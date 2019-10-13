@@ -42,6 +42,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 import com.cburch.logisim.LogisimVersion;
+import com.cburch.logisim.Main;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Attribute;
@@ -124,7 +125,7 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
 
   public boolean isBuiltin() { return false; } // most builtins should return true
 
-  public static final DragDrop dnd = new DragDrop(Tool.class);
+  public static final DragDrop dnd = Main.headless ? null : new DragDrop(Tool.class);
   public DragDrop getDragDrop() { return dnd; }
 
   JDragLabel dragLabel;

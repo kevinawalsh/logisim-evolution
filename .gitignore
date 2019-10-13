@@ -35,6 +35,8 @@ java-runtime-mac
 # Windows files
 *.exe
 *.zip
+logisim-evolution-runtime
+module-deps.txt
 
 # Simulation files and folders
 resources/logisim/sim/comp.tcl

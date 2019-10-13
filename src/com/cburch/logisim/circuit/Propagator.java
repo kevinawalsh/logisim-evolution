@@ -32,6 +32,7 @@ package com.cburch.logisim.circuit;
 
 //import java.util.PriorityQueue;
 import java.util.Random;
+import java.lang.ref.WeakReference;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -66,20 +67,24 @@ public class Propagator {
   // }
 
   private static class Listener implements AttributeListener {
-    Propagator prop;
+    // weak reference here, to allow prop to be garbage collected
+    WeakReference<Propagator> prop;
 
     public Listener(Propagator propagator) {
-      prop = propagator;
+      prop = new WeakReference<>(propagator);
     }
 
     public void attributeListChanged(AttributeEvent e) {
     }
 
     public void attributeValueChanged(AttributeEvent e) {
+      Propagator p = prop.get();
+      if (p == null)
+        return;
       if (e.getAttribute().equals(Options.ATTR_SIM_RAND))
-        prop.updateRandomness();
+        p.updateRandomness();
       else if (e.getAttribute().equals(Options.ATTR_SIM_LIMIT))
-        prop.updateSimLimit();
+        p.updateSimLimit();
     }
   }
 
@@ -219,6 +224,12 @@ public class Propagator {
 
   public Propagator(CircuitState root) {
     this.root = root;
+    // Listener here uses a weak reference, otherwise a cycle is created: the
+    // weak hashmap just below will end up keeping a strong reference to this
+    // Propagator, and the listener will not get removed from the hashmap, which
+    // in turn keeps this Propagator alive, etc. That cycle keeps every
+    // propagator alive forever. A weak reference breaks the cycle and allows
+    // dead propagtors to get collected..
     Listener l = new Listener(this);
     root.getProject().getOptions().getAttributeSet().addAttributeWeakListener(this, l);
     updateRandomness();
@@ -375,9 +386,9 @@ public class Propagator {
     }
     toProcess.add(new SimulatorEvent(clock + delay, eventSerialNumber, state, pt, cause, val));
 
-    // DEBUGGING
-    // System.printf("%s: set %s in %s to %s by %s after %s\n",
-    //     clock, pt, state, val, cause, delay);
+    // DEBUG: System.out.printf("%s: set %s in %s to %s by %s after %s\n",
+    // DEBUG:     clock, pt, state, val, cause, delay);
+    // DEBUG: Thread.dumpStack();
 
     eventSerialNumber++;
   }
@@ -401,8 +412,12 @@ public class Propagator {
 
   // private int visitedNonce = 1;
   private void stepInternal(PropagationPoints changedPoints) { // Safe to call from sim thread
-    if (toProcess.isEmpty())
+		// DEBUG: System.out.println("== Step Internal ==");
+    
+		if (toProcess.isEmpty()) {
+			// DEBUG: System.out.println("-- Done --");
       return;
+		}
 
     // update clock
     clock = toProcess.peek().time;
@@ -425,9 +440,8 @@ public class Propagator {
       // if (!state.visited.add(new ComponentPoint(ev.cause, ev.loc)))
       //   continue; // this component+loc change has already been handled
 
-      // DEBUGGING
-      // System.out.printf("%s: proc %s in %s to %s by %s\n",
-      //     ev.time, ev.loc, ev.state, ev.val, ev.cause);
+			// DEBUG: System.out.printf("%s: proc %s in %s to %s by %s\n",
+			// DEBUG: 		ev.time, ev.loc, ev.state, ev.val, ev.cause);
 
       if (changedPoints != null)
         changedPoints.add(state, ev.loc);
@@ -447,8 +461,14 @@ public class Propagator {
       // }
     }
 
+		// DEBUG: System.out.println("-- process dirty points --");
+		// DEBUG: root.dump("for %s before processDirtyPoints", this);
     root.processDirtyPoints();
+		// DEBUG: root.dump("for %s after processDirtyPoints, before processDirtyComponents", this);
+		// DEBUG: System.out.println("-- process dirty components --");
     root.processDirtyComponents();
+		// DEBUG: root.dump("for %s after processDirtyComponents", this);
+		// DEBUG: System.out.println("-- Done --");
   }
 
   public boolean toggleClocks() {

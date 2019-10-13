@@ -78,7 +78,7 @@ public class CircuitState implements InstanceData {
         // Nothing to do: CircuitWires.BundleMap will be voided, causing
         // everything to be marked dirty.
         Component comp = (Component) event.getData();
-        // System.out.println("added comp " + comp);
+        // DEBUG: System.out.println("added comp " + comp);
         // if (comp instanceof Wire) {
         //   Wire w = (Wire) comp;
         //   markPointAsDirty(w.getEnd0(), null);
@@ -117,12 +117,12 @@ public class CircuitState implements InstanceData {
           // Wire w = (Wire) comp;
           // markPointAsDirty(w.getEnd0(), null);
           // markPointAsDirty(w.getEnd1(), null);
-          // System.out.println("removed wire " + comp);
+          // DEBUG: System.out.println("removed wire " + comp);
         } else {
           // Nothing else to do: CircuitWires.BundleMap will be voided, causing
           // everything to be marked dirty.
           // Propagator.checkComponentEnds(CircuitState.this, comp);
-          // System.out.println("removed comp " + comp);
+          // DEBUG: System.out.println("removed comp " + comp);
           synchronized (dirtyLock) {
             // dirtyComponents.remove(comp);
             while (dirtyComponents.remove(comp))
@@ -190,7 +190,7 @@ public class CircuitState implements InstanceData {
           for (Component repl : map.getReplacementsFor(comp)) {
             if (repl.getFactory().getClass() == compFactory) {
               found = true;
-              setData(repl, compState);
+              replaceData(repl, compState);
               break;
             }
           }
@@ -297,6 +297,7 @@ public class CircuitState implements InstanceData {
 
   private void copyFrom(CircuitState src) {
     // this.base = ... DO NOT COPY propagator, as this circuit has its own already.
+		// DEBUG: System.out.printf("this %s is copying from %s\n", this, src);
     this.parentComp = src.parentComp;
     this.parentState = src.parentState;
     HashMap<CircuitState, CircuitState> substateData = new HashMap<>();
@@ -484,16 +485,36 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  void markPointAsDirty(Propagator.SimulatorEvent ev) { // Location pt, Component cause, Value drivenValue) {
+  void markPointAsDirty(Propagator.SimulatorEvent ev) {
     synchronized(dirtyLock) {
       dirtyPoints.add(ev);
-      // dirtyPoints.add(pt);
-      // dirtyPointVals.add(newVal);
     }
   }
 
+  // DEBUG: private void dumpDirty() {
+  // DEBUG:   synchronized(dirtyLock) {
+  // DEBUG:     boolean updated = false;
+  // DEBUG:     if (substatesDirty) { // caution: maybe not a good idea here in debugging
+  // DEBUG:       substatesDirty = false;
+  // DEBUG:       substatesWorking = substates.toArray(substatesWorking);
+  // DEBUG:       updated = true;
+	// DEBUG: 		}
+  // DEBUG:     System.out.printf("There are %d dirty components, %d working substates%s.\n",
+  // DEBUG:         dirtyComponentsWorking.size(),
+  // DEBUG:           substatesWorking.length,
+  // DEBUG:           updated ? " (just updated list)" :"");
+  // DEBUG:     for (CircuitState cs : substatesWorking)
+  // DEBUG:       System.out.printf("  substate %s\n", cs);
+  // DEBUG:     for (Component c : dirtyComponentsWorking)
+  // DEBUG:       System.out.printf("  comp %s with state %s\n", c, getData(c));
+  // DEBUG:   }
+  // DEBUG: }
+
   ArrayList<Component> dirtyComponentsWorking = new ArrayList<>();
-  void processDirtyComponents() {
+  // DEBUG: void processDirtyComponents() { processDirtyComponents("-="); }
+  void processDirtyComponents(/* DEBUG: String tab */) {
+    // DEBUG: System.out.printf(tab+" Start of processDirtyComponents(%s)\n", this);
+    // DEBUG: System.out.printf(tab+" NOTE: parentState = %s\n", parentState);
     if (!dirtyComponentsWorking.isEmpty())
       throw new IllegalStateException("INTERNAL ERROR: dirtyComponentsWorking not empty");
     synchronized (dirtyLock) {
@@ -503,25 +524,45 @@ public class CircuitState implements InstanceData {
       if (substatesDirty) {
         substatesDirty = false;
         substatesWorking = substates.toArray(substatesWorking);
-      }
+			}
+      // DEBUG: dumpDirty();
     }
 
+    // DEBUG: boolean finished = false, progress = false;
     try { // comp.propagate() can fail if external (or std) library is buggy
       for (Component comp : dirtyComponentsWorking) {
+        // DEBUG: progress = true;
+				// DEBUG: System.out.printf("Propagating (from %s) for dirty component %s\n", this, comp);
         comp.propagate(this);
         // pin values also get propagated to parent state
         if (comp.getFactory() instanceof Pin && parentState != null)
           parentComp.propagate(parentState);
       }
+      // DEBUG: finished = true;
     } finally {
+      // DEBUG: if (!finished)
+      // DEBUG:   System.out.printf(tab+" ERROR in processDirtyComponents(%s)\n", this);
       dirtyComponentsWorking.clear();
     }
 
+    // DEBUG: if (progress)
+    // DEBUG:   dumpDirty();
+
+    // DEBUG: boolean moreprogress = false;
     for (CircuitState substate : substatesWorking) {
+      // DEBUG: moreprogress = true;
+			// DEBUG: System.out.printf("Recurse down for substate %s\n", substate);
       if (substate == null)
         break;
+      // DEBUG: substate.processDirtyComponents(tab+"==");
       substate.processDirtyComponents();
+			// DEBUG: System.out.printf("Done recurse for substate %s\n", substate);
     }
+
+    // DEBUG: if (moreprogress)
+    // DEBUG:   dumpDirty();
+    
+    // DEBUG: System.out.printf(tab+" End of processDirtyComponents(%s)\n", this);
   }
 
   // private ArrayList<Location> dirtyPointsWorking = new ArrayList<>();
@@ -630,7 +671,7 @@ public class CircuitState implements InstanceData {
         System.out.printf("this = %s with parentComp %s \n", this, this.parentComp);
         System.out.printf("comp = %s for circuit %s\n", comp, circ);
         System.out.printf("oldState = %s with parentComp %s\n", oldState, oldState.parentComp);
-        try { throw new Exception("removed stale CircuitState"); } catch (Exception e) { e.printStackTrace(); }
+        Thread.dumpStack();
         synchronized(dirtyLock) {
           substates.remove(oldState);
           substatesDirty = true;
@@ -648,17 +689,49 @@ public class CircuitState implements InstanceData {
       componentData.put(comp, newState);
       return newState;
   }
-
-  public void setData(Component comp, Object data) {
+  
+	private void replaceData(Component comp, Object data) {
+		// This happens when subcirc is copy/paste/moved, which causes a new
+		// component to be created, and we want to transfer the now-defunct
+		// component's state over to the newly-created copmonent.
+		// If comp is a subcircuit, the data will be a CircuitState.
+		// Otherwise data might be a RamState, or some other built-in component state.
     if (data instanceof CircuitState) {
-      // fixme: should never happen?
-      // System.out.println("fixme: setData with circuitstate... happens when subcirc is copy/paste/moved? replaced with another identical one?");
-      // try { throw new Exception(); }
-      // catch (Exception e) { e.printStackTrace(); }
+      CircuitState sub = (CircuitState)data;
+			// DEBUG: System.out.printf("comp is %s\n", comp);
+			// DEBUG: System.out.printf("with old data %s\n", getData(comp));
+			// DEBUG: if (getData(comp) instanceof CircuitState)
+			// DEBUG:  System.out.printf("        new data parent %s\n", ((CircuitState)getData(comp)).parentComp);
+			// DEBUG: System.out.printf("setting new data %s\n", data);
+			// DEBUG: System.out.printf("        new data parent %s\n", sub.parentComp);
       // data was already removed from componentData[orig].
       // need to register it now under componentdata[comp], done below.
       // also need to set parentcomp
       // but don't need to add to substates, b/c it should already be there
+      sub.parentComp = comp;
+			CircuitState old = (CircuitState)componentData.put(comp, data);
+			synchronized (dirtyLock) {
+				// DEBUG: System.out.println("removing old substate " + old);
+				if (old != null) {
+					substates.remove(old);
+          old.parentState = null;
+        }
+				// DEBUG: System.out.println("adding new substate " + sub);
+        sub.parentState = this;
+				substates.add(sub);
+				substatesDirty = true;
+				dirtyComponents.add(comp);
+			}
+    } else {
+			componentData.put(comp, data);
+		}
+  }
+
+  public void setData(Component comp, Object data) {
+    if (data instanceof CircuitState) {
+      // fixme: should never happen?
+      System.out.println("fixme: setData with circuitstate... should never happen");
+			Thread.dumpStack();
       ((CircuitState)data).parentComp = comp;
     }
     componentData.put(comp, data);
@@ -876,27 +949,78 @@ public class CircuitState implements InstanceData {
     return id;
   }
 
-  // public synchronized void dump(String msg, Object ...fmt) {
-  //   synchronized (dirtyLock) {
-  //     synchronized (valuesLock) {
-  //       Thread.dumpStack();
-  //       System.out.printf("dumping circuitstate values: %s\n", String.format(msg, fmt));
-  //       System.out.println("slowpath:");
-  //       slowpath_values.forEach((loc, val) -> System.out.printf("  [%s] %s\n", loc, val));
-  //       System.out.println("fastpath:");
-  //       for (int i = 0; i < FASTPATH_GRID_HEIGHT; i++) {
-  //         for (int j = 0; j < FASTPATH_GRID_WIDTH; j++) {
-  //           Value val = fastpath_values[i][j];
-  //           if (val != null)
-  //             System.out.printf("  [(%d,%d)] %s\n", 10*j, 10*i, val);
-  //         }
-  //       }
-  //       if (wireData != null) {
-  //         System.out.println("wiredata:");
-  //         circuit.wires.dump(wireData);
-  //       }
-  //     }
-  //   }
-  // }
+	// DEBUGGING
+  // DEBUG: private static Object dumpLock = new Object();
+  // DEBUG: private static int dumpIndent = 0;
+  // DEBUG: public synchronized void dump(String msg, Object ...fmt) {
+  // DEBUG:   synchronized (dumpLock) {
+  // DEBUG:     synchronized (dirtyLock) {
+  // DEBUG:       synchronized (valuesLock) {
+  // DEBUG:         String t = dumpIndent <= 0 ? "" : String.format("%"+dumpIndent+"s", "");
+  // DEBUG:         dumpIndent += 2;
+  // DEBUG:         // Thread.dumpStack();
+  // DEBUG:         System.out.printf(t+"{ Dumping %s values: %s\n", this, String.format(msg, fmt));
+  // DEBUG:         System.out.printf(t+"  Current values at canvas locations:\n");
+  // DEBUG:         slowpath_values.forEach((loc, val) ->
+  // DEBUG:             System.out.printf(t+"    at %s value = %s (from slowpath)\n", loc, val));
+  // DEBUG:         for (int i = 0; i < FASTPATH_GRID_HEIGHT; i++) {
+  // DEBUG:           for (int j = 0; j < FASTPATH_GRID_WIDTH; j++) {
+  // DEBUG:             Value val = fastpath_values[i][j];
+  // DEBUG:             if (val != null)
+  // DEBUG:               System.out.printf(t+"    at (%d,%d) value = %s\n", 10*j, 10*i, val);
+  // DEBUG:           }
+  // DEBUG:         }
+  // DEBUG:         if (wireData != null) {
+  // DEBUG:           System.out.printf(t+"  Wire data:\n");
+  // DEBUG:           circuit.wires.dump(t+"  ", wireData);
+  // DEBUG:         } else {
+  // DEBUG:           System.out.printf(t+"  No wire data.\n");
+  // DEBUG:         }
+  // DEBUG:         if (dirtyPoints.isEmpty())
+  // DEBUG:           System.out.printf(t+"  No pending point-change events.\n");
+  // DEBUG:         else {
+  // DEBUG:           System.out.printf(t+"  %d pending point-change events:\n", dirtyPoints.size());
+  // DEBUG:           for (Propagator.SimulatorEvent e : dirtyPoints) {
+  // DEBUG:             System.out.printf(t+"    %s\n", e);
+  // DEBUG:             if (e.state != this)
+  // DEBUG:               System.out.printf(t+"    ERROR: above event is on wrong state\n");
+  // DEBUG:           }
+  // DEBUG:         }
+  // DEBUG:         Set<Component> comps = circuit.getNonWires();
+  // DEBUG:         if (comps.isEmpty())
+  // DEBUG:           System.out.printf(t+"  Contains no components.\n");
+  // DEBUG:         else
+  // DEBUG:           System.out.printf(t+"  Contains %d components:\n", comps.size());
+  // DEBUG:         Set<Object> printed = new HashSet<>();
+  // DEBUG:         // sanity check the dirtyComponents
+  // DEBUG:         for (Component c: dirtyComponents)
+  // DEBUG:           if (!comps.contains(c))
+  // DEBUG:             System.out.printf(t+"    ERROR: component marked dirty, but unlisted: %s\n", c);
+  // DEBUG:         for (Component c : comps) {
+  // DEBUG:           Object data = getData(c);
+  // DEBUG:           System.out.printf(t+"    (%s) %s data = %s\n", 
+  // DEBUG:               dirtyComponents.contains(c) ? "dirty" : "clean",
+  // DEBUG:               c, data);
+  // DEBUG:           if (data instanceof CircuitState) {
+  // DEBUG:             if (printed.contains(data)) {
+  // DEBUG:               System.out.printf(t+"  ERROR - this substate was already seen.\n");
+  // DEBUG:             } else {
+  // DEBUG:               printed.add(data);
+  // DEBUG:               if (!substates.contains(data))
+  // DEBUG:                 System.out.printf(t+"  ERROR - this substate is not found in substates map.\n");
+  // DEBUG:               ((CircuitState)data).dump("for component %s in %s", c, circuit.getName());
+  // DEBUG:             }
+  // DEBUG:           }
+  // DEBUG:         }
+  // DEBUG:         for (CircuitState sub : substates) {
+  // DEBUG:           if (!printed.contains(sub))
+  // DEBUG:             System.out.printf(t+"  ERROR - substate not associated with component: %s\n", sub);
+  // DEBUG:         }
+  // DEBUG:         System.out.printf(t+"}\n");
+  // DEBUG:         dumpIndent -= 2;
+  // DEBUG:       }
+  // DEBUG:     }
+  // DEBUG:   }
+  // DEBUG: }
 
 }

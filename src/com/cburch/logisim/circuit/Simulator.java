@@ -148,7 +148,8 @@ public class Simulator {
     }
   
     synchronized void addPendingInput(CircuitState state, Component comp) {
-      stepPoints.addPendingInput(state, comp);
+      if (!_autoPropagating)
+        stepPoints.addPendingInput(state, comp);
     }
 
     synchronized String getSingleStepMessage() {

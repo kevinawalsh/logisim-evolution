@@ -386,20 +386,21 @@ public class CircuitWires {
     return new State(getConnectivity(), circState.getWireData());
   }
 
-  // void dump(State s) {
-  //   for (int i = 0; i < s.buses.length; i++) {
-  //     System.out.printf("bus %d (%s):\n", i, i < s.numDirty ? "dirty" : "clean");
-  //     ValuedBus vb = s.buses[i];
-  //     System.out.printf("  idx %d %s width %s threads %s val %s %s\n", vb.idx, 
-  //         vb.dirty ? "dirty" : "clean",
-  //         vb.width, vb.threads,
-  //         vb.localDrivenValue, vb.busVal);
-  //     for (int j = 0; j < vb.connections.length; j++) {
-  //       System.out.printf("    connection at %s to %s\n",
-  //           vb.locations[j], vb.connections[j]);
-  //     }
-  //   }
-  // }
+  // DEBUG: void dump(String tab, State s) {
+  // DEBUG:   for (int i = 0; i < s.buses.length; i++) {
+  // DEBUG:     System.out.printf(tab+"bus %d of %d (%s):\n", i, s.buses.length,
+  // DEBUG:         i < s.numDirty ? "dirty" : "clean");
+  // DEBUG:     ValuedBus vb = s.buses[i];
+  // DEBUG:     System.out.printf(tab+"  idx %d (%s) width %s threads %s val %s %s\n", vb.idx, 
+  // DEBUG:         vb.dirty ? "dirty" : "clean",
+  // DEBUG:         vb.width, vb.threads,
+  // DEBUG:         vb.localDrivenValue, vb.busVal);
+  // DEBUG:     for (int j = 0; j < vb.connections.length; j++) {
+  // DEBUG:       System.out.printf(tab+"    connection at %s to %s\n",
+  // DEBUG:           vb.locations[j], vb.connections[j]);
+  // DEBUG:     }
+  // DEBUG:   }
+  // DEBUG: }
 
   static class State {
     private Connectivity connectivity; // original source of connectivity info
@@ -563,7 +564,7 @@ public class CircuitWires {
   // NOTE: this could be made much more efficient in most cases to
   // avoid voiding the connectivity map.
   /*synchronized*/ boolean add(Component comp) {
-    // System.out.println("wires adding " + comp);
+    // DEBUG: System.out.println("wires adding " + comp);
     boolean added = true;
     if (comp instanceof Wire) {
       added = addWire((Wire) comp);
@@ -589,7 +590,7 @@ public class CircuitWires {
   }
 
   /*synchronized*/ void add(Component comp, EndData end) {
-    // System.out.println("wires adding for " + comp + " end " + end);
+    // DEBUG: System.out.println("wires adding for " + comp + " end " + end);
     points.add(comp, end);
     voidConnectivity();
   }
@@ -606,7 +607,7 @@ public class CircuitWires {
 
   // To be called by getConnectivity() only
   private void computeConnectivity(Connectivity ret) {
-    // System.out.println("computing new connectivity map");
+    // DEBUG: System.out.println("computing new connectivity map");
     // create bundles corresponding to wires and tunnels
     connectComponents(ret);
     connectWires(ret);
@@ -1153,7 +1154,7 @@ public class CircuitWires {
     // get state, or create a new one if current state is outdated
     State s = circState.getWireData();
     if (s == null || s.connectivity != map) {
-      // System.out.printf("computing new State from %s\n", s);
+      // DEBUG: System.out.printf("computing new State from %s\n", s);
       // if it is outdated, we need to compute for all threads
       s = new State(map, s);
       circState.setWireData(s);
@@ -1178,10 +1179,10 @@ public class CircuitWires {
 
       ValuedBus vb = s.busAt.get(p);
       if (vb == null) {
-        // System.out.printf("simulator event, but no bus: comp=%s loc=%s val=%s\n", cause, p, val);
+        // DEBUG: System.out.printf("simulator event, but no bus: comp=%s loc=%s val=%s\n", cause, p, val);
         // point is not wired: just set that point's value and be done
         // todo: we could keep track of the affected components here
-        // System.out.printf("  loc %s not wired, accept val %s\n", p, val);
+        // DEBUG: System.out.printf("  loc %s not wired, accept val %s\n", p, val);
         // circState.setValueByWire(val, p);
       } else if (vb.width <= 0) {
         // point is wired to a bus with invalid width: ignore new value
@@ -1198,7 +1199,7 @@ public class CircuitWires {
         // common case... it is wired to a normal bus: update the stored value
         // of this point on the bus, mark the bus as dirty, and (if not
         // degenerate) mark as dirty any related buses.
-        // System.out.printf("  loc %s is wired, processing val %s\n", p, val);
+        // DEBUG: System.out.printf("  loc %s is wired, processing val %s\n", p, val);
         // fixme: sort the connections list, sources first, then bidir, then sinks
         for (BusConnection bc : vb.connections) {
           if (bc.location.equals(p) && bc.component.equals(cause)) {
@@ -1325,12 +1326,12 @@ public class CircuitWires {
   /*synchronized*/ void replace(Component comp, EndData oldEnd, EndData newEnd) {
     points.remove(comp, oldEnd);
     points.add(comp, newEnd);
-    // System.out.printf("replaced %s %s with %s\n", comp, oldEnd, newEnd);
+    // DEBUG: System.out.printf("replaced %s %s with %s\n", comp, oldEnd, newEnd);
     voidConnectivity();
   }
 
   private void voidConnectivity() {
-    // System.out.println("voiding connectivity info");
+    // DEBUG: System.out.println("voiding connectivity info");
     // This should really only be called by AWT thread, but main() also
     // calls it during startup. It should not be called by the simulation
     // thread.

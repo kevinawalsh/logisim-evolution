@@ -35,9 +35,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.Random;
 
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.Var;
@@ -318,7 +320,8 @@ public class TtyInterface {
       ret = doPng(args.headlessPngCircuits, file);
     }
     if (ret == 0 && args.headlessTty) {
-      ret = doTty(args.getTtyFormat(), args.getLoadFile(), file, args.getCircuitToTest());
+      ret = doTty(args.getTtyFormat(), args.getLoadFile(), file, args.getCircuitToTest(),
+          args.getTtyRandomHead(), args.getTtyRandomBody(), args.getTtyRandomTail());
     }
     System.exit(ret);
   }
@@ -352,7 +355,8 @@ public class TtyInterface {
     return err;
   }
 
-  static int doTty(int format, File loadfile, LogisimFile.FileWithSimulations file, String circuitToTest) {
+  static int doTty(int format, File loadfile, LogisimFile.FileWithSimulations file, String circuitToTest,
+      int head, int body, int tail) {
     if ((format & FORMAT_STATISTICS) != 0) {
       format &= ~FORMAT_STATISTICS;
       displayStatistics(file.file);
@@ -385,7 +389,7 @@ public class TtyInterface {
       }
     }
     if (haltPin == null && (format & FORMAT_TABLE) != 0) {
-      doTableAnalysis(proj, circuit, pinNames, format);
+      doTableAnalysis(proj, circuit, pinNames, format, head, body, tail);
       return 0;
     }
 
@@ -503,7 +507,7 @@ public class TtyInterface {
 
   private static int doTableAnalysis(Project proj, Circuit circuit,
       Map<Instance, String> pinLabels,
-      int format) {
+      int format, int head, int body, int tail) {
 
     // args(ArrayList<Instance> inputPins, ArrayList<Instance> outputPins,
     //     Map<Instance, String> pinNames, int format)
@@ -525,11 +529,12 @@ public class TtyInterface {
 
     // boolean needTableHeader = true;
     // ArrayList<Value> prevValues = null;
-    // for (int i = 0; i < table.getRowCount() {
+    // for (int i = 0; i < table.getRowCount()) {
     //   int col = 0;
     //   for (Var v : model.getInputs().vars) {
     //     for (int vi = 0; vi < v.width; vi++) {
-    //       if (TruthTable.isInputSet(i, col, inputs);
+    //       if (TruthTable.isInputSet(i, col, inputs))
+    //         ...
     //     }
     //   }
 
@@ -591,9 +596,45 @@ public class TtyInterface {
     int inputCount = inputNames.size();
     int rowCount = 1 << inputCount;
 
+    if (head == 0 && tail == 0 && body == 0) {
+      head = rowCount;
+    } else {
+      if (head + tail + body >= rowCount) {
+        head = rowCount;
+        tail = body = 0;
+      }
+    }
+
+    int[] bodyidx = new int[body];
+    if (body > 0) {
+      // (deterministic) reservoir sampling!
+      Random r = new Random((head + ":" + body + ":" + tail).hashCode());
+      for (int k = 0; k < body; ++k)
+        bodyidx[k] = k + head;
+      for (int k = body ; k < rowCount - head - tail; ++k) {
+        int v = r.nextInt(k+1);
+        if (v < body)
+          bodyidx[v] = k + head;
+      }
+      Arrays.sort(bodyidx);
+    }
+
+    int[] allidx = new int[head + body + tail];
+    int ii = 0;
+    for (int i = 0; i < head; i++)
+      allidx[ii++] = i;
+    for (int i = 0; i < body; i++)
+      allidx[ii++] = bodyidx[i];
+    for (int i = rowCount-tail; i < rowCount; i++)
+      allidx[ii++] = i;
+
     boolean needTableHeader = true;
     HashMap<Instance, Value> valueMap = new HashMap<>();
-    for (int i = 0; i < rowCount; i++) {
+    int bodyii = 0;
+    for (ii = 0; ii < allidx.length; ii++) {
+      int i = allidx[ii];
+      if (ii == head || i == rowCount-tail)
+        System.out.println("...");
       valueMap.clear();
       CircuitState circuitState = CircuitState.createRootState(proj, circuit);
       int incol = 0;
@@ -647,22 +688,15 @@ public class TtyInterface {
   }
 
   public static final int FORMAT_TABLE = 1;
-
   public static final int FORMAT_SPEED = 2;
-
   public static final int FORMAT_TTY = 4;
-
   public static final int FORMAT_HALT = 8;
-
   public static final int FORMAT_STATISTICS = 16;
-
   public static final int FORMAT_TABLE_TABBED = 32;
-
   public static final int FORMAT_TABLE_CSV = 64;
-
   public static final int FORMAT_TABLE_BIN = 128;
-
   public static final int FORMAT_TABLE_HEX = 256;
+  public static final int FORMAT_RANDOMIZE = 256;
 
   private static boolean lastIsNewline = true;
 }

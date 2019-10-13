@@ -43,6 +43,7 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 
 import com.cburch.logisim.LogisimVersion;
+import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitException;
 import com.cburch.logisim.circuit.CircuitMutation;
@@ -648,9 +649,9 @@ public class AddTool extends Tool {
         || (description != null && description.getName().startsWith("file#"));
   }
 
-  public static final DragDrop circuitDnd = new DragDrop(
+  public static final DragDrop circuitDnd = Main.headless ? null : new DragDrop(
       Tool.class, LayoutClipboard.mimeTypeCircuitClip);
-  public static final DragDrop vhdlDnd = new DragDrop(
+  public static final DragDrop vhdlDnd = Main.headless ? null : new DragDrop(
       Tool.class, LayoutClipboard.mimeTypeVhdlClip);
 
   public class TransferableAddTool<E> implements DragDrop.Support, DragDrop.Ghost {

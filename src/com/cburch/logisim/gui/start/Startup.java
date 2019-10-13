@@ -200,8 +200,29 @@ public class Startup {
             ret.ttyFormat |= TtyInterface.FORMAT_TABLE_CSV;
           else if (fmt.equals("tabs"))
             ret.ttyFormat |= TtyInterface.FORMAT_TABLE_TABBED;
-          else
-            fail(S.get("ttyFormatError"));
+          else if (fmt.startsWith("choose:")) {
+            ret.ttyFormat |= TtyInterface.FORMAT_RANDOMIZE;
+            String[] p = fmt.split(":");
+            try {
+              if (p.length == 2) {
+                ret.ttyRandomHead = ret.ttyRandomTail = 0;
+                ret.ttyRandomBody = Integer.parseInt(p[1]);
+              } else if (p.length == 3) {
+                ret.ttyRandomHead = ret.ttyRandomTail = Integer.parseInt(p[1]);
+                ret.ttyRandomBody = Integer.parseInt(p[2]);
+              } else if (p.length == 4) {
+                ret.ttyRandomHead = Integer.parseInt(p[1]);
+                ret.ttyRandomBody = Integer.parseInt(p[2]);
+                ret.ttyRandomTail = Integer.parseInt(p[3]);
+              } else {
+                fail("can't parse args for tty args choose:A[:B[:C]]");
+              }
+            } catch (NumberFormatException e) {
+              fail("can't parse args for tty choose: " + fmt + " - " + e.getMessage());
+            }
+          } else {
+            fail("unrecognized tty args: " + fmt);
+          }
         }
       } else if (arg.equals("-png")) {
         ret.headlessPng = true;
@@ -450,6 +471,7 @@ public class Startup {
   private File loadFile;
   private HashMap<String, String> substitutions = new HashMap<>();
   private int ttyFormat = 0;
+  private int ttyRandomHead, ttyRandomBody, ttyRandomTail;
   // from other sources
   private boolean initialized = false;
   private SplashScreen monitor = null;
@@ -494,9 +516,10 @@ public class Startup {
     return Collections.unmodifiableMap(substitutions);
   }
 
-  int getTtyFormat() {
-    return ttyFormat;
-  }
+  int getTtyFormat() { return ttyFormat; }
+  int getTtyRandomHead() { return ttyRandomHead; }
+  int getTtyRandomBody() { return ttyRandomBody; }
+  int getTtyRandomTail() { return ttyRandomTail; }
 
   private void loadTemplate() {
     if (templFile != null) {

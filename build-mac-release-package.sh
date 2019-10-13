@@ -89,7 +89,7 @@ fi
 INSTALLER_TYPE="pkg" # Options: dmg or pkg
 OUTPUT="."
 JAR="logisim-evolution.jar"
-VERSION="4.0.0" # must be numerical x.y.z
+VERSION="4.0.1" # must be numerical x.y.z
 FILE_ASSOCIATIONS="file-associations.properties"
 APP_ICON="logisim.icns"
 JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -141,3 +141,28 @@ ${PACKAGER} \
 rm -rf mac-staging
 rm -rf mac-resources
 mv "Logisim-Evolution-${VERSION}.pkg" "Logisim-Evolution-${VERSION}-HC.pkg"
+
+cat <<END
+
+# To notarize, run this command:
+
+ALTOOLPW=enter-app-specific-password-here
+xcrun altool --notarize-app --primary-bundle-id "$JAVA_APP_IDENTIFIER" \
+    --username "kwalsh@holycross.edu" --password "\$ALTOOLPW" \
+    --file Logisim-Evolution-${VERSION}-HC.pkg
+
+# Then later, try:
+xcrun altool --notarization-history 0 -u "kwalsh@holycross.edu" -p "\$ALTOOLPW"
+
+# And if that works, then try:
+UUID=whatever-from-previous-command
+xcrun altool --notarization-info \$UUID -u "kwalsh@holycross.edu" -p "\$ALTOOLPW"
+
+# And if that works, then try:
+URL=copied-from-last-output
+curl "\$URL" > mac-notarize.log
+cat mac-notarize.log
+
+# Check for warnings and errors, then finally:
+xcrun stapler staple Logisim-Evolution-${VERSION}-HC.pkg
+

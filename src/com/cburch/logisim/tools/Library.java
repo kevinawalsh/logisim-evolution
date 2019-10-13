@@ -40,6 +40,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.XmlWriter;
@@ -202,7 +203,7 @@ public abstract class Library {
     return true;
   }
   
-  public static final DragDrop dnd = new DragDrop(
+  public static final DragDrop dnd = Main.headless ? null : new DragDrop(
       Library.class, LayoutClipboard.mimeTypeLibraryClip);
 
   public class TransferableLibrary implements DragDrop.Support, DragDrop.Ghost {
