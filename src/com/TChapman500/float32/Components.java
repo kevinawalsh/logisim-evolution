@@ -40,7 +40,7 @@ public class Components extends Library
 	
 	public String getDisplayName()
 	{
-		return "Single-Precision FP";
+		return "Floating Point";
 	}
 	    
 	/** Returns a list of all the tools available in this library. */
