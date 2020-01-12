@@ -153,6 +153,8 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
     if (addr < 0) {
       return Bounds.create(bds.getX() + xOffset, bds.getY() + yOffset,
           AddrBlockSize, CharHeight + 2);
+    } else if (addr < curScroll || addr >= (curScroll + NrOfLines * NrDataSymbolsEachLine)) {
+      return Bounds.EMPTY_BOUNDS;
     } else {
       addr -= curScroll;
       int line = ((int) addr) / NrDataSymbolsEachLine;

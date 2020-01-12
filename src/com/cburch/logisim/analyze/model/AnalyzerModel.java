@@ -36,7 +36,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.proj.Project;
 
 public class AnalyzerModel {
-  public static final int MAX_INPUTS = 20;
+  public static final int MAX_INPUTS = 12;
   public static final int MAX_OUTPUTS = 256;
 
   public static final int FORMAT_SUM_OF_PRODUCTS = 0;

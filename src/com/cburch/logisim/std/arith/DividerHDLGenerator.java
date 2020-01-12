@@ -30,6 +30,7 @@
 package com.cburch.logisim.std.arith;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
@@ -48,7 +49,7 @@ public class DividerHDLGenerator extends HDLGenerator {
     outPorts.add("Remainder", "BitWidth", Divider.REM, null);
     if (_hdl.isVhdl) {
       wires.add("s_div", "2*BitWidth");
-      wires.add("s_mod", "BitWidth");
+      wires.add("s_rem", "BitWidth");
       wires.add("s_num", "2*BitWidth");
     } else {
       throw new IllegalArgumentException("Verilog divider not yet implemented");
@@ -60,22 +61,30 @@ public class DividerHDLGenerator extends HDLGenerator {
     if (uMode(_attrs)) {
       out.stmt("s_num(2*BitWidth-1 DOWNTO BitWidth) <= Upper;");
       out.stmt("s_num(BitWidth-1 DOWNTO 0)          <= DataA;");
-      out.stmt("s_div <= std_logic_vector(unsigned(s_num) / unsigned(DataB));");
-      out.stmt("s_mod <= std_logic_vector(unsigned(s_num) mod unsigned(DataB));");
+      out.stmt("s_div <= s_num when unsigned(DataB) = 0 else std_logic_vector(unsigned(s_num) / unsigned(DataB));");
+      out.stmt("s_rem <= (others => '0') when unsigned(DataB) = 0 else std_logic_vector(unsigned(s_num) rem unsigned(DataB));");
       out.stmt("Quotient  <= s_div(BitWidth-1 DOWNTO 0);");
-      out.stmt("Remainder <= s_mod(BitWidth-1 DOWNTO 0);");
+      out.stmt("Remainder <= s_rem(BitWidth-1 DOWNTO 0);");
     } else {
       out.stmt("s_num(2*BitWidth-1 DOWNTO BitWidth) <= Upper;");
       out.stmt("s_num(BitWidth-1 DOWNTO 0)          <= DataA;");
-      out.stmt("s_div <= std_logic_vector(signed(s_num) / signed(DataB));");
-      out.stmt("s_mod <= std_logic_vector(signed(s_num) mod signed(DataB));");
+      out.stmt("s_div <= s_num when signed(DataB) = 0 else std_logic_vector(signed(s_num) / signed(DataB));");
+      out.stmt("s_rem <= (others => '0') when signed(DataB) = 0 else  std_logic_vector(signed(s_num) rem signed(DataB));");
       out.stmt("Quotient  <= s_div(BitWidth-1 DOWNTO 0);");
-      out.stmt("Remainder <= s_mod(BitWidth-1 DOWNTO 0);");
+      out.stmt("Remainder <= s_rem(BitWidth-1 DOWNTO 0);");
     }
   }
 
   protected static boolean uMode(AttributeSet attrs) {
     return attrs.getValue(Divider.MODE_ATTR) == Divider.UNSIGNED_OPTION;
+  }
+
+  @Override
+  protected Hdl.Map getPortMappings(NetlistComponent comp) {
+    // todo: support proper sign-extension in this case
+    if (!uMode(_attrs) && !comp.endIsConnected(Divider.UPPER))
+      _err.AddError("Divider component synthesis is broken when upper input is not connected in signed mode");
+    return super.getPortMappings(comp);
   }
 
 }

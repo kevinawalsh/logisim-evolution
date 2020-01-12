@@ -41,6 +41,14 @@ import com.cburch.logisim.util.Cache;
  */
 public class Bounds {
   public static Bounds create(int x, int y, int width, int height) {
+    if (width < 0) {
+      width = -width;
+      x -= width;
+    }
+    if (height < 0) {
+      height = -height;
+      y -= height;
+    }
     int hashCode = 13 * (31 * (31 * x + y) + width) + height;
     Bounds bds = cache.get(hashCode);
     if (bds != null && bds.x == x && bds.y == y && bds.width == width && bds.height == height)
@@ -264,6 +272,17 @@ public class Bounds {
     if (y >= other.y+other.height || other.y >= y+height) // above and below
       return false;
     return true;
+  }
+
+  public Bounds snapToGrid() {
+    int x0 = (x + 9)/10*10;
+    int y0 = (y + 9)/10*10;
+    int x1 = (x + width)/10*10;
+    int y1 = (y + height)/10*10;
+    if (x0 < x1 && y0 < y1)
+      return create(x0, y0, x1-x0, y1-y0);
+    else
+      return EMPTY_BOUNDS;
   }
 
   // rotates this around (xc,yc) assuming that this is facing in the

@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.CutterTool;
 import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.MenuTool;
@@ -51,6 +52,7 @@ public class Base extends Library {
   public Base() {
     WiringTool wiring = new WiringTool();
     SelectTool select = new SelectTool();
+    CutterTool cutter = new CutterTool();
 
     tools = Arrays.asList(new Tool[] {
       PokeTool.SINGLETON,
@@ -60,6 +62,7 @@ public class Base extends Library {
       // Leave it in, maybe useful for custom keyboard/mouse mappings.
       select,
       wiring,
+      cutter,
       new TextTool(), 
       // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings,
       // e.g. for the right-click binding.

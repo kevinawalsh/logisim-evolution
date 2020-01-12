@@ -48,7 +48,10 @@ import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.generic.Callout;
 import com.cburch.logisim.gui.main.Canvas;
+import com.cburch.logisim.prefs.PrefMonitor;
 import com.cburch.logisim.util.DragDrop;
 
 public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support, DragDrop.Ghost {
@@ -100,6 +103,7 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
   public void keyReleased(Canvas canvas, KeyEvent e) { }
   public void keyTyped(Canvas canvas, KeyEvent e) { }
 
+  public void mouseClicked(Canvas canvas, Graphics g, MouseEvent e) { }
   public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) { }
   public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) { }
   public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) { }
@@ -162,6 +166,41 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
 
   public Dimension getSize() {
     return getDragLabel().getPreferredSize();
+  }
+
+  protected Callout tip = null;
+  protected void hideHint() {
+    if (tip == null)
+      return;
+    tip.hide();
+    tip = null;
+  }
+
+  protected static int hintCount = 0;
+
+  protected boolean hintReady(PrefMonitor<Integer> budget) {
+    // hint on events 15 20 25 30 35, 
+    if (hintCount > 35)
+      return false;
+    hintCount++;
+    int round = budget.get();
+    if (round > 0 && hintCount > 35) {
+      budget.set(round - 1);
+      return false;
+    }
+    return (round > 0 && hintCount >= 15 && hintCount % 5 == 0);
+  }
+
+  protected void hintWorked() {
+    if (hintCount < 20)
+      hintCount = 31; // do at most one more this round
+    else
+      hintCount = 35;
+  }
+
+  protected void showHint(Canvas canvas, Location p, String msg) {
+    tip = new Callout(msg);
+    tip.show(canvas, p.x, p.y, Callout.NW, Callout.DURATION);
   }
 
 }

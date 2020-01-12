@@ -42,6 +42,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
+import javax.swing.Icon;
+
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
@@ -61,6 +63,7 @@ import com.cburch.logisim.gui.main.Selection.Event;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.Icons;
 
 public final class EditTool extends Tool {
   private class Listener implements CircuitListener, Selection.Listener {
@@ -407,10 +410,20 @@ public final class EditTool extends Tool {
     cache.clear();
     updateLocation(canvas, e);
   }
+  
+  private static final Icon toolIcon = Icons.getIcon("select.gif");
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    select.paintIcon(c, x, y);
+    Graphics g = c.getGraphics();
+    if (toolIcon != null) {
+      toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
+    } else {
+      int[] xp = { x + 5, x + 5, x + 9, x + 12, x + 14, x + 11, x + 16 };
+      int[] yp = { y, y + 17, y + 12, y + 18, y + 18, y + 12, y + 12 };
+      g.setColor(java.awt.Color.black);
+      g.fillPolygon(xp, yp, xp.length);
+    }
   }
 
   @Override

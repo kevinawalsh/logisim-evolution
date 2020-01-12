@@ -249,7 +249,7 @@ public final class WiringTool extends Tool {
     case KeyEvent.VK_SPACE:
       if (!pending || direction == AIMLESS)
         return;
-      hintCount = 35;
+      hintWorked();
       candidates.clear();
       extraWireFromSplitting = null;
       if (anchor.x == cur.x || anchor.y == cur.y) {
@@ -267,7 +267,7 @@ public final class WiringTool extends Tool {
     case KeyEvent.VK_BACK_SPACE:
       if (!pending || wires.isEmpty())
         return;
-      hintCount = 35;
+      hintWorked();
       backup(canvas);
       break;
     case KeyEvent.VK_ESCAPE:
@@ -424,8 +424,9 @@ public final class WiringTool extends Tool {
     cur = Location.create(newX, newY);
     updateDirection();
 
-    if (Math.abs(cur.x - anchor.x) > 40 && Math.abs(cur.y - anchor.y) > 40)
-      displayHint(canvas, cornerPoint());
+    if (Math.abs(cur.x - anchor.x) > 40 && Math.abs(cur.y - anchor.y) > 40
+        && hintReady())
+      showHint(canvas);
 
     if (wires.isEmpty() && !candidates.isEmpty() && !cur.equals(origin)) {
       for (Wire w : candidates) {
@@ -617,35 +618,23 @@ public final class WiringTool extends Tool {
     reset();
   }
 
-  private Callout tip = null;
+  // Limit hints to once per wiring sequence
   private boolean doneTip = false;
 
-  private void hideHint() {
+  protected void hideHint() {
     doneTip = false;
-    if (tip == null)
-      return;
-    tip.hide();
-    tip = null;
+    super.hideHint();
   }
 
-  private static int hintCount = 0;
-
-  private void displayHint(Canvas canvas, Location p) {
-    if (doneTip) // once per wiring event
-      return;
+  protected boolean hintReady() {
+    if (doneTip) // once per wiring sequence
+      return false;
     doneTip = true;
-    // hint on wiring events 15 20 25 30 35, 
-    if (hintCount > 35)
-      return;
-    hintCount++;
-    int round = AppPreferences.WIRING_TOOL_TIP.get();
-    if (round > 0 && hintCount > 35) {
-      AppPreferences.WIRING_TOOL_TIP.set(round - 1);
-      return;
-    }
-    if (round <= 0 || hintCount < 15 || hintCount % 5 != 0)
-      return;
+    return super.hintReady(AppPreferences.WIRING_TOOL_TIP);
+  }
 
+  protected void showHint(Canvas canvas) {
+    Location p = cornerPoint();
     tip = new Callout(S.get("wiringTip"));
     if (p.x >= Math.max(cur.x, anchor.x) && p.y >= Math.max(cur.y, anchor.y))
       tip.show(canvas, p.x, p.y, Callout.SE, Callout.DURATION);
@@ -658,4 +647,6 @@ public final class WiringTool extends Tool {
     else
       tip = null;
   }
+
+
 }

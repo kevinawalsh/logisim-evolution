@@ -13,6 +13,7 @@ gray-bin/
 src/com/cburch/logisim/gui/start/MacOsAdapter.java
 depcache/
 java-runtime/
+LogisimFPGASettings.xml
 
 # additional libraries
 !libs/*.jar

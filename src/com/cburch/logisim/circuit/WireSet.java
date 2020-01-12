@@ -64,4 +64,8 @@ public class WireSet {
   public boolean containsWire(Wire w) {
     return wires.contains(w);
   }
+
+  public Set<Wire> getWires() {
+    return wires;
+  }
 }

@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.JOptionPane;
 
@@ -159,13 +158,10 @@ public class XmlProjectReader extends XmlReader {
         sourceVersion = LogisimVersion.parse(versionString);
       }
 
-      // If we are opening a pre-logisim-evolution file, there might be
-      // some components
-      // (such as the RAM or the counters), that have changed their shape
-      // and other details.
-      // We have therefore to warn the user that things might be a little
-      // strange in their
-      // circuits...
+      // If we are opening a pre-logisim-evolution file, there might be some
+      // components (such as the RAM or the counters), that have changed their
+      // shape and other details. We have therefore to warn the user that things
+      // might be a little strange in their circuits...
       if (sourceVersion.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
         String msg = 
             "You are opening a file created with original Logisim code.\n"
@@ -458,6 +454,101 @@ public class XmlProjectReader extends XmlReader {
       convertObsoletePinAttributes(doc, compElt, wiringLibName);
     for (Element toolElt : XmlIterator.forDescendantElements(root, "tool"))
       convertObsoletePinAttributes(doc, toolElt, wiringLibName);
+
+    // As of version 4.0.2, quad-input wide primitive gates have reasonable layout.
+    if (version.compareTo(LogisimVersion.get(4, 0, 2)) < 0) {
+      // Version 4.0.2 fixed the spacing of input pins for certain primitive
+      // gates like AND and OR when they were configured with size=Wide and
+      // inputs=4. Warn about this backwards-incompatible change.
+      String gatesLib = findLibNameByDesc(root, "#Gates");
+      if (gatesLib != null) {
+        wideQuadCheck:
+        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = compElt.getAttribute("lib");
+            String name = compElt.getAttribute("name");
+            if (lib == null || name == null || !lib.equals(gatesLib))
+              continue;
+            if (!(name.equals("AND Gate") || name.equals("OR Gate")
+                  || name.equals("NAND Gate") || name.equals("NOR Gate")
+                  || name.equals("XOR Gate") || name.equals("XNOR Gate")
+                  || name.equals("Odd Parity") || name.equals("Even Parity")))
+              continue;
+            boolean wide = false, quad = false;
+            for (Element attrElt : XmlIterator.forChildElements(compElt, "a")) {
+              String aname = attrElt.getAttribute("name");
+              String aval = attrElt.getAttribute("val");
+              if (aname == null || aval == null)
+                continue;
+              if (aname.equals("inputs")) {
+                if (aval.trim().equals("4"))
+                  quad = true;
+                else
+                  break;
+              }
+              else if (aname.equals("size"))
+                if (aval.trim().equals("70"))
+                  wide = true;
+                else
+                  break;
+            }
+            if (wide && quad) {
+              String msg =
+                    "Warning: The shapes of certain quad-input primitive gates used in\n"
+                  + "this file have changed in recent versions of Logisim-Evolution.\n"
+                  + "This include quad-input AND, OR, NAND, NOR, XOR, XNOR, Even-Parity,\n"
+                  + "and Odd-Parity gates that are configured with 'Wide' appearance.\n"
+                  + "Please reconnect input wires as needed for these gates.";
+              if (Main.headless)
+                System.err.println("WARNING:\n" + msg);
+              else
+                JOptionPane.showMessageDialog(null, msg, "Warning: Legacy Circuit", JOptionPane.WARNING_MESSAGE);
+              break wideQuadCheck;
+            }
+          }
+        }
+      }
+    }
+
+    if (version.compareTo(LogisimVersion.get(4, 0, 2)) < 0) {
+      // This file was saved before the Wire Cutter tool existed. Let's
+      // add it to the toolbar next to wiring (or edit (or select)).
+      for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
+        Element wiring = null;
+        Element select = null;
+        Element edit = null;
+        Element cutter = null;
+        for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
+          String eltName = elt.getAttribute("name");
+          if (eltName != null && !eltName.equals("")) {
+            if (eltName.equals("Select Tool"))
+              select = elt;
+            if (eltName.equals("Wiring Tool"))
+              wiring = elt;
+            if (eltName.equals("Edit Tool"))
+              edit = elt;
+            if (eltName.equals("Cutter Tool"))
+              edit = elt;
+          }
+        }
+        if (cutter == null) {
+          String baselib = findLibNameByDesc(root, "#Base");
+          if (baselib != null) {
+            cutter  = doc.createElement("tool");
+            cutter.setAttribute("lib", baselib);
+            cutter.setAttribute("name", "Cutter Tool");
+            if (wiring != null)
+              toolbar.insertBefore(cutter, wiring.getNextSibling());
+            else if (edit != null)
+              toolbar.insertBefore(cutter, edit.getNextSibling());
+            else if (select != null)
+              toolbar.insertBefore(cutter, select.getNextSibling());
+            else
+              toolbar.insertBefore(cutter, toolbar.getFirstChild());
+          }
+        }
+      }
+    }
   }
 
   private void convertObsoletePinAttributes(Document doc, Element elt, String wiringLibName) {

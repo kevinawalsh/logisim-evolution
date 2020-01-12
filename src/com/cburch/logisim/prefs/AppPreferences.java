@@ -471,4 +471,7 @@ public class AppPreferences {
 
   public static final PrefMonitor<Integer>
       WIRING_TOOL_TIP = new PrefMonitor("wiringToolTip", 3);
+
+  public static final PrefMonitor<Integer>
+      CUTTER_TOOL_TIP = new PrefMonitor("cutterToolTip", 3);
 }

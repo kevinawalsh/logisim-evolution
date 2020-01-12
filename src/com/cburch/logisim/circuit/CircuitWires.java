@@ -430,11 +430,13 @@ public class CircuitWires {
       HashMap<WireThread, ValuedThread> allThreads = new HashMap<>();
       for (ValuedBus vb : buses)
         vb.makeThreads(srcBuses.get(vb).threads, allBuses, allThreads);
-      // initialize BusConnection driven values from previous State, if any
+      // initialize BusConnection driven values from previous State, if any,
+      // but only if they are not sinks (or pins, which always count as sinks)
       if (prev != null) {
         for (ValuedBus vb : buses)
           for (BusConnection bc : vb.connections)
-            bc.drivenValue = prev.getDrivenValue(bc.component, bc.location);
+            if (!bc.isSink)
+              bc.drivenValue = prev.getDrivenValue(bc.component, bc.location);
       }
       // compute bus dependencies
       for (ValuedBus vb : buses) {
@@ -994,7 +996,7 @@ public class CircuitWires {
 
       // this is just an approximation, but it's good enough since
       // the problem is minor, and hidden only exists for a short
-      // while at a time anway.
+      // while at a time anyway.
       for (Location loc : points.getAllLocations()) {
         if (points.getComponentCount(loc) > 2) {
           int icount = 0;
@@ -1327,6 +1329,7 @@ public class CircuitWires {
     points.remove(comp, oldEnd);
     points.add(comp, newEnd);
     // DEBUG: System.out.printf("replaced %s %s with %s\n", comp, oldEnd, newEnd);
+
     voidConnectivity();
   }
 

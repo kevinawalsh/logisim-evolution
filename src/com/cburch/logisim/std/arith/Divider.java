@@ -59,11 +59,11 @@ public class Divider extends InstanceFactory {
 
   static Value[] computeResult(BitWidth width, Value a, Value b, Value upper, boolean unsigned) {
     int w = width.getWidth();
-    if (upper == Value.NIL || upper.isUnknown())
-      upper = Value.createKnown(width, 0);
+    if (upper == Value.NIL /* || upper.isUnknown() */)
+      upper = Value.createKnown(width, unsigned ? 0 : a.get(w-1) == Value.TRUE ? -1 : 0);
     if (a.isFullyDefined() && b.isFullyDefined() && upper.isFullyDefined()) {
       BigInteger uu = BigInteger.valueOf(Multiplier.extend(w, upper.toIntValue(), unsigned));
-      BigInteger aa = BigInteger.valueOf(Multiplier.extend(w, a.toIntValue(), unsigned));
+      BigInteger aa = BigInteger.valueOf(Multiplier.extend(w, a.toIntValue(), true)); // zero extend
       BigInteger bb = BigInteger.valueOf(Multiplier.extend(w, b.toIntValue(), unsigned));
 
       BigInteger num = uu.shiftLeft(w).or(aa);

@@ -151,13 +151,15 @@ public class Canvas extends JPanel
 
     @Override
     public void mouseClicked(MouseEvent e) {
+      Tool tool = getToolFor(e);
+      if (tool != null)
+        tool.mouseClicked(Canvas.this, getGraphics(), e);
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
-      if (drag_tool != null) {
+      if (drag_tool != null)
         drag_tool.mouseDragged(Canvas.this, getGraphics(), e);
-      }
     }
 
     @Override
@@ -208,9 +210,8 @@ public class Canvas extends JPanel
       proj.getFrame().clearExplorerSelection();
       Canvas.this.requestFocus();
       drag_tool = getToolFor(e);
-      if (drag_tool != null) {
+      if (drag_tool != null)
         drag_tool.mousePressed(Canvas.this, getGraphics(), e);
-      }
 
       completeAction();
     }
@@ -233,53 +234,14 @@ public class Canvas extends JPanel
     @Override
     public void mouseWheelMoved(MouseWheelEvent mwe) {
       Tool tool = proj.getTool();
-      if (mwe.isControlDown()) {
-        ZoomModel zoomModel = proj.getFrame().getZoomModel();
-        double zoom = zoomModel.getZoomFactor();
-        // Attempt to maintain mouse position during zoom, using
-        // [m]ax, [v]alue, [e]xtent, and [r]elative position within it,
-        // to calculate target [n]ew[m]ax, [p]ercent and [n]ew[v]alue.
-        double mx = canvasPane.getHorizontalScrollBar().getMaximum();
-        int vx = canvasPane.getHorizontalScrollBar().getValue();
-        double ex = canvasPane.getHorizontalScrollBar().getVisibleAmount();
-        int rx = mwe.getX() - vx;
-        double my = canvasPane.getVerticalScrollBar().getMaximum();
-        int vy = canvasPane.getVerticalScrollBar().getValue();
-        double ey = canvasPane.getVerticalScrollBar().getVisibleAmount();
-        int ry = mwe.getY() - vy;
-        double newZoom = zoom;
-        if (mwe.getWheelRotation() < 0) { // ZOOM IN
-          newZoom += 0.1;
-          zoomModel.setZoomFactor(newZoom >= 4.0 ? 4.0 : newZoom);
-
-        } else { // ZOOM OUT
-          newZoom -= 0.1;
-          zoomModel.setZoomFactor(newZoom <= 0.2 ? 0.2 : newZoom);
-        }
-        newZoom = zoomModel.getZoomFactor();
-        double nmx = mx * newZoom / zoom;
-        double px = (vx / mx) + (ex/mx - ex/nmx) * (rx / ex);
-        int nvx = (int)(nmx * px);
-        double nmy = my * newZoom / zoom;
-        double py = (vy / my) + (ey/my - ey/nmy) * (ry / ey);
-        int nvy = (int)(nmy * py);
-        canvasPane.getHorizontalScrollBar().setValue(nvx);
-        canvasPane.getVerticalScrollBar().setValue(nvy);
-      } else if (tool != null && tool instanceof PokeTool && ((PokeTool)tool).isScrollable()) {
+      if (!mwe.isControlDown() &&
+          tool != null && tool instanceof PokeTool && ((PokeTool)tool).isScrollable()) {
         int id = (mwe.getWheelRotation() < 0) ? KeyEvent.VK_UP : KeyEvent.VK_DOWN;
         KeyEvent e = new KeyEvent(mwe.getComponent(), KeyEvent.KEY_PRESSED,
             mwe.getWhen(), 0, id, '\0');
         tool.keyPressed(Canvas.this, e);
       } else {
-        if (mwe.isShiftDown()) {
-          canvasPane.getHorizontalScrollBar().setValue(
-              scrollValue(canvasPane.getHorizontalScrollBar(),
-                mwe.getWheelRotation()));
-        } else {
-          canvasPane.getVerticalScrollBar().setValue(
-              scrollValue(canvasPane.getVerticalScrollBar(),
-                mwe.getWheelRotation()));
-        }
+        canvasPane.mouseWheelMoved(mwe, true);
       }
     }
 
@@ -800,7 +762,7 @@ public class Canvas extends JPanel
     Rectangle viewableBase;
     Rectangle viewable;
     if (canvasPane != null) {
-      viewableBase = canvasPane.getViewport().getViewRect();
+      viewableBase = viewport.getViewRect();
     } else {
       Bounds bds = proj.getCurrentCircuit().getCircuitBounds(getGraphics());
       viewableBase = new Rectangle(0, 0, bds.getWidth(), bds.getHeight());
@@ -1024,9 +986,8 @@ public class Canvas extends JPanel
         painter.paintContents(g, proj);
         clear = true;
       } while (paintDirty);
-      if (canvasPane == null) {
+      if (canvasPane == null)
         viewport.paintContents(g);
-      }
     } finally {
       inPaint = false;
       synchronized (repaintLock) {

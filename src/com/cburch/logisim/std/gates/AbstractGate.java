@@ -262,38 +262,34 @@ abstract class AbstractGate extends InstanceFactory {
     int axisLength = size + bonusWidth + (negateOutput ? 10 : 0);
     int negated = attrs.negated;
 
-    int skipStart;
+    int skipStart = 0;
     int skipDist;
     int skipLowerEven = 10;
     if (inputs <= 3) {
       if (size < 40) {
-        skipStart = -5;
         skipDist = 10;
         skipLowerEven = 10;
       } else if (size < 60 || inputs <= 2) {
-        skipStart = -10;
         skipDist = 20;
         skipLowerEven = 20;
       } else {
-        skipStart = -15;
         skipDist = 30;
         skipLowerEven = 30;
       }
     } else if (inputs == 4 && size >= 60) {
-      skipStart = -5;
+      skipStart = 10;
       skipDist = 20;
       skipLowerEven = 0;
     } else {
-      skipStart = -5;
       skipDist = 10;
       skipLowerEven = 10;
     }
 
     int dy;
     if ((inputs & 1) == 1) {
-      dy = skipStart * (inputs - 1) + skipDist * index;
+      dy = skipStart + (inputs - 1) * -skipDist / 2 + skipDist * index;
     } else {
-      dy = skipStart * inputs + skipDist * index;
+      dy = skipStart + inputs * -skipDist / 2 + skipDist * index;
       if (index >= inputs / 2)
         dy += skipLowerEven;
     }

@@ -193,7 +193,8 @@ public class ProjectCircuitActions {
       }
     }
     if (numInputs > AnalyzerModel.MAX_INPUTS) {
-      analyzeError(proj, S.fmt("analyzeTooManyInputsError", "" + AnalyzerModel.MAX_INPUTS));
+      analyzeError(proj, S.fmt("analyzeTooManyInputsError", "" + AnalyzerModel.MAX_INPUTS,
+            "" + numInputs, (numInputs <= 32 ? ""+(1L << numInputs) : "more than 4 billion")));
       return;
     }
     if (numOutputs > AnalyzerModel.MAX_OUTPUTS) {

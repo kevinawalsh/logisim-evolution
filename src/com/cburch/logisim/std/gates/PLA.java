@@ -296,7 +296,7 @@ class PLA extends InstanceFactory {
     if (ctx.lang.equals("VHDL"))
       return new PLAVhdlGenerator(ctx);
     else
-      return null;
+      return new PLAVerilogGenerator(ctx);
   }
 
   @Override

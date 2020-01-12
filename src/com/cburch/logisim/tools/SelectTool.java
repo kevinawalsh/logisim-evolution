@@ -128,7 +128,7 @@ public final class SelectTool extends Tool {
   private static final int IDLE = 0;
   private static final int MOVING = 1;
   private static final int RECT_SELECT = 2;
-  private static final Icon toolIcon = Icons.getIcon("select.gif");
+  private static final Icon toolIcon = Icons.getIcon("move.gif");
 
   private static final Color COLOR_UNMATCHED = new Color(192, 0, 0);
 
@@ -229,31 +229,15 @@ public final class SelectTool extends Tool {
         }
       }
     } else if (state == RECT_SELECT) {
-      int left = start.getX();
-      int right = left + dx;
-      if (left > right) {
-        int i = left;
-        left = right;
-        right = i;
-      }
-      int top = start.getY();
-      int bot = top + dy;
-      if (top > bot) {
-        int i = top;
-        top = bot;
-        bot = i;
-      }
+      Bounds bds = Bounds.create(start.x, start.y, dx, dy);
 
       Graphics gBase = context.getGraphics();
-      int w = right - left - 1;
-      int h = bot - top - 1;
-      if (w > 2 && h > 2) {
+      if (bds.width > 3 && bds.height > 3) {
         gBase.setColor(BACKGROUND_RECT_SELECT);
-        gBase.fillRect(left + 1, top + 1, w - 1, h - 1);
+        gBase.fillRect(bds.x + 1, bds.y + 1, bds.width - 2, bds.height - 2);
       }
 
       Circuit circ = canvas.getCircuit();
-      Bounds bds = Bounds.create(left, top, right - left, bot - top);
       for (Component c : circ.getAllWithin(bds)) {
         Location cloc = c.getLocation();
         Graphics gDup = gBase.create();
@@ -265,11 +249,8 @@ public final class SelectTool extends Tool {
 
       gBase.setColor(COLOR_RECT_SELECT);
       GraphicsUtil.switchToWidth(gBase, 2);
-      if (w < 0)
-        w = 0;
-      if (h < 0)
-        h = 0;
-      gBase.drawRect(left, top, w, h);
+      gBase.drawRect(bds.x, bds.y,
+          Math.max(0, bds.width-1), Math.max(0, bds.height-1));
     }
   }
 
@@ -508,8 +489,7 @@ public final class SelectTool extends Tool {
       moveGesture = null;
       proj.repaintCanvas();
     } else if (state == RECT_SELECT) {
-      Bounds bds = Bounds.create(start).add(start.getX() + curDx,
-          start.getY() + curDy);
+      Bounds bds = Bounds.create(start.x, start.y, curDx, curDy);
       Circuit circuit = canvas.getCircuit();
       Selection sel = proj.getSelection();
       Collection<Component> in_sel = sel.getComponentsWithin(bds, g);
@@ -559,8 +539,7 @@ public final class SelectTool extends Tool {
 
     if (!handlers.isEmpty()) {
       boolean consume = false;
-      ArrayList<KeyConfigurationResult> results;
-      results = new ArrayList<KeyConfigurationResult>();
+      ArrayList<KeyConfigurationResult> results = new ArrayList<>();
       for (Map.Entry<Component, KeyConfigurator> entry : handlers
           .entrySet()) {
         Component comp = entry.getKey();

@@ -823,65 +823,71 @@ public class Commander extends JFrame
   }
 
   private void doDownloadPrep() {
-    clearConsoles();
-    if (board == null) {
-      eprintf("No FPGA board is selected. Please select an FPGA board.");
-      return;
-    }
-    Circuit root = circuitsList.getSelectedValue();
-    if (root == null) {
-      eprintf("INTERNAL ERROR: no circuit selected.");
-      return;
-    }
-    String name = proj.getLogisimFile().getName();
-    if (name.indexOf(" ") != -1) {
-      eprintf("The project name '" + name + "' contains a space.");
-      eprintf("Spaces are not permitted by the HDL synthesis engine. Please");
-      eprintf("rename your files and directories to not have any spaces.");
-      return;
-    }
-    String path = workspacePath();
-    if (path == null || path.isEmpty()) {
-      eprintf("The project workspace path is invalid.");
-      eprintf("Please change the path in FPGA settings.");
-      return;
-    }
-    if (path.indexOf(" ") != -1) {
-      eprintf("The workspace directory '" + path + "' contains a space.");
-      eprintf("Spaces are not permitted by the HDL synthesis engine. Please");
-      eprintf("rename your files and directories to not have any spaces.");
-      eprintf("Or, set a valid workspace path in FPGA settings.");
-      return;
-    }
-    iprintf("Workspace directory for HDL synthesis: " + path);
-    if (actionItems.get(HDL_DOWNLOAD_ONLY).isSelected()) {
-      iprintf("*** NOTE *** Skipping both HDL generation and synthesis.");
-      iprintf("*** NOTE *** Recent changes to circuits will not take effect.");
-      doSynthesisAndDownload(null);
-    } else {
-      iprintf("Performing design rule checks (DRC)");
-      long oscFreq = board.fpga.ClockFrequency;
-      int clkPeriod = getClkPeriod();
-      Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
-          root, oscFreq, clkPeriod);
-      if (!ctx.getNetlist(root).validate() || fatals > 0) {
-        eprintf("DRC failed, synthesis can't continue.");
+    try {
+      clearConsoles();
+      if (board == null) {
+        eprintf("No FPGA board is selected. Please select an FPGA board.");
         return;
       }
-      iprintf("Performing pin assignment");
-      PinBindings pinBindings = performPinAssignments(ctx);
-      if (pinBindings == null || fatals > 0) {
-        eprintf("Pin assignment failed or is incomplete, synthesis can't continue.");
+      Circuit root = circuitsList.getSelectedValue();
+      if (root == null) {
+        eprintf("INTERNAL ERROR: no circuit selected.");
         return;
       }
-      iprintf("Generating HDL files");
-      if (!writeHDL(ctx, pinBindings) || fatals > 0) {
-        eprintf("HDL file generation failed, synthesis can't continue.");
+      String name = proj.getLogisimFile().getName();
+      if (name.indexOf(" ") != -1) {
+        eprintf("The project name '" + name + "' contains a space.");
+        eprintf("Spaces are not permitted by the HDL synthesis engine. Please");
+        eprintf("rename your files and directories to not have any spaces.");
         return;
       }
-      iprintf("HDL files are ready for synthesis.");
-      if (!actionItems.get(HDL_GEN_ONLY).isSelected())
-        doSynthesisAndDownload(pinBindings);
+      String path = workspacePath();
+      if (path == null || path.isEmpty()) {
+        eprintf("The project workspace path is invalid.");
+        eprintf("Please change the path in FPGA settings.");
+        return;
+      }
+      if (path.indexOf(" ") != -1) {
+        eprintf("The workspace directory '" + path + "' contains a space.");
+        eprintf("Spaces are not permitted by the HDL synthesis engine. Please");
+        eprintf("rename your files and directories to not have any spaces.");
+        eprintf("Or, set a valid workspace path in FPGA settings.");
+        return;
+      }
+      iprintf("Workspace directory for HDL synthesis: " + path);
+      if (actionItems.get(HDL_DOWNLOAD_ONLY).isSelected()) {
+        iprintf("*** NOTE *** Skipping both HDL generation and synthesis.");
+        iprintf("*** NOTE *** Recent changes to circuits will not take effect.");
+        doSynthesisAndDownload(null);
+      } else {
+        iprintf("Performing design rule checks (DRC)");
+        long oscFreq = board.fpga.ClockFrequency;
+        int clkPeriod = getClkPeriod();
+        Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
+            root, oscFreq, clkPeriod);
+        if (!ctx.getNetlist(root).validate() || fatals > 0) {
+          eprintf("DRC failed, synthesis can't continue.");
+          return;
+        }
+        iprintf("Performing pin assignment");
+        PinBindings pinBindings = performPinAssignments(ctx);
+        if (pinBindings == null || fatals > 0) {
+          eprintf("Pin assignment failed or is incomplete, synthesis can't continue.");
+          return;
+        }
+        iprintf("Generating HDL files");
+        if (!writeHDL(ctx, pinBindings) || fatals > 0) {
+          eprintf("HDL file generation failed, synthesis can't continue.");
+          return;
+        }
+        iprintf("HDL files are ready for synthesis.");
+        if (!actionItems.get(HDL_GEN_ONLY).isSelected())
+          doSynthesisAndDownload(pinBindings);
+      }
+    } catch (Exception e) {
+      eprintf("Unexpected exception: " + e.getMessage());
+      for (StackTraceElement m: e.getStackTrace())
+        eprintf("%s", m.toString());
     }
   }
 
@@ -960,7 +966,7 @@ public class Commander extends JFrame
     annotateButton.setEnabled(!dl);
     actionButton.setEnabled(!dl && board != null);
     writeToFlash.setEnabled(!dl && board != null && board.fpga.FlashDefined
-      && !actionItems.get(HDL_GEN_ONLY).isSelected());
+        && !actionItems.get(HDL_GEN_ONLY).isSelected());
     boardsList.setEnabled(!dl);
     circuitsList.setEnabled(!dl);
     clockOption.setEnabled(!dl);
@@ -1080,7 +1086,7 @@ public class Commander extends JFrame
       setAction(HDL_GEN_AND_DOWNLOAD);
     }
     writeToFlash.setEnabled(board != null && board.fpga.FlashDefined
-      && !actionItems.get(HDL_GEN_ONLY).isSelected());
+        && !actionItems.get(HDL_GEN_ONLY).isSelected());
     if (!writeToFlash.isEnabled())
       writeToFlash.setSelected(false);
     if (writeToFlash.isEnabled())
@@ -1121,7 +1127,7 @@ public class Commander extends JFrame
 
     Netlist netlist = ctx.getNetlist(root);
     String boardname = settings.GetSelectedBoard();
-  
+
     PinBindings.Config config = root.getFPGAConfig(boardname);
     PinBindings pinBindings = new PinBindings(err, board, netlist.getMappableComponents(), config);
 
@@ -1229,7 +1235,7 @@ public class Commander extends JFrame
     }
     return list.get(0);
   }
-  
+
   static ImageIcon getIcon(String name) {
     String path ="resources/logisim/icons/" + name;
     java.net.URL url = BindingsDialog.class.getClassLoader().getResource(path);

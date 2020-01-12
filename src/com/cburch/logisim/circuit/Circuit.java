@@ -346,7 +346,7 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   public Collection<Component> getAllContaining(Location pt) {
-    HashSet<Component> ret = new HashSet<Component>();
+    HashSet<Component> ret = new HashSet<>();
     for (Component comp : getComponents()) {
       if (comp.contains(pt))
         ret.add(comp);
@@ -355,7 +355,7 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   public Collection<Component> getAllContaining(Location pt, Graphics g) {
-    HashSet<Component> ret = new HashSet<Component>();
+    HashSet<Component> ret = new HashSet<>();
     for (Component comp : getComponents()) {
       if (comp.contains(pt, g))
         ret.add(comp);
@@ -364,7 +364,7 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   public Collection<Component> getAllWithin(Bounds bds) {
-    HashSet<Component> ret = new HashSet<Component>();
+    HashSet<Component> ret = new HashSet<>();
     for (Component comp : getComponents()) {
       if (bds.contains(comp.getBounds()))
         ret.add(comp);
@@ -373,10 +373,20 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   public Collection<Component> getAllWithin(Bounds bds, Graphics g) {
-    HashSet<Component> ret = new HashSet<Component>();
+    HashSet<Component> ret = new HashSet<>();
     for (Component comp : getComponents()) {
       if (bds.contains(comp.getBounds(g)))
         ret.add(comp);
+    }
+    return ret;
+  }
+
+  public Collection<Wire> getWiresIntersecting(Bounds bds) {
+    HashSet<Wire> ret = new HashSet<>();
+    for (Wire w: wires.getWires()) {
+      Bounds b = w.getBounds();
+      if (bds.overlaps(b)) // && !bds.contains(b)
+        ret.add(w);
     }
     return ret;
   }

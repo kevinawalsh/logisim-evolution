@@ -152,21 +152,7 @@ public class CircuitState implements InstanceData {
         // slowpath_drivers.clear();
       }
 
-      /* Component changed */
-//      else if (action == CircuitEvent.ACTION_CHANGE) {
-//        Object data = event.getData();
-//        if (data instanceof Collection) {
-//          @SuppressWarnings("unchecked")
-//          Collection<Component> comps = (Collection<Component>) data;
-//          markComponentsDirty(comps);
-//          for (Component comp : comps)
-//            Propagator.checkComponentEnds(CircuitState.this, comp);
-//        } else {
-//          Component comp = (Component) event.getData();
-//          markComponentAsDirty(comp);
-//          Propagator.checkComponentEnds(CircuitState.this, comp);
-//        }
-//      }
+      /* Component ends changed */
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
         markComponentAsDirty(comp);
@@ -174,9 +160,6 @@ public class CircuitState implements InstanceData {
         // invalidated components (which are likely Pins, Buttons, or other
         // inputs), so pass this component to the simulator for display.
         proj.getSimulator().addPendingInput(CircuitState.this, comp);
-
-        // TODO detemine if this should really be missing
-        // Propagator.checkComponentEnds(CircuitState.this, comp);
       } else if (action == CircuitEvent.TRANSACTION_DONE) {
         ReplacementMap map = event.getResult().getReplacementMap(circuit);
         if (map == null)
@@ -430,6 +413,7 @@ public class CircuitState implements InstanceData {
   }
 
   public Value getValue(Location p) {
+    Value v = null;
     if (p.x >= 0 && p.y >= 0
         && p.x % 10 == 0 && p.y % 10 == 0
         && p.x < FASTPATH_GRID_WIDTH*10
@@ -437,25 +421,20 @@ public class CircuitState implements InstanceData {
       // fast path
       int x = p.x/10;
       int y = p.y/10;
-      // int xy = circuit.wires.points.fastpathRedirect(x, y);
-      // x = (xy >> 16) & 0xffff;
-      // y = xy & 0xffff;
       synchronized (valuesLock) {
-        Value v = fastpath_values[y][x];
-        if (v != null)
-          return v;
-        v = CircuitWires.getBusValue(this, p);
-        if (v != null)
-          return v;
+        v = fastpath_values[y][x];
       }
     } else {
       // slow path
       synchronized (valuesLock) {
-        Value v = slowpath_values.get(p);
-        if (v != null)
-          return v;
+        v = slowpath_values.get(p);
       }
     }
+    if (v != null)
+      return v;
+    v = CircuitWires.getBusValue(this, p);
+    if (v != null)
+      return v;
     return Value.createUnknown(circuit.getWidth(p));
   }
 

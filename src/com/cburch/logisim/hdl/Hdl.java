@@ -298,9 +298,9 @@ public class Hdl extends ArrayList<String> {
     else if (isVerilog)
       return width + "'d0";
     else if (width % 4 == 0)
-      return "X\"" + (value?"F":"0").repeat(width/4);
+      return "X\"" + (value?"F":"0").repeat(width/4) + "\"";
     else if (width > 12)
-      return "\"" + (value?"1":"0").repeat(width%4) + "\" & X\"" + ("F".repeat(width/4));
+      return "\"" + (value?"1":"0").repeat(width%4) + "\" & X\"" + ("F".repeat(width/4)) + "\"";
     else 
       return "\"" + (value?"1":"0").repeat(width) + "\"";
   }

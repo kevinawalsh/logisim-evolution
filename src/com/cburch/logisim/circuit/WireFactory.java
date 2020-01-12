@@ -43,7 +43,7 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 
-class WireFactory extends AbstractComponentFactory {
+public class WireFactory extends AbstractComponentFactory {
   public static final WireFactory instance = new WireFactory();
 
   private WireFactory() {
@@ -66,9 +66,6 @@ class WireFactory extends AbstractComponentFactory {
     }
   }
 
-  //
-  // user interface methods
-  //
   @Override
   public void drawGhost(ComponentDrawContext context, Color color, int x,
       int y, AttributeSet attrs) {
@@ -78,11 +75,61 @@ class WireFactory extends AbstractComponentFactory {
 
     g.setColor(color);
     GraphicsUtil.switchToWidth(g, 3);
-    if (dir == Wire.VALUE_HORZ) {
+    if (dir == Wire.VALUE_HORZ)
       g.drawLine(x, y, x + len, y);
-    } else {
+    else
       g.drawLine(x, y, x, y + len);
-    }
+  }
+
+  public void drawPartialGhost(ComponentDrawContext context, Color color, int x,
+      int y, AttributeSet attrs, Bounds bds) {
+    Graphics g = context.getGraphics();
+    Object dir = attrs.getValue(Wire.dir_attr);
+    int len = attrs.getValue(Wire.len_attr).intValue();
+
+    int x0 = x, y0 = y, x1 = x, y1 = y;
+    if (dir == Wire.VALUE_HORZ)
+      x1 += len;
+    else
+      y1 += len;
+    int nx0 = Math.max(x0, bds.x);
+    int ny0 = Math.max(y0, bds.y);
+    int nx1 = Math.min(x1, bds.x+bds.width);
+    int ny1 = Math.min(y1, bds.y+bds.height);
+    if (nx0 == nx1 && ny0 == ny1)
+      return; // partial portion is empty, no partial ghost
+    g.setColor(color);
+    GraphicsUtil.switchToWidth(g, 3);
+    g.drawLine(nx0, ny0, nx1, ny1);
+    GraphicsUtil.switchToWidth(g, 1);
+    if (nx0 != x0 || ny0 != y0)
+      context.drawHandle(nx0, ny0);
+    if (nx1 != x1 || ny1 != y1)
+      context.drawHandle(nx1, ny1);
+  }
+
+  public static Wire[] splitWire(Wire w, Bounds bds) {
+    Location p0 = w.getEnd0();
+    Location p1 = w.getEnd1();
+    int nx0 = Math.max(p0.x, bds.x);
+    int ny0 = Math.max(p0.y, bds.y);
+    int nx1 = Math.min(p1.x, bds.x+bds.width);
+    int ny1 = Math.min(p1.y, bds.y+bds.height);
+    Location n0 = Location.create(nx0, ny0);
+    Location n1 = Location.create(nx1, ny1);
+    if (n0.equals(n1))
+      return null; // partial portion is empty, no splitting
+    // if (p0.equals(n0) && p1.equals(n1))
+    //   return null; // both ends contained, no splitting
+    // one or both ends are not contained,
+    // split into up to three pieces
+    // p0    n0    n1     p1
+    // o------x-----x------o
+    Wire[] splits = new Wire[3];
+    splits[0] = p0.equals(n0)?null:Wire.create(p0, n0);
+    splits[1] = Wire.create(n0, n1);
+    splits[2] = n1.equals(p1)?null:Wire.create(n1, p1);
+    return splits;
   }
 
   @Override

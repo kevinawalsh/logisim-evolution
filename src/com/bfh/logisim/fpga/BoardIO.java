@@ -608,6 +608,9 @@ public class BoardIO {
     switch (type) {
     case Button:
     case DIPSwitch:
+    case AllZeros:
+    case AllOnes:
+    case Constant:
       num.in = width;
       break;
     case Pin:
@@ -617,6 +620,7 @@ public class BoardIO {
     case LED:
     case SevenSegment:
     case RGBLED:
+    case Unconnected:
       num.out = width;
       break;
     }
