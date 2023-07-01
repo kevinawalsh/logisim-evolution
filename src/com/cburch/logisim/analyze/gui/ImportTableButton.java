@@ -42,13 +42,12 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JFileChooser;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.VariableList;
 
@@ -252,20 +251,12 @@ class ImportTableButton extends JButton {
       else
         lastFile = new File("truthtable.txt");
     }
-    JFileChooser chooser = JFileChoosers.createSelected(lastFile);
-    chooser.setDialogTitle(S.get("openButton"));
-    chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
-    chooser.addChoosableFileFilter(ExportTableButton.FILE_FILTER);
-    chooser.setFileFilter(ExportTableButton.FILE_FILTER);
-    int choice = chooser.showOpenDialog(parent);
-    if (choice == JFileChooser.APPROVE_OPTION) {
+    FileChooser chooser = FileChooser.createSelected(parent, lastFile);
+    chooser.setTitle(S.get("openButton"));
+    chooser.addFilenameFilter(ExportTableButton.FILE_FILTER);
+    chooser.addFilenameFilter(FileChooser.ACCEPT_ALL);
+    if (chooser.showOpenDialog()) {
       File file = chooser.getSelectedFile();
-      if (file.isDirectory()) {
-        JOptionPane.showMessageDialog(parent,
-            S.fmt("notFileMessage", file.getName()),
-            S.get("openErrorTitle"), JOptionPane.OK_OPTION);
-        return;
-      }
       if (!file.exists() || !file.canRead()) {
         JOptionPane.showMessageDialog(parent,
             S.fmt("cantReadMessage", file.getName()),

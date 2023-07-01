@@ -44,7 +44,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 import com.cburch.logisim.data.Attribute;
@@ -63,7 +62,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.JInputDialog;
 
 public class FileViewer extends InstanceFactory {
@@ -148,17 +147,13 @@ public class FileViewer extends InstanceFactory {
     // void selectOffset(int offset) { }
   }
 
-  private static class FileChooser extends java.awt.Component implements JInputDialog {
-    JFileChooser chooser;
+  private static class CellFileChooser extends java.awt.Component implements JInputDialog {
     Frame parent;
     List<String> result;
 
-    FileChooser(Frame parent, List<String> r) {
+    CellFileChooser(Frame parent, List<String> r) {
       this.parent = parent;
       this.result = r;
-      chooser = JFileChoosers.create();
-      chooser.setDialogTitle(S.get("fileViewerLoadDialogTitle"));
-      chooser.setFileFilter(Loader.TXT_FILTER);
     }
 
     public void setValue(Object r) {
@@ -172,8 +167,10 @@ public class FileViewer extends InstanceFactory {
     public void setVisible(boolean b) {
       if (!b)
         return;
-      int choice = chooser.showOpenDialog(parent);
-      if (choice == JFileChooser.APPROVE_OPTION) {
+      FileChooser chooser = FileChooser.create(parent);
+      chooser.setTitle(S.get("fileViewerLoadDialogTitle"));
+      chooser.addFilenameFilter(Loader.TXT_FILTER);
+      if (chooser.showOpenDialog()) {
         File f = chooser.getSelectedFile();
         try {
           result = Files.readAllLines(f.toPath(), StandardCharsets.UTF_8);
@@ -193,7 +190,7 @@ public class FileViewer extends InstanceFactory {
 
     @Override
     public java.awt.Component getCellEditor(Window source, List<String> s) {
-      return new FileChooser((Frame)source, s);
+      return new CellFileChooser((Frame)source, s);
     }
 
     @Override

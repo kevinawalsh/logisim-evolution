@@ -61,14 +61,13 @@ import javax.swing.ProgressMonitor;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.GifEncoder;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
@@ -78,14 +77,14 @@ public class ExportImage {
     Frame frame;
     Canvas canvas;
     File dest;
-    FileFilter filter;
+    FileChooser.Filter filter;
     String ext;
     List<Circuit> circuits;
     double scale;
     boolean printerView;
     ProgressMonitor monitor;
 
-    ExportThread(Frame frame, Canvas canvas, File dest, FileFilter f,
+    ExportThread(Frame frame, Canvas canvas, File dest, FileChooser.Filter f,
         String ext, List<Circuit> circuits, double scale, boolean printerView,
         ProgressMonitor monitor) {
       super("ExportThread");
@@ -284,15 +283,15 @@ public class ExportImage {
     }
   }
 
-  public static final FileFilter GIF_FILTER =
-      Loader.makeFileFilter(S.getter("exportGifFilter"), ".gif");
-  public static final FileFilter PNG_FILTER =
-      Loader.makeFileFilter(S.getter("exportPngFilter"), ".png");
-  public static final FileFilter JPG_FILTER =
-      Loader.makeFileFilter(S.getter("exportJpgFilter"),
+  public static final FileChooser.Filter GIF_FILTER =
+      new FileChooser.LocalizedFilter(S.getter("exportGifFilter"), ".gif");
+  public static final FileChooser.Filter PNG_FILTER =
+      new FileChooser.LocalizedFilter(S.getter("exportPngFilter"), ".png");
+  public static final FileChooser.Filter JPG_FILTER =
+      new FileChooser.LocalizedFilter(S.getter("exportJpgFilter"),
           ".jpg", ".jpeg", ".jpe", ".jfi", ".jfif", ".jfi");
 
-  public static FileFilter getFilter(String fmt) {
+  public static FileChooser.Filter getFilter(String fmt) {
     switch (fmt) {
     case FORMAT_GIF: return GIF_FILTER;
     case FORMAT_PNG: return PNG_FILTER;
@@ -327,29 +326,33 @@ public class ExportImage {
       return;
 
     String fmt = options.getImageFormat();
-    FileFilter filter = getFilter(fmt);
+    FileChooser.Filter filter = getFilter(fmt);
     if (filter == null)
       return;
 
     // Then display file chooser
-    Loader loader = proj.getLogisimFile().getLoader();
-    JFileChooser chooser = loader.createChooser();
-    chooser.setAcceptAllFileFilterUsed(false);
+    File dir = proj.getLogisimFile().getLoader().getCurrentDirectory();
+    File dest;
     if (circuits.size() > 1) {
+      JFileChooser chooser = FileChooser.createSwingChooserAt(dir);
+      chooser.setAcceptAllFileFilterUsed(false);
       chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
       chooser.setDialogTitle(S.get("exportImageDirectorySelect"));
+      int returnVal = chooser.showDialog(frame,
+          S.get("exportImageButton"));
+      if (returnVal != JFileChooser.APPROVE_OPTION)
+        return;
+      dest = chooser.getSelectedFile();
     } else {
-      chooser.setFileFilter(filter);
-      chooser.setDialogTitle(S.get("exportImageFileSelect"));
+      FileChooser chooser = FileChooser.createAt(frame, dir);
+      chooser.addFilenameFilter(filter);
+      chooser.setTitle(S.get("exportImageFileSelect"));
+      if (!chooser.showSaveDialog())
+        return;
+      dest = chooser.getSelectedFile();
     }
-    int returnVal = chooser.showDialog(frame,
-        S.get("exportImageButton"));
-    if (returnVal != JFileChooser.APPROVE_OPTION)
-      return;
 
     // Determine whether destination is valid
-    File dest = chooser.getSelectedFile();
-    chooser.setCurrentDirectory(dest.isDirectory() ? dest : dest.getParentFile());
     if (dest.exists()) {
       if (!dest.isDirectory()) {
         int confirm = JOptionPane.showConfirmDialog(proj.getFrame(),

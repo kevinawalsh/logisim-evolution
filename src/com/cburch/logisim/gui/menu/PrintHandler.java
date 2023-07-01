@@ -32,11 +32,10 @@ package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
@@ -46,13 +45,11 @@ import java.awt.print.PrinterJob;
 import java.io.File;
 
 import javax.imageio.ImageIO;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.filechooser.FileFilter;
 
 import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.util.GifEncoder;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 
 public abstract class PrintHandler implements Printable {
 
@@ -66,15 +63,15 @@ public abstract class PrintHandler implements Printable {
       lastExportedFile = f;
   }
 
-  public void actionPerformed(ActionEvent e) {
+  public void actionPerformed(Frame parent, ActionEvent e) {
     Object src = e.getSource();
     if (src == LogisimMenuBar.PRINT)
-      print();
+      print(parent);
     else if (src == LogisimMenuBar.EXPORT_IMAGE)
-      exportImage();
+      exportImage(parent);
   }
 
-  public void print() {
+  public void print(Frame parent) {
     PageFormat format = new PageFormat();
     PrinterJob job = PrinterJob.getPrinterJob();
     job.setPrintable(this, format);
@@ -83,52 +80,49 @@ public abstract class PrintHandler implements Printable {
     try {
       job.print();
     } catch (PrinterException e) {
-      JOptionPane.showMessageDialog(
-          KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
+      JOptionPane.showMessageDialog(parent,
           S.fmt("printError", e.toString()),
           S.get("printErrorTitle"), JOptionPane.ERROR_MESSAGE);
     }
   }
 
-  public void exportImage() {
-    FileFilter[] filters = {
+  public void exportImage(Frame parent) {
+    FileChooser.Filter[] filters = {
       ExportImage.getFilter(ExportImage.FORMAT_PNG),
+      ExportImage.getFilter(ExportImage.FORMAT_JPG),
       ExportImage.getFilter(ExportImage.FORMAT_GIF),
-      ExportImage.getFilter(ExportImage.FORMAT_JPG)
     };
-    JFileChooser chooser = JFileChoosers.createSelected(getLastExported());
-    chooser.setAcceptAllFileFilterUsed(false);
-    for (FileFilter ff : filters)
-      chooser.addChoosableFileFilter(ff);
-    chooser.setFileFilter(filters[0]);
-    chooser.setDialogTitle(S.get("exportImageFileSelect"));
+    FileChooser chooser = FileChooser.createSelected(parent,
+        getLastExported());
+    chooser.setTitle(S.get("exportImageFileSelect"));
+    chooser.addFilenameFilter(filters[0]);
+    chooser.addFilenameFilter(filters[1]);
+    chooser.addFilenameFilter(filters[2]);
 
-    int returnVal = chooser.showDialog(
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
-        S.get("exportImageButton"));
-    if (returnVal != JFileChooser.APPROVE_OPTION)
+    if (!chooser.showSaveDialog())
       return;
     File dest = chooser.getSelectedFile();
-    FileFilter ff = chooser.getFileFilter();
-    if (!ff.accept(dest)) {
-      if (ff == filters[0]) dest = new File(dest + ".png");
-      else if (ff == filters[1]) dest = new File(dest + ".gif");
-      else dest = new File(dest + ".jpg");
+    String fmt;
+    if (filters[2].accept(dest)) {
+      fmt = ExportImage.FORMAT_GIF;
+    } else if (filters[1].accept(dest)) {
+      fmt = ExportImage.FORMAT_JPG;
+    } else if (filters[0].accept(dest)) {
+      fmt = ExportImage.FORMAT_PNG;
+    } else {
+      fmt = ExportImage.FORMAT_PNG;
+      dest = new File(dest.getParentFile(), dest.getName() + ".png");
+      if (dest.exists()) {
+        int confirm = JOptionPane.showConfirmDialog(parent,
+            S.get("confirmOverwriteMessage"),
+            S.get("confirmOverwriteTitle"),
+            JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION)
+          return;
+      }
     }
     setLastExported(dest);
-    if (dest.exists()) {
-      int confirm = JOptionPane.showConfirmDialog(
-          KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow(),
-          S.get("confirmOverwriteMessage"),
-          S.get("confirmOverwriteTitle"),
-          JOptionPane.YES_NO_OPTION);
-      if (confirm != JOptionPane.YES_OPTION)
-        return;
-    }
-    String fmt = (ff == filters[0] ? ExportImage.FORMAT_PNG
-        : ff == filters[1] ? ExportImage.FORMAT_GIF
-        : ExportImage.FORMAT_JPG);
-    exportImage(dest, fmt);
+    exportImage(parent, dest, fmt);
   }
 
   @Override
@@ -146,17 +140,11 @@ public abstract class PrintHandler implements Printable {
 
   public abstract void paintExportImage(BufferedImage img, Graphics2D g);
 
-  private void showErr(String key) {
-    Component parent = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-    String msg = S.get("couldNotCreateImage");
-    JOptionPane.showMessageDialog(parent, msg);
-  }
-
-  public void exportImage(File dest, String fmt) {
+  public void exportImage(Frame parent, File dest, String fmt) {
 
     Dimension d = getExportImageSize();
     if (d == null) {
-      showErr("couldNotCreateImage");
+      JOptionPane.showMessageDialog(parent, S.get("couldNotCreateImage"));
       return;
     }
 
@@ -171,7 +159,7 @@ public abstract class PrintHandler implements Printable {
       try {
         paintExportImage(img, g);
       } catch (Exception e) {
-        showErr("couldNotCreateImage");
+        JOptionPane.showMessageDialog(parent, S.get("couldNotCreateImage"));
         return;
       }
 
@@ -188,7 +176,7 @@ public abstract class PrintHandler implements Printable {
           break;
         }
       } catch (Exception e) {
-        showErr("couldNotCreateFile");
+        JOptionPane.showMessageDialog(parent, S.get("couldNotCreateFile"));
         return;
       }
     } finally {

@@ -348,7 +348,7 @@ public class XmlClipReader extends XmlReader {
 
   XmlClipReader(LogisimFile dstFile) {
     this.dstFile = dstFile;
-    this.loader = loader = dstFile.getLoader();
+    this.loader = dstFile.getLoader();
   }
 
   public static ReadClipContext parseSelection(LogisimFile dstFile, String xml)

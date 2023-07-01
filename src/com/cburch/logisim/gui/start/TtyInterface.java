@@ -315,7 +315,7 @@ public class TtyInterface {
 
   public static void run(Startup args) {
     File fileToOpen = args.getFilesToOpen().get(0);
-    Loader loader = new Loader(null);
+    Loader loader = Loader.createWithoutGUI();
     LogisimFile.FileWithSimulations file;
     try {
       file = loader.openLogisimFile(fileToOpen, args.getSubstitutions());

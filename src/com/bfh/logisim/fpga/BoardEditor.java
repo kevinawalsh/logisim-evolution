@@ -30,6 +30,7 @@
 
 package com.bfh.logisim.fpga;
 
+import javax.swing.JFileChooser;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -45,7 +46,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -58,6 +58,7 @@ import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.Errors;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.gui.generic.LFrame;
 
@@ -179,13 +180,10 @@ public class BoardEditor extends JFrame {
   }
 
   private void doLoad() {
-    JFileChooser fc = new JFileChooser();
-    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-    fc.setDialogTitle("Choose XML board description");
-    fc.setFileFilter(Loader.XML_FILTER);
-    fc.setAcceptAllFileFilterUsed(false);
-    int retval = fc.showOpenDialog(null);
-    if (retval != JFileChooser.APPROVE_OPTION)
+    FileChooser fc = FileChooser.create(this);
+    fc.setTitle("Choose XML board description");
+    fc.addFilenameFilter(Loader.XML_FILTER);
+    if (!fc.showOpenDialog())
       return;
     String path = fc.getSelectedFile().getPath();
     setBoard(BoardReader.read(path));
@@ -454,13 +452,10 @@ public class BoardEditor extends JFrame {
 	}
 
   public void doChangeImage() {
-    JFileChooser fc = new JFileChooser();
-    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-    fc.setDialogTitle("Choose FPGA board picture to use");
-    fc.setFileFilter(ExportImage.PNG_FILTER);
-    fc.setAcceptAllFileFilterUsed(false);
-    int retval = fc.showOpenDialog(null);
-    if (retval == JFileChooser.APPROVE_OPTION) {
+    FileChooser fc = FileChooser.create(this);
+    fc.setTitle("Choose FPGA board picture to use");
+    fc.addFilenameFilter(ExportImage.PNG_FILTER);
+    if (fc.showOpenDialog()) {
       File file = fc.getSelectedFile();
       try {
         image.setImage(file);

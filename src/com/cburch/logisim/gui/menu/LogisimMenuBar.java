@@ -180,7 +180,7 @@ public class LogisimMenuBar extends JMenuBar {
     }
   }
 
-  LFrame getParentFrame() {
+  public LFrame getParentFrame() {
     return parent;
   }
 

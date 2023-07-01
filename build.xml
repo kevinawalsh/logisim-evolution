@@ -69,7 +69,7 @@ In summary:
     <target name="compile" depends="clean">
         <mkdir dir="bin"/>
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
-        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/rsyntaxtextarea-stripped.jar">
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="libs/xfiledialog.jar:libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/jh.jar:libs/rsyntaxtextarea-stripped.jar">
             <compilerarg line="-Xmaxerrs 10000"/>
         </javac>
     </target>

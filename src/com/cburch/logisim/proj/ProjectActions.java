@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -55,7 +54,7 @@ import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.start.SplashScreen;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 
 public class ProjectActions {
   private static class CreateFrame implements Runnable {
@@ -142,7 +141,7 @@ public class ProjectActions {
     // return newFrame;
   }
 
-  public static LogisimFile createNewFile(Component errReportFrame) {
+  public static LogisimFile createNewFile(Frame errReportFrame) {
     Loader loader = new Loader(errReportFrame);
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file;
@@ -187,7 +186,7 @@ public class ProjectActions {
   public static Project doNew(SplashScreen monitor, boolean isStartupScreen) {
     if (monitor != null)
       monitor.setProgress(SplashScreen.FILE_CREATE);
-    Loader loader = new Loader(monitor);
+    Loader loader = new Loader((Frame)null); // should not need parent here, would rather crash instead of use console
     InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file = null;
     try {
@@ -208,24 +207,21 @@ public class ProjectActions {
   }
 
   public static Project doOpen(Component parent, Project baseProject) {
-    JFileChooser chooser;
+    FileChooser chooser;
     if (baseProject != null) {
       Loader oldLoader = baseProject.getLogisimFile().getLoader();
-      chooser = oldLoader.createChooser();
+      chooser = FileChooser.createAt(parent, oldLoader.getCurrentDirectory());
       if (oldLoader.getMainFile() != null) {
-        chooser.setSelectedFile(oldLoader.getMainFile());
+        chooser.setFile(oldLoader.getMainFile().getPath());
       }
     } else {
-      chooser = JFileChoosers.create();
+      chooser = FileChooser.create();
     }
-    chooser.setFileFilter(Loader.LOGISIM_FILTER);
+    chooser.addFilenameFilter(Loader.LOGISIM_FILTER);
 
-    int returnVal = chooser.showOpenDialog(parent);
-    if (returnVal != JFileChooser.APPROVE_OPTION)
+    if (!chooser.showOpenDialog())
       return null;
     File selected = chooser.getSelectedFile();
-    if (selected == null)
-      return null;
     return doOpen(parent, baseProject, selected);
   }
 
@@ -359,19 +355,20 @@ public class ProjectActions {
    */
   public static boolean doSaveAs(Project proj) {
     Loader loader = proj.getLogisimFile().getLoader();
-    JFileChooser chooser = loader.createChooser();
-    chooser.setFileFilter(Loader.LOGISIM_FILTER);
+    FileChooser chooser = FileChooser.createAt(proj.getFrame(), loader.getCurrentDirectory());
+    chooser.addFilenameFilter(Loader.LOGISIM_FILTER);
     if (loader.getMainFile() != null) {
-      chooser.setSelectedFile(loader.getMainFile());
+      chooser.setFile(loader.getMainFile().getPath());
     }
 
-    int returnVal = chooser.showSaveDialog(proj.getFrame());
-    if (returnVal != JFileChooser.APPROVE_OPTION)
+    if (!chooser.showSaveDialog())
       return false;
 
     File f = chooser.getSelectedFile();
     String circExt = LogisimFile.LOGISIM_EXTENSION;
-    if (!f.getName().endsWith(circExt)) {
+    boolean modifiedName;
+    File origName = f;
+    if (!f.getName().toLowerCase().endsWith(circExt.toLowerCase())) {
       String old = f.getName();
       int ext0 = old.lastIndexOf('.');
       if (ext0 < 0
@@ -401,7 +398,7 @@ public class ProjectActions {
       }
     }
 
-    if (f.exists()) {
+    if (f.exists() && !f.getPath().equals(origName.getPath())) {
       int confirm = JOptionPane.showConfirmDialog(proj.getFrame(),
           S.get("confirmOverwriteMessage"),
           S.get("confirmOverwriteTitle"),

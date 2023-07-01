@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
@@ -49,6 +48,7 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.util.FileChooser;
 
 public class ProjectLibraryActions {
   private static class BuiltinOption {
@@ -117,11 +117,10 @@ public class ProjectLibraryActions {
 
   public static void doLoadJarLibrary(Project proj) {
     Loader loader = proj.getLogisimFile().getLoader();
-    JFileChooser chooser = loader.createChooser();
-    chooser.setDialogTitle(S.get("loadJarDialogTitle"));
-    chooser.setFileFilter(Loader.JAR_FILTER);
-    int check = chooser.showOpenDialog(proj.getFrame());
-    if (check == JFileChooser.APPROVE_OPTION) {
+    FileChooser chooser = FileChooser.createAt(proj.getFrame(), loader.getCurrentDirectory());
+    chooser.setTitle(S.get("loadJarDialogTitle"));
+    chooser.addFilenameFilter(Loader.JAR_FILTER);
+    if (chooser.showOpenDialog()) {
       File f = chooser.getSelectedFile().getAbsoluteFile();
       String className = null;
 
@@ -164,11 +163,10 @@ public class ProjectLibraryActions {
 
   public static void doLoadLogisimLibrary(Project proj) {
     Loader loader = proj.getLogisimFile().getLoader();
-    JFileChooser chooser = loader.createChooser();
-    chooser.setDialogTitle(S.get("loadLogisimDialogTitle"));
-    chooser.setFileFilter(Loader.LOGISIM_FILTER);
-    int check = chooser.showOpenDialog(proj.getFrame());
-    if (check == JFileChooser.APPROVE_OPTION) {
+    FileChooser chooser = FileChooser.createAt(proj.getFrame(), loader.getCurrentDirectory());
+    chooser.setTitle(S.get("loadLogisimDialogTitle"));
+    chooser.addFilenameFilter(Loader.LOGISIM_FILTER);
+    if (chooser.showOpenDialog()) {
       File f = chooser.getSelectedFile();
       try {
         Library lib = loader.loadLogisimLibrary(f);

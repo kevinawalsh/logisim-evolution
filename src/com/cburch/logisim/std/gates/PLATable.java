@@ -39,7 +39,7 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import com.cburch.logisim.file.Loader;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.JInputDialog;
 
 import java.awt.BorderLayout;
@@ -70,7 +70,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -447,12 +446,11 @@ public class PLATable {
     }
 
     void read() {
-      JFileChooser chooser = JFileChoosers.create();
-      chooser.setSelectedFile(new File(normalizeName(oldTable.label)));
-      chooser.setDialogTitle(S.get("plaLoadDialogTitle"));
-      chooser.setFileFilter(Loader.TXT_FILTER);
-      int choice = chooser.showOpenDialog(null);
-      if (choice == JFileChooser.APPROVE_OPTION) {
+      FileChooser chooser = FileChooser.create(this);
+      chooser.setTitle(S.get("plaLoadDialogTitle"));
+      chooser.setFile(normalizeName(oldTable.label));
+      chooser.addFilenameFilter(Loader.TXT_FILTER);
+      if (chooser.showOpenDialog()) {
         File f = chooser.getSelectedFile();
         try {
           PLATable loaded = parse(f);
@@ -467,12 +465,11 @@ public class PLATable {
     }
 
     void write() {
-      JFileChooser chooser = JFileChoosers.create();
-      chooser.setSelectedFile(new File(normalizeName(oldTable.label)));
-      chooser.setDialogTitle(S.get("plaSaveDialogTitle"));
-      chooser.setFileFilter(Loader.TXT_FILTER);
-      int choice = chooser.showSaveDialog(null);
-      if (choice == JFileChooser.APPROVE_OPTION) {
+      FileChooser chooser = FileChooser.create(this);
+      chooser.setTitle(S.get("plaSaveDialogTitle"));
+      chooser.setFile(normalizeName(oldTable.label));
+      chooser.addFilenameFilter(Loader.TXT_FILTER);
+      if (chooser.showSaveDialog()) {
         File f = chooser.getSelectedFile();
         try {
           newTable.save(f);

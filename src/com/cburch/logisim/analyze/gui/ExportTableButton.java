@@ -38,17 +38,15 @@ import java.io.IOException;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JFileChooser;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.Entry;
 import com.cburch.logisim.analyze.model.TruthTable;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.analyze.model.AnalyzerModel;
 import com.cburch.logisim.analyze.model.VariableList;
 
@@ -171,33 +169,17 @@ class ExportTableButton extends JButton {
       else
         lastFile = new File("truthtable.txt");
     }
-    JFileChooser chooser = JFileChoosers.createSelected(lastFile);
-    chooser.setDialogTitle(S.get("saveButton"));
-    chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
-    chooser.addChoosableFileFilter(FILE_FILTER);
-    chooser.setFileFilter(FILE_FILTER);
-    int choice = chooser.showSaveDialog(parent);
-    if (choice == JFileChooser.APPROVE_OPTION) {
+    FileChooser chooser = FileChooser.createSelected(parent, lastFile);
+    chooser.setTitle(S.get("saveButton"));
+    chooser.addFilenameFilter(FILE_FILTER);
+    chooser.addFilenameFilter(FileChooser.ACCEPT_ALL);
+    if (chooser.showSaveDialog()) {
       File file = chooser.getSelectedFile();
-      if (file.isDirectory()) {
-        JOptionPane.showMessageDialog(parent,
-            S.fmt("notFileMessage", file.getName()),
-            S.get("saveErrorTitle"), JOptionPane.OK_OPTION);
-        return;
-      }
       if (file.exists() && !file.canWrite()) {
         JOptionPane.showMessageDialog(parent,
             S.fmt("cantWriteMessage", file.getName()),
             S.get("saveErrorTitle"), JOptionPane.OK_OPTION);
         return;
-      }
-      if (file.exists()) {
-        int confirm = JOptionPane.showConfirmDialog(parent,
-            S.fmt("confirmOverwriteMessage", file.getName()),
-            S.get("confirmOverwriteTitle"),
-            JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION)
-          return;
       }
       try {
         doSave(file);
@@ -211,12 +193,6 @@ class ExportTableButton extends JButton {
     }
   }
 
-  public static final FileFilter FILE_FILTER = new FileFilter() {
-    public boolean accept(File f) {
-      return (!f.isFile() || f.getName().toLowerCase().endsWith(".txt"));
-    }
-    public String getDescription() {
-      return "Logisim-evolution Truth Table (*.txt)";
-    }
-  };
+  public static final FileChooser.Filter FILE_FILTER =
+      new FileChooser.Filter("Truth Table", "txt"); // FIXME: localize
 }

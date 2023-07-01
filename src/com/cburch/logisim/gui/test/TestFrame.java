@@ -47,7 +47,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -61,6 +60,7 @@ import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
@@ -75,8 +75,11 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
       if (src == close) {
         requestClose();
       } else if (src == load) {
-        int result = chooser.showOpenDialog(TestFrame.this);
-        if (result != JFileChooser.APPROVE_OPTION)
+        FileChooser chooser = FileChooser.create(TestFrame.this);
+        chooser.addFilenameFilter(TestVector.FILE_FILTER);
+        chooser.addFilenameFilter(FileChooser.ACCEPT_ALL);
+
+        if (!chooser.showOpenDialog())
           return;
         File file = chooser.getSelectedFile();
         if (!file.exists() || !file.canRead() || file.isDirectory()) {
@@ -227,7 +230,6 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
   private int finished, count;
 
   private File curFile;
-  private JFileChooser chooser = new JFileChooser();
   private TestPanel panel;
   private JButton load = new JButton();
   private JButton run = new JButton();
@@ -243,10 +245,6 @@ public class TestFrame extends LFrame.SubWindowWithSimulation {
     this.windowManager = new WindowMenuManager();
     project.addProjectWeakListener(null, myListener);
     setSimulator(project.getSimulator(), project.getCircuitState().getCircuit());
-
-    chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
-    chooser.addChoosableFileFilter(TestVector.FILE_FILTER);
-    chooser.setFileFilter(TestVector.FILE_FILTER);
 
     panel = new TestPanel(this);
 

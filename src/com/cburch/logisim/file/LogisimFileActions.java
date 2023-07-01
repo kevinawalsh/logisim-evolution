@@ -299,7 +299,7 @@ public class LogisimFileActions {
 
     @Override
     public void doIt(Project proj) {
-      LogisimFile src = ProjectActions.createNewFile(proj == null ? null : proj.getFrame());
+      LogisimFile src = ProjectActions.createNewFile(proj.getFrame());
       LogisimFile dst = proj.getLogisimFile();
 
       copyToolAttributes(src, dst);

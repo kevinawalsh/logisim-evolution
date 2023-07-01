@@ -42,14 +42,13 @@ import java.io.IOException;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.cburch.logisim.data.TestVector;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 
 class FilePanel extends LogPanel {
   private class Listener implements ActionListener, Model.Listener {
@@ -58,8 +57,10 @@ class FilePanel extends LogPanel {
       if (src == enableButton) {
         getModel().setFileEnabled(!getModel().isFileEnabled());
       } else if (src == selectButton) {
-        int result = chooser.showSaveDialog(getLogFrame());
-        if (result != JFileChooser.APPROVE_OPTION)
+        FileChooser chooser = FileChooser.create(getLogFrame());
+        chooser.addFilenameFilter(TestVector.FILE_FILTER);
+        chooser.addFilenameFilter(FileChooser.ACCEPT_ALL);
+        if (!chooser.showSaveDialog())
           return;
         File file = chooser.getSelectedFile();
         if (file.exists() && (!file.canWrite() || file.isDirectory())) {
@@ -141,14 +142,9 @@ class FilePanel extends LogPanel {
   private JTextField fileField = new JTextField();
   private JButton selectButton = new JButton();
   private JCheckBox headerCheckBox = new JCheckBox();
-  private JFileChooser chooser = JFileChoosers.create();
 
   public FilePanel(LogFrame frame) {
     super(frame);
-
-    chooser.addChoosableFileFilter(chooser.getAcceptAllFileFilter());
-    chooser.addChoosableFileFilter(TestVector.FILE_FILTER);
-    chooser.setFileFilter(TestVector.FILE_FILTER);
 
     JPanel filePanel = new JPanel(new GridBagLayout());
     GridBagLayout gb = (GridBagLayout) filePanel.getLayout();

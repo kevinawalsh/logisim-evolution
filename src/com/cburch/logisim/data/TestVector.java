@@ -41,18 +41,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import javax.swing.filechooser.FileFilter;
+import com.cburch.logisim.util.FileChooser;
 
 public class TestVector {
 
-  public static final FileFilter FILE_FILTER = new FileFilter() {
-    public boolean accept(File f) {
-      return (!f.isFile() || f.getName().toLowerCase().endsWith(".txt"));
-    }
-    public String getDescription() {
-      return "Logisim-evolution Test Vector (*.txt)";
-    }
-  };
+  public static final FileChooser.Filter FILE_FILTER =
+      new FileChooser.Filter("Test Vector", "txt");
 
   private class TestVectorReader {
 

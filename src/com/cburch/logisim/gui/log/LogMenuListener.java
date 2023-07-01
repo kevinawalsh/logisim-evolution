@@ -42,7 +42,7 @@ public class LogMenuListener extends MenuListener {
   protected class FileListener implements ActionListener {
     public void actionPerformed(ActionEvent event) {
       if (printer != null)
-        printer.actionPerformed(event);
+        printer.actionPerformed(menubar.getParentFrame(), event);
     }
     boolean registered;
     public void register(boolean en) {

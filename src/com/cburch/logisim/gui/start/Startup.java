@@ -39,11 +39,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.awt.Desktop;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
 import java.awt.desktop.QuitEvent;
 import java.awt.desktop.QuitHandler;
 import java.awt.desktop.QuitResponse;
 import java.awt.desktop.QuitStrategy;
-import java.awt.GraphicsEnvironment;
 
 import javax.swing.UIManager;
 import javax.swing.UIDefaults;
@@ -588,7 +589,7 @@ public class Startup {
     if (showSplash) {
       monitor.setProgress(SplashScreen.LIBRARIES);
     }
-    Loader preLoader = new Loader(monitor);
+    Loader preLoader = Loader.createWithoutGUI();
     int count;
     count = preLoader.getBuiltin().getLibrary("Base").getTools().size();
     count += preLoader.getBuiltin().getLibrary("Gates").getTools().size();

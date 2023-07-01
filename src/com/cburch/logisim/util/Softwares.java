@@ -120,7 +120,7 @@ public final class Softwares {
   public static String setQuestaPath(Component parent) {
     String path = null;
 
-    JFileChooser chooser = JFileChoosers.create();
+    JFileChooser chooser = FileChooser.createSwingChooser();
     chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     chooser.setDialogTitle(S.get("questaDialogTitle"));
     chooser.setApproveButtonText(S.get("questaDialogButton"));

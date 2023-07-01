@@ -181,7 +181,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.memory.Mem;
 import com.cburch.logisim.std.memory.MemContents;
 import com.cburch.logisim.util.JDialogOk;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.OutputStreamBinarySanitizer;
 import com.cburch.logisim.util.OutputStreamEscaper;
@@ -1855,7 +1855,7 @@ public class HexFile {
   }
 
   private static JFileChooser createFileChooser(File lastFile, boolean auto) {
-    JFileChooser chooser = JFileChoosers.createSelected(lastFile);
+    JFileChooser chooser = FileChooser.createSwingChooserSelected(lastFile);
     if (auto) {
       chooser.addChoosableFileFilter(getFilter(autoFormat));
     } else {

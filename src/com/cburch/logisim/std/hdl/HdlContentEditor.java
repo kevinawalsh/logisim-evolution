@@ -47,7 +47,6 @@ import java.util.WeakHashMap;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.event.DocumentEvent;
@@ -62,7 +61,7 @@ import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.FileUtil;
-import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.FileChooser;
 import com.cburch.logisim.util.JInputDialog;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
@@ -104,11 +103,10 @@ public class HdlContentEditor extends JDialog implements JInputDialog {
           setText(vhdl);
       }
       if (source == save) {
-        JFileChooser chooser = JFileChoosers
-            .createSelected(getDefaultExportFile(null));
-        chooser.setDialogTitle(S.get("hdlSaveButton"));
-        int choice = chooser.showSaveDialog(HdlContentEditor.this);
-        if (choice == JFileChooser.APPROVE_OPTION) {
+        FileChooser chooser = FileChooser.createSelected(
+            HdlContentEditor.this, getDefaultExportFile(null));
+        chooser.setTitle(S.get("hdlSaveButton"));
+        if (chooser.showSaveDialog()) {
           File f = chooser.getSelectedFile();
           try {
             HdlFile.save(f, getText());
