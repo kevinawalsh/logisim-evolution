@@ -55,7 +55,7 @@ public class AdderHDLGenerator extends HDLGenerator {
       inPorts.add("DataA", 1, Adder.IN0, false);
       inPorts.add("DataB", 1, Adder.IN1, false);
       outPorts.add("Result", 1, Adder.OUT, null);
-      inPorts.add("CarryIn", 1, Adder.C_OUT, false);
+      inPorts.add("CarryIn", 1, Adder.C_IN, false);
       outPorts.add("CarryOut", 1, Adder.C_OUT, null);
       if (_hdl.isVhdl) {
         wires.add("s_A", 2);
