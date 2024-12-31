@@ -57,6 +57,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.GowinDownload;
 import com.bfh.logisim.download.LatticeDownload;
 import com.bfh.logisim.gui.FPGASettingsDialog;
 import com.cburch.logisim.util.Errors;
@@ -78,6 +79,8 @@ public class Settings {
   // or, AlteraToolsPath can be a URL (starting with http:// or https://) in
   // which case a web API is used.
   private static final String AlteraToolsPath = "AlteraToolsPath";
+  private static final String GowinShPath = "GowinShPath";
+  private static final String GowinProgPath = "GowinProgPath";
   private static final String Altera64Bit = "Altera64Bit";
   private static final String LatticeToolsPath = "LatticeToolsPath";
   private static final String ApioToolsPath = "ApioToolsPath";
@@ -227,6 +230,16 @@ public class Settings {
     return normalizePath(s);
   }
 
+  public String GetGowinShPath() {
+    String s = getAttribute(WorkSpace, GowinShPath, "");
+    return normalizePath(s);
+  }
+
+  public String GetGowinProgPath() {
+    String s = getAttribute(WorkSpace, GowinProgPath, "");
+    return normalizePath(s);
+  }
+
   public String GetLatticeToolPath() {
     String s = getAttribute(WorkSpace, LatticeToolsPath, "");
     return normalizePath(s);
@@ -267,6 +280,18 @@ public class Settings {
     return true;
   }
 
+  public boolean SetGowinShPath(String path) {
+    path = normalizePath(path);
+    setAttribute(WorkSpace, GowinShPath, path);
+    return true;
+  }
+
+  public boolean SetGowinProgPath(String path) {
+    path = normalizePath(path);
+    setAttribute(WorkSpace, GowinProgPath, path);
+    return true;
+  }
+
   public boolean validXilinxToolPath(String path) {
     path = normalizePath(path);
     return path == null
@@ -286,6 +311,12 @@ public class Settings {
     path = normalizePath(path);
     return path == null
       || LatticeDownload.getToolChainType(path) != LatticeDownload.TOOLCHAIN.UNKNOWN;
+  }
+
+  public boolean validGowinToolPath(String path) {
+    path = normalizePath(path);
+    return path == null
+      || isExecutableScript(path + File.separator + FPGADownload.GOWIN_SH);
   }
 
   public boolean SetApioToolPath(String path) {
@@ -536,6 +567,8 @@ public class Settings {
     GetStaticWorkspacePath();
     GetXilinxToolPath();
     GetAlteraToolPath();
+    GetGowinShPath();
+    GetOpenFPGALoaderPath();
     GetHDLType();
     GetAltera64Bit();
 

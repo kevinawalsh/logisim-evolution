@@ -86,6 +86,8 @@ public abstract class FPGADownload {
         return new LatticeDownload(); // ???
       case APIO_TOOLCHAIN:
         return new ApioDownload();
+      case GOWIN_TOOLCHAIN:
+        return new GowinDownload();
       default:
         return new ApioDownload();
     }
@@ -144,6 +146,7 @@ public abstract class FPGADownload {
 
   public final static String ALTERA_QUARTUS_TOOLCHAIN = "Altera Quartus";
   public final static String XILINX_ISE_TOOLCHAIN = "Xilinx ISE";
+  public final static String GOWIN_TOOLCHAIN = "Gowin";
   public final static String LATTICE_DIAMOND_TOOLCHAIN = "Lattice Diamond";
   public final static String LATTICE_ISPLEVER_TOOLCHAIN = "Lattice ispLEVER";
   public final static String APIO_TOOLCHAIN = "Apio";
@@ -170,6 +173,8 @@ public abstract class FPGADownload {
         return LATTICE_ISPLEVER_TOOLCHAIN;
       case "apio":
         return APIO_TOOLCHAIN;
+      case "gowin":
+        return GOWIN_TOOLCHAIN;
       default:
         return null;
     }
@@ -238,6 +243,9 @@ public abstract class FPGADownload {
   public static final String[] LATTICE_PROGRAMS = {
       LATTICE_DIAMOND_WIN, LATTICE_DIAMOND_UNIX // , LATTICE_ISPLEVER_WIN
   };
+  // public static final String[] GOWIN_PROGRAMS = {"gw_sh" + dotexe};
+  public static final String GOWIN_SH = "gw_sh" + dotexe;
+  public static final String GOWIN_PROG = "programmer_cli" + dotexe;
 
   public static final String BIN_APIO = "bin/apio";
   // public static final String APIO_PYVENV = "pyvenv.cfg";
