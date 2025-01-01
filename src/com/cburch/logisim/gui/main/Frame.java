@@ -632,7 +632,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     String curView = mainPanel.getView();
     if (hdlEditor.getHdlModel() == null && curView.equals(view))
       return;
-    editRegion.setFraction(1.0);
+    editRegion.forceFraction(1.0);
     hdlEditor.setHdlModel(null);
 
     if (view.equals(EDIT_APPEARANCE)) { // appearance view
@@ -674,13 +674,13 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   //     rightRegion.setFraction(lastFraction);
   //   } else {
   //     lastFraction = rightRegion.getFraction();
-  //     rightRegion.setFraction(1);
+  //     rightRegion.forceFraction(1);
   //   }
   // }
 
   private void setHdlEditorView(HdlModel hdl) {
     hdlEditor.setHdlModel(hdl);
-    editRegion.setFraction(0.0);
+    editRegion.forceFraction(0.0);
 
     toolbar.setToolbarModel(hdlEditor.getToolbarModel());
     // toolbar.setToolbarModel(app.getToolbarModel());

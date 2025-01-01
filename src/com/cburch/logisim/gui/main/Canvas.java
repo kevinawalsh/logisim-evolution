@@ -802,8 +802,9 @@ public class Canvas extends JPanel
   }
 
   private void computeViewportContents() {
-    Set<WidthIncompatibilityData> exceptions = proj.getCurrentCircuit()
-        .getWidthIncompatibilityData();
+    Circuit circ = proj.getCurrentCircuit();
+    Set<WidthIncompatibilityData> exceptions =
+      circ == null ? null : circ.getWidthIncompatibilityData();
     if (exceptions == null || exceptions.isEmpty()) {
       viewport.setWidthMessage(null);
       return;

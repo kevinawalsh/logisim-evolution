@@ -219,6 +219,13 @@ public class HorizontalSplitPane extends JPanel {
     return fraction;
   }
 
+  public void forceFraction(double value) {
+    if (fraction != value) {
+      fraction = value;
+      revalidate();
+    }
+  }
+
   public void setFraction(double value) {
     value = Math.min(Math.max(value, 0.05), 0.95);
     if (fraction != value) {

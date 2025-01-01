@@ -76,8 +76,10 @@ class CanvasPainter implements PropertyChangeListener {
 
   private void drawWidthIncompatibilityData(Graphics base, Graphics g,
       Project proj) {
-    Set<WidthIncompatibilityData> exceptions;
-    exceptions = proj.getCurrentCircuit().getWidthIncompatibilityData();
+    Circuit circ = proj.getCurrentCircuit();
+    if (circ == null)
+      return;
+    Set<WidthIncompatibilityData> exceptions = circ.getWidthIncompatibilityData();
     if (exceptions == null || exceptions.size() == 0)
       return;
 
@@ -220,6 +222,9 @@ class CanvasPainter implements PropertyChangeListener {
   // painting methods
   //
   void paintContents(Graphics g, Project proj) {
+    CircuitState circState = proj.getCircuitState();
+    if (circState == null)
+      return;
     Dimension size = canvas.getSize();
     double zoomFactor = canvas.getZoomFactor();
     // Debugging
@@ -240,7 +245,6 @@ class CanvasPainter implements PropertyChangeListener {
     drawWidthIncompatibilityData(g, gScaled, proj);
     Circuit circ = proj.getCurrentCircuit();
 
-    CircuitState circState = proj.getCircuitState();
     ComponentDrawContext ptContext = new ComponentDrawContext(canvas, circ,
         circState, g, gScaled);
     ptContext.setHighlightedWires(highlightedWires);
