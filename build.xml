@@ -85,6 +85,7 @@ In summary:
 			<zipgroupfileset dir="libs" includes="*.jar"/>
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
+                <attribute name="Add-Opens" value="java.desktop/com.apple.eawt.event"/>
             </manifest>
         </jar>
     </target>
@@ -96,6 +97,8 @@ In summary:
 			<zipgroupfileset dir="libs" includes="*.jar"/>
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
+                <attribute name="Add-Opens" value="java.desktop/com.apple.eawt.event"/>
+                <attribute name="Add-Opens" value="java.desktop/com.microsoft.eawt.event"/>
             </manifest>
         </jar>
     </target>
