@@ -316,6 +316,12 @@ public class ZoomControl extends JPanel {
     public Dimension getMinimumSize() {
       return new Dimension(20, 24);
     }
+    @Override
+    public boolean isValidateRoot() {
+      // This prevents setText from causing a revalidation and re-layout of
+      // entire application frame, canvas, etc.
+      return true;
+    }
   };
   private int coords_x = 0, coords_y = 0;
   private void updateCoordinates() {
