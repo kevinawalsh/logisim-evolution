@@ -329,6 +329,7 @@ public class AppearanceCanvas extends Canvas
     this.circuitState = circuitState;
     Circuit circuit = circuitState.getCircuit();
     setModel(circuit.getAppearance(), this);
+    computeSize(true);
   }
 
   @Override
