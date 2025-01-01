@@ -236,4 +236,12 @@ public class LogisimMenuBar extends JMenuBar {
   public void setSimulateListener(SimulateListener l) {
     simulateListener = l;
   }
+
+  public void setCircuitName(String name) {
+    project.setCircuitName(name);
+  }
+
+  public void setVhdlName(String name) {
+    project.setVhdlName(name);
+  }
 }

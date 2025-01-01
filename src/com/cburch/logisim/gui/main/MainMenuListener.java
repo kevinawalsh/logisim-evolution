@@ -167,6 +167,13 @@ public class MainMenuListener extends MenuListener {
             && !circ.getAppearance().isDefaultAppearance();
       }
 
+      if (circ != null)
+        menubar.setCircuitName(circ.getName());
+      else if (hdl != null)
+        menubar.setVhdlName(hdl.getName());
+      else
+        menubar.setCircuitName(null);
+
       menubar.setEnabled(LogisimMenuBar.ADD_CIRCUIT, true);
       menubar.setEnabled(LogisimMenuBar.ADD_VHDL, true);
       menubar.setEnabled(LogisimMenuBar.IMPORT_VHDL, true);

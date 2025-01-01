@@ -173,10 +173,6 @@ class MenuProject extends Menu {
     loadLogisim.setText(S.get("projectLoadLogisimItem"));
     loadJar.setText(S.get("projectLoadJarItem"));
     unload.setText(S.get("projectUnloadLibrariesItem"));
-    moveUp.setText(S.get("projectMoveToolUpItem"));
-    moveDown.setText(S.get("projectMoveToolDownItem"));
-    setAsMain.setText(S.get("projectSetAsMainItem"));
-    remove.setText(S.get("projectRemoveToolItem"));
     revertAppearance.setText(S.get("projectRevertAppearanceItem"));
     layout.setText(S.get("projectEditToolLayoutItem"));
     appearance.setText(S.get("projectEditToolAppearanceItem"));
@@ -184,5 +180,40 @@ class MenuProject extends Menu {
     analyze.setText(S.get("projectAnalyzeCircuitItem"));
     stats.setText(S.get("projectGetCircuitStatisticsItem"));
     options.setText(S.get("projectOptionsItem"));
+    if (vhdlName != null) setVhdlName(vhdlName);
+    else setCircuitName(circuitName);
+  }
+
+  private String circuitName, vhdlName;
+
+  public void setCircuitName(String name) {
+    circuitName = name;
+    vhdlName = null;
+    if (name != null) {
+      moveUp.setText(S.fmt("projectMoveCircuitUpItem", name));
+      moveDown.setText(S.fmt("projectMoveCircuitDownItem", name));
+      setAsMain.setText(S.fmt("projectSetCircuitAsMainItem", name));
+      remove.setText(S.fmt("projectRemoveNamedCircuitItem", name));
+    } else {
+      moveUp.setText(S.get("projectMoveToolUpItem"));
+      moveDown.setText(S.get("projectMoveToolDownItem"));
+      setAsMain.setText(S.get("projectSetAsMainItem"));
+      remove.setText(S.get("projectRemoveToolItem"));
+    }
+  }
+
+  public void setVhdlName(String name) {
+    circuitName = null;
+    vhdlName = name;
+    if (name != null) {
+      moveUp.setText(S.fmt("projectMoveVhdlUpItem", name));
+      moveDown.setText(S.fmt("projectMoveVhdlDownItem", name));
+      remove.setText(S.fmt("projectRemoveNamedVhdlItem", name));
+    } else {
+      moveUp.setText(S.get("projectMoveToolUpItem"));
+      moveDown.setText(S.get("projectMoveToolDownItem"));
+      remove.setText(S.get("projectRemoveToolItem"));
+    }
+    setAsMain.setText(S.get("projectSetAsMainItem"));
   }
 }
