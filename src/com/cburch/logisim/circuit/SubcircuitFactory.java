@@ -75,7 +75,7 @@ import com.cburch.logisim.util.StringUtil;
 
 public class SubcircuitFactory extends InstanceFactory {
   private class CircuitFeature
-    implements StringGetter, MenuExtender, ActionListener {
+    implements StringGetter, MenuExtender {
     private Instance instance;
     private Project proj;
 
@@ -83,7 +83,11 @@ public class SubcircuitFactory extends InstanceFactory {
       this.instance = instance;
     }
 
-    public void actionPerformed(ActionEvent e) {
+    private void viewSubcircuit() {
+      proj.setCurrentCircuit(source);
+    }
+
+    private void viewSubsimulation() {
       CircuitState superState = proj.getCircuitState();
       if (superState == null)
         return;
@@ -94,9 +98,13 @@ public class SubcircuitFactory extends InstanceFactory {
     public void configureMenu(JPopupMenu menu, Project proj) {
       this.proj = proj;
       String name = instance.getFactory().getDisplayName();
+      String simtext = S.fmt("subsimulationViewItem", name);
+      JMenuItem simitem = new JMenuItem(simtext);
+      simitem.addActionListener(e -> viewSubsimulation());
+      menu.add(simitem);
       String text = S.fmt("subcircuitViewItem", name);
       JMenuItem item = new JMenuItem(text);
-      item.addActionListener(this);
+      item.addActionListener(e -> viewSubcircuit());
       menu.add(item);
     }
 
