@@ -95,6 +95,8 @@ class ExperimentalOptions extends OptionsPanel {
               S.getter("accelDefault")),
           new PrefOption(AppPreferences.ACCEL_NONE,
               S.getter("accelNone")),
+          new PrefOption(AppPreferences.ACCEL_METAL,
+              S.getter("accelMetal")),
           new PrefOption(AppPreferences.ACCEL_OPENGL,
               S.getter("accelOpenGL")),
           new PrefOption(AppPreferences.ACCEL_D3D,

@@ -278,16 +278,26 @@ public class AppPreferences {
     String accel = GRAPHICS_ACCELERATION.get();
     try {
       if (accel == ACCEL_NONE) {
-        System.setProperty("sun.java2d.opengl", "False");
-        System.setProperty("sun.java2d.d3d", "False");
+        System.setProperty("sun.java2d.metal", "false");
+        System.setProperty("sun.java2d.opengl", "false");
+        System.setProperty("sun.java2d.d3d", "false");
+      } else if (accel == ACCEL_METAL) {
+        System.setProperty("sun.java2d.metal", "true");
+        System.setProperty("sun.java2d.opengl", "false");
+        System.setProperty("sun.java2d.d3d", "false");
       } else if (accel == ACCEL_OPENGL) {
-        System.setProperty("sun.java2d.opengl", "True");
-        System.setProperty("sun.java2d.d3d", "False");
+        System.setProperty("sun.java2d.metal", "false");
+        System.setProperty("sun.java2d.opengl", "true");
+        System.setProperty("sun.java2d.d3d", "false");
       } else if (accel == ACCEL_D3D) {
-        System.setProperty("sun.java2d.opengl", "False");
-        System.setProperty("sun.java2d.d3d", "True");
+        System.setProperty("sun.java2d.metal", "false");
+        System.setProperty("sun.java2d.opengl", "false");
+        System.setProperty("sun.java2d.d3d", "true");
+      } else {
+        // defaults, which can be overridden on command line, etc.
       }
     } catch (Exception t) {
+      System.err.println("Note: Could not enable " + accel + " graphics acceleration.");
     }
   }
 
@@ -413,11 +423,12 @@ public class AppPreferences {
   public static final PrefMonitor<Integer> AUTO_BACKUP_FREQ = new PrefMonitor("autobackupFreq", 7);
   public static final String ACCEL_DEFAULT = "default";
   public static final String ACCEL_NONE = "none";
+  public static final String ACCEL_METAL = "metal";
   public static final String ACCEL_OPENGL = "opengl";
   public static final String ACCEL_D3D = "d3d";
   public static final PrefMonitor<String> GRAPHICS_ACCELERATION =
     new PrefMonitor("graphicsAcceleration",
-          new String[] { ACCEL_DEFAULT, ACCEL_NONE, ACCEL_OPENGL, ACCEL_D3D },
+          new String[] { ACCEL_DEFAULT, ACCEL_NONE, ACCEL_METAL, ACCEL_OPENGL, ACCEL_D3D },
           ACCEL_DEFAULT);
   public static final String DUALSCREEN_NONE = "none";
   public static final String DUALSCREEN_FIX = "fixBlackWindows";
