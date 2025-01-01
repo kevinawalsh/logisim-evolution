@@ -47,8 +47,7 @@ public class RamHDLGenerator extends HDLGenerator {
     boolean separate = dbus == RamAttributes.BUS_SEP;
     Object trigger = attrs.getValue(StdAttr.TRIGGER);
     boolean synch = trigger == StdAttr.TRIG_RISING || trigger == StdAttr.TRIG_FALLING;
-    boolean nvram = attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE;
-    return lang.equals("VHDL") && separate && synch && (!nvram || vendor == 'A');
+    return lang.equals("VHDL") && separate && synch;
   }
 
   public RamHDLGenerator(ComponentContext ctx) {
@@ -67,21 +66,14 @@ public class RamHDLGenerator extends HDLGenerator {
     for (int i = 0; i < n && n > 1; i++)
       inPorts.add("LE"+i, 1, portnr++, true);
 
-    // For NVRAM, the values of the generic parameters define the mem init data,
-    // which depend on the specific component instance (the full path to the
-    // instance within the overall design, not just a unique name within a
-    // single circuit or subcircuit. We don't yet have a way to pass parameters down
-    // through multiple nested levels of of HDL. So instead for now, we required
-    // NVRAM only appears at the top-level circuit (this is checked during DRC),
-    // then we just use a UID for this component.
-
-    if (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE) {
-      for (int i = 0; i < n; i++) {
-        parameters.add(new ParameterInfo("nvram_contents_"+i,
-              "string",
-              "\"" + memInitFilename(i) + "\"", null));
-      }
-    }
+    // For NVRAM, the values for initial data are encoded directly into the VHDL
+    // file as hex bit patterns, so the entire HDL depends on the specific
+    // component instance (the full path to the instance within the overall
+    // design, not just a unique name within a single circuit or subcircuit.
+    // Ideally we'd use generic parameters, but we don't yet have a way to pass
+    // parameters down through multiple nested levels of of HDL. So instead for
+    // now, we required NVRAM only appears at the top-level circuit (this is
+    // checked during DRC), then we just use a UID for this component.
   }
 
   private static String deriveHDLName(AttributeSet attrs) {
@@ -95,35 +87,74 @@ public class RamHDLGenerator extends HDLGenerator {
 
   @Override
 	protected Hdl getArchitecture() {
+    return getArchitecture(null);
+  }
+
+	private Hdl getArchitecture(RamState state) {
     Hdl out = new Hdl(_lang, _err);
     generateFileHeader(out);
 
     int wd = dataWidth();
-    int rows = (1 << addrWidth());
     int n = Mem.lineSize(_attrs);
+    int rows = (1 << addrWidth()) / n;
 
 		if (out.isVhdl) {
 
 			out.stmt("architecture logisim_generated of " + hdlModuleName + " is ");
       out.indent();
       out.stmt("type MEMORY_ARRAY is array (%d downto 0) of %s;", rows-1, out.typeForWidth(wd));
-
-      out.comment("memory definitions");
-      for (int i = 0; i < n; i++)
-        out.stmt("signal s_mem%d_contents : MEMORY_ARRAY;", i);
       out.stmt();
-
-      if (_attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE) {
-        out.stmt("attribute ram_init_file : string;");
+      if (state != null) {
+        int bits = rows * wd;
+        while (bits % 4 != 0)
+          bits++;
+        out.stmt("function INIT_RAM_VEC(init_vec : std_logic_vector(0 to %d)) return MEMORY_ARRAY is", bits - 1);
+        out.indent();
+        out.stmt("variable ram_content : MEMORY_ARRAY;");
+        out.stmt("begin");
+        out.indent();
+        out.stmt("for i in 0 to %d loop", rows - 1);
+        out.indent();
+        out.stmt("ram_content(i)(%d downto 0) := init_vec(i*%d to i*%d+%d);", wd - 1, wd, wd, wd-1);
+        out.dedent();
+        out.stmt("end loop;");
+        out.stmt("return ram_content;");
+        out.dedent();
+        out.stmt("end function;");
+        out.stmt();
+        out.comment("memory definitions and initial values");
+        for (int i = 0; i < n; i++) {
+          String contents = encodeMemInitDataVHDL(state, i);
+          out.stmt("signal s_mem%d_contents : MEMORY_ARRAY := INIT_RAM_VEC(%s);", i, contents);
+        }
+      } else {
+        out.comment("memory definitions without initial values");
         for (int i = 0; i < n; i++)
-          out.stmt("attribute ram_init_file of s_mem%d_contents : signal is nvram_contents_%d;", i, i);
-			}
+          out.stmt("signal s_mem%d_contents : MEMORY_ARRAY;", i);
+      }
       out.stmt();
       out.dedent();
 
 			out.stmt("begin");
       out.indent();
 			out.stmt();
+      // NOTE: Current HDL for RAM differs from the Logisim simulation in two
+      // important ways:
+      //
+      // (1) Read and clock ticks. In Logisim simulations, reads happen
+      // asynchronously, i.e. the data output port always reflects the current
+      // input address. In HDL, reads are latched: the data output port is
+      // updated with a new value when the clock ticks. 
+      //
+      // (2) Read-during-write behavior. In Logisim simulations, writing has no
+      // effect on reading. In HDL, during the time a write occurs (i.e. when
+      // the clock ticks and write enable is turned on), the data output is not
+      // updated, and the previously-read value is maintained instead.
+      //
+      // Note, however, that reads happen at the speed of the underlying global
+      // clock, regardless of whether the clock has been divided down. So in
+      // cases where the clock has been divided, HDL read behavior will be
+      // closer to the Logisim read behavior.
       if (n == 1) {
         out.stmt("Mem0 : PROCESS( GlobalClock, DataIn0, Address, WE, ClockEnable )");
         out.stmt("BEGIN");
@@ -171,6 +202,14 @@ public class RamHDLGenerator extends HDLGenerator {
   public boolean hdlDependsOnCircuitState() { // for NVRAM
     return _attrs.getValue(RamAttributes.ATTR_TYPE) == RamAttributes.NONVOLATILE;
   }
+
+  @Override
+  public boolean writeHDLFiles(String rootDir) {
+    if (hdlDependsOnCircuitState())
+      return true;
+    else
+      return super.writeHDLFiles(rootDir);
+  }
       
   @Override
   public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent comp,
@@ -182,54 +221,50 @@ public class RamHDLGenerator extends HDLGenerator {
       _err.AddWarning("Non-volatile RAM %s initializion data not found in current "
           + "simulator state. The FPGA NVRAM will be initialized to zero instead.",
           path);
-    return writeMemInitFiles(state, path, rootDir);
+
+    return writeEntity(rootDir) && writeArchitecture(rootDir, state);
   }
+
+  protected boolean writeArchitecture(String rootDir, RamState state) {
+    Hdl hdl = getArchitecture(state);
+		if (hdl == null || hdl.isEmpty()) {
+			_err.AddFatalError("INTERNAL ERROR: Generated empty architecture for HDL `%s'.", hdlModuleName);
+			return false;
+		}
+		File f = openFile(rootDir, false, false);
+		if (f == null)
+			return false;
+		return FileWriter.WriteContents(f, hdl, _err);
+	}
 
   private String memInitFilename(int i) {
       return String.format("../vhdl/memory/%s_%d.mif", hdlModuleName, i);
   }
 
-  // Generate and write a "memory init file" for this non-volatile Ram component.
-  private boolean writeMemInitFiles(RamState state, Path path, String rootDir) {
-    int n = Mem.lineSize(_attrs);
-    for (int i = 0; i < n; i++) {
-      Hdl data = getMemInitData(state, i);
-      File f = openFile(rootDir, true, false, i);
-      if (f == null || !FileWriter.WriteContents(f, data, _err))
-        return false;
-    }
-    return true;
-  }
-
-  private Hdl getMemInitData(MemState state, int offset) {
+  private static final char HEX_DIGIT[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+  private String encodeMemInitDataVHDL(RamState state, int offset) {
+    MemContents c = state.getContents();
     int skip = Mem.lineSize(_attrs);
     int width = dataWidth();
     int depth = (1 << addrWidth()) / skip;
-    Hdl out = new Hdl(_lang, _err);
-    out.add("-- Memory initialization data for alignment offset " + offset);
-    // int depth = (int)((c.getLastOffset() - c.getFirstOffset() + 1) / skip);
-    out.add("DEPTH = " + depth + ";");
-    out.add("WIDTH = " + width + ";");
-    out.add("ADDRESS_RADIX = HEX;");
-    out.add("DATA_RADIX = HEX;");
-    out.add("CONTENT");
-    out.add("BEGIN");
-    if (state != null) {
-      // TODO: we could compress this a bit using ranges
-      MemContents c = state.getContents();
-      for (int a = 0; a < depth; a++) {
-        int d = c.get(a*skip+offset);
-        if (width != 32)
-          d &= ((1 << width) - 1);
-        out.stmt("%8x : %8x;", a, d);
+    StringBuilder sb = new StringBuilder("X\"");
+    long val = 0;
+    int bits = 0;
+    for (int a = 0; a < depth; a++) {
+      long d = c.get(a * skip + offset);
+      val = (val << width) | (d & ((1 << width)-1));
+      bits += width;
+      while (bits > 4) {
+        sb.append(HEX_DIGIT[(int)(val >> (bits-4)) & 0xf]);
+        bits -= 4;
       }
-    } else {
-
-      out.stmt("[0..%x] : %8x; % default init values due to missing simulator state",
-          depth-1, 0);
     }
-    out.add("END;");
-    return out;
+    if (bits > 0) { // 1, 2, or 3 bits leftover
+      val = val << (4-bits);
+      sb.append(HEX_DIGIT[(int)val & 0xf]);
+    }
+    sb.append("\"");
+    return sb.toString();
   }
 
 }
