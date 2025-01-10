@@ -1,202 +1,202 @@
 {
   "logFormatVersion": 1,
-  "jobId": "5e46395e-c742-4a2b-8154-45713f4ef10c",
+  "jobId": "5c4e29a3-0693-4ec4-a4b7-e67c749b3d50",
   "status": "Accepted",
   "statusSummary": "Ready for distribution",
   "statusCode": 0,
-  "archiveFilename": "Logisim-Evolution-5.0.3-HC.pkg",
-  "uploadDate": "2024-01-23T20:57:51Z",
-  "sha256": "b96cedd7b0d95aa4951768e528e2f789accb7e332a4b9d96d7835cae157e3de8",
+  "archiveFilename": "Logisim-Evolution-5.0.4-HC.pkg",
+  "uploadDate": "2025-01-10T02:42:41.864Z",
+  "sha256": "967195b61fec613672344bfce60da347a5871adba22e22362e9784ab6c80788f",
   "ticketContents": [
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg",
       "digestAlgorithm": "SHA-1",
-      "cdhash": "8f4dd8fb2ac53d4be0f2030e6f6069a117f1dd66"
+      "cdhash": "352071035d2457a2f749d9c57bfd44c7c50d23ad"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app",
       "digestAlgorithm": "SHA-256",
-      "cdhash": "d010b145ca40b98e4f368abbcf2f29ccf2259e9b",
+      "cdhash": "f676f17237dea00a63d525b46a72feb604fea127",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/MacOS/Logisim-Evolution",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/MacOS/Logisim-Evolution",
       "digestAlgorithm": "SHA-256",
-      "cdhash": "d010b145ca40b98e4f368abbcf2f29ccf2259e9b",
+      "cdhash": "f676f17237dea00a63d525b46a72feb604fea127",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/bin/java",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/bin/java",
       "digestAlgorithm": "SHA-256",
       "cdhash": "86a3167eabd96e4d492ec8a2118c1192f6709a76",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/bin/keytool",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/bin/keytool",
       "digestAlgorithm": "SHA-256",
       "cdhash": "eaad5466aab38431a26ca24bc465dfd612e5fcab",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libnet.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libnet.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "0bacffbd114f1181b40031d570d35ae2e2e7eeee",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libnio.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libnio.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "6e8f351e15c80339825563280096dc5892ae763c",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libzip.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libzip.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "8e52dc7f25759f7a8730171d9fc343692a53a00b",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libfreetype.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libfreetype.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "9fc0848ef0689fe5931a60b20d7307b7bdc9bc22",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjli.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjli.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "f99b2fe92077efffd643c30372a668ca1ba70655",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libsplashscreen.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libsplashscreen.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "2960a008adb22a7fa73923156ef10c236732b6fa",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjimage.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjimage.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "92a25b5ff35fe5f28d9151a3444f73b51b112372",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosxui.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosxui.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "1280757bf304d88eb15e1e344691d5769bf3a0f9",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libawt_lwawt.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libawt_lwawt.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "d78074daed4c0fc25f67b7b33c67711505c14daa",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjavajpeg.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjavajpeg.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "f2f1e0691fb6040d4cea3158c228a2bdbf61a7ff",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libmlib_image.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libmlib_image.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "667ffdd21eaced7bd5e3c548d29b7c8e5240a066",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjsound.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjsound.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "aa0fd15c3b4849d23831d67c10e016e5cea84bc9",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjsig.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjsig.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "aeaaaec258dbd6ff48c05dc3a7770b21ce3a66a9",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libprefs.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libprefs.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "7536d58ed583cd67d608f782ef0a9ec84e407ce7",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjawt.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjawt.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "beeb7438f3de7b56957e06b01fdd510728f93ae7",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libfontmanager.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libfontmanager.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "b51592c6897e2da21046c1255dae65c6536548c6",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/jspawnhelper",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/jspawnhelper",
       "digestAlgorithm": "SHA-256",
       "cdhash": "3fa3d1d84e90c098d91086530a9106c5442c1563",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosxsecurity.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosxsecurity.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "8ffb6d4158f1dc8bc28ee263017ac7de111e32dc",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/liblcms.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/liblcms.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "4799a26fb565e4de38114c60706961dd06125143",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libverify.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libverify.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "5a9ff0c68482ae5c49058337fe72448e3aaaac02",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjava.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libjava.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "208b810a4b8c03dadcc22d046eb7fa21a7138f83",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libawt.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libawt.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "af468728d47c056c632c674c01395e556e34ad7c",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosx.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosx.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "d4dd998a4a01cb9172c421e7d63d0848a15e4ed3",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosxapp.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/libosxapp.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "a39cebc37a592cbcc464c1d1b09a6e584ceba362",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/server/libjvm.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/server/libjvm.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "4bcbcfc83841eb5cc7101ae45ff9484dd544e736",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/server/libjsig.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/Home/lib/server/libjsig.dylib",
       "digestAlgorithm": "SHA-256",
       "cdhash": "aeaaaec258dbd6ff48c05dc3a7770b21ce3a66a9",
       "arch": "arm64"
     },
     {
-      "path": "Logisim-Evolution-5.0.3-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/MacOS/libjli.dylib",
+      "path": "Logisim-Evolution-5.0.4-HC.pkg/Logisim-Evolution-app.pkg Contents/Payload/Applications/Logisim-Evolution.app/Contents/runtime/Contents/MacOS/libjli.dylib",
       "digestAlgorithm": "SHA-256",
-      "cdhash": "a397f8f352a2ed990e2a0f384fd3dbb250cb40de",
+      "cdhash": "664a5042ab900015b41fe85ddf09fac10de34eff",
       "arch": "arm64"
     }
   ],

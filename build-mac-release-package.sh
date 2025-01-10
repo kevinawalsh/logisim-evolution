@@ -67,7 +67,7 @@
 #    '--identifier' isn ow '--mac-package-signing-prefix'
 #    '--add-modules' and '--runtime-image' are now mutually exclusive, so
 #       eliminate the former.
-# - Code signing may *appear* to fail with the new jpackage with this error:
+# - Code signing may *appear* to fail with the new jpackage with an error like:
 #   Running [codesign, --verify, /var/folders/kb/zswdtzg94bs52lqrts5sssdr0000gp/T/jdk.incubator.jpackage13637540241510693609/images/image-5430644754281798291/Logisim-Evolution.app/Contents/MacOS/libapplauncher.dylib]
 #   /var/folders/kb/zswdtzg94bs52lqrts5sssdr0000gp/T/jdk.incubator.jpackage13637540241510693609/images/image-5430644754281798291/Logisim-Evolution.app/Contents/MacOS/libapplauncher.dylib: code object is not signed at all
 #   In architecture: x86_64
@@ -80,9 +80,24 @@
 #   	at jdk.incubator.jpackage/jdk.incubator.jpackage.internal.MacAppImageBuilder.lambda$signAppBundle$16(MacAppImageBuilder.java:804)
 #   This, however, just means that the Developer ID Application and Developer ID Installer keys (not the certificates)
 #   are missing from the keychain. This can be fixed by going into XCode, preferences, Keys, and create a new one of each.
+#   Or, for x86 Macs, since XCode isn't available for that platform, from a Mac with the needed keys in the keychain, export
+#   the keys (using a password to encrypt the files), copy the key files over to the x86 Mac, import them to the login keychain,
+#   and try again.
 
 set -e # die on error
 #set -x # debug output
+
+arch=`uname -m`
+if [ "$arch" == "arm64" ]; then
+  ARCH_SUFFIX=""
+  echo "#### Building MacOS release for arm64 (newer m1, m2, etc.)"
+elif [ "$arch" == "x86_64" ]; then
+  ARCH_SUFFIX="-x86"
+  echo "#### Building MacOS release for x86 (older platforms)"
+else
+  echo "Unrecognized system architecture"
+  exit 1
+fi
 
 # Using list-deps is recommended by one tutorial, but it seems to over-estimate
 # the modules needed. Perhaps it (harmlessly)includes transitive dependencies?
@@ -116,7 +131,7 @@ fi
 INSTALLER_TYPE="pkg" # Options: dmg or pkg
 OUTPUT="."
 JAR="logisim-evolution.jar"
-VERSION="5.0.3" # must be numerical x.y.z
+VERSION="5.0.4" # must be numerical x.y.z
 FILE_ASSOCIATIONS="file-associations.properties"
 APP_ICON="logisim.icns"
 JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -151,7 +166,7 @@ ${PACKAGER} \
   --main-jar "${JAR}" \
   --java-options "--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED" \
   --app-version "${VERSION}" \
-  --copyright "(c) 2023 Kevin Walsh" \
+  --copyright "(c) 2025 Kevin Walsh" \
   --description "Digital logic designer and simulator." \
   --vendor "Kevin Walsh" \
   --runtime-image "${JAVA_RUNTIME}" \
@@ -168,30 +183,34 @@ ${PACKAGER} \
 
 rm -rf mac-staging
 rm -rf mac-resources
-mv "Logisim-Evolution-${VERSION}.pkg" "Logisim-Evolution-${VERSION}-HC.pkg"
+mv "Logisim-Evolution-${VERSION}.pkg" "Logisim-Evolution-${VERSION}-HC${ARCH_SUFFIX}.pkg"
 
 cat <<ENDNOTE
 
 # To notarize, run this command:
 
 ALTOOLPW=enter-app-specific-password-here
-xcrun altool --notarize-app --primary-bundle-id "$JAVA_APP_IDENTIFIER" \
-    --username "kwalsh@holycross.edu" --password "\$ALTOOLPW" \
-    --file Logisim-Evolution-${VERSION}-HC.pkg
+xcrun notarytool submit \
+    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW" \
+    Logisim-Evolution-${VERSION}-HC${ARCH_SUFFIX}.pkg
 
 # Then later, try:
-xcrun altool --notarization-history 0 -u "kwalsh@holycross.edu" -p "\$ALTOOLPW"
+xcrun notarytool history \
+    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW"
 
 # And if that works, then try:
-UUID=whatever-from-previous-command
-xcrun altool --notarization-info \$UUID -u "kwalsh@holycross.edu" -p "\$ALTOOLPW"
+SUBMISSION_ID=whatever-from-previous-command
+xcrun notarytool info \
+    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW" \
+    "\$SUBMISSION_ID"
 
 # And if that works, then try:
-URL=copied-from-last-output
-curl "\$URL" > mac-notarize.log
-cat mac-notarize.log
+xcrun notarytool log \
+    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW" \
+    "\$SUBMISSION_ID" > mac-notarize${ARCH_SUFFIX}.log
+cat mac-notarize${ARCH_SUFFIX}.log
 
 # Check for warnings and errors, then finally:
-xcrun stapler staple Logisim-Evolution-${VERSION}-HC.pkg
+xcrun stapler staple Logisim-Evolution-${VERSION}-HC${ARCH_SUFFIX}.pkg
 
 ENDNOTE

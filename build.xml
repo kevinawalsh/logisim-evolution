@@ -51,6 +51,10 @@ In summary:
  - Adoptium's temurin OpenJDK 17 build: current recommended execution JDK.
  - Any Java 11 or higher JDK: acceptable for executing JAR.
 
+Updates on Java Versions [9 January 2025]:
+
+Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
+
 -->
 
 <project name="logisim-evolution">

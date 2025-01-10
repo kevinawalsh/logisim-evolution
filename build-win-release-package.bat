@@ -31,8 +31,10 @@ rem     logisim-win-install.nsi
 
 rem set JDEPS="C:\Program Files\Java\jdk-11.0.4+11\bin\jdeps.exe"
 rem set JLINK="C:\Program Files\Java\jdk-11.0.4+11\bin\jlink.exe"
-set JDEPS="C:\Program Files\AdoptOpenJDK\temurin-17.0.7_7-hotspot\bin\jdeps.exe"
-set JLINK="C:\Program Files\AdoptOpenJDK\temurin-17.0.7_7-hotspot\bin\jlink.exe"
+rem set JDEPS="C:\Program Files\AdoptOpenJDK\temurin-17.0.7_7-hotspot\bin\jdeps.exe"
+rem set JLINK="C:\Program Files\AdoptOpenJDK\temurin-17.0.7_7-hotspot\bin\jlink.exe"
+set JDEPS="C:\Program Files\Eclipse Adoptium\jdk-17.0.13.11-hotspot\bin\jdeps.exe"
+set JLINK="C:\Program Files\Eclipse Adoptium\jdk-17.0.13.11-hotspot\bin\jlink.exe"
 rem set PACKAGER="C:\Program Files\Java\jdk-14\bin\jpackage.exe"
 set LAUNCH4J="C:\Program Files (x86)\Launch4j\launch4jc.exe"
 set NSIS="c:\Program Files (x86)\NSIS\Bin\makensis.exe"
@@ -68,7 +70,7 @@ rem   rem installer type can be exe or msi, but exe does not seem to work
 rem   set INSTALLER_TYPE="msi"
 rem   set OUTPUT=.
 rem   set JAR=logisim-evolution.jar
-rem   set VERSION=5.0.3
+rem   set VERSION=5.0.4
 rem   rem FILE_ASSOCIATIONS="file-associations.properties"
 rem   set APP_ICON="logisim.ico"
 rem   rem JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -97,7 +99,7 @@ rem       --name "Logisim-Evolution" ^
 rem       --main-class com.cburch.logisim.Main ^
 rem       --main-jar "%JAR%" ^
 rem       --app-version "%VERSION%" ^
-rem       --copyright "(c) 2023 Kevin Walsh" ^
+rem       --copyright "(c) 2025 Kevin Walsh" ^
 rem       --description "Digital logic designer and simulator." ^
 rem       --vendor "Kevin Walsh" ^
 rem       --add-modules "%MODULES%" ^
@@ -118,18 +120,18 @@ echo Creating executable wrapper...
 %LAUNCH4J% logisim-l4j.xml || goto :error
 
 echo Creating ZIP package for distribution...
-IF EXIST Logisim-Evolution-5.0.3hc-windows.zip del Logisim-Evolution-5.0.3hc-windows.zip || goto :error
-IF EXIST Logisim-Evolution-5.0.3hc rmdir /S /Q Logisim-Evolution-5.0.3hc || goto :error
-mkdir Logisim-Evolution-5.0.3hc || goto :error
-copy LICENSE Logisim-Evolution-5.0.3hc\LICENSE.txt || goto :error
-copy logisim-evolution-5.0.3hc.exe Logisim-Evolution-5.0.3hc || goto :error
-xcopy /s logisim-evolution-runtime Logisim-Evolution-5.0.3hc\logisim-evolution-runtime\ || goto :error
-powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-5.0.3hc', 'Logisim-Evolution-5.0.3hc-windows.zip'); }" || goto :error
-IF EXIST logisim-evolution-5.0.3hc.exe del logisim-evolution-5.0.3hc.exe || goto :error
-rmdir /S /Q Logisim-Evolution-5.0.3hc || goto :error
+IF EXIST Logisim-Evolution-5.0.4hc-windows.zip del Logisim-Evolution-5.0.4hc-windows.zip || goto :error
+IF EXIST Logisim-Evolution-5.0.4hc rmdir /S /Q Logisim-Evolution-5.0.4hc || goto :error
+mkdir Logisim-Evolution-5.0.4hc || goto :error
+copy LICENSE Logisim-Evolution-5.0.4hc\LICENSE.txt || goto :error
+copy logisim-evolution-5.0.4hc.exe Logisim-Evolution-5.0.4hc || goto :error
+xcopy /s logisim-evolution-runtime Logisim-Evolution-5.0.4hc\logisim-evolution-runtime\ || goto :error
+powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-5.0.4hc', 'Logisim-Evolution-5.0.4hc-windows.zip'); }" || goto :error
+IF EXIST logisim-evolution-5.0.4hc.exe del logisim-evolution-5.0.4hc.exe || goto :error
+rmdir /S /Q Logisim-Evolution-5.0.4hc || goto :error
 
 echo Creating self-contained executable...
-copy logisim-evolution.jar logisim-evolution-5.0.3hc.jar || goto :error
+copy logisim-evolution.jar logisim-evolution-5.0.4hc.jar || goto :error
 %NSIS% logisim-win-install.nsi || goto :error
 
 echo =======================================
