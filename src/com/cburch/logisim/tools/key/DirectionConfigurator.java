@@ -39,6 +39,11 @@ import com.cburch.logisim.data.Direction;
 public class DirectionConfigurator implements KeyConfigurator, Cloneable {
   private Attribute<? extends Object> attr;
   private int modsEx;
+
+  // Note: As of at least git commit 3663685d7d7ad2e9cbccf988c6ca6efb879fb437,
+  // this class is used as:
+  //   new DirectionConfigurator(StdAttr.LABEL_LOC)
+  // and the two-argument constructor is never used.
   
   public DirectionConfigurator(Attribute<? extends Object> attr) {
     this.attr = attr;
