@@ -1,4 +1,0 @@
-Manifest-Version: 1.0 
-Created-By: 1.6.0_37 (Sun Microsystems Inc.)
-Library-Class: kahdeg.test.library
-

@@ -1,2 +1,0 @@
-Manifest-Version: 1.0 
-Library-Class: kahdeg.test.library
