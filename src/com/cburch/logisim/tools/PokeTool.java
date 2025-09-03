@@ -31,6 +31,8 @@
 package com.cburch.logisim.tools;
 import static com.cburch.logisim.tools.Strings.S;
 
+import java.util.Set;
+
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.event.KeyEvent;
@@ -187,11 +189,49 @@ public final class PokeTool extends Tool {
     return "Poke Tool";
   }
 
+  private void syntheticMouseEventByLabel(Canvas canvas, KeyEvent e, boolean pressed) {
+    char ch = e.getKeyChar();
+    if (ch == KeyEvent.CHAR_UNDEFINED)
+      return;
+    Circuit circ = canvas.getCircuit();
+    Set<Component> hits = circ.getByLabelCaseInsensitive("" + ch);
+    if (hits == null || hits.isEmpty())
+      return;
+    ComponentUserEvent ce = null;
+    MouseEvent me = null;
+    for (Component hit : hits) {
+      Pokable p = (Pokable)hit.getFeature(Pokable.class);
+      if (p == null)
+        continue;
+      if (ce == null)
+        ce = new ComponentUserEvent(canvas, -1, -1);
+      Caret caret = p.getPokeCaret(ce);
+      // send a NOBUTTON event, caret could use this to detect
+      // that this is a synthetic event and ignore, if it wants.
+      if (pressed) {
+        if (me == null)
+          me = new MouseEvent(canvas,
+              MouseEvent.MOUSE_PRESSED, e.getWhen(), 0 /* modifiers */,
+              -1 /* x */, -1 /* y */, 1 /* clickCount */, false /* popup */);
+        caret.mousePressed(me);
+      } else {
+        if (me == null)
+          me = new MouseEvent(canvas,
+              MouseEvent.MOUSE_RELEASED, e.getWhen(), 0 /* modifiers */,
+              -1 /* x */, -1 /* y */, 1 /* clickCount */, false /* popup */);
+        caret.mouseReleased(me);
+      }
+    }
+    // TODO: is it important to send a matching release for every press?
+  }
+
   @Override
   public void keyPressed(Canvas canvas, KeyEvent e) {
     if (pokeCaret != null) {
       pokeCaret.keyPressed(e);
       canvas.getProject().repaintCanvas();
+    } else {
+      syntheticMouseEventByLabel(canvas, e, true);
     }
   }
 
@@ -200,6 +240,8 @@ public final class PokeTool extends Tool {
     if (pokeCaret != null) {
       pokeCaret.keyReleased(e);
       canvas.getProject().repaintCanvas();
+    } else {
+      syntheticMouseEventByLabel(canvas, e, false);
     }
   }
 

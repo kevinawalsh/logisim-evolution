@@ -469,6 +469,16 @@ public class Circuit implements AttributeDefaultProvider {
     return comps;
   }
 
+  public Set<Component> getByLabelCaseInsensitive(String label) {
+    HashSet<Component> hits = new HashSet<>();
+    for (Component comp : this.getNonWires()) {
+      if (label.equalsIgnoreCase(comp.getAttributeSet().getValue(StdAttr.LABEL))) {
+        hits.add(comp);
+      }
+    }
+    return hits;
+  }
+
   public boolean isEmpty() {
     return comps.isEmpty() && wires.getWires().isEmpty();
   }
