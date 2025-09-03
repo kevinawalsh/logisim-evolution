@@ -308,23 +308,12 @@ public class Button extends InstanceFactory {
 
     Graphics2D g = (Graphics2D)painter.getGraphics();
     
-    // some labels shift when button is pressed,
-    // depending on label position and direction we are facing
+    // centered labels shift when button is pressed or latched
     double labelOffset = 0;
-    Object facing = painter.getAttributeValue(StdAttr.FACING);
     if (pressed || (behavior == BEHAVIOR_LATCHING && val == active)) {
       Object labelLoc = painter.getAttributeValue(StdAttr.LABEL_LOC);
-      boolean sync = painter.getAttributeValue(ATTR_CLOCKING) == CLOCKING_SYNCHRONOUS;
-      boolean wireE = facing == Direction.EAST || (sync && facing == Direction.NORTH);
-      // boolean wireS = facing == Direction.SOUTH || (sync && facing == Direction.EAST);
-      boolean wireW = facing == Direction.WEST || (sync && facing == Direction.SOUTH);
-      boolean wireN = facing == Direction.NORTH || (sync && facing == Direction.WEST);
-      if (labelLoc == StdAttr.LABEL_CENTER
-          || (labelLoc == Direction.NORTH && !wireN)
-          || (labelLoc == Direction.WEST && !wireW)
-          || (labelLoc == Direction.EAST && !wireE)) {
+      if (labelLoc == StdAttr.LABEL_CENTER)
         labelOffset = DEPTH;
-      }
     }
 
     if (pressed) {
@@ -332,6 +321,7 @@ public class Button extends InstanceFactory {
       y += DEPTH;
 
       // Draw exposed north/west wire stub when pressed
+      Object facing = painter.getAttributeValue(StdAttr.FACING);
       if (facing == Direction.NORTH || facing == Direction.WEST) {
         Location p = painter.getLocation();
         int px = p.getX();
