@@ -259,8 +259,6 @@ public final class PokeTool extends Tool {
     if (pokeCaret != null) {
       dirty = true;
       pokeCaret.mousePressed(e);
-
-      // 
     }
     if (dirty)
       canvas.getProject().repaintCanvas();
