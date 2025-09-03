@@ -103,7 +103,6 @@ public class Button extends InstanceFactory {
       State data = getState(state);
       synchronized (data) {
         data.pressed = false;
-        // data.releasedRecently = true;
       }
       state.getInstance().fireInvalidated();
     }
@@ -240,6 +239,7 @@ public class Button extends InstanceFactory {
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.FACING) {
       instance.recomputeBounds();
+      updatePorts(instance);
       recomputeLabelTextFieldPosition(instance);
     } else if (attr == StdAttr.LABEL_LOC) {
       recomputeLabelTextFieldPosition(instance);
@@ -280,8 +280,15 @@ public class Button extends InstanceFactory {
         pressed = false;
         val = resting;
       } else {
-        pressed = data.pressed;
-        val = data.value == null ? resting : data.value;
+        synchronized (data) {
+          val = data.value == null ? resting : data.value;
+          if (behavior == BEHAVIOR_MOMENTARY_NC || behavior == BEHAVIOR_MOMENTARY_NO)
+            pressed = data.pressed || val == active;
+          else if (behavior == BEHAVIOR_ONESHOT_NC || behavior == BEHAVIOR_ONESHOT_NO)
+            pressed = data.pressedRecently || val == active;
+          else
+            pressed = data.pressedRecently;
+        }
       }
     } else {
       val = resting;
@@ -292,6 +299,11 @@ public class Button extends InstanceFactory {
     if (!painter.shouldDrawColor()) {
       int hue = (color.getRed() + color.getGreen() + color.getBlue()) / 3;
       color = new Color(hue, hue, hue);
+    } else {
+      if (val == active && active == Value.TRUE)
+        color = color.brighter();
+      else if (val == active && active == Value.FALSE)
+        color = color.darker();
     }
 
     Graphics2D g = (Graphics2D)painter.getGraphics();
@@ -491,20 +503,17 @@ public class Button extends InstanceFactory {
             // Latching, synchronous
             if (state.pressedRecently) {
               state.pressedRecently = false; // reset
-              // state.releasedRecently = false; // reset, not used
               state.value = (state.value == Value.TRUE ? Value.FALSE : Value.TRUE);
             }
           } else if (behavior == BEHAVIOR_ONESHOT_NC || behavior == BEHAVIOR_ONESHOT_NO) {
             if (state.pressedRecently) {
               state.pressedRecently = false; // reset
-              // state.releasedRecently = false; // reset, not used
               state.value = active;
             } else {
               state.value = resting;
             }
           } else { // BEHAVIOR_MOMENTARY_NC || BEHAVIOR_MOMENTARY_NO
             state.pressedRecently = false; // reset, not used
-            // state.releasedRecently = false; // reset, not used
             state.value = state.pressed ? active : resting;
           }
         } // end clock trigger
@@ -517,7 +526,6 @@ public class Button extends InstanceFactory {
         if (behavior == BEHAVIOR_LATCHING) {
           if (state.pressedRecently) {
               state.pressedRecently = false; // reset
-              // state.releasedRecently = false; // reset, not used
               state.value = (state.value == Value.TRUE ? Value.FALSE : Value.TRUE);
           }
         } else if (behavior == BEHAVIOR_ONESHOT_NC || behavior == BEHAVIOR_ONESHOT_NO) {
@@ -525,7 +533,6 @@ public class Button extends InstanceFactory {
           // causes spontanous changes to outputs like this.
           if (state.pressedRecently) {
             state.pressedRecently = false; // reset
-            // state.releasedRecently = false; // reset, not used
             state.value = active; // not used
             circState.setPort(0, active, 1);
             state.value = resting; // not used
@@ -534,7 +541,6 @@ public class Button extends InstanceFactory {
           }
         } else { // BEHAVIOR_MOMENTARY_NC || BEHAVIOR_MOMENTARY_NO
           state.pressedRecently = false; // reset, not used
-          // state.releasedRecently = false; // reset, not used
           state.value = state.pressed ? active : resting;
         }
         newValue = state.value;
@@ -549,7 +555,6 @@ public class Button extends InstanceFactory {
     Value value; // current value
     boolean pressed;
     boolean pressedRecently;
-    // boolean releasedRecently;
 
     public State() { }
 
