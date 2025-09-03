@@ -36,7 +36,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
@@ -49,7 +48,7 @@ public class PaperPoker extends InstancePoker {
 
 	@Override
 	public boolean init(InstanceState s, MouseEvent e) {
-		Bounds bds = s.getInstance().getBounds();
+		Bounds bds = s.getInstance().getNominalBounds();
     int x = e.getX(), y = e.getY();
     int roller = PaperTape.inRoller(bds, x, y);
     if (roller < 0) {
@@ -130,7 +129,7 @@ public class PaperPoker extends InstancePoker {
     if (left || right)
       return;
 
-		Bounds bds = painter.getBounds();
+		Bounds bds = painter.getNominalBounds();
     bds = PaperTape.cellBounds(bds);
 		Graphics g = painter.getGraphics();
 		g.setColor(Color.RED);

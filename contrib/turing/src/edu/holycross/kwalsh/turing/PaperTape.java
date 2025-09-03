@@ -150,7 +150,7 @@ class PaperTape extends InstanceFactory {
 	@Override
 	protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
-		Bounds bds = instance.getBounds();
+		Bounds bds = instance.getNominalBounds();
 		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT,
         bds.getX() + bds.getWidth() / 2,
         bds.getY() - 3,
@@ -416,7 +416,7 @@ class PaperTape extends InstanceFactory {
 	@Override
 	public void paintInstance(InstancePainter painter) {
     Graphics2D g = (Graphics2D)painter.getGraphics();
-    Bounds bds = painter.getBounds();
+    Bounds bds = painter.getNominalBounds();
     int x = bds.getX(), y = bds.getY();
     int cells = painter.getAttributeValue(ATTR_SIZE);
     if (cells % 2 == 0)
