@@ -71,6 +71,11 @@ public class PaperPoker extends InstancePoker {
 	}
 
   @Override
+  public boolean capturesTextInput() {
+    return !(left || right);
+  }
+
+  @Override
   public void mousePressed(InstanceState s, MouseEvent e) {
     if (!init(s, e))
       return;
@@ -105,6 +110,7 @@ public class PaperPoker extends InstancePoker {
     } else {
       return;
     }
+    e.consume();
 		s.fireInvalidated();
   }
 
@@ -116,11 +122,13 @@ public class PaperPoker extends InstancePoker {
 		PaperData state = PaperData.get(s);
     int c = (int)e.getKeyChar();
     if (c != '\b' && c != 0x1F) { // backspace and delete
-      if (state.printUtf32Symbol(c))
+      if (state.printUtf32Symbol(c)) {
         state.moveRight();
+      }
     } else {
       return;
     }
+    e.consume();
 		s.fireInvalidated();
   }
 
