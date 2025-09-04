@@ -669,7 +669,7 @@ public class Canvas extends JPanel
   }
 
   private static final long serialVersionUID = 1L;
-  public static final Color HALO_COLOR = new Color(255, 0, 255);
+  public static final Color HALO_COLOR = new Color(255, 153, 204, 128);
   // don't bother to update the size if it hasn't changed more than this
   static final double SQRT_2 = Math.sqrt(2.0);
   private static final int BOUNDS_BUFFER = 70;
