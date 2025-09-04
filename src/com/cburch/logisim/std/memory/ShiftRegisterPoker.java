@@ -178,6 +178,9 @@ public class ShiftRegisterPoker extends InstancePoker {
   }
 
   @Override
+  public boolean capturesTextInput() { return loc >= 0; }
+
+  @Override
   public void paint(InstancePainter painter) {
     int loc = this.loc;
     if (loc < 0)
@@ -191,7 +194,7 @@ public class ShiftRegisterPoker extends InstancePoker {
       if (label == null || label.equals("")) y += bds.getHeight() / 2;
       else y += 3 * bds.getHeight() / 4;
       Graphics g = painter.getGraphics();
-      g.setColor(Color.RED);
+      g.setColor(Color.RED); // red to indicate text capture
       g.drawRect(x, y - 6, 10, 13);
     } else {
       int len = (widObj.getWidth() + 3) / 4;
@@ -199,7 +202,7 @@ public class ShiftRegisterPoker extends InstancePoker {
           + bds.getX() + 10;
       int y = bds.getY() + 82 + loc * 20;
       Graphics g = painter.getGraphics();
-      g.setColor(Color.RED);
+      g.setColor(Color.RED); // red to indicate text capture
       g.drawRect(boxXpos, y, 2 + len * 8, 16);
     }
   }

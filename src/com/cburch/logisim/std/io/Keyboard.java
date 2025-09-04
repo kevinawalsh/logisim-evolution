@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.io;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -56,6 +57,9 @@ import com.cburch.logisim.tools.key.DirectionConfigurator;
 
 public class Keyboard extends InstanceFactory {
   public static class Poker extends InstancePoker {
+    @Override
+    public boolean capturesTextInput() { return true; }
+
     @Override
     public void paint(InstancePainter painter) {
       KeyboardData data = getKeyboardState(painter);
@@ -85,7 +89,9 @@ public class Keyboard extends InstanceFactory {
         x += fm.stringWidth(str.substring(0, cursor));
       }
       int y = bds.getY() + (bds.getHeight() + asc) / 2;
+      g.setColor(Color.RED); // red to indicate text capture
       g.drawLine(x, y - asc, x, y);
+      g.setColor(Color.BLACK);
     }
 
     @Override

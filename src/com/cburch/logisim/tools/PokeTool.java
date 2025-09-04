@@ -230,9 +230,10 @@ public final class PokeTool extends Tool {
     if (pokeCaret != null) {
       pokeCaret.keyPressed(e);
       canvas.getProject().repaintCanvas();
-    } else {
-      syntheticMouseEventByLabel(canvas, e, true);
+      if (e.isConsumed() || pokeCaret.capturesTextInput())
+        return;
     }
+    syntheticMouseEventByLabel(canvas, e, true);
   }
 
   @Override
@@ -240,9 +241,10 @@ public final class PokeTool extends Tool {
     if (pokeCaret != null) {
       pokeCaret.keyReleased(e);
       canvas.getProject().repaintCanvas();
-    } else {
-      syntheticMouseEventByLabel(canvas, e, false);
+      if (e.isConsumed() || pokeCaret.capturesTextInput())
+        return;
     }
+    syntheticMouseEventByLabel(canvas, e, false);
   }
 
   @Override

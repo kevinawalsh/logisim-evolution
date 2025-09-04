@@ -34,7 +34,6 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.event.KeyEvent;
 
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.circuit.appear.DynamicValueProvider;

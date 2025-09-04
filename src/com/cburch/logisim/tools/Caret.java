@@ -42,6 +42,7 @@ public interface Caret {
   public void addCaretListener(CaretListener e);
 
   public default EditHandler getEditHandler() { return null; }
+  public default boolean capturesTextInput() { return false; }
 
   public void cancelEditing();
 

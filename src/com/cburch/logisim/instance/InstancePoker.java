@@ -67,4 +67,8 @@ public abstract class InstancePoker {
 
   public void stopEditing(InstanceState state) {
   }
+
+  public boolean capturesTextInput() {
+    return false;
+  }
 }

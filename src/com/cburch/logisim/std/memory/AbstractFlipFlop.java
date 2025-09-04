@@ -81,6 +81,9 @@ abstract class AbstractFlipFlop extends InstanceFactory {
   public static class Poker extends InstancePoker {
     boolean isPressed = true;
 
+    @Override
+    public boolean capturesTextInput() { return true; }
+
     private boolean isInside(InstanceState state, MouseEvent e) {
       Location loc = state.getInstance().getLocation();
       int dx, dy;
@@ -115,7 +118,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 
     @Override
     public void keyTyped(InstanceState state, KeyEvent e) {
-      int val = Character.digit(e.getKeyChar(), 16);
+      int val = Character.digit(e.getKeyChar(), 2);
       if (val < 0)
         return;
       StateData myState = (StateData) state.getData();
@@ -145,6 +148,17 @@ abstract class AbstractFlipFlop extends InstanceFactory {
         myState.curValue = Value.TRUE;
         state.fireInvalidated();
       }
+    }
+
+    @Override
+    public void paint(InstancePainter painter) {
+      Location loc = painter.getLocation();
+      int x = loc.getX();
+      int y = loc.getY();
+      Graphics g = painter.getGraphics();
+      g.setColor(Color.RED); // red to indicate text capture
+      g.drawOval(x - 27, y + 3, 15, 15);
+      g.setColor(Color.BLACK);
     }
   }
 

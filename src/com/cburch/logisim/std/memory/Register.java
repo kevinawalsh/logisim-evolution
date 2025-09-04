@@ -34,7 +34,6 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.List;
 

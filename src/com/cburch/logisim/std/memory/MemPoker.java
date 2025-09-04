@@ -42,6 +42,10 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.proj.Project;
 
 public class MemPoker extends InstancePoker {
+
+  @Override
+  public boolean capturesTextInput() { return true; }
+
   private static class AddrPoker extends MemPoker {
     @Override
     public Bounds getNominalBounds(InstancePainter painter) {
@@ -98,7 +102,7 @@ public class MemPoker extends InstancePoker {
     public void paint(InstancePainter painter) {
       Bounds bds = getNominalBounds(painter);
       Graphics g = painter.getGraphics();
-      g.setColor(Color.RED);
+      g.setColor(Color.RED); // red to indicate text capture
       g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
       g.setColor(Color.BLACK);
     }

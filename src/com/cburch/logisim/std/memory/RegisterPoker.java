@@ -47,6 +47,9 @@ public class RegisterPoker extends InstancePoker {
   private int curValue;
 
   @Override
+  public boolean capturesTextInput() { return true; }
+
+  @Override
   public boolean init(InstanceState state, MouseEvent e) {
     RegisterData data = (RegisterData) state.getData();
     if (data == null) {
@@ -107,7 +110,7 @@ public class RegisterPoker extends InstancePoker {
     int len = (width + 3) / 4;
 
     Graphics g = painter.getGraphics();
-    g.setColor(Color.RED);
+    g.setColor(Color.RED); // red to indicate text capture
     if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
       if (len > 4) {
         g.drawRect(bds.getX(), bds.getY() + 3, bds.getWidth(), 25);

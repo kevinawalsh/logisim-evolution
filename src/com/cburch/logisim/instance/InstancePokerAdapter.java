@@ -180,4 +180,14 @@ class InstancePokerAdapter extends AbstractCaret implements Pokable {
       checkCurrent();
     }
   }
+
+  @Override
+  public boolean capturesTextInput() {
+    if (poker != null) {
+      boolean captures = poker.capturesTextInput();
+      checkCurrent();
+      return captures;
+    }
+    return false;
+  }
 }

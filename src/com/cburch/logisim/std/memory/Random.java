@@ -129,8 +129,8 @@ public class Random extends InstanceFactory {
       isPressed = false;
     }
 
-    @Override
-    public void keyTyped(InstanceState state, KeyEvent e) { }
+    // @Override
+    // public void keyTyped(InstanceState state, KeyEvent e) { }
 
     @Override
     public void keyPressed(InstanceState state, KeyEvent e) {

@@ -277,6 +277,11 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     int bitPressed = -1;
     int bitCaret = -1;
 
+    @Override
+    public boolean capturesTextInput() {
+      return bitCaret >= 0;
+    }
+
     private int getBit(InstanceState state, MouseEvent e) {
       RadixOption radix = state.getAttributeValue(RadixOption.ATTRIBUTE);
       BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
@@ -459,22 +464,34 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
         return;
       int r = (radix == RadixOption.RADIX_16
           ? 4 : (radix == RadixOption.RADIX_8 ? 3 : 1));
-      if (width.getWidth() <= r)
-        return;
+      // note: always show red, to indicate text capture
+      // if (width.getWidth() <= r)
+      //   return;
       Bounds bds = painter.getNominalBounds();
       Graphics g = painter.getGraphics();
-      GraphicsUtil.switchToWidth(g, 2);
-      g.setColor(Color.RED);
-      int y = bds.getY() + bds.getHeight();
-      int x = bds.getX() + bds.getWidth();
-      if (radix == RadixOption.RADIX_2) {
-        x -= 5 + 10 * (bitCaret % 8);
-        y -= 2 + 14 * (bitCaret / 8);
+      g.setColor(Color.RED); // red to indicate text capture
+      int x = bds.getX();
+      int y = bds.getY();
+      int w = bds.getWidth();
+      int h = bds.getHeight();
+      if (width.getWidth() == 1) {
+        g.drawOval(x + 3, y + 3, 15, 15);
       } else {
-        x -= 4 + 7 * (bitCaret / r);
-        y -= 4;
+        GraphicsUtil.switchToWidth(g, 2);
+        y += h;
+        x += w;
+        if (width.getWidth() <= r) {
+          x -= w/2 - 3;
+          y -= 4;
+        } else if (radix == RadixOption.RADIX_2) {
+          x -= 5 + 10 * (bitCaret % 8);
+          y -= 2 + 14 * (bitCaret / 8);
+        } else {
+          x -= 4 + 7 * (bitCaret / r);
+          y -= 4;
+        }
+        g.drawLine(x - 6, y, x, y);
       }
-      g.drawLine(x - 6, y, x, y);
       g.setColor(Color.BLACK);
     }
   }
