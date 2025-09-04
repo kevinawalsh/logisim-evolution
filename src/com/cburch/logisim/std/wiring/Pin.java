@@ -419,6 +419,15 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
         dialog.setLocation(e.getXOnScreen()-60, e.getYOnScreen()-40);
         dialog.setVisible(true);
       } else {
+        // special case: for synthetic "by label" mouse release, mousePressed is
+        // on different caret, so bitPressed will be uninitialized
+        if (bitPressed < 0 && e.getX() == -1 && e.getY() == -1 && radix == RadixOption.RADIX_2) {
+          BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
+          if (width == BitWidth.ONE) {
+            handleBitPress(state, 0, radix, e.getComponent(), (char)0);
+            return;
+          }
+        }
         int bit = getBit(state, e);
         if (bit == bitPressed && bit >= 0) {
           bitCaret = bit;

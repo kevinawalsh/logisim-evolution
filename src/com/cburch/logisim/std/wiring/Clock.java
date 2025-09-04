@@ -99,7 +99,9 @@ public class Clock extends InstanceFactory {
 
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
-      if (isPressed && isInside(state, e))
+      // special case: for synthetic "by label" mouse release, mousePressed is
+      // on different caret, so isPressed will be uninitialized
+      if ((isPressed && isInside(state, e)) || (e.getX() == -1 && e.getY() == -1))
         state.getProject().getSimulator().tick(1); // all clocks tick together
       isPressed = false;
     }
