@@ -229,6 +229,10 @@ public class Button extends InstanceFactory {
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
+    if (ctx.attrs.getValue(ATTR_CLOCKING) != CLOCKING_ASYNCHRONOUS)
+      return null; // no hdl support yet for synchronized buttons
+    if (ctx.attrs.getValue(ATTR_BEHAVIOR) != BEHAVIOR_MOMENTARY_NO)
+      return null; // no hdl support yet for new behaviors
     return ButtonHDLGenerator.forButton(ctx);
   }
 
