@@ -137,7 +137,7 @@ public class Constant extends InstanceFactory {
 
   private static final Color BACKGROUND_COLOR = new Color(230, 230, 230);
 
-  private static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
+  public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,

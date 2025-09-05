@@ -32,12 +32,13 @@ package com.cburch.logisim.tools;
 import static com.cburch.logisim.tools.Strings.S;
 
 import java.util.Set;
+import java.util.ArrayList;
 
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.FontMetrics;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
@@ -58,6 +59,7 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 
 public final class PokeTool extends Tool {
@@ -79,62 +81,224 @@ public final class PokeTool extends Tool {
     Wire wire;
     int x;
     int y;
+    int radixChoice;
+    ArrayList<RadixOption> ordering;
+
+    static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
+    static final Font SMALL = new Font("SansSerif", Font.PLAIN, 8);
+    // We render only a limited set of characters, and there
+    // is a lot of extra space above and below, so we adjust
+    // the heights a bit to make it tighter.
+    static final int FONT_HEIGHT_ADJUST = 2;
+    static final int SMALL_HEIGHT_ADJUST = 2;
+    
+    static final RadixOption BIN = RadixOption.RADIX_2;
+    static final RadixOption OCT = RadixOption.RADIX_8;
+    static final RadixOption HEX = RadixOption.RADIX_16;
+    static final RadixOption U10 = RadixOption.RADIX_10_UNSIGNED;
+    static final RadixOption S10 = RadixOption.RADIX_10_SIGNED;
+    static final RadixOption[] DEFAULT_ORDER = { BIN, U10, S10, OCT, HEX };
 
     WireCaret(Canvas c, Wire w, int x, int y, AttributeSet opts) {
       canvas = c;
       wire = w;
-      this.x = x;
-      this.y = y;
-      // this.opts = opts;
+      setPoint(x, y);
+      setBounds(w.getNominalBounds());
+
+      // There are 5 radix options: 2, 8, 16, u10, s10
+      //
+      // Some may look identical, depending on the value.
+      //
+      // In some case, the display is huge, e.g. 32-bit binary.
+      //
+      // For single-bit wires, we display only binary, unlabeled.
+      //
+      // We will display binary alone, then u10 and s10 together, then u16 and
+      // u8 together. App preferences determine which to see first, which to see
+      // second, and the remainder will be last.
+      ordering = new ArrayList<>();
+      RadixOption r1 = RadixOption.decode(AppPreferences.POKE_WIRE_RADIX1.get());
+      if (r1 == BIN) {
+        ordering.add(BIN);
+      } else if (r1 == U10 || r1 == S10) {
+        ordering.add(U10);
+        ordering.add(S10);
+      } else if (r1 == OCT || r1 == HEX) {
+        ordering.add(HEX);
+        ordering.add(OCT);
+      }
+      RadixOption r2 = RadixOption.decode(AppPreferences.POKE_WIRE_RADIX2.get());
+      if (r1 == BIN) {
+        ordering.add(BIN);
+      } else if (r1 == U10 || r1 == S10) {
+        ordering.add(U10);
+        ordering.add(S10);
+      } else if (r1 == OCT || r1 == HEX) {
+        ordering.add(HEX);
+        ordering.add(OCT);
+      }
+      for (RadixOption r : DEFAULT_ORDER) {
+        if (!ordering.contains(r))
+          ordering.add(r);
+      }
+    }
+
+    private void setPoint(int x, int y) {
+      // snap to exact wire path
+      if (wire.isVertical()) {
+        this.x = wire.getEnd0().x;
+        this.y = Math.min(Math.max(y,  wire.getEnd0().y), wire.getEnd1().y);
+      } else {
+        this.x = Math.min(Math.max(x,  wire.getEnd0().x), wire.getEnd1().x);
+        this.y = wire.getEnd0().y;
+      }
+    }
+
+    private void nextChoice() {
+      if (ordering.get(radixChoice) == BIN)
+        radixChoice = (radixChoice + 1) % 5;
+      else
+        radixChoice = (radixChoice + 2) % 5;
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+      int xx = e.getPoint().x;
+      int yy = e.getPoint().y;
+      // nearby click: only change display
+      // distant click: only move cursor
+      if (Math.abs(x - xx) < 10 && Math.abs(y - yy) < 10)
+        nextChoice();
+      else
+        setPoint(xx, yy);
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+      char ch = e.getKeyChar();
+      if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
+        nextChoice();
+        e.consume();
+      }
     }
 
     @Override
     public void draw(Graphics g) {
       Value v = canvas.getCircuitState().getValue(wire.getEnd0());
-      RadixOption radix1 = RadixOption
-          .decode(AppPreferences.POKE_WIRE_RADIX1.get());
-      RadixOption radix2 = RadixOption
-          .decode(AppPreferences.POKE_WIRE_RADIX2.get());
-      if (radix1 == null)
-        radix1 = RadixOption.RADIX_2;
-      String vStr = radix1.toString(v);
-      if (radix2 != null && v.getWidth() > 1)
-        vStr += " / " + radix2.toString(v);
+    
+      String vStr0, vStr1 = null, lStr0 = null, lStr1 = null;
+      if (v.getWidth() == 1) {
+        // binary, unlabeled
+        vStr0 = BIN.toString(v);
+      } else {
+        vStr0 = ordering.get(radixChoice).toString(v);
+        lStr0 = ordering.get(radixChoice).toDisplayString().toLowerCase();
+        if (ordering.get(radixChoice) != BIN) {
+          vStr1 = ordering.get(radixChoice + 1).toString(v);
+          lStr1 = ordering.get(radixChoice + 1).toDisplayString().toLowerCase();
+        }
+      }
 
-      FontMetrics fm = g.getFontMetrics();
-      g.setColor(caretColor);
+      // TODO: improve font hinting
 
-      int margin = 2;
-      int w = fm.stringWidth(vStr) + 2*margin;
-      int pad = 0;
+      Rectangle rv0 = GraphicsUtil.getTextBounds(g, FONT, vStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+      if (rv0.height > FONT_HEIGHT_ADJUST)
+        rv0.height -= FONT_HEIGHT_ADJUST;
+      Rectangle rl0 = (lStr0 != null) ?
+          GraphicsUtil.getTextBounds(g, SMALL, lStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          : new Rectangle(0, 0, 0, 0);
+      if (rl0.height > SMALL_HEIGHT_ADJUST)
+        rl0.height -= SMALL_HEIGHT_ADJUST;
+
+      Rectangle rv1 = (vStr1 != null) ?
+          GraphicsUtil.getTextBounds(g, FONT, vStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          : new Rectangle(0, 0, 0, 0);
+      if (rv1.height > FONT_HEIGHT_ADJUST)
+        rv1.height -= FONT_HEIGHT_ADJUST;
+      Rectangle rl1 = (lStr1 != null) ?
+          GraphicsUtil.getTextBounds(g, SMALL, lStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          : new Rectangle(0, 0, 0, 0);
+      if (rl1.height > SMALL_HEIGHT_ADJUST)
+        rl1.height -= SMALL_HEIGHT_ADJUST;
+
+      int w0 = Math.max(rv0.width, rl0.width);
+      int w1 = Math.max(rv1.width, rl1.width);
+      if (w1 > 0)
+        w0 = w1 = Math.max(w0, w1); // visually, equal size looks nicer?
+
+      int lmargin = 4; // margin around entire box
+      int rmargin = 4; // margin around entire box
+      int tmargin = 2; // margin around entire box
+      int bmargin = 0; // margin around entire box
+      int mid = w1 > 0 ? 9 : 0; // gap between left and right sides
+      int w = lmargin + w0 + mid + w1 + rmargin; // total width
+
+      int pad = 0; // extra left and right space
       if (w < 45) {
         pad = (45 - w) / 2;
         w = 45;
       }
-      int h = fm.getAscent() + fm.getDescent() + 2*margin;
+
+      int h = tmargin + Math.max(rv0.height, rv1.height) + bmargin; // total height
+      if (lStr0 != null) {
+        h += Math.max(rl0.height, rl1.height);
+      }
 
       Rectangle r = canvas.getViewableRect();
       int dx = Math.max(0, w - (r.x + r.width - x));
       int dxx1 = (dx > w/2) ? -30 : 15; // offset of callout stem
       int dxx2 = (dx > w/2) ? -15 : 30; // offset of callout stem
+      // The point of the stem seems to go about 1 or 2 pixels
+      // past the specified point, because of bevels. So
+      // adjust the point towards the box.
+      int cxx = (dxx1 < 0) ? -2 : 2;
+      int xx, yy;
+      int xp[], yp[];
       if (y - 15 - h <= r.y) {
         // callout below cursor
-        int xx = x - dx, yy = y + 15 + h; // bottom left corner of box
-        int[] xp = { xx, xx,   x+dxx1, x, x+dxx2, xx+w, x+w };
-        int[] yp = { yy, yy-h, yy-h,   y, yy-h,   yy-h, yy  };
-        g.fillPolygon(xp, yp, xp.length);
-        g.setColor(Color.BLACK);
-        g.drawPolygon(xp, yp, xp.length);
-        g.drawString(vStr, xx + margin + pad, yy - margin - fm.getDescent());
+        int cyy = 1;
+        xx = x - dx; yy = y + 15 + h; // bottom left corner of box
+        xp = new int[] { xx, xx,   x+dxx1, x+cxx, x+dxx2, xx+w, x+w };
+        yp = new int[] { yy, yy-h, yy-h,   y+cyy, yy-h,   yy-h, yy  };
       } else {
         // callout above cursor
-        int xx = x - dx, yy = y - 15; // bottom left corner of box
-        int[] xp = { xx, xx,   xx+w, xx+w, x+dxx2, x, x+dxx1 };
-        int[] yp = { yy, yy-h, yy-h, yy,   yy,    y, yy    };
-        g.fillPolygon(xp, yp, xp.length);
+        int cyy = -1;
+        xx = x - dx; yy = y - 15; // bottom left corner of box
+        xp = new int[] { xx, xx,   xx+w, xx+w, x+dxx2, x+cxx, x+dxx1 };
+        yp = new int[] { yy, yy-h, yy-h, yy,   yy,     y+cyy, yy    };
+      }
+
+      g.setColor(caretColor);
+      g.fillPolygon(xp, yp, xp.length);
+      g.setColor(Color.BLACK);
+      g.drawPolygon(xp, yp, xp.length);
+
+      if (vStr1 != null) {
+        g.setColor(Color.GRAY);
+        g.drawLine(
+            xx + lmargin + pad + w0 + mid/2, yy - h + Math.max(tmargin, bmargin) + 1,
+            xx + lmargin + pad + w0 + mid/2, yy - Math.max(tmargin, bmargin) - 1);
+        
         g.setColor(Color.BLACK);
-        g.drawPolygon(xp, yp, xp.length);
-        g.drawString(vStr, xx + margin + pad, yy - margin - fm.getDescent());
+        GraphicsUtil.drawText(g, FONT, vStr1, 
+            xx + w - rmargin - pad - w1/2,
+            yy - h + tmargin + rv0.height,
+            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+        GraphicsUtil.drawText(g, SMALL, lStr1, 
+            xx + w - rmargin - pad - w1/2,
+            yy - bmargin,
+            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+      }
+
+      GraphicsUtil.drawText(g, FONT, vStr0, 
+          xx + pad + lmargin + w0/2,
+          yy - h + tmargin + rv0.height,
+          GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+      if (lStr0 != null) {
+        GraphicsUtil.drawText(g, SMALL, lStr0, 
+            xx + pad + lmargin + w0/2,
+            yy - bmargin,
+            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
       }
     }
   }
@@ -269,10 +433,12 @@ public final class PokeTool extends Tool {
     int y = e.getY();
     Location loc = Location.create(x, y);
     boolean dirty = false;
-    canvas.setHighlightedWires(WireSet.EMPTY);
     if (pokeCaret != null && !pokeCaret.getBounds(g).contains(loc)) {
+      canvas.setHighlightedWires(WireSet.EMPTY);
       dirty = true;
       removeCaret(true);
+    } else if (!(pokeCaret instanceof WireCaret)) {
+      canvas.setHighlightedWires(WireSet.EMPTY);
     }
     if (pokeCaret == null) {
       ComponentUserEvent event = new ComponentUserEvent(canvas, x, y);
