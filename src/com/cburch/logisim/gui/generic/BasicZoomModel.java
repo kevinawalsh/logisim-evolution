@@ -46,7 +46,7 @@ public class BasicZoomModel implements ZoomModel {
       PrefMonitor<Double> zoomPref, double[] zoomOpts) {
     zoomOptions = zoomOpts;
     support = new PropertyChangeSupport(this);
-    zoomFactor = 1.0;
+    zoomFactor = apply(1.0);
     showGrid = true;
 
     setZoomFactor(zoomPref.get());
@@ -83,10 +83,53 @@ public class BasicZoomModel implements ZoomModel {
 
   public void setZoomFactor(double value) {
     double oldValue = zoomFactor;
+    value = apply(value);
     if (value != oldValue) {
       zoomFactor = value;
       support.firePropertyChange(ZoomModel.ZOOM,
           Double.valueOf(oldValue), Double.valueOf(value));
     }
   }
+
+  // my 39 favorite zoom amounts... fractions 0.2 <= a/b <= 8.0,
+  // with integers a and b, and b in {1, 2, 3, 4, 5, 6, 8}.
+  private static final double targets[] = {
+    1/5.0, 1/4.0, 1/3.0, 3/8.0, 2/5.0, 1/2.0, 3/5.0,
+    5/8.0, 2/3.0, 3/4.0, 4/5.0, 5/6.0, 7/8.0, 1/1.0,
+    9/8.0, 7/6.0, 6/5.0, 5/4.0, 4/3.0, 7/5.0, 3/2.0,
+    8/5.0, 5/3.0, 7/4.0, 9/5.0, 2/1.0, 9/4.0, 7/3.0,
+    5/2.0, 8/3.0, 3/1.0, 10/3.0, 7/2.0, 4/1.0, 9/2.0,
+    5/1.0, 6/1.0, 7/1.0, 8/1.0,
+  };
+
+  private final double snap = 0.005; // 0.5% window
+  private final double release = snap*1.5;
+  private int latched = -1;
+
+  double apply(double z) {
+    double lnz = Math.log(z);
+    int best = -1;
+    double bestD = Double.MAX_VALUE;
+    for (int i = 0; i < targets.length; i++) {
+      double d = Math.abs(lnz - Math.log(targets[i])); // relative diff
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    double tol = (latched == best ? release : snap);
+    if (bestD <= tol) {
+      latched = best;
+      return targets[best];
+    }
+    if (latched >= 0) {
+      // stay snapped until we exit release window
+      double dLatched = Math.abs(lnz - Math.log(targets[latched]));
+      if (dLatched <= release)
+        return targets[latched];
+      latched = -1;
+    }
+    return z; // no snap
+  }
+
 }

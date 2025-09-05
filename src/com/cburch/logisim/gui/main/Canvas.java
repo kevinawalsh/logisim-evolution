@@ -1122,8 +1122,8 @@ public class Canvas extends JPanel
     ZoomModel zoomModel = proj.getFrame().getZoomModel();
     double zoom = zoomModel.getZoomFactor();
     while ((v.width < r.width+40 || v.height < r.height) && zoom > 0.2) {
-      zoom = Math.max(0.2, zoom - 0.1);
-      zoomModel.setZoomFactor(zoom);
+      zoomModel.setZoomFactor(Math.max(0.2, zoom - 0.1));
+      zoom = zoomModel.getZoomFactor();
       v = getViewableRect();
     }
     if (v.contains(r))

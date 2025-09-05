@@ -47,7 +47,7 @@ public class GridPainter {
       String prop = event.getPropertyName();
       Object val = event.getNewValue();
       if (prop.equals(ZoomModel.ZOOM)) {
-        setZoomFactor(((Double) val).doubleValue());
+        changedZoomFactor(((Double) val).doubleValue());
         destination.repaint();
       } else if (prop.equals(ZoomModel.SHOW_GRID)) {
         setShowGrid(((Boolean) val).booleanValue());
@@ -192,7 +192,7 @@ public class GridPainter {
     }
   }
 
-  public void setZoomFactor(double value) {
+  private void changedZoomFactor(double value) {
     double oldValue = zoomFactor;
     if (oldValue != value) {
       zoomFactor = value;
@@ -218,7 +218,7 @@ public class GridPainter {
         model.addPropertyChangeListener(ZoomModel.SHOW_GRID, listener);
       }
       setShowGrid(model.getShowGrid());
-      setZoomFactor(model.getZoomFactor());
+      changedZoomFactor(model.getZoomFactor());
       destination.repaint();
     }
   }
