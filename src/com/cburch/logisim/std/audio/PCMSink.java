@@ -47,7 +47,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -64,10 +63,6 @@ public class PCMSink extends InstanceFactory {
   static final AttributeOption RATE_64KHZ = new AttributeOption("64 kHz", S.unlocalized("64 kHz"));
   static final Attribute<AttributeOption> ATTR_RATE = Attributes.forOption(
       "rate", S.getter("audioSampleRate"), new AttributeOption[] { RATE_16KHZ, RATE_32KHZ, RATE_64KHZ });
-
-  public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
-  public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
-  public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
 
   static Attribute<Integer> ATTR_BUFSIZE = Attributes.forIntegerRange("bufsize", S.getter("audioBufferCapacity"), 16, 16*1024);
 
@@ -96,9 +91,9 @@ public class PCMSink extends InstanceFactory {
   public AttributeSet createAttributeSet() {
     // We defer init to here, so that output stream is only initialized when being used
     setAttributes(new Attribute[] {
-      StdAttr.EDGE_TRIGGER, ATTR_RATE, StdAttr.WIDTH, MODE_ATTR, ATTR_BUFSIZE },
+      StdAttr.EDGE_TRIGGER, ATTR_RATE, StdAttr.WIDTH, StdAttr.MODE, ATTR_BUFSIZE },
         new Object[] {
-          StdAttr.TRIG_FALLING, RATE_32KHZ, BitWidth.EIGHT, UNSIGNED_OPTION, Integer.valueOf(512) });
+          StdAttr.TRIG_FALLING, RATE_32KHZ, BitWidth.EIGHT, StdAttr.UNSIGNED_OPTION, Integer.valueOf(512) });
     // FIXME: change to TRIG_RISING
     return super.createAttributeSet();
   }
@@ -224,7 +219,7 @@ public class PCMSink extends InstanceFactory {
       int b = circState.getAttributeValue(ATTR_BUFSIZE);
       int s = circState.getAttributeValue(StdAttr.WIDTH).getWidth();
       AttributeOption r = circState.getAttributeValue(ATTR_RATE);
-      boolean g = circState.getAttributeValue(MODE_ATTR) == SIGNED_OPTION;
+      boolean g = circState.getAttributeValue(StdAttr.MODE) == StdAttr.SIGNED_OPTION;
       init(b, s, r, g);
     }
 
@@ -259,7 +254,7 @@ public class PCMSink extends InstanceFactory {
       int b = circState.getAttributeValue(ATTR_BUFSIZE);
       int s = circState.getAttributeValue(StdAttr.WIDTH).getWidth();
       AttributeOption r = circState.getAttributeValue(ATTR_RATE);
-      boolean g = circState.getAttributeValue(MODE_ATTR) == SIGNED_OPTION;
+      boolean g = circState.getAttributeValue(StdAttr.MODE) == StdAttr.SIGNED_OPTION;
       if (r == rateOption && b == buflen && s == bitsPerSample && g == signed)
         return;
       if (out != null) {

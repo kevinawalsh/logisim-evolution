@@ -87,4 +87,12 @@ public class StdAttr {
       .forOption("appearance", S.getter("stdAppearanceAttr"),
           new AttributeOption[] { APPEAR_CLASSIC, APPEAR_FPGA });
 
+  public static final AttributeOption SIGNED_OPTION = new AttributeOption(
+      "twosComplement", "twosComplement", S.getter("twosComplementOption"));
+  public static final AttributeOption UNSIGNED_OPTION = new AttributeOption(
+      "unsigned", "unsigned", S.getter("unsignedOption"));
+  public static final Attribute<AttributeOption> MODE = Attributes
+      .forOption("mode", S.getter("comparatorType"),
+          new AttributeOption[] { SIGNED_OPTION, UNSIGNED_OPTION });
+
 }

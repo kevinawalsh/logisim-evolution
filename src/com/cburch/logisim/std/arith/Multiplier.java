@@ -53,10 +53,6 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class Multiplier extends InstanceFactory {
 
-  public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
-  public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
-  public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
-
   static long extend(int w, int v, boolean unsigned) {
     long mask = (1L << w) - 1;
     if (unsigned) return v & mask;
@@ -153,8 +149,8 @@ public class Multiplier extends InstanceFactory {
 
   public Multiplier() {
     super("Multiplier", S.getter("multiplierComponent"));
-    setAttributes(new Attribute[] { StdAttr.WIDTH, MODE_ATTR },
-        new Object[] { BitWidth.create(8), SIGNED_OPTION });
+    setAttributes(new Attribute[] { StdAttr.WIDTH, StdAttr.MODE },
+        new Object[] { BitWidth.create(8), StdAttr.SIGNED_OPTION });
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
     setOffsetBounds(Bounds.create(-40, -20, 40, 40));
     setIconName("multiplier.gif");
@@ -207,7 +203,7 @@ public class Multiplier extends InstanceFactory {
   public void propagate(InstanceState state) {
     // get attributes
     BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
-    boolean unsigned = state.getAttributeValue(MODE_ATTR).equals(UNSIGNED_OPTION);
+    boolean unsigned = state.getAttributeValue(StdAttr.MODE).equals(StdAttr.UNSIGNED_OPTION);
 
     // compute outputs
     Value a = state.getPortValue(IN0);

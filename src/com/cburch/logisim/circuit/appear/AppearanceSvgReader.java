@@ -46,6 +46,7 @@ import com.cburch.logisim.file.XmlReader;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.std.io.HexDigitShape;
 import com.cburch.logisim.std.io.LedShape;
+import com.cburch.logisim.std.io.MeterShape;
 import com.cburch.logisim.std.io.RGBLedShape;
 import com.cburch.logisim.std.io.SevenSegmentShape;
 import com.cburch.logisim.std.memory.CounterShape;
@@ -104,6 +105,8 @@ public class AppearanceSvgReader {
         shape = new RegisterShape(x, y, path);
       } else if (name.equals("visible-counter")) {
         shape = new CounterShape(x, y, path);
+      } else if (name.equals("visible-meter")) {
+        shape = new MeterShape(x, y, path);
       } else {
         return null;
       }

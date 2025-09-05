@@ -37,7 +37,6 @@ import java.awt.event.MouseEvent;
 
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -49,7 +48,7 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
-import com.cburch.logisim.std.arith.Comparator;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
@@ -155,9 +154,6 @@ public class Joystick extends InstanceFactory {
     g.drawOval(x1 - 4, y1 - 4, 8, 8);
   }
 
-  public static final AttributeOption SIGNED_OPTION = Comparator.SIGNED_OPTION;
-  public static final AttributeOption UNSIGNED_OPTION = Comparator.UNSIGNED_OPTION;
-  public static final Attribute<AttributeOption> MODE_ATTR = Comparator.MODE_ATTRIBUTE;
   public static final Attribute<Boolean> RETURN_TO_CENTER
       = Attributes.forBoolean("returnToCenter", S.getter("returnToCenter"));
   static final Attribute<BitWidth> ATTR_WIDTH
@@ -165,8 +161,8 @@ public class Joystick extends InstanceFactory {
 
   public Joystick() {
     super("Joystick", S.getter("joystickComponent"));
-    setAttributes(new Attribute[] { ATTR_WIDTH, MODE_ATTR, RETURN_TO_CENTER, Io.ATTR_COLOR },
-        new Object[] { BitWidth.create(4), UNSIGNED_OPTION, true, Color.RED });
+    setAttributes(new Attribute[] { ATTR_WIDTH, StdAttr.MODE, RETURN_TO_CENTER, Io.ATTR_COLOR },
+        new Object[] { BitWidth.create(4), StdAttr.UNSIGNED_OPTION, true, Color.RED });
     setKeyConfigurator(new BitWidthConfigurator(ATTR_WIDTH, 2, 5));
     setOffsetBounds(Bounds.create(-30, -10, 30, 30));
     setIconName("joystick.gif");
@@ -219,7 +215,7 @@ public class Joystick extends InstanceFactory {
     int max = (1 << bits.getWidth()) - 1;
     int xout = (xpos + 15) * max / 31 + 1;
     int yout = (ypos + 15) * max / 31 + 1;
-    if (state.getAttributeValue(MODE_ATTR) == SIGNED_OPTION) {
+    if (state.getAttributeValue(StdAttr.MODE) == StdAttr.SIGNED_OPTION) {
       xout -= (max+1)/2;
       yout -= (max+1)/2;
     }

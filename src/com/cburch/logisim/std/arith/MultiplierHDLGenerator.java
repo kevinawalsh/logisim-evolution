@@ -32,6 +32,7 @@ package com.cburch.logisim.std.arith;
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.instance.StdAttr;
 
 public class MultiplierHDLGenerator extends HDLGenerator {
 
@@ -77,7 +78,7 @@ public class MultiplierHDLGenerator extends HDLGenerator {
   }
 
   protected static boolean uMode(AttributeSet attrs) {
-    return attrs.getValue(Multiplier.MODE_ATTR) == Multiplier.UNSIGNED_OPTION;
+    return attrs.getValue(StdAttr.MODE) == StdAttr.UNSIGNED_OPTION;
   }
 
 }

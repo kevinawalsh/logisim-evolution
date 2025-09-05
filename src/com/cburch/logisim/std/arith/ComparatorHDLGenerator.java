@@ -31,6 +31,7 @@ package com.cburch.logisim.std.arith;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.instance.StdAttr;
 
 public class ComparatorHDLGenerator extends HDLGenerator {
 
@@ -94,7 +95,7 @@ public class ComparatorHDLGenerator extends HDLGenerator {
   }
 
   protected boolean uMode() {
-    return _attrs.getValue(Comparator.MODE_ATTRIBUTE) == Comparator.UNSIGNED_OPTION;
+    return _attrs.getValue(StdAttr.MODE) == StdAttr.UNSIGNED_OPTION;
   }
 
 }

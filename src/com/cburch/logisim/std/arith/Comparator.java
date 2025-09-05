@@ -48,14 +48,10 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 
 public class Comparator extends InstanceFactory {
-  public static final AttributeOption SIGNED_OPTION = new AttributeOption(
-      "twosComplement", "twosComplement",
-      S.getter("twosComplementOption"));
-  public static final AttributeOption UNSIGNED_OPTION = new AttributeOption(
-      "unsigned", "unsigned", S.getter("unsignedOption"));
-  public static final Attribute<AttributeOption> MODE_ATTRIBUTE = Attributes
-      .forOption("mode", S.getter("comparatorType"),
-          new AttributeOption[] { SIGNED_OPTION, UNSIGNED_OPTION });
+  // public attribs preserved for backwards compatability with jar extensions
+  public static final AttributeOption SIGNED_OPTION = StdAttr.SIGNED_OPTION;
+  public static final AttributeOption UNSIGNED_OPTION = StdAttr.UNSIGNED_OPTION;
+  public static final Attribute<AttributeOption> MODE_ATTRIBUTE = StdAttr.MODE;
 
   static final int IN0 = 0;
   static final int IN1 = 1;

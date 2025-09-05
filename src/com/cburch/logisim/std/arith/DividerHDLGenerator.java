@@ -33,6 +33,7 @@ import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.instance.StdAttr;
 
 public class DividerHDLGenerator extends HDLGenerator {
 
@@ -76,7 +77,7 @@ public class DividerHDLGenerator extends HDLGenerator {
   }
 
   protected static boolean uMode(AttributeSet attrs) {
-    return attrs.getValue(Divider.MODE_ATTR) == Divider.UNSIGNED_OPTION;
+    return attrs.getValue(StdAttr.MODE) == StdAttr.UNSIGNED_OPTION;
   }
 
   @Override
