@@ -91,6 +91,8 @@ public class Io extends Library {
         "slideshow.gif", "Slideshow"),
     new FactoryDescription("Meter", S.getter("meterComponent"),
         "meter.png", "Meter"),
+    new FactoryDescription("Slider", S.getter("sliderComponent"),
+        "slider.png", "Slider"),
   };
 
   private List<Tool> tools = null;

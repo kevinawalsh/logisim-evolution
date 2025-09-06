@@ -82,6 +82,11 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
   }
 
   private static final Color DEFAULT_DIAL_COLOR = new Color(226, 214, 182);
+  private static final Color NEAR_MAX_COLORS[] = {
+    new Color(0xC6,0x00,0x00), // dark red
+    new Color(0xFF,0xAA,0x00), // orange
+    new Color(0x00,0xA9,0x9B), // vivid teal
+  };
 
   static final AttributeOption SHAPE_BAR = new AttributeOption("bar",
       S.getter("ioMeterBar"));
@@ -174,7 +179,8 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     ((Graphics2D)g).draw(new Line2D.Double(x1, y1, x2, y2));
   }
 
-  private static void drawBarTick(Graphics g, int x, int y,
+  /* also used by Slider */
+  static void drawBarTick(Graphics g, int x, int y,
       /*long*/double val, long min, long max,
       int a, int b, Color color, double a0, double aR, boolean upright) {
 
@@ -200,7 +206,6 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     paintMeter(g, data, bds, painter.getAttributeSet(), colorized, showState, 2, Color.BLACK);
 
     g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
-
     painter.drawLabel();
     painter.drawPorts();
 
@@ -214,23 +219,9 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     AttributeOption shape = attrs.getValue(ATTR_SHAPE);
     Direction facing = attrs.getValue(StdAttr.FACING);
     Color dialColor = attrs.getValue(Io.ATTR_COLOR);
-
     Value value = (data == null ? null : ((Value) data.getValue()));
-    int intval = value == null || !value.isFullyDefined() ?
-        0 : value.toIntValue();
-    long val, min, max;
-    if (mode == StdAttr.UNSIGNED_OPTION) {
-      val = (long)intval & 0x00000000ffffffffL;
-      min = 0L;
-      max = (1L << bits.getWidth()) - 1L;
-    } else {
-      if (bits.getWidth() == 32 || (intval & (1 << (bits.getWidth()-1))) == 0)
-        val = intval;
-      else
-        val = -(long)((~intval & bits.getMask()) + 1L);
-      min = -(1L << bits.getWidth() - 1);
-      max = (1L << bits.getWidth() - 1) - 1L;
-    }
+
+    RangedValue pt = new RangedValue(value, bits, mode);
 
     int x = bds.getX();
     int y = bds.getY();
@@ -270,25 +261,25 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
       double a0 = (shape == SHAPE_DIAL ? 225 : upright ? 135 : -45);
       double aR = (shape == SHAPE_DIAL ? -270 : upright ? -90 : 90);
 
-      if (bits.getWidth() <= 3) {
-        for (long v = min; v <= max; v++) {
+      if (pt.bits <= 3) {
+        for (long v = pt.min; v <= pt.max; v++) {
           boolean big = (mode != StdAttr.SIGNED_OPTION ?
-              v > min && v >= max-1
-              : ((v > 0 && v >= max-1) || (v < 0 && v <= min+1)));
-          drawDialTick(g, cx, cy, (double)v, min, max, r-3, r,
+              v > pt.min && v >= pt.max-1
+              : ((v > 0 && v >= pt.max-1) || (v < 0 && v <= pt.min+1)));
+          drawDialTick(g, cx, cy, (double)v, pt.min, pt.max, r-3, r,
               big ? maxColor : tickColor, a0, aR);
         }
       } else {
         for (int i = 0; i < 8; i++) {
           boolean big = (mode != StdAttr.SIGNED_OPTION ?
               i >= 6 : (i <= 1 || i >= 6));
-          drawDialTick(g, cx, cy, min + i*(max-min)/7.0, min, max, r-3, r,
+          drawDialTick(g, cx, cy, pt.min + i*(pt.max-pt.min)/7.0, pt.min, pt.max, r-3, r,
               big ? maxColor : tickColor, a0, aR);
         }
       }
       GraphicsUtil.switchToWidth(g, 2);
       double kerf = (aR > 0 ? 0.6 : -0.6);
-      if (mode == StdAttr.UNSIGNED_OPTION) {
+      if (!pt.signed) {
         double aMax = a0 + aR - kerf;
         double aSpan = 1.25/7.0 * aR;
         g.setColor(maxColor);
@@ -303,7 +294,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
       }
       GraphicsUtil.switchToWidth(g, 1);
       if (showState)
-        drawDialTick(g, cx, cy, (double)val, min, max, 0, r,
+        drawDialTick(g, cx, cy, (double)pt.val, pt.min, pt.max, 0, r,
             pinColor, a0, aR);
 
     } else { // SHAPE_BAR
@@ -313,24 +304,24 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
       int aR = (upright ? h-6 : w-6);
 
       GraphicsUtil.switchToWidth(g, 1);
-      if (bits.getWidth() <= 3) {
-        for (long v = min; v <= max; v++) {
+      if (pt.bits <= 3) {
+        for (long v = pt.min; v <= pt.max; v++) {
           boolean big = (mode != StdAttr.SIGNED_OPTION ?
-              v > min && v >= max-1
-              : ((v > 0 && v >= max-1) || (v < 0 && v <= min+1)));
-          drawBarTick(g, x, y+h, (double)v, min, max, r-4, r-1,
+              v > pt.min && v >= pt.max-1
+              : ((v > 0 && v >= pt.max-1) || (v < 0 && v <= pt.min+1)));
+          drawBarTick(g, x, y+h, (double)v, pt.min, pt.max, r-4, r-1,
               big ? maxColor : tickColor, a0, aR, upright);
         }
       } else {
         for (int i = 0; i < 8; i++) {
           boolean big = (mode != StdAttr.SIGNED_OPTION ?
               i >= 6 : (i <= 1 || i >= 6));
-          drawBarTick(g, x, y+h, min + i*(max-min)/7.0, min, max, r-4, r-1,
+          drawBarTick(g, x, y+h, pt.min + i*(pt.max-pt.min)/7.0, pt.min, pt.max, r-4, r-1,
               big ? maxColor : tickColor, a0, aR, upright);
         }
       }
       GraphicsUtil.switchToWidth(g, 2);
-      if (mode == StdAttr.UNSIGNED_OPTION) {
+      if (!pt.signed) {
         double aLo = a0 + 5.5/7.0 * aR;
         double aHi = a0 + 1.0 * aR - 0.5;
         g.setColor(maxColor);
@@ -355,7 +346,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
 
       GraphicsUtil.switchToWidth(g, 1);
       if (showState)
-        drawBarTick(g, x, y+h, (double)val, min, max, 4, r, pinColor, a0, aR, upright);
+        drawBarTick(g, x, y+h, (double)pt.val, pt.min, pt.max, 4, r, pinColor, a0, aR, upright);
     
     }
   }
@@ -396,31 +387,59 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     return new Color(rr, gg, bb, alpha);
   }
 
+  /* also used by Slider */
   static Color pickNeedle(Color dial) {
     return contrast(dial, Color.BLACK) >= contrast(dial, Color.WHITE) ?
         Color.BLACK : Color.WHITE;
   }
 
+  /* also used by Slider */
   static Color pickTicks(Color dial, Color needle) {
     return mix(needle, dial, 0.70, 200);
   }
 
   static Color pickNearMax(Color dial) {
-    Color[] palette = {
-      new Color(0xC6,0x00,0x00), // dark red
-      new Color(0xFF,0xAA,0x00), // orange
-      new Color(0x00,0xA9,0x9B), // vivid teal
-    };
+    return pickContrasting(dial, NEAR_MAX_COLORS);
+  }
+
+  /* also used by Slider */
+  static Color pickContrasting(Color bg, Color[] palette) {
     Color best = palette[0];
-    double bestC = contrast(dial, best);
+    double bestC = contrast(bg, best);
     for (int i = 1; i < palette.length; i++){
-      double c = contrast(dial, palette[i]);
+      double c = contrast(bg, palette[i]);
       if (c > bestC) {
         best = palette[i];
         bestC = c;
       }
     }
     return best;
+  }
+
+  /* also used by Slider */
+  static class RangedValue {
+    final boolean signed;
+    final int bits;
+    final long val, min, max;
+
+    RangedValue(Value value, BitWidth bw, AttributeOption mode) {
+      signed = (mode != StdAttr.UNSIGNED_OPTION);
+      bits = bw.getWidth();
+      int intval = value == null || !value.isFullyDefined() ?
+          0 : value.toIntValue();
+      if (!signed) {
+        val = (long)intval & 0x00000000ffffffffL;
+        min = 0L;
+        max = (1L << bits) - 1L;
+      } else {
+        if (bits == 32 || (intval & (1 << (bits-1))) == 0)
+          val = intval;
+        else
+          val = -(long)((~intval & bw.getMask()) + 1L);
+        min = -(1L << bits - 1);
+        max = (1L << bits - 1) - 1L;
+      }
+    }
   }
 
 }
