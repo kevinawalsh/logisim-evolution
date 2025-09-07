@@ -32,16 +32,18 @@ package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.FontMetrics;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 
-import com.cburch.logisim.comp.TextField;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -49,15 +51,37 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.StringUtil;
 
 public class Tunnel extends InstanceFactory {
   public static final Tunnel FACTORY = new Tunnel();
 
-  static final int MARGIN = 3;
-  static final int ARROW_MARGIN = 5;
-  static final int ARROW_DEPTH = 4;
-  static final int ARROW_MIN_WIDTH = 16;
-  static final int ARROW_MAX_WIDTH = 20;
+  static final int TEXT_MARGIN = 3; // average space around text (unevenly distributed)
+  static final int ARROW_DEPTH = 4; // point to text-box distance
+  static final int ARROW_MARGIN = 5; // point to label distancee
+  static final int ARROW_MIN_WIDTH = 16; // e.g. 16 wide upward facing even for short label
+  static final int ARROW_MAX_WIDTH = 20; // e.g. 20 wide upward facing even for long label
+  
+  // We enforce that the label bounding box is at least NxN,
+  // so that with the added margin, there's enough room for
+  // a minimum-width arrow to attach to it cleanly.
+  static final int MIN_TEXTBOX_DIMENSION = ARROW_MIN_WIDTH - 2 * TEXT_MARGIN;
+
+  //  |<--->|  arrow depth
+  //  |<------>| arrow margin
+  //       .------------------------------.
+  //      / |                             | margin 3
+  //     /  |  +--------------------+     |
+  //    /   |  |     WEST-FACING    |     |
+  //   /    |  |                    |     |
+  //  o     |  x=anchor             |     | label height
+  //   \    |  |                    |     |
+  //    \   |  |       LABEL        |     |
+  //     \  |  +--------------------+     |
+  //      \ |                             | margin 3
+  //       '------------------------------'
+  //        margin     label width    margin
+  //          1                         5
 
   public Tunnel() {
     super("Tunnel", S.getter("tunnelComponent"));
@@ -66,61 +90,15 @@ public class Tunnel extends InstanceFactory {
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
   }
 
-  private Bounds computeBounds(TunnelAttributes attrs, int textWidth,
-      int textHeight, Graphics g, String label) {
-    int x = attrs.getLabelX();
-    int y = attrs.getLabelY();
-    int halign = attrs.getLabelHAlign();
-    int valign = attrs.getLabelVAlign();
-
-    int minDim = ARROW_MIN_WIDTH - 2 * MARGIN;
-    int bw = Math.max(minDim, textWidth);
-    int bh = Math.max(minDim, textHeight);
-    int bx;
-    int by;
-    switch (halign) {
-    case TextField.H_LEFT:
-      bx = x;
-      break;
-    case TextField.H_RIGHT:
-      bx = x - bw;
-      break;
-    default:
-      bx = x - (bw / 2);
-    }
-    switch (valign) {
-    case TextField.V_TOP:
-      by = y;
-      break;
-    case TextField.V_BOTTOM:
-      by = y - bh;
-      break;
-    default:
-      by = y - (bh / 2);
-    }
-
-    if (g != null) {
-      GraphicsUtil.drawText(g, label, bx + bw / 2, by + bh / 2,
-          GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_OVERALL);
-    }
-
-    return Bounds.create(bx, by, bw, bh).expand(MARGIN).add(0, 0);
-  }
-
-  //
-  // private methods
-  //
   private void configureLabel(Instance instance) {
     TunnelAttributes attrs = (TunnelAttributes) instance.getAttributeSet();
     Location loc = instance.getLocation();
-    instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, loc.getX()
-        + attrs.getLabelX(), loc.getY() + attrs.getLabelY(),
+    instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT,
+        loc.getX() + attrs.getLabelAnchorXOffset(),
+        loc.getY() + attrs.getLabelAnchorYOffset(),
         attrs.getLabelHAlign(), attrs.getLabelVAlign());
   }
 
-  //
-  // methods for instances
-  //
   @Override
   protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
@@ -134,18 +112,68 @@ public class Tunnel extends InstanceFactory {
   }
 
   @Override
-  public Bounds getOffsetBounds(AttributeSet attrsBase) {
+  public Component createComponent(Location loc, AttributeSet attrs) {
+    // See same fix in std.base.Text
+    InstanceComponent ret = new InstanceComponent(this, loc, attrs) {
+      @Override
+      public boolean visiblyContains(Location pt, Graphics g) {
+        return getVisibleBounds(g).contains(pt);
+      }
+      @Override
+      public Bounds getVisibleBounds(Graphics g) {
+        return ((Tunnel)getFactory()).getTunnelVisibleBounds(getLocation(), getAttributeSet(), g);
+      }
+    };
+    configureNewInstance(ret.getInstance());
+    return ret;
+  }
+
+  private Bounds getTunnelVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
+    return getVisibleOffsetBounds(attrsBase, g).translate(loc);
+  }
+
+  @Override
+  public Bounds getOffsetBounds(AttributeSet attrsBase) { // nominal
+    // This is only an estimate.
+    // See same fix in std.base.Text  
     TunnelAttributes attrs = (TunnelAttributes) attrsBase;
-    Bounds bds = attrs.getOffsetBounds();
-    if (bds != null) {
-      return bds;
-    } else {
-      int ht = attrs.getFont().getSize();
-      int wd = ht * attrs.getLabel().length() / 2;
-      bds = computeBounds(attrs, wd, ht, null, "");
-      attrs.setOffsetBounds(bds);
-      return bds;
-    }
+
+    // find text nominal width and height
+    Font font = attrs.getFont();
+    String text = "ABC";
+    Bounds t = StringUtil.estimateAlignedBounds(text, font, 0, 0);
+
+    return getBoundsForTextbox(t.width, t.height, attrs.getFacing());
+  }
+
+  @Override
+  public Bounds getVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
+    // See same fix in std.base.Text  
+    TunnelAttributes attrs = (TunnelAttributes) attrsBase;
+
+    Font font = attrs.getFont();
+    String text = attrs.getLabel();
+    if (text == null || text.equals(""))
+      text = "";
+    Rectangle r = GraphicsUtil.getTextBounds(g, font, text, 0, 0, 0, 0);
+
+    return getBoundsForTextbox(r.width, r.height, attrs.getFacing());
+  }
+
+  private static Bounds getBoundsForTextbox(int tw, int th, Direction facing) {
+    int w = Math.max(MIN_TEXTBOX_DIMENSION, tw) + 2*TEXT_MARGIN;
+    int h = Math.max(MIN_TEXTBOX_DIMENSION, th) + 2*TEXT_MARGIN;
+
+    // add space for arrow, and for margins around text
+    int A = ARROW_MARGIN - ARROW_DEPTH;
+    if (facing == Direction.WEST)
+      return Bounds.create(0, -h/2, (A + w), h);
+    else if (facing == Direction.EAST)
+      return Bounds.create(-(w + A), -h/2, (w + A), h);
+    else if (facing == Direction.NORTH)
+      return Bounds.create(-w/2, 0, w, (A + h));
+    else // SOUTH
+      return Bounds.create(-w/2, -(h + A), w, (h + A));
   }
 
   @Override
@@ -157,26 +185,22 @@ public class Tunnel extends InstanceFactory {
       instance.recomputeBounds();
     }
   }
-
-  //
-  // graphics methods
-  //
+    
   @Override
   public void paintGhost(InstancePainter painter) {
+    
+    Graphics g = painter.getGraphics();
     TunnelAttributes attrs = (TunnelAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
     String label = attrs.getLabel();
-
-    Graphics g = painter.getGraphics();
-    g.setFont(attrs.getFont());
-    FontMetrics fm = g.getFontMetrics();
-    Bounds bds = computeBounds(attrs, fm.stringWidth(label), fm.getAscent()
-        + fm.getDescent(), g, label);
-    if (attrs.setOffsetBounds(bds)) {
-      Instance instance = painter.getInstance();
-      if (instance != null)
-        instance.recomputeBounds();
-    }
+     
+    int tx = attrs.getLabelAnchorXOffset();
+    int ty = attrs.getLabelAnchorYOffset();
+    int halign = attrs.getLabelHAlign();
+    int valign = attrs.getLabelVAlign();
+    GraphicsUtil.drawText(g, label, tx, ty, halign, valign);
+    
+    Bounds bds = getVisibleOffsetBounds(attrs, g);
 
     int x0 = bds.getX();
     int y0 = bds.getY();

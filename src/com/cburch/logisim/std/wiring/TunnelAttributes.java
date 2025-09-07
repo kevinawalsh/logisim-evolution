@@ -38,7 +38,6 @@ import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.BitWidth;
-import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
 
@@ -51,9 +50,8 @@ class TunnelAttributes extends AbstractAttributeSet {
   private BitWidth width;
   private String label;
   private Font labelFont;
-  private Bounds offsetBounds;
-  private int labelX;
-  private int labelY;
+  private int labelAnchorXOffset;
+  private int labelAnchorYOffset;
   private int labelHAlign;
   private int labelVAlign;
 
@@ -62,7 +60,6 @@ class TunnelAttributes extends AbstractAttributeSet {
     width = BitWidth.ONE;
     label = "";
     labelFont = StdAttr.DEFAULT_LABEL_FONT;
-    offsetBounds = null;
     configureLabel();
   }
 
@@ -94,8 +91,8 @@ class TunnelAttributes extends AbstractAttributeSet {
       halign = TextField.H_LEFT;
       valign = TextField.V_CENTER_OVERALL;
     }
-    labelX = x;
-    labelY = y;
+    labelAnchorXOffset = x;
+    labelAnchorYOffset = y;
     labelHAlign = halign;
     labelVAlign = valign;
   }
@@ -122,25 +119,12 @@ class TunnelAttributes extends AbstractAttributeSet {
     return label;
   }
 
-  int getLabelHAlign() {
-    return labelHAlign;
-  }
 
-  int getLabelVAlign() {
-    return labelVAlign;
-  }
-
-  int getLabelX() {
-    return labelX;
-  }
-
-  int getLabelY() {
-    return labelY;
-  }
-
-  Bounds getOffsetBounds() {
-    return offsetBounds;
-  }
+  // label alignment and anchor relative to tunnel location origin
+  int getLabelHAlign() { return labelHAlign; }
+  int getLabelVAlign() { return labelVAlign; }
+  int getLabelAnchorXOffset() { return labelAnchorXOffset; }
+  int getLabelAnchorYOffset() { return labelAnchorYOffset; }
 
   @Override
   public <V> V getValue(Attribute<V> attr) {
@@ -155,15 +139,6 @@ class TunnelAttributes extends AbstractAttributeSet {
     return null;
   }
 
-  boolean setOffsetBounds(Bounds value) {
-    Bounds old = offsetBounds;
-    boolean same = old == null ? value == null : old.equals(value);
-    if (!same) {
-      offsetBounds = value;
-    }
-    return !same;
-  }
-
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == StdAttr.FACING) {
@@ -176,6 +151,5 @@ class TunnelAttributes extends AbstractAttributeSet {
     } else if (attr == StdAttr.LABEL_FONT) {
       labelFont = (Font) value;
     }
-    offsetBounds = null;
   }
 }

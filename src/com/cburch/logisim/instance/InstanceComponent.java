@@ -68,10 +68,11 @@ import com.cburch.logisim.util.UnmodifiableList;
 // different? Maybe some kind of java bytecode lazy loading optimization? For
 // now, I've marked these both as "final". If something breaks, maybe we'll find
 // out. 
-// Edit: InstanceComponent is no longer final, and now has one (anonymous)
-// subclass within std/base/Text. That class has some trouble with computing
-// Bounds (unlike all other components, it really needs a graphics context to
-// get the bounds), so it now has its own sublass of InstanceComponent.
+// Edit: InstanceComponent is no longer final, and now has an (anonymous)
+// subclass within std/base/Text and std/wiring/Tunnel. Those class has some
+// trouble with computing Bounds (unlike all other components, they really needs
+// a graphics context to get the bounds), so they now have their own sublass of
+// InstanceComponent.
 // 
 // So, to sum up:
 //
@@ -214,7 +215,7 @@ public /*final*/ class InstanceComponent
     return factory.nominallyContains(translated, instance.getAttributeSet());
   }
 
-  public boolean visiblyContains(Location pt, Graphics g) { // note: for Text, this is wrong/ 
+  public boolean visiblyContains(Location pt, Graphics g) { // note: Text and Tunnel override this
     InstanceTextField field = textField;
     if (field != null && field.getBounds(g).contains(pt))
       return true;
@@ -285,7 +286,7 @@ public /*final*/ class InstanceComponent
     return nominalBounds;
   }
 
-  public Bounds getVisibleBounds(Graphics g) { // note: for Text, this is wrong
+  public Bounds getVisibleBounds(Graphics g) { // note: Text and Tunnel override this
     Bounds ret = nominalBounds;
     InstanceTextField field = textField;
     if (field != null)

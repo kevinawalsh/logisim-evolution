@@ -184,7 +184,7 @@ public class Text extends InstanceFactory implements CustomHandles {
         // Note: textField.getBounds() would work here, if superclass provided
         // access. But for consistency, call the factory instead since the
         // factory must implement getOffsetBounds(attr, g) anyway.
-        return ((Text)getFactory()).getVisibleBounds(getLocation(), getAttributeSet(), g);
+        return ((Text)getFactory()).getTextVisibleBounds(getLocation(), getAttributeSet(), g);
       }
     };
     configureNewInstance(ret.getInstance());
@@ -228,7 +228,7 @@ public class Text extends InstanceFactory implements CustomHandles {
     return Bounds.create(r).expand(4);
   }
 
-  public Bounds getVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
+  private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
     return getVisibleOffsetBounds(attrsBase, g).translate(loc);
   }
 
@@ -258,7 +258,7 @@ public class Text extends InstanceFactory implements CustomHandles {
     Location loc = painter.getLocation();
     Graphics g = painter.getGraphics();
     if (border) {
-      Bounds bds = getVisibleBounds(loc, attrs, g);
+      Bounds bds = getTextVisibleBounds(loc, attrs, g);
       g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     }
     // Note: This next code is essentially identical to painter.drawLabel(),
@@ -281,7 +281,7 @@ public class Text extends InstanceFactory implements CustomHandles {
     Graphics g = context.getGraphics();
     g.setColor(Color.GRAY);
     InstancePainter painter = context.getInstancePainter();
-    Bounds bds = getVisibleBounds(painter.getLocation(), painter.getAttributeSet(), g);
+    Bounds bds = getTextVisibleBounds(painter.getLocation(), painter.getAttributeSet(), g);
     g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     painter.drawHandles();
   }
