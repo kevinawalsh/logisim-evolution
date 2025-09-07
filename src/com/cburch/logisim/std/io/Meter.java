@@ -380,6 +380,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     return (L1+0.05)/(L2+0.05);
   }
 
+  /* also used by Dial */
   static Color mix(Color a, Color b, double t, int alpha) {
     int rr = (int)Math.round(a.getRed()  *(1-t)+b.getRed()  *t);
     int gg = (int)Math.round(a.getGreen()*(1-t)+b.getGreen()*t);

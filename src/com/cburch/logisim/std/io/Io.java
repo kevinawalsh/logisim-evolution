@@ -93,6 +93,8 @@ public class Io extends Library {
         "meter.png", "Meter"),
     new FactoryDescription("Slider", S.getter("sliderComponent"),
         "slider.png", "Slider"),
+    new FactoryDescription("Dial", S.getter("dialComponent"),
+        "dial.png", "Dial"),
   };
 
   private List<Tool> tools = null;

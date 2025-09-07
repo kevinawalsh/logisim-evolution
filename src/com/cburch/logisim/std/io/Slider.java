@@ -56,6 +56,7 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.StringGetter;
 
 public class Slider extends InstanceFactory {
 
@@ -87,7 +88,7 @@ public class Slider extends InstanceFactory {
 
   }
 
-  public static class Poker extends InstancePoker {
+  public static class SliderPoker extends InstancePoker {
 
     @Override
     public void mouseDragged(InstanceState state, MouseEvent e) {
@@ -111,10 +112,10 @@ public class Slider extends InstanceFactory {
       State data = (State) state.getData();
       if (data == null) {
         data = new State(attrs);
-        data.setSliderPosition(t, attrs);
+        data.setPosition(t, attrs);
         state.setData(data);
       } else {
-        data.setSliderPosition(t, attrs);
+        data.setPosition(t, attrs);
       }
       state.getInstance().fireInvalidated();
     }
@@ -151,13 +152,18 @@ public class Slider extends InstanceFactory {
   public static final Attribute<Boolean> RETURN_TO_ZERO
       = Attributes.forBoolean("returnToZero", S.getter("returnToZero"));
 
-  private static final Color DEFAULT_SLIDER_COLOR = new Color(226, 214, 182);
-  private static final Color HANDLE_COLORS[] = {
+  protected static final Color DEFAULT_BACKGROUND_COLOR = new Color(226, 214, 182);
+  protected static final Color HANDLE_COLORS[] = {
     new Color(0x66,0xA9,0xA9), // metalic teal
     new Color(0x44,0x44,0xAF), // blue
     new Color(0x86,0x56,0x56), // red-gray
     new Color(0xFF,0xFF,0xCC), // light yellow
   };
+ 
+  /* used by Dial */
+  protected Slider(String name, StringGetter displayName) {
+    super(name, displayName);
+  }
 
   public Slider() {
     super("Slider", S.getter("sliderComponent"));
@@ -165,14 +171,14 @@ public class Slider extends InstanceFactory {
       StdAttr.FACING, Io.ATTR_COLOR, StdAttr.WIDTH, StdAttr.MODE, RETURN_TO_ZERO,
       StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
       new Object[] {
-        Direction.SOUTH, DEFAULT_SLIDER_COLOR,
+        Direction.SOUTH, DEFAULT_BACKGROUND_COLOR,
         BitWidth.create(8), StdAttr.UNSIGNED_OPTION, false,
         "", StdAttr.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
     setIconName("slider.png");
     setInstanceLogger(Logger.class);
-    setInstancePoker(Poker.class);
+    setInstancePoker(SliderPoker.class);
     setPorts(new Port[] { new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH) });
   }
 
@@ -195,7 +201,7 @@ public class Slider extends InstanceFactory {
       instance.computeLabelTextField(Instance.AVOID_RIGHT);
     } else if (attr == StdAttr.LABEL_LOC) {
       instance.computeLabelTextField(Instance.AVOID_RIGHT);
-    } else if (attr == StdAttr.MODE || attr == StdAttr.WIDTH || attr == RETURN_TO_ZERO) {
+    } else { // if (attr == StdAttr.MODE || attr == StdAttr.WIDTH || attr == RETURN_TO_ZERO) {
       instance.fireInvalidated();
     }
   }
@@ -298,7 +304,7 @@ public class Slider extends InstanceFactory {
         data = new State(attrs);
         painter.setData(data);
       }
-      double t = data == null ? 0.0 : data.getPosition();
+      double t = data.getPosition();
       GraphicsUtil.switchToWidth(g, 3);
       drawTick(g, x, y+h, t, ctr-5, ctr+5, pinColor.darker(), upright);
       GraphicsUtil.switchToWidth(g, 1);
@@ -323,7 +329,8 @@ public class Slider extends InstanceFactory {
     state.setPort(0, val, 1);
   }
 
-  private static class State implements InstanceData, Cloneable {
+  /* also used by Dial */
+  static class State implements InstanceData, Cloneable {
     private double pos; // [ 0 ... 1.0 ]
     private Value val;
 
@@ -375,7 +382,7 @@ public class Slider extends InstanceFactory {
     }
 
     // set pos, and use pos to recompute val
-    synchronized void setSliderPosition(double t, AttributeSet attrs) {
+    synchronized void setPosition(double t, AttributeSet attrs) {
       save(attrs);
       pos = Math.max(0.0, Math.min(t, 1.0));
       recomputeValue(attrs);
