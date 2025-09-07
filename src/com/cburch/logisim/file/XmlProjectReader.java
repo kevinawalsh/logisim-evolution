@@ -526,6 +526,25 @@ public class XmlProjectReader extends XmlReader {
       addBuiltinLibrariesIfMissing(doc, root, "#Audio");
       repairForImageAndCalloutComponents(doc, root);
     }
+
+    if (version.compareTo(LogisimVersion.get(5, 0, 5)) < 0) {
+      // As of version 5.0.5, Audio#PCMSink trigger defaults to TRIG_RISING, but
+      // earlier versions used TRIG_FALLING as default. So earlier files without
+      // explicit trigger attribute need TRIG_FALLING added.
+      String audioLibName = findLibNameByDesc(root, "#Audio");
+      if (audioLibName != null) {
+        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = compElt.getAttribute("lib");
+            String name = compElt.getAttribute("name");
+            if (lib == null || name == null || !lib.equals(audioLibName))
+              continue;
+            if (name.equals("PCMSink"))
+              setDefaultAttribute(doc, compElt, "trigger", "falling");
+          }
+        }
+      }
+    }
   }
 
   private void repairForImageAndCalloutComponents(Document doc, Element root) {

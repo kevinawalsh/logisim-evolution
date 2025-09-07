@@ -86,7 +86,7 @@ public class Main {
     }
   }
 
-  public static final LogisimVersion VERSION = LogisimVersion.get(5, 0, 4, "HC");
+  public static final LogisimVersion VERSION = LogisimVersion.get(5, 0, 5, "HC");
   public static final String VERSION_NAME = VERSION.toString();
   public static final int COPYRIGHT_YEAR = 2025;
 }

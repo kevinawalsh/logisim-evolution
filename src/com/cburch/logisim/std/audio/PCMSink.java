@@ -93,8 +93,7 @@ public class PCMSink extends InstanceFactory {
     setAttributes(new Attribute[] {
       StdAttr.EDGE_TRIGGER, ATTR_RATE, StdAttr.WIDTH, StdAttr.MODE, ATTR_BUFSIZE },
         new Object[] {
-          StdAttr.TRIG_FALLING, RATE_32KHZ, BitWidth.EIGHT, StdAttr.UNSIGNED_OPTION, Integer.valueOf(512) });
-    // FIXME: change to TRIG_RISING
+          StdAttr.TRIG_RISING, RATE_32KHZ, BitWidth.EIGHT, StdAttr.UNSIGNED_OPTION, Integer.valueOf(512) });
     return super.createAttributeSet();
   }
 
