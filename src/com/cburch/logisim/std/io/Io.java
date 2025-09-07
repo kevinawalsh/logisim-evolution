@@ -95,6 +95,8 @@ public class Io extends Library {
         "slider.png", "Slider"),
     new FactoryDescription("Dial", S.getter("dialComponent"),
         "dial.png", "Dial"),
+    new FactoryDescription("Scope", S.getter("scopeComponent"),
+        "scope.png", "Scope"),
   };
 
   private List<Tool> tools = null;
