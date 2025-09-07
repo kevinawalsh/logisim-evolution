@@ -243,7 +243,7 @@ public class Scope extends InstanceFactory {
       }, new Object[] {
         Color.GREEN, Color.GRAY,
             100, 60, 8*1024,
-            StdAttr.TRIG_FALLING, BitWidth.create(8), StdAttr.UNSIGNED_OPTION
+            StdAttr.TRIG_RISING, BitWidth.create(8), StdAttr.UNSIGNED_OPTION
       });
     setIconName("scope.png");
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
