@@ -212,6 +212,8 @@ public class Constant extends InstanceFactory {
       RadixOption r = instance.getAttributeValue(RadixOption.ATTRIBUTE);
       if (r != v.radix)
         instance.getAttributeSet().setAttr(RadixOption.ATTRIBUTE, v.radix);
+      if (v.radix == RadixOption.RADIX_10_SIGNED ||v.radix == RadixOption.RADIX_10_UNSIGNED)
+        instance.recomputeBounds();
       instance.fireInvalidated();
     }
   }
