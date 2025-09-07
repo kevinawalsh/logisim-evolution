@@ -125,17 +125,55 @@ public class BitExtender extends InstanceFactory {
   //
   // graphics methods
   //
+
+  private void paintBorder(InstancePainter painter) {
+    Graphics g = painter.getGraphics();
+    Bounds bds = painter.getNominalBounds();
+    int x = bds.x, y = bds.y;
+    int w = bds.width, h = bds.height;
+
+    BitWidth w0 = painter.getAttributeValue(ATTR_OUT_WIDTH);
+    BitWidth w1 = painter.getAttributeValue(ATTR_IN_WIDTH);
+
+    GraphicsUtil.switchToWidth(g, 2);
+    int xp[], yp[];
+    if (w0.getWidth() < w1.getWidth()) {
+      // truncate
+      xp = new int[] { x, x+w/2-2, x+w/2+2, x+w, x+w,   x };
+      yp = new int[] { y,       y,     y+4, y+4, y+h, y+h };
+    } else if (w0.getWidth() == w1.getWidth()) {
+      // nop
+      xp = new int[] { x, x+w/3-2, x+w/3+2, x+2*w/3-2, x+2*w/3+2, x+w, x+w,   x };
+      yp = new int[] { y,       y,     y+4,       y+4,         y,   y, y+h, y+h };
+    } else {
+      // extend
+      xp = new int[] {   x, x+w/2-2, x+w/2+2, x+w, x+w,   x };
+      yp = new int[] { y+4,     y+4,       y,   y, y+h, y+h };
+    }
+    g.drawPolygon(xp, yp, xp.length);
+  }
+
+  @Override
+  public void paintGhost(InstancePainter painter) {
+    paintBorder(painter);
+  }
+ 
   @Override
   public void paintInstance(InstancePainter painter) {
     Graphics g = painter.getGraphics();
     FontMetrics fm = g.getFontMetrics();
     int asc = fm.getAscent();
 
-    painter.drawBounds();
+    paintBorder(painter);
+
+    BitWidth w0 = painter.getAttributeValue(ATTR_OUT_WIDTH);
+    BitWidth w1 = painter.getAttributeValue(ATTR_IN_WIDTH);
 
     String s0;
     String type = getType(painter.getAttributeSet());
-    if (type.equals("zero"))
+    if (w0.getWidth() <= w1.getWidth())
+      s0 = ""; // truncate or nop
+    else if (type.equals("zero"))
       s0 = S.get("extenderZeroLabel");
     else if (type.equals("one"))
       s0 = S.get("extenderOneLabel");
@@ -145,7 +183,13 @@ public class BitExtender extends InstanceFactory {
       s0 = S.get("extenderInputLabel");
     else
       s0 = "???"; // should never happen
-    String s1 = S.get("extenderMainLabel");
+    String s1;
+    if (w0.getWidth() < w1.getWidth())
+      s1 = S.get("extenderTruncateLabel");
+    else if (w0.getWidth() <= w1.getWidth())
+      s1 = S.get("extenderNopLabel");
+    else 
+      s1 = S.get("extenderMainLabel");
     Bounds bds = painter.getNominalBounds();
     int x = bds.getX() + bds.getWidth() / 2;
     int y0 = bds.getY() + (bds.getHeight() / 2 + asc) / 2;
@@ -155,8 +199,6 @@ public class BitExtender extends InstanceFactory {
     GraphicsUtil.drawText(g, s1, x, y1, GraphicsUtil.H_CENTER,
         GraphicsUtil.V_BASELINE);
 
-    BitWidth w0 = painter.getAttributeValue(ATTR_OUT_WIDTH);
-    BitWidth w1 = painter.getAttributeValue(ATTR_IN_WIDTH);
     painter.drawPort(0, "" + w0.getWidth(), Direction.WEST);
     painter.drawPort(1, "" + w1.getWidth(), Direction.EAST);
     if (type.equals("input"))
