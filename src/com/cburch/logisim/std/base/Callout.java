@@ -32,16 +32,12 @@ package com.cburch.logisim.std.base;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.util.Collection;
 import java.util.Collections;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.comp.ComponentDrawContext;
-import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -50,11 +46,9 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.tools.CustomHandles;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.util.StringUtil;
 
 public class Callout extends Text implements Reshapable {
 
@@ -114,10 +108,9 @@ public class Callout extends Text implements Reshapable {
     int valign = attrs.getVerticalAlign();
     Graphics g = painter.getGraphics();
     Location loc = painter.getLocation();
-    // we can get bounds of just the text via superclass
-    Bounds tbds = super.getVisibleOffsetBounds(attrs, g).translate(loc);
+    Bounds tbds = getTextOnlyVisibleBounds(loc, attrs, g);
 
-    g.setColor(Color.BLACK);
+    g.setColor(attrs.getFGColor());
    
     // Allowed pivot positions, 1 to 8:
     //      1---------2---------3  V_TOP

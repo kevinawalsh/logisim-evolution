@@ -135,6 +135,11 @@ public class Text extends InstanceFactory implements CustomHandles {
                 "center", S.getter("textVertAlignCenterOpt")),
           });
 
+  static final Attribute<Color> FG_COLOR = Attributes.forColor(
+      "foreground", S.getter("textForegroundColorAttr"));
+  static final Attribute<Color> BG_COLOR = Attributes.forColor(
+      "background", S.getter("textBackgroundColorAttr"));
+
   public static final Text FACTORY = new Text();
 
   private Text() {
@@ -211,9 +216,13 @@ public class Text extends InstanceFactory implements CustomHandles {
                          // near the canvas left edge.
     return StringUtil.estimateAlignedBounds(text, font, halign, valign);
   }
-
+  
   @Override
   public Bounds getVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
+    return getTextOnlyVisibleOffsetBounds(attrsBase, g);
+  }
+
+  protected final Bounds getTextOnlyVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
     TextAttributes attrs = (TextAttributes) attrsBase;
     String text = attrs.getText();
     if (text == null || text.equals(""))
@@ -230,6 +239,10 @@ public class Text extends InstanceFactory implements CustomHandles {
 
   private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
     return getVisibleOffsetBounds(attrsBase, g).translate(loc);
+  }
+
+  protected Bounds getTextOnlyVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
+    return getTextOnlyVisibleOffsetBounds(attrsBase, g).translate(loc);
   }
 
   @Override
@@ -249,7 +262,6 @@ public class Text extends InstanceFactory implements CustomHandles {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    painter.getGraphics().setColor(Color.BLACK);
     paint(painter, false);
   }
 
@@ -260,6 +272,11 @@ public class Text extends InstanceFactory implements CustomHandles {
     if (border) {
       Bounds bds = getTextVisibleBounds(loc, attrs, g);
       g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+    } else {
+      Bounds bds = getTextOnlyVisibleBounds(loc, attrs, g);
+      g.setColor(attrs.getBGColor());
+      g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+      g.setColor(attrs.getFGColor());
     }
     // Note: This next code is essentially identical to painter.drawLabel(),
     // which draws by using TextFieldMultiline, which in turn uses GraphicsUtil.

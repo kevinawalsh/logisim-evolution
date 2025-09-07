@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.std.base;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
@@ -42,18 +43,24 @@ import com.cburch.logisim.instance.StdAttr;
 class TextAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
-        Text.ATTR_HALIGN, Text.ATTR_VALIGN });
+        Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR });
 
   private String text;
   private Font font;
   private AttributeOption halign;
   private AttributeOption valign;
+  private Color fg;
+  private Color bg;
+
+  private static final Color CLEAR = new Color(255, 255, 255, 0);
 
   public TextAttributes() {
     text = "text";
     font = StdAttr.DEFAULT_LABEL_FONT;
     halign = Text.ATTR_HALIGN.parse("center");
     valign = Text.ATTR_VALIGN.parse("base");
+    fg = Color.BLACK;
+    bg = CLEAR;
   }
 
   @Override
@@ -78,6 +85,14 @@ class TextAttributes extends AbstractAttributeSet {
     return text;
   }
 
+  Color getFGColor() {
+    return fg;
+  }
+
+  Color getBGColor() {
+    return bg;
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
@@ -89,6 +104,10 @@ class TextAttributes extends AbstractAttributeSet {
       return (V) halign;
     if (attr == Text.ATTR_VALIGN)
       return (V) valign;
+    if (attr == Text.FG_COLOR)
+      return (V) fg;
+    if (attr == Text.BG_COLOR)
+      return (V) bg;
     return null;
   }
 
@@ -109,6 +128,10 @@ class TextAttributes extends AbstractAttributeSet {
       halign = (AttributeOption) value;
     else if (attr == Text.ATTR_VALIGN)
       valign = (AttributeOption) value;
+    else if (attr == Text.FG_COLOR)
+      fg = (Color) value;
+    else if (attr == Text.BG_COLOR)
+      bg = (Color) value;
   }
 
 }

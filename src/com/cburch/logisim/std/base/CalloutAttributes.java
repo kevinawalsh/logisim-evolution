@@ -30,22 +30,17 @@
 
 package com.cburch.logisim.std.base;
 
-import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeOption;
-import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.instance.StdAttr;
 
 class CalloutAttributes extends TextAttributes {
 
   private static final List<Attribute<?>> ATTRIBUTES =
       Arrays.asList(new Attribute<?>[] {
         Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
-        Callout.ATTR_DX, Callout.ATTR_DY });
+        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_DX, Callout.ATTR_DY });
 
   private int dx, dy;
 
