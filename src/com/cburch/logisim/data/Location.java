@@ -37,8 +37,8 @@ import java.util.List;
 import com.cburch.logisim.util.Cache;
 
 /**
- * Represents an immutable rectangular bounding box. This is analogous to
- * java.awt's <code>Point</code> class, except that objects of this type are
+ * Represents an immutable (x, y) point on the circuit canvas. This is analogous
+ * to java.awt's <code>Point</code> class, except that objects of this type are
  * immutable.
  */
 public class Location implements Comparable<Location> {
