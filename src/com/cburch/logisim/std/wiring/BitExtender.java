@@ -32,7 +32,7 @@ package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.FontMetrics;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
@@ -42,12 +42,14 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
@@ -71,19 +73,23 @@ public class BitExtender extends InstanceFactory {
   public BitExtender() {
     super("Bit Extender", S.getter("extenderComponent"));
     setIconName("extender.gif");
-    setAttributes(new Attribute[] { ATTR_IN_WIDTH, ATTR_OUT_WIDTH,
-      ATTR_TYPE },
-      new Object[] { BitWidth.create(8), BitWidth.create(16),
+    setAttributes(new Attribute[] { StdAttr.FACING,
+      ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TYPE },
+      new Object[] { Direction.EAST, BitWidth.create(8), BitWidth.create(16),
         ATTR_TYPE.parse("sign") });
+    setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(JoinedConfigurator.create(new BitWidthConfigurator(
             ATTR_OUT_WIDTH), new BitWidthConfigurator(ATTR_IN_WIDTH, 1,
               Value.MAX_WIDTH, 0)));
-    setOffsetBounds(Bounds.create(-40, -20, 40, 40));
   }
 
-  //
-  // methods for instances
-  //
+  @Override
+  public Bounds getOffsetBounds(AttributeSet attrs) {
+    Direction facing = attrs.getValue(StdAttr.FACING);
+    Bounds base = Bounds.create(-40, -20, 40, 40);
+    return base.rotate(Direction.EAST, facing, 0, 0);
+  }
+
   @Override
   protected void configureNewInstance(Instance instance) {
     configurePorts(instance);
@@ -91,15 +97,27 @@ public class BitExtender extends InstanceFactory {
   }
 
   private void configurePorts(Instance instance) {
-    Port p0 = new Port(0, 0, Port.OUTPUT, ATTR_OUT_WIDTH);
-    Port p1 = new Port(-40, 0, Port.INPUT, ATTR_IN_WIDTH);
-    String type = getType(instance.getAttributeSet());
-    if (type.equals("input")) {
-      instance.setPorts(new Port[] { p0, p1,
-        new Port(-20, -20, Port.INPUT, 1) });
-    } else {
-      instance.setPorts(new Port[] { p0, p1 });
+    Port p0, p1, p2;
+    Direction facing = instance.getAttributeValue(StdAttr.FACING);
+    boolean isInput = getType(instance.getAttributeSet()).equals("input");
+    p0 = new Port(0, 0, Port.OUTPUT, ATTR_OUT_WIDTH);
+    if (facing == Direction.WEST) {
+      p1 = new Port(40, 0, Port.INPUT, ATTR_IN_WIDTH);
+      p2 = isInput ? new Port(20, 20, Port.INPUT, 1) : null;
+    } else if (facing == Direction.NORTH) {
+      p1 = new Port(0, 40, Port.INPUT, ATTR_IN_WIDTH);
+      p2 = isInput ? new Port(-20, 20, Port.INPUT, 1) : null;
+    } else if (facing == Direction.SOUTH) {
+      p1 = new Port(0,-40, Port.INPUT, ATTR_IN_WIDTH);
+      p2 = isInput ? new Port(20, -20, Port.INPUT, 1) : null;
+    } else { // EAST
+      p1 = new Port(-40, 0, Port.INPUT, ATTR_IN_WIDTH);
+      p2 = isInput ? new Port(-20, -20, Port.INPUT, 1) : null;
     }
+    if (p2 != null)
+      instance.setPorts(new Port[] { p0, p1, p2 });
+    else
+      instance.setPorts(new Port[] { p0, p1 });
   }
 
   private String getType(AttributeSet attrs) {
@@ -116,21 +134,25 @@ public class BitExtender extends InstanceFactory {
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == ATTR_TYPE) {
       configurePorts(instance);
-      instance.fireInvalidated();
-    } else {
-      instance.fireInvalidated();
+    } else if (attr == StdAttr.FACING) {
+      instance.recomputeBounds();
+      configurePorts(instance);
     }
+    instance.fireInvalidated();
   }
 
-  //
-  // graphics methods
-  //
-
   private void paintBorder(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
-    Bounds bds = painter.getNominalBounds();
-    int x = bds.x, y = bds.y;
-    int w = bds.width, h = bds.height;
+    Graphics2D g = (Graphics2D)painter.getGraphics();
+
+    Direction facing = painter.getAttributeValue(StdAttr.FACING);
+    int degrees = Direction.EAST.toDegrees() - facing.toDegrees();
+    double radians = Math.toRadians((degrees + 360) % 360);
+
+    Location loc = painter.getLocation();
+    g.translate(loc.getX(), loc.getY());
+    g.rotate(radians);
+
+    int x = -40, y = -20, w = 40, h = 40;
 
     BitWidth w0 = painter.getAttributeValue(ATTR_OUT_WIDTH);
     BitWidth w1 = painter.getAttributeValue(ATTR_IN_WIDTH);
@@ -151,6 +173,9 @@ public class BitExtender extends InstanceFactory {
       yp = new int[] { y+4,     y+4,       y,   y, y+h, y+h };
     }
     g.drawPolygon(xp, yp, xp.length);
+
+    g.rotate(-radians);
+    g.translate(-loc.getX(), -loc.getY());
   }
 
   @Override
@@ -160,11 +185,21 @@ public class BitExtender extends InstanceFactory {
  
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
-    FontMetrics fm = g.getFontMetrics();
-    int asc = fm.getAscent();
 
     paintBorder(painter);
+
+    Graphics2D g = (Graphics2D)painter.getGraphics();
+
+    Direction facing = painter.getAttributeValue(StdAttr.FACING);
+    int degrees = Direction.EAST.toDegrees() - facing.toDegrees();
+    double radians = Math.toRadians((degrees + 360) % 360);
+
+    Location loc = painter.getLocation();
+    g.translate(loc.getX(), loc.getY());
+    g.rotate(radians);
+
+    FontMetrics fm = g.getFontMetrics();
+    int asc = fm.getAscent();
 
     BitWidth w0 = painter.getAttributeValue(ATTR_OUT_WIDTH);
     BitWidth w1 = painter.getAttributeValue(ATTR_IN_WIDTH);
@@ -190,19 +225,23 @@ public class BitExtender extends InstanceFactory {
       s1 = S.get("extenderNopLabel");
     else 
       s1 = S.get("extenderMainLabel");
-    Bounds bds = painter.getNominalBounds();
-    int x = bds.getX() + bds.getWidth() / 2;
-    int y0 = bds.getY() + (bds.getHeight() / 2 + asc) / 2;
-    int y1 = bds.getY() + (3 * bds.getHeight() / 2 + asc) / 2;
-    GraphicsUtil.drawText(g, s0, x, y0, GraphicsUtil.H_CENTER,
-        GraphicsUtil.V_BASELINE);
-    GraphicsUtil.drawText(g, s1, x, y1, GraphicsUtil.H_CENTER,
-        GraphicsUtil.V_BASELINE);
+    
+    int x = -40, y = -20, w = 40, h = 40;
 
-    painter.drawPort(0, "" + w0.getWidth(), Direction.WEST);
-    painter.drawPort(1, "" + w1.getWidth(), Direction.EAST);
-    if (type.equals("input"))
-      painter.drawPort(2);
+    int cx = x + w/2;
+    int cy = y + h/2;
+    int y0 = y + (h / 2 + asc - 4) / 2;
+    int y1 = y + (3 * h / 2 + asc) / 2;
+    GraphicsUtil.drawText(g, s0, cx, y0, GraphicsUtil.H_CENTER, GraphicsUtil.V_BASELINE);
+    GraphicsUtil.drawText(g, s1, cx, y1, GraphicsUtil.H_CENTER, GraphicsUtil.V_BASELINE);
+
+    GraphicsUtil.drawText(g, "" + w0.getWidth(), cx+18, cy, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_OVERALL);
+    GraphicsUtil.drawText(g, "" + w1.getWidth(), cx-18, cy, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_OVERALL);
+    
+    g.rotate(-radians);
+    g.translate(-loc.getX(), -loc.getY());
+
+    painter.drawPorts();
   }
 
   @Override

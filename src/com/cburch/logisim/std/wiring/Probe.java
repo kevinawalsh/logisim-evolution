@@ -90,6 +90,7 @@ public class Probe extends InstanceFactory implements DynamicValueProvider {
     }
   }
 
+  /* note: also used by Clock and Pin, for convenience ?!?! */
   static Bounds getOffsetBounds(Direction dir, BitWidth width, RadixOption radix) {
     if (radix == null)
       radix = RadixOption.RADIX_2;
