@@ -90,6 +90,19 @@ import com.cburch.logisim.util.GraphicsUtil;
 //
 // NOTE: the above may not be entirely accurate, especially for Pin. And we also
 // have things like class Component, InstanceComponent, and so on. Confusing!
+//
+// ALSO NOTE: While a [level 2] Instance has attributes, it does NOT have any
+// dynamic state. So an Instance representing an LED has a Color attribute, but
+// no Value representing the current on/off state. Instead, all circuit state is
+// the tied to circuit simulations, encapsulated in CircuitState, InstanceState,
+// InstancePainter, and related objects, along with additional instance-specific
+// "data" tucked away inside these state objects. This is a one-to-many
+// relationship: An LED, appearing in a specific place in some circuit, might be
+// involoved in multiple simultaneous simulations, and needs on/off state
+// information about each of those simulations. This happens whenever circuits
+// are embedded within each other as subcircuits, and the user can start and
+// switch between multiple simulations from the UI explicitly.
+//
 public final class Instance implements Location.At {
 
   // Not every Component that exists is an InstanceComponent. But for those
