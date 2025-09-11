@@ -370,6 +370,11 @@ public class GraphicsUtil {
     g2.setStroke(new BasicStroke((float) width));
   }
 
+  static public void switchToWidth(Graphics g, float width) {
+    Graphics2D g2 = (Graphics2D) g;
+    g2.setStroke(new BasicStroke(width));
+  }
+
   public static final int H_LEFT = -1;
 
   public static final int H_CENTER = 0;

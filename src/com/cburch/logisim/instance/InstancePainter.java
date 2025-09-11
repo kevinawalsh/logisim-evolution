@@ -150,6 +150,10 @@ public class InstancePainter implements InstanceState {
     return context.getCircuit();
   }
 
+  public CircuitState getCircuitState() {
+    return context.getCircuitState();
+  }
+
   public InstanceData getData() {
     CircuitState circState = context.getCircuitState();
     if (circState == null || comp == null)

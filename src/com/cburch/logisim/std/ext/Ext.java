@@ -28,43 +28,43 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.instance;
+package com.cburch.logisim.std.ext;
+import static com.cburch.logisim.std.Strings.S;
 
-import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.Value;
-import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitState;
+import java.util.List;
 
-public interface InstanceState {
-  public void fireInvalidated();
+import com.cburch.logisim.tools.FactoryDescription;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
 
-  public AttributeSet getAttributeSet();
+public class Ext extends Library {
 
-  public <E> E getAttributeValue(Attribute<E> attr);
+  private static FactoryDescription[] DESCRIPTIONS = {
+    new FactoryDescription("SerialIn", S.getter("serialInputComponent"), "serial-in.png", "SerialIn"),
+    // new FactoryDescription("SerialOut", S.getter("serialOutputComponent"), "serial-in.png", "SerialOut"),
+    // new FactoryDescription("WebGet", S.getter("httpComponent"), "http-get.png", "WebGet"),
+  };
 
-  public InstanceData getData();
+  private List<Tool> tools = null;
 
-  public InstanceFactory getFactory();
+  public Ext() { }
 
-  public Instance getInstance();
+  @Override
+  public String getDisplayName() {
+    return S.get("externalsLibrary");
+  }
 
-  public Value getPortValue(int portIndex);
-  
-  public CircuitState getCircuitState();
+  @Override
+  public String getName() {
+    return "External I/O";
+  }
 
-  public Project getProject();
+  @Override
+  public List<Tool> getTools() {
+    if (tools == null) {
+      tools = FactoryDescription.getTools(Ext.class, DESCRIPTIONS);
+    }
+    return tools;
+  }
 
-  public int getTickCount();
-
-  public boolean isCircuitRoot();
-
-  public boolean isPortConnected(int portIndex);
-
-  public CircuitState createCircuitSubstateFor(Circuit circ);
-
-  public void setData(InstanceData value);
-
-  public void setPort(int portIndex, Value value, int delay);
 }

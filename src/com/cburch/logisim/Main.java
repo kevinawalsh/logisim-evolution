@@ -62,6 +62,8 @@ public class Main {
 
   public static boolean headless = false;
   public static boolean MacOS = false;
+  public static boolean MSWindows = false;
+  public static boolean Linux = false;
   public static boolean AlwaysUseScrollbars = false;
   public static boolean AboutMenuAutomaticallyPresent = false;
   public static boolean PreferencesMenuAutomaticallyPresent = false;
