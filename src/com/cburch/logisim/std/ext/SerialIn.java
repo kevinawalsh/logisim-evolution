@@ -33,12 +33,19 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.awt.geom.Rectangle2D;
 import java.nio.charset.StandardCharsets;
 
 import com.fazecast.jSerialComm.SerialPort;
@@ -71,18 +78,18 @@ public class SerialIn extends InstanceFactory {
 
   public static class Poker extends InstancePoker {
     Rectangle r; // button position
+    boolean isOpening;
+    boolean isClosing;
 
     @Override
     public void mousePressed(InstanceState circState, MouseEvent e) {
       if (r == null || !r.contains(e.getX(), e.getY()))
         return;
       State s = getState(circState);
-      synchronized (s) {
-        if (!s.isOpen)
-          s.open();
-        else
-          s.close();
-      }
+      if (isOpening)
+        s.open();
+      else if (isClosing)
+        s.close();
     }
 
     @Override
@@ -90,13 +97,19 @@ public class SerialIn extends InstanceFactory {
       State state = getState(painter);
       Graphics2D g = (Graphics2D)painter.getGraphics();
       Bounds bds = painter.getNominalBounds();
-      String s = (!state.isOpen ? S.get("serialInputOpen") : S.get("serialInputClose"));
-      int x = bds.x + 30;
+      isOpening = !state.isOpen;
+      isClosing = !isOpening && !state.isClosing;
+      String s = (isOpening ? S.get("serialInputOpen") : S.get("serialInputClose"));
+      int x = bds.x + bds.width - 7;
       int y = bds.y + bds.height - 5;
-      GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
-      r = GraphicsUtil.getTextBounds(g, s, x, y, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+      if (!isOpening && !isClosing) {
+        g.setColor(Color.GRAY);
+        s = S.get("serialInputWait");
+      }
+      GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+      r = GraphicsUtil.getTextBounds(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
       g.setColor(Color.DARK_GRAY);
-      g.drawRect(r.x-5, r.y, r.width + 10, r.height);
+      g.drawRect(r.x-3, r.y+2, r.width + 6, r.height-2);
     }
 
   }
@@ -233,15 +246,17 @@ public class SerialIn extends InstanceFactory {
     Matcher m = instance.getAttributeValue(ATTR_FORMAT);
     int n = m.widths.length + (clocking == CLOCKING_SYNCHRONOUS ? 2 : 0);
     Port[] ps = new Port[n];
-    for (int i = 0; i < m.widths.length; i++) {
-      ps[i] = new Port(0, -10 * i, Port.OUTPUT, m.widths[i]);
-      ps[i].setToolTip(S.getter("serialInputDataTip", ""+(i + 1)));
-    }
+    int idx = 0;
     if (clocking == CLOCKING_SYNCHRONOUS) {
-      ps[n - 2] = new Port(-40, 10, Port.INPUT, 1); // read enable
-      ps[n - 2].setToolTip(S.getter("serialInputReadEnableTip"));
-      ps[n - 1] = new Port(-30, 10, Port.INPUT, 1); // clock
-      ps[n - 1].setToolTip(S.getter("serialInputClockTip"));
+      ps[0] = new Port(-30, 10, Port.INPUT, 1); // clock
+      ps[0].setToolTip(S.getter("serialInputClockTip"));
+      ps[1] = new Port(-40, 10, Port.INPUT, 1); // read enable
+      ps[1].setToolTip(S.getter("serialInputReadEnableTip"));
+      idx = 2;
+    }
+    for (int i = 0; i < m.widths.length; i++) {
+      ps[idx+i] = new Port(0, -10 * i, Port.OUTPUT, m.widths[i]);
+      ps[idx+i].setToolTip(S.getter("serialInputDataTip", ""+(i + 1)));
     }
     instance.setPorts(ps);
   }
@@ -249,8 +264,8 @@ public class SerialIn extends InstanceFactory {
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     Matcher m = attrs.getValue(ATTR_FORMAT);
-    int p = m.widths.length;
-    return Bounds.create(-80, -(10 + 10 * p), 80, 20 + 10 * p);
+    int p = Math.max(5, m.widths.length);
+    return Bounds.create(-80, -(10 * p), 80, 10 + 10 * p);
   }
 
   @Override protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
@@ -280,7 +295,7 @@ public class SerialIn extends InstanceFactory {
 
     Bounds bds = painter.getNominalBounds();
 
-    // TODO: draw a USB-like symbol in top left corner
+    drawUsbLogo((Graphics2D)painter.getGraphics(), bds.x+5, bds.y+18, 50, 24, Color.BLACK);
 
     if (painter.getShowState()) {
       State state = (State)painter.getData();
@@ -294,31 +309,102 @@ public class SerialIn extends InstanceFactory {
       // TODO: Maybe also a blinking activity light?
 
       g.setColor(Color.BLACK);
-      GraphicsUtil.drawText(g, state == null ? "" : state.status, bds.x+5, bds.y+5, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
+      GraphicsUtil.drawText(g, state == null ? "" : state.status, bds.x+5, bds.y+2, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
     }
 
     painter.drawLabel();
     painter.drawPorts();
   }
 
+  static void drawUsbLogo(Graphics2D g, int x, int y, int w, int h, Color color) {
+
+    double s = Math.max(3.0, Math.min(w/10, h/5));
+    double r = s/2;
+
+    g.setColor(color);
+    GraphicsUtil.switchToWidth(g, 1.5f);
+
+    // root
+    double xDot = x + w - r*1.35, yDot = y + h/2;
+    g.fill(new Ellipse2D.Double(xDot-r*1.35, yDot-r*1.35, s*1.35, s*1.35));
+
+    // center triangle
+    double xTri = x + r, yTri = yDot;
+    Path2D tri = new Path2D.Double();
+    tri.moveTo(xTri-r, yTri);
+    tri.lineTo(xTri+r, yTri-r*1.414);
+    tri.lineTo(xTri+r, yTri+r*1.414);
+    tri.closePath();
+    g.fill(tri);
+
+    // upper square
+    double xSqr = x + w/4, ySqr = y + r;
+    g.fill(new Rectangle2D.Double(xSqr-r, ySqr-r, s, s));
+
+    // lower circle
+    double xCir = x + 2*w/5, yCir = y + h - r;
+    g.fill(new Ellipse2D.Double(xCir-r, yCir-r, s, s));
+
+    // stems
+    g.draw(new Line2D.Double(xDot, yDot, xTri, yTri));
+    drawCurve(g, xDot, yDot, xSqr+3.5*s, yDot, xSqr+2*s, ySqr, xSqr, ySqr, r);
+    drawCurve(g, xDot, yDot, xCir+3.5*s, yDot, xCir+2*s, yCir, xCir, yCir, r);
+
+    GraphicsUtil.switchToWidth(g, 1);
+  }
+
+  static void drawCurve(Graphics2D g,
+      double xA, double yA,
+      double xB, double yB,
+      double xC, double yC,
+      double xD, double yD, double r) {
+    double dx, dy, s;
+
+    // r pixels from B, towards A
+    dx = xA - xB; dy = yA - yB;
+    s = r/Math.hypot(dx, dy);
+    double xBA = xB + dx * s, yBA = yB + dy * s;
+    
+    // r pixels from B, towards C
+    dx = xC - xB; dy = yC - yB;
+    s = r/Math.hypot(dx, dy);
+    double xBC = xB + dx * s, yBC = yB + dy * s;
+
+    // r pixels from C, towards B
+    dx = xB - xC; dy = yB - yC;
+    s = r/Math.hypot(dx, dy);
+    double xCB = xC + dx * s, yCB = yC + dy * s;
+    
+    // r pixels from C, towards D
+    dx = xD - xC; dy = yD - yC;
+    s = r/Math.hypot(dx, dy);
+    double xCD = xC + dx * s, yCD = yC + dy * s;
+
+    Path2D curve = new Path2D.Double();
+    curve.moveTo(xA, yA);
+    curve.lineTo(xBA, yBA);
+    curve.quadTo(xB, yB, xBC, yBC);
+    curve.lineTo(xCB, yCB);
+    curve.quadTo(xC, yC, xCD, yCD);
+    curve.lineTo(xD, yD);
+    g.draw(curve);
+  }
+
   @Override
   public void propagate(InstanceState circState) {
     State state = getState(circState);
-    int[] widths = null;
-    synchronized (state) {
-      widths = state.matcher.widths;
-    }
-    int n = widths.length;
 
+    int idx = 0;
     Value[] vals = null;
 
     AttributeOption clocking = circState.getAttributeValue(ATTR_CLOCKING);
     if (clocking == CLOCKING_SYNCHRONOUS) {
-      Value enable = circState.getPortValue(n-2);
+      idx = 2;
+      Value enable = circState.getPortValue(1);
       if (enable == Value.FALSE)
         return;
       AttributeOption trigger = circState.getAttributeValue(StdAttr.EDGE_TRIGGER);
-      Value clock = circState.getPortValue(n-1);
+      Value clock = circState.getPortValue(0);
       Value lastClock = state.setLastClock(clock);
       boolean go;
       if (trigger == StdAttr.TRIG_FALLING) {
@@ -326,24 +412,27 @@ public class SerialIn extends InstanceFactory {
       } else {
         go = lastClock == Value.FALSE && clock == Value.TRUE;
       }
-      synchronized (state) {
-        if (go)
-          vals = state.q.pollFirst();
-      }
+      if (!go)
+        return;
+      vals = state.getValues(false);
     } else { // CLOCKING_ASYNCHRONOUS
-      synchronized (state) { 
-        vals = state.lastAsync;
-      } // end synchronized
+      vals = state.getValues(true);
     }
-    
-    for (int i = 0; i < n; i++) {
-      int b = widths[i];
-      Value v = (vals == null ? null : vals[i]);
-      if (v != null && v.getWidth() != widths[i])
-        v = null;
-      if (v == null)
-        v = Value.createUnknown(BitWidth.create(b));
-      circState.setPort(i,v, 1);
+
+    if (vals != null) {
+      for (int i = 0; i < vals.length; i++) {
+        circState.setPort(idx+i, vals[i], 1);
+      }
+    } else {
+      int i = -1;
+      for (Port p : circState.getInstance().getPorts()) {
+        i++;
+        if (i < idx)
+          continue;
+        int w = p.getFixedBitWidth();
+        Value v = Value.createUnknown(BitWidth.create(w));
+        circState.setPort(i, v, 1);
+      }
     }
   }
 
@@ -442,7 +531,7 @@ public class SerialIn extends InstanceFactory {
     String errmsg;
 
     Matcher(String fmt) {
-      this.fmt = fmt;
+      this.fmt = fmt == null ? "" : fmt;
     }
 
     void push(char c) {
@@ -646,57 +735,79 @@ outer:
 
   private static class State implements InstanceData, Cloneable {
 
-    Value lastClock = Value.UNKNOWN;
+    private Value lastClock = Value.UNKNOWN;
 
-    volatile boolean isOpen = false;
-    volatile String status = "ready";
+    private volatile String status = "ready";
 
-    AttributeOption mode;
-    int baud, qlen;
-    String fmt, delim, path;
-    int[] bits;
-
-    Matcher matcher;
+    private AttributeOption mode;
+    private int baud, qlen;
+    private String fmt, delim, path;
+    private byte[] delimBytes;
+    private Matcher matcher;
+    private Instance instance; // TODO: assign, and listen for circuit removal
     
-    Instance instance; // TODO: assign, and listen for circuit removal
-    
-    SerialPort port;
-    Thread worker;
+    private volatile boolean isOpen = false; // accesed by mouse handler, but non-critical
+    private volatile boolean isClosing = false; // accessed by mouse handler, but non-critical
+    private volatile SerialPort port;
+    private Thread worker;
 
-    // shared between worker and others
-    ArrayDeque<Value[]> q = new ArrayDeque<>();
-    Value[] lastAsync = null;
+    // The data lock protects against concurrent access to
+    // matcher, fmt, delimBytes, lastAsync, q, instance, etc.
+    // None of these variables involve access to the port.
+    // This lock is to be held only for short durations and
+    // holders should not block or sleep.
+    private ReentrantLock data = new ReentrantLock();
+   
+    // The critical lock protects against concurrent access
+    // to port, worker, baud, mode, path, and against concurrent
+    // changes to isOpen and isClosed. All of these
+    // variables involve the underlying port, and threads
+    // holding this lock sometimes need to block.
+    private ReentrantLock crit = new ReentrantLock();
+    private Condition workerDead = crit.newCondition();
 
-    State(InstanceState circState) {
+    private ArrayDeque<Value[]> q = new ArrayDeque<>();
+    private Value[] lastAsync = null;
+
+    public State(InstanceState circState) {
       updateBinding(circState);
     }
     
     private State(State other) {
-      synchronized(other) {
+      other.crit.lock();
+      try {
         mode = other.mode;
         baud = other.baud;
+        path = other.path; // should not open both at same time...
+      } finally {
+        other.crit.unlock();
+      }
+      other.data.lock();
+      try {
         qlen = other.qlen;
         fmt = other.fmt;
         delim = other.delim;
-        path = other.path; // should not open both at same time...
+        delimBytes = other.delimBytes;
         matcher = other.matcher;
         instance = null; // don't know which instance this will be for? 
+      } finally {
+        other.data.unlock();
       }
     }
 
-    synchronized void updateBinding(InstanceState circState) {
-      if (instance != null) {
-        // are we still attached to the same instance?
-        Instance i = circState.getInstance();
-        if (i == null) {
-          System.err.println("Trouble... instance missing?!?!?");
-        } else if (i != instance) {
-          System.err.println("Trouble ahead: instance mismatch?!?!?");
-          instance = i;
-        }
-      } else {
-        instance = circState.getInstance();
+    Value[] getValues(boolean mostRecent) {
+      data.lock();
+      try {
+        if (mostRecent)
+          return lastAsync;
+        else
+          return q.pollFirst();
+      } finally {
+        data.unlock();
       }
+    }
+
+    void updateBinding(InstanceState circState) {
       AttributeSet attrs = circState.getAttributeSet();
       AttributeOption mode = circState.getAttributeValue(ATTR_MODE);
       String path = circState.getAttributeValue(ATTR_PORT);
@@ -705,47 +816,95 @@ outer:
       String delim = circState.getAttributeValue(ATTR_DELIMITER);
       int qlen = circState.getAttributeValue(ATTR_QUEUE);
    
-      // TODO: fmt, delim sanity checks and defaults
-      // if (fmt.equals("")) {
-      //   fmt = "%c"; // take raw bytes, skip nothing
-      // } else if (delim.equals("")) {
-      //   delim = "\\n"; // fixme, be more clever here about defaults
-      // }
-      
-      // TODO: normalize delim
-
-      if (!path.equals(this.path)) {
-        System.out.println("path changed");
-        close();
-        this.path = path;
-      }
-      if (qlen != this.qlen) {
-        System.out.println("qlen changed");
-        this.qlen = qlen;
-        while (q.size() > qlen)
-          q.removeFirst();
-      }
-      if (!m.fmt.equals(this.fmt) || !delim.equals(this.delim)) {
-        System.out.println("fmt/delim changed");
-        q.clear();
-        lastAsync = null;
-        this.delim = delim;
-        this.fmt = m.fmt;
-        this.matcher = m;
-        // TODO if invalid matcher, or if delim is empty...?
-      }
-      if (baud != this.baud || mode != this.mode) {
-        System.out.println("baud/mode changed");
-        this.baud = baud;
-        this.mode = mode;
-        if (port != null) {
-          // close and re-open?
-          port.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+      if (delim == null || delim.isEmpty()) {
+        if (m.tokens.size() == 1 && m.tokens.get(0) instanceof ByteToken) {
+          delim = ""; // no delimiter, just raw bytes
+        } else if (!m.hasWhitespace) {
+          delim = "[\n\r\t ]";
+        } else if (!m.hasNewline) {
+          delim = "[\r\n]";
+        } else {
+          delim = "|"; // need some kind of default
         }
       }
+
+      // check non-critical things first
+      data.lock();
+      try {
+        // update instance
+        if (instance != null) {
+          // are we still attached to the same instance?
+          Instance i = circState.getInstance();
+          if (i == null) {
+            System.err.println("Trouble... instance missing?!?!?");
+          } else if (i != instance) {
+            System.err.println("Trouble ahead: instance mismatch?!?!?");
+            instance = i;
+          }
+        } else {
+          instance = circState.getInstance();
+        }
+
+        if (qlen != this.qlen) {
+          System.out.println("qlen changed");
+          this.qlen = qlen;
+          while (q.size() > qlen)
+            q.removeFirst();
+        }
+        if (!m.fmt.equals(this.fmt) || !delim.equals(this.delim)) {
+          System.out.println("fmt/delim changed");
+          q.clear();
+          lastAsync = null;
+          this.delim = delim;
+          this.fmt = m.fmt;
+          this.matcher = m;
+          this.delimBytes = parseDelim(delim);
+          // TODO if invalid matcher, or if delim is empty...?
+        }
+      } finally {
+        data.unlock();
+      }
+
+      // check critical things second
+      crit.lock();
+      try {
+        // check port parameters
+        if (baud != this.baud || mode != this.mode) {
+          System.out.println("baud/mode changed");
+          this.baud = baud;
+          this.mode = mode;
+          if (port != null) {
+            // close and re-open?
+            port.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+          }
+        }
+        // update path
+        if (!path.equals(this.path)) {
+          System.out.println("path changed");
+          close();
+          this.path = path;
+        }
+      } finally {
+        crit.unlock();
+      }
+
     }
 
-    public Value setLastClock(Value newClock) {
+    private static byte[] parseDelim(String d) {
+      int n = d.length();
+      if (n >= 2 && d.charAt(0) == '[' && d.charAt(n-1) == ']')
+        d = d.substring(0, n-1);
+      return d.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static boolean contains(byte[] arr, byte x) {
+      for (byte b : arr)
+        if (b == x)
+          return true;
+      return false;
+    }
+
+    public Value setLastClock(Value newClock) { // no need for sync here
       Value ret = lastClock;
       lastClock = newClock;
       return ret;
@@ -764,111 +923,172 @@ outer:
         int r = 0; // next position to read
         int n = 0; // number of bytes 
         boolean first = true;
-        while (isOpen) {
+        while (isOpen && !isClosing && !Thread.currentThread().isInterrupted()) { // volatile
           if (n == cap) {
             r = (r + 1) % cap;
             n--;
           }
-          int ok = port.readBytes(buf, 1, w);
+          int ok = port.readBytes(buf, 1, w); // volatile; blocking
           if (ok < 0)
             break;
+          byte b = buf[w];
           w = (w + 1) % cap;
           n++;
-          synchronized (this) {
-            // FIXME,split on delim
-            if (buf[(r + n - 1) % cap] == '\n') {
-              if (!first) {
-                Value[] vals = parseRecord(matcher, buf, r, n-1);
-                boolean changed = lastAsync == null || vals.length != lastAsync.length ;
-                for (int i = 0; !changed && i < vals.length; i++)
-                  changed = !vals[i].equals(lastAsync[i]);
-                while (q.size() >= qlen)
-                  q.removeFirst();
-                q.addLast(vals);
-                if (changed) {
-                  lastAsync = vals;
-                  if (instance == null)
-                    System.out.println("missing instance???");
-                  else if (instance.getAttributeValue(ATTR_CLOCKING) == CLOCKING_ASYNCHRONOUS)
-                    instance.fireInvalidated();
-                }
-              } else {
-                first = false;
-              }
-              w = r = n = 0;
+          data.lockInterruptibly(); // blocking; access delimBytes, matcher, qlen, instance
+          try {
+            // FIXME: handle no-delim case
+            if (!contains(delimBytes, b)) {
+              continue;
             }
+            if (first) {
+              first = false;
+              w = r = n = 0;
+              continue;
+            }
+            Value[] vals = parseRecord(matcher, buf, r, n-1);
+            boolean changed = lastAsync == null || vals.length != lastAsync.length ;
+            for (int i = 0; !changed && i < vals.length; i++)
+              changed = !vals[i].equals(lastAsync[i]);
+            while (q.size() >= qlen)
+              q.removeFirst();
+            q.addLast(vals);
+            if (changed) {
+              lastAsync = vals;
+              fire(false);
+            }
+            w = r = n = 0;
+          } finally {
+            data.unlock();
           }
         }
+      } catch (InterruptedException e) {
+        System.out.println("worker interrupted");
+        // do nothing
       } catch (Exception e) {
+        System.out.println("worker crashed");
         e.printStackTrace();
       } finally {
-        close();
+        data.lock(); 
+        try {
+          q.clear();
+          lastAsync = null;
+          fire(true);
+        } finally {
+          data.unlock();
+        }
+        crit.lock();
+        try {
+          worker = null;
+          workerDead.signalAll();
+          close();
+        } finally {
+          crit.unlock();
+        }
       }
+      System.out.println("worker is done");
     }
 
-    synchronized void open() {
-      if (isOpen)
-        return;
+    void close() {
+      crit.lock();
       try {
-        status = "opening";
-        port = SerialPort.getCommPort(path);
-        port.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
-        port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-        port.setDTR();
-        port.setRTS();
-        if (!port.openPort()) {
-          status = String.format("error (%d)", port.getLastErrorCode());
-          port = null;
+        if (!isOpen || isClosing)
           return;
-        }
-        isOpen = true;
-        status = "opened";
-        worker = new UniquelyNamedThread(this::run, "SerialInputReader");
-        worker.setDaemon(true);
-        worker.start();
-      } catch (Exception e) {
+        isClosing = true;
         isOpen = false;
-        status = "error";
-        port = null;
-        worker = null;
-        e.printStackTrace();
-      }
-      if (instance != null)
-        instance.fireInvalidated();
-      else
-        System.err.println("missing instance in open()???");
-    }
-
-    synchronized void close() {
-      isOpen = false;
-      if (port != null) {
+        status = "closing";
+        // note: worker may be running concurrently
+        if (port != null) {
           try {
-          port.closePort();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        port = null;
-      }
-      if (worker != null) {
-        if (worker != Thread.currentThread()) {
-          try {
-            worker.interrupt();
-            worker.join(1000);
+            System.out.println("closing port");
+            port.closePort();
+            // worker's read will begin failing
           } catch (Exception e) {
             e.printStackTrace();
           }
-          if (worker.isAlive()) {
-            System.err.println("Can't stop " + worker);
-          }
         }
-        worker = null;
-        q.clear();
-        lastAsync = null;
+        if (worker != null) {
+          // worker may be blocked:
+          //  (a) in port.readBytes()
+          //  (b) in data.lockInterruptibly() [within the run loop]
+          //  (c) in data.lock() [ in the cleanup code, to clear the queue ]
+          //  (d) in crit.lock() [ in the cleanup code, to clear worker and close ]
+          // worker may be making progress:
+          //  - inside one of two data-lock critical sections
+          //  - elsewhere
+          try {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            for (int i = 0; i < 3 && worker != null; i++) {
+              System.out.println("interrupting worker");
+              worker.interrupt(); // unblocks (a) and (b)
+                                  // (c) will resolve itself, as data locks are short lived
+              long remaining = deadline - System.nanoTime();
+              if (remaining <= 0L)
+                break;
+              workerDead.awaitNanos(remaining); // unblocks (d)
+            }
+          } catch (InterruptedException e) {
+          }
+          if (worker != null) {
+            System.err.println("Can't stop " + worker);
+            worker = null;
+          }
+          System.out.println("ok, done!");
+        }
+        // at this point, worker is dead, will not touch port again
+        port = null;
+        status = "ready";
+      } finally {
+        isClosing = false;
+        crit.unlock();
       }
-      if (instance != null)
-        instance.fireInvalidated();
-      else
-        System.err.println("missing instance in close()???");
+      fire(true);
+    }
+
+    void open() {
+      crit.lock();
+      try {
+        if (isOpen || isClosing)
+          return;
+        try {
+          status = "opening";
+          port = SerialPort.getCommPort(path);
+          port.setComPortParameters(baud, 8, SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY);
+          port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+          port.setDTR();
+          port.setRTS();
+          if (!port.openPort()) {
+            status = String.format("error (%d)", port.getLastErrorCode());
+            port = null;
+            return;
+          }
+          isOpen = true;
+          status = "opened";
+          worker = new UniquelyNamedThread(this::run, "SerialInputReader");
+          worker.setDaemon(true);
+          worker.start();
+        } catch (Exception e) {
+          isOpen = false;
+          status = "error";
+          port = null;
+          worker = null;
+          e.printStackTrace();
+        }
+      } finally {
+        crit.unlock();
+      }
+      fire(true);
+    }
+
+    private void fire(boolean force) {
+      data.lock();
+      try {
+        if (instance == null)
+          System.err.println("missing instance ???");
+        else if (force || instance.getAttributeValue(ATTR_CLOCKING) == CLOCKING_ASYNCHRONOUS)
+          instance.fireInvalidated();
+      } finally {
+        data.unlock();
+      }
     }
 
   }
