@@ -172,6 +172,8 @@ public class Startup {
     
     String osname = System.getProperty("os.name", "generic").toLowerCase();
     Main.MacOS = osname.startsWith("mac") || osname.startsWith("darwin");
+    Main.MSWindows = osname.contains("win");
+    Main.Linux = osname.contains("nux") || osname.contains("nix") || osname.contains("aix");
 
     Startup ret = new Startup();
     if (!Main.headless)

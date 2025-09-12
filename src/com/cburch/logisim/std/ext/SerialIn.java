@@ -32,20 +32,21 @@ package com.cburch.logisim.std.ext;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.util.ArrayDeque;
-// import java.util.*;
-// import java.util.concurrent.*;
-// import java.util.regex.*;
+import java.util.ArrayList;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.Window;
 import java.awt.event.MouseEvent;
+import java.nio.charset.StandardCharsets;
 
 import com.fazecast.jSerialComm.SerialPort;
 
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
@@ -58,6 +59,8 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class SerialIn extends InstanceFactory {
@@ -85,24 +88,24 @@ public class SerialIn extends InstanceFactory {
     public void paint(InstancePainter painter) {
       State state = getState(painter);
       Graphics2D g = (Graphics2D)painter.getGraphics();
-      Bounds bds = painter.getBounds();
-      String s = (state.isOpen ? S.get("serialInputOpen") : S.get("serialInputClose"));
-      int x = bds.x + 15;
+      Bounds bds = painter.getNominalBounds();
+      String s = (!state.isOpen ? S.get("serialInputOpen") : S.get("serialInputClose"));
+      int x = bds.x + 30;
       int y = bds.y + bds.height - 5;
       GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
       r = GraphicsUtil.getTextBounds(g, s, x, y, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
       g.setColor(Color.DARK_GRAY);
-      g.drawRect(r.x-1, r.y-1, r.width + 2, r.height + 2);
+      g.drawRect(r.x-5, r.y, r.width + 10, r.height);
     }
 
   }
 
   // TODO: add a custom renderer/editor here to show enumerated serial ports
   public static final Attribute<String> ATTR_PORT =
-      Attributes.forString("port", S.getter("serialInputPort"));
+      new SerialPortPathAttribute("port", S.getter("serialInputPort"));
 
   // TODO: maybe add one or two other common options? Are there any?
-  static final AttributeOption MODE_8N1 = new AttributeOption("8n1", "8n1");
+  static final AttributeOption MODE_8N1 = new AttributeOption("8n1", S.unlocalized("8n1"));
   static final Attribute<AttributeOption> ATTR_MODE =
       Attributes.forOption("mode", S.getter("ioSerialMode"),
           new AttributeOption[] { MODE_8N1 });
@@ -219,7 +222,7 @@ public class SerialIn extends InstanceFactory {
     Port[] ps = new Port[n];
     for (int i = 0; i < m.widths.length; i++) {
       ps[i] = new Port(0, -10 * i, Port.OUTPUT, m.widths[i]);
-      ps[i].setToolTip(S.getter("serialInputDataTip", i + 1));
+      ps[i].setToolTip(S.getter("serialInputDataTip", ""+(i + 1)));
     }
     if (clocking == CLOCKING_SYNCHRONOUS) {
       ps[n - 2] = new Port(-40, 10, Port.INPUT, 1); // read enable
@@ -262,20 +265,23 @@ public class SerialIn extends InstanceFactory {
   public void paintInstance(InstancePainter painter) {
     painter.drawBounds();
 
-    Bounds bds = painter.getBounds();
+    Bounds bds = painter.getNominalBounds();
 
     // TODO: draw a USB-like symbol in top left corner
 
     if (painter.getShowState()) {
-      State state = (State)circState.getData();
+      State state = (State)painter.getData();
       // Connection status LED
       Color c = (state != null && state.isOpen ? ON_COLOR : OFF_COLOR);
       Graphics2D g = (Graphics2D)painter.getGraphics();
       g.setColor(c);
-      g.fillRect(bds.x+5, bdx.y+bds.height-15, 12, 8);
+      g.fillRect(bds.x+5, bds.y+bds.height-15, 12, 8);
       g.setColor(Color.GRAY);
-      g.drawRect(bds.x+5, bdx.y+bds.height-15, 12, 8);
+      g.drawRect(bds.x+5, bds.y+bds.height-15, 12, 8);
       // TODO: Maybe also a blinking activity light?
+
+      g.setColor(Color.BLACK);
+      GraphicsUtil.drawText(g, state == null ? "" : state.status, bds.x+5, bds.y+5, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
     }
 
     painter.drawLabel();
@@ -291,14 +297,13 @@ public class SerialIn extends InstanceFactory {
     }
     int n = widths.length;
 
-    // TODO: get info about ports (number, and widths)
-
-    // TODO: if not connected, set all output ports to UNKNOWN
-
     Value[] vals = null;
 
     AttributeOption clocking = circState.getAttributeValue(ATTR_CLOCKING);
     if (clocking == CLOCKING_SYNCHRONOUS) {
+      Value enable = circState.getPortValue(n-2);
+      if (enable == Value.FALSE)
+        return;
       AttributeOption trigger = circState.getAttributeValue(StdAttr.EDGE_TRIGGER);
       Value clock = circState.getPortValue(n-1);
       Value lastClock = state.setLastClock(clock);
@@ -309,20 +314,18 @@ public class SerialIn extends InstanceFactory {
         go = lastClock == Value.FALSE && clock == Value.TRUE;
       }
       synchronized (state) {
-        widths = state.matcher.widths;
         if (go)
           vals = state.q.pollFirst();
       }
     } else { // CLOCKING_ASYNCHRONOUS
       synchronized (state) { 
-        widths = state.matcher.widths;
-        vals = s.lastAsync;
+        vals = state.lastAsync;
       } // end synchronized
     }
     
     for (int i = 0; i < n; i++) {
       int b = widths[i];
-      Val v = (vals == null ? null : vals[i]);
+      Value v = (vals == null ? null : vals[i]);
       if (v != null && v.getWidth() != widths[i])
         v = null;
       if (v == null)
@@ -334,14 +337,14 @@ public class SerialIn extends InstanceFactory {
   static abstract class Token {
     int width = 0;
     Value lastVal;
-    int consume(byte[] buf, int pos, int len);
+    abstract int consume(byte[] buf, int pos, int len);
   }
   static class StaticToken extends Token {
     String tok = "";
     byte[] bytes = new byte[0];
     StaticToken() { }
-    void extend(char c) {
-      tok += c;
+    void extend(String s) {
+      tok += s;
       bytes = tok.getBytes(StandardCharsets.UTF_8);
     }
     int consume(byte[] buf, int pos, int len) {
@@ -380,7 +383,7 @@ public class SerialIn extends InstanceFactory {
       }
       int digits = 0;
       long x = 0;
-      while (len > 0 && within(buf[pos], '0', '9')) {
+      while (len > 0 && within((char)(buf[pos] & 0xff), '0', '9')) {
         x = 10 * x + (buf[pos] - '0');
         pos++; len--;
         digits++;
@@ -403,8 +406,8 @@ public class SerialIn extends InstanceFactory {
     int consume(byte[] buf, int pos, int len) {
       int cnt = 0;
       long x = 0;
-      while (len > 0 && isHex(buf[pos]) && fromHex(buf[pos]) < radix) {
-        x = radix * x + fromHex(buf[pos]);
+      while (len > 0 && isHex((char)(buf[pos] & 0xff)) && fromHex((char)(buf[pos] & 0xff)) < radix) {
+        x = radix * x + fromHex((char)(buf[pos] & 0xff));
         pos++; len--;
         cnt++;
       }
@@ -429,12 +432,27 @@ public class SerialIn extends InstanceFactory {
     void push(char c) {
       if (tokens.isEmpty() || !(tokens.get(0) instanceof StaticToken))
         tokens.add(new StaticToken());
-      StaticToken t = (StaticToken)tokens.getLast();
-      t.extend(c);
+      StaticToken t = (StaticToken)tokens.get(tokens.size()-1);
+      t.extend("" + c);
       if (c == '\n' || c == '\r')
         hasNewline = hasWhitespace = true;
       else if (c == ' ' || c == '\t')
         hasWhitespace = true;
+    }
+    void push(int codepoint) {
+      if (0 <= codepoint && codepoint < 127) {
+        push((char)(codepoint & 0x7f));
+      } else {
+        try {
+          String s = new String(Character.toChars((int)codepoint));
+          if (tokens.isEmpty() || !(tokens.get(0) instanceof StaticToken))
+            tokens.add(new StaticToken());
+          StaticToken t = (StaticToken)tokens.get(tokens.size()-1);
+          t.extend(s);
+        } catch (Exception e) {
+          valid = false;
+        }
+      }
     }
 
     void push(Token t) {
@@ -477,23 +495,29 @@ outer:
         else if (c == '\'') m.push('\'');
         else if (c == '"') m.push('\"');
         else if (c == '?') m.push('?');
-        else if (c == 'x' || c == 'u') { // hex \xh... or unicode \uhhhh
+        else if (c == 'x' || c == 'u') { // hex or unicode
           if (i + 1 < e && isHex(fmt.charAt(i+1))) {
             boolean unicode = (c == 'u');
             int cnt = 0;
-            int x = 0;
+            long x = 0;
             while (i + 1 < e && isHex(fmt.charAt(i+1))) {
               x = 16 * x + fromHex(fmt.charAt(++i));
               cnt++;
             }
-            m.push((char)x);
-            if (unicode && cnt != 4)
-              m.valid = false;
+            if (unicode) {
+              if (cnt != 4)
+                m.valid = false;
+              m.push((int)(x & 0xffffffffL)); // codepoint
+            } else {
+              if (cnt > 2)
+                m.valid = false;
+              m.push((char)(x & 0xff));
+            }
           } else {
-            // malformed... lone '\x' or '\u' without hex digits
+            // malformed... missing hex digits
             m.valid = false;
           }
-        } else if (within(c, '0', '7') { // octal \nnn
+        } else if (within(c, '0', '7')) { // octal
           int x = (c - '0');
           if (i + 1 < e && within(fmt.charAt(i+1), '0', '7'))
             x = 8 * x + (fmt.charAt(++i) - '0');
@@ -553,15 +577,15 @@ outer:
 
     ArrayList<Integer> widths = new ArrayList<>();
     for (Token t : m.tokens) {
-      if (t.w > 0)
-        widths.add(w);
+      if (t.width > 0)
+        widths.add(t.width);
     }
     if (widths.isEmpty()) {
       m.push(new ByteToken()); // default for empty or fully invalid fmt
       widths.add(8);
       m.valid = false;
     }
-    m.widths = out.stream().mapToInt(v->v).toArray();
+    m.widths = widths.stream().mapToInt(v->v).toArray();
     return m;
   }
 
@@ -579,13 +603,12 @@ outer:
   }
 
   private static State getState(InstanceState circState) {
-    AttributeSet attrs = circState.getAttributes();
     State state = (State) circState.getData();
     if (state == null) {
-      state = new State(attrs);
+      state = new State(circState);
       circState.setData(state);
     } else {
-      state.updateAttributes(attrs);
+      state.updateBinding(circState);
     }
     return state;
   }
@@ -610,11 +633,11 @@ outer:
     Thread worker;
 
     // shared between worker and others
-    Deque<Value[]> q = new ArrayDeque<>();
+    ArrayDeque<Value[]> q = new ArrayDeque<>();
     Value[] lastAsync = null;
 
-    State(AttributeSet attrs) {
-      updateAttriutes(attrs);
+    State(InstanceState circState) {
+      updateBinding(circState);
     }
     
     private State(State other) {
@@ -630,7 +653,20 @@ outer:
       }
     }
 
-    synchronized void updateAttributes(AttributeSet attrs) {
+    synchronized void updateBinding(InstanceState circState) {
+      if (instance != null) {
+        // are we still attached to the same instance?
+        Instance i = circState.getInstance();
+        if (i == null) {
+          System.err.println("Trouble... instance missing?!?!?");
+        } else if (i != instance) {
+          System.err.println("Trouble ahead: instance mismatch?!?!?");
+          instance = i;
+        }
+      } else {
+        instance = circState.getInstance();
+      }
+      AttributeSet attrs = circState.getAttributeSet();
       AttributeOption mode = circState.getAttributeValue(ATTR_MODE);
       String path = circState.getAttributeValue(ATTR_PORT);
       int baud = circState.getAttributeValue(ATTR_BAUD);
@@ -646,22 +682,27 @@ outer:
       // }
 
       if (!path.equals(this.path)) {
+        System.out.println("path changed");
         close();
         this.path = path;
       }
       if (qlen != this.qlen) {
+        System.out.println("qlen changed");
         this.qlen = qlen;
         while (q.size() > qlen)
           q.removeFirst();
       }
       if (!fmt.equals(this.fmt) || !delim.equals(this.delim)) {
+        System.out.println("fmt/delim changed");
         q.clear();
         lastAsync = null;
         this.delim = delim;
+        this.fmt = fmt;
         this.matcher = parseFormat(fmt);
         // TODO if invalid matcher, or if delim is empty...?
       }
       if (baud != this.baud || mode != this.mode) {
+        System.out.println("baud/mode changed");
         this.baud = baud;
         this.mode = mode;
         if (port != null) {
@@ -705,10 +746,19 @@ outer:
             if (buf[(r + n - 1) % cap] == '\n') {
               if (!first) {
                 Value[] vals = parseRecord(matcher, buf, r, n-1);
-                lastAsync = vals;
+                boolean changed = lastAsync == null || vals.length != lastAsync.length ;
+                for (int i = 0; !changed && i < vals.length; i++)
+                  changed = !vals[i].equals(lastAsync[i]);
                 while (q.size() >= qlen)
                   q.removeFirst();
                 q.addLast(vals);
+                if (changed) {
+                  lastAsync = vals;
+                  if (instance == null)
+                    System.out.println("missing instance???");
+                  else if (instance.getAttributeValue(ATTR_CLOCKING) == CLOCKING_ASYNCHRONOUS)
+                    instance.fireInvalidated();
+                }
               } else {
                 first = false;
               }
@@ -734,7 +784,7 @@ outer:
         port.setDTR();
         port.setRTS();
         if (!port.openPort()) {
-          status = "error";
+          status = String.format("error (%d)", port.getLastErrorCode());
           port = null;
           return;
         }
@@ -750,7 +800,10 @@ outer:
         worker = null;
         e.printStackTrace();
       }
-      instance.fireInvalidated();
+      if (instance != null)
+        instance.fireInvalidated();
+      else
+        System.err.println("missing instance in open()???");
     }
 
     synchronized void close() {
@@ -779,9 +832,28 @@ outer:
         q.clear();
         lastAsync = null;
       }
-      instance.fireInvalidated();
+      if (instance != null)
+        instance.fireInvalidated();
+      else
+        System.err.println("missing instance in close()???");
     }
 
+  }
+
+  private static class SerialPortPathAttribute extends Attribute<String> {
+    public SerialPortPathAttribute(String name, StringGetter desc) {
+      super(name, desc);
+    }
+
+    @Override
+    public java.awt.Component getCellEditor(Window source, String value) {
+      return new SerialPortChooser(source, value);
+    }
+
+    @Override
+    public String parse(String value) {
+      return value;
+    }
   }
 
 }
