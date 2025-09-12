@@ -48,13 +48,14 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
+// import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -74,7 +75,7 @@ public class SerialPortChooser extends JDialog implements JInputDialog<String> {
   private final Timer refreshTimer;
 
   public SerialPortChooser(Window parent, String initialValue) {
-    super((Frame)parent, S.get("serialPortDialogTitle"));
+    super((Frame)parent, S.get("serialPortDialogTitle"), true);
     
     cancelValue = initialValue;
 
@@ -126,6 +127,7 @@ public class SerialPortChooser extends JDialog implements JInputDialog<String> {
     JPanel inputRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
     inputRow.setBorder(new EmptyBorder(8, 12, 8, 12));
     pathField.setColumns(32);
+    inputRow.add(new JLabel(S.get("serialPortDialogPath") + ":  "));
     inputRow.add(pathField);
     south.add(inputRow, BorderLayout.CENTER);
 
