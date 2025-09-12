@@ -59,6 +59,7 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.UniquelyNamedThread;
@@ -106,9 +107,22 @@ public class SerialIn extends InstanceFactory {
 
   // TODO: maybe add one or two other common options? Are there any?
   static final AttributeOption MODE_8N1 = new AttributeOption("8n1", S.unlocalized("8n1"));
+  static final AttributeOption MODE_8N2 = new AttributeOption("8n2", S.unlocalized("8n2"));
+  static final AttributeOption MODE_8E1 = new AttributeOption("8e1", S.unlocalized("8e1"));
+  static final AttributeOption MODE_8E2 = new AttributeOption("8e2", S.unlocalized("8e2"));
+  static final AttributeOption MODE_8O1 = new AttributeOption("8o1", S.unlocalized("8o1"));
+  static final AttributeOption MODE_8O2 = new AttributeOption("8o2", S.unlocalized("8o2"));
+  static final AttributeOption MODE_7N1 = new AttributeOption("7n1", S.unlocalized("7n1"));
+  static final AttributeOption MODE_7N2 = new AttributeOption("7n2", S.unlocalized("7n2"));
+  static final AttributeOption MODE_7E1 = new AttributeOption("7e1", S.unlocalized("7e1"));
+  static final AttributeOption MODE_7E2 = new AttributeOption("7e2", S.unlocalized("7e2"));
+  static final AttributeOption MODE_7O1 = new AttributeOption("7o1", S.unlocalized("7o1"));
+  static final AttributeOption MODE_7O2 = new AttributeOption("7o2", S.unlocalized("7o2"));
   static final Attribute<AttributeOption> ATTR_MODE =
       Attributes.forOption("mode", S.getter("ioSerialMode"),
-          new AttributeOption[] { MODE_8N1 });
+          new AttributeOption[] {
+            MODE_8N1, MODE_8N2, MODE_8E1, MODE_8E2, MODE_8O1, MODE_8O2,
+            MODE_7N1, MODE_7N2, MODE_7E1, MODE_7E2, MODE_7O1, MODE_7O2 });
 
   // async mode:
   //   Outputs reflect most recent serial data, but are UNKNOWN initially.
@@ -137,15 +151,14 @@ public class SerialIn extends InstanceFactory {
   private static Attribute<Integer> ATTR_BAUD =
       Attributes.forIntegerRange("baud", S.getter("serialInputBaud"), 110, 256000);
 
-  // delim is a regex used to parse the incoming bytes from serial port into records
+  // delim is used to parse the incoming bytes from serial port into records
   // to be parsed.  For example:
-  //   "\n" --> break data at newline, parse each line as a record
-  //   "\r+\n" --> same, but allow for legacy line endings too
-  //   "[ \t\r\n]+" --> split on simple whitespace, parse each non-whitespace piece as a record
-  // If delim is left empty, then each possible prefix of the data stream
-  // checked to see if it can be parsed as a record (i.e. each time a byte
-  // arrives, the whole queue is checked to see if it can be parsed as a
-  // record).
+  //   "[\n]" --> break data at newline, parse each line as a record
+  //   "[ \t\r\n]" --> split on simple whitespace
+  //   "[, ]" --> split on commas and spaces
+  // In all cases, multiple delimiters in a row are treated as one, i.e. empty
+  // records are ignored.
+  // If delim is left empty, a default is used.
   public static final Attribute<String> ATTR_DELIMITER =
       Attributes.forString("delimiter", S.getter("serialInputDelimiter"));
  
@@ -179,8 +192,8 @@ public class SerialIn extends InstanceFactory {
   // Extra/trailing data in a record after a match is discarded.
   // If the format doesn't match the record at all, the entire record is discarded and
   // all values are set to ERROR values.
-  public static final Attribute<String> ATTR_FORMAT =
-      Attributes.forString("format", S.getter("serialInputFormat"));
+  public static final Attribute<Matcher> ATTR_FORMAT =
+      new MatcherAttribute("format", S.getter("serialInputFormat"));
 
 
   public SerialIn() {
@@ -190,7 +203,7 @@ public class SerialIn extends InstanceFactory {
       ATTR_CLOCKING, StdAttr.EDGE_TRIGGER, ATTR_QUEUE,
       StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
       new Object[] { /* Direction.EAST, */
-        MODE_8N1, 115200, "%8d %8d %8d", "\\n", "/dev/ttyUSB0",
+        MODE_8N1, 115200, parseFormat("%8d %8d %8d"), "[\\n]", "/dev/ttyUSB0",
         CLOCKING_ASYNCHRONOUS, StdAttr.TRIG_RISING, 1024,
         "", StdAttr.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     setIconName("serial-in.png");
@@ -217,7 +230,7 @@ public class SerialIn extends InstanceFactory {
 
   private void updatePorts(Instance instance) {
     AttributeOption clocking = instance.getAttributeValue(ATTR_CLOCKING);
-    Matcher m = parseFormat(instance.getAttributeValue(ATTR_FORMAT));
+    Matcher m = instance.getAttributeValue(ATTR_FORMAT);
     int n = m.widths.length + (clocking == CLOCKING_SYNCHRONOUS ? 2 : 0);
     Port[] ps = new Port[n];
     for (int i = 0; i < m.widths.length; i++) {
@@ -235,7 +248,7 @@ public class SerialIn extends InstanceFactory {
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
-    Matcher m = parseFormat(attrs.getValue(ATTR_FORMAT));
+    Matcher m = attrs.getValue(ATTR_FORMAT);
     int p = m.widths.length;
     return Bounds.create(-80, -(10 + 10 * p), 80, 20 + 10 * p);
   }
@@ -421,13 +434,16 @@ public class SerialIn extends InstanceFactory {
 
   // fixme: this should be the attrib directly?
   static class Matcher {
-    // String fmt;  // TODO
-    boolean valid;
+    String fmt;
     int[] widths;
     ArrayList<Token> tokens = new ArrayList<>();
     boolean hasNewline, hasWhitespace;
+    boolean valid = true;
+    String errmsg;
 
-    Matcher() { }
+    Matcher(String fmt) {
+      this.fmt = fmt;
+    }
 
     void push(char c) {
       if (tokens.isEmpty() || !(tokens.get(0) instanceof StaticToken))
@@ -450,13 +466,19 @@ public class SerialIn extends InstanceFactory {
           StaticToken t = (StaticToken)tokens.get(tokens.size()-1);
           t.extend(s);
         } catch (Exception e) {
-          valid = false;
+          err(String.format("\\u%x is not a valid unicode codepoint (%s)", codepoint, e.getMessage()));
         }
       }
     }
 
     void push(Token t) {
       tokens.add(t);
+    }
+
+    void err(String msg) {
+      valid = false;
+      if (errmsg == null)
+        errmsg = msg;
     }
   }
 
@@ -476,7 +498,7 @@ public class SerialIn extends InstanceFactory {
   }
 
   private static Matcher parseFormat(String fmt) {
-    Matcher m = new Matcher();
+    Matcher m = new Matcher(fmt);
     boolean escaped = false;
 outer:
     for (int i = 0, e = fmt.length(); i < e; i++) {
@@ -496,26 +518,27 @@ outer:
         else if (c == '"') m.push('\"');
         else if (c == '?') m.push('?');
         else if (c == 'x' || c == 'u') { // hex or unicode
+          boolean unicode = (c == 'u');
           if (i + 1 < e && isHex(fmt.charAt(i+1))) {
-            boolean unicode = (c == 'u');
             int cnt = 0;
             long x = 0;
             while (i + 1 < e && isHex(fmt.charAt(i+1))) {
               x = 16 * x + fromHex(fmt.charAt(++i));
               cnt++;
+              if (unicode && cnt == 4) break;
+              else if (!unicode && cnt == 2) break;
             }
             if (unicode) {
               if (cnt != 4)
-                m.valid = false;
+                m.err("\\u must be followed by four hex digits");
               m.push((int)(x & 0xffffffffL)); // codepoint
             } else {
-              if (cnt > 2)
-                m.valid = false;
               m.push((char)(x & 0xff));
             }
           } else {
             // malformed... missing hex digits
-            m.valid = false;
+            m.err(unicode ? "\\u must be followed by four hex digits" :
+                "\\x must be followed by one or two hex digits");
           }
         } else if (within(c, '0', '7')) { // octal
           int x = (c - '0');
@@ -526,7 +549,7 @@ outer:
           m.push((char)x);
         } else {
           m.push(c); // malformed, but allow whatever else.
-          m.valid = false;
+          m.err(String.format("\\%c is not a valid escape sequence", c));
         }
         escaped = false;
       } else if (c == '\\') {
@@ -535,11 +558,15 @@ outer:
         m.push(c);
       } else {
         if (++i >= e) {
-          m.valid = false;
+          m.err("% must be followed by a format string, or use %% for a literal percent sign");
           break outer; // malformed... trailing %
         }
         else c = fmt.charAt(i);  
         // %c --> raw byte
+        if (c == '%') {
+          m.push('%');
+          continue;
+        }
         if (c == 'c' || c == 'C') {
           m.push(new ByteToken());
           continue;
@@ -549,31 +576,35 @@ outer:
         while (Character.isDigit(c)) {
           w = w * 10 + (c - '0');
           if (++i >= e) {
-            m.valid = false;
+            m.err("%-style format string should end in: c, d, u, b, o, u, or x");
             break outer; // malformed... missing fmt char
           }
           else c = fmt.charAt(i);  
         }
         if (w <= 0) { // malformed... missing or zero width
+          m.err("invalid width (" + w + "), must be 1-32");
           w = 8; // whatever
-          m.valid = false;
         } else if (w > 32) { // malfomed... width too large
+          m.err("invalid width (" + w + "), must be 1-32");
           w = 32; 
-          m.valid = false;
         }
         if (c == 'd') m.push(new SignedDecimalToken(w));
         else if (c == 'b') m.push(new RadixToken(w, 2));
         else if (c == 'o') m.push(new RadixToken(w, 8));
         else if (c == 'u') m.push(new RadixToken(w, 10));
         else if (c == 'x') m.push(new RadixToken(w, 16));
-        else {
+        else if (c == 'c') {
+          if (w != 8)
+            m.err("%" + w + "c is not valid, only %c (or, equivalently, %8c) is allowed");
+          m.push(new ByteToken());
+        } else {
           m.push(new SignedDecimalToken(w)); // malformed... bad fmt char
-          m.valid = false;
+          m.err("%" + c + " is not valid, should be: c, d, u, b, o, u, or x");
         }
       }
     }
     if (escaped)
-      m.valid = false;
+      m.err("'\\' at end of string should be a complete escape sequence");
 
     ArrayList<Integer> widths = new ArrayList<>();
     for (Token t : m.tokens) {
@@ -583,7 +614,7 @@ outer:
     if (widths.isEmpty()) {
       m.push(new ByteToken()); // default for empty or fully invalid fmt
       widths.add(8);
-      m.valid = false;
+      m.err("format string must describe format of values to expect, like %32d, %16x, etc.");
     }
     m.widths = widths.stream().mapToInt(v->v).toArray();
     return m;
@@ -670,16 +701,18 @@ outer:
       AttributeOption mode = circState.getAttributeValue(ATTR_MODE);
       String path = circState.getAttributeValue(ATTR_PORT);
       int baud = circState.getAttributeValue(ATTR_BAUD);
-      String fmt = circState.getAttributeValue(ATTR_FORMAT);
+      Matcher m = circState.getAttributeValue(ATTR_FORMAT);
       String delim = circState.getAttributeValue(ATTR_DELIMITER);
       int qlen = circState.getAttributeValue(ATTR_QUEUE);
-    
+   
       // TODO: fmt, delim sanity checks and defaults
       // if (fmt.equals("")) {
       //   fmt = "%c"; // take raw bytes, skip nothing
       // } else if (delim.equals("")) {
       //   delim = "\\n"; // fixme, be more clever here about defaults
       // }
+      
+      // TODO: normalize delim
 
       if (!path.equals(this.path)) {
         System.out.println("path changed");
@@ -692,13 +725,13 @@ outer:
         while (q.size() > qlen)
           q.removeFirst();
       }
-      if (!fmt.equals(this.fmt) || !delim.equals(this.delim)) {
+      if (!m.fmt.equals(this.fmt) || !delim.equals(this.delim)) {
         System.out.println("fmt/delim changed");
         q.clear();
         lastAsync = null;
         this.delim = delim;
-        this.fmt = fmt;
-        this.matcher = parseFormat(fmt);
+        this.fmt = m.fmt;
+        this.matcher = m;
         // TODO if invalid matcher, or if delim is empty...?
       }
       if (baud != this.baud || mode != this.mode) {
@@ -854,6 +887,31 @@ outer:
     public String parse(String value) {
       return value;
     }
+  }
+
+  private static class MatcherAttribute extends Attribute<Matcher> {
+    public MatcherAttribute(String name, StringGetter desc) {
+      super(name, desc);
+    }
+
+    @Override
+    public Matcher parse(String value) {
+      Matcher m = parseFormat(value);
+      if (!m.valid)
+        Errors.title(S.get("serialInputFormatErrorTitle")).show(m.errmsg);
+      return m;
+    }
+
+    @Override
+    public String toDisplayString(Matcher value) {
+      return toStandardString(value);
+    }
+
+    @Override
+    public String toStandardString(Matcher m) {
+      return m.fmt;
+    }
+
   }
 
 }
