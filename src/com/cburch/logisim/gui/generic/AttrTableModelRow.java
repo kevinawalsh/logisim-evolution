@@ -40,6 +40,8 @@ public interface AttrTableModelRow {
 
   public String getLabel();
 
+  public Object getDisplayObject();
+
   public String getDisplayString();
 
   public Object getValue();

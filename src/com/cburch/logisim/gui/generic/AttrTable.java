@@ -36,6 +36,8 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
@@ -51,6 +53,7 @@ import java.util.EventObject;
 import java.util.LinkedList;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -66,6 +69,7 @@ import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
 
@@ -488,7 +492,7 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-      return String.class;
+      return Object.class;
     }
 
     @Override
@@ -515,7 +519,8 @@ public class AttrTable extends JPanel implements LocaleListener {
       if (columnIndex == 0) {
         return attrModel.getRow(rowIndex).getLabel();
       } else {
-        return attrModel.getRow(rowIndex).getDisplayString();
+        Object o = attrModel.getRow(rowIndex).getDisplayObject();
+        return o == null ? "" : o;
       }
     }
 
@@ -619,6 +624,50 @@ public class AttrTable extends JPanel implements LocaleListener {
     }
   }
 
+
+  static class ObjectOrColorRenderer extends DefaultTableCellRenderer {
+    private final ColorIcon swatch = new ColorIcon();
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value,
+        boolean isSelected, boolean hasFocus, int row, int column) {
+
+      String text;
+
+      if (value instanceof Color) {
+        Color c = (Color)value;
+        int r = c.getRed(), g = c.getGreen(), b = c.getBlue(), a = c.getAlpha();
+        text = (a == 255)
+            ? String.format("#%02X%02X%02X", r, g, b)
+            : String.format("#%02X%02X%02X%02X", r, g, b, a);
+        swatch.setColor(c);
+        setIcon(swatch);
+        setHorizontalTextPosition(SwingConstants.RIGHT);
+        setIconTextGap(6);
+      } else {
+        setIcon(null);
+        text = (value == null) ? "" : value.toString();
+      }
+
+      return super.getTableCellRendererComponent(table, text, isSelected, hasFocus, row, column);
+    }
+
+    private static class ColorIcon implements Icon {
+      private Color color = Color.BLACK;
+      void setColor(Color c) { this.color = (c == null) ? Color.BLACK : c; }
+      public int getIconWidth()  { return 12; }
+      public int getIconHeight() { return 12; }
+      public void paintIcon(Component c, Graphics g, int x, int y) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(color);
+        g2.fillRect(x, y, getIconWidth(), getIconHeight());
+        g2.setColor(Color.DARK_GRAY);
+        g2.drawRect(x, y, getIconWidth()-1, getIconHeight()-1);
+        g2.dispose();
+      }
+    }
+  }
+
   private static final AttrTableModel NULL_ATTR_MODEL = new NullAttrModel();
   private Window parent;
   private boolean titleEnabled;
@@ -644,7 +693,17 @@ public class AttrTable extends JPanel implements LocaleListener {
         int rowIndex = rowAtPoint(p);
         int colIndex = columnAtPoint(p);
         try {
-          tip = getValueAt(rowIndex, colIndex).toString();
+          Object o = getValueAt(rowIndex, colIndex);
+          tip = o.toString();
+          if (o instanceof String && ((String)o).isEmpty()) {
+            tip = "(empty)";
+          } else if (o instanceof Color) {
+            Color c = (Color)o;
+            int r = c.getRed(), g = c.getGreen(), b = c.getBlue(), a = c.getAlpha();
+            tip = String.format("R=%d G=%d B=%d A=%d", r, g, b, a);
+          } else {
+            tip = o.toString();
+          }
         } catch (RuntimeException e1) {
         }
         return tip;
@@ -655,6 +714,7 @@ public class AttrTable extends JPanel implements LocaleListener {
     table.setRowHeight(20);
     table.getColumnModel().getColumn(0).setPreferredWidth(1);
     table.getColumnModel().getColumn(1).setPreferredWidth(1);
+    table.setDefaultRenderer(Object.class, new ObjectOrColorRenderer());
     new TableColumnResizer(table);
     Font baseFont = title.getFont();
     int titleSize = Math.round(baseFont.getSize() * 1.2f);
@@ -664,7 +724,7 @@ public class AttrTable extends JPanel implements LocaleListener {
     Color bgColor = new Color(240, 240, 240);
     setBackground(bgColor);
     table.setBackground(bgColor);
-    Object renderer = table.getDefaultRenderer(String.class);
+    Object renderer = table.getDefaultRenderer(Object.class);
     if (renderer instanceof JComponent) {
       ((JComponent) renderer).setBackground(Color.WHITE);
     }

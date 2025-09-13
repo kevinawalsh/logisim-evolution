@@ -320,6 +320,11 @@ public class Attributes {
     }
 
     @Override
+    public Object toDisplayObject(Color value) {
+      return value;
+    }
+
+    @Override
     public String toStandardString(Color c) {
       String ret = "#" + hex(c.getRed()) + hex(c.getGreen())
           + hex(c.getBlue());

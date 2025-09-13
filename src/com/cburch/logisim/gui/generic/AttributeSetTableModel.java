@@ -78,6 +78,23 @@ public abstract class AttributeSetTableModel
       return attrs.getValue(attr);
     }
 
+    public Object getDisplayObject() {
+      V value = attrs.getValue(attr);
+      if (value == null) {
+        try {
+          return attr.toDisplayObject(value);
+        } catch (NullPointerException e) {
+          return "";
+        }
+      } else {
+        try {
+          return attr.toDisplayObject(value);
+        } catch (Exception e) {
+          return "???";
+        }
+      }
+    }
+
     public String getDisplayString() {
       V value = attrs.getValue(attr);
       if (value == null) {

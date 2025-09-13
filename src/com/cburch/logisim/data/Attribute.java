@@ -76,6 +76,10 @@ public abstract class Attribute<V> {
     return value == null ? "" : value.toString();
   }
 
+  public Object toDisplayObject(V value) {
+    return toDisplayString(value);
+  }
+
   public String toStandardString(V value) {
     return value.toString();
   }
