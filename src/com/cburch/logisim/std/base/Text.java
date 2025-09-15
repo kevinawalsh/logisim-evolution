@@ -63,24 +63,40 @@ public class Text extends InstanceFactory implements CustomHandles {
     }
 
     @Override
-    public String parse(String escaped) {
+    public String parse(String unescapedFromXML) {
+      return unescapedFromXML;
+    }
+
+    // Note: in the UI's left side panel attribute table, it's
+    // difficult (impossible?) to type newlines or tabs. So
+    // we escape newlines and tabs here, along with backslashes.
+    // This is done only for user/display strings, not for XML.
+
+    @Override
+    public String parseFromUser(java.awt.Window window, String escaped) {
       StringBuilder s = new StringBuilder();
       boolean escape = false;
       for (int i = 0; i < escaped.length(); i++) {
         char c = (char)escaped.charAt(i);
-        if (c == '\\')
-          escape = true;
-        else if (escape) {
+        if (escape) {
           escape = false;
           switch (c) {
           case 't': s.append('\t'); break;
           case 'n': s.append('\n'); break;
-          default: s.append(c); break;
+          case '\\': s.append('\\'); break;
+          default:
+            // bad escape: leave alone, don't eat the backslash
+            s.append("\\" + c);
+            break;
           }
+        } else if (c == '\\') {
+          escape = true;
         } else {
           s.append(c);
         }
       }
+      if (escape) // bad trailing escape, leave alone, don't eat it.
+        s.append('\\');
       return s.toString();
     }
 
@@ -97,6 +113,7 @@ public class Text extends InstanceFactory implements CustomHandles {
       }
       return escaped.toString();
     }
+
   }
 
   public static Attribute<String> ATTR_TEXT = new MultilineAttribute("text",
