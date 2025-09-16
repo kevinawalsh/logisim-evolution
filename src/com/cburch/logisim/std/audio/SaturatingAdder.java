@@ -58,11 +58,10 @@ public class SaturatingAdder extends InstanceFactory {
   static final Attribute<Integer> ATTR_INPUTS =
       Attributes.forIntegerRange("inputs", S.getter("gateInputsAttr"), 2, 5);
 
-  static final AttributeOption NORM_CAP = new AttributeOption("cap", S.getter("audioNormalizationCap"));
-  static final AttributeOption NORM_FIT = new AttributeOption("fit", S.getter("audioNormalizationFit"));
-  static final AttributeOption NORM_CENTER = new AttributeOption("center", S.getter("audioNormalizationCenter"));
-  static final Attribute<AttributeOption> ATTR_NORM = Attributes.forOption(
-      "normalization", S.getter("audioNormalizationMode"), new AttributeOption[] { NORM_CAP, NORM_FIT, NORM_CENTER });
+  static final AttributeOption NORM_CAP = FitRange.NORM_CAP;
+  static final AttributeOption NORM_FIT = FitRange.NORM_FIT;
+  static final AttributeOption NORM_CENTER = FitRange.NORM_CENTER;
+  static final Attribute<AttributeOption> ATTR_NORM = FitRange.ATTR_NORM;
 
   protected SaturatingAdder(String name, String localized) {
     super(name, S.getter(localized));
@@ -85,7 +84,8 @@ public class SaturatingAdder extends InstanceFactory {
     updatePorts(instance);
   }
 
-  @Override protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+  @Override
+  protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.WIDTH) {
       updatePorts(instance);
     } else if (attr == ATTR_INPUTS) {

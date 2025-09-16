@@ -45,8 +45,9 @@ public class Audio extends Library {
     new FactoryDescription("PCMSink", S.getter("audioPCMSinkComponent"), "midisink.gif", "PCMSink"),
     new FactoryDescription("MidiSink", S.getter("audioMidiSinkComponent"), "midisink.gif", "MidiSink"),
     new FactoryDescription("MidiIn", S.getter("audioMidiInComponent"), "midiin.gif", "MidiIn"),
-    new FactoryDescription("SaturatingAdder", S.getter("audioSaturatingAdderComponent"), "saturatingadder.gif", "SaturatingAdder"),
-    new FactoryDescription("SaturatingMultiplier", S.getter("audioSaturatingMultiplierComponent"), "saturatingadder.gif", "SaturatingMultiplier"),
+    new FactoryDescription("SaturatingAdder", S.getter("audioSaturatingAdderComponent"), "saturatingadder.png", "SaturatingAdder"),
+    new FactoryDescription("SaturatingMultiplier", S.getter("audioSaturatingMultiplierComponent"), "saturatingadder.png", "SaturatingMultiplier"),
+    new FactoryDescription("FitRange", S.getter("audioFitRangeComponent"), "fitrange.png", "FitRange"),
   };
 
   private List<Tool> tools = null;
