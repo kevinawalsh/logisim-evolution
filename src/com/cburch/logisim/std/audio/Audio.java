@@ -46,6 +46,7 @@ public class Audio extends Library {
     new FactoryDescription("MidiSink", S.getter("audioMidiSinkComponent"), "midisink.gif", "MidiSink"),
     new FactoryDescription("MidiIn", S.getter("audioMidiInComponent"), "midiin.gif", "MidiIn"),
     new FactoryDescription("SaturatingAdder", S.getter("audioSaturatingAdderComponent"), "saturatingadder.gif", "SaturatingAdder"),
+    new FactoryDescription("SaturatingMultiplier", S.getter("audioSaturatingMultiplierComponent"), "saturatingadder.gif", "SaturatingMultiplier"),
   };
 
   private List<Tool> tools = null;

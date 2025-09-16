@@ -37,6 +37,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
@@ -54,17 +55,27 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class SaturatingAdder extends InstanceFactory {
 
-  private static final Attribute<Integer> ATTR_INPUTS =
+  static final Attribute<Integer> ATTR_INPUTS =
       Attributes.forIntegerRange("inputs", S.getter("gateInputsAttr"), 2, 5);
 
-  public SaturatingAdder() {
-    super("SaturatingAdder", S.getter("audioSaturatingAdderComponent"));
+  static final AttributeOption NORM_CAP = new AttributeOption("cap", S.getter("audioNormalizationCap"));
+  static final AttributeOption NORM_FIT = new AttributeOption("fit", S.getter("audioNormalizationFit"));
+  static final AttributeOption NORM_CENTER = new AttributeOption("center", S.getter("audioNormalizationCenter"));
+  static final Attribute<AttributeOption> ATTR_NORM = Attributes.forOption(
+      "normalization", S.getter("audioNormalizationMode"), new AttributeOption[] { NORM_CAP, NORM_FIT, NORM_CENTER });
+
+  protected SaturatingAdder(String name, String localized) {
+    super(name, S.getter(localized));
     setAttributes(
         new Attribute[] {
-          StdAttr.WIDTH, ATTR_INPUTS, StdAttr.MODE },
+          StdAttr.WIDTH, ATTR_INPUTS, StdAttr.MODE, ATTR_NORM },
           new Object[] {
-            BitWidth.create(8), Integer.valueOf(2), StdAttr.UNSIGNED_OPTION });
+            BitWidth.create(8), Integer.valueOf(2), StdAttr.UNSIGNED_OPTION, NORM_CAP });
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
+  }
+
+  public SaturatingAdder() {
+    this("SaturatingAdder", "audioSaturatingAdderComponent");
     setIconName("saturatingadder.png");
   }
   
@@ -108,6 +119,15 @@ public class SaturatingAdder extends InstanceFactory {
     else
       return Bounds.create(-30, -25, 30, 50);
   }
+  
+  protected void paintDecoration(Graphics2D g, double cx, double cy) {
+    g.setColor(Color.GRAY);
+    g.fill(new Ellipse2D.Double(cx-12, cy-12, 24, 24));
+    g.setColor(Color.WHITE);
+    GraphicsUtil.switchToWidth(g, 2);
+    g.draw(new Line2D.Double(cx, cy-8, cx, cy+8));
+    g.draw(new Line2D.Double(cx-8, cy, cx+8, cy));
+  }
 
   @Override
   public void paintInstance(InstancePainter painter) {
@@ -116,14 +136,11 @@ public class SaturatingAdder extends InstanceFactory {
     Bounds bds = painter.getNominalBounds();
     double cx = bds.x + bds.width/2.0;
     double cy = bds.y + bds.height/2.0;
+    
+    paintDecoration(g, cx, cy);
 
-    g.setColor(Color.GRAY);
-    g.fill(new Ellipse2D.Double(cx-12, cy-12, 24, 24));
-    g.setColor(Color.WHITE);
-    GraphicsUtil.switchToWidth(g, 2);
-    g.draw(new Line2D.Double(cx, cy-8, cx, cy+8));
-    g.draw(new Line2D.Double(cx-8, cy, cx+8, cy));
-  
+    g.setColor(Color.BLACK);
+    GraphicsUtil.switchToWidth(g, 1);
     painter.drawPorts();
   }
 
@@ -132,10 +149,12 @@ public class SaturatingAdder extends InstanceFactory {
     int w = state.getAttributeValue(StdAttr.WIDTH).getWidth();
     int n = state.getAttributeValue(ATTR_INPUTS);
     boolean signed = state.getAttributeValue(StdAttr.MODE) == StdAttr.SIGNED_OPTION;
+    AttributeOption norm = state.getAttributeValue(ATTR_NORM);
 
     long signbit = 1L << (w-1);
     long moresigns = signed ? (-1L << w) : 0;
     long sum = 0;
+    int m = 0;
     for (int i = 0; i < n; i++) {
       Value v = state.getPortValue(1+i);
       if (v.isFullyDefined()) {
@@ -143,10 +162,28 @@ public class SaturatingAdder extends InstanceFactory {
         if ((x & signbit) != 0)
           x |= moresigns;
         sum += x;
+        m++;
       }
     }
     long max = signed ? ((1L << (w-1)) - 1) : ((1L << w) - 1);
     long min = signed ? -((1L << (w-1))) : 0L;
+    if (norm == NORM_FIT) {
+      // Signed:
+      //   Inputs in [-A, +B], sum in [-A*m, +B*m], so scale by 1/m.
+      // Unsigned:
+      //   Inputs in [0, +B], sum in [0, +B*m], so scale by 1/m.
+      if (m > 1)
+        sum /= m;
+    } else if (norm == NORM_CENTER) {
+      // Signed:
+      //   Inputs centered on 0, sum centered on 0, so no offset.
+      // Unsigned:
+      //   Inputs centered on B/2, sum centered m*B/2, so offset by -(m-1)*B/2.
+      //   Note: this offset works fine even in the m=1 and m=0 cases. Having
+      //   the output be centered at B/2 when there are no inputs is reasonable.
+      if (!signed)
+        sum = sum - (m-1)*max/2;
+    }
     sum = Math.max(min, Math.min(max, sum));
     state.setPort(0, Value.createKnown(BitWidth.create(w), (int)sum), 1);
   }
