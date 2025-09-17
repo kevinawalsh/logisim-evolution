@@ -466,6 +466,11 @@ outer:
     public int len;
     public boolean valueOutOfRange, unmatched;
 
+    public DataBuffer(byte[] data) {
+      buf = data;
+      cap = data.length;
+    }
+
     public DataBuffer(int cap) {
       this.cap = cap;
       this.buf = new byte[cap];

@@ -31,41 +31,43 @@
 package com.cburch.logisim.std.ext;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
-import com.cburch.logisim.tools.FactoryDescription;
-import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.data.Value;
 
-public class Ext extends Library {
+public class HttpInputFormat extends SerialInputFormat {
 
-  private static FactoryDescription[] DESCRIPTIONS = {
-    new FactoryDescription("SerialIn", S.getter("serialInputComponent"), "serial-in.png", "SerialIn"),
-    // new FactoryDescription("SerialOut", S.getter("serialOutputComponent"), "serial-in.png", "SerialOut"),
-    // new FactoryDescription("WebGet", S.getter("httpComponent"), "http-get.png", "WebGet"),
-    new FactoryDescription("HttpIn", S.getter("httpInputComponent"), "http-in.png", "HttpIn"),
-  };
+  // Everything here is basically the same as SerialInputFormat, for now,
+  // except there is no delimiter, entire Http responses are parsed at once.
+  // And "raw mode" doesn't really make sense, but for now it will just
+  // return the first byte of each response.
+  //
+  // Also, we could probably work with actual strings, decoded from e.g. Http
+  // utf8 response data. But for now, we continue to use bytes, as our test
+  // cases all use 7-bit clean ascii anyway.
 
-  private List<Tool> tools = null;
-
-  public Ext() { }
-
-  @Override
-  public String getDisplayName() {
-    return S.get("externalsLibrary");
+  public HttpInputFormat() { // raw mode
+    this(""); 
   }
 
-  @Override
-  public String getName() {
-    return "External I/O";
+  public HttpInputFormat(HttpInputFormat other) {
+    this(other.getFormatString()); 
   }
 
-  @Override
-  public List<Tool> getTools() {
-    if (tools == null) {
-      tools = FactoryDescription.getTools(Ext.class, DESCRIPTIONS);
-    }
-    return tools;
+  // Note: both del and fmt may contain escapes, and
+  // they are unescaped before processing.
+  public HttpInputFormat(String fmt) {
+    super("", fmt);
+  }
+
+  public Value[] parseResponse(String resp) {
+    byte[] utf = resp.getBytes(StandardCharsets.UTF_8);
+    DataBuffer buf = new DataBuffer(utf);
+    Value[] vals = buf.parseRecord(this, 0, utf.length);
+    return vals;
   }
 
 }

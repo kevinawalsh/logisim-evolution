@@ -228,7 +228,8 @@ public class SerialIn extends InstanceFactory {
     return Bounds.create(-80, -(10 * p), 80, 10 + 10 * p);
   }
 
-  @Override protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+  @Override
+  protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.LABEL_LOC) {
       recomputeLabelTextFieldPosition(instance);
     } else if (attr == ATTR_CLOCKING) {
@@ -418,14 +419,33 @@ public class SerialIn extends InstanceFactory {
     return state;
   }
 
-  private static class State implements InstanceData, Cloneable {
+  // This is called (sometimes) by CircuitState when simulation is no longer valid
+  public static void kill(State state) {
+    System.out.println("serial... CircuitState notify of kill");
+    if (state == null)
+      return;
+    state.close();
+  }
+
+  // This is called (sometimes) by CircuitState when simulation is reset
+  // This could be static, to match kill, or vice-versa. But whatever.
+  public boolean reset(CircuitState cs, Instance instance) {
+    System.out.println("serial... CircuitState notify of reset");
+    State state = (State)instance.getData(cs);
+    if (state == null)
+      return true; // remove State from cs (but it was already null?)
+    state.close();
+    return false; // keep state, it can be re-opened
+  }
+
+  public static class State implements InstanceData, Cloneable {
 
     private Value lastClock = Value.UNKNOWN;
 
     private volatile String status = "ready";
 
     private AttributeOption mode;
-    boolean async;
+    private boolean async;
     private int baud, qlen;
     private String path;
     private SerialInputFormat format;
@@ -567,10 +587,12 @@ public class SerialIn extends InstanceFactory {
             System.err.println("new: " + cs);
           }
           this.circState = cs;
+          // FIXME: if this situation ever happens, we also need to update SerialPortmanager 
         } else if (cs == null) {
-          System.out.println("huh.. new cs is null!!!");
+          System.out.println("huh.. old and new cs both null!!!");
         } else {
           this.circState = cs;
+          // port can't be open yet, so this is fine
         }
 
         // InstanceComponent ic = (InstanceComponent)iState.getInstance().getComponent();
@@ -847,11 +869,11 @@ public class SerialIn extends InstanceFactory {
     public String toDisplayString(SerialInputFormat format) {
       if (format.isRaw())
         return "raw bytes";
-      else  if (format.hasDelimiters())
-        return format.getFormatString()
-            + " (delimited by " + format.getDelimiterString() + ")";
+      else if (format.hasDelimiters())
+        return format.getFormatString().replace("\n", "\\n").replace("\t", "\\t")
+            + " (delimited by " + format.getDelimiterString().replace("\n", "\\n").replace("\t", "\\t") + ")";
       else
-            return format.getFormatString();
+        return format.getFormatString().replace("\n", "\\n").replace("\t", "\\t");
     }
 
     @Override

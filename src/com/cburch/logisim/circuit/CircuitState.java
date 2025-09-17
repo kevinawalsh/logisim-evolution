@@ -53,6 +53,8 @@ import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.memory.Ram;
 import com.cburch.logisim.std.memory.RamState;
+import com.cburch.logisim.std.ext.SerialIn;
+import com.cburch.logisim.std.ext.HttpIn;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Pin;
@@ -177,8 +179,20 @@ public class CircuitState implements InstanceData {
               break;
             }
           }
+          // FIXME: this is a hack, and it isn't reliable, as it
+          // doesn't handle cases where Ram, HttpIn, or SerialIn
+          // are embedded within subcircuits.
           if (!found && compState instanceof RamState) {
+            System.out.println("closing hex frame");
             Ram.closeHexFrame((RamState)compState);
+          }
+          if (!found && compState instanceof HttpIn.State) {
+            System.out.println("closing http");
+            HttpIn.kill((HttpIn.State)compState);
+          }
+          if (!found && compState instanceof SerialIn.State) {
+            System.out.println("closing serial");
+            SerialIn.kill((SerialIn.State)compState);
           }
           if (!found && compState instanceof CircuitState) {
             CircuitState sub = (CircuitState) compState;
@@ -385,9 +399,6 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  public CircuitState getParentState() {
-    return parentState;
-  }
 
   public CircuitState getAncestorState() {
     CircuitState ancestor = this;
@@ -412,8 +423,25 @@ public class CircuitState implements InstanceData {
     return base;
   }
 
-  Component getSubcircuit() {
+  // Outside the simulator code in PropagationPoints, it's probably
+  // not a good idea to access the parent component, since it can
+  // change, e.g. when copy/pasting/moving subcircuits around in
+  // a circuit, or when promoting a substate to a root state.
+  protected Component getSubcircuit() {
     return parentComp;
+  }
+  
+  // This one should probably be protected too, for the same reason.
+  // But it's used by the gui simulation tree view, menus, etc. Not
+  // sure if that's actually safe, but it's old, stable code.
+  public CircuitState getParentState() {
+    return parentState;
+  }
+
+  // This one should probably be protected too, for the same reason.
+  // But it's also used by various other code.
+  public boolean isSubstate() {
+    return parentState != null;
   }
 
   public Set<CircuitState> getSubstates() { // returns Set of CircuitStates
@@ -448,10 +476,6 @@ public class CircuitState implements InstanceData {
 
   CircuitWires.State getWireData() {
     return wireData;
-  }
-
-  public boolean isSubstate() {
-    return parentState != null;
   }
 
   private void markAllComponentsDirty() {
@@ -628,6 +652,16 @@ public class CircuitState implements InstanceData {
       if (comp.getFactory() instanceof Ram) {
         Ram ram = (Ram)comp.getFactory();
         boolean remove = ram.reset(this, Instance.getInstanceFor(comp));
+        if (remove)
+          it.remove();
+      } else if (comp.getFactory() instanceof HttpIn) {
+        HttpIn http = (HttpIn)comp.getFactory();
+        boolean remove = http.reset(this, Instance.getInstanceFor(comp));
+        if (remove)
+          it.remove();
+      } else if (comp.getFactory() instanceof SerialIn) {
+        SerialIn serial = (SerialIn)comp.getFactory();
+        boolean remove = serial.reset(this, Instance.getInstanceFor(comp));
         if (remove)
           it.remove();
       } else if (!(comp.getFactory() instanceof SubcircuitFactory)) {
