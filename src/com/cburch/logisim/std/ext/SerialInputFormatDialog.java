@@ -295,7 +295,7 @@ public class SerialInputFormatDialog extends JDialog implements JInputDialog<Ser
       });
     }
    
-    // behavior: custom delimiter --> update example, and select prebaked
+    // behavior: custom text --> update example, and select prebaked
     uponChange(customTxt, (text) -> {
       if (!programmaticChange || !text.isEmpty())
         illustrate();
