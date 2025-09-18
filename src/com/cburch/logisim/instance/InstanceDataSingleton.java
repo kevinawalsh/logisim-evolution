@@ -56,7 +56,7 @@ package com.cburch.logisim.instance;
  *  }
  *
  * InstanceDataSingleton provides a clone() implementation, as needed by
- * ComponentData, but it makes only a shallow copy, which only makes sense if
+ * ComponentState, but it makes only a shallow copy, which only makes sense if
  * the value being wrapped is immutable or can otherwise be safely shared
  * between multiple simulations. All known uses of InstanceDataSingleton use
  * either Value or Integer.
