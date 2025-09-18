@@ -302,14 +302,9 @@ public class CircuitState implements InstanceData {
   public static void transferActiveStatus(CircuitState deactivating, CircuitState activating) {
     deactivating = (deactivating == null ? null : deactivating.getAncestorState());
     activating = (activating == null ? null : activating.getAncestorState());
-    if (activating == null && deactivating == null)
-      return; // huh? whatever
     if (activating == deactivating) {
-      // should never happen, Project.setCircuitState() checks for this
-      System.err.println("bad transferActiveStatus call");
-      // at least make sure it is active, I guess?
-      if (!activating.active) {
-        System.err.println("... but marking as active anyway");
+      if (activating != null && !activating.active) {
+        System.err.println("CircuitStates unexpectedly inactive");
         activating.setActiveStatus(true);
       }
     } else {
@@ -328,13 +323,16 @@ public class CircuitState implements InstanceData {
     }
   }
 
-  private void setActiveStatus(boolean newStatus) {
-    if (active == newStatus)
+  private void setActiveStatus(boolean newLevel) {
+    if (active == newLevel)
       return;
-    active = true;
+    if (defunct && newLevel) {
+      System.err.println("ERROR: defunct CircuitState can't become active");
+    }
+    active = newLevel;
     synchronized(dirtyLock) {
       for (CircuitState sub : substates)
-        sub.setActiveStatus(newStatus);
+        sub.setActiveStatus(newLevel);
     }
   }
 
