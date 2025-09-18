@@ -172,7 +172,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     if (dpVal != null && dpVal.toIntValue() == 1)
       summary |= 128; // decimal point
 
-    Object value = Integer.valueOf(summary);
+    Integer value = Integer.valueOf(summary);
     InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
     if (data == null) {
       state.setData(new InstanceDataSingleton(value));

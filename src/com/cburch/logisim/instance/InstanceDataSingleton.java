@@ -93,10 +93,13 @@ package com.cburch.logisim.instance;
  * confirm above notes.
  * TODO: make this generic? Or don't bother, just eliminate it, it's pointless.
  */
-public class InstanceDataSingleton implements InstanceData, Cloneable {
+public final class InstanceDataSingleton implements InstanceData, Cloneable {
   private Object value;
 
-  public InstanceDataSingleton(Object value) {
+  public InstanceDataSingleton(Integer value) {
+    this.value = value;
+  }
+  public InstanceDataSingleton(com.cburch.logisim.data.Value value) {
     this.value = value;
   }
 

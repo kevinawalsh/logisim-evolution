@@ -193,7 +193,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
       if (val == Value.TRUE)
         summary |= 1 << i;
     }
-    Object value = Integer.valueOf(summary);
+    Integer value = Integer.valueOf(summary);
     InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
     if (data == null) {
       state.setData(new InstanceDataSingleton(value));
