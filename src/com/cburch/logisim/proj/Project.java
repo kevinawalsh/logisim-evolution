@@ -32,6 +32,7 @@ package com.cburch.logisim.proj;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -160,11 +161,69 @@ public class Project {
     return frame.confirmClose(title);
   }
 
+  private boolean referencedInUndoLog(CircuitState root) {
+    for (ActionData data : undoLog) {
+      CircuitState cs = data.circuitState;
+      if (cs == null)
+        continue;
+      cs = cs.getAncestorState();
+      if (cs == root)
+        return true;
+    }
+    return false;
+  }
+
+  private boolean referencedInRedoLog(CircuitState root) {
+    for (ActionData data : redoLog) {
+      CircuitState cs = data.circuitState;
+      if (cs == null)
+        continue;
+      cs = cs.getAncestorState();
+      if (cs == root)
+        return true;
+    }
+    return false;
+  }
+
+  private boolean referencedInRootStates(CircuitState root) {
+    if (circuitState != null) {
+      CircuitState cs = circuitState.getAncestorState();
+      if (cs == root)
+        return true;
+    }
+    for (CircuitState cs : allRootStates) {
+      if (cs == null)
+        continue;
+      CircuitState other = cs.getAncestorState();
+      if (other == root)
+        return true;
+    }
+    for (CircuitState cs : recentRootState.values()) {
+      if (cs == null)
+        continue;
+      CircuitState other = cs.getAncestorState();
+      if (other == root)
+        return true;
+    }
+    return false;
+  }
+
   public void doAction(Action act) {
     if (act == null)
       return;
     Action toAdd = act;
     startupScreen = false;
+    for (ActionData data : redoLog) {
+      CircuitState cs = data.circuitState;
+      if (cs == null)
+        continue;
+      cs = cs.getAncestorState();
+      if (referencedInUndoLog(cs))
+        continue;
+      if (referencedInRootStates(cs))
+        continue;
+      CircuitState.markAsDefunct(cs);
+    }
     redoLog.clear();
 
     if (!undoLog.isEmpty() && act.shouldAppendTo(getLastAction())) {
@@ -175,6 +234,16 @@ public class Project {
       if (toAdd != null) {
         undoLog.add(new ActionData(circuitState, hdlModel, toAdd));
         ++undoMods;
+      }
+      // firstData was removed from undoLog, and we are about drop the
+      // firstData.circuitState reference.
+      CircuitState cs = firstData.circuitState;
+      if (cs != null) {
+        cs = cs.getAncestorState();
+        if (!referencedInUndoLog(cs)
+            && !referencedInRedoLog(cs)
+            && !referencedInRootStates(cs))
+          CircuitState.markAsDefunct(cs);
       }
       fireEvent(new ProjectEvent(ProjectEvent.ACTION_START, this, act));
       try {
@@ -211,7 +280,17 @@ public class Project {
       throw e;
     }
     while (undoLog.size() > MAX_UNDO_SIZE) {
-      undoLog.removeFirst();
+      ActionData firstData = undoLog.removeFirst();
+      // firstData was removed from undoLog, so we are about drop the
+      // firstData.circuitState reference. May need to mark it as defunct now.
+      CircuitState cs = firstData.circuitState;
+      if (cs != null) {
+        cs = cs.getAncestorState();
+        if (!referencedInUndoLog(cs)
+            && !referencedInRedoLog(cs)
+            && !referencedInRootStates(cs))
+          CircuitState.markAsDefunct(cs);
+      }
     }
     ++undoMods;
     file.setDirty(isFileDirty());
@@ -280,11 +359,17 @@ public class Project {
     allRootStates.remove(cs);
     fireEvent(ProjectEvent.ACTION_DELETE_STATE, cs);
     recentRootState.remove(circ, cs);
+    CircuitState root = cs.getAncestorState();
     if (cs == circuitState) {
       if (!allRootStates.isEmpty())
         setCircuitState(allRootStates.get(0));
       else
         setCurrentCircuit(circ);
+    }
+    if (!referencedInUndoLog(root)
+        && !referencedInRedoLog(root)
+        && !referencedInRootStates(root)) {
+      CircuitState.markAsDefunct(root);
     }
   }
 
@@ -326,8 +411,10 @@ public class Project {
 
     circuitState = null;
     hdlModel = hdl;
-    if (old != null)
+    if (old != null) {
+      CircuitState.transferActiveStatus(old, null);
       simulator.setCircuitState(null);
+    }
 
     Object oldActive = old;
     if (oldHdl != null)
@@ -516,6 +603,7 @@ public class Project {
     }
     hdlModel = null;
     circuitState = value;
+    CircuitState.transferActiveStatus(old, circuitState);
     if (!circuitState.isSubstate()) {
       if (!allRootStates.contains(circuitState)) {
         allRootStates.add(circuitState);
@@ -582,14 +670,27 @@ public class Project {
       optionsFrame = null;
     }
     file = value.file;
+    HashSet<CircuitState> toBeDefunct = new HashSet<>();
+    toBeDefunct.add(circuitState);
+    circuitState = null;
+    toBeDefunct.addAll(recentRootState.values());
     recentRootState.clear();
+    toBeDefunct.addAll(allRootStates);
     allRootStates.clear();
+    for (ActionData data : undoLog)
+      toBeDefunct.add(data.circuitState);
+    undoLog.clear();
+    for (ActionData data : redoLog)
+      toBeDefunct.add(data.circuitState);
+    redoLog.clear();
+    undoMods = 0;
+    for (CircuitState cs : toBeDefunct) {
+      if (cs != null)
+        CircuitState.markAsDefunct(cs);
+    }
     fireEvent(ProjectEvent.ACTION_CLEAR_STATES, null);
     // todo: close and dispose of orphaned ram hex window instances.
     dependencies = new Dependencies(file);
-    undoLog.clear();
-    redoLog.clear();
-    undoMods = 0;
     fireEvent(ProjectEvent.ACTION_SET_FILE, old, file);
 
     ArrayList<String> simErrs = new ArrayList<>();

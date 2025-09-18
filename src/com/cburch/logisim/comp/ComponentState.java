@@ -31,5 +31,5 @@
 package com.cburch.logisim.comp;
 
 public interface ComponentState {
-  public Object clone();
+  public Object clone(); // FIXME: time to move away from clone()
 }

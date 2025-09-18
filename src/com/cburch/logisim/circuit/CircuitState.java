@@ -105,6 +105,7 @@ public class CircuitState implements InstanceData {
           CircuitState substate = (CircuitState) getData(comp);
           if (substate != null && substate.parentComp == comp) {
             synchronized (dirtyLock) {
+              // FIXME: mark substate as defunct?
               substates.remove(substate);
               substatesDirty = true;
             }
@@ -147,6 +148,7 @@ public class CircuitState implements InstanceData {
           dirtyComponents.clear();
           dirtyPoints.clear();
           // dirtyPointVals.clear();
+          // FIXME: mark substates as defunct?
           substates.clear();
           substatesWorking = new CircuitState[0];
           substatesDirty = true;
@@ -198,6 +200,7 @@ public class CircuitState implements InstanceData {
             CircuitState sub = (CircuitState) compState;
             sub.parentState = null;
             synchronized (dirtyLock) {
+              // FIXME: mark substates as defunct?
               substates.remove(sub);
               substatesDirty = true;
             }
@@ -261,11 +264,33 @@ public class CircuitState implements InstanceData {
   private HashSet<CircuitState> substates = new HashSet<>(); // protected by dirtyLock
   private Object dirtyLock = new Object();
 
+  // Each project has one "active" CircuitState that is the current focus in the
+  // UI... it (along with it's ancestors and children in the CircuitStateTree)
+  // gets clock ticks, it shows as bold in the simulation explorer pane, etc.
+  // (But note, when the HDL editor is active, there may be no active
+  // CircuitState). That CircuitState, and all of its ancestors and substate
+  // CircuitState within it, are makred as active=true. Other CircuitState are
+  // marked active=false. The non-active CircuitState aren't dead or defunct,
+  // they are just on hold, the user may come back and re-activate them later.
+  // TODO: when a CircuitState active status changes, some of the component data
+  // should get notified, such as HttpIn (so it can stop polling the URL). 
+  private boolean active;
+
+  // When a CircuitState is removed from the UI, either through explicit user
+  // action in the simulation explorer pane, or because a subcircuit instance
+  // was removed from a circuit (or some other reason?), it will never again be
+  // used for simulation, it's effectively dead. These are marked as defunct,
+  // permanently.
+  // TODO: when a CircuitState becomes defunct, some of the component data
+  // should get notified, such as SerialIn (so it can close any open serial
+  // ports) and Ram (so it can close and discard any open poke-editing windows).
+  private boolean defunct;
 
   private static int lastId = 0;
   private int id = lastId++;
 
   private CircuitState(Project proj, Circuit circuit, Propagator prop) {
+    System.out.println("New circuit state id="+id+" for " + proj + " and " + prop);
     this.proj = proj;
     this.circuit = circuit;
     this.base = prop != null ? prop : new Propagator(this);
@@ -273,18 +298,81 @@ public class CircuitState implements InstanceData {
     markAllComponentsDirty();
   }
 
+  // which thread calls this? Do we need to worry about sync?
+  public static void transferActiveStatus(CircuitState deactivating, CircuitState activating) {
+    deactivating = (deactivating == null ? null : deactivating.getAncestorState());
+    activating = (activating == null ? null : activating.getAncestorState());
+    if (activating == null && deactivating == null)
+      return; // huh? whatever
+    if (activating == deactivating) {
+      // should never happen, Project.setCircuitState() checks for this
+      System.err.println("bad transferActiveStatus call");
+      // at least make sure it is active, I guess?
+      if (!activating.active) {
+        System.err.println("... but marking as active anyway");
+        activating.setActiveStatus(true);
+      }
+    } else {
+      // old should be active, make in inactive
+      if (deactivating != null && !deactivating.active) {
+        System.err.println("CircuitState is unexpectedly inactive");
+      } else if (deactivating != null) {
+        activating.setActiveStatus(false);
+      }
+      // new should be inactive, make it active
+      if (activating != null && activating.active) {
+        System.err.println("CircuitState is unexpectedly active");
+      } else if (activating != null) {
+        activating.setActiveStatus(true);
+      }
+    }
+  }
+
+  private void setActiveStatus(boolean newStatus) {
+    if (active == newStatus)
+      return;
+    active = true;
+    synchronized(dirtyLock) {
+      for (CircuitState sub : substates)
+        sub.setActiveStatus(newStatus);
+    }
+  }
+
+  // which thread calls this? Do we need to worry about sync?
+  public static void markAsDefunct(CircuitState cs) {
+    cs = cs == null ? null : cs.getAncestorState();
+    if (cs == null || cs.defunct)
+      return;
+    cs.markAsDefunct();
+  }
+
+  private void markAsDefunct() {
+    if (defunct)
+      return;
+    defunct = true;
+    synchronized(dirtyLock) {
+      for (CircuitState sub : substates)
+        sub.markAsDefunct();
+    }
+  }
+
   @Override
   public CircuitState clone() {
     try { throw new Exception("*** why? ***"); }
     catch (Exception e) { e.printStackTrace(); }
-    return cloneAsNewRootState();
+    // return cloneAsNewRootState();
+    // This method is still needed because this is the InstanceState for
+    // subcircuits
+    throw new UnsupportedOperationException("CircuitState::clone() is deprecated");
   }
 
   public static CircuitState createRootState(Project proj, Circuit circuit) {
+    System.out.println("createRootState...");
     return new CircuitState(proj, circuit, null /* make new Propagator */);
   }
 
   public CircuitState cloneAsNewRootState() {
+    System.out.println("cloneAsNewRootState...");
     CircuitState ret = new CircuitState(proj, circuit, null /* make new Propatator */);
     ret.copyFrom(this);
     ret.parentComp = null; // detatch from old parent component and state
@@ -305,6 +393,7 @@ public class CircuitState implements InstanceData {
       // possibility of deadlock (though that shouldn't happen either since no
       // other threads have references to this yet).
       for (CircuitState oldSub : src.substates) {
+        System.out.println("deep copying subcirc within cloneAsnewRootState...");
         CircuitState newSub = new CircuitState(src.proj, oldSub.circuit, this.base);
         newSub.copyFrom(oldSub);
         newSub.parentState = this;
@@ -317,17 +406,24 @@ public class CircuitState implements InstanceData {
       Object oldValue = src.componentData.get(key);
       if (oldValue instanceof CircuitState) {
         Object newValue = substateData.get(oldValue);
-        if (newValue != null)
+        if (newValue != null) {
           this.componentData.put(key, newValue);
-        else
-          this.componentData.remove(key);
+        } else {
+          Object mystery = this.componentData.remove(key);
+          if (mystery != null) // should never happen?
+            System.out.println("mystery CS found among src.componentData"
+                +" but it wasn't in src.substates."); 
+        }
       } else {
         Object newValue;
         if (oldValue instanceof ComponentState) {
           newValue = ((ComponentState) oldValue).clone();
         } else {
+          System.out.println("warn - this only makes sense for immutible state data");
           newValue = oldValue;
         }
+        if (newValue instanceof CircuitState)
+          System.out.println("non-substate CS as cloned component data... this is bad");
         this.componentData.put(key, newValue);
       }
     }
@@ -444,6 +540,10 @@ public class CircuitState implements InstanceData {
     return parentState != null;
   }
 
+  // This one is dangerous... it returns the internal substates directly,
+  // without taking the dirtylock. Should probably revise this. Currently
+  // this is used by gui.start.TtyInterface, which is a bit obscure. And
+  // by PropagationPoints which seems more risky and thread-unsafe.
   public Set<CircuitState> getSubstates() { // returns Set of CircuitStates
     return substates;
   }
@@ -700,6 +800,7 @@ public class CircuitState implements InstanceData {
         oldState.parentState = null;
         oldState.parentComp = null;
       }
+      System.out.println("createCircuitSubstateFor...");
       CircuitState newState = new CircuitState(proj, circ, base);
       synchronized(dirtyLock) {
         substates.add(newState);
