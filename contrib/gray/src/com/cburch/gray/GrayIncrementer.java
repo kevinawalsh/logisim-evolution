@@ -126,7 +126,7 @@ class GrayIncrementer extends InstanceFactory {
 		// for drawing, and we'll use those here. Frequently, you'd want to
 		// retrieve its Graphics object (painter.getGraphics) so you can draw
 		// directly onto the canvas.
-		painter.drawRectangle(painter.getBounds(), "G+1");
+		painter.drawRectangle(painter.getNominalBounds(), "G+1");
 		painter.drawPorts();
 	}
 

@@ -10,7 +10,7 @@
 
     <target name="compile" depends="clean">
         <mkdir dir="bin"/>
-        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" source="11" target="11" classpath="../../logisim-evolution.jar" />
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" release="11" classpath="../../logisim-evolution.jar" />
     </target>
 	
     <target name="jar" depends="compile">

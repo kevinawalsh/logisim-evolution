@@ -108,7 +108,7 @@ public class sound extends InstanceFactory{
     painter.drawPort(3);
     painter.drawPort(4);
 
-    Bounds bds = painter.getBounds();
+    Bounds bds = painter.getNominalBounds();
     Graphics g = painter.getGraphics();
     int x = bds.x + (bds.width-24)/2;
     int y = bds.y + (bds.height-24)/2;

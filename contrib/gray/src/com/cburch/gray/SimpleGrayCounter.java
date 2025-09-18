@@ -71,7 +71,7 @@ class SimpleGrayCounter extends InstanceFactory {
 		// printer output), then skip this.
 		if (painter.getShowState()) {
 			CounterData state = CounterData.get(painter, BIT_WIDTH);
-			Bounds bds = painter.getBounds();
+			Bounds bds = painter.getNominalBounds();
 			GraphicsUtil.drawCenteredText(painter.getGraphics(), StringUtil
 					.toHexString(BIT_WIDTH.getWidth(), state.getValue()
 							.toIntValue()), bds.getX() + bds.getWidth() / 2,

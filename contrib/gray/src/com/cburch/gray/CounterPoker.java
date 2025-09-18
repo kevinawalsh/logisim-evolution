@@ -59,7 +59,7 @@ public class CounterPoker extends InstancePoker {
 	 */
 	@Override
 	public boolean init(InstanceState state, MouseEvent e) {
-		return state.getInstance().getBounds().contains(e.getX(), e.getY());
+		return state.getInstance().getNominalBounds().contains(e.getX(), e.getY());
 		// Anywhere in the main rectangle initiates the poke. The user might
 		// have clicked within a label, but that will be outside the bounds.
 	}
@@ -93,7 +93,7 @@ public class CounterPoker extends InstancePoker {
 	 */
 	@Override
 	public void paint(InstancePainter painter) {
-		Bounds bds = painter.getBounds();
+		Bounds bds = painter.getNominalBounds();
 		BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
 		int len = (width.getWidth() + 3) / 4;
 

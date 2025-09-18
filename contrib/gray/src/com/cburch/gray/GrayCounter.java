@@ -89,7 +89,7 @@ class GrayCounter extends InstanceFactory {
 	 */
 	@Override
 	protected void configureNewInstance(Instance instance) {
-		Bounds bds = instance.getBounds();
+		Bounds bds = instance.getNominalBounds();
 		instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, bds.getX()
 				+ bds.getWidth() / 2, bds.getY() - 3, GraphicsUtil.H_CENTER,
 				GraphicsUtil.V_BASELINE);
@@ -107,7 +107,7 @@ class GrayCounter extends InstanceFactory {
 		if (painter.getShowState()) {
 			BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
 			CounterData state = CounterData.get(painter, width);
-			Bounds bds = painter.getBounds();
+			Bounds bds = painter.getNominalBounds();
 			GraphicsUtil.drawCenteredText(painter.getGraphics(), StringUtil
 					.toHexString(width.getWidth(), state.getValue()
 							.toIntValue()), bds.getX() + bds.getWidth() / 2,
