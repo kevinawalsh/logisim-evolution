@@ -208,8 +208,8 @@ public class HttpIn extends InstanceFactory {
           GraphicsUtil.drawText(g, state.status, bds.x+5, bds.y+2, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
         long t = state.timestamp;
         if (t != 0) {
-          String hhmmss = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
-              .format(java.time.Instant.ofEpochMilli(t).atZone(java.time.ZoneId.systemDefault()));
+          String hhmmss = DateTimeFormatter.ofPattern("HH:mm:ss")
+              .format(Instant.ofEpochMilli(t).atZone(ZoneId.systemDefault()));
           GraphicsUtil.drawText(g, hhmmss, bds.x+bds.width-5, bds.y+bds.height-2, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
         }
       }

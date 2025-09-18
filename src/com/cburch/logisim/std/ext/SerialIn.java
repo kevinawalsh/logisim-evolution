@@ -45,6 +45,9 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.time.format.DateTimeFormatter;
+import java.time.Instant;
+import java.time.ZoneId;
 
 import com.fazecast.jSerialComm.SerialPort;
 
@@ -106,10 +109,12 @@ public class SerialIn extends InstanceFactory {
         g.setColor(Color.GRAY);
         s = S.get("serialInputWait");
       }
-      GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
       r = GraphicsUtil.getTextBounds(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+      g.setColor(Color.WHITE);
+      g.fillRect(r.x-3, r.y+2, r.width + 6, r.height-2);
       g.setColor(Color.DARK_GRAY);
       g.drawRect(r.x-3, r.y+2, r.width + 6, r.height-2);
+      GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
     }
 
   }
@@ -255,8 +260,10 @@ public class SerialIn extends InstanceFactory {
     painter.drawBounds();
 
     Bounds bds = painter.getNominalBounds();
+    int cx = bds.x + bds.width/2;
+    int cy = bds.y + bds.height/2;
 
-    drawUsbLogo((Graphics2D)painter.getGraphics(), bds.x+5, bds.y+18, 50, 24, Color.BLACK);
+    drawUsbLogo((Graphics2D)painter.getGraphics(), cx-25, cy-12, 50, 24, Color.BLACK);
 
     if (painter.getShowState()) {
       State state = (State)painter.getData();
@@ -270,7 +277,18 @@ public class SerialIn extends InstanceFactory {
       // TODO: Maybe also show a blinking activity light?
 
       g.setColor(Color.BLACK);
-      GraphicsUtil.drawText(g, state == null ? "" : state.status, bds.x+5, bds.y+2, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
+      if (state != null) {
+        String status = state.status;
+        if (status != null)
+            GraphicsUtil.drawText(g, status, bds.x+5, bds.y+2, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
+        long t = state.timestamp;
+        if (t != 0) {
+          String hhmmss = DateTimeFormatter.ofPattern("HH:mm:ss")
+              .format(Instant.ofEpochMilli(t).atZone(ZoneId.systemDefault()));
+          GraphicsUtil.drawText(g, hhmmss, bds.x+bds.width-5, bds.y+bds.height-2, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+        }
+
+        }
     }
     
     painter.drawLabel();
@@ -443,6 +461,7 @@ public class SerialIn extends InstanceFactory {
     private Value lastClock = Value.UNKNOWN;
 
     private volatile String status = "ready";
+    private volatile long timestamp;
 
     private AttributeOption mode;
     private boolean async;
@@ -671,11 +690,11 @@ public class SerialIn extends InstanceFactory {
             if (!format.hasDelimiters()) {
               // no delimiter, see if we can match any of current buffer
               vals = buf.parseRecord(format, r, n);
-              if (vals != null) {
-                // drop the matching part
-                r = buf.pos;
-                n = buf.len;
-              }
+              if (vals == null)
+                  continue; // no match, but no err since this was best effot
+              // drop the matching part
+              r = buf.pos;
+              n = buf.len;
             } else if (!format.isDelim(b)) {
               continue;
             } else if (first) {
@@ -700,8 +719,14 @@ public class SerialIn extends InstanceFactory {
               q.addLast(vals);
               if (changed)
                 lastAsync = vals;
+              timestamp = System.currentTimeMillis();
+              status = "ok";
               if ((async && changed) || (!async && q.size() == 1))
                 fire();
+            } else {
+              status = "bad data";
+              timestamp = System.currentTimeMillis();
+              fire();
             }
           } finally {
             data.unlock();
