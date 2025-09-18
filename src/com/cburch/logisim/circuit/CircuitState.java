@@ -847,6 +847,24 @@ public class CircuitState implements InstanceData {
 		}
   }
 
+  /* Design Notes on CircuitState.setData()/getData() (1 of 2)
+   *
+   * CircuitState.setData()/getData() can accept any Object, not just
+   * ComponentState objects, with some restrictions:
+   *
+   *  - The data should *never* be a CircuitState. That would only be
+   *    appropriate for a subcircuit component, but that uses a different,
+   *    dedicated code path, involving substates.
+   *
+   *  - The data is often (always?) a ComponentState object, which has a
+   *    ComponentState.clone() method. In that case, when a simulation
+   *    Circuitstate is duplicated, any state data object associated with a
+   *    comoponent is replaced by the result of clone().
+   *
+   *  - The data doesn't need to be a CircuitState. Any object is accepted. And
+   *    it would even make sense to use an immutable object. But this feature
+   *    doesn't seem to ever be used.
+   */
   public void setData(Component comp, Object data) {
     if (data instanceof CircuitState) {
       // fixme: should never happen?
