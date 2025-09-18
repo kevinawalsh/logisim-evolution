@@ -30,7 +30,7 @@
 
 package com.cburch.logisim.comp;
 
-/* Design Notes on CircuitState.setData()/getData() (1 of 2)
+/* Design Notes on CircuitState.setData()/getData() (1 of 4)
  *
  * A ComponentState object can be created by a component within a circuit being
  * simulated, and stashed inside the CircuitState associated with that

@@ -847,7 +847,7 @@ public class CircuitState implements InstanceData {
 		}
   }
 
-  /* Design Notes on CircuitState.setData()/getData() (1 of 2)
+  /* Design Notes on CircuitState.setData()/getData() (2 of 4)
    *
    * CircuitState.setData()/getData() can accept any Object, not just
    * ComponentState objects, with some restrictions:
