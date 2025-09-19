@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.instance;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Value;
@@ -37,6 +38,9 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 
+// Only known implementing classes are:
+//   InstanceStateImpl
+//   InstancePainter
 public interface InstanceState {
   public void fireInvalidated();
 
@@ -44,7 +48,19 @@ public interface InstanceState {
 
   public <E> E getAttributeValue(Attribute<E> attr);
 
-  public InstanceData getData();
+  public Integer getDataAsInteger();
+  public Value getDataAsValue();
+  public Double getDataAsDouble();
+  public ComponentData getData();
+
+  public int  getDataOrDefault(int defaultValue);
+  public Value  getDataOrDefault(Value defaultValue);
+  public double  getDataOrDefault(double defaultValue);
+
+  public void setData(int data);
+  public void setData(Value data);
+  public void setData(double data);
+  public void setData(ComponentData value);
 
   public InstanceFactory getFactory();
 
@@ -63,8 +79,6 @@ public interface InstanceState {
   public boolean isPortConnected(int portIndex);
 
   public CircuitState createCircuitSubstateFor(Circuit circ);
-
-  public void setData(InstanceData value);
 
   public void setPort(int portIndex, Value value, int delay);
 }

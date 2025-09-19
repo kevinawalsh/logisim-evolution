@@ -30,17 +30,19 @@
 
 package com.cburch.logisim.instance;
 
-/* Design Notes on CircuitState.setData()/getData() (4 of 4)
+/* Design Notes on CircuitState.setData()/getData() (5 of 5)
  *
- * InstanceDataSingleton is a convenience helper class intended to make it
+ * InstanceDataSingleton was a convenience helper class intended to make it
  * easier to create mutable state for instance-flavored components that have
- * only simple state. But it seems mostly pointless.
+ * only simple state. But it was always mostly pointless, and is now deprecated.
+ * It is no longer used by any known components.
  *
- * Some instance-flavored components have simple state, such as std/io/Led which
- * holds just a single Value, or std/io/RGBLed which holds just an Integer. In
- * both cases, the data objects (Value, or Integer) are immutable, and are
- * replaced rather than being mutated. This data can be wrapped in a
- * InstanceDataSingleton, to make it mutable, using a pattern like:
+ * If you insist on using this data type... this is designed only for use with
+ * instance-flavored components with simple state that can be respresented by a
+ * single immutible object, like an Integer for example. InstanceDataSingleton
+ * wraps a variable holding the immutible Integer, allowing it to be accessed
+ * and mutated with setValue()/getValue(). The pattern of code, which previously
+ * was used by many components in std, looked like:
  *
  *  // Get existing component state data from simulation, if any, or fallback ...
  *  InstanceDataSingleton data = (InstanceDataSingleton)instancestate.getData();
@@ -55,68 +57,65 @@ package com.cburch.logisim.instance;
  *    data.setValue(value);
  *  }
  *
- * InstanceDataSingleton provides a clone() implementation, as needed by
- * ComponentState, but it makes only a shallow copy, which only makes sense if
- * the value being wrapped is immutable or can otherwise be safely shared
- * between multiple simulations. All known uses of InstanceDataSingleton use
- * either Value or Integer.
+ * WARNING: InstanceDataSingleton provides the clone() implementation needed by
+ * ComponentState. It makes only a shallow copy, which only makes sense if the
+ * value being wrapped is immutable or can otherwise be safely shared between
+ * multiple simulations. All known previous uses of InstanceDataSingleton used
+ * either Value or Integer. Using InstanceDataSingleton with a mutable object
+ * seems like a bad idea, but we have no way to enforce this in the Java type
+ * system.
  *
- * It seems that all of this is pointless. The above code using
- * InstanceDataSingleton could be replaced by simpler code directly using the
- * underlying CircuitState, like this:
+ * All of this is now pointless. Instead, use CircuitState.setData()/getData()
+ * directly with any of the whitelisted immutable data types. Or, if you are
+ * making your own immutable data types (which aren't whitelisted by
+ * CircuitState), then implement ComponentData and provide a simple
+ * duplicateForNewSimulation() implementation that just does `return this`. Or,
+ * as a last restort, if you have an immutible data type that isn't whitelisted,
+ * make your own simple wrapper to hold it, or add it to the whitelist in
+ * CircuitState.
  *
- *  // Get existing component state data from simulation, if any, or fallback ...
- *  Integer value = (Integer)circuitstate.getData(comp);
- *  if (value == null) value = Integer.valueOf(0);
- *
- *  // Overwrite component state data within simulation...
- *  Integer value = ...
- *  circuitstate.setData(comp, value);
- *
- * Note: The variables needed here, the Component and the CircuitState, can be
- * obtained from InstanceState, since InstanceState is just a thin wrapper
- * around those variables. And if the (pointless) restriction in
- * Instance.setData()/getData() to use InstanceData were eliminated, then the
- * InstanceState wrappers could be used directly:
+ * Performance note: Conceivably, it could be more efficient to use a wrapper
+ * class like this, so the CircuitState HashMap is accessed only once, and
+ * the wrapper object mutated quickly after that, like:
  *
  *  // Get existing component state data from simulation, if any, or fallback ...
- *  Integer value = (Integer)instancestate.getData();
- *  if (value == null) value = Integer.valueOf(0);
+ *  InstanceDataSingleton data = (InstanceDataSingleton)instancestate.getData();
+ *  if (data == null)
+ *    state.setData(data = new InstanceDataSingleton(Integer.valueOf(0));
  *
- *  // Overwrite component state data within simulation...
- *  Integer value = ...
- *  instancestate.setData(value);
+ *  // ... later, modify wrapper, no need to access CircuitState hash map again
+ *  data.setValue(...);   
  *
- * TODO: make this final, see if everything still compiles, to ensure nobody
- * extends this.
- * TODO: change Object to just accept Integer or Value, see if it compiles, to
- * confirm above notes.
- * TODO: make this generic? Or don't bother, just eliminate it, it's pointless.
+ * But there are no known examples of this, so apparently this style was not
+ * considered or was not a performance win. In future a simple
+ * ComponentData<Value> or ComponentData<Integer> wrapper could be made for this
+ * purpose, and it's performance impact measured.
+ *  
+ *
  */
-public final class InstanceDataSingleton implements InstanceData, Cloneable {
-  private Object value;
+public final class InstanceDataSingleton implements InstanceData /*, Cloneable */ {
+  private Object value; // must be immutable, like Color, String, etc.
 
-  public InstanceDataSingleton(Integer value) {
-    this.value = value;
-  }
-  public InstanceDataSingleton(com.cburch.logisim.data.Value value) {
-    this.value = value;
+  public InstanceDataSingleton(Object value_with_an_immutable_type) {
+    this.value = value_with_an_immutable_type;
   }
 
   @Override
   public InstanceDataSingleton clone() {
-    try {
-      return (InstanceDataSingleton) super.clone();
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
+    return new InstanceDataSingleton(value);
+    // try {
+    //   return (InstanceDataSingleton) super.clone();
+    // } catch (CloneNotSupportedException e) {
+    //   return null;
+    // }
   }
 
   public Object getValue() {
     return value;
   }
 
-  public void setValue(Object value) {
-    this.value = value;
+  public void setValue(Object value_with_an_immutable_type) {
+    this.value = value_with_an_immutable_type;
   }
+
 }

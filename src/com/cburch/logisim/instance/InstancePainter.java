@@ -36,6 +36,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.WireSet;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
@@ -154,13 +155,6 @@ public class InstancePainter implements InstanceState {
     return context.getCircuitState();
   }
 
-  public InstanceData getData() {
-    CircuitState circState = context.getCircuitState();
-    if (circState == null || comp == null)
-      throw new UnsupportedOperationException("InstancePainter.getData without state");
-    return (InstanceData) circState.getData(comp);
-  }
-
   public java.awt.Component getDestination() {
     return context.getDestination();
   }
@@ -260,12 +254,82 @@ public class InstancePainter implements InstanceState {
   public boolean isPrintView() {
     return context.isPrintView();
   }
+  
+  public Integer getDataAsInteger() {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataAsInteger(comp);
+  }
 
-  public void setData(InstanceData value) {
+  public Value getDataAsValue() {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataAsValue(comp);
+  }
+  
+  public Double getDataAsDouble() {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataAsDouble(comp);
+  }
+
+  public int getDataOrDefault(int defaultData) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataOrDefault(comp, defaultData);
+  }
+
+  public Value getDataOrDefault(Value defaultData) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataOrDefault(comp, defaultData);
+  }
+
+  public double getDataOrDefault(double defaultData) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataOrDefault(comp, defaultData);
+  }
+
+  public ComponentData getData() {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getData(comp);
+  }
+  
+  public void setData(int data) {
     CircuitState circState = context.getCircuitState();
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("setData on InstancePainter");
-    circState.setData(comp, value);
+    circState.setData(comp, data);
+  }
+
+  public void setData(Value data) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("setData on InstancePainter");
+    circState.setData(comp, data);
+  }
+
+  public void setData(double data) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("setData on InstancePainter");
+    circState.setData(comp, data);
+  }
+
+  public void setData(ComponentData data) {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("setData on InstancePainter");
+    circState.setData(comp, data);
   }
 
   @Override

@@ -41,12 +41,12 @@ import java.util.Set;
 // import com.cburch.logisim.circuit.Propagator.DrivenValue;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
-import com.cburch.logisim.comp.ComponentState;
+import com.cburch.logisim.comp.ComponentData;
+import com.cburch.logisim.comp.ComponentState; // FIXME remove
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.InstanceStateImpl;
@@ -61,7 +61,7 @@ import com.cburch.logisim.std.wiring.Pin;
 
 // CircuitState holds the simulation state of a Circuit (or Subcircuit), i.e.
 // the values being carried along all wires and buses, along with the
-// InstanceData for all components embedded in the circuit. Most of the
+// ComponentData for all components embedded in the circuit. Most of the
 // dynamically-computed data is actually in CircuitWires. In here there is
 // mostly just a few pointers to other data structures and the dirty lists
 // (lists of locations or components that need to be recomputed).
@@ -69,7 +69,7 @@ import com.cburch.logisim.std.wiring.Pin;
 // Note: Each CircuitState belongs to (at most) one Propagator. Some of the
 // members in here more properly belong to Propagator (or, vice versa, some of
 // the functionality in Propagator could equally well be in here.
-public class CircuitState implements InstanceData {
+public final class CircuitState implements ComponentData /*InstanceData*/ {
 
   private class MyCircuitListener implements CircuitListener {
     public void circuitChanged(CircuitEvent event) {
@@ -355,7 +355,7 @@ public class CircuitState implements InstanceData {
   }
 
   @Override
-  public CircuitState clone() {
+  public CircuitState duplicateForNewSimulation() {
     try { throw new Exception("*** why? ***"); }
     catch (Exception e) { e.printStackTrace(); }
     // return cloneAsNewRootState();
@@ -414,6 +414,7 @@ public class CircuitState implements InstanceData {
         }
       } else {
         Object newValue;
+        // FIXME here
         if (oldValue instanceof ComponentState) {
           newValue = ((ComponentState) oldValue).clone();
         } else {
@@ -459,10 +460,6 @@ public class CircuitState implements InstanceData {
 
   public Circuit getCircuit() {
     return circuit;
-  }
-
-  public Object getData(Component comp) {
-    return componentData.get(comp);
   }
 
   private InstanceStateImpl reusableInstanceState = new InstanceStateImpl(this, null);
@@ -847,33 +844,71 @@ public class CircuitState implements InstanceData {
 		}
   }
 
-  /* Design Notes on CircuitState.setData()/getData() (2 of 4)
+  /* Design Notes on CircuitState.setData()/getData() (3 of 5)
    *
-   * CircuitState.setData()/getData() can accept any Object, not just
-   * ComponentState objects, with some restrictions:
+   * CircuitState.setData()/getData() can now accept:
+   *  - ComponentData objects, for mutable state.
+   *  - Certain standard java immutable objects.
+   * It would be nice to accept any immutable object, but there isn't an easy
+   * way to allow only immutable objects in java's type system. Instead, we
+   * whitelist the following types:
+   *   Integer
+   *   Value
+   *   Double
+   * Other immutable types could easily be added at some later time, if needed,
+   * such as Long, Float, Byte, Color, String, etc.
    *
-   *  - The data should *never* be a CircuitState. That would only be
-   *    appropriate for a subcircuit component, but that uses a different,
-   *    dedicated code path, involving substates.
-   *
-   *  - The data is often (always?) a ComponentState object, which has a
-   *    ComponentState.clone() method. In that case, when a simulation
-   *    Circuitstate is duplicated, any state data object associated with a
-   *    comoponent is replaced by the result of clone().
-   *
-   *  - The data doesn't need to be a CircuitState. Any object is accepted. And
-   *    it would even make sense to use an immutable object. But this feature
-   *    doesn't seem to ever be used.
+   * TODO: Change CircuitState so it is no longer a ComponentData, to ensure
+   * statically that subcircuit components don't use this code path.
    */
-  public void setData(Component comp, Object data) {
+  
+  public Integer getDataAsInteger(Component comp) { return (Integer)componentData.get(comp); }
+  public Value getDataAsValue(Component comp) { return (Value)componentData.get(comp); }
+  public Double getDataAsDouble(Component comp) { return (Double)componentData.get(comp); }
+
+  public int getDataOrDefault(Component comp, int defaultData) {
+    Integer data = (Integer)componentData.get(comp);
+    return (data == null ? defaultData : data.intValue());
+  }
+
+  public Value getDataOrDefault(Component comp, Value defaultData) {
+    Value data = (Value)componentData.get(comp);
+    return (data == null ? defaultData : data);
+  }
+
+  public double getDataOrDefault(Component comp, double defaultData) {
+    Double data = (Double)componentData.get(comp);
+    return (data == null ? defaultData : data.doubleValue());
+  }
+
+  // Maybe getMutableData() would be a better name, but
+  // it remains getData() for backwards compatability.
+  public ComponentData getData(Component comp) {
+    return (ComponentData)componentData.get(comp);
+  }
+
+  // We exclude this variation, as it seems unlikely a caller would have a
+  // ready-made ComponentData object to use as a default value.
+  // public ComponentData getDataOrDefault(Component comp, ComponentData defaultValue) {
+  //   ComponentData val = (ComponentData)componentData.get(comp);
+  //   return (val == null ? defaultValue : val;
+  // }
+
+  public void setData(Component comp, int data) { componentData.put(comp, (Integer)data); }
+  public void setData(Component comp, Value data) { componentData.put(comp, data); }
+  public void setData(Component comp, double data) { componentData.put(comp, (Double)data); }
+
+  // Maybe setMutableData() would be a better name, but
+  // it remains setData() for backwards compatability.
+  public void setData(Component comp, ComponentData data) {
+    // FIXME: CircuitState should not implement ComponentData
     if (data instanceof CircuitState) {
-      // fixme: should never happen?
-      System.out.println("fixme: setData with circuitstate... should never happen");
-			Thread.dumpStack();
-      ((CircuitState)data).parentComp = comp;
+      Thread.dumpStack();
+      throw new UnsupportedOperationException("setData(comp, CircuitState) is forbidden");
     }
     componentData.put(comp, data);
   }
+
 
   public void setValue(Location pt, Value val, Component cause, int delay) {
     base.setValue(this, pt, val, cause, delay);

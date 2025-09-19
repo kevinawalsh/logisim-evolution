@@ -30,77 +30,61 @@
 
 package com.cburch.logisim.comp;
 
-/* Design Notes on CircuitState.setData()/getData() (1 of 4)
+/* Design Notes on CircuitState.setData()/getData() (2 of 5)
  *
- * A ComponentState object can be created by a component within a circuit being
- * simulated, and stashed inside the CircuitState associated with that
- * component. For example, a std/memory/Register will need an object with an
- * int, to keep track of the simulated stored value of the register.
+ * ComponentState is here only for backwards compatibility. It has been replaced
+ * by ComponentData. Wherever possible, don't use this, but instead implement
+ * ComponentData, or use the whitelisted immutable data types allowed by
+ * CircuitState.setData()/getData().
  *
- * Duplication/cloning...
- * Sometimes simulation state needs to be duplicated, e.g. when the user wants
- * to clone a subtree of a simulation. For example, the UI gives a popup dialog
- * about this if you explore into a subtree of a simulation, then try to change
- * the state of the subcomponent pin (the dialog mentions the pin state being
- * "tied" to the parent circuit state). For this reason, ComponentState objects
- * should be able make a copy of themselves: clone() is used for this.
+ * It provides an implementation of ComponentData.duplicateForNewSimulation()
+ * that calls the (legacy) clone(), which is partially entangled with java's
+ * confusing Object.clone()/Cloneable system.
+ *
+ * ComponentState implementations must provide a clone() method to help copy the
+ * component's simulation state when a simulation is duplicated.
  *
  * - clone() implementations can return any data type, that's allowed by java's
  *   type system.
  *
  * - clone() implementations can leverage java's Cloneable/Object.clone()
- *   system. But this isn't required.
+ *   system. But this isn't required, and is probably best avoided.
  *
- * - clone() implementations can call a constructor, instead of using java's
- *   Cloneable/Object.clone() system. This is fine. The idea is the returned
- *   object should hold equivalent, but independent, data, so the user sees the
- *   "same" state initially in the duplicated simulation.
+ * - clone() implementations can a constructor, instead of using java's
+ *   Cloneable/Object.clone() system. This is probably best. The idea is the
+ *   returned object should hold equivalent, but independent, data, so the user
+ *   sees the "same" state initially in the duplicated simulation.
  *
  * - clone() implementations can return null, in which case the component will
  *   see null when it later calls CircuitState.getData() in the duplicated
  *   simulation. Some components are okay with this, they just treat it as a new
  *   simulation and create a new state object on demand.
  *
- * - clone() implementations can return any Object whatsoever, CircuitState
- *   doesn't care, so as long as the component knows what to do with that result
- *   when it later calls CircuitState.getObject() in the duplicated simulation.
- *   There are no known components using this feature, though it's conceivable a
- *   component might want to use some kind of sentinel value, or return some
- *   kind of copy-on-demand stub object to avoid duplicating a large object that
- *   might not change much. Rom (and maybe Ram?) comes to mind as a potential
- *   case for this, since it has large but rarely-mutating data.
+ * - clone() implementations that return an object must return a ComponentData
+ *   object. This ensures the result can be stored within the simulation using
+ *   CircuitState.setData()/getData(). (Previously, any Object was allowed, and
+ *   currently, it would be possible to extend this code to accept the
+ *   whitelisted immutable classes allowed CircuitState.setData()/getData(), but
+ *   why bother, nobody should use this class anyway.)
  *
  * - clone() implementations may `return this`, so long as the component is okay
- *   with having two simulations share the same state object. For example, a
- *   component could use fully immutable state objects, replacing them whenever
- *   the state changes, rather than mutating them. Here, clone() returns the
- *   same object, and the later duplicated simulation will replace the object
- *   when needed with a new, different immutable object. But in this case, it
- *   would make more sense to just *not* implement ComponentState or clone() at
- *   all, and instead pass immutable objects directly to CircuitState.setData().
- *   CircuitState.setData()/getData() fall back to re-using state objects if
- *   they don't implement ComponentState. There are no known components using
- *   either of these features, though there are some clone() implementations
- *   that fall back to `return this` in case of `CloneNotSupportedException`,
- *   but those seem like they might be (a) impossible to reach at runtime, only
- *   needed to satisfy java checked-exception rules, or (b) bugs.
+ *   with having two simulations share the same state object. This could make
+ *   sense for immutable data, but here it would be simpler to just avoid
+ *   ComponentState entirely, and just implement ComoponentData directly.
  *
- * See also:
- *   void CircuitState.setData(Component comp, Object data)
- *   Object CircuitState.getData(Component comp)
- *   InstanceData
- *   InstanceDataSingleton
- *
- * note: CircuitState.setData()/getData() can accept any Object, not just
- * ComponentState objects. See design notes in CircuitState.
- * But:
- *  - The data for those calls should *never* be a CircuitState. That would only
- *    be appropriate for a subcircuit component, but that uses a different,
- *    dedicated code path.
- *  - The data for those objects doesn't need to be a CircuitState. Any object
- *    is accepted. And it would even make sense to use an immutable object in
- *    some cases, as noted above. 
  */
-public interface ComponentState {
-  public Object clone(); // FIXME: time to move away from clone()
+public interface ComponentState extends ComponentData {
+  
+    // WARNING: clone() must return a ComponentData object, or null.
+    // No other value is allowed. The return type of `Object` here is
+    // only for backwards-compatiability. All known uses of 
+    public Object clone();
+
+  default ComponentData duplicateForNewSimulation() {
+      Object dup = clone();
+      if (dup instanceof ComponentData)
+          return (ComponentData)dup;
+      else
+          throw new UnsupportedOperationException("ComponentState.clone() implementation is broken");
+  }
 }

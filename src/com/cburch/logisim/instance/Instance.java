@@ -35,11 +35,13 @@ import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
 
 // Tentative Design Notes (1 of 3): The relationship between Instances,
@@ -154,9 +156,19 @@ public final class Instance implements Location.At {
     return comp;
   }
 
-  public InstanceData getData(CircuitState state) {
-    return (InstanceData) state.getData(comp);
-  }
+  public Integer getDataAsInteger(CircuitState state) { return state.getDataAsInteger(comp); }
+  public Value getDataAsValue(CircuitState state) { return state.getDataAsValue(comp); }
+  public Double getDataAsDouble(CircuitState state) { return state.getDataAsDouble(comp); }
+  public ComponentData getData(CircuitState state) { return state.getData(comp); }
+  
+  public int getDataOrDefault(CircuitState state, int defaultData) { return state.getDataOrDefault(comp, defaultData); }
+  public Value getDataOrDefault(CircuitState state, Value defaultData) { return state.getDataOrDefault(comp, defaultData); }
+  public double getDataOrDefault(CircuitState state, double defaultData) { return state.getDataOrDefault(comp, defaultData); }
+
+  public void setData(CircuitState state, int data) { state.setData(comp, data); }
+  public void setData(CircuitState state, Value data) { state.setData(comp, data); }
+  public void setData(CircuitState state, double data) { state.setData(comp, data); }
+  public void setData(CircuitState state, ComponentData data) { state.setData(comp, data); }
 
   public InstanceFactory getFactory() {
     return (InstanceFactory) comp.getFactory();
@@ -180,10 +192,6 @@ public final class Instance implements Location.At {
 
   public void setAttributeReadOnly(Attribute<?> attr, boolean value) {
     comp.getAttributeSet().setReadOnly(attr, value);
-  }
-
-  public void setData(CircuitState state, InstanceData data) {
-    state.setData(comp, data);
   }
 
   public void setPorts(Port[] ports) {

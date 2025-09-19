@@ -32,23 +32,15 @@ package com.cburch.logisim.instance;
 
 import com.cburch.logisim.comp.ComponentState;
 
-/* Design Notes on CircuitState.setData()/getData() (3 of 4)
+/* Design Notes on CircuitState.setData()/getData() (4 of 5)
  *
- * The InstanceData interface seems to serve no real purpose. It is part of the
- * tangled relationship between Component, Instance, and InstanceComponent.
- *
- * For instance-flavored components (those implemnted using InstanceFactory,
- * InstanceComponent, and all that), Instance.setData()/getData() have a
- * restriction that requires data to be InstanceData, not just any object. It
- * isn't clear what purpose this restriction serves, however, since these are
- * all thin wrappers around CircuitState.setData()/getData(), which accepts any
- * ComponentState, or any Object at all. And even instance-flavored components
- * can (and sometimes do) call CircuitState.setData()/getData() directly,
- * bypassing the restriction.
+ * The InstanceData interface no longer serves any purpose at all. It is here
+ * only for backwards compatibility.
  *
  * See also:
  *   InstanceDataSingleton
  */
- public interface InstanceData extends ComponentState {
-  // public Object clone(); // already in ComponentState
+public interface InstanceData extends ComponentState {
+    // See: ComponentState.clone()
+    // Or better yet, don't use this interface at all.
 }

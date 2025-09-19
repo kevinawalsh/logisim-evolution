@@ -33,6 +33,7 @@ package com.cburch.logisim.instance;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -74,12 +75,6 @@ public class InstanceStateImpl implements InstanceState {
   @Override
   public CircuitState createCircuitSubstateFor(Circuit circ) {
     return circuitState.createCircuitSubstateFor(component, circ);
-  }
-
-  public InstanceData getData() {
-    if (circuitState == null)
-      return null;
-    return (InstanceData)circuitState.getData(component);
   }
 
   public InstanceFactory getFactory() {
@@ -126,10 +121,53 @@ public class InstanceStateImpl implements InstanceState {
     this.component = component;
     // todo: seems sketchy, need to undo the setInstanceStateImpl() from before?
   }
-
-  public void setData(InstanceData value) {
-    circuitState.setData(component, value);
+  
+  public Integer getDataAsInteger() {
+    if (circuitState == null)
+      return null;
+    return circuitState.getDataAsInteger(component);
   }
+
+  public Value getDataAsValue() {
+    if (circuitState == null)
+      return null;
+    return circuitState.getDataAsValue(component);
+  }
+
+  public Double getDataAsDouble() {
+    if (circuitState == null)
+      return null;
+    return circuitState.getDataAsDouble(component);
+  }
+
+  public int getDataOrDefault(int defaultData) {
+    if (circuitState == null)
+      return defaultData;
+    return circuitState.getDataOrDefault(component, defaultData);
+  }
+
+  public Value getDataOrDefault(Value defaultData) {
+    if (circuitState == null)
+      return defaultData;
+    return circuitState.getDataOrDefault(component, defaultData);
+  }
+
+  public double getDataOrDefault(double defaultData) {
+    if (circuitState == null)
+      return defaultData;
+    return circuitState.getDataOrDefault(component, defaultData);
+  }
+
+  public ComponentData getData() {
+    if (circuitState == null)
+      return null;
+    return (ComponentData)circuitState.getData(component);
+  }
+
+  public void setData(int data) { circuitState.setData(component, data); }
+  public void setData(Value data) { circuitState.setData(component, data); }
+  public void setData(double data) { circuitState.setData(component, data); }
+  public void setData(ComponentData data) { circuitState.setData(component, data); }
 
   public void setPort(int portIndex, Value value, int delay) {
     EndData end = component.getEnd(portIndex);
