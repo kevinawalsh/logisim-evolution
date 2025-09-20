@@ -262,7 +262,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     if (painter.getShowState()) {
       int len = (width + 3) / 4;
       int xcenter = SymbolWidth(width) - 25;
-      RegisterData state = (RegisterData) painter.getDataFor();
+      RegisterData state = (RegisterData) painter.getDataAsCustom();
       int val = state == null ? 0 : state.value;
       String Value = StringUtil.toHexString(width, val).toUpperCase();
       g.setColor(Color.LIGHT_GRAY);
@@ -336,7 +336,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     GraphicsUtil.switchToWidth(g, 1);
     if (painter.getShowState()) {
       /* Here we draw the bit value */
-      RegisterData state = (RegisterData) painter.getDataFor();
+      RegisterData state = (RegisterData) painter.getDataAsCustom();
       int val = state == null ? 0 : state.value;
       BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
       int width = widthVal == null ? 8 : widthVal.getWidth();
@@ -380,7 +380,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
   public void DrawCounterClassic(InstancePainter painter) {
     Graphics g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
-    RegisterData state = (RegisterData) painter.getDataFor();
+    RegisterData state = (RegisterData) painter.getDataAsCustom();
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
     int width = widthVal == null ? 8 : widthVal.getWidth();
 
@@ -467,7 +467,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
 
   @Override
   public void propagate(InstanceState state) {
-    RegisterData data = (RegisterData) state.getDataFor();
+    RegisterData data = (RegisterData) state.getDataAsCustom();
     if (data == null) {
       data = new RegisterData(state.getAttributeValue(ATTR_INIT));
       state.setData(data);

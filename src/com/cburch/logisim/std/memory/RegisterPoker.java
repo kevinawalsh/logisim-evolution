@@ -51,7 +51,7 @@ public class RegisterPoker extends InstancePoker {
 
   @Override
   public boolean init(InstanceState state, MouseEvent e) {
-    RegisterData data = (RegisterData) state.getDataFor();
+    RegisterData data = (RegisterData) state.getDataAsCustom();
     if (data == null) {
       data = new RegisterData(state.getAttributeValue(Register.ATTR_INIT));
       state.setData(data);
@@ -71,7 +71,7 @@ public class RegisterPoker extends InstancePoker {
     if (dataWidth == null)
       dataWidth = BitWidth.create(8);
     curValue = (curValue * 16 + val) & dataWidth.getMask();
-    RegisterData data = (RegisterData) state.getDataFor();
+    RegisterData data = (RegisterData) state.getDataAsCustom();
     data.value = curValue;
 
     state.fireInvalidated();
@@ -86,7 +86,7 @@ public class RegisterPoker extends InstancePoker {
       int maxVal = dataWidth.getMask();
       if (curValue != maxVal) {
         curValue = curValue + 1;
-        RegisterData data = (RegisterData) state.getDataFor();
+        RegisterData data = (RegisterData) state.getDataAsCustom();
         data.value = curValue;
         state.fireInvalidated();
       }
@@ -94,7 +94,7 @@ public class RegisterPoker extends InstancePoker {
     } else if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_LEFT) {
       if (curValue != 0) {
         curValue = curValue - 1;
-        RegisterData data = (RegisterData) state.getDataFor();
+        RegisterData data = (RegisterData) state.getDataAsCustom();
         data.value = curValue;
         state.fireInvalidated();
       }

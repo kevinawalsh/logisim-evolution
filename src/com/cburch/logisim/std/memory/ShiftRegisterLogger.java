@@ -72,7 +72,7 @@ public class ShiftRegisterLogger extends InstanceLogger {
     BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
     if (dataWidth == null)
       dataWidth = BitWidth.create(0);
-    ShiftRegisterData data = (ShiftRegisterData) state.getDataFor();
+    ShiftRegisterData data = (ShiftRegisterData) state.getDataAsCustom();
     if (data == null) {
       return Value.createKnown(dataWidth, 0);
     } else {

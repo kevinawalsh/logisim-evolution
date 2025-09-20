@@ -179,7 +179,7 @@ public class Ram extends Mem {
     @Override
     public Value getLogValue(InstanceState state, Object option) {
       if (option instanceof Integer) {
-        MemState s = (MemState) state.getDataFor();
+        MemState s = (MemState) state.getDataAsCustom();
         int addr = ((Integer) option).intValue();
         return Value.createKnown(BitWidth.create(s.getDataBits()),
             s.getContents().get(addr));
@@ -553,7 +553,7 @@ public class Ram extends Mem {
   }
 
   public boolean reset(CircuitState state, Instance instance) {
-    RamState ret = (RamState) instance.getDataFor(state);
+    RamState ret = (RamState) instance.getDataAsCustom(state);
     if (ret == null)
       return true;
     MemContents contents = ret.getContents();
@@ -594,7 +594,7 @@ public class Ram extends Mem {
       int dataBits = comp.getAttributeSet().getValue(DATA_ATTR).getWidth();
       contents = MemContents.create(addrBits, dataBits);
     } else {
-      RamState ret = (RamState)state.getDataFor(comp);
+      RamState ret = (RamState)state.getDataAsCustom(comp);
       if (ret == null)
         return null;
       contents = ret.getContents();
@@ -647,7 +647,7 @@ public class Ram extends Mem {
 
   @Override
   MemState getState(InstanceState state) {
-    RamState ret = (RamState)state.getDataFor();
+    RamState ret = (RamState)state.getDataAsCustom();
     if (ret == null) {
       AttributeOption type = state.getInstance().getAttributeValue(RamAttributes.ATTR_TYPE);
       int addrBits = state.getAttributeValue(ADDR_ATTR).getWidth();

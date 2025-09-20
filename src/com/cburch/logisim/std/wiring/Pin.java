@@ -548,7 +548,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
   private static PinState getState(InstanceState state) {
     PinAttributes attrs = (PinAttributes) state.getAttributeSet();
     BitWidth width = attrs.width;
-    PinState ret = (PinState) state.getDataFor();
+    PinState ret = (PinState) state.getDataAsCustom();
     if (ret == null) {
       ret = new PinState(Value.repeat(attrs.defaultBitValue(), width));
       state.setData(ret);

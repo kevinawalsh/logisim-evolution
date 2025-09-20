@@ -175,7 +175,7 @@ public class Slideshow extends InstanceFactory {
     int h = state.getAttributeValue(ATTR_IMG_HEIGHT).intValue();
     int n = state.getAttributeValue(ATTR_COUNT).intValue();
       
-    State data = (State) state.getDataFor();
+    State data = (State) state.getDataAsCustom();
     if (data == null) {
       data = new State(w, h, n);
       state.setData(data);

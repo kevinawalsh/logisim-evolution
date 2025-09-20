@@ -51,7 +51,7 @@ public interface InstanceState {
   public Integer getDataAsInteger();
   public Value getDataAsValue();
   public Double getDataAsDouble();
-  public ComponentData getDataFor();
+  public ComponentData getDataAsCustom();
   public CircuitState getDataForSubcircuit();
   @Deprecated(since = "5.0.5HC", forRemoval = false)
   public Object getData();

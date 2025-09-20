@@ -507,7 +507,7 @@ public class TtyInterface {
     }
     if ((format & FORMAT_TURING) != 0) {
       InstanceState tapeState = circState.getInstanceState(tape);
-      PaperTape p = (PaperTape)tapeState.getDataFor();
+      PaperTape p = (PaperTape)tapeState.getDataAsCustom();
       p.set(turingInitialTape);
       tapeState.fireInvalidated();
       circState.getPropagator().propagate();
@@ -574,7 +574,7 @@ public class TtyInterface {
     if ((format & FORMAT_TURING) != 0) {
       headers.add("state");
       InstanceState tapeState = circState.getInstanceState(tape);
-      p = (PaperTape)tapeState.getDataFor();
+      p = (PaperTape)tapeState.getDataAsCustom();
       for (String s: p.getHeaders())
         headers.add(s);
     }

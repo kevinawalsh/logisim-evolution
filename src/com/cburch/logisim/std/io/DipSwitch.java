@@ -64,7 +64,7 @@ public class DipSwitch extends InstanceFactory {
 
     @Override
     public void mousePressed(InstanceState state, MouseEvent e) {
-      State val = (State) state.getDataFor();
+      State val = (State) state.getDataAsCustom();
       Location loc = state.getInstance().getLocation();
       Direction facing = state.getInstance().getAttributeValue(StdAttr.FACING);
       int n = state.getInstance().getAttributeValue(ATTR_SIZE).getWidth();
@@ -200,7 +200,7 @@ public class DipSwitch extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    State state = (State) painter.getDataFor();
+    State state = (State) painter.getDataAsCustom();
     if (state == null || state.size != painter.getAttributeValue(ATTR_SIZE).getWidth()) {
       int val = (state == null) ? 0 : state.Value;
       state = new State(val, painter.getAttributeValue(ATTR_SIZE).getWidth());
@@ -258,7 +258,7 @@ public class DipSwitch extends InstanceFactory {
 
   @Override
   public void propagate(InstanceState state) {
-    State pins = (State) state.getDataFor();
+    State pins = (State) state.getDataAsCustom();
     if (pins == null || pins.size != state.getAttributeValue(ATTR_SIZE).getWidth()) {
       int val = (pins == null) ? 0 : pins.Value;
       pins = new State(val, state.getAttributeValue(ATTR_SIZE).getWidth());

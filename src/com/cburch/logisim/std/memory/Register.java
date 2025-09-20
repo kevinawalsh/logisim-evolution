@@ -212,7 +212,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
   public void DrawRegisterClassic(InstancePainter painter) {
     Graphics g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
-    RegisterData state = (RegisterData) painter.getDataFor();
+    RegisterData state = (RegisterData) painter.getDataAsCustom();
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
     int width = widthVal == null ? 8 : widthVal.getWidth();
 
@@ -270,7 +270,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
     if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
       DrawRegisterClassic(painter);
     } else {
-      RegisterData state = (RegisterData) painter.getDataFor();
+      RegisterData state = (RegisterData) painter.getDataAsCustom();
       BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
       int width = widthVal == null ? 8 : widthVal.getWidth();
       Location loc = painter.getLocation();
@@ -312,7 +312,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
 
   @Override
   public void propagate(InstanceState state) {
-    RegisterData data = (RegisterData) state.getDataFor();
+    RegisterData data = (RegisterData) state.getDataAsCustom();
     if (data == null) {
       data = new RegisterData(state.getAttributeValue(ATTR_INIT));
       state.setData(data);

@@ -53,7 +53,7 @@ public class RegisterLogger extends InstanceLogger {
     BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
     if (dataWidth == null)
       dataWidth = BitWidth.create(0);
-    RegisterData data = (RegisterData) state.getDataFor();
+    RegisterData data = (RegisterData) state.getDataAsCustom();
     if (data == null)
       return Value.createKnown(dataWidth, 0);
     return Value.createKnown(dataWidth, data.value);

@@ -192,7 +192,7 @@ public class HttpIn extends InstanceFactory {
     g.draw(new Line2D.Double(cx-7.8, cy+4, cx+7.8, cy+4));
 
     if (painter.getShowState()) {
-      State state = (State)painter.getDataFor();
+      State state = (State)painter.getDataAsCustom();
       // Connection status LED
       Color c = (state != null && state.fetching ? ON_COLOR : OFF_COLOR);
       g.setColor(c);
@@ -281,7 +281,7 @@ public class HttpIn extends InstanceFactory {
   }
 
   private static State getState(InstanceState circState) {
-    State state = (State) circState.getDataFor();
+    State state = (State) circState.getDataAsCustom();
     if (state == null) {
       state = new State(circState);
       circState.setData(state);
@@ -303,7 +303,7 @@ public class HttpIn extends InstanceFactory {
   // This could be static, to match kill, or vice-versa. But whatever.
   public boolean reset(CircuitState cs, Instance instance) {
     System.out.println("http... CircuitState notify of reset");
-    State state = (State)instance.getDataFor(cs);
+    State state = (State)instance.getDataAsCustom(cs);
     if (state == null)
       return true; // remove State from cs (but it was already null?)
     HttpFetchManager.kill(state.worker);

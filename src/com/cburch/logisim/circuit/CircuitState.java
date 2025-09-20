@@ -944,11 +944,7 @@ public final class CircuitState /* implements ComponentData */ {
     return null;
   }
 
-  // Note: getDataFor() isn't a great name, but..
-  //  - getData() is taken
-  //  - getDataAsComponentData() is unweildy
-  //  - getComponentData is fine, but doesn't match getDataAsInteger, etc.
-  public ComponentData getDataFor(Component comp) {
+  public ComponentData getDataAsCustom(Component comp) {
     return componentCustomData.get(comp);
   }
 

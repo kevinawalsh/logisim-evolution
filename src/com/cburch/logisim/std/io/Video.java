@@ -350,7 +350,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
   }
 
   private State getState(CircuitState circuitState, AttributeSet attrs) {
-    State state = (State) circuitState.getDataFor(this);
+    State state = (State) circuitState.getDataAsCustom(this);
     if (state == null) {
       ColorModel cm = getColorModel(attrs.getValue(MODEL_OPTION));
       Object blank_option = attrs.getValue(BLANK_OPTION);

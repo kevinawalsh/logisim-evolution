@@ -233,7 +233,7 @@ public class DotMatrix extends InstanceFactory {
     int cols = state.getAttributeValue(ATTR_MATRIX_COLS).intValue();
     long clock = state.getTickCount();
 
-    State data = (State) state.getDataFor();
+    State data = (State) state.getDataAsCustom();
     if (data == null) {
       data = new State(rows, cols, clock);
       state.setData(data);

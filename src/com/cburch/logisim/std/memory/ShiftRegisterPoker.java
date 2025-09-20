@@ -108,7 +108,7 @@ public class ShiftRegisterPoker extends InstancePoker {
         int val = Integer.parseInt("" + e.getKeyChar(), 16);
         e.consume();
         BitWidth widObj = state.getAttributeValue(StdAttr.WIDTH);
-        ShiftRegisterData data = (ShiftRegisterData) state.getDataFor();
+        ShiftRegisterData data = (ShiftRegisterData) state.getDataAsCustom();
         int i = data.getLength() - 1 - loc;
         int value = data.get(i).toIntValue();
         value = ((value * 16) + val) & widObj.getMask();
@@ -129,7 +129,7 @@ public class ShiftRegisterPoker extends InstancePoker {
     BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
     if (dataWidth == null)
       dataWidth = BitWidth.create(8);
-    ShiftRegisterData data = (ShiftRegisterData) state.getDataFor();
+    ShiftRegisterData data = (ShiftRegisterData) state.getDataAsCustom();
     int i = data.getLength() - 1 - loc;
     int curValue = data.get(i).toIntValue();
     if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_RIGHT) {
@@ -164,7 +164,7 @@ public class ShiftRegisterPoker extends InstancePoker {
     if (widObj.equals(BitWidth.ONE)) {
       int newLoc = computeStage(state, e);
       if (oldLoc == newLoc) {
-        ShiftRegisterData data = (ShiftRegisterData) state.getDataFor();
+        ShiftRegisterData data = (ShiftRegisterData) state.getDataAsCustom();
         int i = data.getLength() - 1 - loc;
         Value v = data.get(i);
         if (v == Value.FALSE)

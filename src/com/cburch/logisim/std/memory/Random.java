@@ -76,7 +76,7 @@ public class Random extends InstanceFactory {
       BitWidth dataWidth = state.getAttributeValue(StdAttr.WIDTH);
       if (dataWidth == null)
         dataWidth = BitWidth.create(0);
-      StateData data = (StateData) state.getDataFor();
+      StateData data = (StateData) state.getDataAsCustom();
       if (data == null)
         return Value.createKnown(dataWidth, 0);
       return Value.createKnown(dataWidth, data.value);
@@ -120,7 +120,7 @@ public class Random extends InstanceFactory {
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
       if (isPressed && isInside(state, e)) {
-        StateData data = (StateData) state.getDataFor();
+        StateData data = (StateData) state.getDataAsCustom();
         if (data == null)
           return;
         data.step();
@@ -134,7 +134,7 @@ public class Random extends InstanceFactory {
 
     @Override
     public void keyPressed(InstanceState state, KeyEvent e) {
-      StateData data = (StateData) state.getDataFor();
+      StateData data = (StateData) state.getDataAsCustom();
       if (data == null)
         return;
       if (e.getKeyCode() == KeyEvent.VK_DELETE ||
@@ -311,7 +311,7 @@ public class Random extends InstanceFactory {
   public void paintInstanceClassic(InstancePainter painter) {
     Graphics g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
-    StateData state = (StateData) painter.getDataFor();
+    StateData state = (StateData) painter.getDataAsCustom();
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
     int width = widthVal == null ? 8 : widthVal.getWidth();
 
@@ -365,7 +365,7 @@ public class Random extends InstanceFactory {
     Bounds bds = painter.getNominalBounds();
     int x = bds.getX();
     int y = bds.getY();
-    StateData state = (StateData) painter.getDataFor();
+    StateData state = (StateData) painter.getDataAsCustom();
     int val = state == null ? 0 : state.value;
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
     int width = widthVal == null ? 8 : widthVal.getWidth();
@@ -378,7 +378,7 @@ public class Random extends InstanceFactory {
 
   @Override
   public void propagate(InstanceState state) {
-    StateData data = (StateData) state.getDataFor();
+    StateData data = (StateData) state.getDataAsCustom();
     if (data == null) {
       data = new StateData(state.getAttributeValue(ATTR_SEED));
       state.setData(data);

@@ -49,7 +49,7 @@ public class MemPoker extends InstancePoker {
   private static class AddrPoker extends MemPoker {
     @Override
     public Bounds getNominalBounds(InstancePainter painter) {
-      MemState data = (MemState) painter.getDataFor();
+      MemState data = (MemState) painter.getDataAsCustom();
       return data.getBounds(-1, painter.getNominalBounds());
     }
 
@@ -57,7 +57,7 @@ public class MemPoker extends InstancePoker {
     public void keyTyped(InstanceState state, KeyEvent e) {
       char c = e.getKeyChar();
       int val = Character.digit(e.getKeyChar(), 16);
-      MemState data = (MemState) state.getDataFor();
+      MemState data = (MemState) state.getDataAsCustom();
       if (val >= 0) {
         long newScroll = (data.getScroll() * 16 + val)
             & (data.getLastAddress());
@@ -79,7 +79,7 @@ public class MemPoker extends InstancePoker {
 
     @Override
     public void keyPressed(InstanceState state, KeyEvent e) {
-      MemState data = (MemState) state.getDataFor();
+      MemState data = (MemState) state.getDataAsCustom();
       if (e.getKeyCode() == KeyEvent.VK_UP) {
         data.setScroll(data.getScroll() - data.GetNrOfLineItems());
       } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
@@ -128,7 +128,7 @@ public class MemPoker extends InstancePoker {
 
     @Override
     public Bounds getNominalBounds(InstancePainter painter) {
-      MemState data = (MemState) painter.getDataFor();
+      MemState data = (MemState) painter.getDataAsCustom();
       Bounds inBounds = painter.getInstance().getNominalBounds();
       return data.getBounds(data.getCursor(), inBounds);
     }
@@ -137,7 +137,7 @@ public class MemPoker extends InstancePoker {
     public void keyTyped(InstanceState state, KeyEvent e) {
       char c = e.getKeyChar();
       int val = Character.digit(e.getKeyChar(), 16);
-      MemState data = (MemState) state.getDataFor();
+      MemState data = (MemState) state.getDataAsCustom();
       if (val >= 0) {
         curValue = curValue * 16 + val;
         data.getContents().set(data.getCursor(), curValue);
@@ -158,7 +158,7 @@ public class MemPoker extends InstancePoker {
 
     @Override
     public void keyPressed(InstanceState state, KeyEvent e) {
-      MemState data = (MemState) state.getDataFor();
+      MemState data = (MemState) state.getDataAsCustom();
       if (e.getKeyCode() == KeyEvent.VK_UP) {
         moveTo(data, data.getCursor() - data.GetNrOfLineItems());
       } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
@@ -203,7 +203,7 @@ public class MemPoker extends InstancePoker {
 
     @Override
     public void stopEditing(InstanceState state) {
-      MemState data = (MemState) state.getDataFor();
+      MemState data = (MemState) state.getDataAsCustom();
       data.setCursor(-1);
     }
   }
@@ -218,7 +218,7 @@ public class MemPoker extends InstancePoker {
   @Override
   public boolean init(InstanceState state, MouseEvent event) {
     Bounds bds = state.getInstance().getNominalBounds();
-    MemState data = (MemState) state.getDataFor();
+    MemState data = (MemState) state.getDataAsCustom();
     long addr = data.getAddressAt(event.getX() - bds.getX(), event.getY()
         - bds.getY());
 

@@ -73,7 +73,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      StateData s = (StateData) state.getDataFor();
+      StateData s = (StateData) state.getDataAsCustom();
       return s == null ? Value.FALSE : s.curValue;
     }
   }
@@ -106,7 +106,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
       if (isPressed && isInside(state, e)) {
-        StateData myState = (StateData) state.getDataFor();
+        StateData myState = (StateData) state.getDataAsCustom();
         if (myState == null)
           return;
 
@@ -121,7 +121,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
       int val = Character.digit(e.getKeyChar(), 2);
       if (val < 0)
         return;
-      StateData myState = (StateData) state.getDataFor();
+      StateData myState = (StateData) state.getDataAsCustom();
       if (myState == null)
         return;
       e.consume();
@@ -136,7 +136,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 
     @Override
     public void keyPressed(InstanceState state, KeyEvent e) {
-      StateData myState = (StateData) state.getDataFor();
+      StateData myState = (StateData) state.getDataAsCustom();
       if (myState == null)
         return;
       if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_LEFT) && myState.curValue != Value.FALSE) {
@@ -309,7 +309,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     painter.drawLabel();
     if (painter.getShowState()) {
       Location loc = painter.getLocation();
-      StateData myState = (StateData) painter.getDataFor();
+      StateData myState = (StateData) painter.getDataAsCustom();
       if (myState != null) {
         int x = loc.getX();
         int y = loc.getY();
@@ -351,7 +351,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(x, y, 40, 60);
     if (painter.getShowState()) {
-      StateData myState = (StateData) painter.getDataFor();
+      StateData myState = (StateData) painter.getDataAsCustom();
       if (myState != null) {
         g.setColor(myState.curValue.getColor());
         g.fillOval(x + 13, y + 23, 14, 14);
@@ -407,7 +407,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
   @Override
   public void propagate(InstanceState state) {
     // boolean changed = false;
-    StateData data = (StateData) state.getDataFor();
+    StateData data = (StateData) state.getDataAsCustom();
     if (data == null) {
       // changed = true;
       data = new StateData();

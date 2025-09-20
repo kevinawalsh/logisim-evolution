@@ -77,7 +77,7 @@ public class Button extends InstanceFactory {
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      State data = (State) state.getDataFor();
+      State data = (State) state.getDataAsCustom();
       return data == null  || data.value == null ? Value.FALSE : data.value;
     }
 
@@ -108,7 +108,7 @@ public class Button extends InstanceFactory {
     }
 
     private State getState(InstanceState state) {
-      State data = (State) state.getDataFor();
+      State data = (State) state.getDataAsCustom();
       if (data == null) {
         data = new State();
         state.setData(data);
@@ -279,7 +279,7 @@ public class Button extends InstanceFactory {
     Value val;
     boolean pressed;
     if (painter.getShowState()) {
-      State data = (State) painter.getDataFor();
+      State data = (State) painter.getDataAsCustom();
       if (data == null) {
         pressed = false;
         val = resting;
@@ -462,7 +462,7 @@ public class Button extends InstanceFactory {
 
   @Override
   public void propagate(InstanceState circState) {
-    State state = (State)circState.getDataFor();
+    State state = (State)circState.getDataAsCustom();
     AttributeOption behavior = circState.getAttributeValue(ATTR_BEHAVIOR);
     AttributeOption clocking = circState.getAttributeValue(ATTR_CLOCKING);
     Value resting, active;

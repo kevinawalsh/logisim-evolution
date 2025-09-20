@@ -297,11 +297,11 @@ public class InstancePainter implements InstanceState {
     return circState.getDataOrDefault(comp, defaultData);
   }
 
-  public ComponentData getDataFor() {
+  public ComponentData getDataAsCustom() {
     CircuitState circState = context.getCircuitState();
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
-    return circState.getDataFor(comp);
+    return circState.getDataAsCustom(comp);
   }
 
   public CircuitState getDataForSubcircuit() {

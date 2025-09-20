@@ -322,7 +322,7 @@ public class Scope extends InstanceFactory {
       g.draw(new Line2D.Double(x+0.5, y+h/2-0.5, x+w-1, y+h/2-0.5));
 
     if (showState) {
-      State state = (State)painter.getDataFor();
+      State state = (State)painter.getDataAsCustom();
       if (state == null) {
         state = new State(attrs);
         painter.setData(state);
@@ -371,7 +371,7 @@ public class Scope extends InstanceFactory {
   }
 
   private static State getState(InstanceState circState) {
-    State state = (State) circState.getDataFor();
+    State state = (State) circState.getDataAsCustom();
     if (state == null) {
       AttributeSet attrs = circState.getAttributeSet();
       state = new State(attrs);

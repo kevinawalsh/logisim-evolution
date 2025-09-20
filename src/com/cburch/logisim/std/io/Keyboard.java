@@ -176,7 +176,7 @@ public class Keyboard extends InstanceFactory {
 
   private static KeyboardData getKeyboardState(InstanceState state) {
     int bufLen = getBufferLength(state.getAttributeValue(ATTR_BUFFER));
-    KeyboardData ret = (KeyboardData) state.getDataFor();
+    KeyboardData ret = (KeyboardData) state.getDataAsCustom();
     if (ret == null) {
       ret = new KeyboardData(bufLen);
       state.setData(ret);

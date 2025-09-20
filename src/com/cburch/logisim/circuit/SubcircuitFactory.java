@@ -315,6 +315,9 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   public CircuitState getSubstate(CircuitState superState, Component comp) {
+    // FIXME: perhaps getDataForSubcircuit should do this work in most cases...
+    // are there any cases (outside CircuitState) that would not want the
+    // substate created automatically?
     CircuitState subState = superState.getDataForSubcircuit(comp);
     if (subState == null) {
       subState = superState.createCircuitSubstateFor(comp, source);

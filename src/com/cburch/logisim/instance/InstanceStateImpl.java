@@ -153,10 +153,10 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState.getDataOrDefault(component, defaultData);
   }
   
-  public ComponentData getDataFor() {
+  public ComponentData getDataAsCustom() {
     if (circuitState == null)
       return null;
-    return circuitState.getDataFor(component);
+    return circuitState.getDataAsCustom(component);
   }
 
   public CircuitState getDataForSubcircuit() {
