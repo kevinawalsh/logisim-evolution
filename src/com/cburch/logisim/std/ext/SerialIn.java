@@ -52,6 +52,7 @@ import java.time.ZoneId;
 import com.fazecast.jSerialComm.SerialPort;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -437,26 +438,7 @@ public class SerialIn extends InstanceFactory {
     return state;
   }
 
-  // This is called (sometimes) by CircuitState when simulation is no longer valid
-  public static void kill(State state) {
-    System.out.println("serial... CircuitState notify of kill");
-    if (state == null)
-      return;
-    state.close();
-  }
-
-  // This is called (sometimes) by CircuitState when simulation is reset
-  // This could be static, to match kill, or vice-versa. But whatever.
-  public boolean reset(CircuitState cs, Instance instance) {
-    System.out.println("serial... CircuitState notify of reset");
-    State state = (State)instance.getDataAsCustom(cs);
-    if (state == null)
-      return true; // remove State from cs (but it was already null?)
-    state.close();
-    return false; // keep state, it can be re-opened
-  }
-
-  public static class State implements ComponentData {
+  public static class State implements ComponentData.WithLifetimeTracking {
 
     private Value lastClock = Value.UNKNOWN;
 
@@ -851,6 +833,26 @@ public class SerialIn extends InstanceFactory {
       } finally {
         data.unlock();
       }
+    }
+
+    @Override
+    public void simulationCleanup(CircuitState cs, Component comp) {
+      close();
+    }
+    
+    @Override
+    public void simulationActivating(CircuitState cs, Component comp) {
+      // don't re-open, user must do this explicitly
+    }
+
+    @Override
+    public void simulationDeactivating(CircuitState cs, Component comp) {
+      close();
+    }
+
+    @Override
+    public void simulationReset(CircuitState cs, Component comp) {
+      close();
     }
 
   }

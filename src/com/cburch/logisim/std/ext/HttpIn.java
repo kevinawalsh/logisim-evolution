@@ -41,6 +41,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -291,26 +292,7 @@ public class HttpIn extends InstanceFactory {
     return state;
   }
 
-  // This is called (sometimes) by CircuitState when simulation is no longer valid
-  public static void kill(State state) {
-    System.out.println("http... CircuitState notify of kill");
-    if (state == null)
-      return;
-    HttpFetchManager.kill(state.worker);
-  }
-
-  // This is called (sometimes) by CircuitState when simulation is reset
-  // This could be static, to match kill, or vice-versa. But whatever.
-  public boolean reset(CircuitState cs, Instance instance) {
-    System.out.println("http... CircuitState notify of reset");
-    State state = (State)instance.getDataAsCustom(cs);
-    if (state == null)
-      return true; // remove State from cs (but it was already null?)
-    HttpFetchManager.kill(state.worker);
-    return true; // remove State from cs, we can recreat later on demand
-  }
-
-  public static class State implements ComponentData {
+  public static class State implements ComponentData.WithLifetimeTracking {
 
     private Value lastClock = Value.UNKNOWN;
 
@@ -347,12 +329,7 @@ public class HttpIn extends InstanceFactory {
     }
     
     void enableFetching(boolean enable) {
-      worker.sync.lock();
-      try {
-        worker.enableFetching(enable);
-      } finally {
-        worker.sync.unlock();
-      }
+      worker.enableFetching(enable);
     }
 
     Value[] getValues(boolean async) {
@@ -429,6 +406,26 @@ public class HttpIn extends InstanceFactory {
     @Override
     public State duplicateForNewSimulation() {
       return new State(this);
+    }
+  
+    @Override
+    public void simulationCleanup(CircuitState cs, Component comp) {
+      HttpFetchManager.kill(worker);
+    }
+    
+    @Override
+    public void simulationActivating(CircuitState cs, Component comp) {
+      worker.setActive(true);
+    }
+
+    @Override
+    public void simulationDeactivating(CircuitState cs, Component comp) {
+      worker.setActive(false);
+    }
+
+    @Override
+    public void simulationReset(CircuitState cs, Component comp) {
+      worker.enableFetching(false); // propagate will re-enable, probably...
     }
 
   }

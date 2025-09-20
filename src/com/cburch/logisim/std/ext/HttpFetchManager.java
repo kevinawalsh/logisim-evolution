@@ -117,6 +117,7 @@ public class HttpFetchManager {
         fetchEnabled = enable;
         if (enable) {
           CircuitState top = cs.getProject().getCircuitState();
+          // FIXME: just query cs.isActive()
           simActive = cs == top || cs.hasAncestorState(top);
           status = "";
           timestamp = 0;
@@ -125,6 +126,39 @@ public class HttpFetchManager {
           response = null;
         }
         if (enable && thread == null) {
+          thread = new UniquelyNamedThread(() -> runFetch(), "HttpInputWorker");
+          thread.setDaemon(true);
+          thread.start();
+        }
+        change.signalAll();
+      } finally {
+        sync.unlock();
+      }
+      fire();
+    }
+
+    public void setActive(boolean enable) {
+      if (enable && (instance == null || cs == null)) {
+        System.err.println("HttpIn: Can't de/activate fetching without circuitstate and instance");
+        return;
+      }
+      sync.lock();
+      try {
+        if (dead) {
+          System.err.println("HttpIn: Can't de/activate fetching in dead simulation");
+          return;
+        }
+        if (simActive == enable)
+          return; // nothing to do
+        simActive = enable;
+        if (enable) {
+          status = "";
+          timestamp = 0;
+          penalty = 0;
+          fresh = false;
+          response = null;
+        }
+        if (enable && fetchEnabled && thread == null) {
           thread = new UniquelyNamedThread(() -> runFetch(), "HttpInputWorker");
           thread.setDaemon(true);
           thread.start();
@@ -496,6 +530,7 @@ public class HttpFetchManager {
             Worker worker = workers.get(i);
             worker.sync.lock();
             try {
+              // FIXME: use cs.isActive(), etc.
               // if (worker.cs.getCircuit() != circ && !worker.cs.hasAncestorState(... circ))
               //   continue;
               CircuitState top = worker.cs.getProject().getCircuitState();

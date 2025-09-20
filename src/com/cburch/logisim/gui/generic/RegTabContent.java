@@ -283,7 +283,7 @@ public class RegTabContent extends JScrollPane
       if (prefix != null)
         name = prefix + "/" + name;
       SubcircuitFactory factory = (SubcircuitFactory)comp.getFactory();
-      CircuitState substate = factory.getSubstate(cs, comp);
+      CircuitState substate = cs.getCircuitSubstateFor(comp);
       enumerate(name, factory.getSubcircuit(), substate);
     }
   }

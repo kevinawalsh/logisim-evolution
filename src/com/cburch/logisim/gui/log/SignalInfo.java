@@ -310,7 +310,7 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
 
     CircuitState cur = root;
     for (int i = 0; i < n-1; i++)
-      cur = circ[i].getSubcircuitFactory().getSubstate(cur, path[i]);
+      cur = cur.getCircuitSubstateFor(path[i]);
 
     return log.getLogValue(cur, option);
   }

@@ -29,6 +29,7 @@
  */
 package com.cburch.logisim.std.memory;
 
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
@@ -39,7 +40,7 @@ import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.std.memory.Mem.MemListener;
 
 public class RamState extends MemState
-  implements ComponentData, AttributeListener {
+  implements ComponentData.WithLifetimeTracking, AttributeListener {
 
   private Instance parent;
   private MemListener listener;
@@ -105,6 +106,21 @@ public class RamState extends MemState
     if (value != null) {
       value.getAttributeSet().addAttributeWeakListener(null, this);
     }
+  }
+  
+  @Override
+  public boolean simulationReset(CircuitState cs, Component comp) {
+    AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
+    if (type == RamAttributes.VOLATILE) {
+      MemContents contents = getContents();
+      contents.clear();
+    }
+  }
+
+  @Override
+  public void simulationCleanup(CircuitState cs, Component comp) {
+    System.out.println("closing hex frame");
+    Ram.closeHexFrame(this);
   }
 
 }

@@ -112,10 +112,47 @@ package com.cburch.logisim.comp;
  * CircuitState would probably be okay with this kind of
  * switching-types-during-duplication nonsense, but let's not complicate things. 
  *
+ * Note: CircuitState doesn't move ComponentData between CircuitState objects.
+ * So, for the most part, a ComponentData inserted into one CircuitState will
+ * never appear in some other CircuitState. The only exceptions would be if
+ * some component deliberately puts an object into multiple CircuitStates, which
+ * seems like a bad idea and isn't normally done.
+ *
  * See also:
  *   void CircuitState.setData(Component comp, ComponentData data)
  *   ComponentData CircuitState.getData(Component comp)
  */
 public interface ComponentData {
+
   public ComponentData duplicateForNewSimulation();
+
+  // Some components need help tracking the lifetime of their associated
+  // simulation data. SerialIn and HttpIn, for example, need to close ports or
+  // stop worker threads, and Ram may need to close hex editor windows. The data
+  // for these components should implement ComponentData.WithLifetimeTracking.
+  // For such objects, CircuitState will notify the object of changes to the
+  // status of the simulation:
+  public interface WithLifetimeTracking extends ComponentData {
+
+    // simulationActivating() is called when a simulation transitions to active
+    // status, e.g. selected within the UI and receiving clock ticks.
+    public default void simulationActivating(CircuitState cs, Component comp) { };
+
+    // simulationDeactivating() is called when a simulation transitions to inactive
+    // status, e.g. no longer selected within the UI or receiving clock ticks.
+    public default void simulationDeactivating(CircuitState cs, Component comp) { }
+
+    // simulationReset() is called when a simulation is being reset, e.g.
+    // from menu item action.
+    public default void simulationReset(CircuitState cs, Component comp) { };
+
+    // simulationCleanup() is called when simulation data has become defunct,
+    // e.g. the entire simulation was deleted by the user and will no longer be
+    // visible in the UI, or the component (or subcircuit containing the
+    // component) was deleted from a circuit. This is a last chance to clean up
+    // resources associated with this ComponentData, no further notifications
+    // will be provided after this is called.
+    public default void simulationCleanup(CircuitState cs, Component comp) { }
+  }
+
 }

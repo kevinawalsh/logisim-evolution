@@ -710,8 +710,7 @@ public class Project {
               simErrs.add(String.format("Bad element %s of component path: %s", i, path));
               return; // continue sim.forEach
             }
-            SubcircuitFactory factory = (SubcircuitFactory)comp.getFactory();
-            circState = factory.getSubstate(circState, comp);
+            circState = circState.getCircuitSubstateFor(comp);
           }
           Component comp = cpath.get(cpath.size()-1);
           try {

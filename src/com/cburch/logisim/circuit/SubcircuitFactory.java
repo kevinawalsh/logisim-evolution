@@ -88,7 +88,7 @@ public class SubcircuitFactory extends InstanceFactory {
       CircuitState superState = proj.getCircuitState();
       if (superState == null)
         return;
-      CircuitState subState = getSubstate(superState, instance.getComponent());
+      CircuitState subState = superState.getCircuitSubstateFor(instance.getComponent());
       proj.setCircuitState(subState);
     }
 
@@ -314,26 +314,22 @@ public class SubcircuitFactory extends InstanceFactory {
     return source;
   }
 
-  public CircuitState getSubstate(CircuitState superState, Component comp) {
-    // FIXME: perhaps getDataForSubcircuit should do this work in most cases...
-    // are there any cases (outside CircuitState) that would not want the
-    // substate created automatically?
-    CircuitState subState = superState.getDataForSubcircuit(comp);
-    if (subState == null) {
-      subState = superState.createCircuitSubstateFor(comp, source);
-      if (comp instanceof InstanceComponent)
-        ((InstanceComponent) comp).fireInvalidated();
-      else
-        System.out.println("wrong kind ?!?!  ... " + comp);
-    }
-    return subState;
-  }
+  // public CircuitState getSubstate(CircuitState superState, Component comp) {
+  //   // NOTE: comp will be a subcircuit component created by this SubcircuitFactory
+  //   if (comp.getFactory() != this) // should never happen
+  //     throw new UnsupportedOperationException("wrong SubcircuitFactory for component");
+  //   // FIXME: perhaps getDataForSubcircuit should do this work in most cases...
+  //   // are there any cases (outside CircuitState) that would not want the
+  //   // substate created automatically?
+  //   return superState.getCircuitSubstateFor(comp, source);
+  // }
 
   private CircuitState getSubstate(InstanceState stateInContext) {
-    if (stateInContext instanceof InstanceStateImpl)
-      return getSubstate(((InstanceStateImpl)stateInContext).getCircuitState(),
-          ((InstanceStateImpl)stateInContext).getComponent());
-    else
+    if (stateInContext instanceof InstanceStateImpl) {
+      CircuitState cs = ((InstanceStateImpl)stateInContext).getCircuitState();
+      Component comp = ((InstanceStateImpl)stateInContext).getComponent();
+      return cs.getCircuitSubstateFor(comp);
+    } else
       throw new IllegalArgumentException("getSubstate on wrong type " + stateInContext);
   }
 

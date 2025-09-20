@@ -552,25 +552,6 @@ public class Ram extends Mem {
     return getHexFrame(getState(instance, circState).getContents(), proj, instance);
   }
 
-  public boolean reset(CircuitState state, Instance instance) {
-    RamState ret = (RamState) instance.getDataAsCustom(state);
-    if (ret == null)
-      return true;
-    MemContents contents = ret.getContents();
-
-    AttributeOption type = instance.getAttributeValue(RamAttributes.ATTR_TYPE);
-    if (type == RamAttributes.VOLATILE)
-      contents.clear();
-    // if no window, we could discard, but its also okay to just keep it around
-    // synchronized (windowRegistry) {
-    //   HexFrame win = windowRegistry.get(contents);
-    //   if (win != null) {
-    //     ...
-    //   }
-    // }
-    return false;
-  }
-
 //  public AttributeSet getNonVolatileSimulationAttributes(Component comp) {
 //    // return Collections.singletonList(NV_CONTENTS_ATTR);
 //    AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
