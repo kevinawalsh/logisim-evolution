@@ -81,7 +81,5 @@ public interface InstanceState {
 
   public boolean isPortConnected(int portIndex);
 
-  public CircuitState createCircuitSubstateFor(Circuit circ);
-
   public void setPort(int portIndex, Value value, int delay);
 }

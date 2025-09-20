@@ -329,6 +329,25 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
           circState = circState.cloneAsNewRootState();
           canvas.getProject().setCircuitState(circState);
           state = circState.getInstanceState(state.getInstance());
+          // Crash 20 Sept 2025, likely while clicking a frozen pin in a
+          // subcircuit. Possible race condition where the reusable
+          // InstanceStateImpl in CircuitState got repurposed for a Counter
+          // somehow during or near when we cloned the state.
+          // Exception in thread "AWT-EventQueue-0" java.lang.ClassCastException: class com.cburch.logisim.data.AttributeSets$ArrayBacked cannot be cast to class com.cburch.logisim.std.wiring.PinAttributes (com.cburch.logisim.data.AttributeSets$ArrayBacked and com.cburch.logisim.std.wiring.PinAttributes are in unnamed module of loader 'app')
+          // at com.cburch.logisim.std.wiring.Pin.getState(Pin.java:530)
+          // at com.cburch.logisim.std.wiring.Pin$PinPoker.handleBitPress(Pin.java:338)
+          // at com.cburch.logisim.std.wiring.Pin$PinPoker.mouseReleased(Pin.java:434)
+          // at com.cburch.logisim.instance.InstancePokerAdapter.mouseReleased(InstancePokerAdapter.java:171)
+          // at com.cburch.logisim.tools.PokeTool.mouseReleased(PokeTool.java:480)
+          // at com.cburch.logisim.gui.main.Canvas$MyListener.mouseReleased(Canvas.java:238)
+          // at java.desktop/java.awt.AWTEventMulticaster.mouseReleased(AWTEventMulticaster.java:297)
+          // at java.desktop/java.awt.Component.processMouseEvent(Component.java:6576)
+          // at java.desktop/javax.swing.JComponent.processMouseEvent(JComponent.java:3404)
+          // at com.cburch.logisim.gui.main.Canvas.processMouseEvent(Canvas.java:1004)
+          com.cburch.logisim.comp.ComponentFactory factory = state.getInstance().getComponent().getFactory();
+          if (!(factory instanceof Pin)) {
+            System.err.println("race condition? repurposed pin state, but component isn't a pin but a " + factory); 
+          }
         } else {
           return false;
         }

@@ -72,11 +72,6 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState;
   }
 
-  @Override
-  public CircuitState createCircuitSubstateFor(Circuit circ) {
-    return circuitState.createCircuitSubstateFor(component, circ);
-  }
-
   public InstanceFactory getFactory() {
     if (component instanceof InstanceComponent)
       return (InstanceFactory)((InstanceComponent)component).getFactory();

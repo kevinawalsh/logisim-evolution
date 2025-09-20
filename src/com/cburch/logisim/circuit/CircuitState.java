@@ -67,8 +67,8 @@ import com.cburch.logisim.std.wiring.Pin;
 //
 // Note: Each CircuitState belongs to (at most) one Propagator. Some of the
 // members in here more properly belong to Propagator (or, vice versa, some of
-// the functionality in Propagator could equally well be in here.
-public final class CircuitState implements ComponentData {
+// the functionality in Propagator could equally well be in here).
+public final class CircuitState /* implements ComponentData */ {
 
   private class MyCircuitListener implements CircuitListener {
     public void circuitChanged(CircuitEvent event) {
@@ -78,7 +78,7 @@ public final class CircuitState implements ComponentData {
       if (action == CircuitEvent.ACTION_ADD) {
         // Nothing to do: CircuitWires.BundleMap will be voided, causing
         // everything to be marked dirty.
-        Component comp = (Component) event.getData();
+        // Component comp = (Component) event.getData();
         // DEBUG: System.out.println("added comp " + comp);
         // if (comp instanceof Wire) {
         //   Wire w = (Wire) comp;
@@ -92,25 +92,33 @@ public final class CircuitState implements ComponentData {
       /* Component was removed */
       else if (action == CircuitEvent.ACTION_REMOVE) {
         Component comp = (Component) event.getData();
-        if (comp == temporaryClock)
+        
+        if (comp == temporaryClock) {
           temporaryClock = null;
+        }
+
         if (comp.getFactory() instanceof Clock) {
           knownClocks = false; // just in case, will be recomputed by simulator
         }
 
         if (comp.getFactory() instanceof SubcircuitFactory) {
           knownClocks = false; // just in case, will be recomputed by simulator
-          // disconnect from tree
-          CircuitState substate = (CircuitState) getData(comp);
+          // FIXME: disconnect from tree already happens in TRANSACTION_DONE below?
+          CircuitState substate = getDataForSubcircuit(comp);
           if (substate != null && substate.parentComp == comp) {
-            synchronized (dirtyLock) {
-              // FIXME: mark substate as defunct?
-              substates.remove(substate);
-              substatesDirty = true;
-            }
-            substate.parentState = null;
-            substate.parentComp = null;
+            // substates cleanup happens in TRANSACTION_DONE below?
+            // synchronized (dirtyLock) {
+            //   // FIXME: mark substate as defunct? ... or done in
+            //   // TRANSACTION_DONE below?
+            //   substates.remove(substate);
+            //   substatesDirty = true;
+            // }
+            // substate.parentState = null;
+            // substate.parentComp = null;
+            // subcircuitData cleanup happens in TRANSACTION_DONE below
           }
+        } else {
+          // component*Data cleanup happens in TRANSACTION_DONE below
         }
 
         if (comp instanceof Wire) {
@@ -138,7 +146,8 @@ public final class CircuitState implements ComponentData {
         temporaryClock = null;
         knownClocks = false;
         wireData = null;
-        componentData.clear();
+        // component*Data cleanup happens in TRANSACTION_DONE below
+        // subcircuitData cleanup happens in TRANSACTION_DONE below
         synchronized (valuesLock) {
           slowpath_values.clear(); // slow path
           clearFastpathGrid(); // fast path
@@ -147,7 +156,6 @@ public final class CircuitState implements ComponentData {
           dirtyComponents.clear();
           dirtyPoints.clear();
           // dirtyPointVals.clear();
-          // FIXME: mark substates as defunct?
           substates.clear();
           substatesWorking = new CircuitState[0];
           substatesDirty = true;
@@ -163,49 +171,113 @@ public final class CircuitState implements ComponentData {
         // invalidated components (which are likely Pins, Buttons, or other
         // inputs), so pass this component to the simulator for display.
         proj.getSimulator().addPendingInput(CircuitState.this, comp);
-      } else if (action == CircuitEvent.TRANSACTION_DONE) {
+      }
+
+      /* components were added, deleted, moved (delete-then-add replacements), etc. */
+      else if (action == CircuitEvent.TRANSACTION_DONE) {
         ReplacementMap map = event.getResult().getReplacementMap(circuit);
         if (map == null)
           return;
         for (Component comp : map.getRemovals()) {
-          Object compState = componentData.remove(comp);
-          if (compState == null)
-            continue;
-          Class<?> compFactory = comp.getFactory().getClass();
-          boolean found = false;
-          for (Component repl : map.getReplacementsFor(comp)) {
-            if (repl.getFactory().getClass() == compFactory) {
-              found = true;
-              replaceData(repl, compState);
-              break;
+          // Examine any state held by each affected component, to see which
+          // should be retained, and which should be removed.
+          //
+          // FIXME: previous code seemed broken, it used this approach...
+          // If component A is replaced by B, and they have the same Factory
+          // class, then transfer A's state to B. This seems broken:
+          //  - If subcircuit component A was replaced by subcircuit component
+          //    B, the CircuitState was retained. This makes sense if the user
+          //    moved A on the canvas, for example. But no checking was done to
+          //    see if A and B are simulating the same circuit. Could this get
+          //    triggered by the user selecting A, and pasting a different
+          //    subcircuit B to replace it?
+          //  - If A was replaced by B1, B2, B3, ..., then
+          //    the first Bi with appropriate Factory was taken. Why? This
+          //    couldn't be a simple "move", so why would any state be retained
+          //    in this case?
+          //
+          // FIXME: use the old likely-broken approach for now, with lots of
+          // checking... then simplify code once confirmed.
+          if (comp.getFactory() instanceof SubcircuitFactory) {
+            CircuitState compData = subcircuitData.remove(comp);
+            if (compData == null)
+              continue;
+            boolean found = false;
+            for (Component repl : map.getReplacementsFor(comp)) {
+              // subcircuit component was moved
+              if (repl.getFactory() instanceof SubcircuitFactory) {
+                found = true;
+                compData.parentComp = comp;
+                synchronized (dirtyLock) {
+                  compData.parentState = CircuitState.this;
+                  substates.add(compData);
+                  substatesDirty = true;
+                  dirtyComponents.add(comp);
+                }
+                break;
+              }
             }
-          }
-          // FIXME: this is a hack, and it isn't reliable, as it
-          // doesn't handle cases where Ram, HttpIn, or SerialIn
-          // are embedded within subcircuits.
-          if (!found && compState instanceof RamState) {
-            System.out.println("closing hex frame");
-            Ram.closeHexFrame((RamState)compState);
-          }
-          if (!found && compState instanceof HttpIn.State) {
-            System.out.println("closing http");
-            HttpIn.kill((HttpIn.State)compState);
-          }
-          if (!found && compState instanceof SerialIn.State) {
-            System.out.println("closing serial");
-            SerialIn.kill((SerialIn.State)compState);
-          }
-          if (!found && compState instanceof CircuitState) {
-            CircuitState sub = (CircuitState) compState;
-            sub.parentState = null;
-            synchronized (dirtyLock) {
+            if (!found) {
+              // subcircuit component was deleted
               // FIXME: mark substates as defunct?
-              substates.remove(sub);
-              substatesDirty = true;
+              compData.parentState = null;
+              synchronized (dirtyLock) {
+                substates.remove(compData);
+                substatesDirty = true;
+              }
+            }
+          } else {
+            // non-subcircuit component
+            Integer integerData = componentIntegerData.remove(comp);
+            Value valueData = componentValueData.remove(comp);
+            Double doubleData = componentDoubleData.remove(comp);
+            ComponentData customData = componentCustomData.remove(comp);
+            if (integerData == null && valueData == null &&
+                doubleData == null && customData == null)
+              continue;
+            Class<?> compFactory = comp.getFactory().getClass();
+            boolean found = false;
+            for (Component repl : map.getReplacementsFor(comp)) {
+              if (repl.getFactory().getClass() == compFactory) {
+                found = true;
+                if (integerData != null)
+                  componentIntegerData.put(repl, integerData);
+                else
+                  componentIntegerData.remove(repl); // just in case
+                if (valueData != null)
+                  componentValueData.put(repl, valueData);
+                else
+                  componentValueData.remove(repl); // just in case
+                if (doubleData != null)
+                  componentDoubleData.put(repl, doubleData);
+                else
+                  componentDoubleData.remove(repl); // just in case
+                if (customData != null)
+                  componentCustomData.put(repl, customData);
+                else
+                  componentCustomData.remove(repl); // just in case
+                break;
+              }
+            }
+            // FIXME: this is a hack, and it isn't reliable, as it
+            // doesn't handle cases where Ram, HttpIn, or SerialIn
+            // are embedded within subcircuits.
+            if (!found && customData instanceof RamState) {
+              System.out.println("closing hex frame");
+              Ram.closeHexFrame((RamState)customData);
+            }
+            if (!found && customData instanceof HttpIn.State) {
+              System.out.println("closing http");
+              HttpIn.kill((HttpIn.State)customData);
+            }
+            if (!found && customData instanceof SerialIn.State) {
+              System.out.println("closing serial");
+              SerialIn.kill((SerialIn.State)customData);
             }
           }
         }
       }
+
     }
   }
 
@@ -218,7 +290,15 @@ public final class CircuitState implements ComponentData {
   private Component parentComp; // subcircuit component containing this state
 
   private CircuitWires.State wireData;
-  private HashMap<Component, Object> componentData = new HashMap<>();
+  
+  // component*Data contains:
+  //  - ComponentData objects (mutable state held by a Component)
+  //  - Integer, Value, or Double (immutable state held by a Component)
+  private HashMap<Component /* from any but SubcircuitFactory */, ComponentData> componentCustomData = new HashMap<>();
+  private HashMap<Component /* from any but SubcircuitFactory */, Integer> componentIntegerData = new HashMap<>();
+  private HashMap<Component /* from any but SubcircuitFactory */, Value> componentValueData = new HashMap<>();
+  private HashMap<Component /* from any but SubcircuitFactory */, Double> componentDoubleData = new HashMap<>();
+  private HashMap<Component /* from only SubcircuitFactory */, CircuitState> subcircuitData = new HashMap<>();
   
   private static final int FASTPATH_GRID_WIDTH = 200;
   private static final int FASTPATH_GRID_HEIGHT = 200;
@@ -353,15 +433,15 @@ public final class CircuitState implements ComponentData {
     }
   }
 
-  @Override
-  public CircuitState duplicateForNewSimulation() {
-    try { throw new Exception("*** why? ***"); }
-    catch (Exception e) { e.printStackTrace(); }
-    // return cloneAsNewRootState();
-    // This method is still needed because this is the InstanceState for
-    // subcircuits
-    throw new UnsupportedOperationException("CircuitState::duplicateForNewSimulation() is deprecated");
-  }
+  // @Override
+  // public CircuitState duplicateForNewSimulation() {
+  //   try { throw new Exception("*** why? ***"); }
+  //   catch (Exception e) { e.printStackTrace(); }
+  //   // return cloneAsNewRootState();
+  //   // This method is still needed because this is the InstanceState for
+  //   // subcircuits
+  //   throw new UnsupportedOperationException("CircuitState::duplicateForNewSimulation() is deprecated");
+  // }
 
   public static CircuitState createRootState(Project proj, Circuit circuit) {
     System.out.println("createRootState...");
@@ -382,7 +462,7 @@ public final class CircuitState implements ComponentData {
 		// DEBUG: System.out.printf("this %s is copying from %s\n", this, src);
     this.parentComp = src.parentComp;
     this.parentState = src.parentState;
-    HashMap<CircuitState, CircuitState> substateData = new HashMap<>();
+    // HashMap<CircuitState, CircuitState> substateData = new HashMap<>();
     this.substates = new HashSet<CircuitState>();
     synchronized (src.dirtyLock) {
       // note: we don't bother with our this.dirtyLock here: it isn't needed
@@ -396,34 +476,17 @@ public final class CircuitState implements ComponentData {
         newSub.parentState = this;
         this.substates.add(newSub);
         this.substatesDirty = true;
-        substateData.put(oldSub, newSub);
+        subcircuitData.put(newSub.parentComp, newSub);
       }
     }
-    for (Component key : src.componentData.keySet()) {
-      Object oldValue = src.componentData.get(key);
-      if (oldValue instanceof CircuitState) {
-        Object newValue = substateData.get(oldValue);
-        if (newValue != null) {
-          this.componentData.put(key, newValue);
-        } else {
-          Object mystery = this.componentData.remove(key);
-          if (mystery != null) // should never happen?
-            System.out.println("mystery CS found among src.componentData"
-                +" but it wasn't in src.substates."); 
-        }
-      } else {
-        Object newValue;
-        // FIXME here
-        if (oldValue instanceof ComponentData) {
-          newValue = ((ComponentData) oldValue).duplicateForNewSimulation();
-        } else {
-          System.out.println("warn - this only makes sense for immutible state data");
-          newValue = oldValue;
-        }
-        if (newValue instanceof CircuitState)
-          System.out.println("non-substate CS as cloned component data... this is bad");
-        this.componentData.put(key, newValue);
-      }
+    this.componentIntegerData = new HashMap<>(src.componentIntegerData);
+    this.componentValueData = new HashMap<>(src.componentValueData);
+    this.componentDoubleData = new HashMap<>(src.componentDoubleData);
+    for (Component key : src.componentCustomData.keySet()) {
+      ComponentData oldValue = src.componentCustomData.get(key);
+      ComponentData newValue = oldValue.duplicateForNewSimulation();
+      if (newValue != null)
+        this.componentCustomData.put(key, newValue);
     }
     // Propagator.copyDrivenValues(this, src);
     // note: we don't bother with our this.valuesLock here: it isn't needed
@@ -741,8 +804,12 @@ public final class CircuitState implements ComponentData {
   public void reset() {
     temporaryClock = null;
     wireData = null;
-    for (Iterator<Component> it = componentData.keySet().iterator(); it.hasNext();) {
+    componentIntegerData.clear();
+    componentValueData.clear();
+    componentDoubleData.clear();
+    for (Iterator<Component> it = componentCustomData.keySet().iterator(); it.hasNext();) {
       Component comp = it.next();
+      // FIXME: this isn't very reliable, should use new active/inactive hooks
       if (comp.getFactory() instanceof Ram) {
         Ram ram = (Ram)comp.getFactory();
         boolean remove = ram.reset(this, Instance.getInstanceFor(comp));
@@ -758,7 +825,7 @@ public final class CircuitState implements ComponentData {
         boolean remove = serial.reset(this, Instance.getInstanceFor(comp));
         if (remove)
           it.remove();
-      } else if (!(comp.getFactory() instanceof SubcircuitFactory)) {
+      } else {
         it.remove();
       }
     }
@@ -779,7 +846,7 @@ public final class CircuitState implements ComponentData {
   }
 
   public CircuitState createCircuitSubstateFor(Component comp, Circuit circ) {
-      CircuitState oldState = (CircuitState)componentData.get(comp);
+      CircuitState oldState = (CircuitState)subcircuitData.get(comp);
       if (oldState != null && oldState.parentComp == comp) {
         // fixme: Does this ever happen?
         System.out.println("fixme: removed stale circuitstate... should never happen");
@@ -802,46 +869,10 @@ public final class CircuitState implements ComponentData {
       }
       newState.parentState = this;
       newState.parentComp = comp;
-      componentData.put(comp, newState);
+      subcircuitData.put(comp, newState);
       return newState;
   }
-  
-	private void replaceData(Component comp, Object data) {
-		// This happens when subcirc is copy/paste/moved, which causes a new
-		// component to be created, and we want to transfer the now-defunct
-		// component's state over to the newly-created copmonent.
-		// If comp is a subcircuit, the data will be a CircuitState.
-		// Otherwise data might be a RamState, or some other built-in component state.
-    if (data instanceof CircuitState) {
-      CircuitState sub = (CircuitState)data;
-			// DEBUG: System.out.printf("comp is %s\n", comp);
-			// DEBUG: System.out.printf("with old data %s\n", getData(comp));
-			// DEBUG: if (getData(comp) instanceof CircuitState)
-			// DEBUG:  System.out.printf("        new data parent %s\n", ((CircuitState)getData(comp)).parentComp);
-			// DEBUG: System.out.printf("setting new data %s\n", data);
-			// DEBUG: System.out.printf("        new data parent %s\n", sub.parentComp);
-      // data was already removed from componentData[orig].
-      // need to register it now under componentdata[comp], done below.
-      // also need to set parentcomp
-      // but don't need to add to substates, b/c it should already be there
-      sub.parentComp = comp;
-			CircuitState old = (CircuitState)componentData.put(comp, data);
-			synchronized (dirtyLock) {
-				// DEBUG: System.out.println("removing old substate " + old);
-				if (old != null) {
-					substates.remove(old);
-          old.parentState = null;
-        }
-				// DEBUG: System.out.println("adding new substate " + sub);
-        sub.parentState = this;
-				substates.add(sub);
-				substatesDirty = true;
-				dirtyComponents.add(comp);
-			}
-    } else {
-			componentData.put(comp, data);
-		}
-  }
+
 
   /* Design Notes on CircuitState.setData()/getData() (3 of 5)
    *
@@ -861,22 +892,22 @@ public final class CircuitState implements ComponentData {
    * statically that subcircuit components don't use this code path.
    */
   
-  public Integer getDataAsInteger(Component comp) { return (Integer)componentData.get(comp); }
-  public Value getDataAsValue(Component comp) { return (Value)componentData.get(comp); }
-  public Double getDataAsDouble(Component comp) { return (Double)componentData.get(comp); }
+  public Integer getDataAsInteger(Component comp) { return componentIntegerData.get(comp); }
+  public Value getDataAsValue(Component comp) { return componentValueData.get(comp); }
+  public Double getDataAsDouble(Component comp) { return componentDoubleData.get(comp); }
 
   public int getDataOrDefault(Component comp, int defaultData) {
-    Integer data = (Integer)componentData.get(comp);
+    Integer data = componentIntegerData.get(comp);
     return (data == null ? defaultData : data.intValue());
   }
 
   public Value getDataOrDefault(Component comp, Value defaultData) {
-    Value data = (Value)componentData.get(comp);
+    Value data = componentValueData.get(comp);
     return (data == null ? defaultData : data);
   }
 
   public double getDataOrDefault(Component comp, double defaultData) {
-    Double data = (Double)componentData.get(comp);
+    Double data = componentDoubleData.get(comp);
     return (data == null ? defaultData : data.doubleValue());
   }
 
@@ -890,15 +921,27 @@ public final class CircuitState implements ComponentData {
   //  - setData(int) to handle the case of Integer
   //  - setData(Value) to handle the case of Value
   //  - getData() returns an object, which may be ComponentData, Integer, or Value
-  @Deprecated(since = "5.0.5HC", forRemoval = false)
-  public Object getData(Component comp) {
-    return componentData.get(comp);
+  @Deprecated(since = "5.0.5HC", forRemoval = true)
+  public Object deprecated_getData(Component comp) {
+    return getDataAsAny(comp);
   }
 
   // There are some situations, like DynamicElement, where we want to get data
   // but don't know what type it will be. These uses are okay.
   public Object getDataAsAny(Component comp) {
-    return componentData.get(comp);
+    ComponentData customData = componentCustomData.get(comp);
+    if (customData != null)
+      return customData;
+    Integer integerData = componentIntegerData.get(comp);
+    if (integerData != null)
+      return integerData;
+    Value valueData = componentValueData.get(comp);
+    if (valueData != null)
+      return valueData;
+    Double doubleData = componentDoubleData.get(comp);
+    if (doubleData != null)
+      return doubleData;
+    return null;
   }
 
   // Note: getDataFor() isn't a great name, but..
@@ -906,12 +949,11 @@ public final class CircuitState implements ComponentData {
   //  - getDataAsComponentData() is unweildy
   //  - getComponentData is fine, but doesn't match getDataAsInteger, etc.
   public ComponentData getDataFor(Component comp) {
-    return (ComponentData)componentData.get(comp);
+    return componentCustomData.get(comp);
   }
 
   public CircuitState getDataForSubcircuit(Component comp) {
-    // FIXME: should use substates here...?
-    return (CircuitState)componentData.get(comp);
+    return subcircuitData.get(comp);
   }
 
   // We exclude this variation, as it seems unlikely a caller would have a
@@ -921,21 +963,27 @@ public final class CircuitState implements ComponentData {
   //   return (val == null ? defaultValue : val;
   // }
 
-  public void setData(Component comp, int data) { componentData.put(comp, (Integer)data); }
-  public void setData(Component comp, Value data) { componentData.put(comp, data); }
-  public void setData(Component comp, double data) { componentData.put(comp, (Double)data); }
-
-  // Maybe setMutableData() would be a better name, but
-  // it remains setData() for backwards compatability.
-  public void setData(Component comp, ComponentData data) {
-    // FIXME: CircuitState should not implement ComponentData
-    if (data instanceof CircuitState) {
-      Thread.dumpStack();
-      throw new UnsupportedOperationException("setData(comp, CircuitState) is forbidden");
-    }
-    componentData.put(comp, data);
+  public void setData(Component comp, int data) {
+    componentIntegerData.put(comp, (Integer)data);
   }
 
+  public void setData(Component comp, Value data) {
+    if (data != null)
+      componentValueData.put(comp, data);
+    else
+      componentValueData.remove(comp, data);
+  }
+
+  public void setData(Component comp, double data) {
+    componentDoubleData.put(comp, (Double)data);
+  }
+
+  public void setData(Component comp, ComponentData data) {
+    if (data != null)
+      componentCustomData.put(comp, data);
+    else
+      componentCustomData.remove(comp);
+  }
 
   public void setValue(Location pt, Value val, Component cause, int delay) {
     base.setValue(this, pt, val, cause, delay);
