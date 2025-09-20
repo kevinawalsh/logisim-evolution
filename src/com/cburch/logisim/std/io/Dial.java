@@ -71,7 +71,7 @@ public class Dial extends Slider {
       double t = spin ?
           (degrees - 270) / -360
           : (degrees - ANGLE_MIN) / (ANGLE_MAX - ANGLE_MIN);
-      State data = (State) state.getData();
+      State data = (State) state.getDataFor();
       if (data == null) {
         data = new State(attrs);
         data.setPosition(t, attrs);
@@ -239,7 +239,7 @@ public class Dial extends Slider {
     }
 
     if (showState) {
-      State data = (State) painter.getData();
+      State data = (State) painter.getDataFor();
       if (data == null) {
         data = new State(attrs);
         painter.setData(data);

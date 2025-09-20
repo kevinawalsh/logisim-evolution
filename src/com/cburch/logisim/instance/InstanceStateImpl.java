@@ -164,7 +164,13 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState.getDataFor(component);
   }
 
-  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public CircuitState getDataForSubcircuit() {
+    if (circuitState == null)
+      return null;
+    return circuitState.getDataForSubcircuit(component);
+  }
+
+  @Deprecated(since = "5.0.5HC", forRemoval = false)
   public Object getData() {
     if (circuitState == null)
       return null;

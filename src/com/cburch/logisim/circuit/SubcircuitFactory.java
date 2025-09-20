@@ -315,8 +315,7 @@ public class SubcircuitFactory extends InstanceFactory {
   }
 
   public CircuitState getSubstate(CircuitState superState, Component comp) {
-    //  return getSubstate(createInstanceState(superState, comp));
-    CircuitState subState = (CircuitState)superState.getData(comp);
+    CircuitState subState = superState.getDataForSubcircuit(comp);
     if (subState == null) {
       subState = superState.createCircuitSubstateFor(comp, source);
       if (comp instanceof InstanceComponent)
@@ -327,22 +326,12 @@ public class SubcircuitFactory extends InstanceFactory {
     return subState;
   }
 
-  // public CircuitState getSubstate(CircuitState superState, Instance instance) {
-  //   return getSubstate(createInstanceState(superState, instance));
-  // }
-
   private CircuitState getSubstate(InstanceState stateInContext) {
     if (stateInContext instanceof InstanceStateImpl)
       return getSubstate(((InstanceStateImpl)stateInContext).getCircuitState(),
           ((InstanceStateImpl)stateInContext).getComponent());
     else
       throw new IllegalArgumentException("getSubstate on wrong type " + stateInContext);
-    // CircuitState subState = (CircuitState)instanceState.getData();
-    // if (subState == null) {
-    //   subState = instanceState.createCircuitSubstateFor(source);
-    //   instanceState.fireInvalidated();
-    // }
-    // return subState;
   }
 
   @Override

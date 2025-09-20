@@ -140,7 +140,7 @@ public class Clock extends InstanceFactory {
   }
 
   private static ClockState getState(InstanceState state) {
-    ClockState ret = (ClockState) state.getData();
+    ClockState ret = (ClockState) state.getDataFor();
     if (ret == null) {
       ret = new ClockState(state.getTickCount(), state.getAttributeSet());
       state.setData(ret);
@@ -150,7 +150,7 @@ public class Clock extends InstanceFactory {
 
   public static boolean tick(CircuitState circState, int ticks, Component comp) {
     AttributeSet attrs = comp.getAttributeSet();
-    ClockState state = (ClockState) circState.getData(comp);
+    ClockState state = (ClockState) circState.getDataFor(comp);
     boolean dirty = false;
     if (state == null) {
       state = new ClockState(ticks, attrs);

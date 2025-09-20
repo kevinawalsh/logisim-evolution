@@ -411,7 +411,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
   public boolean writeAllHDLThatDependsOn(CircuitState cs, NetlistComponent shadow,
       Path path, String rootDir) { // for NVRAM
     if (shadow != null) {
-      cs = (CircuitState)cs.getData(shadow.original);
+      cs = cs.getDataForSubcircuit(shadow.original);
     }
     for (NetlistComponent comp : _circNets.components) {
       HDLSupport g = comp.hdlSupport;

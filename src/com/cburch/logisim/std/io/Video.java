@@ -50,6 +50,7 @@ import com.bric.swing.IndexedColorPicker;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.AbstractComponentFactory;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentEvent;
 import com.cburch.logisim.comp.ComponentFactory;
@@ -349,27 +350,42 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
   }
 
   private State getState(CircuitState circuitState, AttributeSet attrs) {
-    State state = (State) circuitState.getData(this);
+    State state = (State) circuitState.getDataFor(this);
     if (state == null) {
       ColorModel cm = getColorModel(attrs.getValue(MODEL_OPTION));
       Object blank_option = attrs.getValue(BLANK_OPTION);
       ColorModelColor cmc = attrs.getValue(FIXED_OPTION);
       int color = cmc == null ? 0 : ((ColorModelColor)cmc).color;
       Color bg = new Color(cm.getRGB(color));
-      state = new State(bg, new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB));
+      state = new State(bg);
       circuitState.setData(this, state);
     }
     return state;
   }
 
-  private class State implements ComponentState, Cloneable {
+  private class State implements ComponentData {
     public Value lastClock = null;
     public BufferedImage img;
     public int last_x, last_y, color;
 
-    State(Color bg, BufferedImage img) {
-      this.img = img;
+    State(Color bg) {
+      img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
       reset(bg);
+    }
+
+    State(State other) {
+      lastClock = other.lastClock;
+      last_x = other.last_x;
+      last_y = other.last_y;
+      color = other.color;
+      img = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
+      Graphics g = img.getGraphics();
+      g.drawImage(other.img, 0, 0, 256, 256, 0, 0, 256, 256, null);
+    }
+
+    @Override
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
 
     public void reset(Color bg) {
@@ -377,8 +393,6 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
       g.setColor(bg);
       g.fillRect(0, 0, img.getWidth(), img.getHeight());
     }
-
-    public Object clone() { try { return super.clone(); } catch(CloneNotSupportedException e) { return null; } }
 
     public boolean tick(Value clk) {
       boolean rising = (lastClock == null || (lastClock == Value.FALSE && clk == Value.TRUE));

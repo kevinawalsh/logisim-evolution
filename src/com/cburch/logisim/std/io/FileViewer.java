@@ -367,7 +367,7 @@ public class FileViewer extends InstanceFactory {
     int cols = state.getAttributeValue(ATTR_COLS).intValue();
     if (state.getAttributeValue(ATTR_STORAGE) == FILE_EMBED) {
       List<String> contents = state.getAttributeValue(ATTR_CONTENTS);
-      State data = (State) state.getData();
+      State data = (State) state.getDataFor();
       if (data == null) {
         data = new State(lines, cols, contents);
         state.setData(data);
@@ -378,7 +378,7 @@ public class FileViewer extends InstanceFactory {
       return data;
     } else {
       Attributes.LinkedFile source = state.getAttributeValue(ATTR_FILENAME);
-      State data = (State) state.getData();
+      State data = (State) state.getDataFor();
       if (data == null || !(data instanceof LinkedFileState)) {
         data = new LinkedFileState(lines, cols, source);
         state.setData(data);

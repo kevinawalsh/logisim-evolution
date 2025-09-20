@@ -276,7 +276,7 @@ public class CircuitAppearance extends Drawing {
     g.translate(-offset.getX(), -offset.getY());
     CircuitState state = null;
     if (painter.getShowState()) {
-      try { state = (CircuitState)painter.getData(); }
+      try { state = painter.getDataForSubcircuit(); }
       catch (UnsupportedOperationException e) { }
     }
     for (CanvasObject shape : getObjectsFromBottom()) {

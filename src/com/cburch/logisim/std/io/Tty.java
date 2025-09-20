@@ -149,7 +149,7 @@ public class Tty extends InstanceFactory {
   private TtyState getTtyState(InstanceState state) {
     int rows = getRowCount(state.getAttributeValue(ATTR_ROWS));
     int cols = getColumnCount(state.getAttributeValue(ATTR_COLUMNS));
-    TtyState ret = (TtyState) state.getData();
+    TtyState ret = (TtyState) state.getDataFor();
     if (ret == null) {
       ret = new TtyState(rows, cols);
       state.setData(ret);

@@ -446,7 +446,7 @@ public class MidiIn extends InstanceFactory {
   }
 
   private State getState(InstanceState state) {
-    State ret = (State) state.getData();
+    State ret = (State) state.getDataFor();
     if (ret == null) {
       ret = new State();
       state.setData(ret);

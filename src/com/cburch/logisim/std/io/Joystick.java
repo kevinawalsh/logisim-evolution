@@ -75,7 +75,7 @@ public class Joystick extends InstanceFactory {
 
     @Override
     public void paint(InstancePainter painter) {
-      State state = (State) painter.getData();
+      State state = (State) painter.getDataFor();
       if (state == null) {
         state = new State(0, 0);
         painter.setData(state);
@@ -91,7 +91,7 @@ public class Joystick extends InstanceFactory {
     }
 
     private void updateState(InstanceState state, int dx, int dy) {
-      State s = (State) state.getData();
+      State s = (State) state.getDataFor();
       if (dx < -15)
         dx = -15;
       if (dy < -15)
@@ -188,7 +188,7 @@ public class Joystick extends InstanceFactory {
     Graphics g = painter.getGraphics();
     g.drawRoundRect(x - 30, y - 10, 30, 30, 8, 8);
     g.drawRoundRect(x - 28, y - 8, 26, 26, 4, 4);
-    State state = (State) painter.getData();
+    State state = (State) painter.getDataFor();
     int dx = state == null ? 0 : state.xPos;
     int dy = state == null ? 0 : state.yPos;
     drawBall(g, x, y, dx, dy, painter.getAttributeValue(Io.ATTR_COLOR),
@@ -199,7 +199,7 @@ public class Joystick extends InstanceFactory {
   @Override
   public void propagate(InstanceState state) {
     BitWidth bits = state.getAttributeValue(ATTR_WIDTH);
-    State s = (State) state.getData();
+    State s = (State) state.getDataFor();
     int xpos = s == null ? 0 : s.xPos;
     int ypos = s == null ? 0 : s.yPos;
 

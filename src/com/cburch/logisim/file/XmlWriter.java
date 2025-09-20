@@ -281,7 +281,7 @@ public class XmlWriter {
       ComponentFactory factory = comp.getFactory();
       if (factory instanceof SubcircuitFactory) {
         Circuit subcirc = ((SubcircuitFactory)factory).getSubcircuit();
-        CircuitState subState = (CircuitState)circState.getData(comp);
+        CircuitState subState = circState.getDataForSubcircuit(comp);
         if (subState == null)
           continue;
         String subpath = path + subcircPathName(subcirc.getName(), comp.getLocation()) + "/";

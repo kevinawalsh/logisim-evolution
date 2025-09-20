@@ -304,7 +304,14 @@ public class InstancePainter implements InstanceState {
     return circState.getDataFor(comp);
   }
 
-  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public CircuitState getDataForSubcircuit() {
+    CircuitState circState = context.getCircuitState();
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.getData without state");
+    return circState.getDataForSubcircuit(comp);
+  }
+
+  @Deprecated(since = "5.0.5HC", forRemoval = false)
   public Object getData() {
     CircuitState circState = context.getCircuitState();
     if (circState == null || comp == null)

@@ -891,7 +891,7 @@ public final class CircuitState implements ComponentData {
   //  - setData(int) to handle the case of Integer
   //  - setData(Value) to handle the case of Value
   //  - getData() returns an object, which may be ComponentData, Integer, or Value
-  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  @Deprecated(since = "5.0.5HC", forRemoval = false)
   public Object getData(Component comp) {
     return componentData.get(comp);
   }
@@ -908,6 +908,11 @@ public final class CircuitState implements ComponentData {
   //  - getComponentData is fine, but doesn't match getDataAsInteger, etc.
   public ComponentData getDataFor(Component comp) {
     return (ComponentData)componentData.get(comp);
+  }
+
+  public CircuitState getDataForSubcircuit(Component comp) {
+    // FIXME: should use substates here...?
+    return (CircuitState)componentData.get(comp);
   }
 
   // We exclude this variation, as it seems unlikely a caller would have a

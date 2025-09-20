@@ -266,7 +266,7 @@ public class SerialIn extends InstanceFactory {
     drawUsbLogo((Graphics2D)painter.getGraphics(), cx-25, cy-12, 50, 24, Color.BLACK);
 
     if (painter.getShowState()) {
-      State state = (State)painter.getData();
+      State state = (State)painter.getDataFor();
       // Connection status LED
       Color c = (state != null && state.isOpen ? ON_COLOR : OFF_COLOR);
       Graphics2D g = (Graphics2D)painter.getGraphics();
@@ -427,7 +427,7 @@ public class SerialIn extends InstanceFactory {
   }
 
   private static State getState(InstanceState circState) {
-    State state = (State) circState.getData();
+    State state = (State) circState.getDataFor();
     if (state == null) {
       state = new State(circState);
       circState.setData(state);
@@ -449,7 +449,7 @@ public class SerialIn extends InstanceFactory {
   // This could be static, to match kill, or vice-versa. But whatever.
   public boolean reset(CircuitState cs, Instance instance) {
     System.out.println("serial... CircuitState notify of reset");
-    State state = (State)instance.getData(cs);
+    State state = (State)instance.getDataFor(cs);
     if (state == null)
       return true; // remove State from cs (but it was already null?)
     state.close();

@@ -163,7 +163,7 @@ public class PCMSink extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    State data = (State) painter.getData();
+    State data = (State) painter.getDataFor();
     Bounds bds = painter.getNominalBounds();
     Graphics g = painter.getGraphics();
 
@@ -187,7 +187,7 @@ public class PCMSink extends InstanceFactory {
   }
 
   private State getState(InstanceState state) {
-    State ret = (State) state.getData();
+    State ret = (State) state.getDataFor();
     if (ret == null) {
       ret = new State(state);
       state.setData(ret);

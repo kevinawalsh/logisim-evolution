@@ -53,6 +53,24 @@ package com.cburch.logisim.comp;
  * must be able make a copy of themselves: duplicateForNewSimulation() is used
  * for this.
  *
+ * Typical implementations use a copy-constructor:
+ *
+ *   static class MyState implements ComponentData {
+ *     MyState(...) {
+ *       ... initialze for a new component ...
+ *     }
+ *     MyState(MyState other) { 
+ *       ... initialize from other copy ...
+ *     }
+ *     @Override
+ *     public MyState duplicateForNewSimulation() {
+ *       return new MyState(this);
+ *     }
+ *     ...
+ *   }
+ *
+ * Notes:
+ *
  * - duplicateForNewSimulation() implementations can return any data type,
  *   that's allowed by java's type system. Normally, an implementation would
  *   return the same type as itself.

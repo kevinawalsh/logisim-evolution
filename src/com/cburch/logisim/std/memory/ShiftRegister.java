@@ -325,7 +325,7 @@ public class ShiftRegister extends InstanceFactory {
     BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
     Integer lenObj = state.getAttributeValue(ATTR_LENGTH);
     int length = lenObj == null ? 8 : lenObj.intValue();
-    ShiftRegisterData data = (ShiftRegisterData) state.getData();
+    ShiftRegisterData data = (ShiftRegisterData) state.getDataFor();
     if (data == null) {
       data = new ShiftRegisterData(width, length);
       state.setData(data);
@@ -386,7 +386,7 @@ public class ShiftRegister extends InstanceFactory {
     Boolean Negedge = painter.getAttributeValue(StdAttr.EDGE_TRIGGER)
         .equals(StdAttr.TRIG_FALLING);
     DrawControl(painter, xpos, ypos, len, wid, parallelObj, Negedge);
-    ShiftRegisterData data = (ShiftRegisterData) painter.getData();
+    ShiftRegisterData data = (ShiftRegisterData) painter.getDataFor();
     for (int stage = 0; stage < len; stage++) {
       Integer val = null;
       if (data != null && data.get(len - stage - 1) != null)

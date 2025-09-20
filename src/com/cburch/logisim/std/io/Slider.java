@@ -74,7 +74,7 @@ public class Slider extends InstanceFactory {
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      State data = (State) state.getData();
+      State data = (State) state.getDataFor();
       if (data == null)
         return Value.createKnown(getBitWidth(state, option), 0);
       else
@@ -109,7 +109,7 @@ public class Slider extends InstanceFactory {
       else // inputLoc at right
         dcs = (dx + aC)/(1.0 + Math.abs(dy*1.0/HEIGHT));
       double t = (aC + dcs) / aS;
-      State data = (State) state.getData();
+      State data = (State) state.getDataFor();
       if (data == null) {
         data = new State(attrs);
         data.setPosition(t, attrs);
@@ -128,7 +128,7 @@ public class Slider extends InstanceFactory {
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
       AttributeSet attrs = state.getAttributeSet();
-      State data = (State) state.getData();
+      State data = (State) state.getDataFor();
       if (data == null) {
         return;
       } else if (state.getAttributeValue(RETURN_TO_ZERO)) {
@@ -299,7 +299,7 @@ public class Slider extends InstanceFactory {
     }
 
     if (showState) {
-      State data = (State) painter.getData();
+      State data = (State) painter.getDataFor();
       if (data == null) {
         data = new State(attrs);
         painter.setData(data);
@@ -319,7 +319,7 @@ public class Slider extends InstanceFactory {
   @Override
   public void propagate(InstanceState state) {
     AttributeSet attrs = state.getAttributeSet();
-    State data = (State) state.getData();
+    State data = (State) state.getDataFor();
     Value val;
     if (data == null) {
       data = new State(attrs);

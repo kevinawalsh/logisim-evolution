@@ -380,7 +380,7 @@ public class PortIO extends InstanceFactory {
 
   private static PortState getState(InstanceState state) {
     int size = state.getAttributeValue(ATTR_SIZE);
-    PortState data = (PortState) state.getData();
+    PortState data = (PortState) state.getDataFor();
     if (data == null) {
       data = new PortState(size);
       state.setData(data);

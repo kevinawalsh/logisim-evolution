@@ -216,7 +216,7 @@ public class RamHDLGenerator extends HDLGenerator {
       Path path, String rootDir) { // for NVRAM
     if (!hdlDependsOnCircuitState())
       return true;
-    RamState state = cs == null ? null : (RamState)cs.getData(comp.original);
+    RamState state = cs == null ? null : (RamState)cs.getDataFor(comp.original);
     if (state == null)
       _err.AddWarning("Non-volatile RAM %s initializion data not found in current "
           + "simulator state. The FPGA NVRAM will be initialized to zero instead.",

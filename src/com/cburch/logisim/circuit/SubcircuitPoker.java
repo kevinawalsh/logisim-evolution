@@ -78,10 +78,9 @@ public class SubcircuitPoker extends InstancePoker {
   public void mouseReleased(InstanceState state, MouseEvent e) {
     if (mouseDown) {
       mouseDown = false;
-      Object sub = state.getData();
-      if (e.getClickCount() == 2 && isWithin(state, e)
-          && sub instanceof CircuitState) {
-        state.getProject().setCircuitState((CircuitState) sub);
+      if (e.getClickCount() == 2 && isWithin(state, e)) {
+        CircuitState sub = state.getDataForSubcircuit();
+        state.getProject().setCircuitState(sub);
       } else {
         state.getInstance().fireInvalidated();
       }
@@ -90,8 +89,7 @@ public class SubcircuitPoker extends InstancePoker {
 
   @Override
   public void paint(InstancePainter painter) {
-    if (painter.getDestination() instanceof Canvas
-        && painter.getData() instanceof CircuitState) {
+    if (painter.getDestination() instanceof Canvas) {
       Bounds bds = painter.getInstance().getNominalBounds();
       int cx = bds.getX() + bds.getWidth() / 2;
       int cy = bds.getY() + bds.getHeight() / 2;

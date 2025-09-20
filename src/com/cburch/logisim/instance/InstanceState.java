@@ -52,7 +52,8 @@ public interface InstanceState {
   public Value getDataAsValue();
   public Double getDataAsDouble();
   public ComponentData getDataFor();
-  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public CircuitState getDataForSubcircuit();
+  @Deprecated(since = "5.0.5HC", forRemoval = false)
   public Object getData();
 
   public int  getDataOrDefault(int defaultValue);
