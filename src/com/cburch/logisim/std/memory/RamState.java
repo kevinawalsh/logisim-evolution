@@ -29,17 +29,17 @@
  */
 package com.cburch.logisim.std.memory;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.std.memory.Mem.MemListener;
 
 public class RamState extends MemState
-  implements InstanceData, AttributeListener {
+  implements ComponentData, AttributeListener {
 
   private Instance parent;
   private MemListener listener;
@@ -57,6 +57,15 @@ public class RamState extends MemState
     contents.addHexModelWeakListener(null, listener);
   }
 
+  RamState(RamState other) {
+    super(other);
+    parent = null;
+    clockState = new ClockState(other.clockState);
+    listener = other.listener;
+    CurrentData = other.CurrentData;
+    getContents().addHexModelWeakListener(null, listener);
+  }
+
   @Override
   public void attributeListChanged(AttributeEvent e) { }
 
@@ -69,12 +78,8 @@ public class RamState extends MemState
   }
 
   @Override
-  public RamState clone() {
-    RamState ret = (RamState) super.clone();
-    ret.parent = null;
-    ret.clockState = this.clockState.clone();
-    ret.getContents().addHexModelWeakListener(null, listener);
-    return ret;
+  public RamState duplicateForNewSimulation() {
+    return new RamState(this);
   }
 
   int GetCurrentData() {

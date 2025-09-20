@@ -35,12 +35,12 @@ import java.awt.Graphics;
 
 import com.cburch.hex.HexModel;
 import com.cburch.hex.HexModelListener;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 
-class MemState implements InstanceData, Cloneable, HexModelListener {
+class MemState implements ComponentData, HexModelListener {
 
   private MemContents contents;
   private long curScroll = 0;
@@ -63,6 +63,29 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
     this.contents = contents;
     setBits(contents.getLogLength(), contents.getWidth());
     contents.addHexModelWeakListener(null, this);
+  }
+
+  public MemState(MemState other) {
+    contents = other.contents.duplicate();
+    contents.addHexModelWeakListener(null, this);
+    curScroll = other.curScroll;
+    cursorLoc = other.cursorLoc;
+    curAddr = other.curAddr;
+    RecalculateParameters = other.RecalculateParameters;
+    NrOfLines = other.NrOfLines;
+    NrDataSymbolsEachLine = other.NrDataSymbolsEachLine;
+    AddrBlockSize = other.AddrBlockSize;
+    DataBlockSize = other.DataBlockSize;
+    DataSize = other.DataSize;
+    SpaceSize = other.SpaceSize;
+    xOffset = other.xOffset;
+    yOffset = other.yOffset;
+    CharHeight = other.CharHeight;
+  }
+
+  @Override
+  public MemState duplicateForNewSimulation() {
+    return new MemState(this);
   }
 
   public void bytesChanged(HexModel source, long start, long numBytes,
@@ -105,18 +128,6 @@ class MemState implements InstanceData, Cloneable, HexModelListener {
     xOffset = offsetX + (DisplayWidth / 2) - (TotalWidth / 2);
     /* Same calculations for the height */
     yOffset = offsetY;
-  }
-
-  @Override
-  public MemState clone() {
-    try {
-      MemState ret = (MemState) super.clone();
-      ret.contents = contents.clone();
-      ret.contents.addHexModelWeakListener(null, ret);
-      return ret;
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
   }
 
   //

@@ -37,6 +37,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeOption;
@@ -47,7 +48,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -73,7 +73,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      StateData s = (StateData) state.getData();
+      StateData s = (StateData) state.getDataFor();
       return s == null ? Value.FALSE : s.curValue;
     }
   }
@@ -106,7 +106,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     @Override
     public void mouseReleased(InstanceState state, MouseEvent e) {
       if (isPressed && isInside(state, e)) {
-        StateData myState = (StateData) state.getData();
+        StateData myState = (StateData) state.getDataFor();
         if (myState == null)
           return;
 
@@ -121,7 +121,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
       int val = Character.digit(e.getKeyChar(), 2);
       if (val < 0)
         return;
-      StateData myState = (StateData) state.getData();
+      StateData myState = (StateData) state.getDataFor();
       if (myState == null)
         return;
       e.consume();
@@ -136,7 +136,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
 
     @Override
     public void keyPressed(InstanceState state, KeyEvent e) {
-      StateData myState = (StateData) state.getData();
+      StateData myState = (StateData) state.getDataFor();
       if (myState == null)
         return;
       if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_LEFT) && myState.curValue != Value.FALSE) {
@@ -162,8 +162,20 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     }
   }
 
-  private static class StateData extends ClockState implements InstanceData {
+  private static class StateData extends ClockState implements ComponentData {
     Value curValue = Value.FALSE;
+
+    StateData() { }
+
+    StateData(StateData other) {
+      super(other);
+      curValue = other.curValue;
+    }
+
+    @Override
+    public StateData duplicateForNewSimulation() {
+      return new StateData(this);
+    }
   }
 
   private static final int STD_PORTS = 5; // or 6, with enable
@@ -297,7 +309,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     painter.drawLabel();
     if (painter.getShowState()) {
       Location loc = painter.getLocation();
-      StateData myState = (StateData) painter.getData();
+      StateData myState = (StateData) painter.getDataFor();
       if (myState != null) {
         int x = loc.getX();
         int y = loc.getY();
@@ -339,7 +351,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(x, y, 40, 60);
     if (painter.getShowState()) {
-      StateData myState = (StateData) painter.getData();
+      StateData myState = (StateData) painter.getDataFor();
       if (myState != null) {
         g.setColor(myState.curValue.getColor());
         g.fillOval(x + 13, y + 23, 14, 14);
@@ -395,7 +407,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
   @Override
   public void propagate(InstanceState state) {
     // boolean changed = false;
-    StateData data = (StateData) state.getData();
+    StateData data = (StateData) state.getDataFor();
     if (data == null) {
       // changed = true;
       data = new StateData();

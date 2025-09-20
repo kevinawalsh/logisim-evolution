@@ -69,7 +69,7 @@ import com.cburch.logisim.std.wiring.Pin;
 // Note: Each CircuitState belongs to (at most) one Propagator. Some of the
 // members in here more properly belong to Propagator (or, vice versa, some of
 // the functionality in Propagator could equally well be in here.
-public final class CircuitState implements ComponentData /*InstanceData*/ {
+public final class CircuitState implements ComponentData {
 
   private class MyCircuitListener implements CircuitListener {
     public void circuitChanged(CircuitEvent event) {
@@ -361,7 +361,7 @@ public final class CircuitState implements ComponentData /*InstanceData*/ {
     // return cloneAsNewRootState();
     // This method is still needed because this is the InstanceState for
     // subcircuits
-    throw new UnsupportedOperationException("CircuitState::clone() is deprecated");
+    throw new UnsupportedOperationException("CircuitState::duplicateForNewSimulation() is deprecated");
   }
 
   public static CircuitState createRootState(Project proj, Circuit circuit) {
@@ -415,8 +415,8 @@ public final class CircuitState implements ComponentData /*InstanceData*/ {
       } else {
         Object newValue;
         // FIXME here
-        if (oldValue instanceof ComponentState) {
-          newValue = ((ComponentState) oldValue).clone();
+        if (oldValue instanceof ComponentData) {
+          newValue = ((ComponentData) oldValue).duplicateForNewSimulation();
         } else {
           System.out.println("warn - this only makes sense for immutible state data");
           newValue = oldValue;
@@ -881,9 +881,32 @@ public final class CircuitState implements ComponentData /*InstanceData*/ {
     return (data == null ? defaultData : data.doubleValue());
   }
 
-  // Maybe getMutableData() would be a better name, but
-  // it remains getData() for backwards compatability.
-  public ComponentData getData(Component comp) {
+  // Legacy code in external jar libraries probably uses setData()/getData()
+  // with InstanceData, or the old ComponentState, for mutable data. Both of
+  // these are now under ComponentData. For immutable data, it probably uses
+  // InstanceDataSingleton, which also now falls under ComponentData. But we
+  // provide backwards-compatibility for the (probably unlikely) cases where
+  // setData()/getData() was used directly with some other still-acceptable data
+  // type, like Integer or Value. This means we provide
+  //  - setData(int) to handle the case of Integer
+  //  - setData(Value) to handle the case of Value
+  //  - getData() returns an object, which may be ComponentData, Integer, or Value
+  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public Object getData(Component comp) {
+    return componentData.get(comp);
+  }
+
+  // There are some situations, like DynamicElement, where we want to get data
+  // but don't know what type it will be. These uses are okay.
+  public Object getDataAsAny(Component comp) {
+    return componentData.get(comp);
+  }
+
+  // Note: getDataFor() isn't a great name, but..
+  //  - getData() is taken
+  //  - getDataAsComponentData() is unweildy
+  //  - getComponentData is fine, but doesn't match getDataAsInteger, etc.
+  public ComponentData getDataFor(Component comp) {
     return (ComponentData)componentData.get(comp);
   }
 

@@ -41,7 +41,6 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 
 public class RGBLedShape extends LedShape {
   public RGBLedShape(int x, int y, DynamicElement.Path p) {
@@ -63,8 +62,8 @@ public class RGBLedShape extends LedShape {
     } else {
       Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
       Object desired = activ.booleanValue() ? Value.TRUE : Value.FALSE;
-      InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
-      int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
+      Integer data = (Integer)getData(state);
+      int summ = (data == null ? 0 : data.intValue());
       int mask = activ.booleanValue() ? 0 : 7;
       summ ^= mask;
       int red = ((summ >> RGBLed.RED) & 1) * 0xFF;

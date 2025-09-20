@@ -44,7 +44,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -67,26 +66,13 @@ public class Probe extends InstanceFactory implements DynamicValueProvider {
 
     @Override
     public BitWidth getBitWidth(InstanceState state, Object option) {
-      StateData data = (StateData) state.getData();
-      return data == null || data.curValue == null ? null : data.curValue.getBitWidth();
+      Value data = state.getDataAsValue();
+      return data == null ? null : data.getBitWidth();
     }
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      return getValue(state);
-    }
-  }
-
-  private static class StateData implements InstanceData, Cloneable {
-    Value curValue = Value.NIL;
-
-    @Override
-    public Object clone() {
-      try {
-        return super.clone();
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+      return state.getDataOrDefault(Value.NIL);
     }
   }
 
@@ -116,15 +102,11 @@ public class Probe extends InstanceFactory implements DynamicValueProvider {
       return Bounds.create(0, -10, 20, 20);
   }
 
-  private static Value getValue(InstanceState state) {
-    StateData data = (StateData) state.getData();
-    return data == null ? Value.NIL : data.curValue;
-  }
+    // return state.getDataOrDefault(Value.NIL);
 
   @Override
   public Value getDynamicValue(Instance insance, Object instanceStateData) {
-    StateData data = (StateData) instanceStateData;
-    return data == null ? Value.NIL : data.curValue;
+    return instanceStateData == null ? Value.NIL : (Value)instanceStateData;
   }
 
   static void paintValue(InstancePainter painter, Value value) {
@@ -230,7 +212,7 @@ public class Probe extends InstanceFactory implements DynamicValueProvider {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Value value = getValue(painter);
+    Value value = painter.getDataOrDefault(Value.NIL);
 
     Graphics g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds(); // label not included
@@ -270,19 +252,11 @@ public class Probe extends InstanceFactory implements DynamicValueProvider {
 
   @Override
   public void propagate(InstanceState state) {
-    StateData oldData = (StateData) state.getData();
-    Value oldValue = oldData == null ? Value.NIL : oldData.curValue;
+    Value oldValue = state.getDataOrDefault(Value.NIL);
     Value newValue = state.getPortValue(0);
-    boolean same = oldValue == null ? newValue == null : oldValue
-        .equals(newValue);
+    boolean same = oldValue == null ? newValue == null : oldValue.equals(newValue);
     if (!same) {
-      if (oldData == null) {
-        oldData = new StateData();
-        oldData.curValue = newValue;
-        state.setData(oldData);
-      } else {
-        oldData.curValue = newValue;
-      }
+      state.setData(newValue);
       int oldWidth = oldValue == null ? 1 : oldValue.getBitWidth().getWidth();
       int newWidth = newValue.getBitWidth().getWidth();
       if (oldWidth != newWidth) {

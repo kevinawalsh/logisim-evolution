@@ -37,6 +37,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -46,7 +47,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -146,7 +146,7 @@ public class Random extends InstanceFactory {
     }
   }
 
-  private static class StateData extends ClockState implements InstanceData {
+  private static class StateData extends ClockState implements ComponentData {
     private final static long multiplier = 0x5DEECE66DL;
     private final static long addend = 0xBL;
     private final static long mask = (1L << 48) - 1;
@@ -158,6 +158,19 @@ public class Random extends InstanceFactory {
 
     public StateData(Object seed) {
       reset(seed);
+    }
+
+    StateData(StateData other) {
+      super(other);
+      initSeed = other.initSeed;
+      curSeed = other.curSeed;
+      value = other.value;
+      isResetting = other.isResetting;
+    }
+
+    @Override
+    public StateData duplicateForNewSimulation() {
+      return new StateData(this);
     }
 
     boolean reset(Object seed) {

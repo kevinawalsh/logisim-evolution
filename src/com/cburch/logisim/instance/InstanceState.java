@@ -51,7 +51,9 @@ public interface InstanceState {
   public Integer getDataAsInteger();
   public Value getDataAsValue();
   public Double getDataAsDouble();
-  public ComponentData getData();
+  public ComponentData getDataFor();
+  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public Object getData();
 
   public int  getDataOrDefault(int defaultValue);
   public Value  getDataOrDefault(Value defaultValue);

@@ -39,6 +39,7 @@ import java.awt.event.KeyEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -48,7 +49,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
@@ -192,7 +192,7 @@ public class PortIO extends InstanceFactory {
   }
 
 
-  private static class PortState implements InstanceData, Cloneable {
+  private static class PortState implements ComponentData {
 
     Value pin[]; // pindata = usrdata + indata
     Value usr[]; // usrdata
@@ -209,6 +209,12 @@ public class PortIO extends InstanceFactory {
         usr[i] = Value.createUnknown(BitWidth.create(n));
         size -= n;
       }
+    }
+
+    PortState(PortState other) {
+      pin = Arrays.copyOf(other.pin, other.pin.length);
+      usr = Arrays.copyOf(other.usr, other.usr.length);
+      size = other.size;
     }
 
     public void resize(int sz) {
@@ -254,14 +260,8 @@ public class PortIO extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
-      try {
-        PortState other = (PortState)super.clone();
-        other.pin = Arrays.copyOf(pin, pin.length);
-        other.usr = Arrays.copyOf(usr, usr.length);
-        return other;
-      }
-      catch (CloneNotSupportedException e) { return null; }
+    public PortState duplicateForNewSimulation() {
+      return new PortState(this);
     }
   }
 

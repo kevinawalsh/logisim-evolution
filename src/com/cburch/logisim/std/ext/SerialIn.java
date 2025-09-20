@@ -52,6 +52,7 @@ import java.time.ZoneId;
 import com.fazecast.jSerialComm.SerialPort;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -62,7 +63,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 // import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
@@ -456,7 +456,7 @@ public class SerialIn extends InstanceFactory {
     return false; // keep state, it can be re-opened
   }
 
-  public static class State implements InstanceData, Cloneable {
+  public static class State implements ComponentData {
 
     private Value lastClock = Value.UNKNOWN;
 
@@ -504,11 +504,12 @@ public class SerialIn extends InstanceFactory {
       other.crit.lock();
       try {
         // System.out.println("copy state from other...");
+        lastClock = other.lastClock;
         mode = other.mode;
         async = other.async;
         baud = other.baud;
         path = other.path; // should not open both at same time...
-        circState = null;
+        circState = null; // FIXME: duplicateForNewSimulation should take the new circuitstate as param...
       } finally {
         other.crit.unlock();
       }
@@ -659,7 +660,7 @@ public class SerialIn extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
+    public State duplicateForNewSimulation() {
       return new State(this);
     }
 

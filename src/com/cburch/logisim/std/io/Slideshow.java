@@ -36,6 +36,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -43,7 +44,6 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -54,7 +54,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class Slideshow extends InstanceFactory {
 
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
     int w, h, n;
     Image.ImageContent[] slides; // always large enough for MAX_SLIDES
     int cur;
@@ -65,6 +65,16 @@ public class Slideshow extends InstanceFactory {
       this.n = n;
       this.slides = new Image.ImageContent[MAX_SLIDES];
       this.cur = -1;
+    }
+
+    State(State other) {
+      w = other.w;
+      h = other.h;
+      n = other.n;
+      cur = other.cur;
+      slides = new Image.ImageContent[MAX_SLIDES];
+      for (int i = 0; i < n; i++)
+        slides[i] = new Image.ImageContent(other.slides[i]);
     }
 
     void updateSize(int w, int h, int n) {
@@ -97,17 +107,8 @@ public class Slideshow extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
-      try {
-        State other = (State) super.clone();
-        other.slides = new Image.ImageContent[MAX_SLIDES];
-        for (int i = 0; i < n; i++)
-          other.slides[i] = new Image.ImageContent(this.slides[i]);
-        return other;
-      } catch (CloneNotSupportedException e) {
-        e.printStackTrace();
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
   }
 

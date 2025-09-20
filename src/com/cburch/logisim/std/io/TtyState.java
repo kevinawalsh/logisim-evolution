@@ -32,11 +32,11 @@ package com.cburch.logisim.std.io;
 
 import java.util.Arrays;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.start.TtyInterface;
-import com.cburch.logisim.instance.InstanceData;
 
-class TtyState implements InstanceData, Cloneable {
+class TtyState implements ComponentData {
   private Value lastClock;
   private String[] rowData;
   private int colCount;
@@ -52,6 +52,16 @@ class TtyState implements InstanceData, Cloneable {
     lastRow = new char[colCount];
     sendStdout = false;
     clear();
+  }
+
+  TtyState(TtyState other) {
+    lastClock = other.lastClock;
+    rowData = other.rowData.clone();
+    colCount = other.colCount;
+    lastRow = other.lastRow.clone();
+    row = other.row;
+    col = other.col;
+    sendStdout = other.sendStdout;
   }
 
   public void add(char c) {
@@ -90,15 +100,8 @@ class TtyState implements InstanceData, Cloneable {
   }
 
   @Override
-  public TtyState clone() {
-    try {
-      TtyState ret = (TtyState) super.clone();
-      ret.rowData = this.rowData.clone();
-      ret.lastRow = this.lastRow.clone();
-      return ret;
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
+  public TtyState duplicateForNewSimulation() {
+    return new TtyState(this);
   }
 
   private void commit() {

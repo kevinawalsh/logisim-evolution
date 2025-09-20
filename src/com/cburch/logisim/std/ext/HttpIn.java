@@ -41,6 +41,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -50,7 +51,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -310,7 +310,7 @@ public class HttpIn extends InstanceFactory {
     return true; // remove State from cs, we can recreat later on demand
   }
 
-  public static class State implements InstanceData, Cloneable {
+  public static class State implements ComponentData {
 
     private Value lastClock = Value.UNKNOWN;
 
@@ -339,6 +339,8 @@ public class HttpIn extends InstanceFactory {
       try {
         format = new HttpInputFormat(other.format);
         worker = HttpFetchManager.makeWorker(other.worker);
+        lastClock = other.lastClock;
+        lastValues = (other.lastValues == null ? null : other.lastValues.clone());
       } finally {
         other.worker.sync.unlock();
       }
@@ -425,7 +427,7 @@ public class HttpIn extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
+    public State duplicateForNewSimulation() {
       return new State(this);
     }
 

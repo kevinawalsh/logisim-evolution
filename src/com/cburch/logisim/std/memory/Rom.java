@@ -301,7 +301,7 @@ public class Rom extends Mem {
 
   @Override
   MemState getState(Instance instance, CircuitState state) {
-    MemState ret = (MemState) instance.getData(state);
+    MemState ret = (MemState) instance.getDataFor(state);
     if (ret == null) {
       MemContents contents = getMemContents(instance);
       ret = new MemState(contents);
@@ -312,7 +312,7 @@ public class Rom extends Mem {
 
   @Override
   MemState getState(InstanceState state) {
-    MemState ret = (MemState) state.getData();
+    MemState ret = (MemState) state.getDataFor();
     if (ret == null) {
       MemContents contents = getMemContents(state.getInstance());
       ret = new MemState(contents);

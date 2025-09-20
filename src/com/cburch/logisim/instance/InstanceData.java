@@ -40,6 +40,7 @@ import com.cburch.logisim.comp.ComponentState;
  * See also:
  *   InstanceDataSingleton
  */
+@Deprecated(since = "5.0.5HC", forRemoval = false)
 public interface InstanceData extends ComponentState {
     // See: ComponentState.clone()
     // Or better yet, don't use this interface at all.

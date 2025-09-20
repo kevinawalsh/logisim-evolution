@@ -45,7 +45,6 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.UnmodifiableList;
@@ -97,8 +96,8 @@ public class LedShape extends DynamicElement {
     } else {
       Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
       Object desired = activ.booleanValue() ? Value.TRUE : Value.FALSE;
-      InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
-      Value val = data == null ? Value.FALSE : (Value) data.getValue();
+      Value val = (Value)getData(state);
+      if (val == null) val = Value.FALSE;
       g.setColor(val == desired ? onColor : offColor);
       g.fillOval(x, y, w, h);
       g.setColor(Color.darkGray);

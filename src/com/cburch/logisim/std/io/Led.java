@@ -46,7 +46,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -71,11 +70,9 @@ public class Led extends InstanceFactory implements DynamicElementProvider, Dyna
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      InstanceDataSingleton data = (InstanceDataSingleton) state
-          .getData();
-      if (data == null)
-        return Value.FALSE;
-      return data.getValue() == Value.TRUE ? Value.TRUE : Value.FALSE;
+      // Coerce to FALSE any Value other than TRUE, such as err, unknown, etc.
+      Value data = state.getDataAsValue();
+      return (data != null && data == Value.TRUE) ? Value.TRUE : Value.FALSE;
     }
   }
 
@@ -140,8 +137,7 @@ public class Led extends InstanceFactory implements DynamicElementProvider, Dyna
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    InstanceDataSingleton data = (InstanceDataSingleton) painter.getData();
-    Value val = data == null ? Value.FALSE : (Value) data.getValue();
+    Value val = painter.getDataOrDefault(Value.FALSE);
     Bounds bds = painter.getNominalBounds().expand(-1);
 
     Graphics g = painter.getGraphics();
@@ -164,19 +160,13 @@ public class Led extends InstanceFactory implements DynamicElementProvider, Dyna
 
   @Override
   public Value getDynamicValue(Instance instance, Object instanceStateData) {
-    InstanceDataSingleton data = (InstanceDataSingleton) instanceStateData;
-    return data == null ? Value.NIL : (Value) data.getValue();
+    return instanceStateData == null ? Value.NIL : (Value)instanceStateData;
   }
 
   @Override
   public void propagate(InstanceState state) {
     Value val = state.getPortValue(0);
-    InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
-    if (data == null) {
-      state.setData(new InstanceDataSingleton(val));
-    } else {
-      data.setValue(val);
-    }
+    state.setData(val);
   }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {

@@ -38,7 +38,6 @@ import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.instance.StdAttr;
@@ -81,8 +80,8 @@ public class SevenSegmentShape extends DynamicElement {
     g.setColor(Color.DARK_GRAY);
     int summ = 0, desired = 1;
     if (state != null) {
-      InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
-      summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
+      Integer data = (Integer)getData(state);
+      summ = (data == null ? 0 : data.intValue());
       Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
       desired = activ == null || activ.booleanValue() ? 1 : 0;
     }

@@ -32,11 +32,11 @@ package com.cburch.logisim.std.memory;
 
 import java.util.Arrays;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.InstanceData;
 
-class ShiftRegisterData extends ClockState implements InstanceData {
+class ShiftRegisterData extends ClockState implements ComponentData {
   private BitWidth width;
   private Value[] vs;
   private int vsPos;
@@ -48,16 +48,21 @@ class ShiftRegisterData extends ClockState implements InstanceData {
     this.vsPos = 0;
   }
 
-  public void clear() {
-    Arrays.fill(vs, Value.createKnown(width, 0));
-    vsPos = 0;
+  public ShiftRegisterData(ShiftRegisterData other) {
+    super(other);
+    width = other.width;
+    vs = other.vs.clone();
+    vsPos = other.vsPos;
   }
 
   @Override
-  public ShiftRegisterData clone() {
-    ShiftRegisterData ret = (ShiftRegisterData) super.clone();
-    ret.vs = this.vs.clone();
-    return ret;
+  public ShiftRegisterData duplicateForNewSimulation() {
+    return new ShiftRegisterData(this);
+  }
+
+  public void clear() {
+    Arrays.fill(vs, Value.createKnown(width, 0));
+    vsPos = 0;
   }
 
   public Value get(int index) {

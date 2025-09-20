@@ -102,7 +102,7 @@ class RomAttributes extends AbstractAttributeSet {
     RomAttributes d = (RomAttributes) dest;
     d.addrBits = addrBits;
     d.dataBits = dataBits;
-    d.contents = contents.clone();
+    d.contents = contents.duplicate();
     d.lineSize = lineSize;
     d.LabelFont = LabelFont;
     d.Appearance = Appearance;

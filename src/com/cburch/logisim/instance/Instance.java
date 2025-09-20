@@ -159,7 +159,9 @@ public final class Instance implements Location.At {
   public Integer getDataAsInteger(CircuitState state) { return state.getDataAsInteger(comp); }
   public Value getDataAsValue(CircuitState state) { return state.getDataAsValue(comp); }
   public Double getDataAsDouble(CircuitState state) { return state.getDataAsDouble(comp); }
-  public ComponentData getData(CircuitState state) { return state.getData(comp); }
+  public ComponentData getDataFor(CircuitState state) { return state.getDataFor(comp); }
+  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public Object getData(CircuitState state) { return state.getDataAsAny(comp); }
   
   public int getDataOrDefault(CircuitState state, int defaultData) { return state.getDataOrDefault(comp, defaultData); }
   public Value getDataOrDefault(CircuitState state, Value defaultData) { return state.getDataOrDefault(comp, defaultData); }

@@ -46,6 +46,7 @@ import javax.sound.midi.Sequencer;
 import javax.sound.midi.Synthesizer;
 import javax.sound.midi.Transmitter;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
@@ -53,7 +54,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -524,16 +524,19 @@ public class MidiIn extends InstanceFactory {
     }
   }
 
-  static class State implements InstanceData, Cloneable {
+  static class State implements ComponentData {
     private Value lastClock = Value.UNKNOWN;
     // private int curData = -1;
 
     public State() { }
 
+    public State(State other) {
+      lastClock = other.lastClock;
+    }
+
     @Override
-    public State clone() {
-      try { return (State) super.clone(); }
-      catch (CloneNotSupportedException e) { return null; }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
 
     public Value setLastClock(Value newClock) {

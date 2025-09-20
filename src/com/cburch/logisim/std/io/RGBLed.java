@@ -44,7 +44,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -70,12 +69,11 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
-      int rgb = 0;
+      Integer data = state.getDataAsInteger();
       if (data == null)
         return Value.createUnknown(bitwidth);
       else
-        return Value.createKnown(bitwidth, ((Integer)data.getValue()).intValue());
+        return Value.createKnown(bitwidth, data.intValue());
     }
   }
 
@@ -169,8 +167,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    InstanceDataSingleton data = (InstanceDataSingleton) painter.getData();
-    int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
+    int summ = painter.getDataOrDefault(0);
     Bounds bds = painter.getNominalBounds().expand(-1);
 
     Graphics g = painter.getGraphics();
@@ -202,13 +199,7 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
       if (val == Value.TRUE)
         summary |= 1 << i;
     }
-    Integer value = Integer.valueOf(summary);
-    InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
-    if (data == null) {
-      state.setData(new InstanceDataSingleton(value));
-    } else {
-      data.setValue(value);
-    }
+    state.setData(summary);
   }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {

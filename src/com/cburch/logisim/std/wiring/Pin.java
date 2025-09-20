@@ -58,6 +58,7 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.circuit.appear.DynamicValueProvider;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -69,7 +70,6 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -505,29 +505,33 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     }
   }
 
-  private static class PinState implements InstanceData, Cloneable {
+  private static class PinState implements ComponentData {
 
     Value foundValue; // for color - received value from wire connected to this pin
     Value intendedValue; // for display - output: received value; input: UI or parent value
 
-    @Override
-    public Object clone() {
-      try {
-        return super.clone();
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    PinState(Value v) {
+      foundValue = intendedValue = v;
     }
+
+    PinState(PinState other) {
+      foundValue = other.foundValue;
+      intendedValue = other.intendedValue;
+    };
+
+    @Override
+    public PinState duplicateForNewSimulation() {
+      return new PinState(this);
+    }
+
   }
 
   private static PinState getState(InstanceState state) {
     PinAttributes attrs = (PinAttributes) state.getAttributeSet();
     BitWidth width = attrs.width;
-    PinState ret = (PinState) state.getData();
+    PinState ret = (PinState) state.getDataFor();
     if (ret == null) {
-      ret = new PinState();
-      ret.foundValue = ret.intendedValue = 
-          Value.repeat(attrs.defaultBitValue(), width);
+      ret = new PinState(Value.repeat(attrs.defaultBitValue(), width));
       state.setData(ret);
     }
     if (ret.intendedValue.getWidth() != width.getWidth()) {

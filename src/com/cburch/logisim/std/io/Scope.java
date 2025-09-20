@@ -40,16 +40,16 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
@@ -118,7 +118,7 @@ public class Scope extends InstanceFactory {
 
   }
 
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
     private double[] samples;
     private int idx, cnt;
     Value lastClock = Value.UNKNOWN;
@@ -132,6 +132,16 @@ public class Scope extends InstanceFactory {
       samples = new double[n];
       bw = attrs.getValue(StdAttr.WIDTH);
       mode = attrs.getValue(StdAttr.MODE);
+    }
+
+    private State(State other) {
+      samples = other.samples.clone();
+      idx = other.idx;
+      cnt = other.cnt;
+      lastClock = other.lastClock;
+      zoom = other.zoom;
+      bw = other.bw;
+      mode = other.mode;
     }
 
     public Value setLastClock(Value newClock) {
@@ -166,14 +176,8 @@ public class Scope extends InstanceFactory {
     }
     
     @Override
-    public Object clone() {
-      try {
-        State ret = (State) super.clone();
-        ret.samples = this.samples.clone();
-        return ret;
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public ComponentData duplicateForNewSimulation() {
+      return new State(this);
     }
 
     public void drawWaveform(Graphics2D g,

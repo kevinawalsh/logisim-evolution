@@ -34,10 +34,10 @@ import java.util.ArrayList;
 
 import java.awt.FontMetrics;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.InstanceData;
 
-class KeyboardData implements InstanceData, Cloneable {
+class KeyboardData implements ComponentData {
   private Value lastClock;
   private char[] buffer;
   private String str;
@@ -55,6 +55,19 @@ class KeyboardData implements InstanceData, Cloneable {
     clear();
   }
 
+  KeyboardData(KeyboardData other) {
+    lastClock = other.lastClock;
+    buffer = other.buffer.clone();
+    str = other.str;
+    specials = new ArrayList<>(other.specials);
+    bufferLength = other.bufferLength;
+    cursorPos = other.cursorPos;
+    dispValid = other.dispValid;
+    dispStart = other.dispStart;
+    dispEnd = other.dispEnd;
+    readyForDiscard = other.readyForDiscard;
+  }
+
   public void clear() {
     bufferLength = 0;
     cursorPos = 0;
@@ -66,14 +79,8 @@ class KeyboardData implements InstanceData, Cloneable {
   }
 
   @Override
-  public Object clone() {
-    try {
-      KeyboardData ret = (KeyboardData) super.clone();
-      ret.buffer = this.buffer.clone();
-      return ret;
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
+  public KeyboardData duplicateForNewSimulation() {
+    return new KeyboardData(this);
   }
 
   public boolean delete() {

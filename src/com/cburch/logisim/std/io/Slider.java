@@ -36,6 +36,7 @@ import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -46,7 +47,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -330,18 +330,26 @@ public class Slider extends InstanceFactory {
   }
 
   /* also used by Dial */
-  static class State implements InstanceData, Cloneable {
+  static class State implements ComponentData {
     private double pos; // [ 0 ... 1.0 ]
     private Value val;
+    
+    // These 3 are saved only for re-validation during propagation
+    private BitWidth bw;
+    private AttributeOption mode;
+    private boolean centering;
 
     public State(AttributeSet attrs) {
       returnToZero(attrs);
     }
 
-    // These 3 are saved only for re-validation during propagation
-    private BitWidth bw;
-    private AttributeOption mode;
-    private boolean centering;
+    State(State other) {
+      pos = other.pos;
+      val = other.val;
+      bw = other.bw;
+      mode = other.mode;
+      centering = other.centering;
+    }
     
     private void save(AttributeSet attrs) {
       bw = attrs.getValue(StdAttr.WIDTH);
@@ -406,9 +414,8 @@ public class Slider extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
-      try { return super.clone(); }
-      catch (CloneNotSupportedException e) { return null; }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
   }
 

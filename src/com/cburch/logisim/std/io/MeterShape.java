@@ -46,7 +46,7 @@ import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.instance.InstanceDataSingleton;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.UnmodifiableList;
 
@@ -83,7 +83,7 @@ public class MeterShape extends DynamicElement {
     if (state == null) {
       Meter.paintMeter(g, null, bounds, attrs, true, true, 1, dialColor.darker());
     } else {
-      InstanceDataSingleton data = (InstanceDataSingleton)getData(state);
+      Value data = (Value)getData(state);
       Meter.paintMeter(g, data, bounds, attrs, true, true, 1, dialColor.darker());
     }
 

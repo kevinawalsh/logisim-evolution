@@ -33,6 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -42,7 +43,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -384,7 +384,7 @@ public class MidiSink extends InstanceFactory {
     return ret;
   }
 
-  static class State implements InstanceData, Cloneable {
+  static class State implements ComponentData {
     private Value lastClock;
     private int cmd = -1;
     private int[] param = new int[] { -1, -1 };
@@ -393,15 +393,17 @@ public class MidiSink extends InstanceFactory {
     public State() {
       lastClock = Value.UNKNOWN;
     }
+    
+    private State(State other) {
+      lastClock = other.lastClock;
+      cmd = other.cmd;
+      param = other.param.clone();
+      expecting = other.expecting;
+    }
 
     @Override
-    public State clone() {
-      try {
-        State ret = (State) super.clone();
-        return ret;
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
 
     public Value setLastClock(Value newClock) {

@@ -41,6 +41,7 @@ import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -48,7 +49,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -107,12 +107,17 @@ public class Clock extends InstanceFactory {
     }
   }
 
-  private static class ClockState implements InstanceData, Cloneable {
+  private static class ClockState implements ComponentData {
     Value sending = Value.UNKNOWN;
     int currentTick;
 
     ClockState(int curTick, AttributeSet attrs) {
       updateTick(curTick, attrs);
+    }
+
+    ClockState(ClockState other) {
+      sending = other.sending;
+      currentTick = other.currentTick;
     }
 
     boolean updateTick(int ticks, AttributeSet attrs) {
@@ -129,12 +134,8 @@ public class Clock extends InstanceFactory {
     }
 
     @Override
-    public ClockState clone() {
-      try {
-        return (ClockState) super.clone();
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public ClockState duplicateForNewSimulation() {
+      return new ClockState(this);
     }
   }
 

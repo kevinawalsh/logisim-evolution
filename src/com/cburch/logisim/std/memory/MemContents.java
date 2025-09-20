@@ -36,7 +36,7 @@ import com.cburch.hex.HexModel;
 import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
-public class MemContents implements Cloneable, HexModel {
+public class MemContents implements HexModel {
   public static MemContents create(int addrBits, int width) {
     return new MemContents(addrBits, width);
   }
@@ -55,6 +55,23 @@ public class MemContents implements Cloneable, HexModel {
   private MemContents(int addrBits, int width) {
     listeners = null;
     setDimensions(addrBits, width);
+  }
+
+  private MemContents(MemContents other) {
+    listeners = null;
+    width = other.width;
+    addrBits = other.addrBits;
+    mask = other.mask;
+    pages = new Page[other.pages.length];
+    for (int i = 0; i < pages.length; i++) {
+      if (other.pages[i] != null) {
+        pages[i] = other.pages[i].duplicate();
+      }
+    }
+  }
+  
+  public MemContents duplicate() {
+    return new MemContents(this);
   }
 
   public void addHexModelWeakListener(Object owner, HexModelListener l) {
@@ -86,24 +103,6 @@ public class MemContents implements Cloneable, HexModel {
       pages[index] = null;
       fireBytesChanged(index << PAGE_SIZE_BITS, oldValues.length,
           oldValues);
-    }
-  }
-
-  @Override
-  public MemContents clone() {
-    try {
-      MemContents ret = (MemContents) super.clone();
-      ret.listeners = null;
-      ret.pages = new Page[this.pages.length];
-      for (int i = 0; i < ret.pages.length; i++) {
-        if (this.pages[i] != null) {
-          ret.pages[i] = this.pages[i].clone();
-        }
-      }
-      return ret;
-    } catch (CloneNotSupportedException ex) {
-      ex.printStackTrace();
-      return this;
     }
   }
 
@@ -464,17 +463,10 @@ public class MemContents implements Cloneable, HexModel {
     fireMetainfoChanged();
   }
 
-  static abstract class Page implements Cloneable {
+  static abstract class Page {
     abstract void clear();
 
-    @Override
-    public Page clone() {
-      try {
-        return (Page) super.clone();
-      } catch (CloneNotSupportedException e) {
-        return this;
-      }
-    }
+    abstract Page duplicate();
 
     abstract int get(int addr);
 
@@ -512,6 +504,5 @@ public class MemContents implements Cloneable, HexModel {
 
     abstract void set(int addr, int value);
   }
-
 
 }

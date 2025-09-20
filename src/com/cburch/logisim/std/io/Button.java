@@ -42,6 +42,7 @@ import java.awt.geom.Path2D;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeOption;
@@ -52,7 +53,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -543,7 +543,7 @@ public class Button extends InstanceFactory {
     circState.setPort(0, newValue, 1);
   }
   
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
 
     Value lastClock = Value.UNKNOWN;
     Value value; // current value
@@ -559,12 +559,13 @@ public class Button extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
-      try {
-        return super.clone();
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      State dup = new State();
+      dup.lastClock = this.lastClock;
+      dup.value = this.value;
+      dup.pressed = false;
+      dup.pressedRecently = false;
+      return dup;
     }
 
   }

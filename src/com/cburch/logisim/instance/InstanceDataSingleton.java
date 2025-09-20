@@ -93,6 +93,7 @@ package com.cburch.logisim.instance;
  *  
  *
  */
+@Deprecated(since = "5.0.5HC", forRemoval = false)
 public final class InstanceDataSingleton implements InstanceData /*, Cloneable */ {
   private Object value; // must be immutable, like Color, String, etc.
 

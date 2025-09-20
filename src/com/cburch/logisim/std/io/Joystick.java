@@ -35,14 +35,14 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 
-import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.InstanceData;
+import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
@@ -111,7 +111,7 @@ public class Joystick extends InstanceFactory {
     }
   }
 
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
     private int xPos;
     private int yPos;
 
@@ -120,13 +120,14 @@ public class Joystick extends InstanceFactory {
       yPos = y;
     }
 
+    State(State other) {
+      xPos = other.xPos;
+      yPos = other.yPos;
+    }
+
     @Override
-    public Object clone() {
-      try {
-        return super.clone();
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
   }
 

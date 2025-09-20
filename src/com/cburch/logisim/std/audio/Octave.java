@@ -41,6 +41,7 @@ import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Synthesizer;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -50,7 +51,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -240,7 +240,7 @@ public class Octave extends InstanceFactory {
     return ret;
   }
   
-  static class State implements InstanceData, Cloneable {
+  static class State implements ComponentData {
     private Value lastClock = Value.UNKNOWN;
     private MidiDevice out;
     boolean[] on = new boolean[12];
@@ -252,10 +252,11 @@ public class Octave extends InstanceFactory {
     public State(State orig) {
       out = MidiDevice.open();
       lastClock = orig.lastClock;
+      on = orig.on.clone();
     }
 
     @Override
-    public State clone() {
+    public State duplicateForNewSimulation() {
       return new State(this);
     }
 

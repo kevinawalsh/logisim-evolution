@@ -240,12 +240,13 @@ public abstract class DynamicElement extends AbstractCanvasObject {
         new Handle(this, x1, y1), new Handle(this, x0, y1) });
   }
 
+  // FIXME: provide accessors for Integer, Value, ComponentData
   protected Object getData(CircuitState state) {
     return getData(path, state);
   }
 
   public static Object getData(Path path, CircuitState state) {
-    Object o = state.getData(path.elt[0]);
+    Object o = state.getDataAsAny(path.elt[0]);
     for (int i = 1; i < path.elt.length && o != null; i++) {
       if (!(o instanceof CircuitState)) {
         throw new IllegalStateException(
@@ -253,7 +254,7 @@ public abstract class DynamicElement extends AbstractCanvasObject {
             + "  but got: " + o);
       }
       state = (CircuitState)o;
-      o = state.getData(path.elt[i]);
+      o = state.getDataAsAny(path.elt[i]);
     }
     return o;
   }

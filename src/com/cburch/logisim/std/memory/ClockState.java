@@ -33,20 +33,15 @@ package com.cburch.logisim.std.memory;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 
-class ClockState implements Cloneable {
+class ClockState {
   private Value lastClock;
 
   public ClockState() {
     lastClock = Value.FALSE;
   }
 
-  @Override
-  public ClockState clone() {
-    try {
-      return (ClockState) super.clone();
-    } catch (CloneNotSupportedException e) {
-      return null;
-    }
+  public ClockState(ClockState other) {
+    lastClock = other.lastClock;
   }
 
   public boolean updateClock(Value newClock, Object trigger) {

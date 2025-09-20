@@ -47,7 +47,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
@@ -73,11 +72,11 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
 
     @Override
     public Value getLogValue(InstanceState state, Object option) {
-      InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
+      Value data = state.getDataAsValue();
       if (data == null)
         return Value.createUnknown(getBitWidth(state, option));
       else
-        return (Value)data.getValue();
+        return data;
     }
   }
 
@@ -198,7 +197,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
   @Override
   public void paintInstance(InstancePainter painter) {
     Graphics g = painter.getGraphics();
-    InstanceDataSingleton data = (InstanceDataSingleton) painter.getData();
+    Value data = painter.getDataAsValue();
     Bounds bds = painter.getNominalBounds();
     boolean colorized = painter.shouldDrawColor();
     boolean showState = painter.getShowState();
@@ -211,7 +210,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
 
   }
 
-  static void paintMeter(Graphics g, InstanceDataSingleton data, Bounds bds,
+  static void paintMeter(Graphics g, Value value, Bounds bds,
       AttributeSet attrs, boolean colorized, boolean showState, int borderWidth, Color borderColor) {
 
     BitWidth bits = attrs.getValue(StdAttr.WIDTH);
@@ -219,7 +218,6 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     AttributeOption shape = attrs.getValue(ATTR_SHAPE);
     Direction facing = attrs.getValue(StdAttr.FACING);
     Color dialColor = attrs.getValue(Io.ATTR_COLOR);
-    Value value = (data == null ? null : ((Value) data.getValue()));
 
     RangedValue pt = new RangedValue(value, bits, mode);
 
@@ -354,12 +352,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
   @Override
   public void propagate(InstanceState state) {
     Value val = state.getPortValue(0);
-    InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
-    if (data == null) {
-      state.setData(new InstanceDataSingleton(val));
-    } else {
-      data.setValue(val);
-    }
+    state.setData(val);
   }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {

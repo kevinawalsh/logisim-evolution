@@ -43,7 +43,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -172,13 +171,7 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     if (dpVal != null && dpVal.toIntValue() == 1)
       summary |= 128; // decimal point
 
-    Integer value = Integer.valueOf(summary);
-    InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
-    if (data == null) {
-      state.setData(new InstanceDataSingleton(value));
-    } else {
-      data.setValue(value);
-    }
+    state.setData(summary);
   }
 
   @Override

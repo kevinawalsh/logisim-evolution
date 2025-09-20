@@ -30,13 +30,23 @@
 
 package com.cburch.logisim.std.memory;
 
-import com.cburch.logisim.instance.InstanceData;
+import com.cburch.logisim.comp.ComponentData;
 
-class RegisterData extends ClockState implements InstanceData {
+class RegisterData extends ClockState implements ComponentData {
   int value;
 
   public RegisterData(int initial) {
     value = initial;
+  }
+
+  public RegisterData(RegisterData other) {
+    super(other);
+    value = other.value;
+  }
+
+  @Override
+  public RegisterData duplicateForNewSimulation() {
+    return new RegisterData(this);
   }
 
   public int getValue() {

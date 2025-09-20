@@ -35,6 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Arrays;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -42,7 +43,6 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -53,7 +53,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 // TODO repropagate when rows/cols change
 
 public class DotMatrix extends InstanceFactory {
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
     private int rows;
     private int cols;
     private Value[] grid;
@@ -65,16 +65,16 @@ public class DotMatrix extends InstanceFactory {
       updateSize(rows, cols, curClock);
     }
 
+    State(State other) {
+      rows = other.rows;
+      cols = other.cols;
+      grid = other.grid.clone();
+      persistTo = other.persistTo.clone();
+    }
+
     @Override
-    public Object clone() {
-      try {
-        State ret = (State) super.clone();
-        ret.grid = this.grid.clone();
-        ret.persistTo = this.persistTo.clone();
-        return ret;
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
 
     private Value get(int row, int col, long curTick) {

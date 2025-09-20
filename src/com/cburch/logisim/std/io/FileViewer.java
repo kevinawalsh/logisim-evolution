@@ -47,6 +47,7 @@ import java.util.List;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -56,7 +57,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -70,7 +70,7 @@ public class FileViewer extends InstanceFactory {
 
   public static final Font FONT = new Font("monospaced", Font.PLAIN, 12);
     
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
     int lines, cols;
     List<String> contents = null;
     HashMap<Integer, Integer> map = null;
@@ -85,6 +85,15 @@ public class FileViewer extends InstanceFactory {
     State(int lines, int cols, List<String> contents) {
       this(lines, cols);
       updateContents(contents);
+    }
+
+    State(State other) {
+      lines = other.lines;
+      cols = other.cols;
+      contents = new ArrayList<>(other.contents);
+      map = new HashMap<>(other.map);
+      firstline = other.firstline;
+      selectedline = other.selectedline;
     }
 
     void updateSize(int lines, int cols) {
@@ -124,16 +133,8 @@ public class FileViewer extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
-      try {
-        State other = (State) super.clone();
-        other.contents = new ArrayList<>(this.contents);
-        other.map = new HashMap<>(this.map);
-        return other;
-      } catch (CloneNotSupportedException e) {
-        e.printStackTrace();
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      return new State(this);
     }
 
     void deselect() {

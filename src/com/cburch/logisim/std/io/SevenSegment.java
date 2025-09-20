@@ -44,7 +44,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceDataSingleton;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -55,8 +54,7 @@ import com.cburch.logisim.tools.key.DirectionConfigurator;
 public class SevenSegment extends InstanceFactory implements DynamicElementProvider {
   static void drawBase(InstancePainter painter, boolean DrawPoint) {
     ensureSegments();
-    InstanceDataSingleton data = (InstanceDataSingleton) painter.getData();
-    int summ = (data == null ? 0 : ((Integer) data.getValue()).intValue());
+    int summ = painter.getDataOrDefault(0);
     Boolean active = painter.getAttributeValue(Io.ATTR_ACTIVE);
     int desired = active == null || active.booleanValue() ? 1 : 0;
 
@@ -193,13 +191,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
       if (val == Value.TRUE)
         summary |= 1 << i;
     }
-    Integer value = Integer.valueOf(summary);
-    InstanceDataSingleton data = (InstanceDataSingleton) state.getData();
-    if (data == null) {
-      state.setData(new InstanceDataSingleton(value));
-    } else {
-      data.setValue(value);
-    }
+    state.setData(summary);
   }
 
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {

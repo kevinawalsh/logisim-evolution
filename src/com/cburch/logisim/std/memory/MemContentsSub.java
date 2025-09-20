@@ -33,24 +33,26 @@ package com.cburch.logisim.std.memory;
 import java.util.Arrays;
 
 class MemContentsSub {
-  private static class BytePage extends MemContents.Page {
+  private final static class BytePage extends MemContents.Page {
     private byte[] data;
 
-    public BytePage(int size) {
+    BytePage(int size) {
       data = new byte[size];
+    }
+
+    BytePage(BytePage other) {
+      data = new byte[other.data.length];
+      System.arraycopy(other.data, 0, data, 0, other.data.length);
+    }
+
+    @Override
+    public BytePage duplicate() {
+      return new BytePage(this);
     }
 
     @Override
     void clear() {
       Arrays.fill(data, (byte) 0);
-    }
-
-    @Override
-    public BytePage clone() {
-      BytePage ret = (BytePage) super.clone();
-      ret.data = new byte[this.data.length];
-      System.arraycopy(this.data, 0, ret.data, 0, this.data.length);
-      return ret;
     }
 
     @Override
@@ -85,24 +87,26 @@ class MemContentsSub {
     }
   }
 
-  private static class IntPage extends MemContents.Page {
+  private final static class IntPage extends MemContents.Page {
     private int[] data;
 
-    public IntPage(int size) {
+    IntPage(int size) {
       data = new int[size];
+    }
+
+    IntPage(IntPage other) {
+      data = new int[other.data.length];
+      System.arraycopy(other.data, 0, data, 0, other.data.length);
+    }
+
+    @Override
+    public IntPage duplicate() {
+      return new IntPage(this);
     }
 
     @Override
     void clear() {
       Arrays.fill(data, 0);
-    }
-
-    @Override
-    public IntPage clone() {
-      IntPage ret = (IntPage) super.clone();
-      ret.data = new int[this.data.length];
-      System.arraycopy(this.data, 0, ret.data, 0, this.data.length);
-      return ret;
     }
 
     @Override
@@ -137,24 +141,26 @@ class MemContentsSub {
     }
   }
 
-  private static class ShortPage extends MemContents.Page {
+  private final static class ShortPage extends MemContents.Page {
     private short[] data;
 
-    public ShortPage(int size) {
+    ShortPage(int size) {
       data = new short[size];
+    }
+
+    ShortPage(ShortPage other) {
+      data = new short[other.data.length];
+      System.arraycopy(other.data, 0, data, 0, other.data.length);
+    }
+
+    @Override
+    public ShortPage duplicate() {
+      return new ShortPage(this);
     }
 
     @Override
     void clear() {
       Arrays.fill(data, (short) 0);
-    }
-
-    @Override
-    public ShortPage clone() {
-      ShortPage ret = (ShortPage) super.clone();
-      ret.data = new short[this.data.length];
-      System.arraycopy(this.data, 0, ret.data, 0, this.data.length);
-      return ret;
     }
 
     @Override

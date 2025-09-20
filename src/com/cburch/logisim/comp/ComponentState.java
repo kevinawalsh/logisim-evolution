@@ -73,6 +73,7 @@ package com.cburch.logisim.comp;
  *   ComponentState entirely, and just implement ComoponentData directly.
  *
  */
+@Deprecated(since = "5.0.5HC", forRemoval = false)
 public interface ComponentState extends ComponentData {
   
     // WARNING: clone() must return a ComponentData object, or null.

@@ -157,11 +157,18 @@ public class InstanceStateImpl implements InstanceState {
       return defaultData;
     return circuitState.getDataOrDefault(component, defaultData);
   }
-
-  public ComponentData getData() {
+  
+  public ComponentData getDataFor() {
     if (circuitState == null)
       return null;
-    return (ComponentData)circuitState.getData(component);
+    return circuitState.getDataFor(component);
+  }
+
+  // @Deprecated(since = "5.0.5HC", forRemoval = false)
+  public Object getData() {
+    if (circuitState == null)
+      return null;
+    return circuitState.getDataAsAny(component);
   }
 
   public void setData(int data) { circuitState.setData(component, data); }

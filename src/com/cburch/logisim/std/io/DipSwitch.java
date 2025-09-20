@@ -37,6 +37,7 @@ import java.awt.event.MouseEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -46,7 +47,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
@@ -83,7 +83,7 @@ public class DipSwitch extends InstanceFactory {
     }
   }
 
-  private static class State implements InstanceData, Cloneable {
+  private static class State implements ComponentData {
 
     private int Value;
     private int size;
@@ -102,12 +102,8 @@ public class DipSwitch extends InstanceFactory {
     }
 
     @Override
-    public Object clone() {
-      try {
-        return super.clone();
-      } catch (CloneNotSupportedException e) {
-        return null;
-      }
+    public State duplicateForNewSimulation() {
+      return new State(Value, size);
     }
 
     public void ToggleBit(int bitindex) {

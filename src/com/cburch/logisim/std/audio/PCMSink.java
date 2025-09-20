@@ -39,6 +39,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -47,7 +48,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.instance.InstanceData;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -204,7 +204,7 @@ public class PCMSink extends InstanceFactory {
     return 32000;
   }
 
-  static class State implements InstanceData, Cloneable {
+  static class State implements ComponentData {
     private Value lastClock = Value.UNKNOWN;
     private byte[] buf; // approx 25% of buflen*bytesPerSample
     private int count = 0;
@@ -269,9 +269,11 @@ public class PCMSink extends InstanceFactory {
     //   if (out != null && out.isOpen())
     //     out.close();
     // }
+    
+    // FIXME: hook into new CircuitState active/inactive tracking
 
     @Override
-    public State clone() {
+    public State duplicateForNewSimulation() {
       return new State(this);
     }
 
