@@ -571,6 +571,7 @@ public class Ram extends Mem {
       return null;
     MemContents contents;
     if (state == null) {
+      // FIXME: should return null here???? contents is clear...
       int addrBits = comp.getAttributeSet().getValue(ADDR_ATTR).getWidth();
       int dataBits = comp.getAttributeSet().getValue(DATA_ATTR).getWidth();
       contents = MemContents.create(addrBits, dataBits);
@@ -598,7 +599,7 @@ public class Ram extends Mem {
       throw new IllegalStateException("Component is missing simulation state");
     Instance instance = ((InstanceComponent)comp).getInstance();
     InstanceState istate = new InstanceStateImpl(state, comp);
-    MemContents contents = getContents(istate);;
+    MemContents contents = getContents(istate);
     contents.copyFrom(0, src, 0, (int)(src.getLastOffset()+1));
   }
   

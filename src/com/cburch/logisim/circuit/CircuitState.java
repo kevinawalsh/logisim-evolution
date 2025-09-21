@@ -34,9 +34,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 // import com.cburch.logisim.circuit.Propagator.DrivenValue;
 import com.cburch.logisim.comp.Component;
@@ -105,8 +105,8 @@ public final class CircuitState /* implements ComponentData */ {
         if (comp.getFactory() instanceof SubcircuitFactory) {
           knownClocks = false; // just in case, will be recomputed by simulator
           // FIXME: confirm the disconnect-from-tree already happens in TRANSACTION_DONE below
-          CircuitState substate = getDataForSubcircuit(comp);
-          if (substate != null && substate.parentComp == comp) {
+          // CircuitState substate = getDataForSubcircuit(comp);
+          // if (substate != null && substate.parentComp == comp) {
             // substates cleanup happens in TRANSACTION_DONE below?
             // synchronized (dirtyLock) {
             //   // FIXME: mark substate as defunct? ... or done in TRANSACTION_DONE below?
@@ -116,7 +116,7 @@ public final class CircuitState /* implements ComponentData */ {
             // substate.parentState = null;
             // substate.parentComp = null;
             // subcircuitData cleanup happens in TRANSACTION_DONE below
-          }
+          // }
         } else {
           // component*Data cleanup happens in TRANSACTION_DONE below
         }
@@ -199,12 +199,12 @@ public final class CircuitState /* implements ComponentData */ {
           // FIXME: use the old likely-broken approach for now, with lots of
           // checking... then simplify code once confirmed.
           if (comp.getFactory() instanceof SubcircuitFactory) {
-            CircuitState compData = subcircuitData.remove(comp);
-            if (compData == null)
+            // subcircuit component removed or moved or replaced
+            CircuitState subcircData = subcircuitData.remove(comp);
+            if (subcircData == null)
               continue;
             boolean found = false;
             for (Component repl : map.getReplacementsFor(comp)) {
-              // subcircuit component was moved
               if (repl.getFactory() instanceof SubcircuitFactory) {
                 // FIXME: confirm the only reasonable case here is that
                 // it is the same circuit
@@ -216,10 +216,11 @@ public final class CircuitState /* implements ComponentData */ {
                   System.err.println("FIXME: subcircuit replaced with different subcirc!!");
                 }
                 found = true;
-                compData.parentComp = comp;
+                subcircData.parentComp = comp;
+                subcircuitData.put(comp, subcircData);
                 synchronized (dirtyLock) {
-                  compData.parentState = CircuitState.this;
-                  substates.add(compData);
+                  subcircData.parentState = CircuitState.this;
+                  substates.add(subcircData);
                   substatesDirty = true;
                   dirtyComponents.add(comp);
                 }
@@ -235,15 +236,15 @@ public final class CircuitState /* implements ComponentData */ {
             }
             if (!found) {
               // subcircuit component was deleted
-              compData.parentState = null;
+              subcircData.parentState = null;
               synchronized (dirtyLock) {
-                substates.remove(compData);
+                substates.remove(subcircData);
                 substatesDirty = true;
               }
-              compData.markAsDefunct();
+              subcircData.markAsDefunct();
             }
           } else {
-            // non-subcircuit component
+            // non-subcircuit component removed or moved or replaced
             Integer integerData = componentIntegerData.remove(comp);
             Value valueData = componentValueData.remove(comp);
             Double doubleData = componentDoubleData.remove(comp);
@@ -267,19 +268,25 @@ public final class CircuitState /* implements ComponentData */ {
                 if (integerData != null)
                   componentIntegerData.put(repl, integerData);
                 else
-                  componentIntegerData.remove(repl); // just in case
+                  componentIntegerData.remove(repl); // just in case, but should not happen
                 if (valueData != null)
                   componentValueData.put(repl, valueData);
                 else
-                  componentValueData.remove(repl); // just in case
+                  componentValueData.remove(repl); // just in case, but should not happen
                 if (doubleData != null)
                   componentDoubleData.put(repl, doubleData);
                 else
-                  componentDoubleData.remove(repl); // just in case
+                  componentDoubleData.remove(repl); // just in case, but should not happen
+                ComponentData oldData = componentCustomData.remove(repl); // just in case, but should not happen
+                if (oldData != null) {
+                  System.err.println("replacement already had state?");
+                  // Lifetime tracking: repl already had data, about to be overwritten
+                  if (oldData instanceof ComponentData.WithLifetimeTracking) {
+                    ((ComponentData.WithLifetimeTracking)oldData).simulationCleanup(CircuitState.this, repl);
+                  }
+                }
                 if (customData != null)
                   componentCustomData.put(repl, customData);
-                else
-                  componentCustomData.remove(repl); // just in case
                 break;
               }
             }
@@ -292,7 +299,7 @@ public final class CircuitState /* implements ComponentData */ {
             }
             // Lifetime tracking: component was removed, cleanup custom state
             if (!found && customData instanceof ComponentData.WithLifetimeTracking) {
-              ((ComponentData.WithLifetimeTracking)customData).simulationCleanup();
+              ((ComponentData.WithLifetimeTracking)customData).simulationCleanup(CircuitState.this, comp);
             }
           }
         }
@@ -425,10 +432,17 @@ public final class CircuitState /* implements ComponentData */ {
   private void setActiveStatus(boolean newLevel) {
     if (active == newLevel)
       return;
-    if (defunct && newLevel) {
-      System.err.println("ERROR: defunct CircuitState can't become active");
+    if (defunct) {
+      System.err.println("ERROR: defunct CircuitState can't change active/inactive status");
     }
     active = newLevel;
+    if (active) {
+      // Lifetime tracking: every component is now active
+      notifyLifetimeTrackers((comp, data) -> data.simulationActivating(this, comp));
+    } else {
+      // Lifetime tracking: every component is now inactive
+      notifyLifetimeTrackers((comp, data) -> data.simulationDeactivating(this, comp));
+    }
     synchronized(dirtyLock) {
       for (CircuitState sub : substates)
         sub.setActiveStatus(newLevel);
@@ -437,20 +451,33 @@ public final class CircuitState /* implements ComponentData */ {
 
   // which thread calls this? Do we need to worry about sync?
   public static void markAsDefunct(CircuitState cs) {
-    cs = cs == null ? null : cs.getAncestorState();
-    if (cs == null || cs.defunct)
+    if (cs == null)
       return;
-    cs.markAsDefunct();
+    cs.getAncestorState().markAsDefunct();
   }
 
   private void markAsDefunct() {
     if (defunct)
       return;
     defunct = true;
+    componentIntegerData.clear();
+    componentValueData.clear();
+    componentDoubleData.clear();
+    // Lifetime tracking: every component is now defunct
+    notifyLifetimeTrackers((comp, data) -> data.simulationCleanup(this, comp));
+    componentCustomData.clear();
+    synchronized (valuesLock) {
+      slowpath_values.clear(); // slow path
+      clearFastpathGrid(); // fast path
+    }
     synchronized(dirtyLock) {
+      dirtyComponents.clear();
+      dirtyPoints.clear();
       for (CircuitState sub : substates)
         sub.markAsDefunct();
+      substates.clear();
     }
+    subcircuitData.clear();
   }
 
   // @Override
@@ -502,11 +529,12 @@ public final class CircuitState /* implements ComponentData */ {
     this.componentIntegerData = new HashMap<>(src.componentIntegerData);
     this.componentValueData = new HashMap<>(src.componentValueData);
     this.componentDoubleData = new HashMap<>(src.componentDoubleData);
-    for (Component key : src.componentCustomData.keySet()) {
-      ComponentData oldValue = src.componentCustomData.get(key);
+    for (Map.Entry<Component, ComponentData> entry : src.componentCustomData.entrySet()) {
+      Component comp = entry.getKey();
+      ComponentData oldValue = entry.getValue();
       ComponentData newValue = oldValue.duplicateForNewSimulation();
       if (newValue != null)
-        this.componentCustomData.put(key, newValue);
+        this.componentCustomData.put(comp, newValue);
     }
     // Propagator.copyDrivenValues(this, src);
     // note: we don't bother with our this.valuesLock here: it isn't needed
@@ -821,27 +849,41 @@ public final class CircuitState /* implements ComponentData */ {
     }
   }
 
+  @FunctionalInterface
+  private interface LifetimeNotifier {
+    void notify(
+        /* Iterator<Map.Entry<Component, ComponentData.WithLifetimeTracking>> it, */
+        Component comp,
+        ComponentData.WithLifetimeTracking data);
+  }
+
+  private void notifyLifetimeTrackers(LifetimeNotifier func) {
+    for (var it = componentCustomData.entrySet().iterator(); it.hasNext(); ) {
+      var entry = it.next();
+      Component comp = entry.getKey();
+      ComponentData data = entry.getValue();
+      if (data instanceof ComponentData.WithLifetimeTracking) {
+        func.notify(comp, (ComponentData.WithLifetimeTracking)data);
+      }
+    }
+  }
+
   public void reset() {
     temporaryClock = null;
     wireData = null;
     componentIntegerData.clear();
     componentValueData.clear();
     componentDoubleData.clear();
-    // Lifetime tracking: component was reset
-    for (Iterator<Component> it = componentCustomData.keySet().iterator(); it.hasNext();) {
-      Component comp = it.next();
-      // can we it.remove using an entryset?
-      ComponentData data = componentCustomData..getValue();
-      if (comp instanceof ComponentData.WithLifetimeTracking) {
-        ((ComponentData.WithLifetimeTracking)data).simulationReset(this, comp);
-      }
-      } else {
-    for (var entry : componentCustomData.entrySet()) {
+    // Lifetime tracking: every component is being reset, then data removed
+    // except those refusing to be removed
+    for (var it = componentCustomData.entrySet().iterator(); it.hasNext(); ) {
+      var entry = it.next();
       Component comp = entry.getKey();
       ComponentData data = entry.getValue();
-      if (comp instanceof ComponentData.WithLifetimeTracking) {
-        ((ComponentData.WithLifetimeTracking)data).simulationReset(this, comp);
-      }
+      if (data instanceof ComponentData.WithLifetimeTracking) {
+        boolean okToRemove = ((ComponentData.WithLifetimeTracking)data).simulationReset(this, comp);
+        if (okToRemove)
+          it.remove();
       } else {
         it.remove();
       }
@@ -859,7 +901,6 @@ public final class CircuitState /* implements ComponentData */ {
     }
     // slowpath_drivers.clear();
     markAllComponentsDirty();
-
   }
 
   public CircuitState getCircuitSubstateFor(Component comp) {
@@ -877,7 +918,7 @@ public final class CircuitState /* implements ComponentData */ {
             ((SubcircuitFactory)comp.getFactory()).getSubcircuit());                  // debug check
         System.out.printf("oldState = %s with parentComp %s\n", cs, cs.parentComp);   // debug check
         Thread.dumpStack();                                                           // debug check
-      }                                                                               // debug check
+      }
       return cs;
     }
     Circuit circ = ((SubcircuitFactory)comp.getFactory()).getSubcircuit();
@@ -889,7 +930,7 @@ public final class CircuitState /* implements ComponentData */ {
     newState.parentState = this;
     newState.parentComp = comp;
     subcircuitData.put(comp, newState);
-    // FIXME: is fireInvalidated actually necessary? can we just mark as dirty, directly?
+    // FIXME: is fireInvalidated actually necessary? can we just mark as dirty, directly? confirm this...
     if (comp instanceof InstanceComponent)
       ((InstanceComponent) comp).fireInvalidated();
     else                                                                               // debug check

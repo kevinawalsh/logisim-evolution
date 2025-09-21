@@ -29,10 +29,12 @@
  */
 package com.cburch.logisim.std.memory;
 
+import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
@@ -114,6 +116,9 @@ public class RamState extends MemState
     if (type == RamAttributes.VOLATILE) {
       MemContents contents = getContents();
       contents.clear();
+      return true; // okay to delete this RamState
+    } else {
+      return false; // do not delete this RamState
     }
   }
 

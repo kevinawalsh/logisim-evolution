@@ -850,10 +850,12 @@ public class SerialIn extends InstanceFactory {
       close();
     }
 
-    @Override
-    public void simulationReset(CircuitState cs, Component comp) {
-      close();
-    }
+    // Default behavior is fine, just call simulationCleanup()
+    // @Override
+    // public void simulationReset(CircuitState cs, Component comp) {
+    //   close();
+    //   return true; // okay to delete this State
+    // }
 
   }
 

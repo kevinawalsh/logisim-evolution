@@ -423,10 +423,13 @@ public class HttpIn extends InstanceFactory {
       worker.setActive(false);
     }
 
-    @Override
-    public void simulationReset(CircuitState cs, Component comp) {
-      worker.enableFetching(false); // propagate will re-enable, probably...
-    }
+    // Default behavior is fine, just do simulationCleanup()
+    // @Override
+    // public void simulationReset(CircuitState cs, Component comp) {
+    //   // worker.enableFetching(false); // propagate will re-enable, probably...
+    //   HttpFetchManager.kill(worker);
+    //   return true; // okay to delete this State
+    // }
 
   }
 

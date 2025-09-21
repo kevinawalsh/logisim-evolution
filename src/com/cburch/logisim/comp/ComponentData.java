@@ -30,6 +30,9 @@
 
 package com.cburch.logisim.comp;
 
+import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.Component;
+
 /* Design Notes on CircuitState.setData()/getData() (1 of 5)
  *
  * ComponentData replaces the earlier ComponentState, which had issues.
@@ -142,9 +145,17 @@ public interface ComponentData {
     // status, e.g. no longer selected within the UI or receiving clock ticks.
     public default void simulationDeactivating(CircuitState cs, Component comp) { }
 
-    // simulationReset() is called when a simulation is being reset, e.g.
-    // from menu item action.
-    public default void simulationReset(CircuitState cs, Component comp) { };
+    // simulationReset() is called when a simulation is being reset, e.g. from
+    // menu item action. If this returns true, the component data will be
+    // removed from the CircuitState immediately after this call, so this is a
+    // last chance to clean up.  If this returns false, the component data will
+    // be preserved across resets. Normally both cleanup and reset would do the
+    // same thing, and this will return true. But Ram is unusual: for
+    // NONVOLATILE, the state persists across resets.
+    public default boolean simulationReset(CircuitState cs, Component comp) {
+      simulationCleanup(cs, comp);
+      return true;
+    };
 
     // simulationCleanup() is called when simulation data has become defunct,
     // e.g. the entire simulation was deleted by the user and will no longer be
