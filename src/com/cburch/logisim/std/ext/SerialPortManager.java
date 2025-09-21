@@ -32,7 +32,6 @@ package com.cburch.logisim.std.ext;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.util.ArrayList;
-import java.util.WeakHashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -46,8 +45,6 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.util.JDialogOk;
 
 public class SerialPortManager {
@@ -69,9 +66,6 @@ public class SerialPortManager {
   }
 
   private static final ArrayList<OpenPortInfo> openPorts = new ArrayList<>();
-  private static final WeakHashMap<Project, Integer> projects = new WeakHashMap<>();
-
-  private static PortProjectListener myListener = new PortProjectListener();
 
   private static final Object lock = new Object();
 
@@ -140,14 +134,6 @@ public class SerialPortManager {
       // }
       // System.out.println("  in project: " + proj.getLogisimFile().getName());
 
-      Integer i = projects.get(proj);
-      if (i == null) {
-        projects.put(proj, (Integer)1);
-        proj.addProjectWeakListener(null, myListener);
-      } else {
-        projects.put(proj, (Integer)(i+1));
-      }
-
       return port;
     }
   }
@@ -165,15 +151,6 @@ public class SerialPortManager {
       }
       info.port = null;
       openPorts.remove(info);
-     
-      Project proj = info.cs.getProject();
-      Integer i = projects.get(proj);
-      if (i == null || i <= 1) {
-        projects.remove(proj);
-        proj.removeProjectWeakListener(null, myListener);
-      } else {
-        projects.put(proj, (Integer)(i-1));
-      }
     }
   }
 
@@ -183,47 +160,6 @@ public class SerialPortManager {
       if (prev == null)
         return;
       close(prev);
-    }
-  }
-
-  private static class PortProjectListener implements ProjectListener {
-    public void projectChanged(ProjectEvent event) {
-      int action = event.getAction();
-      if (action == ProjectEvent.ACTION_SET_STATE) {
-        // System.out.println("set sim state");
-      } else if (action == ProjectEvent.ACTION_CLEAR_STATES) {
-        // System.out.println("clear sim states... close all ports?");
-        Project proj = event.getProject();
-        synchronized(lock) {
-          for (int i = openPorts.size()-1; i >= 0; i--) {
-            OpenPortInfo info = openPorts.get(i);
-            if (info.cs.getProject() == proj)
-              close(info);
-          }
-        }
-      } else if (action == ProjectEvent.ACTION_ADD_STATE) {
-        CircuitState cs = (CircuitState)event.getData();
-        // System.out.println("new cs: " + cs);
-      } else if (action == ProjectEvent.ACTION_DELETE_STATE) {
-        CircuitState cs = (CircuitState)event.getData();
-        Project proj = cs.getProject();
-        synchronized(lock) {
-          for (int i = openPorts.size()-1; i >= 0; i--) {
-            OpenPortInfo info = openPorts.get(i);
-            if (info.cs.getProject() == proj
-                && (info.cs == cs || info.cs.hasAncestorState(cs)))
-              close(info);
-          }
-        }
-        // System.out.println("killed cs: " + cs);
-        // while (cs.isSubstate()) {
-        //   // Component sub = cs.getSubcircuit();
-        //   cs = cs.getParentState();
-        //   // System.out.println("  of comp " + sub + " within circuit state: " + cs);
-        //   System.out.println("  within circuit state: " + cs);
-        // }
-        // System.out.println("  in project: " + proj.getLogisimFile().getName());
-      }
     }
   }
 

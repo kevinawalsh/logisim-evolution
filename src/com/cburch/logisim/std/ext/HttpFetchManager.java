@@ -40,20 +40,15 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.WeakHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitEvent;
-import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class HttpFetchManager {
@@ -303,8 +298,6 @@ public class HttpFetchManager {
   }
 
   private static final ArrayList<Worker> workers = new ArrayList<>();
-  private static final WeakHashMap<Object, Integer> watches = new WeakHashMap<>();
-  private static Watchdog myListener = new Watchdog();
   private static final Object lock = new Object();
 
   public static Worker makeWorker(String url, boolean autoFetch, int delay, Instance instance, CircuitState cs) {
@@ -366,74 +359,12 @@ public class HttpFetchManager {
         System.out.println("  worker=" + worker);
         System.out.println("  cs=" + csOld);
         System.out.println("  proj=" + csOld.getProject().getLogisimFile().getName());
-        unlistenRecursive(csOld);
       }
       Project proj = cs.getProject();
       System.out.println("bind worker to cs");
       System.out.println("  worker=" + worker);
       System.out.println("  cs=" + cs);
       System.out.println("  proj=" + proj.getLogisimFile().getName());
-      listenRecursive(cs);
-    }
-  }
-
-  private static void listenRecursive(CircuitState cs) {
-    listen(cs.getCircuit());
-    while (cs.isSubstate()) {
-      // Component sub = cs.getSubcircuit();
-      cs = cs.getParentState();
-      listen(cs.getCircuit());
-    }
-    listen(cs.getProject());
-  }
-
-  private static void unlistenRecursive(CircuitState cs) {
-    unlisten(cs.getCircuit());
-    while (cs.isSubstate()) {
-      // Component sub = cs.getSubcircuit();
-      cs = cs.getParentState();
-      unlisten(cs.getCircuit());
-    }
-    unlisten(cs.getProject());
-  }
-
-  private static void listen(Project proj) {
-    listen(proj, () -> proj.addProjectWeakListener(null, myListener));
-  }
-
-  private static void listen(Circuit circ) {
-    listen(circ, () -> circ.addCircuitWeakListener(null, myListener));
-  }
-
-  private static void listen(Object obj, Runnable act) {
-    synchronized(lock) {
-      Integer i = watches.get(obj);
-      if (i == null) {
-        watches.put(obj, (Integer)1);
-        act.run();
-      } else {
-        watches.put(obj, (Integer)(i+1));
-      }
-    }
-  }
-  
-  private static void unlisten(Project proj) {
-    unlisten(proj, () -> proj.removeProjectWeakListener(null, myListener));
-  }
-
-  private static void unlisten(Circuit circ) {
-    unlisten(circ, () -> circ.removeCircuitWeakListener(null, myListener));
-  }
-
-  private static void unlisten(Object obj, Runnable act) {
-    synchronized(lock) {
-      Integer i = watches.get(obj);
-      if (i == null || i <= 1) {
-        watches.remove(obj);
-        act.run();
-      } else {
-        watches.put(obj, (Integer)(i-1));
-      }
     }
   }
 
@@ -456,146 +387,7 @@ public class HttpFetchManager {
       System.out.println("  worker=" + worker);
       System.out.println("  cs=" + worker.cs);
       System.out.println("  proj=" + worker.cs.getProject().getLogisimFile().getName());
-      unlistenRecursive(worker.cs);
     }
-  }
-
-  // FIXME: should also listen to circuit, so we can stop workers
-  // for components that have been removed from a circuit
-  private static class Watchdog implements ProjectListener, CircuitListener {
-
-    static void killIf(Predicate<Worker> condition) {
-      synchronized(lock) {
-        for (int i = workers.size()-1; i >= 0; i--) {
-          Worker worker = workers.get(i);
-          worker.sync.lock();
-          try {
-            if (condition.test(worker))
-              kill(worker);
-          } finally {
-            worker.sync.unlock();
-          }
-        }
-      }
-    }
-    
-    @Override
-    public void circuitChanged(CircuitEvent event) {
-      int action = event.getAction();
-      if (action == CircuitEvent.ACTION_REMOVE) {
-        Circuit circ = event.getCircuit();
-        Component comp = (Component)event.getData();
-        // if this comp is a Worker.instance, kill that worker
-        // if any Worker.cs subcirc/ancestor was was this comp, kill that worker
-        //   [oops, can't implement without access to cs.getSubcircuit() ]
-        // alternatively...
-        //   We hacked CircuitState to call kill/reset directly.
-        killIf( (worker) ->  {
-            if (worker.instance != null && worker.instance.getComponent() == comp)
-              return true;
-            // CircuitState cs = worker.cs;
-            // while (cs.isSubstate()) {
-            //   Component parent = cs.getSubcircuit();
-            //   if (parent == comp)
-            //     return true;
-            //   cs = cs.getParentState();
-            // }
-            return false;
-        });
-      } else if (action == CircuitEvent.ACTION_CLEAR) {
-        Circuit circ = event.getCircuit();
-        // if any Worker.instance was in this circuit, kill that worker
-        // if any Worker.cs subcirc/ancestor was in this circuit, kill that worker
-        killIf( (worker) ->  {
-            CircuitState cs = worker.cs;
-            if (cs.getCircuit() == circ)
-              return true;
-            while (cs.isSubstate()) {
-              cs = cs.getParentState();
-              if (cs.getCircuit() == circ)
-                return true;
-            }
-            return false;
-        });
-      } else if (action == CircuitEvent.TRANSACTION_DONE) {
-        // FIXME stopgap
-        Circuit circ = event.getCircuit();
-        // ugh, we can't even know what project the affected circuit
-        // belongs too, as it could be in multiple projects if 
-        // being used as a library.
-        //   activateWorkers(circ.... getProject());
-        // instead, scan all workers, ugh.
-        synchronized(lock) {
-          for (int i = workers.size()-1; i >= 0; i--) {
-            Worker worker = workers.get(i);
-            worker.sync.lock();
-            try {
-              // FIXME: use cs.isActive(), etc.
-              // if (worker.cs.getCircuit() != circ && !worker.cs.hasAncestorState(... circ))
-              //   continue;
-              CircuitState top = worker.cs.getProject().getCircuitState();
-              boolean active = worker.cs == top || worker.cs.hasAncestorState(top);
-              if (active != worker.simActive) {
-                System.out.println("changing worker activity, the hard way");
-                worker.simActive = active;
-                worker.change.signalAll();
-              }
-            } finally {
-              worker.sync.unlock();
-            }
-          }
-        }
-      }
-    }
-
-    // FIXME stopgap: we can't reliably determine when simulation
-    // is removed. So instead, de-activate workers that aren't part
-    // of the current top-level simulation.
-    private static void activateWorkers(Project proj) {
-      CircuitState top = proj.getCircuitState();
-      synchronized(lock) {
-        for (int i = workers.size()-1; i >= 0; i--) {
-          Worker worker = workers.get(i);
-          worker.sync.lock();
-          try {
-            if (worker.cs.getProject() != proj)
-              continue;
-            boolean active = worker.cs == top || worker.cs.hasAncestorState(top);
-            if (active != worker.simActive) {
-              System.out.println("changing worker activity");
-              worker.simActive = active;
-              worker.change.signalAll();
-            }
-          } finally {
-            worker.sync.unlock();
-          }
-        }
-      }
-    }
-
-    @Override
-    public void projectChanged(ProjectEvent event) {
-      int action = event.getAction();
-      if (action == ProjectEvent.ACTION_SET_STATE) {
-        // System.out.println("set sim state");
-        Project proj = event.getProject();
-        activateWorkers(proj);
-      } else if (action == ProjectEvent.ACTION_CLEAR_STATES) {
-        // System.out.println("clear sim states... close all ports?");
-        Project proj = event.getProject();
-        killIf( (worker) -> worker.cs.getProject() == proj );
-      } else if (action == ProjectEvent.ACTION_ADD_STATE) {
-        // CircuitState cs = (CircuitState)event.getData();
-        // System.out.println("new cs: " + cs);
-      } else if (action == ProjectEvent.ACTION_DELETE_STATE) {
-        CircuitState cs = (CircuitState)event.getData();
-        Project proj = cs.getProject();
-        killIf( (worker) ->
-            worker.cs.getProject() == proj
-                  && (worker.cs == cs || worker.cs.hasAncestorState(cs)) );
-      }
-    }
-
   }
 
   static String statusCode(int code) {

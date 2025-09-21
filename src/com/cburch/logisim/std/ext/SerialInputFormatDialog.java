@@ -38,9 +38,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -48,12 +51,16 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
@@ -65,6 +72,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.JInputDialog;
 
 public class SerialInputFormatDialog extends JDialog implements JInputDialog<SerialInputFormat> {
@@ -172,19 +180,23 @@ public class SerialInputFormatDialog extends JDialog implements JInputDialog<Ser
 
     // Delimiter subsection
     JPanel dsub = subsection("Split data into records by...");
-    delCustomTextfield.setToolTipText("Serial data is split when any of these characters are encountered. You can use common escape sequences, like '\\n' for newline or '\\xFF' for byte 255.");
+    delCustomTextfield.setToolTipText(
+        txtToHtml("Serial data is split when any of these characters are encountered.\n\n"
+          + "Surround your set of characters with square-braces: [...]\n\n"
+          + "You can use any character here, or common escape sequences, like '\\n' for newline or '\\xFF' for byte 255."));
     delPrebakedButtons = makeButtonGroup(delPrebaked, delCustomButton, delCustomTextfield);
     // arrange delim options in two rows
     dsub.add(row(2, delPrebakedButtons));
-    dsub.add(row(2, delCustomButton, delCustomTextfield));
+    dsub.add(row(2, delCustomButton, delCustomTextfield,
+          makeHelpButtonFor(delCustomTextfield)));
     dsub.setAlignmentX(0f);
     dsub.setMaximumSize(new Dimension(Integer.MAX_VALUE, dsub.getPreferredSize().height));
     col.add(Box.createVerticalStrut(4));
     col.add(dsub);
- 
+
     // Record format subsection
     JPanel fsub = subsection("Expected format of each record is ...");
-    fmtCustomTextfield.setToolTipText("Use a mix of text and value placeholders.\n"
+    fmtCustomTextfield.setToolTipText(txtToHtml("Use a mix of text and value placeholders.\n"
         + "Valid placeholders each specify a width N (from 1 to 32) and a format:\n"
         + "%Nd -- an N-bit value written in signed decimal format\n"
         + "%Nu -- an N-bit value written in unsigned decimal format\n"
@@ -192,12 +204,13 @@ public class SerialInputFormatDialog extends JDialog implements JInputDialog<Ser
         + "%No -- an N-bit value written in octal format\n"
         + "%Nb -- an N-bit value written in binary format\n"
         + "%c -- an 8-bit value taken directly serial data stream\n"
-        + "%% -- use two percent signs to match a literal percent in the data stream");
+        + "%% -- use two percent signs to match a literal percent in the data stream"));
     fmtPrebakedButtons = makeButtonGroup(fmtPrebaked, fmtCustomButton, fmtCustomTextfield);
     // each format option gets its own row 
     for (JRadioButton btn: fmtPrebakedButtons)
       fsub.add(row(2, btn));
-    fsub.add(row(2, fmtCustomButton, fmtCustomTextfield));
+    fsub.add(row(2, fmtCustomButton, fmtCustomTextfield,
+          makeHelpButtonFor(fmtCustomTextfield)));
     fsub.setAlignmentX(0f);
     fsub.setMaximumSize(new Dimension(Integer.MAX_VALUE, fsub.getPreferredSize().height));
     col.add(Box.createVerticalStrut(4));
@@ -239,6 +252,66 @@ public class SerialInputFormatDialog extends JDialog implements JInputDialog<Ser
       @Override public void windowClosing(java.awt.event.WindowEvent e) { demoTimer.stop(); }
       @Override public void windowClosed (java.awt.event.WindowEvent e) { demoTimer.stop(); }
     });
+  }
+
+  static String txtToHtml(String tip) {
+    return "<html><body style='width:280px;white-space:normal;'>"
+        + tip.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\n","<br>")
+        + "</body></html>";
+  }
+
+  protected static Icon questionIcon = Icons.getIcon("help-icon.png"); 
+
+  static JToggleButton makeHelpButtonFor(JTextField field) {
+    JToggleButton b = new JToggleButton(questionIcon);
+    b.setMargin(new Insets(0,0,0,0));
+    b.setFocusable(false);
+    b.setContentAreaFilled(false);
+    b.setBorderPainted(false); // flat look
+    b.setToolTipText("Show help");
+    // show a thin border only while selected
+    b.addChangeListener(e -> b.setBorderPainted(b.isSelected()));
+
+    b.addActionListener(e -> {
+      if (b.isSelected()) {
+        String html = field.getToolTipText();
+        if (html == null || html.isBlank())
+          html = "<html><body>Sorry, no help.</body></html>";
+
+        Window owner = SwingUtilities.getWindowAncestor(field);
+        JDialog dlg = new JDialog(owner, "Help", Dialog.ModalityType.MODELESS);
+        JEditorPane pane = new JEditorPane("text/html", html);
+        pane.setEditable(false);
+        JScrollPane sp = new JScrollPane(pane);
+        sp.setPreferredSize(new Dimension(400, 240));
+        dlg.setContentPane(sp);
+        dlg.pack();
+
+        // position to the RIGHT of the button
+        Point onScreen = b.getLocationOnScreen();
+        dlg.setLocation(onScreen.x + b.getWidth() + 8, onScreen.y);
+
+        // ensure top-left
+        pane.setCaretPosition(0);
+        SwingUtilities.invokeLater(() -> {
+          sp.getViewport().setViewPosition(new Point(0, 0));
+          sp.getVerticalScrollBar().setValue(0);
+          sp.getHorizontalScrollBar().setValue(0);
+        });
+
+        dlg.addWindowListener(new WindowAdapter() {
+          @Override public void windowClosing(WindowEvent e) { b.setSelected(false); }
+          @Override public void windowClosed (WindowEvent e) { b.setSelected(false); }
+        });
+        b.putClientProperty("helpDialog", dlg);
+        dlg.setVisible(true);
+      } else {
+        Object w = b.getClientProperty("helpDialog");
+        if (w instanceof Window)
+          ((Window) w).dispose();
+      }
+    });
+    return b;
   }
 
   public void setValue(SerialInputFormat newFormat) {

@@ -164,7 +164,8 @@ public class HttpInputFormatDialog extends JDialog implements JInputDialog<HttpI
  
     // Record format subsection
     JPanel fsub = subsection("Expected format of each http response is ...");
-    fmtCustomTextfield.setToolTipText("Use a mix of text and value placeholders.\n"
+    fmtCustomTextfield.setToolTipText(
+        SerialInputFormatDialog.txtToHtml("Use a mix of text and value placeholders.\n"
         + "Valid placeholders each specify a width N (from 1 to 32) and a format:\n"
         + "%Nd -- an N-bit value written in signed decimal format\n"
         + "%Nu -- an N-bit value written in unsigned decimal format\n"
@@ -172,12 +173,13 @@ public class HttpInputFormatDialog extends JDialog implements JInputDialog<HttpI
         + "%No -- an N-bit value written in octal format\n"
         + "%Nb -- an N-bit value written in binary format\n"
         + "%c -- an 8-bit value taken directly http response bytes\n"
-        + "%% -- use two percent signs to match a literal percent in the http response");
+        + "%% -- use two percent signs to match a literal percent in the http response"));
     fmtPrebakedButtons = makeButtonGroup(fmtPrebaked, fmtCustomButton, fmtCustomTextfield);
     // each format option gets its own row 
     for (JRadioButton btn: fmtPrebakedButtons)
       fsub.add(row(2, btn));
-    fsub.add(row(2, fmtCustomButton, fmtCustomTextfield));
+    fsub.add(row(2, fmtCustomButton, fmtCustomTextfield,
+          SerialInputFormatDialog.makeHelpButtonFor(fmtCustomTextfield)));
     fsub.setAlignmentX(0f);
     fsub.setMaximumSize(new Dimension(Integer.MAX_VALUE, fsub.getPreferredSize().height));
     col.add(Box.createVerticalStrut(4));

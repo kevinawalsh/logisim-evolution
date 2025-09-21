@@ -46,6 +46,7 @@ import java.awt.desktop.QuitStrategy;
 import java.awt.GraphicsEnvironment;
 
 import javax.swing.SwingUtilities;
+import javax.swing.ToolTipManager;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 
@@ -168,6 +169,11 @@ public class Startup {
 
       // Initialize graphics acceleration if appropriate
       AppPreferences.handleGraphicsAcceleration();
+
+      // Make sure tooltips have a reasonable delay
+      ToolTipManager tipManager = ToolTipManager.sharedInstance();
+      int delay = tipManager.getDismissDelay();
+      tipManager.setDismissDelay(Math.max(delay, 20_000));
     }
     
     String osname = System.getProperty("os.name", "generic").toLowerCase();
