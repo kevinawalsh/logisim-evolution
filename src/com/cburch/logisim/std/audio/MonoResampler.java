@@ -81,9 +81,11 @@ class MonoResampler {
 
     // allocate staging buffer with reasonable size
     int frameSize = outBytes * fmt.getChannels(); // mono, so channels=1
-    double targetMs = 15.0; // 10–20 ms was a suggested sweet spot
-                            // Alternatively, we could could go as low as 1 frameSize
-    int frames = Math.max(64, (int)Math.ceil(outRate * targetMs/1000.0));
+    //double targetMs = 15.0; // 10–20 ms was a suggested sweet spot
+    //double targetMs = 0.5; // But logisim does much better with lower numbers
+                            // We can could go as low as 1 frame
+    // int frames = Math.max(1, (int)Math.ceil(outRate * targetMs/1000.0));
+    int frames = 1;
     int outBufBytes = frames * frameSize;
     outBuf = new byte[outBufBytes];
   }
