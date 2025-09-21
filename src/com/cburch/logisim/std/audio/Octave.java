@@ -190,7 +190,9 @@ public class Octave extends InstanceFactory {
     g.setColor(Color.BLACK);
     g.drawRect(x+30, y+65-30, w-30, 60);
     GraphicsUtil.switchToWidth(g, 1);
-    MidiDevice.paintSpeakerIcon(g, x+65, y+65, data != null && data.out != null);
+    String err = null; // TODO
+    MidiDevice.paintSpeakerIcon(g, x+65, y+65,
+        err != null, data != null && data.out != null);
 
     painter.drawClock(CK, Direction.NORTH); // port number 0
     painter.drawPort(WE);

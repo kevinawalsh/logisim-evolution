@@ -355,7 +355,8 @@ public class MidiSink extends InstanceFactory {
 
     int x = bds.x + bds.width/2;
     int y = bds.y + bds.height/2;
-    MidiDevice.paintSpeakerIcon(g, x, y, dev != null);
+    String err = null; // TODO
+    MidiDevice.paintSpeakerIcon(g, x, y, err != null, dev != null);
   }
 
   // Global state, since the underlying midi system is global anyway

@@ -175,14 +175,14 @@ public class MidiDevice {
 
   }
 
-  public static void paintSpeakerIcon(Graphics g, int x, int y, boolean active) {
+  public static void paintSpeakerIcon(Graphics g, int x, int y, boolean error, boolean active) {
     x -= 12;
     y -= 12;
     g.setColor(Color.BLACK);
     g.drawRect(x+1, y+7, 6, 10);
     int[] bx = new int[] { x+7, x+13, x+14, x+14, x+13, x+7 };
     int[] by = new int[] { y+7, y+1, y+1, y+23, y+23, y+17 };
-    g.setColor(active ? Color.BLUE : Color.RED);
+    g.setColor(error ? Color.RED : active ? Color.BLUE : Color.GRAY);
     g.drawPolyline(bx, by, 6);
     g.drawArc(x+14, y+1, 9, 22, -60, 120);
     g.drawArc(x+10, y+5, 9, 12, -60, 120);
