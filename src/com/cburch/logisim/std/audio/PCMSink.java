@@ -233,7 +233,7 @@ public class PCMSink extends InstanceFactory {
     if (opt == RATE_44KHZ)   return new int[] { 44100, 22000, 22050, 11025, 16000, 8000 }; // 44000 x ~1, 1/2, ~1/2
     if (opt == RATE_48KHZ)   return new int[] { 24000, 16000, 12000, 8000 };               // 48000 x 1/2, 1/3, 1/4
     // if (opt == RATE_64KHZ)   return new int[] { ... }
-    return 32000;
+    return new int[] { 44000, 32000, 16000, 8000 };
   }
 
   static class State implements ComponentData.WithLifetimeTracking {
@@ -244,7 +244,7 @@ public class PCMSink extends InstanceFactory {
     private int channels; // always 1 for now
   
     // Audio parameters as configured by user within simulator
-    private int buflen; // total buffer size (number of samples)
+    private int buflen; // target buffer size (number of samples)
     private AttributeOption sim_rateOption; // samples per second
     private int sim_rate; // samples per second
     private boolean sim_signed; // SIGNED or UNSIGNED
@@ -252,14 +252,8 @@ public class PCMSink extends InstanceFactory {
     
     // Audio parameters supported by underlying audio system
     private AudioFormat fmt;
-    private int sys_rate; // samples per second
-    private int sys_bitsPerSample; // sample depth, e.g. 24-bit samples
-    private int sys_bytesPerSample; // sample depth, e.g. 3 bytes (rounded up)
-    private AttributeOption sys_signed; // SIGNED, UNSIGNED, or FLOAT
-    private SourceDataLine out; // opened using fmt
-   
-    // 
-    private double stepInPerOut; // input samples per one output
+    private SourceDataLine out;
+    private MonoResampler resampler;
 
     public State(InstanceState circState) {
       int b = circState.getAttributeValue(ATTR_BUFSIZE);
@@ -278,13 +272,13 @@ public class PCMSink extends InstanceFactory {
       closeAudio();
       if (t != null)
         System.err.println(t.getMessage());
-      if (t instanceof LineUnavailableException e)
+      if (t instanceof LineUnavailableException)
         err = "Unavailable (line is busy)";
-      else if (t intanceof IllegalStateException e)
+      else if (t instanceof IllegalStateException)
         err = "Error (line already open)";
-      else if (t intanceof SecurityException e)
+      else if (t instanceof SecurityException)
         err = "Access Denied (security restriction)";
-      else if (t intanceof IllegalArgumentException e)
+      else if (t instanceof IllegalArgumentException)
         err = "Failed (PCM parameters not supported)";
       else if (defaultErrmsg != null)
         err = defaultErrmsg;
@@ -319,27 +313,24 @@ public class PCMSink extends InstanceFactory {
       init(b, s, r, g);
     }
 
-    void makeFmt(AttributeOption signOpt, int rate, int bitsPerSample) throws Exception {
-      sys_rate = rate;
-      sys_bitsPerSample = bitsPerSample;
-      sys_bytesPerSample = (sys_bitsPerSample + 7)/8;
-      sys_signed = signOpt;
+    AudioFormat makeFmt(AttributeOption signOpt, int rate, int bitsPerSample) throws Exception {
       AudioFormat.Encoding encoding = 
           signOpt == FLOAT ? AudioFormat.Encoding.PCM_FLOAT :
-          signOpt == SIGNED ? AudioFormat.Encoding.PCM_SIGNED
+          signOpt == SIGNED ? AudioFormat.Encoding.PCM_SIGNED :
           AudioFormat.Encoding.PCM_UNSIGNED;
-      int frameSize = sys_bytesPerSample*channels;
-      float sampleRate = sys_rate; // samples per second
-      float frameRate = sys_rate; // uncompressed, so frameRate = sampleRate
-      fmt = new AudioFormat(encoding, sampleRate,
-          sys_bitsPerSample, channels,
+      int frameSize = (bitsPerSample + 7)/8 * channels;
+      float sampleRate = rate; // samples per second
+      float frameRate = rate; // uncompressed, so frameRate = sampleRate
+      return new AudioFormat(encoding, sampleRate,
+          bitsPerSample, channels,
           frameSize, frameRate, false /* bigEndian */);
     }
 
     boolean tryOpen(AttributeOption signOpt, int rate, int bitsPerSample) {
       try {
 
-        makeFmt(signOpt, rate, bitsPerSample);
+        fmt = makeFmt(signOpt, rate, bitsPerSample);
+        System.out.println("Trying: " + fmt);
 
         out = AudioSystem.getSourceDataLine(fmt);
 
@@ -351,6 +342,7 @@ public class PCMSink extends InstanceFactory {
 
         // yay, system seems to support this format
         resampler = new MonoResampler(out, sim_rate, sim_bitsPerSample, sim_signed);
+        err = null;
         return true;
 
       } catch (Throwable t) {
@@ -403,8 +395,7 @@ public class PCMSink extends InstanceFactory {
         out = null;
         resampler = null;
       }
-      simFmt = null;
-      sysFmt = null;
+      fmt = null;
     }
     
     @Override

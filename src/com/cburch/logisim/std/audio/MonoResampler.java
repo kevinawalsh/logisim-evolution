@@ -80,7 +80,7 @@ class MonoResampler {
     outLittleEndian = !fmt.isBigEndian();
 
     // allocate staging buffer with reasonable size
-    int frameSize = outBytes * f.getChannels(); // mono, so channels=1
+    int frameSize = outBytes * fmt.getChannels(); // mono, so channels=1
     double targetMs = 15.0; // 10–20 ms was a suggested sweet spot
                             // Alternatively, we could could go as low as 1 frameSize
     int frames = Math.max(64, (int)Math.ceil(outRate * targetMs/1000.0));
@@ -158,11 +158,13 @@ class MonoResampler {
   }
 
   private int emit(double y) {
-    switch (outEncoding) {
-    case AudioFormat.Encoding.PCM_FLOAT:    writeFloat32((float)y); break;
-    case AudioFormat.Encoding.PCM_SIGNED:   writeInt(y, true); break;
-    case AudioFormat.Encoding.PCM_UNSIGNED: writeInt(y, false); break;
-    }
+    if (outEncoding == AudioFormat.Encoding.PCM_FLOAT)
+      writeFloat32((float)y);
+    else if (outEncoding == AudioFormat.Encoding.PCM_SIGNED)
+      writeInt(y, true);
+    else if (outEncoding == AudioFormat.Encoding.PCM_UNSIGNED)
+      writeInt(y, false);
+
     if (outLen >= outBuf.length - outBytes)
       return flush();
     else
@@ -170,8 +172,8 @@ class MonoResampler {
   }
 
   private void writeFloat32(float y) {
-    if (y >  1.0) y =  1.0;
-    if (y < -1.0) y = -1.0;
+    if (y >  1.0f) y =  1.0f;
+    if (y < -1.0f) y = -1.0f;
     int bits = Float.floatToIntBits(y);
     if (outLittleEndian) {
       outBuf[outLen++] = (byte) bits;
