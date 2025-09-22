@@ -140,6 +140,7 @@ public final class CircuitState /* implements ComponentData */ {
         temporaryClock = null;
         knownClocks = false;
         wireData = null;
+        System.out.println("ACTION_CLEAR");
         // component*Data cleanup happens in TRANSACTION_DONE below
         // subcircuitData cleanup happens in TRANSACTION_DONE below
         synchronized (valuesLock) {
@@ -225,6 +226,7 @@ public final class CircuitState /* implements ComponentData */ {
               }
             }
             if (!found) {
+              System.out.println("TRANSACTION_DONE removed " + subcircData);
               // subcircuit component was deleted
               subcircData.parentState = null;
               synchronized (dirtyLock) {
@@ -250,9 +252,10 @@ public final class CircuitState /* implements ComponentData */ {
                 // the attributes too?
                 AttributeSet replAttrs = repl.getAttributeSet();
                 AttributeSet compAttrs = comp.getAttributeSet();
-                if (replAttrs != compAttrs) {
-                  // maybe check for item equality?
+                if (!AttributeSet.indistinguishable(replAttrs, compAttrs)) {
                   System.err.println("FIXME: component replaced by one with different attribues");
+                  System.out.println(compAttrs.dump());
+                  System.out.println(replAttrs.dump());
                 }
                 found = true;
                 if (integerData != null)
@@ -276,8 +279,8 @@ public final class CircuitState /* implements ComponentData */ {
                   }
                 }
                 if (customData != null) {
+                  componentCustomData.put(repl, customData);
                   if (customData instanceof ComponentData.WithLifetimeTracking) {
-                    componentCustomData.put(repl, customData);
                     ((ComponentData.WithLifetimeTracking)customData).simulationRelocating(CircuitState.this, comp, repl);
                   }
                 }
@@ -290,6 +293,9 @@ public final class CircuitState /* implements ComponentData */ {
               if (map.getReplacementsFor(comp).size() != 1) {
                 System.err.println("FIXME: subcirc replacement is multiple things!!");
               }
+            }
+            if (!found) {
+              System.out.println("TRANSACTION_DONE removed comp " + comp);
             }
             // Lifetime tracking: component was removed, cleanup custom state
             if (!found && customData instanceof ComponentData.WithLifetimeTracking) {

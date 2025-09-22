@@ -408,6 +408,7 @@ public class HttpIn extends InstanceFactory {
   
     @Override
     public void simulationCleanup(CircuitState cs, Component comp) {
+      System.out.println("cleanup " + worker);
       HttpFetchManager.kill(worker);
     }
     
