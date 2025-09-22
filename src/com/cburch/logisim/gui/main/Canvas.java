@@ -319,7 +319,7 @@ public class Canvas extends JPanel
         CircuitState circState = getCircuitState();
         circState.markComponentsDirty(getCircuit().getNonWires());
         // TODO actually, we'd want to mark all components in
-        // subcircuits as dirty as well
+        // subcircuits as dirty as well, or reset entire simulation
       }
     }
 

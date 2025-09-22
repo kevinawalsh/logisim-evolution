@@ -314,16 +314,6 @@ public class SubcircuitFactory extends InstanceFactory {
     return source;
   }
 
-  // public CircuitState getSubstate(CircuitState superState, Component comp) {
-  //   // NOTE: comp will be a subcircuit component created by this SubcircuitFactory
-  //   if (comp.getFactory() != this) // should never happen
-  //     throw new UnsupportedOperationException("wrong SubcircuitFactory for component");
-  //   // FIXME: perhaps getDataForSubcircuit should do this work in most cases...
-  //   // are there any cases (outside CircuitState) that would not want the
-  //   // substate created automatically?
-  //   return superState.getCircuitSubstateFor(comp, source);
-  // }
-
   private CircuitState getSubstate(InstanceState stateInContext) {
     if (stateInContext instanceof InstanceStateImpl) {
       CircuitState cs = ((InstanceStateImpl)stateInContext).getCircuitState();
