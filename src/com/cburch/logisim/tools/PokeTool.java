@@ -306,16 +306,14 @@ public final class PokeTool extends Tool {
 
   private static final Color caretColor = new Color(255, 255, 150);
 
-  private static Cursor cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+  private static final Cursor cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
 
-  private Listener listener = new Listener();
+  private final Listener listener = new Listener();
   private Circuit pokedCircuit;
   private Component pokedComponent;
   private Caret pokeCaret;
 
-  private PokeTool() { }
-
-  public static final PokeTool SINGLETON = new PokeTool();
+  public PokeTool() { }
 
   @Override
   public boolean isBuiltin() { return true; }

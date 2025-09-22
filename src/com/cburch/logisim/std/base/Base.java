@@ -52,13 +52,14 @@ public class Base extends Library {
   private final AddTool calloutAdder = new AddTool(Base.class, Callout.FACTORY);
 
   public Base() {
+    PokeTool poke = new PokeTool();
     WiringTool wiring = new WiringTool();
     SelectTool select = new SelectTool();
     CutterTool cutter = new CutterTool();
     TextTool text = new TextTool();
 
     tools = Arrays.asList(new Tool[] {
-      PokeTool.SINGLETON,
+      poke,
       new EditTool(select, wiring),
       // Select by itself is kind of useless. It can select and move things, or
       // click to edit attributes. But it can't modify wires like EditTool can.
