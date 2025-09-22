@@ -47,6 +47,7 @@ import javax.swing.JPopupMenu;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -106,7 +107,7 @@ public class SubcircuitFactory extends InstanceFactory {
     }
 
     public String toString() {
-      return source.getName();
+      return S.fmt("subcircuitCircuitTip", source.getName());
     }
   }
 
@@ -429,8 +430,4 @@ public class SubcircuitFactory extends InstanceFactory {
     }
   }
 
-  /*
-   * TODO public String getToolTip(ComponentUserEvent e) { return
-   * S.fmt("subcircuitCircuitTip", source.getDisplayName()); }
-   */
 }
