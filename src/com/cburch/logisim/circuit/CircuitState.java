@@ -390,7 +390,6 @@ public final class CircuitState /* implements ComponentData */ {
   private int id = lastId++;
 
   private CircuitState(Project proj, Circuit circuit, Propagator prop) {
-    System.out.println("New circuit state id="+id+" for " + proj + " and " + prop);
     this.proj = proj;
     this.circuit = circuit;
     this.base = prop != null ? prop : new Propagator(this);
@@ -400,14 +399,8 @@ public final class CircuitState /* implements ComponentData */ {
 
   // which thread calls this? Do we need to worry about sync?
   public static void transferActiveStatus(CircuitState deactivating, CircuitState activating) {
-    System.out.println("xfer from: " + deactivating);
-    System.out.println("xfer to  : " + activating);
     deactivating = (deactivating == null ? null : deactivating.getAncestorState());
     activating = (activating == null ? null : activating.getAncestorState());
-    System.out.println("xfer from root is: " + deactivating);
-    System.out.println("xfer to root is  : " + activating);
-    System.out.println("xfer from activity is: " + (deactivating == null ? "null" : ""+deactivating.active));
-    System.out.println("xfer to activity is  : " + (activating == null ? "null" : ""+activating.active));
     if (activating == deactivating) {
       if (activating != null && !activating.active) {
         System.err.println("CircuitStates unexpectedly inactive");
@@ -497,12 +490,10 @@ public final class CircuitState /* implements ComponentData */ {
   // }
 
   public static CircuitState createRootState(Project proj, Circuit circuit) {
-    System.out.println("createRootState...");
     return new CircuitState(proj, circuit, null /* make new Propagator */);
   }
 
   public CircuitState cloneAsNewRootState() {
-    System.out.println("cloneAsNewRootState...");
     CircuitState ret = new CircuitState(proj, circuit, null /* make new Propatator */);
     ret.copyFrom(this);
     ret.parentComp = null; // detatch from old parent component and state
@@ -523,7 +514,6 @@ public final class CircuitState /* implements ComponentData */ {
       // possibility of deadlock (though that shouldn't happen either since no
       // other threads have references to this yet).
       for (CircuitState oldSub : src.substates) {
-        System.out.println("deep copying subcirc within cloneAsnewRootState...");
         CircuitState newSub = new CircuitState(src.proj, oldSub.circuit, this.base);
         newSub.copyFrom(oldSub);
         newSub.parentState = this;
@@ -932,11 +922,11 @@ public final class CircuitState /* implements ComponentData */ {
     CircuitState cs = subcircuitData.get(comp);
     if (cs != null) {
       if (cs.parentComp != comp) {                                                    // debug check
-        System.out.println("fixme: found stale circuitstate... should never happen"); // debug check
-        System.out.printf("this = %s with parentComp %s \n", this, this.parentComp);  // debug check
-        System.out.printf("comp = %s for circuit %s\n", comp,                         // debug check
+        System.err.println("fixme: found stale circuitstate... should never happen"); // debug check
+        System.err.printf("this = %s with parentComp %s \n", this, this.parentComp);  // debug check
+        System.err.printf("comp = %s for circuit %s\n", comp,                         // debug check
             ((SubcircuitFactory)comp.getFactory()).getSubcircuit());                  // debug check
-        System.out.printf("oldState = %s with parentComp %s\n", cs, cs.parentComp);   // debug check
+        System.err.printf("oldState = %s with parentComp %s\n", cs, cs.parentComp);   // debug check
         Thread.dumpStack();                                                           // debug check
       }
       return cs;
@@ -955,7 +945,7 @@ public final class CircuitState /* implements ComponentData */ {
     if (comp instanceof InstanceComponent)
       ((InstanceComponent) comp).fireInvalidated();
     else                                                                               // debug check
-      System.out.println("fixme: subcircuit component isn't an InstanceComponent!!!"); // debug check
+      System.err.println("fixme: subcircuit component isn't an InstanceComponent!!!"); // debug check
     return newState;
   }
 
