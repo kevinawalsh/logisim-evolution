@@ -31,7 +31,6 @@
 package com.cburch.logisim.std.base;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Collection;
 import java.util.Collections;
