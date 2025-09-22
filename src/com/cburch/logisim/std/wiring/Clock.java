@@ -32,6 +32,7 @@ package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 
@@ -259,13 +260,53 @@ public class Clock extends InstanceFactory {
     java.awt.Graphics g = painter.getGraphics();
     Bounds bds = painter.getInstance().getNominalBounds(); // intentionally with no
     // graphics object - we don't want label included
-    int x = bds.getX();
-    int y = bds.getY();
+    int x = bds.x;
+    int y = bds.y;
+    int w = bds.width;
+    int h = bds.height;
     GraphicsUtil.switchToWidth(g, 2);
     g.setColor(Color.BLACK);
-    g.drawRect(x, y, bds.getWidth(), bds.getHeight());
+    g.drawRect(x, y, w, h);
 
     painter.drawLabel();
+
+    int durationHigh = painter.getAttributeValue(ATTR_HIGH).intValue();
+    int durationLow = painter.getAttributeValue(ATTR_LOW).intValue();
+    if (durationHigh != 1 || durationLow != 1) {
+      int cycle = durationHigh + durationLow;
+      int phase = ((painter.getAttributeValue(ATTR_PHASE).intValue() % cycle) + cycle) % cycle;
+      String txt1 = String.format("%d:%d", durationHigh, durationLow);
+      String txt2 = String.format("+%d", phase);
+      String label = painter.getAttributeValue(StdAttr.LABEL);
+      Object ldir = (label != null && !label.trim().isEmpty()) ?
+          painter.getAttributeValue(StdAttr.LABEL_LOC) : null;
+      Direction pdir = painter.getAttributeValue(StdAttr.FACING);
+      Direction dir = pdir == Direction.NORTH || 
+          pdir == Direction.SOUTH ? Direction.EAST : Direction.SOUTH;
+      if (dir == ldir)
+        dir = dir.reverse();
+      if (dir == Direction.NORTH) {
+        GraphicsUtil.drawText(g, PARAM_FONT, txt1,
+            x+w/2, y-10, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+        GraphicsUtil.drawText(g, PARAM_FONT, txt2,
+            x+w/2, y-14, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+      } else if (dir == Direction.EAST) {
+        GraphicsUtil.drawText(g, PARAM_FONT, txt1,
+            x+w+2, y+h/2+1, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+        GraphicsUtil.drawText(g, PARAM_FONT, txt2,
+            x+w+2, y+h/2-1, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
+      } else if (dir == Direction.SOUTH) {
+        GraphicsUtil.drawText(g, PARAM_FONT, txt1,
+            x+w/2, y+h+14, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+        GraphicsUtil.drawText(g, PARAM_FONT, txt2,
+            x+w/2, y+h+10, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
+      } else {
+        GraphicsUtil.drawText(g, PARAM_FONT, txt1,
+            x-2, y+h/2+1, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+        GraphicsUtil.drawText(g, PARAM_FONT, txt2,
+            x-2, y+h/2-1, GraphicsUtil.H_RIGHT, GraphicsUtil.V_TOP);
+      }
+    }
 
     boolean drawUp;
     if (painter.getShowState()) {
@@ -280,7 +321,6 @@ public class Clock extends InstanceFactory {
     y += 10;
     int[] xs = { x - 6, x - 6, x, x, x + 6, x + 6 };
     int[] ys;
-    // todo: also draw current phase as a number, if cycle != 2
     if (drawUp) {
       ys = new int[] { y, y - 4, y - 4, y + 4, y + 4, y };
     } else {
@@ -290,6 +330,8 @@ public class Clock extends InstanceFactory {
 
     painter.drawPorts();
   }
+
+  private static final Font PARAM_FONT = new Font("SansSerif", Font.BOLD, 10);
 
   @Override
   public void propagate(InstanceState state) {
