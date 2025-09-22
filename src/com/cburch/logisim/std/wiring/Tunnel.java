@@ -155,7 +155,8 @@ public class Tunnel extends InstanceFactory {
     String text = attrs.getLabel();
     if (text == null || text.equals(""))
       text = "";
-    Rectangle r = GraphicsUtil.getTextBounds(g, font, text, 0, 0, 0, 0);
+    // Note: extra spaces provide font-size-aware padding on left and right
+    Rectangle r = GraphicsUtil.getTextBounds(g, font, " "+text+" ", 0, 0, 0, 0);
 
     return getBoundsForTextbox(r.width, r.height, attrs.getFacing());
   }
@@ -193,12 +194,14 @@ public class Tunnel extends InstanceFactory {
     TunnelAttributes attrs = (TunnelAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
     String label = attrs.getLabel();
+    Font font = attrs.getFont();
      
     int tx = attrs.getLabelAnchorXOffset();
     int ty = attrs.getLabelAnchorYOffset();
     int halign = attrs.getLabelHAlign();
     int valign = attrs.getLabelVAlign();
-    GraphicsUtil.drawText(g, label, tx, ty, halign, valign);
+    // Note: extra spaces provide font-size-aware padding on left and right
+    GraphicsUtil.drawText(g, font, " "+label+" ", tx, ty, halign, valign);
     
     Bounds bds = getVisibleOffsetBounds(attrs, g);
 
