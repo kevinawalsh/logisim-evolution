@@ -142,6 +142,17 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       return false;
     }
 
+    private boolean isMainCircuit(Tool tool) {
+      if (tool instanceof AddTool && proj != null && proj.getLogisimFile() != null) {
+        ComponentFactory fact = ((AddTool) tool).getFactory(false);
+        if (fact instanceof SubcircuitFactory) {
+          Circuit circ = ((SubcircuitFactory) fact).getSubcircuit();
+          return proj.getLogisimFile().getMainCircuit() == circ;
+        }
+      }
+      return false;
+    }
+
     @Override
     public java.awt.Component getTreeCellRendererComponent(JTree tree,
         Object value, boolean selected, boolean expanded, boolean leaf,
@@ -170,15 +181,20 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           // label.setBackground(VIEWED_TOOL_COLOR);
           // label.setOpaque(true);
         }
-        label.setText(tool.getDisplayName());
-        label.setIcon(new ToolIcon(tool));
+        String text = tool.getDisplayName();
+        if (isMainCircuit(tool)) {
+          text += label.getFont().canDisplay(MAIN_MARKER) ? " "+MAIN_MARKER : " "+MAIN_MARKER2;
+        }
+        label.setText(text);
+        label.setIcon(new ToolIcon(tool, isMainCircuit(tool)));
         label.setToolTipText(tool.getDescription());
       } else if (value instanceof ProjectExplorerLibraryNode) {
         ProjectExplorerLibraryNode libNode = (ProjectExplorerLibraryNode) value;
         Library lib = libNode.getValue();
         String text = lib.getDisplayName();
-        if (lib.isDirty())
-          text += DIRTY_MARKER;
+        if (lib.isDirty()) {
+          text += label.getFont().canDisplay(DIRTY_MARKER) ? " "+DIRTY_MARKER : DIRTY_MARKER2;
+        }
         label.setText(text);
       }
       return ret;
@@ -239,8 +255,9 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     Tool tool;
     Circuit circ = null;
     VhdlContent vhdl = null;
+    boolean isMain;
 
-    ToolIcon(Tool tool) {
+    ToolIcon(Tool tool, boolean isMain) {
       this.tool = tool;
       if (tool instanceof AddTool) {
         ComponentFactory fact = ((AddTool) tool).getFactory(false);
@@ -298,7 +315,10 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
   private static final long serialVersionUID = 1L;
 
-  private static final String DIRTY_MARKER = "*";
+  private static final char DIRTY_MARKER = '\u25CF'; // black circle
+  private static final String DIRTY_MARKER2 = " *";
+  private static final char MAIN_MARKER = '\u2747'; // sparkle
+  private static final String MAIN_MARKER2 = " <>";
 
   public static final Color MAGNIFYING_INTERIOR = new Color(200, 200, 255, 64);
   // public static final Color VIEWED_TOOL_COLOR = new Color(255, 255, 153);
