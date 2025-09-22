@@ -142,7 +142,7 @@ public class CircuitBuilder {
   public static CircuitMutation build(Circuit destCirc, AnalyzerModel model,
       boolean twoInputs, boolean useNands) {
     CircuitMutation result = new CircuitMutation(destCirc);
-    result.clear();
+    result.removeAll(destCirc.getComponents());
 
     Layout[] layouts = new Layout[model.getOutputs().bits.size()];
     int maxWidth = 0;

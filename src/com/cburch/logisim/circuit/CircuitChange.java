@@ -49,11 +49,6 @@ class CircuitChange {
     return new CircuitChange(circuit, ADD_ALL, comps);
   }
 
-  public static CircuitChange clear(Circuit circuit,
-      Collection<Component> oldComponents) {
-    return new CircuitChange(circuit, CLEAR, oldComponents);
-  }
-
   public static CircuitChange remove(Circuit circuit, Component comp) {
     return new CircuitChange(circuit, REMOVE, comp);
   }
@@ -99,7 +94,7 @@ class CircuitChange {
         oldValue, newValue);
   }
 
-  static final int CLEAR = 0;
+  // static final int CLEAR = 0;
   static final int ADD = 1;
   static final int ADD_ALL = 2;
   static final int REMOVE = 3;
@@ -150,8 +145,6 @@ class CircuitChange {
 
   boolean concernsSupercircuit() {
     switch (type) {
-    case CLEAR:
-      return true;
     case ADD:
     case REMOVE:
       return comp.getFactory() instanceof Pin;
@@ -208,12 +201,6 @@ class CircuitChange {
 
   void execute(CircuitMutator mutator, ReplacementMap prevReplacements) {
     switch (type) {
-    case CLEAR:
-      if (circuit == null)
-        throw new IllegalArgumentException("null circuit with change type " + type);
-      mutator.clear(circuit);
-      prevReplacements.reset();
-      break;
     case ADD:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
@@ -291,8 +278,6 @@ class CircuitChange {
 
   CircuitChange getReverseChange() {
     switch (type) {
-    case CLEAR:
-      return CircuitChange.addAll(circuit, comps);
     case ADD:
       return CircuitChange.remove(circuit, comp);
     case ADD_ALL:
@@ -321,7 +306,6 @@ class CircuitChange {
 
   public String toString() {
     switch (type) {
-    case CLEAR: return "CLEAR " + comps.size() + " comps";
     case ADD: return "ADD " + comp;
     case ADD_ALL: return "ADD_ALL " + comps.size() + " comps";
     case REMOVE: return "REMOVE " + comp;

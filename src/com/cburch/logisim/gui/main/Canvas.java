@@ -331,10 +331,6 @@ public class Canvas extends JPanel
         if (c == painter.getHaloedComponent()) {
           proj.getFrame().viewComponentAttributes(null, null);
         }
-      } else if (act == CircuitEvent.ACTION_CLEAR) {
-        if (painter.getHaloedComponent() != null) {
-          proj.getFrame().viewComponentAttributes(null, null);
-        }
       } else if (act == CircuitEvent.ACTION_INVALIDATE) {
         completeAction();
       }

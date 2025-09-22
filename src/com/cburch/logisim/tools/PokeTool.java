@@ -68,8 +68,7 @@ public final class PokeTool extends Tool {
       Circuit circ = pokedCircuit;
       if (event.getCircuit() == circ
           && circ != null
-          && (event.getAction() == CircuitEvent.ACTION_REMOVE
-            || event.getAction() == CircuitEvent.ACTION_CLEAR)
+          && event.getAction() == CircuitEvent.ACTION_REMOVE
           && !circ.contains(pokedComponent)) {
         removeCaret(false);
       }

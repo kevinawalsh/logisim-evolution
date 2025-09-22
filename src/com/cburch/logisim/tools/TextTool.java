@@ -66,10 +66,6 @@ public final class TextTool extends Tool {
         if (event.getData() == caretComponent) {
           caret.cancelEditing();
         }
-      } else if (action == CircuitEvent.ACTION_CLEAR) {
-        if (caretComponent != null) {
-          caret.cancelEditing();
-        }
       }
     }
 

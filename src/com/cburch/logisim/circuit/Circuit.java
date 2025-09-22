@@ -441,7 +441,7 @@ public class Circuit implements AttributeDefaultProvider {
     return clocks;
   }
 
-  private Set<Component> getComponents() {
+  public Set<Component> getComponents() {
     return CollectionUtil.createUnmodifiableSetUnion(comps,
         wires.getWires());
   }
@@ -605,25 +605,6 @@ public class Circuit implements AttributeDefaultProvider {
       c.addComponentWeakListener(null, myComponentListener);
     }
     fireEvent(CircuitEvent.ACTION_ADD, c);
-  }
-
-  public void mutatorClear() {
-    locker.checkForWritePermission("clear", this);
-
-    Set<Component> oldComps = comps;
-    comps = new HashSet<Component>();
-    wires = new CircuitWires();
-    clocks.clear();
-    for (Component comp : oldComps) {
-      if (comp.getFactory() instanceof SubcircuitFactory) {
-        SubcircuitFactory sub = (SubcircuitFactory) comp.getFactory();
-        sub.getSubcircuit().circuitsUsingThis.remove(comp);
-      } else if (comp.getFactory() instanceof VhdlEntity) {
-        VhdlEntity vhdl = (VhdlEntity)comp.getFactory();
-        vhdl.removeCircuitUsing(comp);
-      }
-    }
-    fireEvent(CircuitEvent.ACTION_CLEAR, oldComps);
   }
 
   HashSet<Circuit> dynamicShapeDependentCircuits() {

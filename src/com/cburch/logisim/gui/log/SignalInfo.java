@@ -158,13 +158,8 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
     }
 
     int action = event.getAction();
-    if (action == CircuitEvent.ACTION_CLEAR) {
-      // This happens only when analyzer is replacing an entire circuit. Can we
-      // match up pin names perhaps? todo later
-      remove();
-    }
     
-    else if (action == CircuitEvent.TRANSACTION_DONE) {
+    if (action == CircuitEvent.TRANSACTION_DONE) {
       // This happens after a set of add/remove or other changes to a circuit.
       // This could remove a component that is on our path, or alter our name.
     

@@ -36,7 +36,7 @@ public class CircuitEvent {
   public final static int ACTION_REMOVE = 2; // data=Component removed
   // public final static int ACTION_CHANGE = 3; // data=Component changed (unused)
   public final static int ACTION_INVALIDATE = 4; // data=Component invalidated (pin types changed)
-  public final static int ACTION_CLEAR = 5; // data=Set<Component> entire circuit cleared
+  // public final static int ACTION_CLEAR = 5; // data=Set<Component> entire circuit cleared (unused)
   public final static int TRANSACTION_DONE = 6; // data=ReplacementSet done series of add/remove 
   public final static int ACTION_DISPLAY_CHANGE = 7; // data=null viewed/haloed status change
 
@@ -75,7 +75,7 @@ public class CircuitEvent {
     case ACTION_REMOVE : s = "ACTION_REMOVE"; break;
     // case ACTION_CHANGE : s = "ACTION_CHANGE"; break;
     case ACTION_INVALIDATE : s = "ACTION_INVALIDATE"; break;
-    case ACTION_CLEAR : s = "ACTION_CLEAR"; break;
+    // case ACTION_CLEAR : s = "ACTION_CLEAR"; break;
     case TRANSACTION_DONE : s = "TRANSACTION_DONE"; break;
     case ACTION_DISPLAY_CHANGE : s = "ACTION_DISPLAY_CHANGE"; break;
     default: s = "UNKNOWN_ACTION(" + action + ")"; break;

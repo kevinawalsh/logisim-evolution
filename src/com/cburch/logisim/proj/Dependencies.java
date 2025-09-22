@@ -85,9 +85,6 @@ public class Dependencies {
             dag.removeEdge(e.getCircuit(), factory.getContent());
         }
         break;
-      case CircuitEvent.ACTION_CLEAR:
-        dag.removeNode(e.getCircuit());
-        break;
       }
     }
 

@@ -135,29 +135,6 @@ public final class CircuitState /* implements ComponentData */ {
         }
       }
 
-      /* Whole circuit was cleared */
-      else if (action == CircuitEvent.ACTION_CLEAR) {
-        temporaryClock = null;
-        knownClocks = false;
-        wireData = null;
-        System.out.println("ACTION_CLEAR");
-        // component*Data cleanup happens in TRANSACTION_DONE below
-        // subcircuitData cleanup happens in TRANSACTION_DONE below
-        synchronized (valuesLock) {
-          slowpath_values.clear(); // slow path
-          clearFastpathGrid(); // fast path
-        }
-        synchronized (dirtyLock) {
-          dirtyComponents.clear();
-          dirtyPoints.clear();
-          // dirtyPointVals.clear();
-          substates.clear();
-          substatesWorking = new CircuitState[0];
-          substatesDirty = true;
-        }
-        // slowpath_drivers.clear();
-      }
-
       /* Component ends changed */
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();

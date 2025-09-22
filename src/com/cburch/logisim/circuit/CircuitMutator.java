@@ -38,8 +38,6 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 public interface CircuitMutator {
   public void add(Circuit circuit, Component comp);
 
-  public void clear(Circuit circuit);
-
   public void remove(Circuit circuit, Component comp);
 
   public void replace(Circuit circuit, Component oldComponent,
