@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 // import com.cburch.logisim.circuit.Propagator.DrivenValue;
 import com.cburch.logisim.comp.Component;
@@ -51,12 +50,7 @@ import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.memory.Ram;
-import com.cburch.logisim.std.memory.RamState;
-import com.cburch.logisim.std.ext.SerialIn;
-import com.cburch.logisim.std.ext.HttpIn;
 import com.cburch.logisim.std.wiring.Clock;
-import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Pin;
 
 // CircuitState holds the simulation state of a Circuit (or Subcircuit), i.e.
@@ -166,11 +160,7 @@ public final class CircuitState /* implements ComponentData */ {
       /* Component ends changed */
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
-        markComponentAsDirty(comp);
-        // If simulator is in single step mode, we want to hilight the
-        // invalidated components (which are likely Pins, Buttons, or other
-        // inputs), so pass this component to the simulator for display.
-        proj.getSimulator().addPendingInput(CircuitState.this, comp);
+        queueForPropagation(comp);
       }
 
       /* components were added, deleted, moved (delete-then-add replacements), etc. */
@@ -689,10 +679,23 @@ public final class CircuitState /* implements ComponentData */ {
     }
   }
 
-  public void markComponentAsDirty(Component comp) {
+  private void markComponentAsDirty(Component comp) {
     synchronized (dirtyLock) {
       dirtyComponents.add(comp);
     }
+  }
+
+  // As of 5.0.5-HC, queueForPropagation() is now the proper, efficient way to
+  // cause a re-propagation for a specific instance within a specific simulator.
+  // The previous fireInvalidated() should be used only when *all* simulations
+  // of some component need to be re-propagated, as might happen when the
+  // component properties change in a way that affects the propagation function.
+  public void queueForPropagation(Component comp) {
+    markComponentAsDirty(comp);
+    // If simulator is in single step mode, we want to hilight the
+    // invalidated components (which are likely Pins, Buttons, or other
+    // inputs), so pass this component to the simulator for display.
+    proj.getSimulator().addPendingInput(CircuitState.this, comp);
   }
 
   public void markComponentsDirty(Collection<Component> comps) {
@@ -898,9 +901,10 @@ public final class CircuitState /* implements ComponentData */ {
       // dirtyPointVals.clear();
       for (CircuitState sub : substates)
         sub.reset();
+      dirtyComponents.addAll(circuit.getNonWires()); // markAllComponentsDirty();
     }
     // slowpath_drivers.clear();
-    markAllComponentsDirty();
+    // markAllComponentsDirty();
   }
 
   public CircuitState getCircuitSubstateFor(Component comp) {
@@ -937,7 +941,6 @@ public final class CircuitState /* implements ComponentData */ {
       System.out.println("fixme: subcircuit component isn't an InstanceComponent!!!"); // debug check
     return newState;
   }
-
 
   /* Design Notes on CircuitState.setData()/getData() (3 of 5)
    *
@@ -1173,14 +1176,8 @@ public final class CircuitState /* implements ComponentData */ {
 
     for (Component clock : circuit.getClocks()) {
       hasClocks = true;
-      boolean dirty = Clock.tick(this, ticks, clock);
-      if (dirty) {
-        markComponentAsDirty(clock);
-        // If simulator is in single step mode, we want to hilight the
-        // invalidated components (which are likely Pins, Buttons, or other
-        // inputs), so pass this component to the simulator for display.
-        proj.getSimulator().addPendingInput(this, clock);
-      }
+      if (Clock.tick(this, ticks, clock))
+        queueForPropagation(clock);
     }
 
     synchronized (dirtyLock) {
