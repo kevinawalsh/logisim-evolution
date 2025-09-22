@@ -66,6 +66,7 @@ import com.cburch.logisim.std.wiring.Pin;
 public final class CircuitState /* implements ComponentData */ {
 
   private class MyCircuitListener implements CircuitListener {
+
     public void circuitChanged(CircuitEvent event) {
       int action = event.getAction();
 
@@ -98,21 +99,9 @@ public final class CircuitState /* implements ComponentData */ {
 
         if (comp.getFactory() instanceof SubcircuitFactory) {
           knownClocks = false; // just in case, will be recomputed by simulator
-          // FIXME: confirm the disconnect-from-tree already happens in TRANSACTION_DONE below
-          // CircuitState substate = getDataForSubcircuit(comp);
-          // if (substate != null && substate.parentComp == comp) {
-            // substates cleanup happens in TRANSACTION_DONE below?
-            // synchronized (dirtyLock) {
-            //   // FIXME: mark substate as defunct? ... or done in TRANSACTION_DONE below?
-            //   substates.remove(substate);
-            //   substatesDirty = true;
-            // }
-            // substate.parentState = null;
-            // substate.parentComp = null;
-            // subcircuitData cleanup happens in TRANSACTION_DONE below
-          // }
+          // subcircuit substate cleanup happens in TRANSACTION_DONE below
         } else {
-          // component*Data cleanup happens in TRANSACTION_DONE below
+          // component data cleanup happens in TRANSACTION_DONE below
         }
 
         if (comp instanceof Wire) {
@@ -147,142 +136,130 @@ public final class CircuitState /* implements ComponentData */ {
         if (map == null)
           return;
         for (Component comp : map.getRemovals()) {
-          // Examine any state held by each affected component, to see which
-          // should be retained, and which should be removed.
-          //
-          // FIXME: previous code seemed broken, it used this approach...
-          // If component A is replaced by B, and they have the same Factory
-          // class, then transfer A's state to B. This seems broken:
-          //  - If subcircuit component A was replaced by subcircuit component
-          //    B, the CircuitState was retained. This makes sense if the user
-          //    moved A on the canvas, for example. But no checking was done to
-          //    see if A and B are simulating the same circuit. Could this get
-          //    triggered by the user selecting A, and pasting a different
-          //    subcircuit B to replace it?
-          //  - If A was replaced by B1, B2, B3, ..., then
-          //    the first Bi with appropriate Factory was taken. Why? This
-          //    couldn't be a simple "move", so why would any state be retained
-          //    in this case?
-          //
-          // FIXME: use the old likely-broken approach for now, with lots of
-          // checking... then simplify code once confirmed.
-          if (comp.getFactory() instanceof SubcircuitFactory) {
-            // subcircuit component removed or moved or replaced
-            CircuitState subcircData = subcircuitData.remove(comp);
-            if (subcircData == null)
-              continue;
-            boolean found = false;
-            for (Component repl : map.getReplacementsFor(comp)) {
-              if (repl.getFactory() instanceof SubcircuitFactory) {
-                // FIXME: confirm the only reasonable case here is that
-                // it is the same circuit
-                SubcircuitFactory replFactory = (SubcircuitFactory)repl.getFactory();
-                Circuit replCirc = replFactory.getSubcircuit();
-                SubcircuitFactory compFactory = (SubcircuitFactory)comp.getFactory();
-                Circuit compCirc = compFactory.getSubcircuit();
-                if (replCirc != compCirc) {
-                  System.err.println("FIXME: subcircuit replaced with different subcirc!!");
-                }
-                found = true;
-                subcircData.parentComp = comp;
-                subcircuitData.put(comp, subcircData);
-                synchronized (dirtyLock) {
-                  subcircData.parentState = CircuitState.this;
-                  substates.add(subcircData);
-                  substatesDirty = true;
-                  dirtyComponents.add(comp);
-                }
-                break;
-              }
-            }
-            if (found) {
-              // FIXME: confirm the only reasonable case here is that
-              // there was exactly 1 replacement...
-              if (map.getReplacementsFor(comp).size() != 1) {
-                System.err.println("FIXME: subcirc replacement is multiple things!!");
-              }
-            }
-            if (!found) {
-              System.out.println("TRANSACTION_DONE removed " + subcircData);
-              // subcircuit component was deleted
-              subcircData.parentState = null;
-              synchronized (dirtyLock) {
-                substates.remove(subcircData);
-                substatesDirty = true;
-              }
-              subcircData.markAsDefunct();
-            }
-          } else {
-            // non-subcircuit component removed or moved or replaced
-            Integer integerData = componentIntegerData.remove(comp);
-            Value valueData = componentValueData.remove(comp);
-            Double doubleData = componentDoubleData.remove(comp);
-            ComponentData customData = componentCustomData.remove(comp);
-            if (integerData == null && valueData == null &&
-                doubleData == null && customData == null)
-              continue;
-            Class<?> compFactory = comp.getFactory().getClass();
-            boolean found = false;
-            for (Component repl : map.getReplacementsFor(comp)) {
-              if (repl.getFactory().getClass() == compFactory) {
-                // Beyond just matching the factories, we should probably match
-                // the attributes too?
-                AttributeSet replAttrs = repl.getAttributeSet();
-                AttributeSet compAttrs = comp.getAttributeSet();
-                if (!AttributeSet.indistinguishable(replAttrs, compAttrs)) {
-                  System.err.println("FIXME: component replaced by one with different attribues");
-                  System.out.println(compAttrs.dump());
-                  System.out.println(replAttrs.dump());
-                }
-                found = true;
-                if (integerData != null)
-                  componentIntegerData.put(repl, integerData);
-                else
-                  componentIntegerData.remove(repl); // just in case, but should not happen
-                if (valueData != null)
-                  componentValueData.put(repl, valueData);
-                else
-                  componentValueData.remove(repl); // just in case, but should not happen
-                if (doubleData != null)
-                  componentDoubleData.put(repl, doubleData);
-                else
-                  componentDoubleData.remove(repl); // just in case, but should not happen
-                ComponentData oldData = componentCustomData.remove(repl); // just in case, but should not happen
-                if (oldData != null) {
-                  System.err.println("replacement already had state?");
-                  // Lifetime tracking: repl already had data, about to be overwritten
-                  if (oldData instanceof ComponentData.WithLifetimeTracking) {
-                    ((ComponentData.WithLifetimeTracking)oldData).simulationCleanup(CircuitState.this, repl);
-                  }
-                }
-                if (customData != null) {
-                  componentCustomData.put(repl, customData);
-                  if (customData instanceof ComponentData.WithLifetimeTracking) {
-                    ((ComponentData.WithLifetimeTracking)customData).simulationRelocating(CircuitState.this, comp, repl);
-                  }
-                }
-                break;
-              }
-            }
-            if (found) {
-              // FIXME: the only reasonable case here is that
-              // there was exactly 1 replacement...
-              if (map.getReplacementsFor(comp).size() != 1) {
-                System.err.println("FIXME: subcirc replacement is multiple things!!");
-              }
-            }
-            if (!found) {
-              System.out.println("TRANSACTION_DONE removed comp " + comp);
-            }
-            // Lifetime tracking: component was removed, cleanup custom state
-            if (!found && customData instanceof ComponentData.WithLifetimeTracking) {
-              ((ComponentData.WithLifetimeTracking)customData).simulationCleanup(CircuitState.this, comp);
-            }
-          }
+          // Retain state iff comp was replaced by one component that is
+          // (probably) a "moved" version of the original component.
+          Component repl = getUniqueReplacementFor(map, comp);
+          if (comp.getFactory() instanceof SubcircuitFactory)
+            xferSubcircuitState(map, comp, repl);
+          else
+            xferComponentState(map, comp, repl);
         }
       }
 
     }
+
+    // subcircuit component removed or moved or replaced
+    private void xferSubcircuitState(ReplacementMap map,
+        Component comp, Component repl) {
+      CircuitState subcircData = subcircuitData.remove(comp);
+      if (subcircData == null) {
+        // nothing to retain or cleanup, substate
+        // wasn't created yet
+        return;
+      }
+      boolean retain = repl != null && isSameSubcircuit(comp, repl);
+      if (retain) {
+        // transfer state from subcircuit comp to subcircuit repl
+        subcircData.parentComp = repl;
+        subcircuitData.put(repl, subcircData);
+        synchronized (dirtyLock) {
+          subcircData.parentState = CircuitState.this;
+          substates.add(subcircData); // but should already be there
+          substatesDirty = true;
+          dirtyComponents.add(repl);
+        }
+      } else {
+        // subcircuit component was deleted
+        subcircData.parentState = null;
+        synchronized (dirtyLock) {
+          substates.remove(subcircData);
+          substatesDirty = true;
+        }
+        subcircData.markAsDefunct();
+      }
+    }
+
+    // non-subcircuit component removed or moved or replaced
+    private void xferComponentState(ReplacementMap map,
+        Component comp, Component repl) {
+      Integer integerData = componentIntegerData.remove(comp);
+      Value valueData = componentValueData.remove(comp);
+      Double doubleData = componentDoubleData.remove(comp);
+      ComponentData customData = componentCustomData.remove(comp);
+      if (integerData == null && valueData == null &&
+          doubleData == null && customData == null) {
+        // nothing to retain or cleanup, component data wasn't set
+        return;
+      }
+      boolean retain = repl != null && isIndistinguishableComponent(comp, repl);
+      if (retain) {
+        // transfer state from comp to repl
+        if (integerData != null)
+          componentIntegerData.put(repl, integerData);
+        else
+          componentIntegerData.remove(repl); // just in case, but should not happen
+        if (valueData != null)
+          componentValueData.put(repl, valueData);
+        else
+          componentValueData.remove(repl); // just in case, but should not happen
+        if (doubleData != null)
+          componentDoubleData.put(repl, doubleData);
+        else
+          componentDoubleData.remove(repl); // just in case, but should not happen
+        ComponentData oldData = componentCustomData.remove(repl); // just in case, but should not happen
+        if (oldData != null) {
+          System.err.println("replacement already had state?");
+          // Lifetime tracking: repl already had data, about to be overwritten
+          if (oldData instanceof ComponentData.WithLifetimeTracking) {
+            ((ComponentData.WithLifetimeTracking)oldData).simulationCleanup(CircuitState.this, repl);
+          }
+        }
+        if (customData != null) {
+          componentCustomData.put(repl, customData);
+          if (customData instanceof ComponentData.WithLifetimeTracking) {
+            ((ComponentData.WithLifetimeTracking)customData).simulationRelocating(CircuitState.this, comp, repl);
+          }
+        }
+      } else {
+        // component was deleted
+        // Lifetime tracking: component was removed, cleanup custom state
+        if (customData instanceof ComponentData.WithLifetimeTracking) {
+          ((ComponentData.WithLifetimeTracking)customData).simulationCleanup(CircuitState.this, comp);
+        }
+      }
+    }
+
+    // only for subcircuits
+    private boolean isSameSubcircuit(Component a, Component b) {
+      if (!(a.getFactory() instanceof SubcircuitFactory))
+        return false;
+      if (!(b.getFactory() instanceof SubcircuitFactory))
+        return false;
+      Circuit ca = ((SubcircuitFactory)a.getFactory()).getSubcircuit();
+      Circuit cb = ((SubcircuitFactory)b.getFactory()).getSubcircuit();
+      return ca == cb;
+    }
+
+    // only for non-subcircuits
+    private boolean isIndistinguishableComponent(Component a, Component b) {
+      if (a.getFactory().getClass() != b.getFactory().getClass())
+        return false;
+      AttributeSet pa = a.getAttributeSet();
+      AttributeSet pb = b.getAttributeSet();
+      return AttributeSet.indistinguishable(pa, pb);
+    }
+
+    // If map shows that comp was replaced by exactly one new component, then
+    // return that replacement. Otherwise return null.
+    private Component getUniqueReplacementFor(ReplacementMap map,
+        Component comp) {
+      Collection<Component> repls = map.getReplacementsFor(comp);
+      if (repls.size() != 1)
+        return null;
+      else
+        return repls.iterator().next();
+    }
+
   }
 
   private MyCircuitListener myCircuitListener = new MyCircuitListener();
@@ -355,8 +332,6 @@ public final class CircuitState /* implements ComponentData */ {
   // CircuitState within it, are makred as active=true. Other CircuitState are
   // marked active=false. The non-active CircuitState aren't dead or defunct,
   // they are just on hold, the user may come back and re-activate them later.
-  // TODO: when a CircuitState active status changes, some of the component data
-  // should get notified, such as HttpIn (so it can stop polling the URL). 
   private boolean active;
 
   // When a CircuitState is removed from the UI, either through explicit user
@@ -364,9 +339,6 @@ public final class CircuitState /* implements ComponentData */ {
   // was removed from a circuit (or some other reason?), it will never again be
   // used for simulation, it's effectively dead. These are marked as defunct,
   // permanently.
-  // TODO: when a CircuitState becomes defunct, some of the component data
-  // should get notified, such as SerialIn (so it can close any open serial
-  // ports) and Ram (so it can close and discard any open poke-editing windows).
   private boolean defunct;
 
   private static int lastId = 0;
@@ -553,7 +525,7 @@ public final class CircuitState /* implements ComponentData */ {
 
   private InstanceStateImpl reusableInstanceState = new InstanceStateImpl(this, null);
 
-  // FIXME: wtf?
+  // This is part of the entangled component-instance mess
   public InstanceState getInstanceState(Component comp) {
     Object factory = comp.getFactory();
     if (factory instanceof InstanceFactory) {
@@ -567,7 +539,7 @@ public final class CircuitState /* implements ComponentData */ {
     }
   }
 
-  // FIXME: wtf?
+  // This is part of the entangled component-instance mess
   public InstanceState getInstanceState(Instance instance) {
     Object factory = instance.getFactory();
     if (factory instanceof InstanceFactory) {
@@ -904,13 +876,13 @@ public final class CircuitState /* implements ComponentData */ {
     }
     CircuitState cs = subcircuitData.get(comp);
     if (cs != null) {
-      if (cs.parentComp != comp) {                                                    // debug check
-        System.err.println("fixme: found stale circuitstate... should never happen"); // debug check
-        System.err.printf("this = %s with parentComp %s \n", this, this.parentComp);  // debug check
-        System.err.printf("comp = %s for circuit %s\n", comp,                         // debug check
-            ((SubcircuitFactory)comp.getFactory()).getSubcircuit());                  // debug check
-        System.err.printf("oldState = %s with parentComp %s\n", cs, cs.parentComp);   // debug check
-        Thread.dumpStack();                                                           // debug check
+      if (cs.parentComp != comp) {                                                           // debug check
+        System.err.printf("DEBUG: found stale circuitstate... should never happen\n");       // debug check
+        System.err.printf("DEBUG: this = %s with parentComp %s \n", this, this.parentComp);  // debug check
+        System.err.printf("DEBUG: comp = %s for circuit %s\n", comp,                         // debug check
+            ((SubcircuitFactory)comp.getFactory()).getSubcircuit());                         // debug check
+        System.err.printf("DEBUG oldState = %s with parentComp %s\n", cs, cs.parentComp);    // debug check
+        Thread.dumpStack();                                                                  // debug check
       }
       return cs;
     }
@@ -924,11 +896,14 @@ public final class CircuitState /* implements ComponentData */ {
     newState.parentState = this;
     newState.parentComp = comp;
     subcircuitData.put(comp, newState);
-    // FIXME: is fireInvalidated actually necessary? can we just mark as dirty, directly? confirm this...
-    if (comp instanceof InstanceComponent)
-      ((InstanceComponent) comp).fireInvalidated();
-    else                                                                               // debug check
-      System.err.println("fixme: subcircuit component isn't an InstanceComponent!!!"); // debug check
+
+    // FIXME: confirm fireInvalidated not actually necessary...
+    // we do markComponentAsDirty instead
+    // if (comp instanceof InstanceComponent)
+    //   ((InstanceComponent) comp).fireInvalidated();
+    // else                                                                               // debug check
+    //   System.err.println("DEBUG: subcircuit component isn't an InstanceComponent!!!"); // debug check
+    markComponentAsDirty(comp);
     return newState;
   }
 
@@ -945,9 +920,6 @@ public final class CircuitState /* implements ComponentData */ {
    *   Double
    * Other immutable types could easily be added at some later time, if needed,
    * such as Long, Float, Byte, Color, String, etc.
-   *
-   * TODO: Change CircuitState so it is no longer a ComponentData, to ensure
-   * statically that subcircuit components don't use this code path.
    */
   
   public Integer getDataAsInteger(Component comp) { return componentIntegerData.get(comp); }
@@ -1128,31 +1100,6 @@ public final class CircuitState /* implements ComponentData */ {
       return !v.equals(old);
     }
   }
-
-  // private void markDirtyComponentsAt(Location p) {
-  //   boolean found = false;
-  //   for (Component comp : circuit.getComponents(p)) {
-  //     if (!(comp instanceof Wire) && !(comp instanceof Splitter)) {
-  //       found = true;
-  //       markComponentAsDirty(comp);
-  //     }
-  //   }
-  //   // NOTE: this will cause a double-propagation on components
-  //   // whose outputs have just changed.
-  //   // FIXME: huh?
-  //   if (found)
-  //     base.locationTouched(this, p);
-  // }
-
-  // private void markDirtyComponents(Location p, Component[] affected) {
-  //   for (Component comp : affected)
-  //     markComponentAsDirty(comp);
-  //   // NOTE: this will cause a double-propagation on components
-  //   // whose outputs have just changed.
-  //   // FIXME: huh?
-  //   if (affected.length > 0)
-  //     base.locationTouched(this, p);
-  // }
 
   void setWireData(CircuitWires.State data) {
     wireData = data;
