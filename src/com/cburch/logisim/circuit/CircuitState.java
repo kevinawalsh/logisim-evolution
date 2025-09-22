@@ -423,11 +423,11 @@ public final class CircuitState /* implements ComponentData */ {
   }
 
   private void setActiveStatus(boolean newLevel) {
-    System.out.println(this + " activity " + active + " --> " + newLevel);
     if (active == newLevel)
       return;
     if (defunct) {
       System.err.println("ERROR: defunct CircuitState can't change active/inactive status");
+      return;
     }
     active = newLevel;
     // System.out.println(this + " is now active=" + active);
