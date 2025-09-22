@@ -42,20 +42,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Predicate;
 
-import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class HttpFetchManager {
 
+  private static int nextId = 1;
+
   public static class Worker {
-    Instance instance;
-    CircuitState cs;
+    int id = nextId++;
+    Component comp;
+    final CircuitState cs;
     String url;
     int delay, penalty;
     boolean simActive;
@@ -72,55 +71,47 @@ public class HttpFetchManager {
     Condition change = sync.newCondition();
     Thread thread;
 
-    Worker(String url, boolean autoFetch, int delay) {
+    Worker(String url, boolean autoFetch, int delay, Component comp, CircuitState cs) {
       this.url = url == null ? "" : url;;
       this.delay = Math.max(100, delay);
       this.autoFetch = autoFetch;
+      this.comp = comp;
+      this.cs = cs;
       status = "ready";
+    }
+
+    public String toString() {
+      return "HttpFetchWorker"+id+" for " + url;
     }
 
     private void fire() {
       sync.lock();
       try {
-        // NOTE: It seems like we should be able to
-        // cause a propagation more directly, since
-        // we have the circuitState, which ultimately
-        // just needs to mark instance.getComponent()
-        // as dirty, basically one line of code.
-        if (instance == null)
-          System.err.println("missing instance in HttpIn???");
-        else
-          instance.fireInvalidated();
+        cs.queueForPropagation(comp);
       } finally {
         sync.unlock();
       }
     }
 
     public void enableFetching(boolean enable) {
-      if (enable && (instance == null || cs == null)) {
-        System.err.println("HttpIn: Can't enable fetching without circuitstate and instance");
-        return;
-      }
       sync.lock();
       try {
         if (dead) {
-          System.err.println("HttpIn: Can't enable/disable fetching in dead simulation");
+          System.err.println("HttpIn: Can't enable/disable fetching in defunct simulation");
           return;
         }
         if (fetchEnabled == enable)
           return; // nothing to do
         fetchEnabled = enable;
         if (enable) {
-          CircuitState top = cs.getProject().getCircuitState();
-          // FIXME: just query cs.isActive()
-          simActive = cs == top || cs.hasAncestorState(top);
+          simActive = cs.isActive();
           status = "";
           timestamp = 0;
           penalty = 0;
           fresh = false;
           response = null;
         }
-        if (enable && thread == null) {
+        if (simActive && fetchEnabled && thread == null) {
           thread = new UniquelyNamedThread(() -> runFetch(), "HttpInputWorker");
           thread.setDaemon(true);
           thread.start();
@@ -133,14 +124,10 @@ public class HttpFetchManager {
     }
 
     public void setActive(boolean enable) {
-      if (enable && (instance == null || cs == null)) {
-        System.err.println("HttpIn: Can't de/activate fetching without circuitstate and instance");
-        return;
-      }
       sync.lock();
       try {
         if (dead) {
-          System.err.println("HttpIn: Can't de/activate fetching in dead simulation");
+          System.err.println("HttpIn: Can't de/activate fetching in defunct simulation");
           return;
         }
         if (simActive == enable)
@@ -153,7 +140,7 @@ public class HttpFetchManager {
           fresh = false;
           response = null;
         }
-        if (enable && fetchEnabled && thread == null) {
+        if (simActive && fetchEnabled && thread == null) {
           thread = new UniquelyNamedThread(() -> runFetch(), "HttpInputWorker");
           thread.setDaemon(true);
           thread.start();
@@ -171,7 +158,7 @@ public class HttpFetchManager {
       sync.lock();
       try {
         if (dead) {
-          System.err.println("HttpIn: Can't change params for dead simulation");
+          System.err.println("HttpIn: Can't change params for defunct simulation");
           return;
         }
         if (url.equals(newUrl) && autoFetch == enable && delay == newDelay)
@@ -232,7 +219,7 @@ public class HttpFetchManager {
             } finally {
               sync.unlock();
             }
-            System.out.println("fetching: " + target);
+            // System.out.println(this +" GET " + target);
             URI uri;
             try {
               uri = URI.create(target);
@@ -300,71 +287,29 @@ public class HttpFetchManager {
   private static final ArrayList<Worker> workers = new ArrayList<>();
   private static final Object lock = new Object();
 
-  public static Worker makeWorker(String url, boolean autoFetch, int delay, Instance instance, CircuitState cs) {
-    Worker worker = new Worker(url, autoFetch, delay);
-    if (instance != null || cs != null)
-      bind(worker, instance, cs);
-    return worker;
-  }
-
-  public static Worker makeWorker(Worker other) {
-    other.sync.lock();
-    try {
-      return new Worker(other.url, other.autoFetch, other.delay);
-    } finally {
-      other.sync.unlock();
-    }
-  }
-
-  public static void bind(Worker worker, Instance instance, CircuitState cs) {
-    // System.out.println("binding...");
-    if (cs == null) {
-      System.out.println("nevermind, killing...");
-      kill(worker);
-      return;
-    }
-    CircuitState csOld = null;
-    worker.sync.lock();
-    try {
-      if (worker.instance != instance) {
-        System.out.println("setting instance...");
-        System.out.println("  old=" + worker.instance);
-        System.out.println("  new=" + instance);
-        worker.instance = instance;
-      }
-
-      if (worker.cs == cs) {
-        // System.out.println("cs didn't change ...");
-        return;
-      }
-      if (worker.cs != null) {
-        // cs really shouln't change, right?
-        System.err.println("huh... cs mismatch in HttpIn!!!");
-        System.err.println("old: " + worker.cs);
-        System.err.println("new: " + cs);
-        if (cs.getProject() != worker.cs.getProject())
-          csOld = worker.cs;
-        worker.cs = cs;
-      } else {
-        worker.cs = cs;
-      }
-    } finally {
-      worker.sync.unlock();
-    }
+  public static Worker makeWorker(String url, boolean autoFetch, int delay, Component comp, CircuitState cs) {
+    if (cs == null) throw new IllegalArgumentException("cs");
+    if (comp == null) throw new IllegalArgumentException("comp");
+    Worker worker = new Worker(url, autoFetch, delay, comp, cs);
     synchronized (lock) {
       if (!workers.contains(worker))
         workers.add(worker);
-      if (csOld != null) {
-        System.out.println("unbind worker from cs");
-        System.out.println("  worker=" + worker);
-        System.out.println("  cs=" + csOld);
-        System.out.println("  proj=" + csOld.getProject().getLogisimFile().getName());
-      }
-      Project proj = cs.getProject();
-      System.out.println("bind worker to cs");
-      System.out.println("  worker=" + worker);
-      System.out.println("  cs=" + cs);
-      System.out.println("  proj=" + proj.getLogisimFile().getName());
+    }
+    return worker;
+  }
+
+  public static void relocate(Worker worker, Component comp, CircuitState cs) {
+    // - component changes when a component moves on the canvas
+    // - cs should never change
+    if (cs == null) throw new IllegalArgumentException("cs");
+    if (cs != worker.cs) throw new IllegalArgumentException("cs");
+    if (comp == null) throw new IllegalArgumentException("comp");
+    
+    worker.sync.lock();
+    try {
+      worker.comp = comp;
+    } finally {
+      worker.sync.unlock();
     }
   }
 
@@ -383,10 +328,6 @@ public class HttpFetchManager {
     }
     synchronized (lock) {
       workers.remove(worker);
-      System.out.println("kill worker from cs");
-      System.out.println("  worker=" + worker);
-      System.out.println("  cs=" + worker.cs);
-      System.out.println("  proj=" + worker.cs.getProject().getLogisimFile().getName());
     }
   }
 

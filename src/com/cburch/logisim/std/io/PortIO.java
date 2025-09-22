@@ -449,7 +449,7 @@ public class PortIO extends InstanceFactory {
       if (n < 0 || n >= data.size)
         return;
       data.toggle(n);
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
   }
 

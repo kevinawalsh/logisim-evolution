@@ -134,8 +134,15 @@ public interface ComponentData {
   // stop worker threads, and Ram may need to close hex editor windows. The data
   // for these components should implement ComponentData.WithLifetimeTracking.
   // For such objects, CircuitState will notify the object of changes to the
-  // status of the simulation:
+  // status of the simulation.
   public interface WithLifetimeTracking extends ComponentData {
+
+    // simulationRelocating() is called if the component this data is associated
+    // with is replaced during a circuit modification transaction, but the data
+    // from the original component is relocated to the replacement component.
+    // This can occur, for example, when a component is moved on the canvas
+    // (this is implemented as a remove-and-add transaction).
+    public default void simulationRelocating(CircuitState cs, Component originalComp, Component replacementComp) { };
 
     // simulationActivating() is called when a simulation transitions to active
     // status, e.g. selected within the UI and receiving clock ticks.

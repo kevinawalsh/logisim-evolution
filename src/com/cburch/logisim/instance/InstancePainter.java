@@ -49,47 +49,62 @@ import com.cburch.logisim.proj.Project;
 
 // This is more like ComponentPainter maybe?
 public class InstancePainter implements InstanceState {
-  private ComponentDrawContext context;
+
+  private final ComponentDrawContext context; // non-null
+  private final CircuitState circState; // may be null
+
+  // InstancePainter is used to help draw components. It can be repurposed
+  // for drawing multiple components. There will either be a Component, or a
+  // Factory+AttributeSet pair, but never both.
+  //
+  //     comp     factory  attrs
+  //     -------- -------- --------
+  // (a) present  null     null     -- e.g. drawing a Component in a circuit
+  // (b) null     present  present  -- e.g. drawing a ghost before placing
+  // (c) null     null     null     -- when not being used
+  //
+  // Many methods only work in case (a). Others work only in case (b). Most fail
+  // in (c). FIXME: This should probably be two different classes, possibly with
+  // some shared ancestor for the 
+  
   private Component comp;
   private ComponentFactory factory;
   private AttributeSet attrs;
 
   public InstancePainter(ComponentDrawContext context, Component comp) {
     this.context = context;
+    this.circState = context.getCircuitState();
     this.comp = comp;
   }
 
-  //
-  // helper methods for drawing common elements in components
-  //
-  public void drawBounds() {
+  public void drawBounds() { // (a)
     if (comp != null)
       context.drawBounds(comp);
   }
 
-  public void drawClock(int i, Direction dir) {
+  public void drawClock(int i, Direction dir) { // (a)
     if (comp != null)
       context.drawClock(comp, i, dir);
   }
 
-  public void drawClockSymbol(int xpos, int ypos) {
+  public void drawClockSymbol(int xpos, int ypos) { // (a)
     if (comp != null)
       context.drawClockSymbol(comp, xpos, ypos);
   }
 
-  public void drawDongle(int x, int y) {
+  public void drawDongle(int x, int y) { // any ... just draws a dot
     context.drawDongle(x, y);
   }
 
-  public void drawHandle(int x, int y) {
+  public void drawHandle(int x, int y) { // any ... just draws a square
     context.drawHandle(x, y);
   }
 
-  public void drawHandle(Location loc) {
+  public void drawHandle(Location loc) { // any ... just draws a square
     context.drawHandle(loc);
   }
 
-  public void drawHandles() {
+  public void drawHandles() { // (a)
     if (comp != null)
       context.drawHandles(comp);
   }
@@ -98,68 +113,75 @@ public class InstancePainter implements InstanceState {
   // since it relies on a Component's textField. In particular, it doesn't work
   // within drawGhost() or any other cases where we only have a Factory and
   // AttributeSet, rather than a Component.
-  public void drawLabel() {
+  public void drawLabel() { // (a)
     if (comp != null)
       comp.drawLabel(context);
   }
 
-  public void drawPort(int i) {
+  public void drawPort(int i) { // (a)
     if (comp != null)
       context.drawPin(comp, i);
   }
 
-  public void drawPort(int i, String label, Direction dir) {
+  public void drawPort(int i, String label, Direction dir) { // (a)
     if (comp != null)
       context.drawPin(comp, i, label, dir);
   }
 
-  public void drawPorts() {
+  public void drawPorts() { // (a)
     if (comp != null)
       context.drawPins(comp);
   }
 
-  public void drawRectangle(Bounds bds, String label) {
+  public void drawRectangle(Bounds bds, String label) { // any ... just draws a box with text
     context.drawRectangle(bds.getX(), bds.getY(), bds.getWidth(),
         bds.getHeight(), label);
   }
 
-  public void drawRectangle(int x, int y, int width, int height, String label) {
+  public void drawRectangle(int x, int y, int width, int height, String label) { // any ... just draws a box with text
     context.drawRectangle(x, y, width, height, label);
   }
 
   @Override
-  public void fireInvalidated() {
+  public void queueForPropagation() { // (a)
+    if (circState == null || comp == null)
+      throw new UnsupportedOperationException("InstancePainter.queueForPropagation without state");
+    circState.queueForPropagation(comp);
+  }
+
+  @Override
+  public void fireInvalidated() { // (a)
     if (comp != null)
       comp.fireInvalidated();
   }
 
-  public AttributeSet getAttributeSet() {
+  public AttributeSet getAttributeSet() { // (a) or (b)
     return comp == null ? attrs : comp.getAttributeSet();
   }
 
-  public <E> E getAttributeValue(Attribute<E> attr) {
+  public <E> E getAttributeValue(Attribute<E> attr) { // (a) or (b)
     return getAttributeSet().getValue(attr);
   }
   
-  public Bounds getNominalBounds() {
+  public Bounds getNominalBounds() { // (a) or (b)
     return comp == null
         ? factory.getOffsetBounds(attrs)
         : comp.getNominalBounds();
   }
 
-  public Circuit getCircuit() {
+  public Circuit getCircuit() { // any
     return context.getCircuit();
   }
 
-  public CircuitState getCircuitState() {
-    return context.getCircuitState();
+  public CircuitState getCircuitState() { // any
+    return circState;
   }
 
-  public java.awt.Component getDestination() {
+  public java.awt.Component getDestination() { // any
     return context.getDestination();
   }
 
-  public InstanceFactory getFactory() {
+  public InstanceFactory getFactory() { // (a) or (b)
     if (comp instanceof InstanceComponent)
       return (InstanceFactory)comp.getFactory();
     else if (factory instanceof InstanceFactory)
@@ -168,38 +190,32 @@ public class InstancePainter implements InstanceState {
       return null;
   }
 
-  public Object getGateShape() {
+  public Object getGateShape() { // any ... just gets app preferences
     return context.getGateShape();
   }
 
-  public Graphics getGraphics() {
+  public Graphics getGraphics() { // any
     return context.getGraphics();
   }
 
-  //
-  // methods related to the context of the canvas
-  //
-  public WireSet getHighlightedWires() {
+  public WireSet getHighlightedWires() { // any
     return context.getHighlightedWires();
   }
 
-  //
-  // methods related to the instance
-  //
-  public Instance getInstance() {
+  public Instance getInstance() { // (a)
     return comp instanceof InstanceComponent
         ? ((InstanceComponent)comp).getInstance() :  null;
   }
 
-  public Component getComponent() {
+  public Component getComponent() { // (a)
     return comp;
   }
 
-  public Location getLocation() {
+  public Location getLocation() { // (a)
     return comp == null ? Location.create(0, 0) : comp.getLocation();
   }
 
-  public Bounds getNominalOffsetBounds() {
+  public Bounds getNominalOffsetBounds() { // (a) or (b)
     if (comp == null) {
       return factory.getOffsetBounds(attrs);
     } else {
@@ -217,153 +233,136 @@ public class InstancePainter implements InstanceState {
   //   }
   // }
 
-  public Value getPortValue(int portIndex) {
-    CircuitState s = context.getCircuitState();
-    if (comp != null && s != null) {
-      return s.getValue(comp.getEnd(portIndex).getLocation());
+  public Value getPortValue(int portIndex) { // (a)
+    if (comp != null && circState != null) {
+      return circState.getValue(comp.getEnd(portIndex).getLocation());
     } else {
       return Value.UNKNOWN;
     }
   }
 
-  //
-  // methods related to the circuit state
-  //
-  public Project getProject() {
-    return context.getCircuitState().getProject();
+  public Project getProject() { // any
+    return circState.getProject();
   }
 
-  public boolean getShowState() {
+  public boolean getShowState() { // any
     return context.getShowState();
   }
 
-  public int getTickCount() {
-    return context.getCircuitState().getPropagator().getTickCount();
+  public int getTickCount() { // any
+    return circState.getPropagator().getTickCount();
   }
 
-  public boolean isCircuitRoot() {
-    return !context.getCircuitState().isSubstate();
+  public boolean isCircuitRoot() { // any
+    return !circState.isSubstate();
   }
 
-  public boolean isPortConnected(int index) {
+  public boolean isPortConnected(int index) { // (a)
     Circuit circ = context.getCircuit();
     Location loc = comp.getEnd(index).getLocation();
     return circ.isConnected(loc, comp);
   }
 
-  public boolean isPrintView() {
+  public boolean isPrintView() { // any
     return context.isPrintView();
   }
   
-  public Integer getDataAsInteger() {
-    CircuitState circState = context.getCircuitState();
+  public Integer getDataAsInteger() { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataAsInteger(comp);
   }
 
-  public Value getDataAsValue() {
-    CircuitState circState = context.getCircuitState();
+  public Value getDataAsValue() { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataAsValue(comp);
   }
   
-  public Double getDataAsDouble() {
-    CircuitState circState = context.getCircuitState();
+  public Double getDataAsDouble() { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataAsDouble(comp);
   }
 
-  public int getDataOrDefault(int defaultData) {
-    CircuitState circState = context.getCircuitState();
+  public int getDataOrDefault(int defaultData) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataOrDefault(comp, defaultData);
   }
 
-  public Value getDataOrDefault(Value defaultData) {
-    CircuitState circState = context.getCircuitState();
+  public Value getDataOrDefault(Value defaultData) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataOrDefault(comp, defaultData);
   }
 
-  public double getDataOrDefault(double defaultData) {
-    CircuitState circState = context.getCircuitState();
+  public double getDataOrDefault(double defaultData) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataOrDefault(comp, defaultData);
   }
 
-  public ComponentData getDataAsCustom() {
-    CircuitState circState = context.getCircuitState();
+  public ComponentData getDataAsCustom() { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataAsCustom(comp);
   }
 
-  public CircuitState getDataForSubcircuit() {
-    CircuitState circState = context.getCircuitState();
+  public CircuitState getDataForSubcircuit() { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataForSubcircuit(comp);
   }
 
   @Deprecated(since = "5.0.5HC", forRemoval = false)
-  public Object getData() {
-    CircuitState circState = context.getCircuitState();
+  public Object getData() { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("InstancePainter.getData without state");
     return circState.getDataAsAny(comp);
   }
   
-  public void setData(int data) {
-    CircuitState circState = context.getCircuitState();
+  public void setData(int data) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("setData on InstancePainter");
     circState.setData(comp, data);
   }
 
-  public void setData(Value data) {
-    CircuitState circState = context.getCircuitState();
+  public void setData(Value data) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("setData on InstancePainter");
     circState.setData(comp, data);
   }
 
-  public void setData(double data) {
-    CircuitState circState = context.getCircuitState();
+  public void setData(double data) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("setData on InstancePainter");
     circState.setData(comp, data);
   }
 
-  public void setData(ComponentData data) {
-    CircuitState circState = context.getCircuitState();
+  public void setData(ComponentData data) { // (a)
     if (circState == null || comp == null)
       throw new UnsupportedOperationException("setData on InstancePainter");
     circState.setData(comp, data);
   }
 
-  void setFactory(ComponentFactory factory, AttributeSet attrs) {
+  void setFactory(ComponentFactory factory, AttributeSet attrs) { // changes to (b)
     this.comp = null;
     this.factory = factory;
     this.attrs = attrs;
   }
 
-  public void setComponent(Component comp) {
+  public void setComponent(Component comp) { // changes to (a)
     this.comp = comp;
     this.factory = null;
     this.attrs = null;
   }
 
-  public void setPort(int portIndex, Value value, int delay) {
+  public void setPort(int portIndex, Value value, int delay) { // none
     throw new UnsupportedOperationException("setValue on InstancePainter");
   }
 
-  public boolean shouldDrawColor() {
+  public boolean shouldDrawColor() { // any
     return context.shouldDrawColor();
   }
 }

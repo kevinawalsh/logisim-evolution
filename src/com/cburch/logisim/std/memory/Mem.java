@@ -76,7 +76,7 @@ public abstract class Mem extends InstanceFactory {
 
     public void bytesChanged(HexModel source, long start, long numBytes,
         int[] values) {
-      instance.fireInvalidated();
+      instance.fireInvalidated(); // ROM edit affects all simulations
     }
 
     public void metainfoChanged(HexModel source) {

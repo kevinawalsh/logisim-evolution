@@ -275,8 +275,12 @@ public final class CircuitState /* implements ComponentData */ {
                     ((ComponentData.WithLifetimeTracking)oldData).simulationCleanup(CircuitState.this, repl);
                   }
                 }
-                if (customData != null)
-                  componentCustomData.put(repl, customData);
+                if (customData != null) {
+                  if (customData instanceof ComponentData.WithLifetimeTracking) {
+                    componentCustomData.put(repl, customData);
+                    ((ComponentData.WithLifetimeTracking)customData).simulationRelocating(CircuitState.this, comp, repl);
+                  }
+                }
                 break;
               }
             }
@@ -396,8 +400,14 @@ public final class CircuitState /* implements ComponentData */ {
 
   // which thread calls this? Do we need to worry about sync?
   public static void transferActiveStatus(CircuitState deactivating, CircuitState activating) {
+    System.out.println("xfer from: " + deactivating);
+    System.out.println("xfer to  : " + activating);
     deactivating = (deactivating == null ? null : deactivating.getAncestorState());
     activating = (activating == null ? null : activating.getAncestorState());
+    System.out.println("xfer from root is: " + deactivating);
+    System.out.println("xfer to root is  : " + activating);
+    System.out.println("xfer from activity is: " + (deactivating == null ? "null" : ""+deactivating.active));
+    System.out.println("xfer to activity is  : " + (activating == null ? "null" : ""+activating.active));
     if (activating == deactivating) {
       if (activating != null && !activating.active) {
         System.err.println("CircuitStates unexpectedly inactive");
@@ -408,7 +418,7 @@ public final class CircuitState /* implements ComponentData */ {
       if (deactivating != null && !deactivating.active) {
         System.err.println("CircuitState is unexpectedly inactive");
       } else if (deactivating != null) {
-        activating.setActiveStatus(false);
+        deactivating.setActiveStatus(false);
       }
       // new should be inactive, make it active
       if (activating != null && activating.active) {
@@ -420,12 +430,14 @@ public final class CircuitState /* implements ComponentData */ {
   }
 
   private void setActiveStatus(boolean newLevel) {
+    System.out.println(this + " activity " + active + " --> " + newLevel);
     if (active == newLevel)
       return;
     if (defunct) {
       System.err.println("ERROR: defunct CircuitState can't change active/inactive status");
     }
     active = newLevel;
+    // System.out.println(this + " is now active=" + active);
     if (active) {
       // Lifetime tracking: every component is now active
       notifyLifetimeTrackers((comp, data) -> data.simulationActivating(this, comp));
@@ -437,6 +449,10 @@ public final class CircuitState /* implements ComponentData */ {
       for (CircuitState sub : substates)
         sub.setActiveStatus(newLevel);
     }
+  }
+
+  public boolean isActive() {
+    return active;
   }
 
   // which thread calls this? Do we need to worry about sync?
@@ -927,6 +943,7 @@ public final class CircuitState /* implements ComponentData */ {
     }
     Circuit circ = ((SubcircuitFactory)comp.getFactory()).getSubcircuit();
     CircuitState newState = new CircuitState(proj, circ, base);
+    newState.active = this.active;
     synchronized(dirtyLock) {
       substates.add(newState);
       substatesDirty = true;

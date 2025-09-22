@@ -287,7 +287,7 @@ public class HttpIn extends InstanceFactory {
       state = new State(circState);
       circState.setData(state);
     } else {
-      state.updateBinding(circState);
+      state.updateParams(circState);
     }
     return state;
   }
@@ -311,22 +311,22 @@ public class HttpIn extends InstanceFactory {
       int delay = iState.getAttributeValue(ATTR_DELAY);
       format = iState.getAttributeValue(ATTR_FORMAT);
 
-      Instance i = iState.getInstance();
+      Component comp = iState.getInstance().getComponent();
       CircuitState cs = iState.getCircuitState();
-      worker = HttpFetchManager.makeWorker(url, async, delay, i, cs);
+      worker = HttpFetchManager.makeWorker(url, async, delay, comp, cs);
     }
     
-    private State(State other) {
-      other.worker.sync.lock();
-      try {
-        format = new HttpInputFormat(other.format);
-        worker = HttpFetchManager.makeWorker(other.worker);
-        lastClock = other.lastClock;
-        lastValues = (other.lastValues == null ? null : other.lastValues.clone());
-      } finally {
-        other.worker.sync.unlock();
-      }
-    }
+    // private State(State other) {
+    //   other.worker.sync.lock();
+    //   try {
+    //     format = new HttpInputFormat(other.format);
+    //     worker = HttpFetchManager.makeWorker(other.worker);
+    //     lastClock = other.lastClock;
+    //     lastValues = (other.lastValues == null ? null : other.lastValues.clone());
+    //   } finally {
+    //     other.worker.sync.unlock();
+    //   }
+    // }
     
     void enableFetching(boolean enable) {
       worker.enableFetching(enable);
@@ -370,7 +370,7 @@ public class HttpIn extends InstanceFactory {
       }
     }
 
-    void updateBinding(InstanceState iState) {
+    void updateParams(InstanceState iState) {
       AttributeSet attrs = iState.getAttributeSet();
       String url = iState.getAttributeValue(ATTR_URL);
       boolean async = iState.getAttributeValue(ATTR_WHEN) == POLLING;
@@ -379,18 +379,11 @@ public class HttpIn extends InstanceFactory {
 
       worker.sync.lock();
       try {
-        
-        Instance i = iState.getInstance();
-        CircuitState cs = iState.getCircuitState();
-        HttpFetchManager.bind(worker, i, cs);
-
         worker.setParams(url, async, delay);
-
         if (this.format == null || !format.sameAs(this.format)) {
           this.format = format;
           lastValues = null;
         }
-
       } finally {
         worker.sync.unlock();
       }
@@ -405,7 +398,12 @@ public class HttpIn extends InstanceFactory {
 
     @Override
     public State duplicateForNewSimulation() {
-      return new State(this);
+      return null; // new State(this);
+    }
+    
+    @Override
+    public void simulationRelocating(CircuitState cs, Component originalComp, Component replacementComp) {
+      HttpFetchManager.relocate(worker, replacementComp, cs);
     }
   
     @Override

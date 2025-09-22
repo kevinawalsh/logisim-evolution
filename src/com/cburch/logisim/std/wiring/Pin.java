@@ -198,7 +198,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
         }
         setVisible(false);
         pinState.intendedValue = newVal;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     }
 
@@ -417,7 +417,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
           val[bit+i] = (((d&(1<<i)) != 0) ? Value.TRUE : Value.FALSE);
       }
       pinState.intendedValue = Value.create(val);
-      state.fireInvalidated();
+      state.queueForPropagation();
       return true;
     }
 

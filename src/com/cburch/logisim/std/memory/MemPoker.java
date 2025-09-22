@@ -141,7 +141,7 @@ public class MemPoker extends InstancePoker {
       if (val >= 0) {
         curValue = curValue * 16 + val;
         data.getContents().set(data.getCursor(), curValue);
-        state.fireInvalidated();
+        state.fireInvalidated(); // ROM edit affects all simulations
       } else if (c == ' ' || c == '\t') {
         moveTo(data, data.getCursor() + 1);
       } else if (c == '\r' || c == '\n') {

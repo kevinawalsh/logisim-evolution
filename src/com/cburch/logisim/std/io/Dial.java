@@ -79,7 +79,7 @@ public class Dial extends Slider {
       } else {
         data.setPosition(t, attrs);
       }
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
 
     @Override

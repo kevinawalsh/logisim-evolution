@@ -35,13 +35,24 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 
 // Only known implementing classes are:
 //   InstanceStateImpl
 //   InstancePainter
 public interface InstanceState {
+
+  // use queueForPropagation() to cause re-propagation for this *one* simulation
+  // of this instance. Use this method when only one simulated instance is
+  // affected, e.g. when the user pokes the component causing a state change. Do
+  // not use this method when *all* simulations of this instance are affected,
+  // e.g. when an attribute change affects how propagation happens in all
+  // simulations.
+  public void queueForPropagation();
+
+  // Use fireInvalidated() when *all* simulations of this instance need to be
+  // re-propagated, as might happen when the instance attributes change. Do not
+  // use this method when only *one* simulation is affected.
   public void fireInvalidated();
 
   public AttributeSet getAttributeSet();

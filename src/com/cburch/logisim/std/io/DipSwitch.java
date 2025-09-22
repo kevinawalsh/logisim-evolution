@@ -79,7 +79,7 @@ public class DipSwitch extends InstanceFactory {
         i = (e.getX() - loc.getX() - 5) / 10;
       }
       val.ToggleBit(i);
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
   }
 

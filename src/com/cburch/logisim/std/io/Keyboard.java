@@ -130,7 +130,7 @@ public class Keyboard extends InstanceFactory {
       if (used)
         e.consume();
       if (changed)
-        state.getInstance().fireInvalidated();
+        state.queueForPropagation();
     }
 
     @Override
@@ -148,7 +148,7 @@ public class Keyboard extends InstanceFactory {
         }
       }
       if (changed)
-        state.getInstance().fireInvalidated();
+        state.queueForPropagation();
     }
   }
 

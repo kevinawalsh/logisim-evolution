@@ -95,7 +95,7 @@ public class Button extends InstanceFactory {
         data.pressed = true;
         data.pressedRecently = true;
       }
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
 
     @Override
@@ -104,7 +104,7 @@ public class Button extends InstanceFactory {
       synchronized (data) {
         data.pressed = false;
       }
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
 
     private State getState(InstanceState state) {

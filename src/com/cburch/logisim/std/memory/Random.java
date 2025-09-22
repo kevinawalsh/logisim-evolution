@@ -124,7 +124,7 @@ public class Random extends InstanceFactory {
         if (data == null)
           return;
         data.step();
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
       isPressed = false;
     }
@@ -141,7 +141,7 @@ public class Random extends InstanceFactory {
           e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
         e.consume();
         if (data.reset(state.getAttributeValue(ATTR_SEED)))
-          state.fireInvalidated();
+          state.queueForPropagation();
       }
     }
   }

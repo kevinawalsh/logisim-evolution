@@ -86,10 +86,10 @@ public class SerialIn extends InstanceFactory {
     boolean isClosing;
 
     @Override
-    public void mousePressed(InstanceState circState, MouseEvent e) {
+    public void mousePressed(InstanceState iState, MouseEvent e) {
       if (r == null || !r.contains(e.getX(), e.getY()))
         return;
-      State s = getState(circState);
+      State s = getState(iState);
       if (isOpening)
         s.open();
       else if (isClosing)
@@ -374,22 +374,22 @@ public class SerialIn extends InstanceFactory {
   }
 
   @Override
-  public void propagate(InstanceState circState) {
-    State state = getState(circState);
+  public void propagate(InstanceState iState) {
+    State state = getState(iState);
 
     int idx = 0;
     Value[] vals = null;
 
-    AttributeOption clocking = circState.getAttributeValue(ATTR_CLOCKING);
+    AttributeOption clocking = iState.getAttributeValue(ATTR_CLOCKING);
     if (clocking == CLOCKING_SYNCHRONOUS) {
       idx = 3;
-      Value enable = circState.getPortValue(1);
+      Value enable = iState.getPortValue(1);
       boolean go;
       if (enable == Value.FALSE) {
         go = false;
       } else {
-        AttributeOption trigger = circState.getAttributeValue(StdAttr.EDGE_TRIGGER);
-        Value clock = circState.getPortValue(0);
+        AttributeOption trigger = iState.getAttributeValue(StdAttr.EDGE_TRIGGER);
+        Value clock = iState.getPortValue(0);
         Value lastClock = state.setLastClock(clock);
         if (trigger == StdAttr.TRIG_FALLING) {
           go = lastClock == Value.TRUE && clock == Value.FALSE;
@@ -402,7 +402,7 @@ public class SerialIn extends InstanceFactory {
       if (go)
         vals = state.getValues(false);
       boolean ready = state.hasQueuedValue();
-      circState.setPort(2, ready ? Value.TRUE : Value.FALSE, 1);
+      iState.setPort(2, ready ? Value.TRUE : Value.FALSE, 1);
       if (!go)
         return; // update ready port, but not data ports
     } else { // CLOCKING_ASYNCHRONOUS
@@ -411,29 +411,29 @@ public class SerialIn extends InstanceFactory {
 
     if (vals != null) {
       for (int i = 0; i < vals.length; i++) {
-        circState.setPort(idx+i, vals[i], 1);
+        iState.setPort(idx+i, vals[i], 1);
       }
     } else {
       // set all output ports to unknown
       int i = -1;
-      for (Port p : circState.getInstance().getPorts()) {
+      for (Port p : iState.getInstance().getPorts()) {
         i++;
         if (i < idx)
           continue;
         int w = p.getFixedBitWidth();
         Value v = Value.createUnknown(BitWidth.create(w));
-        circState.setPort(i, v, 1);
+        iState.setPort(i, v, 1);
       }
     }
   }
 
-  private static State getState(InstanceState circState) {
-    State state = (State) circState.getDataAsCustom();
+  private static State getState(InstanceState iState) {
+    State state = (State) iState.getDataAsCustom();
     if (state == null) {
-      state = new State(circState);
-      circState.setData(state);
+      state = new State(iState);
+      iState.setData(state);
     } else {
-      state.updateBinding(circState);
+      state.updateParams(iState);
     }
     return state;
   }
@@ -451,9 +451,8 @@ public class SerialIn extends InstanceFactory {
     private String path;
     private SerialInputFormat format;
     
-    private Instance instance;
-    private CircuitState circState;
-    // private InstanceComponent ic;
+    private Component comp;
+    private final CircuitState circState;
     
     private volatile boolean isOpen = false; // accesed by mouse handler, but non-critical
     private volatile boolean isClosing = false; // accessed by mouse handler, but non-critical
@@ -464,7 +463,7 @@ public class SerialIn extends InstanceFactory {
     private Value[] lastAsync = null;
 
     // The data lock protects against concurrent access to
-    // format, lastAsync, q, async, and instance.
+    // format, lastAsync, q, async, and comp.
     // None of these variables involve access to the port.
     // This lock is to be held only for short durations and
     // holders should not block or sleep.
@@ -479,30 +478,16 @@ public class SerialIn extends InstanceFactory {
     private Condition workerDead = crit.newCondition();
 
     public State(InstanceState iState) {
-      updateBinding(iState);
-    }
-    
-    private State(State other) {
-      other.crit.lock();
-      try {
-        // System.out.println("copy state from other...");
-        lastClock = other.lastClock;
-        mode = other.mode;
-        async = other.async;
-        baud = other.baud;
-        path = other.path; // should not open both at same time...
-        circState = null; // FIXME: duplicateForNewSimulation should take the new circuitstate as param...
-      } finally {
-        other.crit.unlock();
-      }
-      other.data.lock();
-      try {
-        qlen = other.qlen;
-        format = new SerialInputFormat(other.format);
-        instance = null; // don't know which instance this will be for? 
-      } finally {
-        other.data.unlock();
-      }
+      AttributeSet attrs = iState.getAttributeSet();
+      mode = iState.getAttributeValue(ATTR_MODE);
+      path = iState.getAttributeValue(ATTR_PORT);
+      async = iState.getAttributeValue(ATTR_CLOCKING) == CLOCKING_ASYNCHRONOUS;
+      baud = iState.getAttributeValue(ATTR_BAUD);
+      format = iState.getAttributeValue(ATTR_FORMAT);
+      qlen = iState.getAttributeValue(ATTR_QUEUE);
+
+      comp = iState.getInstance().getComponent();
+      circState = iState.getCircuitState();
     }
 
     Value[] getValues(boolean mostRecent) {
@@ -526,7 +511,7 @@ public class SerialIn extends InstanceFactory {
       }
     }
 
-    void updateBinding(InstanceState iState) {
+    void updateParams(InstanceState iState) {
       AttributeSet attrs = iState.getAttributeSet();
       AttributeOption mode = iState.getAttributeValue(ATTR_MODE);
       String path = iState.getAttributeValue(ATTR_PORT);
@@ -538,39 +523,17 @@ public class SerialIn extends InstanceFactory {
       // check non-critical things first
       data.lock();
       try {
-        // update instance
-        if (instance != null) {
-          // are we still attached to the same instance?
-          Instance i = iState.getInstance();
-          if (i == null) {
-            System.err.println("Trouble... instance missing?!?!?");
-            instance = null;
-          } else if (i != instance) {
-            // System.err.println("Trouble ahead: instance mismatch?!?!?");
-            // System.out.println("old instance: " + instance);
-            // System.out.println("old ic: " + instance.getComponent());
-            // System.out.println("new instance: " + i);
-            // System.out.println("new ic: " + i.getComponent());
-            instance = i;
-          }
-        } else {
-          instance = iState.getInstance();
-        }
-
         if (qlen != this.qlen) {
-          // System.out.println("qlen changed");
           this.qlen = qlen;
           while (q.size() > qlen)
             q.removeFirst();
         }
         if (this.format == null || !format.sameAs(this.format)) {
-          // System.out.println("format changed");
           this.format = format;
           q.clear();
           lastAsync = null;
         }
         if (async != this.async) {
-          // System.out.println("async changed");
           this.async = async;
         }
       } finally {
@@ -580,41 +543,8 @@ public class SerialIn extends InstanceFactory {
       // check critical things second
       crit.lock();
       try {
-        CircuitState cs = iState.getCircuitState();
-        if (this.circState != null) {
-          // cs really shouln't change, right?
-          if (cs != this.circState) {
-            System.err.println("huh... cs mismatch in SerialIn!!!");
-            System.err.println("old: " + this.circState);
-            System.err.println("new: " + cs);
-          }
-          this.circState = cs;
-          // FIXME: if this situation ever happens, we also need to update SerialPortmanager 
-        } else if (cs == null) {
-          System.out.println("huh.. old and new cs both null!!!");
-        } else {
-          this.circState = cs;
-          // port can't be open yet, so this is fine
-        }
-
-        // InstanceComponent ic = (InstanceComponent)iState.getInstance().getComponent();
-        // if (this.ic != null) {
-        //   // cs really shouln't change, right?
-        //   if (ic != this.ic) {
-        //     System.out.println("huh.. ic mismatch!!!");
-        //     System.out.println("old: " + this.ic);
-        //     System.out.println("new: " + ic);
-        //   }
-        //   this.ic = ic;
-        // } else if (ic == null) {
-        //   System.out.println("huh.. new ic is null!!!");
-        // } else {
-        //   this.ic = ic;
-        // }
-
         // check port parameters
         if (baud != this.baud || mode != this.mode) {
-          // System.out.println("baud/mode changed");
           this.baud = baud;
           this.mode = mode;
           if (port != null) {
@@ -624,7 +554,6 @@ public class SerialIn extends InstanceFactory {
         }
         // update path
         if (!path.equals(this.path)) {
-          // System.out.println("path changed");
           close();
           this.path = path;
         }
@@ -643,7 +572,7 @@ public class SerialIn extends InstanceFactory {
 
     @Override
     public State duplicateForNewSimulation() {
-      return new State(this);
+      return null; // new State(this);
     }
 
     private void run() {
@@ -667,7 +596,7 @@ public class SerialIn extends InstanceFactory {
           w = (w + 1) % buf.cap;
           n++;
           // process buffer, if appropriate
-          data.lockInterruptibly(); // blocking; access format, qlen, instance
+          data.lockInterruptibly(); // blocking; access format, qlen, comp
           try {
             Value[] vals = null;
             if (!format.hasDelimiters()) {
@@ -716,7 +645,6 @@ public class SerialIn extends InstanceFactory {
           }
         }
       } catch (InterruptedException e) {
-        // System.out.println("worker interrupted");
         // do nothing
       } catch (Exception e) {
         System.err.println("serial port worker crashed");
@@ -739,7 +667,6 @@ public class SerialIn extends InstanceFactory {
           crit.unlock();
         }
       }
-      // System.out.println("worker is done");
     }
 
     void close() {
@@ -766,7 +693,6 @@ public class SerialIn extends InstanceFactory {
           try {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
             for (int i = 0; i < 3 && worker != null; i++) {
-              // System.out.println("interrupting worker");
               worker.interrupt(); // unblocks (a) and (b)
                                   // (c) will resolve itself, as data locks are short lived
               long remaining = deadline - System.nanoTime();
@@ -780,7 +706,6 @@ public class SerialIn extends InstanceFactory {
             System.err.println("Can't stop serial port worker: " + worker);
             worker = null;
           }
-          // System.out.println("ok, done!");
         }
         // at this point, worker is dead, will not touch port again
         port = null;
@@ -799,7 +724,7 @@ public class SerialIn extends InstanceFactory {
           return;
         try {
           status = "opening";
-          port = SerialPortManager.openPort(/* ic,*/ circState,
+          port = SerialPortManager.openPort(circState,
               path, baud, mode.toString());
           isOpen = true;
           status = "opened";
@@ -821,15 +746,17 @@ public class SerialIn extends InstanceFactory {
     private void fire() {
       data.lock();
       try {
-        // NOTE: It seems like we should be able to
-        // cause a propagation more directly, since
-        // we have the circuitState, which ultimately
-        // just needs to mark instance.getComponent()
-        // as dirty, basically one line of code.
-        if (instance == null)
-          System.err.println("missing instance in SerialIn???");
-        else
-          instance.fireInvalidated();
+        circState.queueForPropagation(comp);
+      } finally {
+        data.unlock();
+      }
+    }
+
+    @Override
+    public void simulationRelocating(CircuitState cs, Component originalComp, Component replacementComp) {
+      data.lock();
+      try {
+        comp = replacementComp;
       } finally {
         data.unlock();
       }

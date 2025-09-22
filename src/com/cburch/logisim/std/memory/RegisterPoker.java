@@ -74,7 +74,7 @@ public class RegisterPoker extends InstancePoker {
     RegisterData data = (RegisterData) state.getDataAsCustom();
     data.value = curValue;
 
-    state.fireInvalidated();
+    state.queueForPropagation();
   }
 
   @Override
@@ -88,7 +88,7 @@ public class RegisterPoker extends InstancePoker {
         curValue = curValue + 1;
         RegisterData data = (RegisterData) state.getDataAsCustom();
         data.value = curValue;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
       e.consume();
     } else if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_LEFT) {
@@ -96,7 +96,7 @@ public class RegisterPoker extends InstancePoker {
         curValue = curValue - 1;
         RegisterData data = (RegisterData) state.getDataAsCustom();
         data.value = curValue;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
       e.consume();
     }

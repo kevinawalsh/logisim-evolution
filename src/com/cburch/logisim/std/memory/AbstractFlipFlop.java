@@ -111,7 +111,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
           return;
 
         myState.curValue = myState.curValue.not();
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
       isPressed = false;
     }
@@ -127,10 +127,10 @@ abstract class AbstractFlipFlop extends InstanceFactory {
       e.consume();
       if (val == 0 && myState.curValue != Value.FALSE) {
         myState.curValue = Value.FALSE;
-        state.fireInvalidated();
+        state.queueForPropagation();
       } else if (val == 1 && myState.curValue != Value.TRUE) {
         myState.curValue = Value.TRUE;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     }
 
@@ -142,11 +142,11 @@ abstract class AbstractFlipFlop extends InstanceFactory {
       if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_LEFT) && myState.curValue != Value.FALSE) {
         e.consume();
         myState.curValue = Value.FALSE;
-        state.fireInvalidated();
+        state.queueForPropagation();
       } else if ((e.getKeyCode() == KeyEvent.VK_UP ||e.getKeyCode() == KeyEvent.VK_RIGHT) && myState.curValue != Value.TRUE) {
         e.consume();
         myState.curValue = Value.TRUE;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     }
 

@@ -95,13 +95,13 @@ public class ShiftRegisterPoker extends InstancePoker {
       Integer lenObj = state.getAttributeValue(ShiftRegister.ATTR_LENGTH);
       if (loc < lenObj.intValue() - 1) {
         this.loc = loc + 1;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     } else if (c == '\u0008') {
       e.consume();
       if (loc > 0) {
         this.loc = loc - 1;
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     } else {
       try {
@@ -114,7 +114,7 @@ public class ShiftRegisterPoker extends InstancePoker {
         value = ((value * 16) + val) & widObj.getMask();
         Value valObj = Value.createKnown(widObj, value);
         data.set(i, valObj);
-        state.fireInvalidated();
+        state.queueForPropagation();
       } catch (NumberFormatException ex) {
         return;
       }
@@ -138,14 +138,14 @@ public class ShiftRegisterPoker extends InstancePoker {
       if (curValue != maxVal) {
         curValue = curValue + 1;
         data.set(i, Value.createKnown(dataWidth, curValue));
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     } else if (e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_LEFT) {
       e.consume();
       if (curValue != 0) {
         curValue = curValue - 1;
         data.set(i, Value.createKnown(dataWidth, curValue));
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     }
   }
@@ -172,7 +172,7 @@ public class ShiftRegisterPoker extends InstancePoker {
         else
           v = Value.FALSE;
         data.set(i, v);
-        state.fireInvalidated();
+        state.queueForPropagation();
       }
     }
   }

@@ -107,7 +107,7 @@ public class Joystick extends InstanceFactory {
         s.xPos = dx;
         s.yPos = dy;
       }
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
   }
 

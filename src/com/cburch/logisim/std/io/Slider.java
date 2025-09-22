@@ -117,7 +117,7 @@ public class Slider extends InstanceFactory {
       } else {
         data.setPosition(t, attrs);
       }
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
 
     @Override
@@ -136,7 +136,7 @@ public class Slider extends InstanceFactory {
       } else {
         data.snapToValidPosition(attrs);
       }
-      state.getInstance().fireInvalidated();
+      state.queueForPropagation();
     }
 
     @Override

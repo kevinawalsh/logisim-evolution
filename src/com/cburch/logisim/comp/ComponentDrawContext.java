@@ -38,7 +38,6 @@ import java.awt.Graphics2D;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.WireSet;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
@@ -46,20 +45,20 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class ComponentDrawContext {
+public final class ComponentDrawContext {
   private static final int PIN_OFFS = 2;
   private static final int PIN_RAD = 4;
 
-  private java.awt.Component dest;
-  private Circuit circuit;
-  private CircuitState circuitState;
-  private Graphics2D base;
-  private Graphics2D g;
-  private boolean showState;
-  private boolean showColor;
-  private boolean printView;
-  private WireSet highlightedWires;
-  private InstancePainter instancePainter;
+  private final java.awt.Component dest;
+  private final Circuit circuit;
+  private final CircuitState circuitState;
+  private final Graphics2D base;
+  private /*final*/ Graphics2D g;
+  private /*final*/ boolean showState;
+  private /*final*/ boolean showColor;
+  private final boolean printView;
+  private /*final*/ WireSet highlightedWires;
+  private final InstancePainter instancePainter;
 
   public ComponentDrawContext(java.awt.Component dest, Circuit circuit,
       CircuitState circuitState, Graphics base, Graphics g) {

@@ -43,7 +43,6 @@ import javax.swing.UIManager;
 import com.fazecast.jSerialComm.SerialPort;
 
 import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.JDialogOk;
 
@@ -52,15 +51,13 @@ public class SerialPortManager {
   private static class OpenPortInfo {
     String path;
     SerialPort port;
-    // InstanceComponent ic; // SerialIn instance controlling this port
-    CircuitState cs; // The circuit state (simulation) ic is part of,
+    CircuitState cs; // The circuit state (simulation) this is part of,
                      // which may be a substate of some other simulation,
                      // etc., up to the ancestor state.
 
-    OpenPortInfo(String path, SerialPort port, /* InstanceComponent ic,*/ CircuitState cs) {
+    OpenPortInfo(String path, SerialPort port, CircuitState cs) {
       this.path = path;
       this.port = port;
-      // this.ic = ic;
       this.cs = cs;
     }
   }
@@ -86,9 +83,8 @@ public class SerialPortManager {
     }
   }
 
-  static SerialPort openPort(/* InstanceComponent ic, */ CircuitState cs, String path, int baud, String mode) throws Exception {
-    if (/*ic == null ||*/ cs == null)
-      throw new Exception("sorry :(");
+  static SerialPort openPort(CircuitState cs, String path, int baud, String mode) throws Exception {
+    if (cs == null) throw new IllegalArgumentException("cs");
     int bits, parity, stop;
     try {
       // mode is "8n1" or similar
@@ -120,19 +116,8 @@ public class SerialPortManager {
       if (!port.openPort())
         throw new Exception(String.format("error (%d)", port.getLastErrorCode()));
       
-      OpenPortInfo info = new OpenPortInfo(path, port, /* ic,*/ cs);
+      OpenPortInfo info = new OpenPortInfo(path, port, cs);
       openPorts.add(info);
-
-      Project proj = cs.getProject();
-      // System.out.println("opened serial port: " + path);
-      // System.out.println("  for comp " + ic + " within circuit state: " + cs);
-      // while (cs.isSubstate()) {
-      //   // Component sub = cs.getSubcircuit();
-      //   cs = cs.getParentState();
-      //   // System.out.println("  of comp " + sub + " within circuit state: " + cs);
-      //   System.out.println("  within circuit state: " + cs);
-      // }
-      // System.out.println("  in project: " + proj.getLogisimFile().getName());
 
       return port;
     }
@@ -142,7 +127,6 @@ public class SerialPortManager {
     synchronized (lock) {
       if (info.port == null)
         return;
-      // System.out.println("closing serial port: " + info.path);
       try {
         info.port.closePort();
       } catch (Exception e) {

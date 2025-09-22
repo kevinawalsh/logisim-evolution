@@ -53,7 +53,13 @@ public class InstanceStateImpl implements InstanceState {
       ((InstanceComponent) component).setInstanceStateImpl(this);
     }
   }
+  
+  @Override
+  public void queueForPropagation() {
+    circuitState.queueForPropagation(component);
+  }
 
+  @Override
   public void fireInvalidated() {
     if (component instanceof InstanceComponent) {
       ((InstanceComponent) component).fireInvalidated();
