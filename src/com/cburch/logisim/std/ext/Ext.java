@@ -44,6 +44,7 @@ public class Ext extends Library {
     // new FactoryDescription("SerialOut", S.getter("serialOutputComponent"), "serial-in.png", "SerialOut"),
     // new FactoryDescription("WebGet", S.getter("httpComponent"), "http-get.png", "WebGet"),
     new FactoryDescription("HttpIn", S.getter("httpInputComponent"), "http-in.png", "HttpIn"),
+    new FactoryDescription("RealTimeClock", S.getter("rtcComponent"), "rtc.png", "RealTimeClock"),
   };
 
   private List<Tool> tools = null;
