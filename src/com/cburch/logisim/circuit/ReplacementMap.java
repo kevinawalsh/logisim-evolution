@@ -126,8 +126,10 @@ public class ReplacementMap {
       Component c = e.getKey();
       if (!inverse.containsKey(c)) {
         HashSet<Component> bs = e.getValue();
-        if (!bs.isEmpty())
+        if (!bs.isEmpty()) {
           System.err.println("Internal error: component replaced but not represented");
+          Thread.dumpStack();
+        }
         inverse.put(c, new HashSet<Component>(3));
       }
     }

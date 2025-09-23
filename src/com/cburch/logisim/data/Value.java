@@ -728,6 +728,17 @@ public final class Value {
     return value;
   }
 
+  public long extendAsLong(boolean signed) {
+    if (error != 0)
+      return -1;
+    if (unknown != 0)
+      return -1;
+    if (!signed)
+      return value & 0xffffffffL;
+    else
+      return (((long)value) << (64-width)) >> (64-width);
+  }
+
   public String toOctalString() {
     if (width <= 1) {
       return toString();

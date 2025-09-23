@@ -139,7 +139,7 @@ public class PCMSink extends InstanceFactory {
     Value v = circState.getPortValue(IN);
     if (!v.isFullyDefined())
       return;
-    long sample = v.toIntValue();
+    long sample = v.extendAsLong(false); // resampler handles sign extension
 
     if (data.out == null) {
       // First try the user-chosen PCM format

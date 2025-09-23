@@ -48,7 +48,7 @@ public class Audio extends Library {
     new FactoryDescription("SaturatingAdder", S.getter("audioSaturatingAdderComponent"), "saturatingadder.png", "SaturatingAdder"),
     new FactoryDescription("SaturatingMultiplier", S.getter("audioSaturatingMultiplierComponent"), "saturatingadder.png", "SaturatingMultiplier"),
     new FactoryDescription("FitRange", S.getter("audioFitRangeComponent"), "fitrange.png", "FitRange"),
-    new FactoryDescription("ScaledMath", S.getter("audioScaledmathComponent"), "scaledmath.png", "ScaledMath"),
+    new FactoryDescription("ScaledMath", S.getter("audioScaledMathComponent"), "scaledmath.png", "ScaledMath"),
     new FactoryDescription("LineSelect", S.getter("audioLineSelectComponent"), "lineselect.png", "LineSelect"),
   };
 

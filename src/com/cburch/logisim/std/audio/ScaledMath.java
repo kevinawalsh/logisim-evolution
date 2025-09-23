@@ -229,13 +229,7 @@ public class ScaledMath extends InstanceFactory {
       long span = (1L << w);
       long max = signed ? ((1L << (w-1)) - 1) : ((1L << w) - 1);
       long min = signed ? -((1L << (w-1))) : 0L;
-      long i = input.isFullyDefined() ? input.toIntValue() : signed ? 0 : (span/2);
-      if (signed) {
-        long signbit = 1L << (w - 1);
-        long moresigns = -1L << w;
-        if ((i & signbit) != 0)
-          i |= moresigns;
-      }
+      long i = input.isFullyDefined() ? input.extendAsLong(signed) : signed ? 0 : (span/2);
       double x = ((double)i)/(double)span;
       double y = compute(func, signed, x);
       // System.out.println(func + " of " + x + " --> " + y);

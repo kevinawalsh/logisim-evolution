@@ -158,9 +158,7 @@ public class SaturatingAdder extends InstanceFactory {
     for (int i = 0; i < n; i++) {
       Value v = state.getPortValue(1+i);
       if (v.isFullyDefined()) {
-        long x = v.toIntValue();
-        if ((x & signbit) != 0)
-          x |= moresigns;
+        long x = v.extendAsLong(signed);
         sum += x;
         m++;
       }

@@ -167,7 +167,7 @@ public class FitRange extends InstanceFactory {
       // input in [-lo, +hi], make offset be in [0, max]
       int w = wo.getWidth();
       long signbit = 1L << (w-1);
-      long x = v.toIntValue();
+      long x = v.extendAsLong(false);
       if (norm == NORM_CAP) {
         // negative inputs --> zero
         // non-negative inputs --> nop
@@ -183,7 +183,7 @@ public class FitRange extends InstanceFactory {
       // input in [0, max], make offset be in [-lo, hi]
       int w = wo.getWidth();
       long signbit = 1L << (w-1);
-      long x = v.toIntValue();
+      long x = v.extendAsLong(false);
       if (norm == NORM_CAP) {
         // small inputs --> nop
         // large inputs --> hi
@@ -204,13 +204,7 @@ public class FitRange extends InstanceFactory {
       long or = (1L << ow); // span of output range
       long omin = so ? -or/2 : 0L;
       long omax = so ? (or/2 - 1) : (or - 1);
-      long x = v.toIntValue();
-      if (si) {
-        long signbit = 1L << (iw - 1);
-        long moresigns = -1L << iw;
-        if ((x & signbit) != 0)
-          x |= moresigns;
-      }
+      long x = v.extendAsLong(si);
       if (norm == NORM_CAP) {
         x = Math.max(omin, Math.min(omax, x));
         state.setPort(0, Value.createKnown(wo, (int)x), 1);

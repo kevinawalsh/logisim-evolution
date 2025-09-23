@@ -76,9 +76,7 @@ public class SaturatingMultiplier extends SaturatingAdder {
     for (int i = 0; i < n; i++) {
       Value v = state.getPortValue(1+i);
       if (v.isFullyDefined()) {
-        long x = v.toIntValue();
-        if ((x & signbit) != 0)
-          x |= moresigns;
+        long x = v.extendAsLong(signed);
         if (!signed && norm == NORM_CENTER) {
           // prod *= (x - max/2.0);
           prod *= (x - (max+1)/2);
