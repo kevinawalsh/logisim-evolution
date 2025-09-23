@@ -35,6 +35,7 @@ import java.awt.Graphics;
 import java.awt.Dimension;
 import java.awt.Point;
 import javax.swing.Icon;
+import javax.swing.JComponent;
 
 import com.cburch.draw.tools.DrawingAttributeSet;
 import com.cburch.draw.toolbar.ToolbarClickableItem;
@@ -55,7 +56,7 @@ public class ShowStateTool implements ToolbarClickableItem {
     pressed = Icons.getIcon("showstate_pressed.gif");
   }
 
-  public Dimension getDimension(Object orientation) {
+  public Dimension getDimension(JComponent c, Object orientation) {
     return new Dimension(icon.getIconWidth() + 8, icon.getIconHeight() + 8);
   }
 

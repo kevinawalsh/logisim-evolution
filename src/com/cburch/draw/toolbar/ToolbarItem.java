@@ -33,9 +33,12 @@ package com.cburch.draw.toolbar;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import javax.swing.JComponent;
 
 public interface ToolbarItem {
-	public Dimension getDimension(Object orientation);
+
+	// public Dimension getDimension(Graphics g, Object orientation);
+	public Dimension getDimension(JComponent c, Object orientation);
 
 	public String getToolTip();
 

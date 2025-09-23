@@ -76,7 +76,7 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 
 	@Override
 	public Dimension getPreferredSize() {
-		Dimension dim = item.getDimension(toolbar.getOrientation());
+		Dimension dim = item.getDimension(this, toolbar.getOrientation());
 		dim.width += 2 * BORDER;
 		dim.height += 2 * BORDER;
 		return dim;
@@ -125,7 +125,7 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 				g2.dispose();
 				return;
 			}
-			Dimension dim = item.getDimension(toolbar.getOrientation());
+			Dimension dim = item.getDimension(this, toolbar.getOrientation());
 			Color defaultColor = g.getColor();
 			GraphicsUtil.switchToWidth(g, 2);
 			g.setColor(Color.GRAY);
@@ -141,7 +141,7 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 
 		// draw selection indicator
 		if (toolbar.getToolbarModel().isSelected(item)) {
-			Dimension dim = item.getDimension(toolbar.getOrientation());
+			Dimension dim = item.getDimension(this, toolbar.getOrientation());
 			GraphicsUtil.switchToWidth(g, 2);
 			g.setColor(Color.BLACK);
 			g.drawRect(BORDER, BORDER, dim.width, dim.height);

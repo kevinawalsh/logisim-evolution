@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.datatransfer.DataFlavor;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 
 import com.cburch.draw.toolbar.AbstractToolbarModel;
@@ -126,7 +128,6 @@ class LayoutToolbarModel extends AbstractToolbarModel {
   private class ToolItem implements ToolbarItem, AttributeListener {
     private Tool tool;
     String label;
-    Bounds labelBounds;
 
     ToolItem(Tool tool) {
       this.tool = tool;
@@ -145,8 +146,6 @@ class LayoutToolbarModel extends AbstractToolbarModel {
         ((VhdlEntity)addTool.getFactory()).getContent()
             .getStaticAttributes().addAttributeWeakListener(null, this);
       }
-      if (label != null)
-        labelBounds = StringUtil.estimateBounds(label, FONT);
     }
 
     @Override
@@ -161,13 +160,16 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     public void attributeListChanged(AttributeEvent e) { }
 
     @Override
-    public Dimension getDimension(Object orientation) {
+    public Dimension getDimension(JComponent c, Object orientation) {
       if (label == null)
         return new Dimension(24, 24);
+      FontMetrics fm = c.getFontMetrics(FONT);
+      int w = fm.stringWidth(label);
+      // int h = fm.getHeight();
       if (orientation == Toolbar.HORIZONTAL)
-        return new Dimension(24 + 3 + labelBounds.getWidth(), 24);
+        return new Dimension(24 + 3 + w, 24);
       else
-        return new Dimension(24, 24 + 2 + labelBounds.getWidth());
+        return new Dimension(24, 24 + 2 + w);
     }
 
     @Override

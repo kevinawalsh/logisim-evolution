@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import javax.swing.JComponent;
 
 public class ToolbarSeparator implements ToolbarItem {
 	private int size;
@@ -42,7 +43,7 @@ public class ToolbarSeparator implements ToolbarItem {
 		this.size = size;
 	}
 
-	public Dimension getDimension(Object orientation) {
+	public Dimension getDimension(JComponent c, Object orientation) {
 		return new Dimension(size, size);
 	}
 

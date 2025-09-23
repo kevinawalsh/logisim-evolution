@@ -43,6 +43,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 
 import com.cburch.draw.toolbar.AbstractToolbarModel;
@@ -156,7 +157,7 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
         HdlToolbarModel.this.doAction(action);
     }
 
-    public Dimension getDimension(Object orientation) {
+    public Dimension getDimension(JComponent c, Object orientation) {
       if (icon == null)
         return new Dimension(16, 16);
       int w = icon.getIconWidth();

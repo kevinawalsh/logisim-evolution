@@ -36,6 +36,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 
 import com.cburch.draw.toolbar.ToolbarItem;
 
@@ -50,7 +51,7 @@ public class ToolbarToolItem implements ToolbarItem {
     this.shortcut = shortcut;
 	}
 
-	public Dimension getDimension(Object orientation) {
+	public Dimension getDimension(JComponent c, Object orientation) {
 		if (icon == null) {
 			return new Dimension(16, 16);
 		} else {
