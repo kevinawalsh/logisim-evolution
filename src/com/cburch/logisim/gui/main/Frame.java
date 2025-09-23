@@ -329,7 +329,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   public static final String EDIT_APPEARANCE = "appearance";
   public static final String EDIT_HDL = "hdl";
   private static final double[] ZOOM_OPTIONS = {
-    20, 33.3, 50, 70, 80, 90, 100, 125, 150, 200, 250, 300, 400 };
+    20, 33.3, 50, 70, 80, 90, 100, 125, 150, 200, 250, 300, 400, 800 };
   private MyProjectListener myProjectListener = new MyProjectListener();
   // GUI elements shared between views
   private MainMenuListener menuListener;
