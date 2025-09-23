@@ -88,7 +88,7 @@ public class ScaledMath extends InstanceFactory {
   public ScaledMath() {
     this("ScaledMath", "audioScaledMathComponent");
     setIconName("scaledmath.png");
-    setOffsetBounds(Bounds.create(-30, -10, 30, 30));
+    setOffsetBounds(Bounds.create(-30, -15, 30, 30));
     setPorts(new Port[] {
       new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH),
       new Port(-30, 0, Port.INPUT, StdAttr.WIDTH),

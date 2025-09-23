@@ -72,6 +72,25 @@ public class FitRange extends InstanceFactory {
   public static final Attribute<BitWidth> OUTPUT_WIDTH = Attributes.forBitWidth(
       "widthOut", S.getter("audioFitOutputWidthAttr"));
 
+  static final int WIDTH = 30, HEIGHT = 40;
+  static final Path2D.Double outline = new Path2D.Double();
+  static final Path2D curve = new Path2D.Double();
+  static final Ellipse2D shadow;
+  static {
+    outline.moveTo(0, 5);
+    outline.curveTo(10, 0, WIDTH-10, 10, WIDTH, 5);
+    outline.lineTo(WIDTH, HEIGHT-5);
+    outline.curveTo(WIDTH-10, HEIGHT, 10, HEIGHT-10, 0, HEIGHT-5);
+    outline.closePath();
+
+    double cx = WIDTH/2.0, cy = HEIGHT/2.0;
+    curve.moveTo(cx-8, cy);
+    curve.curveTo(cx-4, cy-4, cx+4, cy+4, cx+8, cy);
+
+    double r = Math.min(WIDTH, HEIGHT)/2.0-3;
+    shadow = new Ellipse2D.Double(cx-r, cy-r, 2*r, 2*r);
+  }
+
   public FitRange() {
     super("FitRange", S.getter("audioFitRangeComponent"));
     setAttributes(
@@ -80,11 +99,11 @@ public class FitRange extends InstanceFactory {
           new Object[] {
             BitWidth.create(8), StdAttr.UNSIGNED_OPTION,
             BitWidth.create(8), StdAttr.SIGNED_OPTION, NORM_FIT });
-    setOffsetBounds(Bounds.create(-30, -20, 30, 40));
+    setOffsetBounds(Bounds.create(-WIDTH, -HEIGHT/2, WIDTH, HEIGHT));
     setIconName("fitrange.png");
     Port[] ps = new Port[2];
     ps[0] = new Port(0, 0, Port.OUTPUT, OUTPUT_WIDTH);
-    ps[1] = new Port(-30, 0, Port.INPUT, INPUT_WIDTH);
+    ps[1] = new Port(-WIDTH, 0, Port.INPUT, INPUT_WIDTH);
     setPorts(ps);
   }
   
@@ -98,35 +117,34 @@ public class FitRange extends InstanceFactory {
     instance.fireInvalidated(); // recompute using new mode, etc.
   }
 
+  private void paintShape(Graphics2D g, Bounds bds, boolean inner) {
+    GraphicsUtil.switchToWidth(g, 2);
+    g.translate(bds.x, bds.y);
+    g.draw(outline);
+    if (inner) {
+      Color c = g.getColor();
+      g.setColor(Color.GRAY);
+      g.fill(shadow);
+      g.setColor(Color.WHITE);
+      g.draw(curve);
+      g.setColor(c);
+    }
+    g.translate(-bds.x, -bds.y);
+    GraphicsUtil.switchToWidth(g, 1);
+  }
+
+  @Override
+  public void paintGhost(InstancePainter painter) {
+    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Bounds bds = painter.getNominalBounds();
+    paintShape(g, bds, false);
+  }
+
   @Override
   public void paintInstance(InstancePainter painter) {
     Graphics2D g = (Graphics2D)painter.getGraphics();
-    
     Bounds bds = painter.getNominalBounds();
-    double cx = bds.x + bds.width/2.0;
-    double cy = bds.y + bds.height/2.0;
-    
-    GraphicsUtil.switchToWidth(g, 2);
-
-    g.setColor(Color.BLACK);
-    Path2D outline = new Path2D.Double();
-    outline.moveTo(bds.x, bds.y+5);
-    outline.curveTo(bds.x+10, bds.y, bds.x+bds.width-10, bds.y+10, bds.x+bds.width, bds.y+5);
-    outline.lineTo(bds.x+bds.width, bds.y+bds.height-5);
-    outline.curveTo(bds.x+bds.width-10, bds.y+bds.height, bds.x+10, bds.y+bds.height-10, bds.x, bds.y+bds.height-5);
-    outline.closePath();
-    g.draw(outline);
-
-    g.setColor(Color.GRAY);
-    g.fill(new Ellipse2D.Double(cx-12, cy-12, 24, 24));
-    g.setColor(Color.WHITE);
-    Path2D curve = new Path2D.Double();
-    curve.moveTo(cx-8, cy);
-    curve.curveTo(cx-4, cy-4, cx+4, cy+4, cx+8, cy);
-    g.draw(curve);
-
-    g.setColor(Color.BLACK);
-    GraphicsUtil.switchToWidth(g, 1);
+    paintShape(g, bds, true);
     painter.drawPorts();
   }
 
