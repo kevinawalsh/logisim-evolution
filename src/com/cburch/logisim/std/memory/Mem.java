@@ -216,6 +216,7 @@ public abstract class Mem extends InstanceFactory {
   }
 
   public void DrawMemClassic(InstancePainter painter) {
+    // FIXME
     Graphics g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
 
@@ -258,11 +259,17 @@ public abstract class Mem extends InstanceFactory {
             bds.getY() + bds.getHeight() / 2 + 20);
     }
 
+
+    AttributeOption proportions = painter.getAttributeValue(Rom.ATTR_PROPORTIONS);
+    if (proportions == null)
+      proportions = Rom.RECT;
+    int symwidth = (proportions == Rom.TALL) ? SymbolWidth/2 : SymbolWidth;
+
     GraphicsUtil.drawCenteredText(g,
         MEM + " " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR).getWidth())
         + " x "
         + Integer.toString(painter.getAttributeValue(Mem.DATA_ATTR).getWidth()),
-        bds.getX() + (SymbolWidth / 2) + 20, bds.getY() + 6);
+        bds.getX() + (symwidth / 2) + 20, bds.getY() + 6);
 
     // draw input and output ports
     painter.drawPort(DATA, S.get("ramDataLabel"), Direction.WEST);

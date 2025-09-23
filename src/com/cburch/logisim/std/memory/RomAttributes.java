@@ -78,7 +78,7 @@ class RomAttributes extends AbstractAttributeSet {
   private static List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
         Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
-        StdAttr.APPEARANCE});
+        StdAttr.APPEARANCE, Rom.ATTR_PROPORTIONS });
 
   // fixme: this isn't necessary since EventSourceWeakSupport now has an owner
   // for each listener?
@@ -92,6 +92,7 @@ class RomAttributes extends AbstractAttributeSet {
   private String Label = "";
   private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
   private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
+  private AttributeOption Proportions = Rom.RECT;
 
   RomAttributes() {
     contents = MemContents.create(addrBits.getWidth(), dataBits.getWidth());
@@ -106,6 +107,7 @@ class RomAttributes extends AbstractAttributeSet {
     d.lineSize = lineSize;
     d.LabelFont = LabelFont;
     d.Appearance = Appearance;
+    d.Proportions = Proportions;
   }
 
   @Override
@@ -129,6 +131,8 @@ class RomAttributes extends AbstractAttributeSet {
       return (V) LabelFont;
     if (attr == StdAttr.APPEARANCE)
       return (V) Appearance;
+    if (attr == Rom.ATTR_PROPORTIONS)
+      return (V) Proportions;
     return null;
   }
 
@@ -155,5 +159,7 @@ class RomAttributes extends AbstractAttributeSet {
       LabelFont = (Font) value;
     else if (attr == StdAttr.APPEARANCE)
       Appearance = (AttributeOption) value;
+    else if (attr == Rom.ATTR_PROPORTIONS)
+      Proportions = (AttributeOption) value;
   }
 }

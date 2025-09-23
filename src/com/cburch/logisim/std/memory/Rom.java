@@ -45,7 +45,9 @@ import javax.swing.JLabel;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -152,6 +154,12 @@ public class Rom extends Mem {
     public void mouseReleased(MouseEvent e) {
     }
   }
+  
+  static final AttributeOption RECT = new AttributeOption("rect", S.getter("romProportionsRect"));
+  static final AttributeOption WIDE = new AttributeOption("wide", S.getter("romProportionsWide"));
+  static final AttributeOption TALL = new AttributeOption("tall", S.getter("romProportionsTall"));
+  static final Attribute<AttributeOption> ATTR_PROPORTIONS = Attributes.forOption(
+      "proportions", S.getter("romProportions"), new AttributeOption[] { RECT, WIDE, TALL });
 
   public static Attribute<MemContents> CONTENTS_ATTR = new ContentsAttribute();
 
@@ -175,13 +183,25 @@ public class Rom extends Mem {
     Port[] ps = new Port[MEM_INPUTS + dataLines-1];
     ps[ADDR] = new Port(0, 10, Port.INPUT, ADDR_ATTR);
     ps[ADDR].setToolTip(S.getter("memAddrTip"));
-    int ypos = (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1) ? getControlHeight(instance
-        .getAttributeSet()) + 10 : getControlHeight(instance
-        .getAttributeSet());
-    ps[DATA] = new Port(SymbolWidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
+    int symwidth = SymbolWidth;
+    int ypos = getControlHeight(instance.getAttributeSet());
+    if (instance.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+      AttributeOption p = instance.getAttributeValue(ATTR_PROPORTIONS);
+      AttributeOption lines = instance.getAttributeValue(Mem.LINE_ATTR);
+      if (p == TALL)
+        symwidth /= 2;
+      else if (p == WIDE)
+        ypos = (lines == QUAD) ? 0 : 10;
+      else if (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1)
+        ypos += 10;
+    } else {
+      if (instance.getAttributeValue(Mem.DATA_ATTR).getWidth() == 1)
+        ypos += 10;
+    }
+    ps[DATA] = new Port(symwidth + 40, ypos, Port.OUTPUT, DATA_ATTR);
     ps[DATA].setToolTip(S.getter("memDataTip"));
     for (int i = 1; i < dataLines; i++) {
-      ps[MEM_INPUTS+i-1] = new Port(SymbolWidth + 40, ypos+i*10, Port.OUTPUT, DATA_ATTR);
+      ps[MEM_INPUTS+i-1] = new Port(symwidth + 40, ypos+i*10, Port.OUTPUT, DATA_ATTR);
       ps[MEM_INPUTS+i-1].setToolTip(S.getter("memDataTip"+i));
     }
     instance.setPorts(ps);
@@ -292,11 +312,18 @@ public class Rom extends Mem {
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     int len = attrs.getValue(Mem.DATA_ATTR).getWidth();
-    if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC)
-      return Bounds.create(0, 0, SymbolWidth + 40, 140);
-    else
-      return Bounds.create(0, 0, SymbolWidth + 40, getControlHeight(attrs)
-          + 20 * len);
+    if (attrs.getValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
+      AttributeOption p = attrs.getValue(ATTR_PROPORTIONS);
+      if (p == WIDE)
+        return Bounds.create(0, 0, SymbolWidth + 40, 40);
+      else if (p == TALL)
+        return Bounds.create(0, 0, SymbolWidth/2 + 40, 140);
+      else
+        return Bounds.create(0, 0, SymbolWidth + 40, 140);
+    } else {
+      return Bounds.create(0, 0, SymbolWidth + 40,
+          getControlHeight(attrs) + 20 * len);
+    }
   }
 
   @Override
@@ -348,7 +375,7 @@ public class Rom extends Mem {
     //     }
     //   }
     // }
-    if (attr == Mem.DATA_ATTR || attr == StdAttr.APPEARANCE) {
+    if (attr == Mem.DATA_ATTR || attr == StdAttr.APPEARANCE || attr == ATTR_PROPORTIONS) {
       instance.recomputeBounds();
       configurePorts(instance);
     } else if (attr == Mem.LINE_ATTR) {
