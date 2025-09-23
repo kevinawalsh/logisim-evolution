@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.util;
 
+import java.util.UUID;
+
 // import java.awt.dnd.DragSourceEvent;
 // import java.awt.dnd.DragSourceListener;
 import java.awt.Color;
@@ -74,19 +76,19 @@ public class DragDrop {
   // Transferable (the sending side), and provide a jvm-local data flavor for
   // the class (used by the receiving side).
  
-  public DragDrop(Object ...classOrMimeTypeString) {
-    int n = classOrMimeTypeString.length;
+  public DragDrop(Object ...classOrMimeTypeStringOrDataFlavor) {
+    int n = classOrMimeTypeStringOrDataFlavor.length;
     DataFlavor[] flavors = new DataFlavor[n];
     Class[] classes = new Class[n];
     try {
       for (int i = 0; i < n; i++) {
-        Object o  = classOrMimeTypeString[i];
+        Object o  = classOrMimeTypeStringOrDataFlavor[i];
         if (o instanceof Class) {
           flavors[i] = new DataFlavor(
               String.format("%s;class=\"%s\"",
                 DataFlavor.javaJVMLocalObjectMimeType,
                 ((Class)o).getName()));
-          classes[0] = (Class)o;
+          classes[i] = (Class)o;
         } else if (o instanceof String) {
           flavors[i] = new DataFlavor((String)o);
         } else if (o instanceof DataFlavor) {
@@ -104,12 +106,33 @@ public class DragDrop {
     dataClasses = classes;
     if (flavors.length > 0) {
       dataFlavor = flavors[0];
-      dataClass = classes[0];
+      dataClass = classes[0]; // null if flavor[0] wasn't a Class
     } else {
       dataFlavor = null;
       dataClass = null;
     }
   }
+
+  public static DataFlavor uuidTokenFlavor(String tag) {
+    try {
+      String mimetype = String.format("application/x-logisim-%s-token;class=java.lang.String", tag);
+      return new DataFlavor(mimetype);
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+      throw new ExceptionInInitializerError(e);
+    }
+  }
+  
+  public static String uuidNonce() {
+    return UUID.randomUUID().toString();
+  }
+
+  public static String uuidToken(String tag) {
+    return tag + ":" + UUID.randomUUID().toString();
+  }
+  
+  public static final DataFlavor JVMLOCAL_UUID_FLAVOR = uuidTokenFlavor("jvm");
+  public final static String JVMLOCAL_UUID_TOKEN = uuidToken("jvm");
 
   public interface Support extends Transferable {
     public DragDrop getDragDrop();
@@ -118,18 +141,21 @@ public class DragDrop {
       DragDrop dnd = getDragDrop();
       if (dnd == null || dnd.dataFlavors == null)
         return null;
+      if (flavor.equals(JVMLOCAL_UUID_FLAVOR))
+        return JVMLOCAL_UUID_TOKEN;
       for (int i = 0; i < dnd.dataFlavors.length; i++) {
         if (!dnd.dataFlavors[i].equals(flavor))
           continue;
         else if (dnd.dataClasses[i] != null)
           return convertTo(dnd.dataClasses[i]);
         else
-          return convertTo(flavor.getMimeType());
+          return convertToFlavor(i, dnd.dataFlavors[i]);
       }
       return null;
     }
 
-    public default Object convertTo(String mimetype) {
+    // This one is meant to be overridden
+    public default Object convertToFlavor(int idx, Object dataFlavor) {
       return null;
     }
 

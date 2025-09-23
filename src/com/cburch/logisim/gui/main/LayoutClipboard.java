@@ -122,8 +122,10 @@ public class LayoutClipboard<T> implements ClipboardOwner {
   private class XmlData implements DragDrop.Support {
     String xml;
     XmlData(String xml) { this.xml = xml; }
+    @Override
     public DragDrop getDragDrop() { return dnd; }
-    public Object convertTo(String mimetype) { return xml; }
+    @Override
+    public Object convertToFlavor(int idx, Object dataFlavor) { return xml; }
   }
 
   // todo: add image flavor, text flavor, etc. for export

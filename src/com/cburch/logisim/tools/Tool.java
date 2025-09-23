@@ -128,8 +128,14 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
   }
 
   public boolean isBuiltin() { return false; } // most builtins should return true
+  
+  public static final Object UUID_FLAVOR = DragDrop.uuidTokenFlavor("tool");
+  public final String TOOL_NONCE = DragDrop.uuidNonce();
 
-  public static final DragDrop dnd = Main.headless ? null : new DragDrop(Tool.class);
+  public static final DragDrop dnd = Main.headless ? null :
+      new DragDrop(Tool.class,
+          DragDrop.JVMLOCAL_UUID_FLAVOR,
+          UUID_FLAVOR  /*, Project.UUID_FLAVOR*/);
   public DragDrop getDragDrop() { return dnd; }
 
   JDragLabel dragLabel;
@@ -201,6 +207,15 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
   protected void showHint(Canvas canvas, Location p, String msg) {
     tip = new Callout(msg);
     tip.popup(canvas, p.x, p.y, Callout.NW, Callout.DURATION);
+  }
+
+  @Override
+  public Object convertToFlavor(int idx, Object dataFlavor) {
+    if (dataFlavor == UUID_FLAVOR && isBuiltin())
+      return "tool:builtin:"+getName();
+    if (dataFlavor == UUID_FLAVOR)
+      return "tool:class="+getClass().getName()+":"+TOOL_NONCE;
+    return null;
   }
 
 }

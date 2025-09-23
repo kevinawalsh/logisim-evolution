@@ -38,6 +38,7 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
@@ -54,6 +55,8 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
+import com.cburch.logisim.util.DragDrop;
 
 public class Toolbar extends JPanel {
 
@@ -111,24 +114,36 @@ public class Toolbar extends JPanel {
 		}
 
     boolean checkIntraToolbarMove(DropTargetDragEvent e) throws Exception {
-      DataFlavor flavor = ToolbarButton.dnd.dataFlavor;
+      DataFlavor flavor1 = ToolbarButton.dnd.dataFlavor;
+      DataFlavor flavor2 = ToolbarButton.dnd.dataFlavors[1]; // UUID_FLAVOR
       int action = DnDConstants.ACTION_MOVE;
-      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor1) || !e.isDataFlavorSupported(flavor2))
         return false;
       e.acceptDrag(action);
-      ToolbarButton incoming;
-      incoming = (ToolbarButton)e.getTransferable().getTransferData(flavor);
-      return (incoming != null && incoming.getToolbar() == Toolbar.this);
+      String token = (String)e.getTransferable().getTransferData(flavor2);
+      return (token != null && token.equals(TOOLBAR_TOKEN));
     }
 
     boolean checkIntraProjectAddition(DropTargetDragEvent e) throws Exception {
       DataFlavor flavor = model.getAcceptedDataFlavor();
       int action = DnDConstants.ACTION_LINK;
-      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor)) {
         return false;
+      }
+      DataFlavor preFlavors[] = model.getPrecheckDataFlavors();
+      for (DataFlavor f : preFlavors) {
+        if (!e.isDataFlavorSupported(f)) {
+          return false;
+        }
+      }
       e.acceptDrag(action);
-      Object incoming = e.getTransferable().getTransferData(flavor);
-      return (incoming != null && model.isSameProject(incoming));
+      int n = preFlavors.length;
+      String[] tokens = new String[n];
+      Transferable t = e.getTransferable();
+      for (int i = 0; i < n; i++) {
+        tokens[i] = (String)t.getTransferData(preFlavors[i]);
+      }
+      return model.dragPrecheck(tokens);
     }
 
     void checkDrag(DropTargetDragEvent e) {
@@ -173,12 +188,10 @@ public class Toolbar extends JPanel {
     boolean tryIntraProjectAddition(DropTargetDropEvent e, int pos) throws Exception {
       DataFlavor flavor = model.getAcceptedDataFlavor();
       int action = DnDConstants.ACTION_LINK;
-      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor))
+      if ((e.getSourceActions() & action) == 0 || !e.isDataFlavorSupported(flavor) || !e.isDataFlavorSupported(flavor))
         return false;
       e.acceptDrop(action);
       Object incoming = e.getTransferable().getTransferData(flavor);
-      if (!(incoming != null && model.isSameProject(incoming)))
-        return false;
       return model.handleDrop(incoming, pos);
     }
 
@@ -187,7 +200,7 @@ public class Toolbar extends JPanel {
       int pos = subpanel.setDropCursor(e.getLocation());
       subpanel.setDropCursor(null);
       try {
-        if (pos >= 0 && model.supportsDragDrop()
+        if (pos >= 0 && model.supportsDragDrop() && e.isLocalTransfer()
             && (tryIntraToolbarMove(e, pos) || tryIntraProjectAddition(e, pos))) {
           e.dropComplete(true);
           return;
@@ -328,5 +341,12 @@ public class Toolbar extends JPanel {
     }
     return -1;
   }
+  
+  // Extra DragDrop code is needed to check for intra-toolbar drags, while also
+  // avoiding calling getTransferable() before the drop. Apparently, during a
+  // transfer but before he drop, is e.isLocalTransfer() can wrongly return
+  // false, and the JVM may fail while trying to serialize the dragged objects.
+  static final Object UUID_FLAVOR = DragDrop.uuidTokenFlavor("toolbar");
+  public final String TOOLBAR_TOKEN = DragDrop.uuidToken("toolbar");
 
 }

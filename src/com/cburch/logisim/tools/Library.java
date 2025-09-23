@@ -87,6 +87,19 @@ public abstract class Library {
     return null;
   }
 
+  public Tool findToolByUUID(String uuid) {
+    for (Tool tool : getTools()) {
+      if (tool.TOOL_NONCE.equals(uuid))
+        return tool;
+    }
+    for (Library lib : getLibraries()) {
+      Tool tool = lib.findToolByUUID(uuid);
+      if (tool != null)
+        return tool;
+    }
+    return null;
+  }
+
   public Tool findEquivalentTool(Tool query) {
     for (Tool tool : getTools()) {
       if (tool.equals(query))
@@ -214,10 +227,11 @@ public abstract class Library {
     public LogisimFile getLogisimFile() { return file; }
     public Library getLibrary() { return Library.this; }
 
+    @Override
     public DragDrop getDragDrop() { return dnd; }
 
     @Override
-    public Object convertTo(String mimetype) {
+    public Object convertToFlavor(int idx, Object dataFlavor) {
       return XmlWriter.encodeSelection(file, proj, Library.this);
     }
 

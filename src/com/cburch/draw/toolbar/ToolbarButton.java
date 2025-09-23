@@ -149,7 +149,7 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 		}
 	}
 
-  public static final DragDrop dnd = new DragDrop(ToolbarButton.class);
+  public static final DragDrop dnd = new DragDrop(ToolbarButton.class, Toolbar.UUID_FLAVOR);
   public DragDrop getDragDrop() { return dnd; }
 
   public void paintDragImage(JComponent dest, Graphics gr, Dimension dim) {
@@ -165,4 +165,10 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 		g.dispose();
 	}
 
+  @Override
+  public Object convertToFlavor(int idx, Object dataFlavor) {
+    if (dataFlavor == Toolbar.UUID_FLAVOR)
+      return toolbar.TOOLBAR_TOKEN;
+    return null;
+  }
 }

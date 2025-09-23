@@ -658,9 +658,9 @@ public class AddTool extends Tool {
   }
 
   public static final DragDrop circuitDnd = Main.headless ? null : new DragDrop(
-      Tool.class, LayoutClipboard.mimeTypeCircuitClip);
+      Tool.class, LayoutClipboard.mimeTypeCircuitClip, Tool.UUID_FLAVOR, DragDrop.JVMLOCAL_UUID_FLAVOR);
   public static final DragDrop vhdlDnd = Main.headless ? null : new DragDrop(
-      Tool.class, LayoutClipboard.mimeTypeVhdlClip);
+      Tool.class, LayoutClipboard.mimeTypeVhdlClip, Tool.UUID_FLAVOR, DragDrop.JVMLOCAL_UUID_FLAVOR);
 
   public class TransferableAddTool<E> implements DragDrop.Support, DragDrop.Ghost {
     private DragDrop dnd;
@@ -680,12 +680,20 @@ public class AddTool extends Tool {
     public DragDrop getDragDrop() { return dnd; }
 
     @Override
-    public Object convertTo(String mimetype) {
+    public Object convertToFlavor(int idx, Object dataFlavor) {
+      if (dataFlavor == UUID_FLAVOR && factory instanceof SubcircuitFactory)
+        return "tool:add-subcircuit:"+TOOL_NONCE;
+      if (dataFlavor == UUID_FLAVOR && factory instanceof VhdlEntity)
+        return "tool:add-vhdl:"+TOOL_NONCE;
+      else if (dataFlavor == UUID_FLAVOR) // parent handles builtin, and other tools
+        return AddTool.super.convertToFlavor(idx, dataFlavor);
+      // rest is various xml mimetypes, which we handle
       return elt ==  null ? null : XmlWriter.encodeSelection(file, proj, elt);
     }
 
     @Override
     public Object convertTo(Class cls) {
+      // Why isn't this in Tool.java instead?
       return AddTool.this;
     }
 

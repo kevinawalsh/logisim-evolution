@@ -105,8 +105,10 @@ public class ExternalClipboard<T> implements ClipboardOwner {
     String xml;
     XmlAndPlainData(T plain, String xml) { this.plain = plain; this.xml = xml; }
 
+    @Override
     public DragDrop getDragDrop() { return dnd; }
 
+    @Override
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
       if (flavor.equals(plainFlavor))
         return plain;

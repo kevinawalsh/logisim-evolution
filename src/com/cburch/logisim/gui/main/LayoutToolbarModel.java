@@ -69,6 +69,7 @@ import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.DragDrop;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.InputEventUtil;
 import com.cburch.logisim.util.StringUtil;
@@ -316,32 +317,65 @@ class LayoutToolbarModel extends AbstractToolbarModel {
   }
 
   @Override
-  public boolean isSameProject(Object incoming) {
-    if (incoming instanceof Tool && ((Tool)incoming).isBuiltin())
+  public DataFlavor[] getPrecheckDataFlavors() {
+    return new DataFlavor[] {
+      DragDrop.JVMLOCAL_UUID_FLAVOR,
+      (DataFlavor)Tool.UUID_FLAVOR,
+    };
+    // note: a separate Project.UUID_FLAVOR is not needed,
+    // b/c the tool UUIDs we accept are project-specific anyway
+  }
+
+  @Override
+  public boolean dragPrecheck(String[] tokens) {
+    // if (incoming instanceof Tool && ((Tool)incoming).isBuiltin())
+    //   return true;
+    if (!tokens[0].equals(DragDrop.JVMLOCAL_UUID_TOKEN))
+      return false;
+    if (tokens[1].startsWith("tool:builtin:"))
       return true;
+    // if (!(incoming instanceof AddTool))
+    //   return false;
+    // AddTool tool = (AddTool)incoming;
+    // ComponentFactory factory = tool.getFactory();
+    // if (factory == null)
+    //   return false;
+    // if (factory instanceof SubcircuitFactory || factory instanceof VhdlEntity)
+    if (!tokens[1].startsWith("tool:add-subcircuit:")
+        && !tokens[1].startsWith("tool:add-vhdl:"))
+      return false;
+    //   // LogisimFile f = ((SubcircuitFactory)factory).getCircuit().getLogisimFile(); 
+    //   // if (proj.getLogisimFile() == f)
+    //   //   return true;
+    //   // Search our file to see if we have the same AddTool, either as an
+    //   // AddTool for one our circuits, or an AddTool for some jar library we
+    //   // loaded, or an AddTool for some circuit inside (perhaps even nested
+    //   // multiple levels deep) inside a Logisim library.
+    //   return proj.getLogisimFile().findEquivalentTool(tool) != null;
+    String uuid = tokens[1].substring(tokens[1].lastIndexOf(':')+1);
+    return proj.getLogisimFile().findToolByUUID(uuid) != null;
+  }
+  
+  private boolean dropCheck(Tool incoming) {
     if (!(incoming instanceof AddTool))
       return false;
     AddTool tool = (AddTool)incoming;
     ComponentFactory factory = tool.getFactory();
     if (factory == null)
       return false;
-    if (factory instanceof SubcircuitFactory || factory instanceof VhdlEntity) {
-      // LogisimFile f = ((SubcircuitFactory)factory).getCircuit().getLogisimFile(); 
-      // if (proj.getLogisimFile() == f)
-      //   return true;
+    if (factory instanceof SubcircuitFactory || factory instanceof VhdlEntity)
       // Search our file to see if we have the same AddTool, either as an
       // AddTool for one our circuits, or an AddTool for some jar library we
       // loaded, or an AddTool for some circuit inside (perhaps even nested
       // multiple levels deep) inside a Logisim library.
       return proj.getLogisimFile().findEquivalentTool(tool) != null;
-    }
     return false;
   }
 
   @Override
   public boolean handleDrop(Object incoming, int pos) {
     Tool tool = (Tool)incoming;
-    if (!tool.isBuiltin() && !isSameProject(incoming))
+    if (tool == null || !tool.isBuiltin() && !dropCheck(tool))
       return false;
     Options opts = proj.getLogisimFile().getOptions();
     proj.doAction(ToolbarActions.addTool(opts.getToolbarData(), tool.cloneTool(), pos));

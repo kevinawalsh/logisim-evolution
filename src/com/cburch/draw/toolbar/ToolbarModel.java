@@ -50,7 +50,9 @@ public interface ToolbarModel {
   default public DataFlavor getAcceptedDataFlavor() { return null; }
   default public boolean handleDrop(Object incoming, int pos) { return false; }
   default public boolean handleDragDrop(int oldPos, int newP) { return false; }
-  default public boolean isSameProject(Object incoming) { return false; }
+  // default public boolean isSameProject(Object incoming) { return false; }
+  default public DataFlavor[] getPrecheckDataFlavors() { return null; }
+  default public boolean dragPrecheck(String[] tokens) { return false; }
 
   default public JPopupMenu getPopupMenu() { return null; }
 }
