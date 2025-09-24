@@ -51,6 +51,7 @@ import com.cburch.logisim.std.io.RGBLedShape;
 import com.cburch.logisim.std.io.SevenSegmentShape;
 import com.cburch.logisim.std.memory.CounterShape;
 import com.cburch.logisim.std.memory.RegisterShape;
+import com.cburch.logisim.std.wiring.ProbeShape;
 
 public class AppearanceSvgReader {
 
@@ -107,6 +108,8 @@ public class AppearanceSvgReader {
         shape = new CounterShape(x, y, path);
       } else if (name.equals("visible-meter")) {
         shape = new MeterShape(x, y, path);
+      } else if (name.equals("visible-probe")) {
+        shape = new ProbeShape(x, y, path);
       } else {
         return null;
       }

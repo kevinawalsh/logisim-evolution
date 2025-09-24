@@ -36,6 +36,8 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import com.cburch.logisim.circuit.RadixOption;
+import com.cburch.logisim.circuit.appear.DynamicElement;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.circuit.appear.DynamicValueProvider;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -53,7 +55,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class Probe extends InstanceFactory implements DynamicValueProvider {
+public class Probe extends InstanceFactory implements DynamicElementProvider, DynamicValueProvider {
   public static class ProbeLogger extends InstanceLogger {
     public ProbeLogger() {
     }
@@ -107,6 +109,10 @@ public class Probe extends InstanceFactory implements DynamicValueProvider {
   @Override
   public Value getDynamicValue(Instance insance, Object instanceStateData) {
     return instanceStateData == null ? Value.NIL : (Value)instanceStateData;
+  }
+
+  public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
+    return new ProbeShape(x, y, path);
   }
 
   static void paintValue(InstancePainter painter, Value value) {

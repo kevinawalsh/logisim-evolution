@@ -246,19 +246,15 @@ public abstract class DynamicElement extends AbstractCanvasObject {
   }
 
   public static Object getData(Path path, CircuitState state) {
-    Object o = state.getDataAsAny(path.elt[0]);
-    for (int i = 1; i < path.elt.length && o != null; i++) {
-      if (!(o instanceof CircuitState)) {
-        throw new IllegalStateException(
-            "Expecting CircuitState for path[" + (i-1) + "] " + path.elt[i-1]
-            + "  but got: " + o);
-      }
-      state = (CircuitState)o;
-      o = state.getDataAsAny(path.elt[i]);
+    int n = path.elt.length;
+    for (int i = 0; i < n - 1; i++) {
+      state = state.getDataForSubcircuit(path.elt[i]);
+      if (state == null)
+        return null;
     }
-    return o;
+    // TODO: provide the more specific accessors here
+    return state.getDataAsAny(path.elt[n - 1]);
   }
-
 
   @Override
   public String getDisplayNameAndLabel() {
