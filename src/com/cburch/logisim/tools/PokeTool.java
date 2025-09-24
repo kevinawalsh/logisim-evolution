@@ -451,14 +451,16 @@ public final class PokeTool extends Tool {
           canvas.setHighlightedWires(circ.getWireSet((Wire) c));
         } else {
           Pokable p = (Pokable) c.getFeature(Pokable.class);
-          if (p != null) {
-            Caret caret = p.getPokeCaret(event);
-            setPokedComponent(circ, c, caret);
-            AttributeSet attrs = c.getAttributeSet();
-            if (attrs != null && attrs.getAttributes().size() > 0) {
-              Project proj = canvas.getProject();
-              proj.getFrame().viewComponentAttributes(circ, c);
-            }
+          Caret caret = null;
+          if (p != null)
+            caret = p.getPokeCaret(event);
+          // Even if component isn't Pokable, display the
+          // attributes anyway. Makes for easier interactive play.
+          setPokedComponent(circ, c, caret);
+          AttributeSet attrs = c.getAttributeSet();
+          if (attrs != null && attrs.getAttributes().size() > 0) {
+            Project proj = canvas.getProject();
+            proj.getFrame().viewComponentAttributes(circ, c);
           }
         }
       }
