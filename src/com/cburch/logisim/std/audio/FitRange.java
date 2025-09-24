@@ -34,6 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 
 import com.cburch.logisim.data.Attribute;
@@ -87,7 +88,7 @@ public class FitRange extends InstanceFactory {
     curve.moveTo(cx-8, cy);
     curve.curveTo(cx-4, cy-4, cx+4, cy+4, cx+8, cy);
 
-    double r = Math.min(WIDTH, HEIGHT)/2.0-3;
+    double r = Math.min(WIDTH, HEIGHT)/2.0-4;
     shadow = new Ellipse2D.Double(cx-r, cy-r, 2*r, 2*r);
   }
 
@@ -117,7 +118,20 @@ public class FitRange extends InstanceFactory {
     instance.fireInvalidated(); // recompute using new mode, etc.
   }
 
-  private void paintShape(Graphics2D g, Bounds bds, boolean inner) {
+  private void paintSymbol(Graphics2D g, char c, double x, double y) {
+    if (c == '+') {
+      g.draw(new Line2D.Double(x-2.5, y, x+2.5, y));
+      g.draw(new Line2D.Double(x, y-2.5, x, y+2.5));
+    } else if (c == '-') {
+      g.draw(new Line2D.Double(x-2.5, y, x+2.5, y));
+    } else if (c == '0') {
+      g.draw(new Ellipse2D.Double(x-1.5, y-2.5, 3, 5));
+    }
+  }
+
+  private void paintShape(InstancePainter painter, boolean inner) {
+    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Bounds bds = painter.getNominalBounds();
     GraphicsUtil.switchToWidth(g, 2);
     g.translate(bds.x, bds.y);
     g.draw(outline);
@@ -128,6 +142,13 @@ public class FitRange extends InstanceFactory {
       g.setColor(Color.WHITE);
       g.draw(curve);
       g.setColor(c);
+      GraphicsUtil.switchToWidth(g, 1);
+      boolean si = painter.getAttributeValue(INPUT_MODE) == StdAttr.SIGNED_OPTION;
+      boolean so = painter.getAttributeValue(OUTPUT_MODE) == StdAttr.SIGNED_OPTION;
+      paintSymbol(g, '+', 5, 9);
+      paintSymbol(g, si ? '-' : '0', 5, 29);
+      paintSymbol(g, '+', 25, 11);
+      paintSymbol(g, so ? '-' : '0', 25, 31);
     }
     g.translate(-bds.x, -bds.y);
     GraphicsUtil.switchToWidth(g, 1);
@@ -135,16 +156,14 @@ public class FitRange extends InstanceFactory {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
-    Bounds bds = painter.getNominalBounds();
-    paintShape(g, bds, false);
+    paintShape(painter, false);
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
     Graphics2D g = (Graphics2D)painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
-    paintShape(g, bds, true);
+    paintShape(painter, true);
     painter.drawPorts();
   }
 
@@ -211,9 +230,11 @@ public class FitRange extends InstanceFactory {
       } else if (norm == NORM_FIT) {
         // use floating point and hope for the best...
         // f ranges from 0.0 (inclusive) to 1.0 (exclusive)
+        long x0 = x;
         double f = ((double)x - (double)imin)/(double)ir;
         x = (long)Math.round(omin + f * or);
         x = Math.max(omin, Math.min(omax, x)); // in case of floating point issues
+        // System.out.printf("%d in [%d, %d] --> %f --> %d in [%d, %d]\n", x0, imin, imax, f, x, omin, omax);
         state.setPort(0, Value.createKnown(wo, (int)x), 1);
       } else { // NORM_CENTER
         long ic = (imax+1+imin)/2;
