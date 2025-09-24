@@ -127,7 +127,7 @@ public final class CircuitState /* implements ComponentData */ {
       /* Component ends changed */
       else if (action == CircuitEvent.ACTION_INVALIDATE) {
         Component comp = (Component) event.getData();
-        queueForPropagation(comp);
+        queueForPropagationNoNudge(comp);
       }
 
       /* components were added, deleted, moved (delete-then-add replacements), etc. */
@@ -657,6 +657,12 @@ public final class CircuitState /* implements ComponentData */ {
     // invalidated components (which are likely Pins, Buttons, or other
     // inputs), so pass this component to the simulator for display.
     proj.getSimulator().addPendingInput(CircuitState.this, comp);
+    proj.getSimulator().nudge();
+  }
+
+  private void queueForPropagationNoNudge(Component comp) {
+    markComponentAsDirty(comp);
+    proj.getSimulator().addPendingInput(CircuitState.this, comp);
   }
 
   public void markComponentsDirty(Collection<Component> comps) {
@@ -1114,7 +1120,7 @@ public final class CircuitState /* implements ComponentData */ {
     for (Component clock : circuit.getClocks()) {
       hasClocks = true;
       if (Clock.tick(this, ticks, clock))
-        queueForPropagation(clock);
+        queueForPropagationNoNudge(clock);
     }
 
     synchronized (dirtyLock) {
