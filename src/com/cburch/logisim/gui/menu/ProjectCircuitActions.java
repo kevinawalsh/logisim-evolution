@@ -244,8 +244,17 @@ public class ProjectCircuitActions {
           S.get("circuitRemoveErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
     } else if (!proj.getDependencies().canRemove(circuit)) {
+      List<String> reasons = proj.getDependencies().reasonsNotToRemove(circuit);
+      String detail = "";
+      for (int i = 0; i < reasons.size(); i++) {
+        detail += "\n" + reasons.get(i);
+        if (i == 3 && reasons.size() > 6) {
+          detail += "\nand " + (reasons.size() - 4) + " others.";
+          break;
+        }
+      }
       JOptionPane.showMessageDialog(proj.getFrame(),
-          S.get("circuitRemoveUsedError"),
+          S.fmt("circuitRemoveUsedError", ""+reasons.size()) + detail,
           S.get("circuitRemoveErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
     } else {

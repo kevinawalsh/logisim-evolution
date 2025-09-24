@@ -30,10 +30,12 @@
 
 package com.cburch.logisim.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 public class Dag {
   private static class Node {
@@ -166,4 +168,18 @@ public class Dag {
       }
     }
   }
+
+  public List<Object> getPredecessors(Object data) {
+    ArrayList<Object> ret = new ArrayList<>();
+    Node n = findNode(data);
+    if (n == null || n.numPreds == 0)
+      return ret;
+
+    for (Node q : nodes.values()) {
+      if (q != n && q.succs.contains(n))
+        ret.add(q.data);
+    }
+    return ret;
+  }
+
 }

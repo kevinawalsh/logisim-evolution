@@ -30,6 +30,9 @@
 
 package com.cburch.logisim.proj;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -139,6 +142,14 @@ public class Dependencies {
 
   public boolean canRemove(Circuit circ) {
     return !dag.hasPredecessors(circ);
+  }
+
+  public List<String> reasonsNotToRemove(Circuit circ) {
+    List<Object> preds = dag.getPredecessors(circ);
+    ArrayList<String> ret = new ArrayList<>();
+    for (Object o : preds)
+      ret.add(o.toString());
+    return ret;
   }
 
   public boolean canRemove(VhdlContent vhdl) {
