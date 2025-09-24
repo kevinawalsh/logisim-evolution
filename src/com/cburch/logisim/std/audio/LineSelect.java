@@ -258,6 +258,7 @@ public class LineSelect extends InstanceFactory {
       int ex = e.getX(), ey = e.getY();
       int inputs = state.getAttributeValue(ATTR_INPUTS).intValue();
       Direction dir = state.getAttributeValue(StdAttr.FACING);
+      int spacing = state.getAttributeValue(ATTR_SPACING).intValue();
 
       int xo = 0, yo = 0;
       if (dir == Direction.EAST) xo = 10;
@@ -270,8 +271,11 @@ public class LineSelect extends InstanceFactory {
         Location pt = state.getInstance().getComponent().getEnd(i+1).getLocation();
         int x = pt.x + xo, y = pt.y + yo;
 
-        if ((Math.abs(ex - x) <= 5 + xo/3)
-            && (Math.abs(ey - y) <= 5 + yo/3)) {
+        int hitboxWidth = (xo != 0 || spacing > 1) ? 18 : 10;
+        int hitboxHeight = (yo != 0 || spacing > 1) ? 18 : 10;
+
+        if ((Math.abs(ex - x) <= hitboxWidth/2)
+            && (Math.abs(ey - y) <= hitboxHeight/2)) {
           sel = i;
         }
       }
