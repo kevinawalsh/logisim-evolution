@@ -3,7 +3,7 @@
 1. Check git status, ensure on holycross branch all work is committed.
 
 2. Bump version, and copyright year, in various files:
-   - src/com/cburch/logisim/Main.java
+   - VERSION and COPYRIGHT\_YEAR
    - README.md
    - logisim-win-install.nsi
    - build-mac-release-package.sh

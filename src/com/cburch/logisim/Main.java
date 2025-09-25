@@ -30,14 +30,17 @@
 
 package com.cburch.logisim;
 
+import java.awt.Desktop;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.awt.Desktop;
+import java.nio.charset.StandardCharsets;
 
 import javax.swing.JOptionPane;
 
 import com.cburch.logisim.gui.start.Startup;
+
 
 public class Main {
   public static void main(String[] args) throws Exception {
@@ -88,7 +91,37 @@ public class Main {
     }
   }
 
-  public static final LogisimVersion VERSION = LogisimVersion.get(5, 0, 5, "HC");
+  private static String getFromFile(String filename, String defaultValue) {
+    try {
+      InputStream in = Main.class.getResourceAsStream(filename);
+      if (in != null)
+        return new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+    } catch (Exception e) {
+    }
+    return defaultValue;
+  }
+  
+  private static String getCurrentVersion() {
+    String verFromJar = Main.class.getPackage().getImplementationVersion();
+    if (verFromJar != null)
+      return verFromJar;
+    String ver = getFromFile("/version.txt", "unknown");
+    String git = getFromFile("/git-version-hash.txt", "");
+    String verFromFile = !git.isBlank() ? ver + " ("+git+")" : ver;
+    return verFromFile;
+  }
+
+  private static int getCurrentCopyrightYear() {
+    String s = getFromFile("/copyright-year.txt", "2025");
+    try {
+      return Math.max(2025, Integer.parseInt(s));
+    } catch (Throwable t) {
+      return 2025;
+    }
+  }
+
+  public static final LogisimVersion VERSION = LogisimVersion.parse(getCurrentVersion());
   public static final String VERSION_NAME = VERSION.toString();
-  public static final int COPYRIGHT_YEAR = 2025;
+  public static final int COPYRIGHT_YEAR = getCurrentCopyrightYear();;
+
 }
