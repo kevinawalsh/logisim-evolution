@@ -50,3 +50,6 @@ publi/
 
 # File containing the log level
 logback.xml
+
+# contact info file
+crash-contact.txt

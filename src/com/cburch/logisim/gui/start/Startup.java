@@ -38,11 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.awt.Desktop;
-import java.awt.desktop.QuitEvent;
-import java.awt.desktop.QuitHandler;
-import java.awt.desktop.QuitResponse;
-import java.awt.desktop.QuitStrategy;
 import java.awt.GraphicsEnvironment;
 
 import javax.swing.SwingUtilities;
@@ -57,11 +52,11 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Print;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.WindowManagers;
-import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.util.Debug;
+import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.LocaleManager;
 
@@ -113,6 +108,12 @@ public class Startup {
   }
 
   public static Startup parseArgs(String[] args) {
+
+    String osname = System.getProperty("os.name", "generic").toLowerCase();
+    Main.MacOS = osname.startsWith("mac") || osname.startsWith("darwin");
+    Main.MSWindows = osname.contains("win");
+    Main.Linux = osname.contains("nux") || osname.contains("nix") || osname.contains("aix");
+
     // first pass: check for headless, process locale, and make note of high priority items
     boolean doClearPreferences = false;
     int i;
@@ -151,6 +152,8 @@ public class Startup {
       if (arg.equals("-vvvvv"))
         Debug.verbose += 5;
     }
+    
+    Debug.init();
 
     if (GraphicsEnvironment.isHeadless() && !Main.headless)
       fail(S.get("argHeadlessError"));
@@ -175,15 +178,10 @@ public class Startup {
       int delay = tipManager.getDismissDelay();
       tipManager.setDismissDelay(Math.max(delay, 20_000));
     }
-    
-    String osname = System.getProperty("os.name", "generic").toLowerCase();
-    Main.MacOS = osname.startsWith("mac") || osname.startsWith("darwin");
-    Main.MSWindows = osname.contains("win");
-    Main.Linux = osname.contains("nux") || osname.contains("nix") || osname.contains("aix");
 
     Startup ret = new Startup();
     if (!Main.headless)
-      ret.registerDesktop();
+      DesktopIntegration.init(ret);
 
     if (doClearPreferences)
       AppPreferences.clear();
@@ -415,79 +413,6 @@ public class Startup {
     System.exit(0);
   }
 
-  Desktop desktop;
-
-  private void registerDesktop() {
-
-    Main.AlwaysUseScrollbars = Main.MacOS;
-
-    try {
-      if (!Desktop.isDesktopSupported()) {
-        Debug.println(1, "Note [0]: no desktop support");
-        return;
-      }
-      desktop = Desktop.getDesktop();
-
-      if (desktop.isSupported(Desktop.Action.APP_SUDDEN_TERMINATION)) {
-        Main.SupportsSuddenTerminationHandling = true;
-        desktop.enableSuddenTermination();
-      } else {
-        Debug.println(1, "Note [1]: no support to prevent sudden termination");
-      }
-
-      if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY)
-          && desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
-        Main.QuitMenuAutomaticallyPresent = true;
-        // desktop.setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
-        desktop.setQuitStrategy(QuitStrategy.NORMAL_EXIT);
-        desktop.setQuitHandler(new QuitHandler() {
-          public void handleQuitRequestWith(QuitEvent e, QuitResponse response) {
-            boolean ok = ProjectActions.doQuit();
-            if (ok)
-              response.performQuit(); // never reached: doQuit calls System.exit() on success.
-            else
-              response.cancelQuit();
-          }
-        });
-      } else {
-        Debug.println(1, "Note [2]: no support to control quit strategy and handler");
-      }
-
-      if (desktop.isSupported(Desktop.Action.APP_OPEN_FILE))
-        desktop.setOpenFileHandler(e -> { 
-          for (File file : e.getFiles())
-            doOpenFile(file);
-        });
-      else
-        Debug.println(1, "Note [3]: no support for desktop file opening");
-
-      if (desktop.isSupported(Desktop.Action.APP_PRINT_FILE))
-        desktop.setPrintFileHandler(e -> { 
-          for (File file : e.getFiles())
-            doPrintFile(file);
-        });
-      else
-        Debug.println(1, "Note [4]: no support for desktop file printing");
-
-      if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
-        desktop.setPreferencesHandler(e -> PreferencesFrame.showPreferences());
-        Main.PreferencesMenuAutomaticallyPresent = true;
-      } else {
-        Debug.println(1, "Note [5]: no support for desktop preferences");
-      }
-
-      if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
-        desktop.setAboutHandler(e -> About.showAboutDialog(null));
-        Main.AboutMenuAutomaticallyPresent = true;
-      } else {
-        Debug.println(1, "Note [6]: no support for desktop about screen");
-      }
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
   private static void setLocale(String lang) {
     Locale[] opts = S.getLocaleOptions();
     for (int i = 0; i < opts.length; i++) {
@@ -528,7 +453,8 @@ public class Startup {
     this.showSplash = !Main.headless;
   }
 
-  private void doOpenFile(File file) {
+  // used by util/DesktopIntegration
+  public void doOpenFile(File file) {
     if (initialized) {
       ProjectActions.doOpen(null, null, file);
     } else {
@@ -536,7 +462,8 @@ public class Startup {
     }
   }
 
-  private void doPrintFile(File file) {
+  // used by util/DesktopIntegration
+  public void doPrintFile(File file) {
     if (initialized) {
       Project toPrint = ProjectActions.doOpen(null, null, file);
       Print.doPrint(toPrint);
@@ -626,22 +553,12 @@ public class Startup {
     if (showSplash)
       monitor.setProgress(SplashScreen.GUI_INIT);
     WindowManagers.initialize();
-    if (desktop != null
-        && desktop.isSupported(Desktop.Action.APP_MENU_BAR)) {
-      LogisimMenuBar menubar = new LogisimMenuBar(null, null, null, null);
-      try {
-        desktop.setDefaultMenuBar(menubar);
-        Main.HasWindowlessMenubar = true;
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-    } else {
-      Debug.println(1, "Note [7]: no desktop menubar support");
-      new LogisimMenuBar(null, null, null, null);
-      // most of the time occupied here will be in loading menus, which
-      // will occur eventually anyway; we might as well do it when the
-      // monitor says we are
-    }
+
+    LogisimMenuBar menubar = new LogisimMenuBar(null, null, null, null);
+    DesktopIntegration.installMenubar(menubar);
+    // most of the time occupied here will be in loading menus, which
+    // will occur eventually anyway; we might as well do it when the
+    // monitor says we are
 
     // Make ENTER and SPACE have the same effect for focused buttons.
     UIManager.getDefaults().put("Button.focusInputMap",

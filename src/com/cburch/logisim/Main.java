@@ -30,7 +30,6 @@
 
 package com.cburch.logisim;
 
-import java.awt.Desktop;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -67,29 +66,6 @@ public class Main {
   public static boolean MacOS = false;
   public static boolean MSWindows = false;
   public static boolean Linux = false;
-  public static boolean AlwaysUseScrollbars = false;
-  public static boolean AboutMenuAutomaticallyPresent = false;
-  public static boolean PreferencesMenuAutomaticallyPresent = false;
-  public static boolean QuitMenuAutomaticallyPresent = false;
-  public static boolean HasWindowlessMenubar = false;
-
-  public static boolean SupportsSuddenTerminationHandling = false;
-  private static boolean TerminationAllowed = true;
-  private static Object TerminationLock = new Object();
-  public static void setSuddenTerminationAllowed(boolean allow) {
-    if (!SupportsSuddenTerminationHandling)
-      return;
-    synchronized (TerminationLock) {
-      if (TerminationAllowed != allow) {
-        Desktop desktop = Desktop.getDesktop();
-        if (allow)
-          desktop.enableSuddenTermination();
-        else
-          desktop.disableSuddenTermination();
-        TerminationAllowed = allow;
-      }
-    }
-  }
 
   private static String getFromFile(String filename, String defaultValue) {
     try {
@@ -100,7 +76,15 @@ public class Main {
     }
     return defaultValue;
   }
-  
+
+  private static String getFromFile(String filename, int linenum, String defaultValue) {
+    String s = getFromFile(filename, null);
+    if (s == null)
+      return defaultValue;
+    String lines[] = s.split("\\r?\\n");
+    return (lines == null || lines.length < linenum) ? defaultValue : lines[linenum].trim();
+  }
+
   private static String getCurrentVersion() {
     String verFromJar = Main.class.getPackage().getImplementationVersion();
     if (verFromJar != null)
@@ -123,5 +107,7 @@ public class Main {
   public static final LogisimVersion VERSION = LogisimVersion.parse(getCurrentVersion());
   public static final String VERSION_NAME = VERSION.toString();
   public static final int COPYRIGHT_YEAR = getCurrentCopyrightYear();;
+  public static final String CRASH_CONTACT_LINK = getFromFile("/crash-contact.txt", 0, "");
+  public static final String CRASH_CONTACT_EMAIL = getFromFile("/crash-contact.txt", 1, "");
 
 }

@@ -41,12 +41,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
-import com.cburch.logisim.Main;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.prefs.PreferencesFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.util.DesktopIntegration;
 
 class MenuFile extends Menu implements ActionListener {
   private static final long serialVersionUID = 1L;
@@ -90,11 +90,11 @@ class MenuFile extends Menu implements ActionListener {
     addSeparator();
     add(exportImage);
     add(print);
-    if (!Main.PreferencesMenuAutomaticallyPresent) {
+    if (!DesktopIntegration.PreferencesMenuAutomaticallyPresent) {
       addSeparator();
       add(prefs);
     }
-    if (!Main.QuitMenuAutomaticallyPresent) {
+    if (!DesktopIntegration.QuitMenuAutomaticallyPresent) {
       addSeparator();
       add(quit);
     }
@@ -153,7 +153,7 @@ class MenuFile extends Menu implements ActionListener {
       if (result != 2) {
         // Get the list of open projects
         List<Project> pl = Projects.getOpenProjects();
-        if (pl.size() <= 1 && !Main.HasWindowlessMenubar) {
+        if (pl.size() <= 1 && !DesktopIntegration.HasWindowlessMenubar) {
           // Since we have a single window open, before closing the current
           // project open a new empty one, to avoid having no remaining windows.
           // This isn't needed if (like on MacOS) there is a menubar even when

@@ -41,9 +41,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.WeakHashMap;
 
-import com.cburch.logisim.Main;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Frame;
+import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.PropertyChangeWeakSupport;
 
 public class Projects {
@@ -101,13 +101,13 @@ public class Projects {
         projectRemoved(proj, frame, this);
       }
       if (openProjects.isEmpty()) {
-        if (!Main.HasWindowlessMenubar) {
+        if (!DesktopIntegration.HasWindowlessMenubar) {
           ProjectActions.doQuit();
         } else {
           Frame top = getTopFrame();
           if (top != null)
             top.savePreferences();
-          Main.setSuddenTerminationAllowed(true);
+          DesktopIntegration.setSuddenTerminationAllowed(true);
         }
       }
     }
@@ -128,7 +128,7 @@ public class Projects {
         openProjects.add(proj);
         propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
         if (proj.isFileDirty())
-          Main.setSuddenTerminationAllowed(false);
+          DesktopIntegration.setSuddenTerminationAllowed(false);
       }
     }
   }
@@ -195,20 +195,20 @@ public class Projects {
   }
 
   public static void projectDirtied() {
-    Main.setSuddenTerminationAllowed(false);
+    DesktopIntegration.setSuddenTerminationAllowed(false);
   }
 
   public static void projectCleaned() {
     for (Project p : openProjects) {
       if (p.isFileDirty()) {
-        Main.setSuddenTerminationAllowed(false);
+        DesktopIntegration.setSuddenTerminationAllowed(false);
         return;
       }
     }
     Frame top = getTopFrame();
     if (top != null)
       top.savePreferences();
-    Main.setSuddenTerminationAllowed(true);
+    DesktopIntegration.setSuddenTerminationAllowed(true);
   }
 
   static void windowCreated(Project proj, Frame oldFrame, Frame frame) {
@@ -278,7 +278,7 @@ public class Projects {
       openProjects.add(proj);
       propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
       if (proj.isFileDirty())
-        Main.setSuddenTerminationAllowed(false);
+        DesktopIntegration.setSuddenTerminationAllowed(false);
     } else {
       openingLocations.add(p);
     }

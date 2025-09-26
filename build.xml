@@ -70,12 +70,17 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         <delete file="logisim-evolution-src.jar"/>
         <delete file="src/com/cburch/logisim/gui/start/MacOsAdapter.java"/>
     </target>
+    
+    <target name="contact">
+        <mkdir dir="bin"/>
+        <copy file="crash-contact.txt" tofile="bin/crash-contact.txt"/>
+    </target>
 
-    <target name="git-version">
+    <target name="version">
         <mkdir dir="bin"/>
 
         <!-- write version and copyright into a file -->
-        <copy file="VERSION" tofile="bin/version.txt-bad"/>
+        <copy file="VERSION" tofile="bin/version.txt"/>
         <copy file="COPYRIGHT_YEAR" tofile="bin/copyright-year.txt"/>
         
         <!-- for manifest, load version (and strip newline) into a property -->
@@ -103,7 +108,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
 
     </target>
 
-    <target name="compile" depends="cleanjars,git-version">
+    <target name="compile" depends="cleanjars,version,contact">
         <mkdir dir="bin"/>
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
         <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" release="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/rsyntaxtextarea-stripped.jar:libs/jSerialComm-2.11.2.jar">
@@ -113,7 +118,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         </javac>
     </target>
 	
-    <target name="jar" depends="compile,git-version">
+    <target name="jar" depends="compile,version,contact">
         <jar destfile="logisim-evolution.jar">
             <fileset dir="bin" />
             <fileset dir="." includes="doc/ resources/" />

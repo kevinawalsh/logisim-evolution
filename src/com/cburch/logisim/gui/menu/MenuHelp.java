@@ -30,10 +30,6 @@
 package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.menu.Strings.S;
 
-import java.awt.Desktop;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -42,21 +38,22 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 
-import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 
 import com.cburch.logisim.Main;
-import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.gui.start.About;
+import com.cburch.logisim.util.Debug;
+import com.cburch.logisim.util.DesktopIntegration;
+import com.cburch.logisim.util.Errors;
 
-class MenuHelp extends JMenu implements ActionListener {
+public class MenuHelp extends JMenu implements ActionListener {
 
   private static final long serialVersionUID = 1L;
 
@@ -64,6 +61,10 @@ class MenuHelp extends JMenu implements ActionListener {
   private JMenuItem tutorial = new JMenuItem();
   private JMenuItem guide = new JMenuItem();
   private JMenuItem library = new JMenuItem();
+  private JMenuItem report = new JMenuItem();
+  private JMenuItem email = new JMenuItem();
+  private JMenuItem crashlog = new JMenuItem();
+  private JMenuItem logs = new JMenuItem();
   private JMenuItem about = new JMenuItem();
 
   public MenuHelp(LogisimMenuBar menubar) {
@@ -72,15 +73,28 @@ class MenuHelp extends JMenu implements ActionListener {
     tutorial.addActionListener(this);
     guide.addActionListener(this);
     library.addActionListener(this);
+    report.addActionListener(this);
+    email.addActionListener(this);
+    crashlog.addActionListener(this);
+    logs.addActionListener(this);
     about.addActionListener(this);
 
     add(tutorial);
     add(guide);
     add(library);
-    if (!Main.AboutMenuAutomaticallyPresent) {
+    addSeparator();
+    add(report);
+    add(email);
+    add(crashlog);
+    add(logs);
+    if (!DesktopIntegration.AboutMenuAutomaticallyPresent) {
       addSeparator();
       add(about);
     }
+    report.setEnabled(!Main.CRASH_CONTACT_LINK.isBlank());
+    email.setEnabled(!Main.CRASH_CONTACT_EMAIL.isBlank());
+    crashlog.setEnabled(Debug.crashLogPath != null);
+    logs.setEnabled(Debug.PERSIST_DIR != null);
   }
 
   public void actionPerformed(ActionEvent e) {
@@ -91,6 +105,14 @@ class MenuHelp extends JMenu implements ActionListener {
       showHelp("guide/tutorial/");
     } else if (src == library) {
       showHelp("libs/");
+    } else if (src == report) {
+      DesktopIntegration.openBrowser(Main.CRASH_CONTACT_LINK);
+    } else if (src == email) {
+      DesktopIntegration.openMail(Main.CRASH_CONTACT_EMAIL, "Logisim feedback");
+    } else if (src == crashlog) {
+      Debug.openCrashLog();
+    } else if (src == logs) {
+      Debug.openCrashLogFolder();
     } else if (src == about) {
       About.showAboutDialog(menubar.getParentFrame());
     }
@@ -123,29 +145,13 @@ class MenuHelp extends JMenu implements ActionListener {
     tutorial.setText(S.get("helpTutorialItem"));
     guide.setText(S.get("helpGuideItem"));
     library.setText(S.get("helpLibraryItem"));
+    report.setText(S.get("helpReportItem"));
+    email.setText(S.get("helpEmailItem"));
+    crashlog.setText(S.get("helpCrashlogItem"));
+    logs.setText(S.get("helpLogsItem"));
     about.setText(S.get("helpAboutItem"));
   }
   
-  public static void openInBrowser(String url) {
-    try {
-      URI uri = new URL(url).toURI();
-      Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-      if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-        desktop.browse(uri);
-        return;
-      }
-    } catch (Exception e) {
-      // disableHelp();
-      Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-      clipboard.setContents(new StringSelection(url), null);
-      Errors.title(S.get("helpNotFoundTitle")).show(String.format(S.get("helpBrowserError"), url), e);
-      return;
-    }
-    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-    clipboard.setContents(new StringSelection(url), null);
-    Errors.title(S.get("helpNotFoundTitle")).show(String.format(S.get("helpBrowserError"), url));
-  }
-
   static void send_err(HttpExchange req, int rcode, String msg) {
     try {
       byte[] body = msg.getBytes(StandardCharsets.UTF_8);
@@ -222,6 +228,6 @@ class MenuHelp extends JMenu implements ActionListener {
     if (MenuHelp.class.getResource("/doc/"+lang+"/html/guide/index.html") == null)
       lang = "en";
     String url = "http://" + srv.getAddress() + "/" + lang + "/html/" + target;
-    openInBrowser(url);
+    DesktopIntegration.openBrowser(url);
   }
 }

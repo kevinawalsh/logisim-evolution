@@ -41,14 +41,13 @@ import java.awt.event.MouseWheelEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import javax.swing.BoundedRangeModel;
-import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.Main;
+import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.GestureUtilities;
 
 public class CanvasPane extends JScrollPane {
@@ -216,7 +215,7 @@ public class CanvasPane extends JScrollPane {
     this.contents = contents;
     this.listener = new Listener();
     this.zoomModel = null;
-    if (Main.AlwaysUseScrollbars) {
+    if (DesktopIntegration.AlwaysUseScrollbars) {
       setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
       setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
     }
