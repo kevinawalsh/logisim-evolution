@@ -56,6 +56,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class PCMSink extends InstanceFactory {
@@ -271,7 +272,7 @@ public class PCMSink extends InstanceFactory {
     void failed(Throwable t, String defaultErrmsg) {
       closeAudio();
       if (t != null)
-        System.err.println(t.getMessage());
+        Debug.error(t);
       if (t instanceof LineUnavailableException)
         err = "Unavailable (line is busy)";
       else if (t instanceof IllegalStateException)
@@ -330,7 +331,7 @@ public class PCMSink extends InstanceFactory {
       try {
 
         fmt = makeFmt(signOpt, rate, bitsPerSample);
-        System.out.println("Trying: " + fmt);
+        Debug.println(1, "Trying: " + fmt);
 
         out = AudioSystem.getSourceDataLine(fmt);
 
@@ -391,7 +392,7 @@ public class PCMSink extends InstanceFactory {
     void closeAudio() {
       if (out != null) {
         try { if (out.isOpen()) out.close(); }
-        catch (Throwable t) { t.printStackTrace(); }
+        catch (Throwable t) { Debug.error(t); }
         out = null;
         resampler = null;
       }

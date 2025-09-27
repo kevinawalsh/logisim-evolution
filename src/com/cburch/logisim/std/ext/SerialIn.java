@@ -63,13 +63,13 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-// import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
@@ -647,8 +647,7 @@ public class SerialIn extends InstanceFactory {
       } catch (InterruptedException e) {
         // do nothing
       } catch (Exception e) {
-        System.err.println("serial port worker crashed");
-        e.printStackTrace();
+        Debug.error("serial port worker crashed", e);
       } finally {
         data.lock(); 
         try {
@@ -703,7 +702,7 @@ public class SerialIn extends InstanceFactory {
           } catch (InterruptedException e) {
           }
           if (worker != null) {
-            System.err.println("Can't stop serial port worker: " + worker);
+            Debug.error("Can't stop serial port worker: " + worker);
             worker = null;
           }
         }

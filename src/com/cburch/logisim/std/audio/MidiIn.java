@@ -235,7 +235,7 @@ public class MidiIn extends InstanceFactory {
           if (expecting >= 1) {
             b1 = queue.peek(1);
             if ((b1 & 0x80) != 0) {
-              System.out.println("MIDI: first param byte missing");
+              Debug.error("MIDI: first param byte missing");
               queue.remove();
               continue; /* repeat examine queue */
             }
@@ -243,7 +243,7 @@ public class MidiIn extends InstanceFactory {
           if (expecting >= 2) {
             b2 = queue.peek(2);
             if ((b2 & 0x80) != 0) {
-              System.out.println("MIDI: second param byte missing");
+              Debug.error("MIDI: second param byte missing");
               queue.remove();
               queue.remove();
               continue; /* repeat examine queue */
@@ -252,7 +252,7 @@ public class MidiIn extends InstanceFactory {
           if (expecting >= 3) {
             b3 = queue.peek(3);
             if ((b3 & 0x80) != 0) {
-              System.out.println("MIDI: third param byte missing");
+              Debug.error("MIDI: third param byte missing");
               queue.remove();
               queue.remove();
               queue.remove();
@@ -424,7 +424,7 @@ public class MidiIn extends InstanceFactory {
           found.add(dev);
         }
       } catch (MidiUnavailableException e) {
-        e.printStackTrace();
+        Debug.error("midi", e);
       }
 
       ArrayList<MidiDevice> toClose = new ArrayList<>();
@@ -516,7 +516,7 @@ public class MidiIn extends InstanceFactory {
         String s = String.format("%d: (%d bytes)", timeStamp, msg.length);
         for (int i = 0; i < msg.length; i++)
           s += String.format(" %02x", msg[i]);
-        System.out.println(s);
+        Debug.println(1, s);
       }
       synchronized(midiLock) {
         queue.add(msg);

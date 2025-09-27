@@ -45,6 +45,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class HttpFetchManager {
@@ -97,7 +98,7 @@ public class HttpFetchManager {
       sync.lock();
       try {
         if (dead) {
-          System.err.println("HttpIn: Can't enable/disable fetching in defunct simulation");
+          Debug.error("HttpIn: Can't enable/disable fetching in defunct simulation");
           return;
         }
         if (fetchEnabled == enable)
@@ -127,7 +128,7 @@ public class HttpFetchManager {
       sync.lock();
       try {
         if (dead) {
-          System.err.println("HttpIn: Can't de/activate fetching in defunct simulation");
+          Debug.error("HttpIn: Can't de/activate fetching in defunct simulation");
           return;
         }
         if (simActive == enable)
@@ -158,7 +159,7 @@ public class HttpFetchManager {
       sync.lock();
       try {
         if (dead) {
-          System.err.println("HttpIn: Can't change params for defunct simulation");
+          Debug.error("HttpIn: Can't change params for defunct simulation");
           return;
         }
         if (url.equals(newUrl) && autoFetch == enable && delay == newDelay)
@@ -219,7 +220,7 @@ public class HttpFetchManager {
             } finally {
               sync.unlock();
             }
-            // System.out.println(this +" GET " + target);
+            Debug.println(2, this +" GET " + target);
             URI uri;
             try {
               uri = URI.create(target);
@@ -254,7 +255,7 @@ public class HttpFetchManager {
             return;
           } catch (Exception e) {
             if (!(e instanceof ConnectException))
-              e.printStackTrace();
+              Debug.error("HttpFetchManager run", e);
             sync.lock();
             try {
               fetching = false;

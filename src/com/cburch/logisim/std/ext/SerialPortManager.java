@@ -44,6 +44,7 @@ import com.fazecast.jSerialComm.SerialPort;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.JDialogOk;
 
 public class SerialPortManager {
@@ -130,8 +131,7 @@ public class SerialPortManager {
       try {
         info.port.closePort();
       } catch (Exception e) {
-        System.err.println("Error closing port: " + info.path);
-        e.printStackTrace();
+        Debug.error("Error closing port: " + info.path, e);
       }
       info.port = null;
       openPorts.remove(info);

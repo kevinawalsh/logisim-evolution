@@ -34,6 +34,8 @@ import static com.cburch.logisim.std.Strings.S;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.SourceDataLine;
 
+import com.cburch.logisim.util.Debug;
+
 // MonoResamplePipe handles conversion from the simulator's requested PCM output
 // format to the underlying system's supported PCM format. It can handle:
 // - mono audio (1 channel)
@@ -138,7 +140,7 @@ class MonoResampler {
       outLen = rem;
       return written;
     } catch (Throwable t) {
-      System.err.println(t.getMessage());
+      Debug.error("audio resampling", t);
       outLen = 0;
       return -1; // write failed, unknown reason
     }

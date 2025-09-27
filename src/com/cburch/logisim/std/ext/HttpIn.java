@@ -57,6 +57,7 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
@@ -408,7 +409,7 @@ public class HttpIn extends InstanceFactory {
   
     @Override
     public void simulationCleanup(CircuitState cs, Component comp) {
-      System.out.println("cleanup " + worker);
+      Debug.println(3, "cleanup " + worker);
       HttpFetchManager.kill(worker);
     }
     

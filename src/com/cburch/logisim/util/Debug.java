@@ -331,6 +331,8 @@ public class Debug {
 
   // These are less severe and are not surfaced in GUI until shutdown.
   // All other classes should call this rather than dumping stuff to stderr.
+  public static void error(String what) { error(what, null); }
+  public static void error(Throwable ex) { error("unknown", ex); }
   public static void error(String what, Throwable ex) {
     synchronized(lock) { numLoggedErrors++; }
     String where = Thread.currentThread().getName();
