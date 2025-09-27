@@ -151,6 +151,18 @@ public class AppearanceEditHandler extends EditHandler
   }
 
   @Override
+  public void undo() {
+    Project proj = canvas.getProject();
+    proj.undoAction();
+  }
+
+  @Override
+  public void redo() {
+    Project proj = canvas.getProject();
+    proj.redoAction();
+  }
+
+  @Override
   public void copy() {
     if (!canvas.getSelection().isEmpty()) {
       canvas.getProject().doAction(ClipboardActions.copy(canvas));
