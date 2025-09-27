@@ -123,11 +123,13 @@ public final class SelectTool extends Tool {
   private static final int MOVING = 1;
   private static final int RECT_SELECT = 2;
   private static final int RESHAPING = 3;
+  private static final int MOVING_OR_DROPPING_ONE = 4;
   private static final Cursor cursors[] = {
     Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR),
     Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR),
     Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR),
-    Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR)
+    Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR),
+    Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR),
   };
 
   private static final Icon toolIcon = Icons.getIcon("move.gif");
@@ -209,7 +211,7 @@ public final class SelectTool extends Tool {
   }
 
   public boolean isMoving() {
-    return state == MOVING;
+    return state == MOVING || state == MOVING_OR_DROPPING_ONE;
   }
 
   public Location getForceSnapPoint() {
@@ -407,6 +409,10 @@ public final class SelectTool extends Tool {
 
   @Override
   public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+    if (state == MOVING_OR_DROPPING_ONE) {
+      Project proj = canvas.getProject();
+      setState(proj, MOVING);
+    }
     if (state == MOVING) {
       Project proj = canvas.getProject();
       computeDxDy(proj, e, g);
@@ -485,16 +491,19 @@ public final class SelectTool extends Tool {
     Collection<Component> in_sel = sel.getComponentsContaining(start, g);
     if (!in_sel.isEmpty()) {
       if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {
+        // Non-shift-click to selected components begins MOVING
         setState(proj, MOVING);
         proj.repaintCanvas();
         return;
       } else {
-        // fixme: this drops all components clicked, should only drop one?
         Component target = highestPriority(g, start, in_sel, null);
         if (target != null) {
-          Action act = SelectionActions.drop(sel, Collections.singletonList(target));
-          if (act != null)
-            proj.doAction(act);
+          // shift-click to a selected component might begin MOVING, or maybe DROP_ONE
+          setState(proj, MOVING_OR_DROPPING_ONE);
+          proj.repaintCanvas();
+          return;
+        } else {
+          // return; // never reached ?
         }
       }
     }
@@ -601,6 +610,18 @@ public final class SelectTool extends Tool {
         handler.doReshapeAction(proj, circuit, c, start, dx, dy);
       }
       proj.repaintCanvas();
+    } else if (state == MOVING_OR_DROPPING_ONE) {
+      // drop one
+      Selection sel = proj.getSelection();
+      Collection<Component> in_sel = sel.getComponentsContaining(start, g);
+      if (!in_sel.isEmpty()) {
+        Component target = highestPriority(g, start, in_sel, null);
+        if (target != null) {
+          Action act = SelectionActions.drop(sel, Collections.singletonList(target));
+          if (act != null)
+            proj.doAction(act);
+        }
+      }
     }
   }
 
