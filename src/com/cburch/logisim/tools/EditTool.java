@@ -242,9 +242,35 @@ public final class EditTool extends Tool {
   }
 
   private boolean isWiringPoint(Canvas canvas, Location loc, int modsEx) {
-    boolean wiring = (modsEx & MouseEvent.ALT_DOWN_MASK) == 0;
-    boolean select = !wiring;
-
+    boolean WIRING = true, SELECT = false;
+    // Old behavior before 5.0.5-HC:
+    //   Hover without ALT --> 
+    //     Hover over a selected wire is NOT a wiring point, it's a selection point.
+    //     Hover a Port (that doesn't have a selected wire attached)
+    //       or over a wire (that isn't selected) IS considered a wiring point, not selection.
+    //     Hover over a blank area is NOT a wiring point, it's a selection point.
+    //   Hover with ALT --> the exact opposite...
+    //     Hover over a selected wire IS a wiring point.
+    //     Hover a Port (that doesn't have a selected wire attached)
+    //       or over a wire (that isn't selected) is NOT a wiring point, its a selection.
+    //     Hover over a blank area is a wiring point, it's a selection point.
+    // This is not at all clear or intuitive in the interface.
+    // New behavior for 5.0.5-HC:
+    //   Hover without ALT -->
+    //     [same] Hover over a selected wire is NOT a wiring point, it's a selection point.
+    //     [new]  Hover over *anything selected* is a selection point (e.g. drag-to-move action).
+    //     [same] Hover a Port (that doesn't have a selected wire attached)
+    //       or over a wire (that isn't selected) IS considered a wiring point, not selection.
+    //     Hover over a blank area is NOT a wiring point, it's a selection point.
+    //   Hover with ALT -->
+    //     Hover over *anything selected* is a selection point (e.g. drag-to-copy action).
+    //     Hover over a *non-selected non-wire component* is a selection point (drag-to-copy action).
+    //     Hover over a *non-selected wire component* or a blank area is a wiring point.
+    // In other words, the only thing ALT affects is
+    //   - hovering in blank areas (no ALT --> select, ALT --> wiring)
+    //   - hovering over a port of a non-selected component (without an attached selected wire)
+    //     (no ALT --> wiring, ALT --> select)
+    boolean alt = (modsEx & MouseEvent.ALT_DOWN_MASK) != 0;
     if (canvas != null && canvas.getSelection() != null) {
       Collection<Component> sel = canvas.getSelection().getComponents();
       if (sel != null) {
@@ -256,23 +282,37 @@ public final class EditTool extends Tool {
             // extra margin is added, because moving small wires is annoying, or
             // close to impossible depending on zoom level.
             if (w.nominallyNearby(loc))
-              return select;
+              return SELECT; // hover over selected wire --> always selection
+          } else {
+            if (c.nominallyContains(loc)) {
+              return SELECT; // hover over selected component --> always selection
+            }
           }
         }
       }
     }
 
-    Circuit circ = canvas.getCircuit();
-    Collection<? extends Component> at = circ.getComponents(loc);
-    if (at != null && at.size() > 0)
-      return wiring;
+    // Not over a selected component. Might be:
+    //  - over a port
+    //  - over a wire
+    //  - over a non-wire component
+    //  - over a blank area
 
+    Circuit circ = canvas.getCircuit();
+    Collection<? extends Component> ports = circ.getComponents(loc);
+    System.out.println("  ports = " + (ports == null ? "null" : ""+ports.size()));
+    if (ports != null && ports.size() > 0)
+      return alt ? WIRING : SELECT;
+
+    // Over a wire
     for (Wire w : circ.getWires()) {
       if (w.nominallyContains(loc)) {
-        return wiring;
+        return WIRING;
       }
     }
-    return select;
+
+    // Over a blank area or non-wire component
+    return alt ? WIRING : SELECT;
   }
 
   @Override
@@ -377,6 +417,7 @@ public final class EditTool extends Tool {
     wireLoc = NULL_LOCATION;
     lastX = Integer.MIN_VALUE;
     if (wire) {
+      System.out.println("pressed wire");
       current = wiring;
       Selection sel = canvas.getSelection();
       Circuit circ = canvas.getCircuit();
@@ -453,6 +494,7 @@ public final class EditTool extends Tool {
     boolean isEligible = dx * dx + dy * dy < 36;
     if ((mods & MouseEvent.ALT_DOWN_MASK) != 0)
       isEligible = true;
+    System.out.println(""+isEligible + " dist " + (dx * dx + dy * dy) + " " + (dx*dx+dy*dy<36));
     if (!isEligible) {
       snapx = -1;
       snapy = -1;
@@ -463,12 +505,14 @@ public final class EditTool extends Tool {
     lastRawY = my;
     lastMods = mods;
     if (lastX == snapx && lastY == snapy && modsSame) { // already computed
+      System.out.println("precomputed: " + wireLoc);
       return wireLoc != NULL_LOCATION;
     } else {
       Location snap = Location.create(snapx, snapy);
       if (modsSame) {
         Object o = cache.get(snap);
         if (o != null) {
+      System.out.println("got cache: " + o);
           lastX = snapx;
           lastY = snapy;
           Location oldWireLoc = wireLoc;
@@ -484,6 +528,7 @@ public final class EditTool extends Tool {
       Location oldWireLoc = wireLoc;
       boolean ret = isEligible && isWiringPoint(canvas, snap, mods);
       wireLoc = ret ? snap : NULL_LOCATION;
+      System.out.println("ret: " + ret);
       cache.put(snap, Boolean.valueOf(ret));
       int toRemove = cache.size() - CACHE_MAX_SIZE;
       Iterator<Location> it = cache.keySet().iterator();
