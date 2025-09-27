@@ -525,8 +525,14 @@ public final class CircuitState /* implements ComponentData */ {
 
   private InstanceStateImpl reusableInstanceState = new InstanceStateImpl(this, null);
 
+  // WARNING: Do not use these methods without careful synchronization with
+  // simulator propagation. The returned InstanceState is transient... it
+  // remains valid only until the next call to getInstanceState(). With
+  // auto-tick, that can happen at any time, unless the caller is on the same
+  // thread and blocking the propagator. 
+  // TODO: Revisit this entire "repurposing" optimization.
   // This is part of the entangled component-instance mess
-  public InstanceState getInstanceState(Component comp) {
+  public InstanceState dangerouslyGetTransientInstanceState(Component comp) {
     Object factory = comp.getFactory();
     if (factory instanceof InstanceFactory) {
       if (comp != ((InstanceComponent)comp).getInstance().getComponent()) 
@@ -538,9 +544,8 @@ public final class CircuitState /* implements ComponentData */ {
       throw new RuntimeException("getInstanceState requires instance component");
     }
   }
-
   // This is part of the entangled component-instance mess
-  public InstanceState getInstanceState(Instance instance) {
+  public InstanceState dangerouslyGetTransientInstanceState(Instance instance) {
     Object factory = instance.getFactory();
     if (factory instanceof InstanceFactory) {
       // return ((InstanceFactory) factory).createInstanceState(this, instance);
@@ -1153,7 +1158,7 @@ public final class CircuitState /* implements ComponentData */ {
       return false;
     }
     if (ticks >= 0) {
-      InstanceState state = getInstanceState(i);
+      InstanceState state = dangerouslyGetTransientInstanceState(i);
       Value vOld = pin.getValue(state);
       Value vNew = ticks%2==0 ? Value.FALSE : Value.TRUE;
       if (!vNew.equals(vOld)) {

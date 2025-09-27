@@ -155,7 +155,7 @@ public class TestThread extends UniquelyNamedThread implements CircuitListener {
         if (!(comp.getFactory() instanceof Pin))
           continue;
         Instance inst = Instance.getInstanceFor(comp);
-        InstanceState pinState = state.getInstanceState(comp);
+        InstanceState pinState = state.dangerouslyGetTransientInstanceState(comp);
         String label = pinState.getAttributeValue(StdAttr.LABEL);
         if (label == null || !label.equals(columnName))
           continue;

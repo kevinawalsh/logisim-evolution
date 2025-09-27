@@ -255,7 +255,7 @@ public class Circuit implements AttributeDefaultProvider {
 
     for (int i = 0; i < pin.length; ++i) {
       if (Pin.FACTORY.isInputPin(pin[i])) {
-        InstanceState pinState = state.getInstanceState(pin[i]);
+        InstanceState pinState = state.dangerouslyGetTransientInstanceState(pin[i]);
         Pin.FACTORY.driveInputPin(pinState, val[i]);
       }
     }
@@ -274,7 +274,7 @@ public class Circuit implements AttributeDefaultProvider {
     FailException err = null;
 
     for (int i = 0; i < pin.length; i++) {
-      InstanceState pinState = state.getInstanceState(pin[i]);
+      InstanceState pinState = state.dangerouslyGetTransientInstanceState(pin[i]);
       if (Pin.FACTORY.isInputPin(pin[i]))
         continue;
 

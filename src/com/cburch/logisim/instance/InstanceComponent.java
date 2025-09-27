@@ -366,7 +366,7 @@ public /*final*/ class InstanceComponent
   }
 
   public void propagate(CircuitState state) {
-    factory.propagate(state.getInstanceState(this));
+    factory.propagate(state.dangerouslyGetTransientInstanceState(this));
   }
 
   void recomputeBounds() {

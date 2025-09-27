@@ -288,7 +288,7 @@ public class TtyInterface {
     for (Component comp : circState.getCircuit().getNonWires()) {
       if (comp.getFactory() instanceof Ram) {
         Ram ramFactory = (Ram) comp.getFactory();
-        InstanceState ramState = circState.getInstanceState(comp);
+        InstanceState ramState = circState.dangerouslyGetTransientInstanceState(comp);
         MemContents m = ramFactory.getContents(ramState);
         HexFile.open(m, loadFile);
         found = true;
@@ -308,11 +308,11 @@ public class TtyInterface {
       Object factory = comp.getFactory();
       if (factory instanceof Tty) {
         Tty ttyFactory = (Tty) factory;
-        InstanceState ttyState = circState.getInstanceState(comp);
+        InstanceState ttyState = circState.dangerouslyGetTransientInstanceState(comp);
         ttyFactory.sendToStdout(ttyState);
         found = true;
       } else if (factory instanceof Keyboard) {
-        keybStates.add(circState.getInstanceState(comp));
+        keybStates.add(circState.dangerouslyGetTransientInstanceState(comp));
         found = true;
       }
     }
@@ -506,7 +506,7 @@ public class TtyInterface {
       }
     }
     if ((format & FORMAT_TURING) != 0) {
-      InstanceState tapeState = circState.getInstanceState(tape);
+      InstanceState tapeState = circState.dangerouslyGetTransientInstanceState(tape);
       PaperTape p = (PaperTape)tapeState.getDataAsCustom();
       p.set(turingInitialTape);
       tapeState.fireInvalidated();
@@ -573,7 +573,7 @@ public class TtyInterface {
     PaperTape p = null;
     if ((format & FORMAT_TURING) != 0) {
       headers.add("state");
-      InstanceState tapeState = circState.getInstanceState(tape);
+      InstanceState tapeState = circState.dangerouslyGetTransientInstanceState(tape);
       p = (PaperTape)tapeState.getDataAsCustom();
       for (String s: p.getHeaders())
         headers.add(s);
@@ -583,7 +583,7 @@ public class TtyInterface {
     while (true) {
       ArrayList<Object> curOutputs = new ArrayList<>();
       for (Instance pin : outputPins) {
-        InstanceState pinState = circState.getInstanceState(pin);
+        InstanceState pinState = circState.dangerouslyGetTransientInstanceState(pin);
         Value val = Pin.FACTORY.getValue(pinState);
         if (pin == haltPin) {
           halted |= val.equals(Value.TRUE);
@@ -800,7 +800,7 @@ public class TtyInterface {
           boolean value = TruthTable.isInputSet(i, incol++, inputCount);
           v[b] = value ?  Value.TRUE : Value.FALSE;
         }
-        InstanceState pinState = circuitState.getInstanceState(pin);
+        InstanceState pinState = circuitState.dangerouslyGetTransientInstanceState(pin);
         Pin.FACTORY.driveInputPin(pinState, Value.create(v));
         valueMap.put(pin, Value.create(v));
       }
@@ -820,7 +820,7 @@ public class TtyInterface {
           valueMap.put(pin, Value.createError(width));
         } else {
           int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
-          InstanceState pinState = circuitState.getInstanceState(pin);
+          InstanceState pinState = circuitState.dangerouslyGetTransientInstanceState(pin);
           Value outValue = Pin.FACTORY.getValue(pinState);
           valueMap.put(pin, outValue);
         }

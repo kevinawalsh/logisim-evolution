@@ -228,7 +228,7 @@ public class Analyze {
           boolean value = TruthTable.isInputSet(i, incol++, inputCount);
           v[b] = value ?  Value.TRUE : Value.FALSE;
         }
-        InstanceState pinState = circuitState.getInstanceState(pin);
+        InstanceState pinState = circuitState.dangerouslyGetTransientInstanceState(pin);
         Pin.FACTORY.driveInputPin(pinState, Value.create(v));
       }
 
@@ -249,7 +249,7 @@ public class Analyze {
         for (int j = 0; j < outputPins.size(); j++) {
           Instance pin = outputPins.get(j);
           int width = pin.getAttributeValue(StdAttr.WIDTH).getWidth();
-          InstanceState pinState = circuitState.getInstanceState(pin);
+          InstanceState pinState = circuitState.dangerouslyGetTransientInstanceState(pin);
           Entry out;
           for (int b = width-1; b >= 0; b--) {
             Value outValue = Pin.FACTORY.getValue(pinState).get(b);

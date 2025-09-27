@@ -415,7 +415,7 @@ public class SubcircuitFactory extends InstanceFactory {
     Instance[] pins = attrs.getPinInstances();
     for (int i = 0; i < pins.length; i++) {
       Instance pin = pins[i];
-      InstanceState pinState = subState.getInstanceState(pin);
+      InstanceState pinState = subState.dangerouslyGetTransientInstanceState(pin);
       if (Pin.FACTORY.isInputPin(pin)) {
         Value newVal = stateInContext.getPortValue(i);
         Value oldVal = Pin.FACTORY.getValue(pinState);
