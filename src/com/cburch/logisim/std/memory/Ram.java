@@ -624,24 +624,24 @@ public class Ram extends Mem {
 
   @Override
   MemState getState(Instance instance, CircuitState state) {
-    return getState(state.getInstanceState(instance));
+    Component comp = instance.getComponent();
+    RamState ret = (RamState)state.getDataAsCustom(comp);
+    if (ret == null) {
+      AttributeOption type = instance.getAttributeValue(RamAttributes.ATTR_TYPE);
+      int addrBits = instance.getAttributeValue(ADDR_ATTR).getWidth();
+      int dataBits = instance.getAttributeValue(DATA_ATTR).getWidth();
+      MemContents contents = MemContents.create(addrBits, dataBits);
+      ret = new RamState(instance, contents, new MemListener(instance));
+      state.setData(comp, ret);
+    } else {
+      ret.setRam(instance);
+    }
+    return ret;
   }
 
   @Override
   MemState getState(InstanceState state) {
-    RamState ret = (RamState)state.getDataAsCustom();
-    if (ret == null) {
-      AttributeOption type = state.getInstance().getAttributeValue(RamAttributes.ATTR_TYPE);
-      int addrBits = state.getAttributeValue(ADDR_ATTR).getWidth();
-      int dataBits = state.getAttributeValue(DATA_ATTR).getWidth();
-      MemContents contents = MemContents.create(addrBits, dataBits);
-      Instance instance = state.getInstance();
-      ret = new RamState(instance, contents, new MemListener(instance));
-      state.setData(ret);
-    } else {
-      ret.setRam(state.getInstance());
-    }
-    return ret;
+    return getState(state.getInstance(), state.getCircuitState());
   }
 
   @Override
