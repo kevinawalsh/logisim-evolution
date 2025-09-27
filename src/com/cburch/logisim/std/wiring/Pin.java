@@ -75,11 +75,13 @@ import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 
@@ -185,6 +187,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     public void accept() {
       String s = text.getText();
       if (isEditValid(s)) {
+        s = s.trim();
         Value newVal;
         if (s.matches("x+") || s.matches("\\?+")) {
           newVal = Value.createUnknown(BitWidth.create(bitWidth));
@@ -315,44 +318,52 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       }
     }
 
-    private boolean handleBitPress(InstanceState state, int bit, RadixOption radix, java.awt.Component src, char ch) {
-      if (src instanceof Canvas && !state.isCircuitRoot()) {
-        Canvas canvas = (Canvas)src;
-        CircuitState circState = canvas.getCircuitState();
-        java.awt.Component frame = SwingUtilities.getRoot(canvas);
-        int choice = JOptionPane.showConfirmDialog(frame,
-            S.get("pinFrozenQuestion"),
-            S.get("pinFrozenTitle"),
-            JOptionPane.OK_CANCEL_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        if (choice == JOptionPane.OK_OPTION) {
-          circState = circState.cloneAsNewRootState();
-          canvas.getProject().setCircuitState(circState);
-          state = circState.getInstanceState(state.getInstance());
-          // Crash 20 Sept 2025, likely while clicking a frozen pin in a
-          // subcircuit. Possible race condition where the reusable
-          // InstanceStateImpl in CircuitState got repurposed for a Counter
-          // somehow during or near when we cloned the state.
-          // Exception in thread "AWT-EventQueue-0" java.lang.ClassCastException: class com.cburch.logisim.data.AttributeSets$ArrayBacked cannot be cast to class com.cburch.logisim.std.wiring.PinAttributes (com.cburch.logisim.data.AttributeSets$ArrayBacked and com.cburch.logisim.std.wiring.PinAttributes are in unnamed module of loader 'app')
-          // at com.cburch.logisim.std.wiring.Pin.getState(Pin.java:530)
-          // at com.cburch.logisim.std.wiring.Pin$PinPoker.handleBitPress(Pin.java:338)
-          // at com.cburch.logisim.std.wiring.Pin$PinPoker.mouseReleased(Pin.java:434)
-          // at com.cburch.logisim.instance.InstancePokerAdapter.mouseReleased(InstancePokerAdapter.java:171)
-          // at com.cburch.logisim.tools.PokeTool.mouseReleased(PokeTool.java:480)
-          // at com.cburch.logisim.gui.main.Canvas$MyListener.mouseReleased(Canvas.java:238)
-          // at java.desktop/java.awt.AWTEventMulticaster.mouseReleased(AWTEventMulticaster.java:297)
-          // at java.desktop/java.awt.Component.processMouseEvent(Component.java:6576)
-          // at java.desktop/javax.swing.JComponent.processMouseEvent(JComponent.java:3404)
-          // at com.cburch.logisim.gui.main.Canvas.processMouseEvent(Canvas.java:1004)
-          com.cburch.logisim.comp.ComponentFactory factory = state.getInstance().getComponent().getFactory();
-          if (!(factory instanceof Pin)) {
-            System.err.println("race condition? repurposed pin state, but component isn't a pin but a " + factory); 
-          }
-        } else {
-          return false;
-        }
+    private boolean isOkayToModify(InstanceState state, java.awt.Component src) {
+      if (state.isCircuitRoot())
+        return true;
+      if (!(src instanceof Canvas)) // ?
+        return true;
+      if (!(state instanceof InstanceStateImpl)) {
+        Debug.error("Pin attempting to modify non-root InstancePainter state?");
+        return false;
       }
+      Canvas canvas = (Canvas)src;
+      // Pin is frozen, prompt if we should make new root circuit state
+      // Why two params here? Isn't circState the same as state.getCircuitState()?
+      CircuitState circState = canvas.getCircuitState();
 
+      java.awt.Component frame = SwingUtilities.getRoot(canvas);
+
+      int choice = JOptionPane.showConfirmDialog(frame,
+          S.get("pinFrozenQuestion"),
+          S.get("pinFrozenTitle"),
+          JOptionPane.OK_CANCEL_OPTION,
+          JOptionPane.WARNING_MESSAGE);
+      if (choice != JOptionPane.OK_OPTION)
+        return false;
+    
+
+      circState = circState.cloneAsNewRootState();
+      canvas.getProject().setCircuitState(circState);
+      
+      // WARNING: Calling circState.getInstanceState() here is a mistake.
+      //    BAD: state = circState.getInstanceState(state.getInstance());
+      // CircuitState returns a often-reused singleton InstanceStateImpl. This
+      // can be obseved when the clock is on, any state object it returns will
+      // be volatile and rapidly changing.
+      // Instead, we repurpose the InstanceStateImpl we already have, which
+      // came from InstancePokerAdapter and is NOT reused for other components.
+      // This makes more sense anyway: the state within the instance poker gets
+      // rebound to our new circState, rather than leaving that instance poker
+      // inconsistent.
+      ((InstanceStateImpl)state).repurpose(circState, ((InstanceStateImpl)state).getComponent());
+
+      return true;
+    }
+
+    private boolean handleBitPress(InstanceState state, int bit, RadixOption radix, java.awt.Component src, char ch) {
+      if (!isOkayToModify(state, src))
+        return false;
       BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
       PinState pinState = getState(state);
       int r = (radix == RadixOption.RADIX_16
@@ -434,6 +445,8 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
         return;
       RadixOption radix = state.getAttributeValue(RadixOption.ATTRIBUTE);
       if (radix == RadixOption.RADIX_10_SIGNED || radix == RadixOption.RADIX_10_UNSIGNED) {
+        if (!isOkayToModify(state, e.getComponent()))
+          return;
         EditDecimal dialog = new EditDecimal(state);
         dialog.setLocation(e.getXOnScreen()-60, e.getYOnScreen()-40);
         dialog.setVisible(true);
