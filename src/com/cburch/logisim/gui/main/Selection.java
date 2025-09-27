@@ -633,8 +633,16 @@ public class Selection {
   public Collection<Component> getComponentsContaining(Location query, Graphics g) {
     HashSet<Component> ret = new HashSet<Component>();
     for (Component comp : unionSet) {
-      if (comp.visiblyContains(query, g))
-        ret.add(comp);
+      // New behavior for 5.0.5-HC: A selected wire has a larger hit-box
+      // than usual, because moving small wires is annoying, or
+      // close to impossible depending on zoom level.
+      if (comp instanceof Wire) {
+        if (((Wire)comp).nominallyNearby(query))
+          ret.add(comp);
+      } else {
+        if (comp.visiblyContains(query, g))
+          ret.add(comp);
+      }
     }
     return ret;
   }

@@ -251,7 +251,11 @@ public final class EditTool extends Tool {
         for (Component c : sel) {
           if (c instanceof Wire) {
             Wire w = (Wire) c;
-            if (w.nominallyContains(loc) && !w.endsAt(loc))
+            // New behavior for 5.0.5-HC: if clicking on the end of seelcted
+            // wire is considered a selection action, not a wiring action. Also,
+            // extra margin is added, because moving small wires is annoying, or
+            // close to impossible depending on zoom level.
+            if (w.nominallyNearby(loc))
               return select;
           }
         }

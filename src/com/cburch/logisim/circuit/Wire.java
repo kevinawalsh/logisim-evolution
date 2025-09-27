@@ -140,6 +140,15 @@ public final class Wire
           && e0.y - 2 <= q.y && q.y <= e1.y + 2;
   }
 
+  public boolean nominallyNearby(Location q) {
+    if (is_x_equal)
+      return e0.x - 4 <= q.x && q.x <= e1.x + 4
+          && e0.y - 4 <= q.y && q.y <= e1.y + 4;
+    else
+      return e0.x - 4 <= q.x && q.x <= e1.x + 4
+          && e0.y - 4 <= q.y && q.y <= e1.y + 4;
+  }
+
   public boolean visiblyContains(Location pt, Graphics g) {
     return nominallyContains(pt);
   }
