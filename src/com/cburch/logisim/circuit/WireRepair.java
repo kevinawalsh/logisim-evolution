@@ -95,7 +95,8 @@ class WireRepair extends CircuitTransaction {
   private void doMerges(CircuitMutator mutator) {
     MergeSets sets = new MergeSets();
     for (Location loc : circuit.wires.points.getAllLocations()) {
-      Collection<?> at = circuit.getComponents(loc);
+      //Collection<?> at = circuit.getComponentsByPortLocation(loc);
+      Collection<?> at = circuit.wires.points.getComponents(loc); // same thing
       if (at.size() == 2) {
         Iterator<?> atit = at.iterator();
         Object at0 = atit.next();
@@ -148,7 +149,7 @@ class WireRepair extends CircuitTransaction {
     mids.add(whole.getEnd1());
     for (Location loc : whole) {
       if (allLocs.contains(loc)) {
-        for (Component comp : circuit.getComponents(loc)) {
+        for (Component comp : circuit.getComponentsByPortLocation(loc)) {
           if (!mergeSet.contains(comp)) {
             mids.add(loc);
             break;

@@ -245,32 +245,51 @@ public final class EditTool extends Tool {
     boolean WIRING = true, SELECT = false;
     // Old behavior before 5.0.5-HC:
     //   Hover without ALT --> 
-    //     Hover over a selected wire is NOT a wiring point, it's a selection point.
-    //     Hover a Port (that doesn't have a selected wire attached)
-    //       or over a wire (that isn't selected) IS considered a wiring point, not selection.
-    //     Hover over a blank area is NOT a wiring point, it's a selection point.
-    //   Hover with ALT --> the exact opposite...
-    //     Hover over a selected wire IS a wiring point.
-    //     Hover a Port (that doesn't have a selected wire attached)
-    //       or over a wire (that isn't selected) is NOT a wiring point, its a selection.
-    //     Hover over a blank area is a wiring point, it's a selection point.
-    // This is not at all clear or intuitive in the interface.
+    //     Hover over selected wire ... SELECT point (e.g. drag-to-move action).
+    //     Hover over port (with no selected wire attached; selected or non-selected component)... WIRING point.
+    //                     [so splitters are hard to move, and selecting them doesn't help]
+    //                     [so for a component port with attached wire, behavior depends on
+    //                     whether the wire is selected, but not whether the component is
+    //                     selected... a little confusing]
+    //     Hover over wire (non-selected, over a port or not)... WIRING point (i.e. extend wire).
+    //     Hover over non-wire (selected or not, but not over a port)... SELECT point (e.g. drag-to-move).
+    //     Hover over blank area... SELECT point (e.g. rect-select).
+    //   Hover with ALT -->
+    //     Hover over selected wire... WIRING point.
+    //                     [doesn't seem useful... why select wire if not moving it?]
+    //     Hover over port (with no selected wire attached)... SELECT point.
+    //                     [useful for moving splitter? but nobody discovers this]
+    //     Hover over wire (non-selected, not over a port)... SELECT point.
+    //                     [doesn't seem useful.... clicking a wire without ALT can also still select it]
+    //     Hover over non-wire (selected or not, but not over a port)... WIRING point.
+    //                     [anti-useful.... this makes wires on top of components]
+    //     Hover over blank area... WIRING point (i.e. start new wire).
+    //                       [seems useful]
+    // Note:
+    //  - Above behavior is likely not clear in the interface at all, and likely not discoverable.
+    //  - ALT means "exact opposite" here, which is logically nice, but even from this view ALT should
+    //    probably mean "do the opposite when choosing between two reasonable alternatives", e.g.
+    //    when clicking a blank area we could rect-select or we could start a wire.
+    //
     // New behavior for 5.0.5-HC:
     //   Hover without ALT -->
-    //     [same] Hover over a selected wire is NOT a wiring point, it's a selection point.
-    //     [new]  Hover over *anything selected* is a selection point (e.g. drag-to-move action).
-    //     [same] Hover a Port (that doesn't have a selected wire attached)
-    //       or over a wire (that isn't selected) IS considered a wiring point, not selection.
-    //     Hover over a blank area is NOT a wiring point, it's a selection point.
+    //     Hover over *anything selected* ... SELECT point (e.g. drag-to-move action).
+    //     Hover over port (of non-selected component, with no selected wire attached) ...WIRING point.
+    //     Hover over wire (non-selected) ... WIRING point.
+    //     Hover over non-wire (non-selected) ... SELECT point (e.g. drag-to-move action).
+    //     Hover over blank area... SELECT point (e.g. rect-select).
     //   Hover with ALT -->
-    //     Hover over *anything selected* is a selection point (e.g. drag-to-copy action).
-    //     Hover over a *non-selected non-wire component* is a selection point (drag-to-copy action).
-    //     Hover over a *non-selected wire component* or a blank area is a wiring point.
-    // In other words, the only thing ALT affects is
-    //   - hovering in blank areas (no ALT --> select, ALT --> wiring)
-    //   - hovering over a port of a non-selected component (without an attached selected wire)
-    //     (no ALT --> wiring, ALT --> select)
+    //     Hover over *anything selected* ... SELECT point (e.g. a new drag-to-copy action).
+    //     Hover over port (of non-selected component, with no selected wire attached) ...WIRING point.
+    //     Hover over non-wire (non-selected) ... SELECT point [??? probably drops all, starts to selection?]
+    //     Hover over wire (non-selected) ... SELECT point [??? probably drops all, starts to selection?]
+    //     Hover over blank area ... WIRING point (i.e. start new wire).
+    // In other words, the only thing ALT affects is here is...
+    //   - How select tool itself behaves (normal --> move existing components, alt --> create copy and move)
+    //   - What happens when clicking blank area (normal --> rect-select, alt --> start new wire)
     boolean alt = (modsEx & MouseEvent.ALT_DOWN_MASK) != 0;
+
+    // Hover over anything selected --> SELECT
     if (canvas != null && canvas.getSelection() != null) {
       Collection<Component> sel = canvas.getSelection().getComponents();
       if (sel != null) {
@@ -292,17 +311,18 @@ public final class EditTool extends Tool {
       }
     }
 
-    // Not over a selected component. Might be:
+    // Not over a selected component. Might be...
     //  - over a port
     //  - over a wire
     //  - over a non-wire component
     //  - over a blank area
 
+    // Hover over a port --> WIRING
     Circuit circ = canvas.getCircuit();
-    Collection<? extends Component> ports = circ.getComponents(loc);
-    System.out.println("  ports = " + (ports == null ? "null" : ""+ports.size()));
-    if (ports != null && ports.size() > 0)
-      return alt ? WIRING : SELECT;
+    Collection<? extends Component> at = circ.getComponentsByPortLocation(loc);
+    System.out.println("  at = " + (at == null ? "null" : ""+at.size()));
+    if (at != null && at.size() > 0)
+      return WIRING;
 
     // Over a wire
     for (Wire w : circ.getWires()) {

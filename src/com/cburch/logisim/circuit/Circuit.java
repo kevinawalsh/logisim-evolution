@@ -446,7 +446,7 @@ public class Circuit implements AttributeDefaultProvider {
         wires.getWires());
   }
 
-  public Collection<? extends Component> getComponents(Location loc) {
+  public Collection<? extends Component> getComponentsByPortLocation(Location loc) {
     return wires.points.getComponents(loc);
   }
 

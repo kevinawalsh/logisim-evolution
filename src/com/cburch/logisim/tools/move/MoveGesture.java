@@ -63,7 +63,7 @@ public class MoveGesture {
     Set<ConnectionData> conns = new HashSet<ConnectionData>();
     for (Location loc : locs) {
       boolean found = false;
-      for (Component comp : circuit.getComponents(loc)) {
+      for (Component comp : circuit.xxxgetComponents(loc)) {
         if (!selected.contains(comp)) {
           found = true;
           break;
@@ -108,7 +108,7 @@ public class MoveGesture {
   private static Wire findWire(Circuit circ, Location loc,
       Set<Component> ignore, Wire ignoreW) {
     Wire ret = null;
-    for (Component comp : circ.getComponents(loc)) {
+    for (Component comp : circ.xxxgetComponents(loc)) {
       if (!ignore.contains(comp) && comp != ignoreW) {
         if (ret == null && comp instanceof Wire) {
           ret = (Wire) comp;

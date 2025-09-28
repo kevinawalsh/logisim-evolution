@@ -948,7 +948,7 @@ public class XmlProjectReader extends XmlReader {
           return null;
         String subcircName = name.substring(8, name.length()-1);
         Circuit subcirc = null;
-        for (Component sub : circuit.getComponents(loc)) {
+        for (Component sub : circuit.getComponentsByPortLocation(loc)) {
           if (!(sub.getFactory() instanceof SubcircuitFactory))
               continue;
           SubcircuitFactory f = (SubcircuitFactory)sub.getFactory();
