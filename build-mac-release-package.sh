@@ -164,7 +164,7 @@ ${PACKAGER} \
   --name "Logisim-Evolution" \
   --main-class com.cburch.logisim.Main \
   --main-jar "${JAR}" \
-  --java-options "--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED" \
+  --java-options "--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" \
   --app-version "${VERSION}" \
   --copyright "(c) 2025 Kevin Walsh" \
   --description "Digital logic designer and simulator." \
