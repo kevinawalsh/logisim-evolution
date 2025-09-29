@@ -108,7 +108,7 @@ public final class WiringTool extends Tool {
 
   // Wire w goes from end0 (top or left) to end1 (bottom or right), and end is one of those two points.
   private Wire checkForRepairs(Canvas canvas, Wire w, Location end) {
-    if (!canvas.getCircuit().getNonWires(end).isEmpty())
+    if (!canvas.getCircuit().getNonWiresByPortLocation(end).isEmpty())
       return w; // don't repair if the wire landed on a pin or some other connection
 
     // Vertical:
@@ -130,7 +130,7 @@ public final class WiringTool extends Tool {
     else
       cand = Location.create(end.x + delta, end.y);
 
-    for (Component comp : canvas.getCircuit().getNonWires(cand)) {
+    for (Component comp : canvas.getCircuit().getNonWiresByPortLocation(cand)) {
       if (comp.getNominalBounds().contains(end, REPAIR_RADIUS)) {
         WireRepair repair = (WireRepair) comp.getFeature(WireRepair.class);
         if (repair != null

@@ -281,13 +281,21 @@ public final class EditTool extends Tool {
     //   Hover with ALT -->
     //     Hover over *anything selected* ... SELECT point (e.g. a new drag-to-copy action).
     //     Hover over port (of non-selected component, with no selected wire attached) ...WIRING point.
-    //     Hover over non-wire (non-selected) ... SELECT point [??? probably drops all, starts to selection?]
+    //        FIXME... change this to SELECT
     //     Hover over wire (non-selected) ... SELECT point [??? probably drops all, starts to selection?]
+    //     Hover over non-wire (non-selected) ... SELECT point [??? probably drops all, starts to selection?]
     //     Hover over blank area ... WIRING point (i.e. start new wire).
     // In other words, the only thing ALT affects is here is...
     //   - How select tool itself behaves (normal --> move existing components, alt --> create copy and move)
+    //   - What happens when clicking over a wire (normal --> draw wires, alt --> select wire)
     //   - What happens when clicking blank area (normal --> rect-select, alt --> start new wire)
     boolean alt = (modsEx & MouseEvent.ALT_DOWN_MASK) != 0;
+
+    // Remaining TODO:
+    // - Change hover over non-selected port with ALT ... SELECT point
+    // - In SelectTool, if press-drag-release a component, should drop it immediately,
+    //   rather than keeping it selected.
+    // - In SelectTool, if press-drag then release with ALT, create a copy instead of moving.
 
     // Hover over anything selected --> SELECT
     if (canvas != null && canvas.getSelection() != null) {
@@ -320,18 +328,25 @@ public final class EditTool extends Tool {
     // Hover over a port --> WIRING
     Circuit circ = canvas.getCircuit();
     Collection<? extends Component> at = circ.getComponentsByPortLocation(loc);
-    System.out.println("  at = " + (at == null ? "null" : ""+at.size()));
+    // System.out.println("  at = " + (at == null ? "null" : ""+at.size()));
     if (at != null && at.size() > 0)
       return WIRING;
 
-    // Over a wire
+    // Hover over a wire --> SELECT if alt, WIRING otherwise
     for (Wire w : circ.getWires()) {
       if (w.nominallyContains(loc)) {
-        return WIRING;
+        return alt ? SELECT : WIRING;
       }
     }
 
-    // Over a blank area or non-wire component
+    // Hover over a non-wire --> SELECT
+    // NOTE: slight discrepancy, we use nominal bounds here, but select
+    // uses visble bounds.
+    Collection<Component> clicked = circ.getAllNominallyContaining(loc);
+    if (!clicked.isEmpty())
+      return SELECT;
+
+    // Over a blank area --> WIRING if alt, SELECT otherwise
     return alt ? WIRING : SELECT;
   }
 
@@ -437,7 +452,7 @@ public final class EditTool extends Tool {
     wireLoc = NULL_LOCATION;
     lastX = Integer.MIN_VALUE;
     if (wire) {
-      System.out.println("pressed wire");
+      // System.out.println("pressed wire");
       current = wiring;
       Selection sel = canvas.getSelection();
       Circuit circ = canvas.getCircuit();
@@ -514,7 +529,7 @@ public final class EditTool extends Tool {
     boolean isEligible = dx * dx + dy * dy < 36;
     if ((mods & MouseEvent.ALT_DOWN_MASK) != 0)
       isEligible = true;
-    System.out.println(""+isEligible + " dist " + (dx * dx + dy * dy) + " " + (dx*dx+dy*dy<36));
+    // System.out.println(""+isEligible + " dist " + (dx * dx + dy * dy) + " " + (dx*dx+dy*dy<36));
     if (!isEligible) {
       snapx = -1;
       snapy = -1;
@@ -525,14 +540,14 @@ public final class EditTool extends Tool {
     lastRawY = my;
     lastMods = mods;
     if (lastX == snapx && lastY == snapy && modsSame) { // already computed
-      System.out.println("precomputed: " + wireLoc);
+      // System.out.println("precomputed: " + wireLoc);
       return wireLoc != NULL_LOCATION;
     } else {
       Location snap = Location.create(snapx, snapy);
       if (modsSame) {
         Object o = cache.get(snap);
         if (o != null) {
-      System.out.println("got cache: " + o);
+      // System.out.println("got cache: " + o);
           lastX = snapx;
           lastY = snapy;
           Location oldWireLoc = wireLoc;
@@ -548,7 +563,7 @@ public final class EditTool extends Tool {
       Location oldWireLoc = wireLoc;
       boolean ret = isEligible && isWiringPoint(canvas, snap, mods);
       wireLoc = ret ? snap : NULL_LOCATION;
-      System.out.println("ret: " + ret);
+      // System.out.println("ret: " + ret);
       cache.put(snap, Boolean.valueOf(ret));
       int toRemove = cache.size() - CACHE_MAX_SIZE;
       Iterator<Location> it = cache.keySet().iterator();

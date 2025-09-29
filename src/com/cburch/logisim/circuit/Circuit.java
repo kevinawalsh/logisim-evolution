@@ -508,7 +508,7 @@ public class Circuit implements AttributeDefaultProvider {
     return false;
   }
 
-  public Collection<? extends Component> getNonWires(Location loc) {
+  public Collection<? extends Component> getNonWiresByPortLocation(Location loc) {
     return wires.points.getNonWires(loc);
   }
 

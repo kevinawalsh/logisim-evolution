@@ -278,7 +278,7 @@ public class Analyze {
       Set<LocationBit> pointsToProcess) throws AnalyzeException {
     HashSet<Component> dirtyComponents = new HashSet<>();
     for (LocationBit point : pointsToProcess) {
-      for (Component comp : circuit.getNonWires(point.loc)) {
+      for (Component comp : circuit.getNonWiresByPortLocation(point.loc)) {
         dirtyComponents.add(comp);
       }
     }

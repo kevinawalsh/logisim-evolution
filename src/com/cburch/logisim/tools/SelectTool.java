@@ -188,13 +188,13 @@ public final class SelectTool extends Tool {
     if (sel.shouldSnap()) {
       dx = Canvas.snapXToGrid(dx);
       dy = Canvas.snapYToGrid(dy);
-    } else if (topleft != null && (e.getModifiersEx() & MouseEvent.ALT_DOWN_MASK) != 0) {
-      // top left corner force align to grid
-      int destx = Canvas.snapXToGrid(topleft.getX() + dx);
-      int desty = Canvas.snapYToGrid(topleft.getY() + dy);
-      dx += destx - (topleft.getX() + dx);
-      dy += desty - (topleft.getY() + dy);
-      forceSnap = topleft;
+    // } else if (topleft != null && (e.getModifiersEx() & MouseEvent.ALT_DOWN_MASK) != 0) {
+    //   // top left corner force align to grid
+    //   int destx = Canvas.snapXToGrid(topleft.getX() + dx);
+    //   int desty = Canvas.snapYToGrid(topleft.getY() + dy);
+    //   dx += destx - (topleft.getX() + dx);
+    //   dy += desty - (topleft.getY() + dy);
+    //   forceSnap = topleft;
     }
     // after snapping, again ensure top left doesn't go off canvas
     if (topleft != null) {
