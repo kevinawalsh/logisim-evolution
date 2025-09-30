@@ -46,8 +46,12 @@ public class Audio extends Library {
     new FactoryDescription("MidiSink", S.getter("audioMidiSinkComponent"), "midisink.gif", "MidiSink"),
     new FactoryDescription("MidiIn", S.getter("audioMidiInComponent"), "midiin.gif", "MidiIn"),
     new FactoryDescription("SaturatingAdder", S.getter("audioSaturatingAdderComponent"), "saturatingadder.png", "SaturatingAdder"),
-    new FactoryDescription("SaturatingMultiplier", S.getter("audioSaturatingMultiplierComponent"), "saturatingadder.png", "SaturatingMultiplier"),
+    new FactoryDescription("SaturatingSubtractor", S.getter("audioSaturatingSubtractorComponent"), "saturatingsubtractor.png", "SaturatingSubtractor"),
+    new FactoryDescription("SaturatingNegator", S.getter("audioSaturatingNegatorComponent"), "saturatingnegator.png", "SaturatingNegator"),
+    new FactoryDescription("SaturatingMultiplier", S.getter("audioSaturatingMultiplierComponent"), "saturatingmultiplier.png", "SaturatingMultiplier"),
+    new FactoryDescription("SaturatingDivider", S.getter("audioSaturatingDividerComponent"), "saturatingdivider.png", "SaturatingDivider"),
     new FactoryDescription("FitRange", S.getter("audioFitRangeComponent"), "fitrange.png", "FitRange"),
+    new FactoryDescription("LinearMap", S.getter("audioLinearMapComponent"), "fitrange.png", "LinearMap"),
     new FactoryDescription("ScaledMath", S.getter("audioScaledMathComponent"), "scaledmath.png", "ScaledMath"),
     new FactoryDescription("LineSelect", S.getter("audioLineSelectComponent"), "lineselect.png", "LineSelect"),
   };

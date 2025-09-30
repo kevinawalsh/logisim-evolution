@@ -91,17 +91,21 @@ public class FitRange extends InstanceFactory {
     double r = Math.min(WIDTH, HEIGHT)/2.0-4;
     shadow = new Ellipse2D.Double(cx-r, cy-r, 2*r, 2*r);
   }
-
+  
   public FitRange() {
-    super("FitRange", S.getter("audioFitRangeComponent"));
+    this("FitRange", "audioFitRangeComponent");
+  }
+
+  protected FitRange(String name, String descr) {
+    super(name, S.getter(descr));
     setAttributes(
         new Attribute[] {
           INPUT_WIDTH, INPUT_MODE, OUTPUT_WIDTH, OUTPUT_MODE, ATTR_NORM },
           new Object[] {
             BitWidth.create(8), StdAttr.UNSIGNED_OPTION,
             BitWidth.create(8), StdAttr.SIGNED_OPTION, NORM_FIT });
-    setOffsetBounds(Bounds.create(-WIDTH, -HEIGHT/2, WIDTH, HEIGHT));
     setIconName("fitrange.png");
+    setOffsetBounds(Bounds.create(-WIDTH, -HEIGHT/2, WIDTH, HEIGHT));
     Port[] ps = new Port[2];
     ps[0] = new Port(0, 0, Port.OUTPUT, OUTPUT_WIDTH);
     ps[1] = new Port(-WIDTH, 0, Port.INPUT, INPUT_WIDTH);
@@ -129,7 +133,7 @@ public class FitRange extends InstanceFactory {
     }
   }
 
-  private void paintShape(InstancePainter painter, boolean inner) {
+  protected void paintShape(InstancePainter painter, boolean inner) {
     Graphics2D g = (Graphics2D)painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     GraphicsUtil.switchToWidth(g, 2);

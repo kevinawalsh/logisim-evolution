@@ -43,11 +43,11 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class SaturatingMultiplier extends SaturatingAdder {
+public class SaturatingDivider extends SaturatingAdder {
 
-  public SaturatingMultiplier() {
-    super("SaturatingMultiplier", "audioSaturatingMultiplierComponent");
-    setIconName("saturatingmultiplier.png");
+  public SaturatingDivider() {
+    super("SaturatingDivider", "audioSaturatingDividerComponent");
+    setIconName("saturatingdivider.png");
   }
   
   @Override
@@ -56,8 +56,9 @@ public class SaturatingMultiplier extends SaturatingAdder {
     g.fill(new Ellipse2D.Double(cx-12, cy-12, 24, 24));
     g.setColor(Color.WHITE);
     GraphicsUtil.switchToWidth(g, 2);
-    g.draw(new Line2D.Double(cx-5.6, cy-5.6, cx+5.6, cy+5.6));
-    g.draw(new Line2D.Double(cx-5.6, cy+5.6, cx+5.6, cy-5.6));
+    g.fill(new Ellipse2D.Double(cx-1.5, cy-6-1.5, 3, 3));
+    g.fill(new Ellipse2D.Double(cx-1.5, cy+6-1.5, 3, 3));
+    g.draw(new Line2D.Double(cx-8, cy, cx+8, cy));
   }
 
   @Override
@@ -75,15 +76,21 @@ public class SaturatingMultiplier extends SaturatingAdder {
       Value v = state.getPortValue(1+i);
       if (v.isFullyDefined()) {
         long x = v.extendAsLong(signed);
+        if (m > 1 && norm == NORM_FIT)
+          prod *= max;
         if (!signed && norm == NORM_CENTER) {
           // prod *= (x - max/2.0);
-          prod *= (x - (max+1)/2);
+          if (i == 0)
+            prod *= (x - (max+1)/2);
+          else
+            prod /= (x - (max+1)/2);
         } else {
-          prod *= x;
+          if (i == 0)
+            prod *= x;
+          else
+            prod /= x;
         }
         m++;
-        if (m > 1 && norm == NORM_FIT)
-          prod /= max;
       }
     }
     if (norm == NORM_FIT) {

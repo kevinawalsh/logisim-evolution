@@ -33,6 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
 import java.awt.event.MouseEvent;
 
 import com.cburch.logisim.circuit.SplitterAttributes;
@@ -63,6 +64,13 @@ public class LineSelect extends InstanceFactory {
   static final Attribute<Integer> ATTR_INPUTS =
       Attributes.forIntegerRange("inputs", S.getter("audioLineSelectInputs"), 2, 20);
 
+  static final AttributeOption SELECT_1 = new AttributeOption("one", S.getter("audioLineSelect1"));
+  static final AttributeOption SELECT_N = new AttributeOption("many", S.getter("audioLineSelectN"));
+
+  static final Attribute<AttributeOption> ATTR_BEHAVIOR = Attributes.forOption(
+      "behavior", S.getter("audioLineSelectBehavior"), new AttributeOption[] {
+        SELECT_1, SELECT_N });
+
   static final AttributeOption DEFAULT_SMIN = new AttributeOption("signedmin", S.getter("audioLineSelectDefaultSMin"));
   static final AttributeOption DEFAULT_ZERO = new AttributeOption("zero", S.getter("audioLineSelectDefaultZero"));
   static final AttributeOption DEFAULT_UMID = new AttributeOption("midpoint", S.getter("audioLineSelectDefaultUMid"));
@@ -79,8 +87,8 @@ public class LineSelect extends InstanceFactory {
   public LineSelect() {
     super("LineSelect", S.getter("audioLineSelectComponent"));
     setAttributes(new Attribute[] {
-      StdAttr.FACING, ATTR_SPACING, Plexers.ATTR_SIZE, ATTR_INPUTS, StdAttr.WIDTH, ATTR_DEFAULTVAL },
-      new Object[] { Direction.EAST, Integer.valueOf(1), Plexers.SIZE_NARROW, Integer.valueOf(5), BitWidth.EIGHT, DEFAULT_ZERO });
+      StdAttr.FACING, ATTR_SPACING, Plexers.ATTR_SIZE, ATTR_INPUTS, ATTR_BEHAVIOR, StdAttr.WIDTH, StdAttr.MODE, ATTR_DEFAULTVAL },
+      new Object[] { Direction.EAST, Integer.valueOf(1), Plexers.SIZE_NARROW, Integer.valueOf(5), SELECT_N, BitWidth.EIGHT, StdAttr.UNSIGNED_OPTION, DEFAULT_ZERO });
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
     setIconName("lineselect.png");
     setFacingAttribute(StdAttr.FACING);
@@ -159,7 +167,7 @@ public class LineSelect extends InstanceFactory {
       updatePorts(instance);
     } else if (attr == StdAttr.WIDTH || attr == ATTR_SPACING) {
       updatePorts(instance);
-    } else if (attr == ATTR_DEFAULTVAL) {
+    } else if (attr == ATTR_DEFAULTVAL || attr == StdAttr.MODE || attr == ATTR_BEHAVIOR) {
       instance.fireInvalidated();
     }
   }
@@ -186,6 +194,7 @@ public class LineSelect extends InstanceFactory {
     boolean wide = painter.getAttributeValue(Plexers.ATTR_SIZE) == Plexers.SIZE_WIDE;
     Direction dir = painter.getAttributeValue(StdAttr.FACING);
     int inputs = painter.getAttributeValue(ATTR_INPUTS).intValue();
+    AttributeOption behavior = painter.getAttributeValue(ATTR_BEHAVIOR);
     int spacing = painter.getAttributeValue(ATTR_SPACING).intValue();
 
     drawTrapezoid(g, bds, dir, wide);
@@ -197,19 +206,35 @@ public class LineSelect extends InstanceFactory {
     else if (dir == Direction.NORTH) yo = -10;
     else yo = 10;
 
-    int sel = painter.getShowState() ? painter.getDataOrDefault(-1) : -1;
+    int n = 0;
+    int mask = painter.getShowState() ? painter.getDataOrDefault(0) : 0;
     for (int i = 0; i < inputs; i++) {
       Location pt = painter.getComponent().getEnd(i+1).getLocation();
       int x = pt.x + xo, y = pt.y + yo;
-      g.setColor(sel == i ? RED : Color.LIGHT_GRAY);
-      if (yo == 0) {
-        g.fillRect(x - 6, y - 3, 12, 6);
-        g.setColor(Color.DARK_GRAY);
-        g.drawRect(x - 6, y - 3, 12, 6);
-      } else {
-        g.fillRect(x - 3, y - 6, 6, 12);
-        g.setColor(Color.DARK_GRAY);
-        g.drawRect(x - 3, y - 6, 6, 12);
+      if (behavior == SELECT_N) {
+        g.setColor((mask & (1<<i)) != 0 ? RED : Color.LIGHT_GRAY);
+        if (yo == 0) {
+          g.fillRect(x - 6, y - 3, 12, 6);
+          g.setColor(Color.DARK_GRAY);
+          g.drawRect(x - 6, y - 3, 12, 6);
+        } else {
+          g.fillRect(x - 3, y - 6, 6, 12);
+          g.setColor(Color.DARK_GRAY);
+          g.drawRect(x - 3, y - 6, 6, 12);
+        }
+      } else { // SELECT_1
+        boolean on = ((mask & (1 << i)) != 0) && (n == 0);
+        if (on) n++;
+        g.setColor(on ? RED : Color.LIGHT_GRAY);
+        if (yo == 0) {
+          g.fill(new Ellipse2D.Double(x - 6, y - 3, 12, 6));
+          g.setColor(Color.DARK_GRAY);
+          g.draw(new Ellipse2D.Double(x - 6, y - 3, 12, 6));
+        } else {
+          g.fill(new Ellipse2D.Double(x - 3, y - 6, 6, 12));
+          g.setColor(Color.DARK_GRAY);
+          g.draw(new Ellipse2D.Double(x - 3, y - 6, 6, 12));
+        }
       }
     }
 
@@ -223,15 +248,29 @@ public class LineSelect extends InstanceFactory {
     BitWidth bw = state.getAttributeValue(StdAttr.WIDTH);
     int w = bw.getWidth();
     int inputs = state.getAttributeValue(ATTR_INPUTS).intValue();
+    boolean signed = state.getAttributeValue(StdAttr.MODE) == StdAttr.SIGNED_OPTION;
 
-    int sel = state.getDataOrDefault(-1);
-    if (sel >= inputs)
-      sel = -1;
+    int mask = state.getDataOrDefault(0);
+    int n = 0;
+    long sum = 0;
+    Value out = null;
+    for (int i = 0; i < inputs; i++) {
+      if ((mask & (1<<i)) != 0) {
+        out = state.getPortValue(1+i);
+        if (out.isFullyDefined()) {
+          sum += out.extendAsLong(signed);
+          n++;
+        }
+      }
+    }
 
-    Value out;
-    if (0 <= sel && sel < inputs) {
-      out = state.getPortValue(1+sel);
+    if (n == 1) {
+      // out was set above
+    } else if (n > 1) {
+      // multiple selection, compute average
+      out = Value.createKnown(bw, (int)(sum/n)); 
     } else {
+      // no valid selection
       AttributeOption def = state.getAttributeValue(ATTR_DEFAULTVAL);
       if (def == DEFAULT_SMIN)
         out = Value.createKnown(bw, 1 << (w-1));
@@ -259,6 +298,7 @@ public class LineSelect extends InstanceFactory {
       int inputs = state.getAttributeValue(ATTR_INPUTS).intValue();
       Direction dir = state.getAttributeValue(StdAttr.FACING);
       int spacing = state.getAttributeValue(ATTR_SPACING).intValue();
+      AttributeOption behavior = state.getAttributeValue(ATTR_BEHAVIOR);
 
       int xo = 0, yo = 0;
       if (dir == Direction.EAST) xo = 10;
@@ -279,10 +319,17 @@ public class LineSelect extends InstanceFactory {
           sel = i;
         }
       }
-      if (state.getDataOrDefault(-1) == sel)
-        state.setData(-1);
-      else
-        state.setData(sel);
+      if (sel == -1)
+        return;
+      int bit = (1<<sel);
+      int mask = state.getDataOrDefault(0);
+      if (behavior == SELECT_1)
+        mask = mask & bit;
+      if ((mask & bit) != 0) {
+        state.setData(mask & ~bit);
+      } else {
+        state.setData(mask | bit);
+      }
       state.queueForPropagation();
     }
   }

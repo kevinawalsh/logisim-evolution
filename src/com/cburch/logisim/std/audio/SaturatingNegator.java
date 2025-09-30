@@ -36,84 +36,80 @@ import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 
+import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.instance.InstanceFactory;
+import com.cburch.logisim.instance.InstanceFactory;
+import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class SaturatingMultiplier extends SaturatingAdder {
+public class SaturatingNegator extends InstanceFactory {
 
-  public SaturatingMultiplier() {
-    super("SaturatingMultiplier", "audioSaturatingMultiplierComponent");
-    setIconName("saturatingmultiplier.png");
+  public SaturatingNegator() {
+    super("SaturatingNegator", S.getter("audioSaturatingNegatorComponent"));
+    setAttributes(
+        new Attribute[] { StdAttr.WIDTH, StdAttr.MODE },
+          new Object[] { BitWidth.create(8), StdAttr.UNSIGNED_OPTION });
+    setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
+    setOffsetBounds(Bounds.create(-30, -15, 30, 30));
+    setIconName("saturatingnegator.png");
+    setPorts(new Port[] {
+      new Port(0, 0, Port.OUTPUT, StdAttr.WIDTH),
+      new Port(-30, 0, Port.INPUT, StdAttr.WIDTH)
+    });
   }
-  
-  @Override
+
   protected void paintDecoration(Graphics2D g, double cx, double cy) {
     g.setColor(Color.GRAY);
     g.fill(new Ellipse2D.Double(cx-12, cy-12, 24, 24));
     g.setColor(Color.WHITE);
     GraphicsUtil.switchToWidth(g, 2);
-    g.draw(new Line2D.Double(cx-5.6, cy-5.6, cx+5.6, cy+5.6));
-    g.draw(new Line2D.Double(cx-5.6, cy+5.6, cx+5.6, cy-5.6));
+    g.draw(new Line2D.Double(cx-8, cy, cx-3, cy));
+    g.draw(new Line2D.Double(cx+2, cy-8, cx+2, cy+8));
+  }
+
+  @Override
+  public void paintInstance(InstancePainter painter) {
+    Graphics2D g = (Graphics2D)painter.getGraphics();
+    painter.drawBounds();
+    Bounds bds = painter.getNominalBounds();
+    double cx = bds.x + bds.width/2.0;
+    double cy = bds.y + bds.height/2.0;
+    
+    paintDecoration(g, cx, cy);
+
+    g.setColor(Color.BLACK);
+    GraphicsUtil.switchToWidth(g, 1);
+    painter.drawPorts();
   }
 
   @Override
   public void propagate(InstanceState state) {
     int w = state.getAttributeValue(StdAttr.WIDTH).getWidth();
-    int n = state.getAttributeValue(ATTR_INPUTS);
     boolean signed = state.getAttributeValue(StdAttr.MODE) == StdAttr.SIGNED_OPTION;
-    AttributeOption norm = state.getAttributeValue(ATTR_NORM);
 
     long max = signed ? ((1L << (w-1)) - 1) : ((1L << w) - 1);
     long min = signed ? -((1L << (w-1))) : 0L;
-    double prod = 1.0;
-    int m = 0;
-    for (int i = 0; i < n; i++) {
-      Value v = state.getPortValue(1+i);
-      if (v.isFullyDefined()) {
-        long x = v.extendAsLong(signed);
-        if (!signed && norm == NORM_CENTER) {
-          // prod *= (x - max/2.0);
-          prod *= (x - (max+1)/2);
-        } else {
-          prod *= x;
-        }
-        m++;
-        if (m > 1 && norm == NORM_FIT)
-          prod /= max;
-      }
+    long x;
+    Value v = state.getPortValue(1);
+    if (v.isFullyDefined()) {
+      x = v.extendAsLong(signed);
+      x = -x;
+    } else if (v.isErrorValue()) {
+      state.setPort(0, Value.createError(BitWidth.create(w)), 1);
+      return;
+    } else {
+      x = signed ? 0 : (max/2);
     }
-    if (norm == NORM_FIT) {
-      // This was already done in loop, above.
-      // Signed:
-      //   Inputs are in [-A, +B] and prod is in [-A^m, +B^m] so scale by 1/B^(m-1).
-      // Unsigned:
-      //   Inputs are in [0, +B] and prod is in [0, +B^m] so scale by 1/B^(m-1).
-    } else if (norm == NORM_CENTER) {
-      // Signed:
-      //   Inputs centered on 0, prod centered on 0, so no offset.
-      // Unsigned:
-      //   Inputs originally centered on B/2, above we
-      //   offset them by -B/2 to be centered on 0.
-      //   So prod is now centered on 0, and we offst by +B/2.
-      //   Note: this offset works fine even in the m=1 and m=0 cases. Having
-      //   the output be centered at B/2+1 when there are no inputs is reasonable.
-      //   Also note: We could use a fractional midpoint, e.g. B/2=3.5 in the
-      //   4-bit case where B=15, so the range is perfectly centered. But there
-      //   would be no inputs that represent the exact center. We instead round
-      //   up to B/2=4, to match the asymmetric range for the signed case, since
-      //   that's what we'd normally subtract when converting from unsigned to
-      //   signed.
-      if (!signed) {
-        // prod = prod + max/2.0;
-        prod = prod + (max+1)/2;
-      }
-    }
-    long ret = Math.max(min, Math.min(max, (long)Math.round(prod)));
-    state.setPort(0, Value.createKnown(BitWidth.create(w), (int)ret), 1);
+    x = Math.max(min, Math.min(max, x));
+    state.setPort(0, Value.createKnown(BitWidth.create(w), (int)x), 1);
   }
 
 }
