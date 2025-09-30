@@ -52,6 +52,7 @@ import com.cburch.logisim.std.io.SevenSegmentShape;
 import com.cburch.logisim.std.memory.CounterShape;
 import com.cburch.logisim.std.memory.RegisterShape;
 import com.cburch.logisim.std.wiring.ProbeShape;
+import com.cburch.logisim.util.Debug;
 
 public class AppearanceSvgReader {
 
@@ -116,6 +117,7 @@ public class AppearanceSvgReader {
       try {
         shape.parseSvgElement(elt);
       } catch (Exception e) {
+        Debug.error(e);
         e.printStackTrace();
         throw e;
       }

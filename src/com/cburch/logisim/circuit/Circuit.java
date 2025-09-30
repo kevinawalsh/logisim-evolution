@@ -76,6 +76,7 @@ import com.cburch.logisim.std.memory.Rom;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.CollectionUtil;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
 public class Circuit implements AttributeDefaultProvider {
@@ -265,6 +266,7 @@ public class Circuit implements AttributeDefaultProvider {
     try {
       prop.propagate();
     } catch (Throwable thr) {
+      Debug.error("circuit propagation", thr);
       thr.printStackTrace();
     }
 

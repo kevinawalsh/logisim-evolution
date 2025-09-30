@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 import javax.swing.JOptionPane;
 
 import com.cburch.logisim.gui.start.Startup;
-
+import com.cburch.logisim.util.Debug;
 
 public class Main {
   public static void main(String[] args) throws Exception {
@@ -49,6 +49,7 @@ public class Main {
     try {
       startup.run();
     } catch (Throwable e) {
+      Debug.error("main", e);
       if (headless) {
         System.err.println(e);
         e.printStackTrace(System.err);

@@ -57,6 +57,7 @@ import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.start.SplashScreen;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.JFileChoosers;
 
 public class ProjectActions {
@@ -85,6 +86,7 @@ public class ProjectActions {
         Writer result = new StringWriter();
         PrintWriter printWriter = new PrintWriter(result);
         e.printStackTrace(printWriter);
+        Debug.error("main project run", e);
         JOptionPane.showMessageDialog(null, result.toString());
         System.exit(-1);
       }
@@ -330,7 +332,8 @@ public class ProjectActions {
         return src;
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      // e.printStackTrace();
+      Debug.error("restoring backup", e);
       if (bak != null && bak.exists()) {
         File restored = restore(bak);
         if (restored != null)

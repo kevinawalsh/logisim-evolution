@@ -64,6 +64,7 @@ import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.SelectTool;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.EventSourceWeakSupport;
 
@@ -645,7 +646,7 @@ public class Project {
   public void setFrame(Frame value) {
     if (value == null || frame != null) {
       try { throw new IllegalStateException(String.format("set frame old=%s\nand frame new=%s\n", frame, value)); }
-      catch (Exception e) { e.printStackTrace(); }
+      catch (Exception e) { Debug.error("project setFrame", e); }
     }
     // Todo: simplify: oldValue should always be null here, new value always non-null.
     if (frame == value)

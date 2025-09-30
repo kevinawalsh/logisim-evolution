@@ -102,8 +102,10 @@ public class Errors {
       System.err.println(title + ": " + text);
       if (errs.length > 1)
         System.err.println(errs.length + " associated errors:");
-      for (Throwable t: errs)
-        t.printStackTrace();
+      for (Throwable t: errs) {
+        //   t.printStackTrace();
+        Debug.error(title, t);
+      }
       return;
     }
     Icon icon = isErr
@@ -138,8 +140,10 @@ public class Errors {
       PrintWriter out = new PrintWriter(errors);
       if (errs.length > 1)
         out.println(errs.length + " associated errors:");
-      for (Throwable t: errs)
+      for (Throwable t: errs) {
         t.printStackTrace(out);
+        Debug.error(title, t);
+      }
 
       String errstr = text + "\n" + errors.toString();
 

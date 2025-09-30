@@ -86,6 +86,7 @@ import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 
@@ -549,7 +550,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           support.setDropAction(COPY);
         return true;
       } catch (Throwable e) {
-        e.printStackTrace();
+        // e.printStackTrace();
+        Debug.error("project explorer", e);
       }
       return false;
     }
@@ -641,7 +643,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           return SelectionActions.doPaste(proj, support.getTransferable());
         }
       } catch (UnsupportedFlavorException | IOException e) {
-        e.printStackTrace();
+        // e.printStackTrace();
+        Debug.error("xml transfer", e);
       }
       return false;
     }

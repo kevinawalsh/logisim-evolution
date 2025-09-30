@@ -477,7 +477,8 @@ public class Simulator {
         sim._fireSimulatorReset(); // todo: fixme: ack, wrong thread!
       } catch (Exception err) {
         oops = true;
-        err.printStackTrace();
+        // err.printStackTrace();
+        Debug.error("simulator propagation", err);
       }
 
       if (doTick || (doTickIfStable && prop != null && !prop.isPending())) {
@@ -498,7 +499,8 @@ public class Simulator {
           propagated |= prop.propagate(p, evt);
       } catch (Exception err) {
         oops = true;
-        err.printStackTrace();
+        // err.printStackTrace();
+        Debug.error("simulator propagation", err);
       }
 
       if (doStep) try {
@@ -510,7 +512,8 @@ public class Simulator {
           propagated = true;
       } catch (Exception err) {
         oops = true;
-        err.printStackTrace();
+        // err.printStackTrace();
+        Debug.error("simulator propagation", err);
       }
      
       osc = prop != null && prop.isOscillating();
@@ -551,7 +554,8 @@ public class Simulator {
           if (!loop())
             return;
         } catch (Throwable e) {
-          e.printStackTrace();
+          // e.printStackTrace();
+          Debug.error("simulator thread", e);
           exceptionEncountered = true; // volatile, but not synchronized
           simStateLock.lock(); try {
             _autoPropagating = false;

@@ -54,6 +54,7 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.tools.CustomHandles;
 import com.cburch.logisim.util.Cache;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public final class Wire
@@ -74,7 +75,7 @@ public final class Wire
   public static Wire create(Location e0, Location e1) {
     if (e0.equals(e1)) {
       try { throw new IllegalArgumentException("wire with zero length"); }
-      catch (Exception e) { e.printStackTrace(); }
+      catch (Exception e) { Debug.error("creating wire", e); }
     }
     boolean is_x_equal = e0.x == e1.x;
     if ((is_x_equal && e0.y > e1.y) || (!is_x_equal && e0.x > e1.x)) {
@@ -311,7 +312,7 @@ public final class Wire
     // Normally this is handled by CircuitWires, and so it won't get
     // called. The exception is when a wire is added or removed
     try { throw new Exception("** never happens? **"); }
-    catch (Exception e) { e.printStackTrace(); }
+    catch (Exception e) { Debug.error("Wire.propagate() is vestigial", e); }
     // state.markPointAsDirty(e0);
     // state.markPointAsDirty(e1);
   }

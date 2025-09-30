@@ -411,8 +411,8 @@ public class ProjectCircuitActions {
     String error = getNewNameErrors(lib, name, vhdl);;
     if (error == null)
       return name;
-    try { throw new Exception(); }
-    catch (Exception e) { e.printStackTrace(); }
+    // try { throw new Exception(); }
+    // catch (Exception e) { e.printStackTrace(); }
     String title = vhdl ? S.get("vhdlNameDialogTitle") : S.get("circuitNameDialogTitle");
     JOptionPane.showMessageDialog(frame, error, title, JOptionPane.ERROR_MESSAGE);
     return null;

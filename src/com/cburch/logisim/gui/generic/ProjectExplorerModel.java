@@ -48,6 +48,7 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.util.Debug;
 
 class ProjectExplorerModel implements TreeModel, ProjectListener {
 
@@ -213,7 +214,7 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
 
   public void valueForPathChanged(TreePath path, Object newValue) {
     try { throw new Exception("not implemented"); }
-    catch (Exception e) { e.printStackTrace(); }
+    catch (Exception e) { Debug.error(e); }
   }
 
   // void fireStructureChanged() {
