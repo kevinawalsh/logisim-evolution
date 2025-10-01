@@ -294,24 +294,17 @@ cat <<ENDNOTE
 # To notarize, run this command:
 
 ALTOOLPW=enter-app-specific-password-here
-xcrun notarytool submit \
-    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" \
-    Logisim-Evolution-${VERSION}-HC${ARCH_SUFFIX}.pkg
+xcrun notarytool submit --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" Logisim-Evolution-${VERSION}-HC${ARCH_SUFFIX}.pkg
 
 # Then later, try:
-xcrun notarytool history \
-    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW"
+xcrun notarytool history --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW"
 
 # And if that works, then try:
 SUBMISSION_ID=whatever-from-previous-command
-xcrun notarytool info \
-    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" \
-    "\$SUBMISSION_ID"
+xcrun notarytool info --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" "\$SUBMISSION_ID"
 
 # And if that works, then try:
-xcrun notarytool log \
-    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" \
-    "\$SUBMISSION_ID" > mac-notarize${ARCH_SUFFIX}.log
+xcrun notarytool log --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" "\$SUBMISSION_ID" > mac-notarize${ARCH_SUFFIX}.log
 cat mac-notarize${ARCH_SUFFIX}.log
 
 # Check for warnings and errors, then finally:
