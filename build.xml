@@ -60,9 +60,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
 <project name="logisim-evolution">
 
     <target name="clean" depends="cleanjars">
-        <delete dir="bin/com/bfh/"/>
-        <delete dir="bin/com/cburch/"/>
-        <delete dir="bin/com/hepia/"/>
+        <delete dir="bin/"/>
     </target>
 
     <target name="cleanjars">
@@ -117,15 +115,27 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
             <compilerarg line="-Xlint:deprecation"/>
         </javac>
     </target>
-	
+
     <target name="jar" depends="compile,version,contact">
         <jar destfile="logisim-evolution.jar">
             <fileset dir="bin" />
             <fileset dir="." includes="doc/ resources/" />
-			<zipgroupfileset dir="libs" includes="*.jar"/>
+
+            <!-- fat jar: add all libs except jSerialComm -->
+            <zipgroupfileset dir="libs" includes="*.jar" excludes="jSerialComm-*.jar"/>
+            <!-- fat jar: add jSerialComm, but strip module-info and any related data -->
+            <zipfileset src="libs/jSerialComm-2.11.2.jar">
+              <exclude name="module-info.class"/>
+              <exclude name="META-INF/versions/**/module-info.class"/>
+              <exclude name="META-INF/*.SF"/>
+              <exclude name="META-INF/*.RSA"/>
+              <exclude name="META-INF/*.DSA"/>
+            </zipfileset>
+
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
                 <attribute name="Add-Opens" value="java.desktop/com.apple.eawt.event"/>
+                <attribute name="Enable-Native-Access" value="ALL-UNNAMED"/>
                 <attribute name="Implementation-Version" value="${app.version} (${git.hash})"/>
             </manifest>
         </jar>
@@ -135,11 +145,23 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         <jar destfile="logisim-evolution-src.jar">
             <fileset dir="bin" />
             <fileset dir="." includes="doc/ src/ build.xml" />
-			<zipgroupfileset dir="libs" includes="*.jar"/>
+
+            <!-- fat jar: add all libs except jSerialComm -->
+            <zipgroupfileset dir="libs" includes="*.jar" excludes="jSerialComm-*.jar"/>
+            <!-- fat jar: add jSerialComm, but strip module-info and any related data -->
+            <zipfileset src="libs/jSerialComm-2.11.2.jar">
+              <exclude name="module-info.class"/>
+              <exclude name="META-INF/versions/**/module-info.class"/>
+              <exclude name="META-INF/*.SF"/>
+              <exclude name="META-INF/*.RSA"/>
+              <exclude name="META-INF/*.DSA"/>
+            </zipfileset>
+
             <manifest>
                 <attribute name="Main-Class" value="com.cburch.logisim.Main"/>
                 <attribute name="Add-Opens" value="java.desktop/com.apple.eawt.event"/>
-                <attribute name="Add-Opens" value="java.desktop/com.microsoft.eawt.event"/>
+                <attribute name="Enable-Native-Access" value="ALL-UNNAMED"/>
+                <attribute name="Implementation-Version" value="${app.version} (${git.hash})"/>
             </manifest>
         </jar>
     </target>
