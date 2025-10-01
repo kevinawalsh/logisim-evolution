@@ -99,18 +99,40 @@ else
   exit 1
 fi
 
+VERSION_HC=`cat VERSION`
+VERSION=`sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+)-HC$/\1/' VERSION`
+if [ "${VERSION}-HC" != "${VERSION_HC}" ]; then
+  echo "Bad parse of VERSION file, format must be x.y.z-HC"
+  exit 1
+fi
+echo "Release version: $VERSION Holy Cross Edition"
+
+JAVA_RUNTIME="java-runtime-mac"
+
 # Using list-deps is recommended by one tutorial, but it seems to over-estimate
 # the modules needed. Perhaps it (harmlessly)includes transitive dependencies?
 # MODULES=`jdeps --list-deps logisim-evolution.jar | paste -d, -s`
 # MODULES=java.base,java.datatransfer,java.desktop,java.logging,java.prefs,java.xml
 
 # Using print-module-deps appears to be the correct way to get the dependencies.
-echo "Detecting java module dependencies..."
-DETECTED_MODULES=`jdeps --print-module-deps logisim-evolution.jar`
-MODULES="java.base,java.desktop,java.logging,java.prefs,jdk.httpserver"
-echo "Detected java module dependencies: ${DETECTED_MODULES}"
+echo "Detecting ignored java modules..."
+DETECTED_MISSING=`jdeps --print-module-deps logisim-evolution.jar | awk '/not found$/ { print $3; }' | cut -d. -f1 | sort -u | paste -d, -s -`
+MISSING="android"
+echo "Detected ignored java modules: ${DETECTED_MISSING}"
 
-JAVA_RUNTIME="java-runtime-mac"
+if [ "${DETECTED_MISSING}" != "${MISSING}" ]; then
+  echo "ERROR: This differs from expected!"
+  echo "     : Module dependencies must have changed!"
+  echo "     : First, confirm whether it is okay to ignore these missing modules."
+  echo "     : If so, within build-packager.sh, set MISSING=\"${DETECTED_MISSING}\""
+  echo "     : Then delete ./${JAVA_RUNTIME} and try running this again."
+  exit 1
+fi
+
+echo "Detecting java module dependencies..."
+DETECTED_MODULES=`jdeps --print-module-deps --ignore-missing-deps logisim-evolution.jar`
+MODULES="java.base,java.desktop,java.logging,java.management,java.net.http,java.prefs,jdk.httpserver"
+echo "Detected java module dependencies: ${DETECTED_MODULES}"
   
 if [ "${DETECTED_MODULES}" != "${MODULES}" ]; then
   echo "ERROR: This differs from expected!"
@@ -131,10 +153,10 @@ fi
 INSTALLER_TYPE="pkg" # Options: dmg or pkg
 OUTPUT="."
 JAR="logisim-evolution.jar"
-VERSION="5.0.4" # must be numerical x.y.z
 FILE_ASSOCIATIONS="file-associations.properties"
 APP_ICON="logisim.icns"
 JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
+
 
 # Prepare input files
 echo "Preparing input files..."
