@@ -87,6 +87,15 @@
 set -e # die on error
 #set -x # debug output
 
+APPLE_TEAM_ID="GDM3S3ULJA"
+APPLE_TEAM_ID_NAME="Developer ID Application: Kevin Walsh (${APPLE_TEAM_ID})"
+
+if ! git diff --quiet --ignore-submodules -- \
+   || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+  echo "** Working tree dirty (unstaged and/or untracked) **"
+  exit 1
+fi
+
 arch=`uname -m`
 if [ "$arch" == "arm64" ]; then
   ARCH_SUFFIX=""
@@ -106,6 +115,14 @@ if [ "${VERSION}-HC" != "${VERSION_HC}" ]; then
   exit 1
 fi
 echo "Release version: $VERSION Holy Cross Edition"
+
+CRASH_EMAIL=`sed -n '1p' crash-contact.txt`
+CRASH_LINK=`sed -n '2p' crash-contact.txt`
+echo "Crash contact email is: $CRASH_EMAIL"
+echo "Crash contact link is: $CRASH_LINK"
+
+COPYRIGHT_YEAR=`sed -n '1p' COPYRIGHT_YEAR`
+echo "Copyright year is: $COPYRIGHT_YEAR"
 
 JAVA_RUNTIME="java-runtime-mac"
 
@@ -164,6 +181,71 @@ rm -rf mac-staging
 mkdir -p mac-staging
 cp LICENSE "${JAR}" mac-staging/
 
+# jSerialComm includes jnilib native code, which must be signed, or removed
+(
+  cd mac-staging
+
+  # remove non-OSX native libs
+  jar tf "$JAR" | grep -E '\.(dll|so)$' > native-libs-other.txt
+  if [ ! -s "native-libs-other.txt" ]; then
+    echo "Note: No non-OSX native libs found in $JAR"
+  else
+    echo "Removing non-OSX native libs from $JAR ..."
+    sed 's/^/ *  /' native-libs-other.txt 
+    zip -q -d "${JAR}" '*.dll' '*.so'
+  fi
+  rm -f native-libs-other.txt
+
+  if [ "$ARCH_SUFFIX" == "-x86" ]; then
+    jar tf "$JAR" | grep -E '\.(jnilib|dylib)$' | grep -E '^OSX/(x86|x86_64)/' > native-libs.txt
+    jar tf "$JAR" | grep -E '\.(jnilib|dylib)$' | grep -E -v '^OSX/(x86|x86_64)/' > native-libs-other.txt
+  else
+    jar tf "$JAR" | grep -E '\.(jnilib|dylib)$' | grep '^OSX/aarch64/' > native-libs.txt
+    jar tf "$JAR" | grep -E '\.(jnilib|dylib)$' | grep -v '^OSX/aarch64/' > native-libs-other.txt
+  fi
+
+  if [ ! -s "native-libs-other.txt" ]; then
+    echo "Note: No mismatched-architecture OSX native libs found in $JAR"
+  else
+    echo "Removing mismatched-architecture OSX native libs from $JAR ..."
+    while IFS= read -r path; do
+      echo " *  $path"
+      zip -q -d "$JAR" "$path"
+    done < native-libs-other.txt
+  fi
+  rm -f native-libs-other.txt
+
+  if [ ! -s "native-libs.txt" ]; then
+    echo "Note: No matched-architecture OSX native libs found in $JAR"
+  else
+
+    echo "Extracting matched-architecture OSX native libs from $JAR ..."
+    mkdir -p native-libs
+    while IFS= read -r path; do
+      echo " *  $path"
+      ( cd "native-libs" && jar xf "../$JAR" "$path" )
+    done < native-libs.txt
+
+    echo "Removing apple quarantine flags, if present ..."
+    xattr -dr com.apple.quarantine "native-libs" || true
+
+    echo "Signing native libs ..."
+    while IFS= read -r path; do
+      f="native-libs/$path"
+      codesign --force --timestamp --options runtime --sign "$APPLE_TEAM_ID_NAME" "$f"
+      codesign --verify --verbose=2 "$f"
+    done < native-libs.txt
+
+    echo "Repackaging native libs ..."
+    while IFS= read -r path; do
+      jar uf "$JAR" -C "native-libs" "$path"
+    done < native-libs.txt
+
+    rm -rf native-libs
+  fi
+  rm -f native-libs.txt
+)
+
 # Prepare installer customizations: background image, postinstall script
 echo "Preparing installer customizations..."
 rm -rf mac-resources
@@ -188,7 +270,7 @@ ${PACKAGER} \
   --main-jar "${JAR}" \
   --java-options "--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED --enable-native-access=ALL-UNNAMED" \
   --app-version "${VERSION}" \
-  --copyright "(c) 2025 Kevin Walsh" \
+  --copyright "(c) ${COPYRIGHT_YEAR} Kevin Walsh" \
   --description "Digital logic designer and simulator." \
   --vendor "Kevin Walsh" \
   --runtime-image "${JAVA_RUNTIME}" \
@@ -213,22 +295,22 @@ cat <<ENDNOTE
 
 ALTOOLPW=enter-app-specific-password-here
 xcrun notarytool submit \
-    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW" \
+    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" \
     Logisim-Evolution-${VERSION}-HC${ARCH_SUFFIX}.pkg
 
 # Then later, try:
 xcrun notarytool history \
-    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW"
+    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW"
 
 # And if that works, then try:
 SUBMISSION_ID=whatever-from-previous-command
 xcrun notarytool info \
-    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW" \
+    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" \
     "\$SUBMISSION_ID"
 
 # And if that works, then try:
 xcrun notarytool log \
-    --apple-id "kwalsh@holycross.edu" --team-id "GDM3S3ULJA" --password "\$ALTOOLPW" \
+    --apple-id "kwalsh@holycross.edu" --team-id "$APPLE_TEAM_ID" --password "\$ALTOOLPW" \
     "\$SUBMISSION_ID" > mac-notarize${ARCH_SUFFIX}.log
 cat mac-notarize${ARCH_SUFFIX}.log
 
