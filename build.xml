@@ -117,7 +117,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     </target>
 
     <target name="jar" depends="compile,version,contact">
-        <jar destfile="logisim-evolution.jar">
+        <jar destfile="logisim-evolution.jar" duplicate="fail">
             <fileset dir="bin" />
             <fileset dir="." includes="doc/ resources/" />
 
@@ -142,7 +142,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     </target>
 
     <target name="jarsrc" depends="jar">
-        <jar destfile="logisim-evolution-src.jar">
+        <jar destfile="logisim-evolution-src.jar" duplicate="fail">
             <fileset dir="bin" />
             <fileset dir="." includes="doc/ src/ build.xml" />
 
