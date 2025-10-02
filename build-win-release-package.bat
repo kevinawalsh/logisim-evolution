@@ -41,10 +41,10 @@ set NSIS="c:\Program Files (x86)\NSIS\Bin\makensis.exe"
 
 rem Using print-module-deps appears to be the correct way to get the dependencies.
 echo Detecting java module dependencies...
-%JDEPS% --print-module-deps logisim-evolution.jar > module-deps.txt
+%JDEPS% --print-module-deps --ignore-missing-deps logisim-evolution.jar > module-deps.txt
 set /p DETECTED_MODULES=<module-deps.txt
 
-set MODULES=java.base,java.desktop,java.logging,java.prefs,jdk.httpserver
+set MODULES=java.base,java.desktop,java.logging,java.management,java.net.http,java.prefs,jdk.httpserver
 echo Detected java module dependencies: %DETECTED_MODULES%
 
 set JAVA_RUNTIME=logisim-evolution-runtime
@@ -70,7 +70,7 @@ rem   rem installer type can be exe or msi, but exe does not seem to work
 rem   set INSTALLER_TYPE="msi"
 rem   set OUTPUT=.
 rem   set JAR=logisim-evolution.jar
-rem   set VERSION=5.0.4
+rem   set VERSION=5.0.5
 rem   rem FILE_ASSOCIATIONS="file-associations.properties"
 rem   set APP_ICON="logisim.ico"
 rem   rem JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
@@ -120,18 +120,18 @@ echo Creating executable wrapper...
 %LAUNCH4J% logisim-l4j.xml || goto :error
 
 echo Creating ZIP package for distribution...
-IF EXIST Logisim-Evolution-5.0.4hc-windows.zip del Logisim-Evolution-5.0.4hc-windows.zip || goto :error
-IF EXIST Logisim-Evolution-5.0.4hc rmdir /S /Q Logisim-Evolution-5.0.4hc || goto :error
-mkdir Logisim-Evolution-5.0.4hc || goto :error
-copy LICENSE Logisim-Evolution-5.0.4hc\LICENSE.txt || goto :error
-copy logisim-evolution-5.0.4hc.exe Logisim-Evolution-5.0.4hc || goto :error
-xcopy /s logisim-evolution-runtime Logisim-Evolution-5.0.4hc\logisim-evolution-runtime\ || goto :error
-powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-5.0.4hc', 'Logisim-Evolution-5.0.4hc-windows.zip'); }" || goto :error
-IF EXIST logisim-evolution-5.0.4hc.exe del logisim-evolution-5.0.4hc.exe || goto :error
-rmdir /S /Q Logisim-Evolution-5.0.4hc || goto :error
+IF EXIST Logisim-Evolution-5.0.5hc-windows.zip del Logisim-Evolution-5.0.5hc-windows.zip || goto :error
+IF EXIST Logisim-Evolution-5.0.5hc rmdir /S /Q Logisim-Evolution-5.0.5hc || goto :error
+mkdir Logisim-Evolution-5.0.5hc || goto :error
+copy LICENSE Logisim-Evolution-5.0.5hc\LICENSE.txt || goto :error
+copy logisim-evolution-5.0.5hc.exe Logisim-Evolution-5.0.5hc || goto :error
+xcopy /s logisim-evolution-runtime Logisim-Evolution-5.0.5hc\logisim-evolution-runtime\ || goto :error
+powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-5.0.5hc', 'Logisim-Evolution-5.0.5hc-windows.zip'); }" || goto :error
+IF EXIST logisim-evolution-5.0.5hc.exe del logisim-evolution-5.0.5hc.exe || goto :error
+rmdir /S /Q Logisim-Evolution-5.0.5hc || goto :error
 
 echo Creating self-contained executable...
-copy logisim-evolution.jar logisim-evolution-5.0.4hc.jar || goto :error
+copy logisim-evolution.jar logisim-evolution-5.0.5hc.jar || goto :error
 %NSIS% logisim-win-install.nsi || goto :error
 
 echo =======================================

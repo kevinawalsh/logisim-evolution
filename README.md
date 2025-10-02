@@ -9,6 +9,7 @@ others.
 
 You can get the latest *unstable version* of Logisim-Evolution (Holy Cross Edition) here:
 
+[![Download for Windows](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-windows.jpg)](https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.0.5-beta/Logisim-Evolution-5.0.5hc.exe)
 [![Download for Mac](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-mac.jpg)](https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.0.5-beta/Logisim-Evolution-5.0.5-HC.pkg)
 [![Universal Jar](https://raw.githubusercontent.com/kevinawalsh/logisim-evolution/holycross/images/download-linux.jpg)](https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.0.5-beta/logisim-evolution-5.0.5hc.jar)
 
