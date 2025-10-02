@@ -33,6 +33,10 @@
   </lib>
   <lib desc="#Arithmetic" name="4"/>
   <lib desc="#Memory" name="5">
+    <tool name="Shift Register">
+      <a name="parallel" val="false"/>
+      <a name="width" val="16"/>
+    </tool>
     <tool name="ROM">
       <a name="contents">addr/data: 8 8
 0
@@ -120,7 +124,7 @@
       <a name="type" val="output"/>
     </tool>
     <tool lib="1" name="Probe">
-      <a name="facing" val="west"/>
+      <a name="facing" val="south"/>
     </tool>
     <tool lib="6" name="Button"/>
     <tool lib="2" name="NOT Gate"/>
@@ -6328,305 +6332,6 @@ coefficients (b_0, a_1, a_2) to achieve diferent effects.</a>
     <wire from="(90,110)" to="(100,110)"/>
     <wire from="(90,210)" to="(100,210)"/>
   </circuit>
-  <circuit name="diy-wave-generator">
-    <a name="appearance" val="classic"/>
-    <comp lib="0" loc="(32,59)" name="Text">
-      <a name="halign" val="left"/>
-      <a name="text">Circuit goes here...
-
-These are 32 bit numbers, with a big range (-2 billion to +2 billion).
-But aim to have numbers varying between about -10000 and +10000,
-and try to make them oscillate rapidly (anywhere from a few times 
-per second, to a few hundred times per second).
-
-The clock will tick 16000 times per second.</a>
-    </comp>
-    <comp lib="1" loc="(160,550)" name="Clock">
-      <a name="facing" val="north"/>
-      <a name="highDuration" val="8000"/>
-      <a name="label" val="This one is a SLOW clock, one tick per second"/>
-      <a name="labelfont" val="SansSerif plain 10"/>
-      <a name="labelloc" val="south"/>
-      <a name="lowDuration" val="8000"/>
-    </comp>
-    <comp lib="1" loc="(180,350)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(280,290)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(350,310)" name="Constant">
-      <a name="radix" val="10signed"/>
-      <a name="value" val="0xfffffffc"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="1" loc="(380,260)" name="Constant">
-      <a name="radix" val="10signed"/>
-      <a name="value" val="0x00000205"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="1" loc="(630,180)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(630,260)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="5" loc="(150,270)" name="Register">
-      <a name="label" val="B"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="5" loc="(250,250)" name="Register">
-      <a name="initial" val="0x2710"/>
-      <a name="label" val="A"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="5" loc="(80,470)" name="Register">
-      <a name="label" val="random!"/>
-    </comp>
-    <comp lib="6" loc="(440,470)" name="Dial">
-      <a name="label" val="Dial (0-255)"/>
-      <a name="labelloc" val="south"/>
-    </comp>
-    <comp lib="6" loc="(520,400)" name="Slider">
-      <a name="label" val="Slider (0-255)"/>
-      <a name="labelloc" val="south"/>
-    </comp>
-    <comp lib="6" loc="(540,220)" name="Dial">
-      <a name="label" val="Volume Control"/>
-      <a name="labelloc" val="south"/>
-      <a name="mode" val="twosComplement"/>
-    </comp>
-    <comp lib="6" loc="(610,150)" name="Scope">
-      <a name="color" val="#6fff0e"/>
-      <a name="mode" val="twosComplement"/>
-      <a name="offcolor" val="#878787"/>
-      <a name="samples" val="1600"/>
-      <a name="scopeheight" val="80"/>
-      <a name="scopewidth" val="240"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="8" loc="(120,470)" name="LinearMap">
-      <a name="domain" val="[0, 255]"/>
-      <a name="range" val="[-20, 20]"/>
-      <a name="widthOut" val="32"/>
-    </comp>
-    <comp lib="8" loc="(180,430)" name="SaturatingAdder">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(250,420)" name="SaturatingMultiplier">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(340,450)" name="SaturatingMultiplier">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(370,390)" name="SaturatingDivider">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(450,370)" name="SaturatingDivider">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(500,200)" name="FitRange">
-      <a name="normalization" val="cap"/>
-      <a name="typeIn" val="twosComplement"/>
-      <a name="widthIn" val="32"/>
-      <a name="widthOut" val="16"/>
-    </comp>
-    <comp lib="8" loc="(640,230)" name="PCMSink">
-      <a name="mode" val="twosComplement"/>
-      <a name="rate" val="16 kHz"/>
-      <a name="trigger" val="falling"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="8" loc="(90,390)" name="SaturatingAdder">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp loc="(570,200)" name="volume-limiter"/>
-    <wire from="(120,470)" to="(130,470)"/>
-    <wire from="(450,200)" to="(470,200)"/>
-    <wire from="(500,200)" to="(520,200)"/>
-    <wire from="(540,210)" to="(540,220)"/>
-    <wire from="(570,200)" to="(600,200)"/>
-    <wire from="(600,150)" to="(600,200)"/>
-    <wire from="(600,150)" to="(610,150)"/>
-    <wire from="(600,200)" to="(600,230)"/>
-    <wire from="(600,230)" to="(610,230)"/>
-    <wire from="(630,170)" to="(630,180)"/>
-    <wire from="(630,250)" to="(630,260)"/>
-    <wire from="(80,470)" to="(90,470)"/>
-  </circuit>
-  <circuit name="diy-sine-wave">
-    <comp lib="0" loc="(146,647)" name="Callout">
-      <a name="dx" val="94"/>
-      <a name="dy" val="-8"/>
-      <a name="foreground" val="#0400fa"/>
-      <a name="text">Using k=2 and m=5000
-works well</a>
-    </comp>
-    <comp lib="0" loc="(23,43)" name="Text">
-      <a name="halign" val="left"/>
-      <a name="text">Goal: generate an audio wave by simulating a "mass and spring" system. Just picture a
-baseball, suspended from the ceiling by a spring. When perfectly balanced, the ball will
-be at rest, not bouncing at all. Call that position X=0. If we give it a push to displace it
-upwards (making X positive) or downwards (making X negative), it will react by vibrating,
-oscillating up and down. The varying position, X, over time will be our audio signal: we
-will essentially be listening the the vibrations of the mass on a spring.
-
-Physics notes: Position is X, velocity is Xd (in units of distance per clock tick), and the
-spring is pulling back towards the origin with force X*k/m, where k is the spring
-constant and m is the mass. After 1 clock tick, Xd changes by by -X*k/m, so the new
-velocity Xd' after 1 clock tick will be:
-    Xd' = Xd + X*(-k)/m
-And X changes depending on the velocity, so the new position after 1 clock tick will be:
-   X' = X + Xd'
-The overall frequency of oscillation will be sqrt(k/m), in units of oscillations per clock tick.
-If we are running at 16kHz clock rate, then freq = 16000*sqrt(k/m) Hz.</a>
-    </comp>
-    <comp lib="0" loc="(258,650)" name="Text">
-      <a name="halign" val="left"/>
-      <a name="text" val="k"/>
-    </comp>
-    <comp lib="0" loc="(302,420)" name="Callout">
-      <a name="dx" val="21"/>
-      <a name="dy" val="59"/>
-      <a name="foreground" val="#0400fa"/>
-      <a name="text">X times (negative k)
-divided by m</a>
-    </comp>
-    <comp lib="0" loc="(336,652)" name="Text">
-      <a name="halign" val="left"/>
-      <a name="text" val="m"/>
-    </comp>
-    <comp lib="1" loc="(140,420)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(140,540)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(260,620)" name="Constant">
-      <a name="facing" val="north"/>
-      <a name="radix" val="10signed"/>
-      <a name="value" val="0x00000002"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="1" loc="(340,620)" name="Constant">
-      <a name="facing" val="north"/>
-      <a name="radix" val="10signed"/>
-      <a name="value" val="0x00001388"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="1" loc="(570,540)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(570,620)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="5" loc="(160,390)" name="Register">
-      <a name="label" val="Xd"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="5" loc="(160,510)" name="Register">
-      <a name="initial" val="0x2710"/>
-      <a name="label" val="X"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="6" loc="(470,600)" name="Dial">
-      <a name="label" val="Volume Control"/>
-      <a name="labelloc" val="south"/>
-      <a name="mode" val="twosComplement"/>
-    </comp>
-    <comp lib="6" loc="(550,510)" name="Scope">
-      <a name="color" val="#6fff0e"/>
-      <a name="mode" val="twosComplement"/>
-      <a name="offcolor" val="#878787"/>
-      <a name="samples" val="1600"/>
-      <a name="scopeheight" val="80"/>
-      <a name="scopewidth" val="240"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="8" loc="(100,510)" name="SaturatingAdder">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(300,510)" name="SaturatingNegator">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(340,500)" name="SaturatingMultiplier">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(380,510)" name="SaturatingDivider">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp lib="8" loc="(430,580)" name="FitRange">
-      <a name="normalization" val="cap"/>
-      <a name="typeIn" val="twosComplement"/>
-      <a name="widthIn" val="32"/>
-      <a name="widthOut" val="16"/>
-    </comp>
-    <comp lib="8" loc="(580,590)" name="PCMSink">
-      <a name="mode" val="twosComplement"/>
-      <a name="rate" val="16 kHz"/>
-      <a name="trigger" val="falling"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="8" loc="(90,390)" name="SaturatingAdder">
-      <a name="mode" val="twosComplement"/>
-      <a name="width" val="32"/>
-    </comp>
-    <comp loc="(500,580)" name="volume-limiter"/>
-    <wire from="(100,390)" to="(100,470)"/>
-    <wire from="(100,390)" to="(130,390)"/>
-    <wire from="(100,510)" to="(130,510)"/>
-    <wire from="(140,410)" to="(140,420)"/>
-    <wire from="(140,530)" to="(140,540)"/>
-    <wire from="(160,390)" to="(190,390)"/>
-    <wire from="(160,510)" to="(180,510)"/>
-    <wire from="(180,510)" to="(180,580)"/>
-    <wire from="(180,510)" to="(190,510)"/>
-    <wire from="(190,390)" to="(190,450)"/>
-    <wire from="(190,490)" to="(190,510)"/>
-    <wire from="(190,490)" to="(310,490)"/>
-    <wire from="(190,510)" to="(190,580)"/>
-    <wire from="(190,580)" to="(400,580)"/>
-    <wire from="(260,510)" to="(260,620)"/>
-    <wire from="(260,510)" to="(270,510)"/>
-    <wire from="(300,510)" to="(310,510)"/>
-    <wire from="(340,500)" to="(350,500)"/>
-    <wire from="(340,520)" to="(340,620)"/>
-    <wire from="(340,520)" to="(350,520)"/>
-    <wire from="(380,510)" to="(400,510)"/>
-    <wire from="(40,340)" to="(40,380)"/>
-    <wire from="(40,340)" to="(400,340)"/>
-    <wire from="(40,380)" to="(60,380)"/>
-    <wire from="(40,400)" to="(40,450)"/>
-    <wire from="(40,400)" to="(60,400)"/>
-    <wire from="(40,450)" to="(190,450)"/>
-    <wire from="(400,340)" to="(400,510)"/>
-    <wire from="(430,580)" to="(450,580)"/>
-    <wire from="(470,590)" to="(470,600)"/>
-    <wire from="(50,470)" to="(100,470)"/>
-    <wire from="(50,470)" to="(50,500)"/>
-    <wire from="(50,500)" to="(70,500)"/>
-    <wire from="(50,520)" to="(50,580)"/>
-    <wire from="(50,520)" to="(70,520)"/>
-    <wire from="(50,580)" to="(180,580)"/>
-    <wire from="(500,580)" to="(540,580)"/>
-    <wire from="(540,510)" to="(540,580)"/>
-    <wire from="(540,510)" to="(550,510)"/>
-    <wire from="(540,580)" to="(540,590)"/>
-    <wire from="(540,590)" to="(550,590)"/>
-    <wire from="(570,530)" to="(570,540)"/>
-    <wire from="(570,610)" to="(570,620)"/>
-    <wire from="(90,390)" to="(100,390)"/>
-  </circuit>
   <circuit name="sawtooth-80hz">
     <a name="appearance" val="custom"/>
     <appear>
@@ -7785,10 +7490,12 @@ whenever it is enabled.</a>
       <polyline fill="none" points="56,96 119,96" stroke="#b8b8b8"/>
       <visible-rgbled height="10" path="/RGBLED(150,340)" stroke-width="0" width="10" x="53" y="51"/>
       <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="103" y="69">to 65535</text>
+      <text dominant-baseline="central" fill="#969696" font-family="SansSerif" font-size="8" text-anchor="middle" x="113" y="103">per sec</text>
       <circ-port height="8" pin="140,310" width="8" x="46" y="56"/>
       <circ-port height="10" pin="420,300" width="10" x="125" y="85"/>
       <circ-port height="8" pin="90,500" width="8" x="66" y="106"/>
       <circ-port height="8" pin="140,370" width="8" x="46" y="66"/>
+      <circ-port height="10" pin="430,260" width="10" x="125" y="95"/>
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(125,138)" name="Callout">
@@ -7800,11 +7507,12 @@ whenever it is enabled.</a>
  32-bit value, with a feedback loop
 adding "step" during each clock tick.</a>
     </comp>
-    <comp lib="0" loc="(18,39)" name="Text">
+    <comp lib="0" loc="(13,46)" name="Text">
       <a name="halign" val="left"/>
-      <a name="text">a flexible but LOUD and UNSIGNED sawtooth generator - When enabled, counts from 0
+      <a name="text">a flexible but LOUD and UNSIGNED sawtooth-like generator - When enabled, counts from 0
 up to 65535, then resets to 0, and counts up again, forever. It counts upwards at a speed
-determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.</a>
+determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.
+This also outputs click=1 each time it wraps around.</a>
     </comp>
     <comp lib="0" loc="(297,448)" name="Text">
       <a name="halign" val="left"/>
@@ -7895,6 +7603,12 @@ anyway.</a>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="1" loc="(430,260)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="click"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
     <comp lib="1" loc="(90,500)" name="Pin">
       <a name="label" val="Freq"/>
       <a name="radix" val="10unsigned"/>
@@ -7933,6 +7647,8 @@ anyway.</a>
     <wire from="(160,510)" to="(170,510)"/>
     <wire from="(160,530)" to="(160,540)"/>
     <wire from="(160,530)" to="(170,530)"/>
+    <wire from="(180,250)" to="(180,260)"/>
+    <wire from="(180,260)" to="(430,260)"/>
     <wire from="(200,230)" to="(210,230)"/>
     <wire from="(210,230)" to="(210,300)"/>
     <wire from="(210,300)" to="(220,300)"/>
@@ -7962,10 +7678,12 @@ anyway.</a>
       <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="103" y="69">to 32767</text>
       <visible-probe height="10" path="/sweep-0-to-65535(240,180)/Probe(100,450)" stroke-width="0" width="53" x="44" y="99"/>
       <visible-rgbled height="10" path="/sweep-0-to-65535(240,180)/RGBLED(150,340)" stroke-width="0" width="10" x="53" y="61"/>
+      <text dominant-baseline="central" fill="#969696" font-family="SansSerif" font-size="8" text-anchor="middle" x="113" y="103">per sec</text>
       <circ-port height="8" pin="130,140" width="8" x="46" y="56"/>
       <circ-port height="10" pin="300,180" width="10" x="125" y="85"/>
       <circ-port height="8" pin="130,230" width="8" x="66" y="106"/>
       <circ-port height="8" pin="130,170" width="8" x="46" y="66"/>
+      <circ-port height="10" pin="320,210" width="10" x="125" y="95"/>
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(18,39)" name="Text">
@@ -8004,7 +7722,13 @@ instead of unsigned (0 to 65535).</a>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="8" loc="(280,180)" name="FitRange">
+    <comp lib="1" loc="(320,210)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="click"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="8" loc="(290,180)" name="FitRange">
       <a name="widthIn" val="16"/>
       <a name="widthOut" val="16"/>
     </comp>
@@ -8017,8 +7741,272 @@ instead of unsigned (0 to 65535).</a>
     <wire from="(150,160)" to="(150,170)"/>
     <wire from="(150,160)" to="(160,160)"/>
     <wire from="(180,200)" to="(180,230)"/>
-    <wire from="(240,180)" to="(250,180)"/>
-    <wire from="(280,180)" to="(300,180)"/>
+    <wire from="(240,180)" to="(260,180)"/>
+    <wire from="(240,190)" to="(250,190)"/>
+    <wire from="(250,190)" to="(250,210)"/>
+    <wire from="(250,210)" to="(320,210)"/>
+    <wire from="(290,180)" to="(300,180)"/>
+  </circuit>
+  <circuit name="sweep-0-to-65535-slowly">
+    <a name="appearance" val="custom"/>
+    <appear>
+      <rect fill="none" height="60" stroke="#000000" stroke-width="2" width="80" x="50" y="50"/>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="102" y="57">sweep 0</text>
+      <polyline fill="none" points="79,76 79,96" stroke="#000000"/>
+      <polyline fill="none" points="99,76 99,96" stroke="#000000"/>
+      <polyline fill="none" points="59,96 79,76" stroke="#000000"/>
+      <polyline fill="none" points="79,96 99,76" stroke="#000000"/>
+      <polyline fill="none" points="99,96 119,76" stroke="#000000"/>
+      <visible-probe height="10" path="/Probe(90,480)" stroke-width="0" width="53" x="44" y="99"/>
+      <polyline fill="none" points="56,96 119,96" stroke="#b8b8b8"/>
+      <visible-rgbled height="10" path="/RGBLED(150,340)" stroke-width="0" width="10" x="53" y="51"/>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="103" y="69">to 65535</text>
+      <text dominant-baseline="central" fill="#969696" font-family="SansSerif" font-size="8" text-anchor="middle" x="110" y="104">x0.01sec</text>
+      <circ-port height="8" pin="140,310" width="8" x="46" y="56"/>
+      <circ-port height="10" pin="420,300" width="10" x="125" y="85"/>
+      <circ-port height="8" pin="80,530" width="8" x="66" y="106"/>
+      <circ-port height="8" pin="140,370" width="8" x="46" y="66"/>
+      <circ-port height="10" pin="430,260" width="10" x="125" y="95"/>
+      <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
+    </appear>
+    <comp lib="0" loc="(125,138)" name="Callout">
+      <a name="background" val="#feffa189"/>
+      <a name="dx" val="39"/>
+      <a name="dy" val="65"/>
+      <a name="foreground" val="#cc45bf"/>
+      <a name="text">The heart of this circuit is a
+ 32-bit value, with a feedback loop
+adding "step" during each clock tick.</a>
+    </comp>
+    <comp lib="0" loc="(18,39)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">a flexible but LOUD and UNSIGNED sawtooth generator - When enabled, counts from 0
+up to 65535, then resets to 0, and counts up again, forever. It counts upwards at a speed
+determined by one of the inputs, you can choose any period from 0.01 seconds to about 41 seconds.
+The period is specified in hundredths-of-a-second as a 12-bit number between 0 and 4095.
+This also outputs click=1 each time it wraps around. </a>
+    </comp>
+    <comp lib="0" loc="(297,448)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">The counter up above is 32-bits, going from about -2billion to 2 billion,
+before wrapping around to -2billion again. Each simulated clock tick we
+add some "step" to the counter, so if the simulation is running
+at 16kHz for audio output, we'd wrap around in about:
+     P=4billion/(16000*stepsize) seconds.
+or:
+ P=4billion/(160*stepsize) hundredths of a second.
+In other words, that's the period of the sawtooth we
+generated.  Inversely, if we want a given period P,
+we can calculate the needed stepsize to get it:
+  stepsize = 4billion/(160*P)
+                 = 26843545.6/P
+</a>
+    </comp>
+    <comp lib="0" loc="(40,636)" name="Text">
+      <a name="foreground" val="#002bed"/>
+      <a name="halign" val="left"/>
+      <a name="text">Q: Why is this using a 32-bit counter instead of 16 bits?
+A: Because it lets us adjust the step size more finely,
+more precisly controlling exactly how long it takes to
+reach the maximum and wrap around back to zero.
+
+With a 32-bit counter (0 to 4billion), we have a lot
+of possible step sizes to choose from to control how
+often the counter wraps around.
+</a>
+    </comp>
+    <comp lib="0" loc="(419,357)" name="Callout">
+      <a name="background" val="#feffa189"/>
+      <a name="dx" val="-27"/>
+      <a name="dy" val="-37"/>
+      <a name="foreground" val="#cc45bf"/>
+      <a name="text">This "requantizer" divides by 2^16, so
+the large counter values are scaled down
+but exactly fill the output range [0, 65535]</a>
+    </comp>
+    <comp lib="1" loc="(140,240)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="step"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(140,310)" name="Pin">
+      <a name="behavior" val="pullup"/>
+      <a name="label" val="Enable"/>
+    </comp>
+    <comp lib="1" loc="(140,370)" name="Pin">
+      <a name="behavior" val="pulldown"/>
+      <a name="label" val="Reset"/>
+    </comp>
+    <comp lib="1" loc="(150,530)" name="Bit Extender">
+      <a name="in_width" val="12"/>
+      <a name="out_width" val="32"/>
+      <a name="type" val="zero"/>
+    </comp>
+    <comp lib="1" loc="(160,500)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x0199999a"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(220,340)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(260,510)" name="Tunnel">
+      <a name="facing" val="south"/>
+      <a name="label" val="step"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(420,300)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="Sweep"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(430,260)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="click"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(80,530)" name="Pin">
+      <a name="label" val="Period"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(90,480)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="4" loc="(200,230)" name="Adder">
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="4" loc="(220,520)" name="Divider">
+      <a name="mode" val="unsigned"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="5" loc="(250,300)" name="Register">
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="6" loc="(150,340)" name="RGBLED"/>
+    <comp lib="8" loc="(400,300)" name="FitRange">
+      <a name="typeOut" val="unsigned"/>
+      <a name="widthIn" val="32"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <wire from="(140,190)" to="(140,220)"/>
+    <wire from="(140,190)" to="(260,190)"/>
+    <wire from="(140,220)" to="(160,220)"/>
+    <wire from="(140,240)" to="(160,240)"/>
+    <wire from="(140,310)" to="(160,310)"/>
+    <wire from="(140,370)" to="(160,370)"/>
+    <wire from="(150,530)" to="(180,530)"/>
+    <wire from="(160,310)" to="(160,330)"/>
+    <wire from="(160,310)" to="(220,310)"/>
+    <wire from="(160,350)" to="(160,370)"/>
+    <wire from="(160,370)" to="(240,370)"/>
+    <wire from="(160,500)" to="(170,500)"/>
+    <wire from="(170,500)" to="(170,510)"/>
+    <wire from="(170,510)" to="(180,510)"/>
+    <wire from="(180,250)" to="(180,260)"/>
+    <wire from="(180,260)" to="(430,260)"/>
+    <wire from="(200,230)" to="(210,230)"/>
+    <wire from="(210,230)" to="(210,300)"/>
+    <wire from="(210,300)" to="(220,300)"/>
+    <wire from="(220,330)" to="(220,340)"/>
+    <wire from="(220,330)" to="(230,330)"/>
+    <wire from="(220,520)" to="(260,520)"/>
+    <wire from="(230,320)" to="(230,330)"/>
+    <wire from="(240,320)" to="(240,370)"/>
+    <wire from="(250,300)" to="(260,300)"/>
+    <wire from="(260,190)" to="(260,300)"/>
+    <wire from="(260,300)" to="(370,300)"/>
+    <wire from="(260,510)" to="(260,520)"/>
+    <wire from="(400,300)" to="(420,300)"/>
+    <wire from="(80,530)" to="(90,530)"/>
+    <wire from="(90,480)" to="(90,530)"/>
+    <wire from="(90,530)" to="(110,530)"/>
+  </circuit>
+  <circuit name="sweep-(-32768)-to-(+32767)-slowly">
+    <a name="appearance" val="custom"/>
+    <appear>
+      <rect fill="none" height="60" stroke="#000000" stroke-width="2" width="80" x="50" y="50"/>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="90" y="56">sweep -32768</text>
+      <polyline fill="none" points="79,76 79,96" stroke="#000000"/>
+      <polyline fill="none" points="99,76 99,96" stroke="#000000"/>
+      <polyline fill="none" points="59,96 79,76" stroke="#000000"/>
+      <polyline fill="none" points="79,96 99,76" stroke="#000000"/>
+      <polyline fill="none" points="99,96 119,76" stroke="#000000"/>
+      <polyline fill="none" points="56,86 119,86" stroke="#b8b8b8"/>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="103" y="69">to 32767</text>
+      <text dominant-baseline="central" fill="#969696" font-family="SansSerif" font-size="8" text-anchor="middle" x="110" y="104">x0.01sec</text>
+      <circ-port height="8" pin="130,140" width="8" x="46" y="56"/>
+      <circ-port height="10" pin="300,180" width="10" x="125" y="85"/>
+      <circ-port height="8" pin="130,230" width="8" x="66" y="106"/>
+      <circ-port height="8" pin="130,170" width="8" x="46" y="66"/>
+      <circ-port height="10" pin="320,210" width="10" x="125" y="95"/>
+      <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
+    </appear>
+    <comp lib="0" loc="(18,39)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">a flexible but LOUD and SIGNED sawtooth generator - When enabled, counts from -32768
+up to +32767, then resets to -32768, and counts up again, forever. It counts upwards at a speed
+determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.</a>
+    </comp>
+    <comp lib="0" loc="(312,252)" name="Callout">
+      <a name="background" val="#feffa189"/>
+      <a name="dx" val="-27"/>
+      <a name="dy" val="-37"/>
+      <a name="foreground" val="#cc45bf"/>
+      <a name="text">This "requantizer" adjusts the range
+so it is signed (-32768 to +32768)
+instead of unsigned (0 to 65535).</a>
+    </comp>
+    <comp lib="1" loc="(130,140)" name="Pin">
+      <a name="behavior" val="pullup"/>
+      <a name="label" val="Enable"/>
+    </comp>
+    <comp lib="1" loc="(130,170)" name="Pin">
+      <a name="behavior" val="pulldown"/>
+      <a name="label" val="Reset"/>
+    </comp>
+    <comp lib="1" loc="(130,230)" name="Pin">
+      <a name="label" val="Period"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(300,180)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="Sweep"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="10signed"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(320,210)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="click"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="8" loc="(290,180)" name="FitRange">
+      <a name="widthIn" val="16"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <comp loc="(240,180)" name="sweep-0-to-65535-slowly"/>
+    <wire from="(130,140)" to="(150,140)"/>
+    <wire from="(130,170)" to="(150,170)"/>
+    <wire from="(130,230)" to="(180,230)"/>
+    <wire from="(150,140)" to="(150,150)"/>
+    <wire from="(150,150)" to="(160,150)"/>
+    <wire from="(150,160)" to="(150,170)"/>
+    <wire from="(150,160)" to="(160,160)"/>
+    <wire from="(180,200)" to="(180,230)"/>
+    <wire from="(240,180)" to="(260,180)"/>
+    <wire from="(240,190)" to="(250,190)"/>
+    <wire from="(250,190)" to="(250,210)"/>
+    <wire from="(250,210)" to="(320,210)"/>
+    <wire from="(290,180)" to="(300,180)"/>
   </circuit>
   <circuit name="lowpass-filter-onepole">
     <a name="appearance" val="custom"/>
@@ -8669,67 +8657,39 @@ Formulas:
       <polyline fill="none" points="66,96 66,77" stroke="#000000"/>
       <polyline fill="none" points="66,76 70,76" stroke="#000000"/>
       <polyline fill="none" points="71,96 105,96" stroke="#000000"/>
-      <visible-probe height="10" path="/sawtooth(200,220)/Probe(100,450)" stroke-width="0" width="53" x="44" y="99"/>
       <polyline fill="none" points="106,76 110,76" stroke="#000000"/>
       <polyline fill="none" points="111,76 111,96" stroke="#000000"/>
       <polyline fill="none" points="111,96 121,96" stroke="#000000"/>
       <visible-led height="10" path="/LED(100,190)" stroke-width="0" width="10" x="54" y="53"/>
-      <visible-counter height="10" path="/Counter(500,180)" stroke-width="0" width="27" x="100" y="52"/>
-      <circ-port height="10" pin="480,260" width="10" x="125" y="85"/>
+      <visible-counter height="10" path="/Counter(300,180)" stroke-width="0" width="27" x="100" y="52"/>
+      <text dominant-baseline="central" fill="#969696" font-family="SansSerif" font-size="8" text-anchor="middle" x="110" y="104">x0.01sec</text>
+      <visible-probe height="10" path="/sweep-(-32768)-to-(+32767)-slowly(200,220)/sweep-0-to-65535-slowly(240,180)/Probe(90,480)" stroke-width="0" width="53" x="43" y="99"/>
+      <circ-port height="10" pin="280,260" width="10" x="125" y="85"/>
       <circ-port height="8" pin="100,260" width="8" x="66" y="106"/>
       <circ-port height="8" pin="80,190" width="8" x="46" y="56"/>
-      <circ-port height="10" pin="570,180" width="10" x="125" y="55"/>
+      <circ-port height="10" pin="370,180" width="10" x="125" y="55"/>
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
-    <comp lib="0" loc="(245,212)" name="Text">
-      <a name="halign" val="left"/>
-      <a name="text" val="x[n]"/>
-    </comp>
-    <comp lib="0" loc="(277,372)" name="Callout">
-      <a name="background" val="#feffa189"/>
-      <a name="dx" val="29"/>
-      <a name="dy" val="-54"/>
-      <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
-      <a name="text">The trick I'm using here is to use a sawtooth to
-sweep through numbers at the desired
-frequency. Whenever the sawtooth crosses the 
-centerline, going from x[n-1]&lt;1 during the last
-clock tickk, to x[n]&gt;0 during this tick, we output a 1.</a>
-    </comp>
     <comp lib="0" loc="(56,44)" name="Text">
       <a name="halign" val="left"/>
       <a name="text">click-track generator - This outputs a "0" normally, with regularly spaced short "1" pulses.
-The freequency is controlled by an input.</a>
+The period (the amount of time between clicks, in hundredths of a second) is controlled by an input.</a>
     </comp>
     <comp lib="1" loc="(100,260)" name="Pin">
-      <a name="label" val="Freq"/>
+      <a name="label" val="Period"/>
       <a name="radix" val="10unsigned"/>
       <a name="width" val="12"/>
     </comp>
-    <comp lib="1" loc="(250,330)" name="Clock">
+    <comp lib="1" loc="(280,210)" name="Clock">
       <a name="facing" val="north"/>
     </comp>
-    <comp lib="1" loc="(310,240)" name="Constant">
-      <a name="radix" val="10unsigned"/>
-      <a name="value" val="0x0000"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="1" loc="(310,280)" name="Constant">
-      <a name="radix" val="10unsigned"/>
-      <a name="value" val="0x0001"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="1" loc="(480,210)" name="Clock">
-      <a name="facing" val="north"/>
-    </comp>
-    <comp lib="1" loc="(480,260)" name="Pin">
+    <comp lib="1" loc="(280,260)" name="Pin">
       <a name="facing" val="west"/>
       <a name="label" val="click"/>
       <a name="labelloc" val="east"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="1" loc="(570,180)" name="Pin">
+    <comp lib="1" loc="(370,180)" name="Pin">
       <a name="facing" val="west"/>
       <a name="label" val="count"/>
       <a name="labelloc" val="east"/>
@@ -8741,18 +8701,7 @@ The freequency is controlled by an input.</a>
       <a name="behavior" val="pullup"/>
       <a name="label" val="Enable"/>
     </comp>
-    <comp lib="2" loc="(430,260)" name="AND Gate"/>
-    <comp lib="4" loc="(360,230)" name="Comparator">
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="4" loc="(360,290)" name="Comparator">
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="5" loc="(270,300)" name="Register">
-      <a name="label" val="x[n-1]"/>
-      <a name="width" val="16"/>
-    </comp>
-    <comp lib="5" loc="(500,180)" name="Counter">
+    <comp lib="5" loc="(300,180)" name="Counter">
       <a name="label" val="count number of clicks"/>
       <a name="max" val="0xffff"/>
       <a name="width" val="16"/>
@@ -8761,28 +8710,163 @@ The freequency is controlled by an input.</a>
       <a name="color" val="#71eff0"/>
       <a name="facing" val="south"/>
     </comp>
-    <comp loc="(200,220)" name="sawtooth"/>
+    <comp loc="(200,220)" name="sweep-(-32768)-to-(+32767)-slowly"/>
     <wire from="(100,190)" to="(120,190)"/>
     <wire from="(100,260)" to="(140,260)"/>
     <wire from="(140,240)" to="(140,260)"/>
-    <wire from="(200,220)" to="(220,220)"/>
-    <wire from="(220,220)" to="(220,300)"/>
-    <wire from="(220,220)" to="(320,220)"/>
-    <wire from="(220,300)" to="(240,300)"/>
-    <wire from="(250,320)" to="(250,330)"/>
-    <wire from="(270,300)" to="(320,300)"/>
-    <wire from="(310,240)" to="(320,240)"/>
-    <wire from="(310,280)" to="(320,280)"/>
-    <wire from="(360,220)" to="(370,220)"/>
-    <wire from="(360,280)" to="(380,280)"/>
-    <wire from="(370,220)" to="(370,240)"/>
-    <wire from="(370,240)" to="(380,240)"/>
-    <wire from="(430,260)" to="(450,260)"/>
-    <wire from="(450,190)" to="(450,260)"/>
-    <wire from="(450,190)" to="(470,190)"/>
-    <wire from="(450,260)" to="(480,260)"/>
-    <wire from="(480,200)" to="(480,210)"/>
-    <wire from="(500,180)" to="(570,180)"/>
+    <wire from="(200,230)" to="(250,230)"/>
+    <wire from="(250,190)" to="(250,230)"/>
+    <wire from="(250,190)" to="(270,190)"/>
+    <wire from="(250,230)" to="(250,260)"/>
+    <wire from="(250,260)" to="(280,260)"/>
+    <wire from="(280,200)" to="(280,210)"/>
+    <wire from="(300,180)" to="(370,180)"/>
+    <wire from="(80,190)" to="(100,190)"/>
+  </circuit>
+  <circuit name="pulse-generator">
+    <a name="appearance" val="custom"/>
+    <appear>
+      <path d="M88,50 Q92,60 96,50" fill="none" stroke="#808080" stroke-width="2"/>
+      <rect fill="none" height="59" stroke="#000000" stroke-width="2" width="80" x="50" y="50"/>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="12" text-anchor="middle" x="84" y="66">pulse</text>
+      <polyline fill="none" points="106,76 106,96" stroke="#000000"/>
+      <polyline fill="none" points="77,76 77,96" stroke="#000000"/>
+      <polyline fill="none" points="60,96 65,96" stroke="#000000"/>
+      <polyline fill="none" points="66,96 66,77" stroke="#000000"/>
+      <polyline fill="none" points="66,76 76,76" stroke="#000000"/>
+      <polyline fill="none" points="78,96 105,96" stroke="#000000"/>
+      <polyline fill="none" points="106,76 115,76" stroke="#000000"/>
+      <polyline fill="none" points="116,76 116,96" stroke="#000000"/>
+      <polyline fill="none" points="117,96 121,96" stroke="#000000"/>
+      <visible-led height="10" path="/LED(100,190)" stroke-width="0" width="10" x="54" y="53"/>
+      <visible-counter height="10" path="/Counter(290,180)" stroke-width="0" width="27" x="100" y="52"/>
+      <visible-probe height="10" path="/sweep-(-32768)-to-(+32767)-slowly(200,220)/sweep-0-to-65535-slowly(240,180)/Probe(90,480)" stroke-width="0" width="53" x="44" y="99"/>
+      <text dominant-baseline="central" fill="#9c9c9c" font-family="SansSerif" font-size="8" text-anchor="middle" x="101" y="104">Duty</text>
+      <visible-probe height="10" path="/Probe(510,230)" stroke-width="0" width="53" x="66" y="80"/>
+      <circ-port height="10" pin="520,310" width="10" x="125" y="85"/>
+      <circ-port height="8" pin="100,260" width="8" x="66" y="106"/>
+      <circ-port height="8" pin="80,190" width="8" x="46" y="56"/>
+      <circ-port height="10" pin="360,180" width="10" x="125" y="55"/>
+      <circ-port height="8" pin="120,370" width="8" x="96" y="106"/>
+      <circ-port height="10" pin="530,260" width="10" x="125" y="65"/>
+      <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
+    </appear>
+    <comp lib="0" loc="(378,401)" name="Callout">
+      <a name="dx" val="-50"/>
+      <a name="dy" val="-93"/>
+      <a name="foreground" val="#cc45bf"/>
+      <a name="halign" val="left"/>
+      <a name="text">This counter keeps track of how
+long the pulse has lasted so far.
+We compare to how long the user
+wants the pulse to last, to see if
+the pulse is still active, or has expired.</a>
+    </comp>
+    <comp lib="0" loc="(56,43)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">pulse generator - This outputs a "0" normally, with regularly spaced bursts of "1" ouputs.
+The period (the amount of time between clicks, in hundredths of a second) is controlled by an
+input, and the duration of the pulse is controlled by a second input. The duration
+is specified as a number from 0 to 65535, corresponding to a maximum of 4 seconds pulse.
+This also outputs the "sweep" number, counting from 0 up to Duty, during each pulse.</a>
+    </comp>
+    <comp lib="1" loc="(100,260)" name="Pin">
+      <a name="label" val="Period"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(120,370)" name="Pin">
+      <a name="label" val="Duty"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(270,210)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(300,320)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(360,180)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="count"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(510,230)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(520,310)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="pulse"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(530,260)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="sweep"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(80,190)" name="Pin">
+      <a name="behavior" val="pullup"/>
+      <a name="label" val="Enable"/>
+    </comp>
+    <comp lib="3" loc="(500,260)" name="Multiplexer">
+      <a name="enable" val="false"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="4" loc="(450,300)" name="Comparator">
+      <a name="mode" val="unsigned"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="5" loc="(290,180)" name="Counter">
+      <a name="label" val="count number of pulses"/>
+      <a name="max" val="0xffff"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="5" loc="(320,290)" name="Counter">
+      <a name="label" val="duration of pulse"/>
+      <a name="max" val="0xffff"/>
+      <a name="ongoal" val="stay"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(100,190)" name="LED">
+      <a name="color" val="#71eff0"/>
+      <a name="facing" val="south"/>
+    </comp>
+    <comp loc="(200,220)" name="sweep-(-32768)-to-(+32767)-slowly"/>
+    <wire from="(100,190)" to="(120,190)"/>
+    <wire from="(100,260)" to="(140,260)"/>
+    <wire from="(120,370)" to="(380,370)"/>
+    <wire from="(140,240)" to="(140,260)"/>
+    <wire from="(200,230)" to="(240,230)"/>
+    <wire from="(240,190)" to="(240,230)"/>
+    <wire from="(240,190)" to="(260,190)"/>
+    <wire from="(240,230)" to="(240,280)"/>
+    <wire from="(240,280)" to="(290,280)"/>
+    <wire from="(270,200)" to="(270,210)"/>
+    <wire from="(290,180)" to="(360,180)"/>
+    <wire from="(300,310)" to="(300,320)"/>
+    <wire from="(320,290)" to="(400,290)"/>
+    <wire from="(380,250)" to="(380,370)"/>
+    <wire from="(380,250)" to="(470,250)"/>
+    <wire from="(380,370)" to="(400,370)"/>
+    <wire from="(400,270)" to="(400,290)"/>
+    <wire from="(400,270)" to="(470,270)"/>
+    <wire from="(400,290)" to="(410,290)"/>
+    <wire from="(400,310)" to="(400,370)"/>
+    <wire from="(400,310)" to="(410,310)"/>
+    <wire from="(450,310)" to="(480,310)"/>
+    <wire from="(480,280)" to="(480,310)"/>
+    <wire from="(480,310)" to="(520,310)"/>
+    <wire from="(500,260)" to="(510,260)"/>
+    <wire from="(510,230)" to="(510,260)"/>
+    <wire from="(510,260)" to="(530,260)"/>
     <wire from="(80,190)" to="(100,190)"/>
   </circuit>
   <circuit name="serial-test">
@@ -9522,6 +9606,102 @@ The amount is controlled by a signed 8-bit input in the range [-128, 127].</a>
     <wire from="(360,180)" to="(380,180)"/>
     <wire from="(410,170)" to="(440,170)"/>
     <wire from="(470,170)" to="(490,170)"/>
+  </circuit>
+  <circuit name="balancing-fader">
+    <a name="appearance" val="custom"/>
+    <appear>
+      <rect fill="none" height="35" stroke="#000000" stroke-width="2" width="39" x="40" y="65"/>
+      <text dominant-baseline="top" font-family="SansSerif" font-size="12" text-anchor="middle" x="65" y="63">mix</text>
+      <polyline fill="none" points="48,75 56,81" stroke="#000000"/>
+      <polyline fill="none" points="49,87 55,81" stroke="#000000"/>
+      <polyline fill="none" points="55,81 66,81" stroke="#000000"/>
+      <circ-port height="8" pin="200,200" width="8" x="36" y="66"/>
+      <circ-port height="8" pin="160,440" width="8" x="56" y="96"/>
+      <circ-port height="10" pin="470,250" width="10" x="75" y="75"/>
+      <circ-port height="8" pin="200,270" width="8" x="36" y="86"/>
+      <circ-anchor facing="east" height="6" width="6" x="77" y="77"/>
+    </appear>
+    <comp lib="0" loc="(23,36)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">This circuit takes two 16-bit signed audio signals, and mixes them into one
+by taking some of one, and some of the other. The "balance" is controlled
+by a user input, a signed 8-bit input in the range [-128, 127]. 
+-128 means "use only the left sample, ignore the right"
+0 means "use half of each sample"
++127 means "use only the right sample, ignore the left"</a>
+    </comp>
+    <comp lib="1" loc="(160,440)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="label" val="Balance"/>
+      <a name="radix" val="10signed"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(200,200)" name="Pin">
+      <a name="label" val="AudioSampleLeft"/>
+      <a name="radix" val="10signed"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(200,270)" name="Pin">
+      <a name="label" val="AudioSampleRight"/>
+      <a name="radix" val="10signed"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(250,220)" name="Constant">
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0x7fff"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(470,250)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="CombinedSample"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="10signed"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(210,400)" name="LinearMap">
+      <a name="domain" val="[-128, 127]"/>
+      <a name="range" val="[0, 32767]"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <comp lib="8" loc="(290,230)" name="SaturatingSubtractor">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(320,280)" name="SaturatingMultiplier">
+      <a name="mode" val="twosComplement"/>
+      <a name="normalization" val="fit"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(340,210)" name="SaturatingMultiplier">
+      <a name="mode" val="twosComplement"/>
+      <a name="normalization" val="fit"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(430,250)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(160,400)" to="(160,440)"/>
+    <wire from="(160,400)" to="(180,400)"/>
+    <wire from="(200,200)" to="(310,200)"/>
+    <wire from="(200,270)" to="(290,270)"/>
+    <wire from="(210,400)" to="(240,400)"/>
+    <wire from="(240,240)" to="(240,290)"/>
+    <wire from="(240,240)" to="(260,240)"/>
+    <wire from="(240,290)" to="(240,400)"/>
+    <wire from="(240,290)" to="(290,290)"/>
+    <wire from="(250,220)" to="(260,220)"/>
+    <wire from="(290,230)" to="(300,230)"/>
+    <wire from="(300,220)" to="(300,230)"/>
+    <wire from="(300,220)" to="(310,220)"/>
+    <wire from="(320,280)" to="(350,280)"/>
+    <wire from="(340,210)" to="(350,210)"/>
+    <wire from="(350,210)" to="(350,240)"/>
+    <wire from="(350,240)" to="(400,240)"/>
+    <wire from="(350,260)" to="(350,280)"/>
+    <wire from="(350,260)" to="(400,260)"/>
+    <wire from="(430,250)" to="(470,250)"/>
   </circuit>
   <circuit name="filter-buildingblock">
     <a name="appearance" val="custom"/>
@@ -33166,5 +33346,1254 @@ sEcXc/8aZf+bEoUoG8MId328xiXJuIxkyDwYMPBZ9gQUKjRtQA8nIa+hfxbeW3d0OKKPs4QchJer
     <wire from="(350,360)" to="(360,360)"/>
     <wire from="(360,360)" to="(360,430)"/>
     <wire from="(460,210)" to="(530,210)"/>
+  </circuit>
+  <circuit name="attempted-reverb">
+    <a name="appearance" val="classic"/>
+    <comp lib="1" loc="(360,340)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(810,200)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(870,280)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="5" loc="(390,310)" name="Shift Register">
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(200,360)" name="Dial">
+      <a name="label" val="Reverb Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(790,170)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="320"/>
+      <a name="scopeheight" val="100"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(810,270)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="8" loc="(550,260)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(880,250)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp loc="(240,310)" name="balancing-fader"/>
+    <comp loc="(80,300)" name="recording-thank-you"/>
+    <comp loc="(840,250)" name="volume-limiter"/>
+    <wire from="(120,220)" to="(120,300)"/>
+    <wire from="(120,220)" to="(490,220)"/>
+    <wire from="(120,300)" to="(200,300)"/>
+    <wire from="(120,320)" to="(120,480)"/>
+    <wire from="(120,320)" to="(200,320)"/>
+    <wire from="(120,480)" to="(500,480)"/>
+    <wire from="(200,340)" to="(200,360)"/>
+    <wire from="(200,340)" to="(220,340)"/>
+    <wire from="(220,330)" to="(220,340)"/>
+    <wire from="(240,310)" to="(390,310)"/>
+    <wire from="(360,320)" to="(360,340)"/>
+    <wire from="(360,320)" to="(390,320)"/>
+    <wire from="(490,220)" to="(490,250)"/>
+    <wire from="(490,250)" to="(520,250)"/>
+    <wire from="(490,310)" to="(500,310)"/>
+    <wire from="(500,270)" to="(500,310)"/>
+    <wire from="(500,270)" to="(520,270)"/>
+    <wire from="(500,310)" to="(500,480)"/>
+    <wire from="(550,260)" to="(780,260)"/>
+    <wire from="(780,170)" to="(780,250)"/>
+    <wire from="(780,170)" to="(790,170)"/>
+    <wire from="(780,250)" to="(780,260)"/>
+    <wire from="(780,250)" to="(790,250)"/>
+    <wire from="(80,300)" to="(120,300)"/>
+    <wire from="(810,190)" to="(810,200)"/>
+    <wire from="(810,260)" to="(810,270)"/>
+    <wire from="(840,250)" to="(850,250)"/>
+    <wire from="(870,270)" to="(870,280)"/>
+  </circuit>
+  <circuit name="diy-wave-generator">
+    <a name="appearance" val="classic"/>
+    <comp lib="0" loc="(1014,446)" name="Callout">
+      <a name="dx" val="-20"/>
+      <a name="dy" val="22"/>
+      <a name="foreground" val="#f56224"/>
+      <a name="text" val="Input, Signed Decimal (32 bit)"/>
+    </comp>
+    <comp lib="0" loc="(221,204)" name="Text">
+      <a name="background" val="#f7a2da6e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(1) Put a register
+in the middle, to
+keep track of 
+the current number.
+Or use a few
+registers, each
+serving as a variable. </a>
+    </comp>
+    <comp lib="0" loc="(30,24)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">Your circuit goes here...
+
+Do some arithmetic and feedback loops with 32 bit numbers.
+These have a big range (-2 billion to +2 billion).
+But aim to have numbers varying between about -10000 and +10000,
+and try to make them oscillate rapidly (anywhere from a few times 
+per second, to a few hundred times per second).
+
+The clock will tick 16000 times per second.</a>
+    </comp>
+    <comp lib="0" loc="(36,205)" name="Text">
+      <a name="background" val="#7ff7576e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(2) Generate new
+values, by feeding
+the old values into
+some equation. You can
+encorporate random
+numbers too, or 
+also include user-input
+as part of the equation.</a>
+    </comp>
+    <comp lib="0" loc="(397,214)" name="Text">
+      <a name="background" val="#78b9f76e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(3) Send one
+of the values
+to the audio output.
+Or use a combination
+of several values.</a>
+    </comp>
+    <comp lib="0" loc="(624,804)" name="Callout">
+      <a name="dx" val="-66"/>
+      <a name="dy" val="-133"/>
+      <a name="foreground" val="#f56224"/>
+      <a name="text">This converts an 8-bit number
+within [0, 255] so it
+falls between -5000 and 5000
+as a 32-bit number.</a>
+    </comp>
+    <comp lib="0" loc="(701,406)" name="Callout">
+      <a name="dx" val="-20"/>
+      <a name="dy" val="22"/>
+      <a name="foreground" val="#f56224"/>
+      <a name="text" val="Constants."/>
+    </comp>
+    <comp lib="0" loc="(80,439)" name="Text">
+      <a name="background" val="#f7b1216e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(optional) Use some user
+input (dial, slider, input)
+to affect the calculation
+in some way.</a>
+    </comp>
+    <comp lib="0" loc="(904,326)" name="Callout">
+      <a name="dx" val="-20"/>
+      <a name="dy" val="22"/>
+      <a name="foreground" val="#f56224"/>
+      <a name="text" val="Input, 32-bit binary"/>
+    </comp>
+    <comp lib="1" loc="(1040,490)" name="Pin">
+      <a name="radix" val="10signed"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(1040,530)" name="Pin">
+      <a name="radix" val="10signed"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(160,570)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="label" val="This one is a SLOW clock, one tick per second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="15999"/>
+    </comp>
+    <comp lib="1" loc="(160,640)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="label" val="This one is a slow clock, one tick per half-second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="7999"/>
+    </comp>
+    <comp lib="1" loc="(390,670)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(490,480)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(590,420)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(660,440)" name="Constant">
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0xfffffffc"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(670,170)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(720,440)" name="Constant">
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0x00000205"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(730,250)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(930,390)" name="Pin">
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="5" loc="(370,620)" name="Register">
+      <a name="label" val="random!"/>
+    </comp>
+    <comp lib="5" loc="(460,400)" name="Register">
+      <a name="label" val="B"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="5" loc="(560,380)" name="Register">
+      <a name="initial" val="0x2710"/>
+      <a name="label" val="A"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="6" loc="(520,670)" name="Slider">
+      <a name="label" val="Slider (0-255)"/>
+      <a name="labelloc" val="south"/>
+    </comp>
+    <comp lib="6" loc="(650,140)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="320"/>
+      <a name="scopeheight" val="100"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(670,240)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(690,680)" name="Dial">
+      <a name="label" val="Dial (0-255)"/>
+      <a name="labelloc" val="south"/>
+    </comp>
+    <comp lib="6" loc="(750,600)" name="Dial">
+      <a name="label" val="Dial (0-255)"/>
+      <a name="labelloc" val="south"/>
+    </comp>
+    <comp lib="6" loc="(830,530)" name="Slider">
+      <a name="label" val="Slider (0-255)"/>
+      <a name="labelloc" val="south"/>
+    </comp>
+    <comp lib="6" loc="(830,650)" name="Slider">
+      <a name="color" val="#a3e2de"/>
+      <a name="label" val="Slider (-2billion) to (2billion)"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="6" loc="(930,630)" name="Dial">
+      <a name="color" val="#ace2d2"/>
+      <a name="label" val="Dial (-2billion) to (2billion)"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(400,520)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(410,620)" name="LinearMap">
+      <a name="domain" val="[0, 255]"/>
+      <a name="range" val="[-20, 20]"/>
+      <a name="widthOut" val="32"/>
+    </comp>
+    <comp lib="8" loc="(490,560)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(560,550)" name="SaturatingMultiplier">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(570,660)" name="LinearMap">
+      <a name="domain" val="[0, 255]"/>
+      <a name="range" val="[-5000, 5000]"/>
+      <a name="widthOut" val="32"/>
+    </comp>
+    <comp lib="8" loc="(610,220)" name="FitRange">
+      <a name="normalization" val="cap"/>
+      <a name="typeIn" val="twosComplement"/>
+      <a name="widthIn" val="32"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <comp lib="8" loc="(650,580)" name="SaturatingMultiplier">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(680,520)" name="SaturatingDivider">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(740,220)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(760,500)" name="SaturatingDivider">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp loc="(700,220)" name="volume-limiter"/>
+    <wire from="(100,330)" to="(100,420)"/>
+    <wire from="(130,330)" to="(130,390)"/>
+    <wire from="(130,390)" to="(200,390)"/>
+    <wire from="(170,230)" to="(210,230)"/>
+    <wire from="(200,340)" to="(200,390)"/>
+    <wire from="(200,340)" to="(380,340)"/>
+    <wire from="(350,220)" to="(370,220)"/>
+    <wire from="(370,220)" to="(370,250)"/>
+    <wire from="(370,220)" to="(390,220)"/>
+    <wire from="(370,250)" to="(380,250)"/>
+    <wire from="(370,620)" to="(380,620)"/>
+    <wire from="(380,250)" to="(380,340)"/>
+    <wire from="(410,620)" to="(420,620)"/>
+    <wire from="(520,660)" to="(520,670)"/>
+    <wire from="(520,660)" to="(540,660)"/>
+    <wire from="(540,220)" to="(580,220)"/>
+    <wire from="(610,220)" to="(640,220)"/>
+    <wire from="(640,140)" to="(640,220)"/>
+    <wire from="(640,140)" to="(650,140)"/>
+    <wire from="(640,220)" to="(650,220)"/>
+    <wire from="(670,160)" to="(670,170)"/>
+    <wire from="(670,230)" to="(670,240)"/>
+    <wire from="(700,220)" to="(710,220)"/>
+    <wire from="(730,240)" to="(730,250)"/>
+  </circuit>
+  <circuit name="diy-waves">
+    <a name="appearance" val="classic"/>
+    <comp lib="0" loc="(109,503)" name="Callout">
+      <a name="dx" val="-7"/>
+      <a name="dy" val="46"/>
+      <a name="foreground" val="#e02f89"/>
+      <a name="text">These ones
+have a fixed
+frequency</a>
+    </comp>
+    <comp lib="0" loc="(114,770)" name="Callout">
+      <a name="dx" val="-10"/>
+      <a name="dy" val="47"/>
+      <a name="foreground" val="#e02f89"/>
+      <a name="text">Pick a random number
+between 60 and 440,
+once each second.</a>
+    </comp>
+    <comp lib="0" loc="(199,208)" name="Text">
+      <a name="background" val="#f7a2da6e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(2) Generate
+a waveform at
+that frequency.</a>
+    </comp>
+    <comp lib="0" loc="(200,329)" name="Text">
+      <a name="background" val="#f7b1216e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(optional) Selectively
+enable/disable the
+waveform using
+a button, or a
+periodic pulse,
+or some other
+varying true/false value.</a>
+    </comp>
+    <comp lib="0" loc="(225,922)" name="Text">
+      <a name="foreground" val="#ff05ba"/>
+      <a name="halign" val="left"/>
+      <a name="text">Period=150
+here means one click
+every 1.50 seconds</a>
+    </comp>
+    <comp lib="0" loc="(355,213)" name="Text">
+      <a name="background" val="#78b9f76e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(3) Modify the
+resulting sound
+in some way</a>
+    </comp>
+    <comp lib="0" loc="(366,536)" name="Callout">
+      <a name="dx" val="-13"/>
+      <a name="dy" val="17"/>
+      <a name="foreground" val="#e02f89"/>
+      <a name="text" val="For these, you can pick any frequency between [0, 4095]."/>
+    </comp>
+    <comp lib="0" loc="(402,779)" name="Callout">
+      <a name="dx" val="-23"/>
+      <a name="dy" val="37"/>
+      <a name="foreground" val="#e02f89"/>
+      <a name="text">Click generators: these output a single "1" every so often
+(you choose how often)</a>
+    </comp>
+    <comp lib="0" loc="(46,170)" name="Text">
+      <a name="background" val="#7ff7576e"/>
+      <a name="halign" val="left"/>
+      <a name="text">(1) Pick a number
+for the frequency
+(can be constant,
+or adjustable, 
+random, or
+even varying over
+time)</a>
+    </comp>
+    <comp lib="0" loc="(46,26)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text" val="Vary and modify a waveform generators"/>
+    </comp>
+    <comp lib="0" loc="(610,926)" name="Text">
+      <a name="foreground" val="#ff05ba"/>
+      <a name="halign" val="left"/>
+      <a name="text">Period=150
+here means one pulse
+every 1.50 seconds,
+and Duty=8000 means
+half-second pulse.</a>
+    </comp>
+    <comp lib="0" loc="(745,522)" name="Callout">
+      <a name="dx" val="-11"/>
+      <a name="dy" val="31"/>
+      <a name="foreground" val="#e02f89"/>
+      <a name="text">For choice of frequency, you can use a constant of your choice,
+or a slider, dial, or number input.</a>
+    </comp>
+    <comp lib="0" loc="(821,779)" name="Callout">
+      <a name="dx" val="-23"/>
+      <a name="dy" val="37"/>
+      <a name="foreground" val="#e02f89"/>
+      <a name="text">Pulse generators: these turn ON for a while, every so often
+(you choose how often, and how long they stay ON)</a>
+    </comp>
+    <comp lib="1" loc="(190,630)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x1b8"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(250,900)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x096"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(360,710)" name="Constant">
+      <a name="facing" val="north"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x7fff"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(400,830)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="label" val="1 click per second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="15999"/>
+    </comp>
+    <comp lib="1" loc="(400,880)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="label" val="1 click per half-second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="7999"/>
+    </comp>
+    <comp lib="1" loc="(540,830)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="label" val="1 click per quarter-second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="3999"/>
+    </comp>
+    <comp lib="1" loc="(540,880)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="label" val="1 click per 2-seconds"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="31999"/>
+    </comp>
+    <comp lib="1" loc="(600,600)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x1b8"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(600,630)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x0dc"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(600,660)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x06e"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(640,600)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x14f"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(640,630)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x11d"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(640,660)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x03c"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(670,900)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x096"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(70,890)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="15999"/>
+    </comp>
+    <comp lib="1" loc="(720,140)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(720,900)" name="Constant">
+      <a name="facing" val="north"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x1f40"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(780,220)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(870,830)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="highDuration" val="1000"/>
+      <a name="label" val="sixteenth-second pulse each half second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="7000"/>
+    </comp>
+    <comp lib="1" loc="(870,880)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="highDuration" val="8000"/>
+      <a name="label" val="half-second pulse, then wait 1 second"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="labelloc" val="south"/>
+      <a name="lowDuration" val="16000"/>
+    </comp>
+    <comp lib="1" loc="(880,660)" name="Pin">
+      <a name="label" val="Decimal Freq Input"/>
+      <a name="labelloc" val="south"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(890,600)" name="Pin">
+      <a name="label" val="Binary Freq Input"/>
+      <a name="labelloc" val="south"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="5" loc="(90,850)" name="Register">
+      <a name="label" val="random!"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="6" loc="(700,110)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="320"/>
+      <a name="scopeheight" val="100"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(700,610)" name="Slider">
+      <a name="label" val="Freq Slider"/>
+      <a name="labelloc" val="south"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="6" loc="(720,210)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(750,600)" name="Dial">
+      <a name="label" val="Freq Dial"/>
+      <a name="labelloc" val="south"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="8" loc="(130,850)" name="LinearMap">
+      <a name="domain" val="[0, 4095]"/>
+      <a name="range" val="[60, 440]"/>
+      <a name="widthIn" val="12"/>
+      <a name="widthOut" val="12"/>
+    </comp>
+    <comp lib="8" loc="(790,190)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp loc="(140,600)" name="sawtooth-80hz"/>
+    <comp loc="(140,680)" name="triangle-160hz"/>
+    <comp loc="(290,600)" name="sinwave"/>
+    <comp loc="(290,680)" name="sawtooth"/>
+    <comp loc="(330,870)" name="click-track"/>
+    <comp loc="(390,600)" name="white-noise"/>
+    <comp loc="(390,680)" name="squarewave"/>
+    <comp loc="(490,600)" name="trianglewave"/>
+    <comp loc="(750,190)" name="volume-limiter"/>
+    <comp loc="(750,870)" name="pulse-generator"/>
+    <wire from="(130,850)" to="(140,850)"/>
+    <wire from="(150,220)" to="(190,220)"/>
+    <wire from="(190,630)" to="(230,630)"/>
+    <wire from="(220,250)" to="(220,310)"/>
+    <wire from="(230,620)" to="(230,630)"/>
+    <wire from="(250,900)" to="(270,900)"/>
+    <wire from="(270,890)" to="(270,900)"/>
+    <wire from="(300,220)" to="(350,220)"/>
+    <wire from="(360,700)" to="(360,710)"/>
+    <wire from="(450,220)" to="(580,220)"/>
+    <wire from="(580,190)" to="(580,220)"/>
+    <wire from="(580,190)" to="(690,190)"/>
+    <wire from="(670,900)" to="(690,900)"/>
+    <wire from="(690,110)" to="(690,190)"/>
+    <wire from="(690,110)" to="(700,110)"/>
+    <wire from="(690,190)" to="(700,190)"/>
+    <wire from="(690,890)" to="(690,900)"/>
+    <wire from="(70,870)" to="(70,890)"/>
+    <wire from="(720,130)" to="(720,140)"/>
+    <wire from="(720,200)" to="(720,210)"/>
+    <wire from="(720,890)" to="(720,900)"/>
+    <wire from="(750,190)" to="(760,190)"/>
+    <wire from="(780,210)" to="(780,220)"/>
+    <wire from="(90,850)" to="(100,850)"/>
+  </circuit>
+  <circuit name="diy-create-a-wave">
+    <a name="appearance" val="classic"/>
+    <comp lib="0" loc="(320,493)" name="Callout">
+      <a name="background" val="#d6f5982f"/>
+      <a name="dx" val="-38"/>
+      <a name="dy" val="-190"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text">This restricts the "sweep" through ROM
+to the range 0 to 23. So only the
+first 24 values in the ROM are used.
+If you want to use more than 24, or less,
+adjust the range in here.</a>
+    </comp>
+    <comp lib="0" loc="(386,98)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="49"/>
+      <a name="dy" val="142"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text">Each value in this ROM is a 4 bit unsigned audio
+sample, in the range of 0 to F, in hex...
+0 1 2 3 4 5 6 7 8 9 A B C D E F
+low              middle            high
+Click to edit them. They will play back in
+a loop, at whatever frequency you pick.
+(NOTE: Only the first 24 values are used.)</a>
+    </comp>
+    <comp lib="0" loc="(695,469)" name="Callout">
+      <a name="dx" val="-96"/>
+      <a name="dy" val="-128"/>
+      <a name="text">This adjusts the range 
+from [0, 15] to [-10000, +10000]</a>
+    </comp>
+    <comp lib="0" loc="(99,438)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="50"/>
+      <a name="dy" val="-50"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text" val="Pick a frequency."/>
+    </comp>
+    <comp lib="1" loc="(120,230)" name="Pin">
+      <a name="behavior" val="pullup"/>
+      <a name="label" val="Enable"/>
+    </comp>
+    <comp lib="1" loc="(120,260)" name="Pin">
+      <a name="behavior" val="pulldown"/>
+      <a name="label" val="Reset"/>
+    </comp>
+    <comp lib="1" loc="(160,320)" name="Pin">
+      <a name="label" val="Freq"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(710,270)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(770,350)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="5" loc="(400,260)" name="ROM">
+      <a name="contents">addr/data: 8 4
+48*7 31*0 2 f 0 9 9 d
+a 3 3 7 8 e 3 0
+9 a a 5 d e 2 1
+8 0 8 8 4 6 f b
+a 9 d 2 0 3 7 2
+b 9 3 5 9 f 3 3
+6 8 6 6 a a 9 3
+8 9 e 9 a 3 9 b
+2 f 1 c 3 4 0 0
+3 d 5 5 6 9 c 7
+0 f 7 3 0 3 d 1
+3 7 d 7 2 8 5 4
+9 6 b 2 b 3 9 1
+2 5 a 1 6 d a a
+0 3 7 8 8 1 d d
+4 6 5 e b f b 2
+1 9 e 1 c 5 9 c
+6 f e 2 8 5 e 9
+6 9 f f 4 e e 7
+5 f 6 6 c 9 8 e
+9 d f 8 3 f 4 0
+e 6 7 7 5 1 d 5
+9 3 b
+</a>
+      <a name="dataWidth" val="4"/>
+      <a name="proportions" val="tall"/>
+    </comp>
+    <comp lib="6" loc="(190,310)" name="Slider">
+      <a name="label" val="Freq Slider"/>
+      <a name="labelloc" val="south"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="6" loc="(690,240)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="320"/>
+      <a name="scopeheight" val="100"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(710,340)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="8" loc="(290,270)" name="LinearMap">
+      <a name="domain" val="[0, 65535]"/>
+      <a name="range" val="[0, 23]"/>
+      <a name="widthIn" val="16"/>
+    </comp>
+    <comp lib="8" loc="(600,320)" name="LinearMap">
+      <a name="domain" val="[0, 15]"/>
+      <a name="range" val="[-10000, +10000]"/>
+      <a name="widthIn" val="4"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <comp lib="8" loc="(780,320)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp loc="(240,270)" name="sweep-0-to-65535"/>
+    <comp loc="(740,320)" name="volume-limiter"/>
+    <wire from="(120,230)" to="(140,230)"/>
+    <wire from="(120,260)" to="(140,260)"/>
+    <wire from="(140,230)" to="(140,240)"/>
+    <wire from="(140,240)" to="(160,240)"/>
+    <wire from="(140,250)" to="(140,260)"/>
+    <wire from="(140,250)" to="(160,250)"/>
+    <wire from="(160,320)" to="(170,320)"/>
+    <wire from="(170,300)" to="(170,320)"/>
+    <wire from="(180,290)" to="(180,300)"/>
+    <wire from="(180,300)" to="(190,300)"/>
+    <wire from="(190,300)" to="(190,310)"/>
+    <wire from="(240,270)" to="(260,270)"/>
+    <wire from="(290,270)" to="(400,270)"/>
+    <wire from="(540,320)" to="(570,320)"/>
+    <wire from="(600,320)" to="(680,320)"/>
+    <wire from="(680,240)" to="(680,320)"/>
+    <wire from="(680,240)" to="(690,240)"/>
+    <wire from="(680,320)" to="(690,320)"/>
+    <wire from="(710,260)" to="(710,270)"/>
+    <wire from="(710,330)" to="(710,340)"/>
+    <wire from="(740,320)" to="(750,320)"/>
+    <wire from="(770,340)" to="(770,350)"/>
+  </circuit>
+  <circuit name="diy-sine-wave">
+    <comp lib="0" loc="(146,647)" name="Callout">
+      <a name="dx" val="94"/>
+      <a name="dy" val="-8"/>
+      <a name="foreground" val="#0400fa"/>
+      <a name="text">Using k=2 and m=5000
+works well</a>
+    </comp>
+    <comp lib="0" loc="(23,43)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">Goal: generate an audio wave by simulating a "mass and spring" system. Just picture a
+baseball, suspended from the ceiling by a spring. When perfectly balanced, the ball will
+be at rest, not bouncing at all. Call that position X=0. If we give it a push to displace it
+upwards (making X positive) or downwards (making X negative), it will react by vibrating,
+oscillating up and down. The varying position, X, over time will be our audio signal: we
+will essentially be listening the the vibrations of the mass on a spring.
+
+Physics notes: Position is X, velocity is Xd (in units of distance per clock tick), and the
+spring is pulling back towards the origin with force X*k/m, where k is the spring
+constant and m is the mass. After 1 clock tick, Xd changes by by -X*k/m, so the new
+velocity Xd' after 1 clock tick will be:
+    Xd' = Xd + X*(-k)/m
+And X changes depending on the velocity, so the new position after 1 clock tick will be:
+   X' = X + Xd'
+The overall frequency of oscillation will be sqrt(k/m), in units of oscillations per clock tick.
+If we are running at 16kHz clock rate, then freq = 16000*sqrt(k/m) Hz.</a>
+    </comp>
+    <comp lib="0" loc="(258,650)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text" val="k"/>
+    </comp>
+    <comp lib="0" loc="(302,420)" name="Callout">
+      <a name="dx" val="21"/>
+      <a name="dy" val="59"/>
+      <a name="foreground" val="#0400fa"/>
+      <a name="text">X times (negative k)
+divided by m</a>
+    </comp>
+    <comp lib="0" loc="(336,652)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text" val="m"/>
+    </comp>
+    <comp lib="1" loc="(140,420)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(140,540)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(260,620)" name="Constant">
+      <a name="facing" val="north"/>
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0x00000002"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(340,620)" name="Constant">
+      <a name="facing" val="north"/>
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0x00001388"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="1" loc="(570,540)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(570,620)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="5" loc="(160,390)" name="Register">
+      <a name="label" val="Xd"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="5" loc="(160,510)" name="Register">
+      <a name="initial" val="0x2710"/>
+      <a name="label" val="X"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="6" loc="(470,600)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(550,510)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="1600"/>
+      <a name="scopeheight" val="80"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(100,510)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(300,510)" name="SaturatingNegator">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(340,500)" name="SaturatingMultiplier">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(380,510)" name="SaturatingDivider">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp lib="8" loc="(430,580)" name="FitRange">
+      <a name="normalization" val="cap"/>
+      <a name="typeIn" val="twosComplement"/>
+      <a name="widthIn" val="32"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <comp lib="8" loc="(580,590)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="trigger" val="falling"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(90,390)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="32"/>
+    </comp>
+    <comp loc="(500,580)" name="volume-limiter"/>
+    <wire from="(100,390)" to="(100,470)"/>
+    <wire from="(100,390)" to="(130,390)"/>
+    <wire from="(100,510)" to="(130,510)"/>
+    <wire from="(140,410)" to="(140,420)"/>
+    <wire from="(140,530)" to="(140,540)"/>
+    <wire from="(160,390)" to="(190,390)"/>
+    <wire from="(160,510)" to="(180,510)"/>
+    <wire from="(180,510)" to="(180,580)"/>
+    <wire from="(180,510)" to="(190,510)"/>
+    <wire from="(190,390)" to="(190,450)"/>
+    <wire from="(190,490)" to="(190,510)"/>
+    <wire from="(190,490)" to="(310,490)"/>
+    <wire from="(190,510)" to="(190,580)"/>
+    <wire from="(190,580)" to="(400,580)"/>
+    <wire from="(260,510)" to="(260,620)"/>
+    <wire from="(260,510)" to="(270,510)"/>
+    <wire from="(300,510)" to="(310,510)"/>
+    <wire from="(340,500)" to="(350,500)"/>
+    <wire from="(340,520)" to="(340,620)"/>
+    <wire from="(340,520)" to="(350,520)"/>
+    <wire from="(380,510)" to="(400,510)"/>
+    <wire from="(40,340)" to="(40,380)"/>
+    <wire from="(40,340)" to="(400,340)"/>
+    <wire from="(40,380)" to="(60,380)"/>
+    <wire from="(40,400)" to="(40,450)"/>
+    <wire from="(40,400)" to="(60,400)"/>
+    <wire from="(40,450)" to="(190,450)"/>
+    <wire from="(400,340)" to="(400,510)"/>
+    <wire from="(430,580)" to="(450,580)"/>
+    <wire from="(470,590)" to="(470,600)"/>
+    <wire from="(50,470)" to="(100,470)"/>
+    <wire from="(50,470)" to="(50,500)"/>
+    <wire from="(50,500)" to="(70,500)"/>
+    <wire from="(50,520)" to="(50,580)"/>
+    <wire from="(50,520)" to="(70,520)"/>
+    <wire from="(50,580)" to="(180,580)"/>
+    <wire from="(500,580)" to="(540,580)"/>
+    <wire from="(540,510)" to="(540,580)"/>
+    <wire from="(540,510)" to="(550,510)"/>
+    <wire from="(540,580)" to="(540,590)"/>
+    <wire from="(540,590)" to="(550,590)"/>
+    <wire from="(570,530)" to="(570,540)"/>
+    <wire from="(570,610)" to="(570,620)"/>
+    <wire from="(90,390)" to="(100,390)"/>
+  </circuit>
+  <circuit name="diy-envelope">
+    <a name="appearance" val="classic"/>
+    <comp lib="0" loc="(109,548)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="50"/>
+      <a name="dy" val="-50"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text" val="Pick a period"/>
+    </comp>
+    <comp lib="0" loc="(331,603)" name="Callout">
+      <a name="background" val="#d6f5982f"/>
+      <a name="dx" val="-38"/>
+      <a name="dy" val="-190"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text">This restricts the "sweep" through ROM
+to the range 0 to 255. So ALL values in the 
+ROM are used.
+If you want to use fewer,
+adjust the range in here.</a>
+    </comp>
+    <comp lib="0" loc="(431,212)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="49"/>
+      <a name="dy" val="142"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text">Each value in this ROM is a 4 bit unsigned "volume"
+numer, in the range of 0 to F, in hex...
+0 1 2 3 4 5 6 7 8 9 A B C D E F
+low              middle            high
+Click to edit them. These will be used
+to control the volume of the sound
+(0=OFF, 7=medium, F=loud)</a>
+    </comp>
+    <comp lib="0" loc="(700,581)" name="Callout">
+      <a name="dx" val="-96"/>
+      <a name="dy" val="-128"/>
+      <a name="text">This adjusts the range 
+from [0, 15] to [0, 32767]</a>
+    </comp>
+    <comp lib="1" loc="(130,340)" name="Pin">
+      <a name="behavior" val="pullup"/>
+      <a name="label" val="Enable"/>
+    </comp>
+    <comp lib="1" loc="(130,370)" name="Pin">
+      <a name="behavior" val="pulldown"/>
+      <a name="label" val="Reset"/>
+    </comp>
+    <comp lib="1" loc="(170,430)" name="Pin">
+      <a name="label" val="Period"/>
+      <a name="radix" val="10unsigned"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(180,190)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x140"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(840,370)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(900,450)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="5" loc="(410,370)" name="ROM">
+      <a name="contents">addr/data: 8 4
+1 3 6 8 9 f f f
+e d 14*c b b a a a
+9 9 9 8 8 8 7 7
+7 5*6 6*5 6*4 6*3 7*2 7*1
+</a>
+      <a name="dataWidth" val="4"/>
+      <a name="proportions" val="tall"/>
+    </comp>
+    <comp lib="6" loc="(140,160)" name="Slider">
+      <a name="facing" val="north"/>
+      <a name="label" val="Freq Slider"/>
+      <a name="labelloc" val="north"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="6" loc="(200,420)" name="Slider">
+      <a name="label" val="Period Slider"/>
+      <a name="labelloc" val="south"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="6" loc="(820,340)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="320"/>
+      <a name="scopeheight" val="100"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(840,440)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="8" loc="(300,380)" name="LinearMap">
+      <a name="domain" val="[0, 65535]"/>
+      <a name="range" val="[0, 256]"/>
+      <a name="widthIn" val="16"/>
+    </comp>
+    <comp lib="8" loc="(610,430)" name="LinearMap">
+      <a name="domain" val="[0, 15]"/>
+      <a name="range" val="[0, 32767]"/>
+      <a name="widthIn" val="4"/>
+      <a name="widthOut" val="16"/>
+    </comp>
+    <comp lib="8" loc="(750,420)" name="SaturatingMultiplier">
+      <a name="mode" val="twosComplement"/>
+      <a name="normalization" val="fit"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(910,420)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp loc="(250,130)" name="sinwave"/>
+    <comp loc="(250,380)" name="sweep-0-to-65535-slowly"/>
+    <comp loc="(870,420)" name="volume-limiter"/>
+    <wire from="(130,340)" to="(150,340)"/>
+    <wire from="(130,370)" to="(150,370)"/>
+    <wire from="(140,160)" to="(140,170)"/>
+    <wire from="(140,170)" to="(180,170)"/>
+    <wire from="(150,340)" to="(150,350)"/>
+    <wire from="(150,350)" to="(170,350)"/>
+    <wire from="(150,360)" to="(150,370)"/>
+    <wire from="(150,360)" to="(170,360)"/>
+    <wire from="(170,430)" to="(180,430)"/>
+    <wire from="(180,190)" to="(190,190)"/>
+    <wire from="(180,410)" to="(180,430)"/>
+    <wire from="(190,150)" to="(190,190)"/>
+    <wire from="(190,400)" to="(190,410)"/>
+    <wire from="(190,410)" to="(200,410)"/>
+    <wire from="(200,410)" to="(200,420)"/>
+    <wire from="(250,130)" to="(670,130)"/>
+    <wire from="(250,380)" to="(270,380)"/>
+    <wire from="(300,380)" to="(410,380)"/>
+    <wire from="(550,430)" to="(580,430)"/>
+    <wire from="(610,430)" to="(720,430)"/>
+    <wire from="(670,130)" to="(670,410)"/>
+    <wire from="(670,410)" to="(720,410)"/>
+    <wire from="(750,420)" to="(760,420)"/>
+    <wire from="(760,420)" to="(760,430)"/>
+    <wire from="(760,430)" to="(810,430)"/>
+    <wire from="(810,340)" to="(810,420)"/>
+    <wire from="(810,340)" to="(820,340)"/>
+    <wire from="(810,420)" to="(810,430)"/>
+    <wire from="(810,420)" to="(820,420)"/>
+    <wire from="(840,360)" to="(840,370)"/>
+    <wire from="(840,430)" to="(840,440)"/>
+    <wire from="(870,420)" to="(880,420)"/>
+    <wire from="(900,440)" to="(900,450)"/>
+  </circuit>
+  <circuit name="diy-delayline-reverb">
+    <a name="appearance" val="classic"/>
+    <comp lib="0" loc="(234,670)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="22"/>
+      <a name="dy" val="-37"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text" val="Feed audio data in here...."/>
+    </comp>
+    <comp lib="0" loc="(536,450)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="-31"/>
+      <a name="dy" val="89"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text">This RAM can hold about 1 second of audio data
+(16000 samples x 16-bits each).
+The total amount can be adjusted
+if you change the address bit-width,
+and the counter-bit width.</a>
+    </comp>
+    <comp lib="0" loc="(56,38)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">(1) Send something into the RAM. 
+- Maybe just the original audio?
+- Or, mix the original audio together with feedback from the RAM output!
+(2) Send something to the speakers (PCM audio output).
+- Maybe just the RAM output?
+- Or mix that together with the original audio?
+(3) Add volume/boost somewhere...
+- Maybe boost the feedback loop?
+- Or boost the output of the RAM?
+- Or both?</a>
+    </comp>
+    <comp lib="0" loc="(683,656)" name="Callout">
+      <a name="background" val="#f5f50074"/>
+      <a name="dx" val="-44"/>
+      <a name="dy" val="-33"/>
+      <a name="foreground" val="#bd48d1"/>
+      <a name="text">... and it will come out 
+here 1 second later.</a>
+    </comp>
+    <comp lib="1" loc="(270,590)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(340,590)" name="Clock"/>
+    <comp lib="1" loc="(360,580)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
+    <comp lib="1" loc="(810,200)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(870,280)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="5" loc="(290,560)" name="Counter">
+      <a name="max" val="0x3fff"/>
+      <a name="width" val="14"/>
+    </comp>
+    <comp lib="5" loc="(360,550)" name="RAM">
+      <a name="addrWidth" val="14"/>
+      <a name="dataWidth" val="16"/>
+    </comp>
+    <comp lib="6" loc="(20,260)" name="Button">
+      <a name="color" val="#ff00e7"/>
+      <a name="facing" val="south"/>
+      <a name="label" val="Play!"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="6" loc="(240,300)" name="Dial">
+      <a name="color" val="#37e247"/>
+      <a name="label" val="Mix Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(400,240)" name="Dial">
+      <a name="color" val="#36e2dc"/>
+      <a name="label" val="Reverb Boost"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(510,240)" name="Dial">
+      <a name="color" val="#c41ce2"/>
+      <a name="label" val="Reverb Boost"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="6" loc="(790,170)" name="Scope">
+      <a name="color" val="#6fff0e"/>
+      <a name="mode" val="twosComplement"/>
+      <a name="offcolor" val="#878787"/>
+      <a name="samples" val="320"/>
+      <a name="scopeheight" val="100"/>
+      <a name="scopewidth" val="240"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(810,270)" name="Dial">
+      <a name="label" val="Volume Control"/>
+      <a name="labelloc" val="south"/>
+      <a name="mode" val="twosComplement"/>
+    </comp>
+    <comp lib="8" loc="(210,190)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(270,200)" name="SaturatingAdder">
+      <a name="mode" val="twosComplement"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="8" loc="(880,250)" name="PCMSink">
+      <a name="mode" val="twosComplement"/>
+      <a name="rate" val="16 kHz"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp loc="(260,250)" name="balancing-fader"/>
+    <comp loc="(430,220)" name="volume-limiter"/>
+    <comp loc="(540,220)" name="volume-limiter"/>
+    <comp loc="(80,300)" name="recording-thank-you"/>
+    <comp loc="(840,250)" name="volume-limiter"/>
+    <wire from="(190,240)" to="(220,240)"/>
+    <wire from="(190,260)" to="(220,260)"/>
+    <wire from="(20,260)" to="(20,290)"/>
+    <wire from="(20,290)" to="(30,290)"/>
+    <wire from="(240,270)" to="(240,300)"/>
+    <wire from="(240,630)" to="(290,630)"/>
+    <wire from="(260,250)" to="(280,250)"/>
+    <wire from="(270,580)" to="(270,590)"/>
+    <wire from="(290,560)" to="(360,560)"/>
+    <wire from="(290,610)" to="(290,630)"/>
+    <wire from="(290,610)" to="(360,610)"/>
+    <wire from="(340,590)" to="(360,590)"/>
+    <wire from="(360,220)" to="(380,220)"/>
+    <wire from="(400,230)" to="(400,240)"/>
+    <wire from="(430,220)" to="(450,220)"/>
+    <wire from="(470,220)" to="(490,220)"/>
+    <wire from="(510,230)" to="(510,240)"/>
+    <wire from="(540,220)" to="(560,220)"/>
+    <wire from="(600,610)" to="(630,610)"/>
+    <wire from="(690,260)" to="(780,260)"/>
+    <wire from="(780,170)" to="(780,250)"/>
+    <wire from="(780,170)" to="(790,170)"/>
+    <wire from="(780,250)" to="(780,260)"/>
+    <wire from="(780,250)" to="(790,250)"/>
+    <wire from="(80,300)" to="(100,300)"/>
+    <wire from="(810,190)" to="(810,200)"/>
+    <wire from="(810,260)" to="(810,270)"/>
+    <wire from="(840,250)" to="(850,250)"/>
+    <wire from="(870,270)" to="(870,280)"/>
   </circuit>
 </project>
