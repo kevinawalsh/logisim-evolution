@@ -30,9 +30,7 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeModelEvent;
@@ -42,17 +40,16 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.comp.Component;
 
 public class SimulationTreeModel implements TreeModel {
   private EventListenerList listeners = new EventListenerList();
-  private SimulationTreeTopNode root;
-  private CircuitState currentView, bottomView;
+  private SimulationTreeNode root;
+  // private CircuitState currentView, bottomView;
 
-  public SimulationTreeModel(List<CircuitState> allRootStates) {
-    this.root = new SimulationTreeTopNode(this, allRootStates);
-    this.currentView = null;
-    this.bottomView = null;
+  public SimulationTreeModel(CircuitState cs) {
+    this.root = new SimulationTreeNode(this, null, cs, null);
+    // this.currentView = null;
+    // this.bottomView = null;
   }
 
   public void addTreeModelListener(TreeModelListener l) {
@@ -83,13 +80,13 @@ public class SimulationTreeModel implements TreeModel {
     return 0;
   }
 
-  public CircuitState getCurrentView() {
-    return currentView;
-  }
+  // public CircuitState getCurrentView() {
+  //   return currentView;
+  // }
 
-  public CircuitState getBottomView() {
-    return bottomView;
-  }
+  // public CircuitState getBottomView() {
+  //   return bottomView;
+  // }
 
   public int getIndexOfChild(Object parent, Object child) {
     if (parent instanceof TreeNode && child instanceof TreeNode)
@@ -107,22 +104,18 @@ public class SimulationTreeModel implements TreeModel {
     return true;
   }
 
-  public void clear() { root.clear(); }
-  public SimulationTreeNode addState(CircuitState cs) { return root.addState(cs); }
-  public void removeState(CircuitState cs) { root.removeState(cs); }
+  // protected SimulationTreeNode mapComponentToNode(Component comp) {
+  //   return null;
+  // }
 
-  protected SimulationTreeNode mapComponentToNode(Component comp) {
-    return null;
-  }
-
-  private SimulationTreeCircuitNode mapToNode(CircuitState state) {
-    TreePath path = mapToPath(state);
-    if (path == null) {
-      return null;
-    } else {
-      return (SimulationTreeCircuitNode) path.getLastPathComponent();
-    }
-  }
+  // private SimulationTreeCircuitNode mapToNode(CircuitState state) {
+  //   TreePath path = mapToPath(state);
+  //   if (path == null) {
+  //     return null;
+  //   } else {
+  //     return (SimulationTreeCircuitNode) path.getLastPathComponent();
+  //   }
+  // }
 
   public TreePath mapToPath(CircuitState state) {
     if (state == null)
@@ -135,29 +128,22 @@ public class SimulationTreeModel implements TreeModel {
       current = parent;
       parent = current.getParentState();
     }
-    path.add(current); // root state
+    // We should have reached root
+    if (current != ((SimulationTreeNode)root).getCircuitState())
+      return null;
 
     Object[] pathNodes = new Object[path.size() + 1];
     pathNodes[0] = root;
+    SimulationTreeNode prevNode = root;
     int pathPos = 1;
-    SimulationTreeNode node = root;
     for (int i = path.size() - 1; i >= 0; i--) {
       current = path.get(i);
-      SimulationTreeNode oldNode = node;
-      for (TreeNode child : Collections.list(node.children())) {
-        if (child instanceof SimulationTreeCircuitNode) {
-          SimulationTreeCircuitNode circNode = (SimulationTreeCircuitNode) child;
-          if (circNode.getCircuitState() == current) {
-            node = circNode;
-            break;
-          }
-        }
-      }
-      if (node == oldNode) {
+      SimulationTreeNode nextNode = prevNode.getChildFor(path.get(i));
+      if (nextNode == null)
         return null;
-      }
-      pathNodes[pathPos] = node;
+      pathNodes[pathPos] = nextNode;
       pathPos++;
+      prevNode = nextNode;
     }
     return new TreePath(pathNodes);
   }
@@ -166,40 +152,42 @@ public class SimulationTreeModel implements TreeModel {
     listeners.remove(TreeModelListener.class, l);
   }
 
-  public void setCurrentView(CircuitState value) {
-    CircuitState oldView = currentView;
-    CircuitState oldBottomView = bottomView;
-    if (oldView != value) {
-      currentView = value;
-      if (bottomView == null) {
-        bottomView = currentView;
-      } else if (currentView != bottomView) {
-        if (!bottomView.hasAncestorState(currentView))
-          bottomView = currentView;
-      }
+  // public void setCurrentView(CircuitState value) {
+  //   CircuitState oldView = currentView;
+  //   CircuitState oldBottomView = bottomView;
+  //   if (value == null) {
+  //     currentView = bottomView = null;
+  //   } else if (oldView != value) {
+  //     currentView = value;
+  //     if (bottomView == null) {
+  //       bottomView = currentView;
+  //     } else if (currentView != bottomView) {
+  //       if (!bottomView.hasAncestorState(currentView))
+  //         bottomView = currentView;
+  //     }
 
-      // we could udpate only up to a common ancestor, but full path is simpler
-      SimulationTreeCircuitNode node;
-      node = mapToNode(oldBottomView);
-      while (node != null) {
-        node.fireAppearanceChanged();
-        TreeNode parent = node.getParent();
-        if (parent instanceof SimulationTreeCircuitNode)
-          node = (SimulationTreeCircuitNode) parent;
-        else
-          node = null;
-      }
-      node = mapToNode(bottomView);
-      while (node != null) {
-        node.fireAppearanceChanged();
-        TreeNode parent = node.getParent();
-        if (parent instanceof SimulationTreeCircuitNode)
-          node = (SimulationTreeCircuitNode) parent;
-        else
-          node = null;
-      }
-    }
-  }
+  //     // we could udpate only up to a common ancestor, but full path is simpler
+  //     SimulationTreeCircuitNode node;
+  //     node = mapToNode(oldBottomView);
+  //     while (node != null) {
+  //       node.fireAppearanceChanged();
+  //       TreeNode parent = node.getParent();
+  //       if (parent instanceof SimulationTreeCircuitNode)
+  //         node = (SimulationTreeCircuitNode) parent;
+  //       else
+  //         node = null;
+  //     }
+  //     node = mapToNode(bottomView);
+  //     while (node != null) {
+  //       node.fireAppearanceChanged();
+  //       TreeNode parent = node.getParent();
+  //       if (parent instanceof SimulationTreeCircuitNode)
+  //         node = (SimulationTreeCircuitNode) parent;
+  //       else
+  //         node = null;
+  //     }
+  //   }
+  // }
 
   public void valueForPathChanged(TreePath path, Object newValue) {
     throw new UnsupportedOperationException();

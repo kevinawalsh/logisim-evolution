@@ -31,107 +31,148 @@
 package com.cburch.logisim.gui.main;
 import static com.cburch.logisim.gui.main.Strings.S;
 
-import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Shape;
+import java.awt.Insets;
 
 import javax.swing.Icon;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.plaf.TreeUI;
+import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreePath;
 
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.gui.generic.ProjectExplorer;
 
 public class SimulationTreeRenderer extends DefaultTreeCellRenderer {
+
+  private static final int ICON_SIZE = 20;
+
   private static class RendererIcon implements Icon {
     private ComponentFactory factory;
-    private boolean isCurrentView, onCurrentPath;
 
-    RendererIcon(ComponentFactory factory, boolean isCurrentView, boolean onCurrentPath) {
-      this.factory = factory;
-      this.isCurrentView = isCurrentView;
-      this.onCurrentPath = onCurrentPath;
-    }
+    RendererIcon(ComponentFactory factory) { this.factory = factory; }
 
-    public int getIconHeight() { return 20; }
-    public int getIconWidth() { return 20; }
+    public int getIconHeight() { return ICON_SIZE; }
+    public int getIconWidth() { return ICON_SIZE; }
 
     public void paintIcon(Component c, Graphics g, int x, int y) {
-      ComponentDrawContext context = new ComponentDrawContext(c, null,
-          null, g, g);
-      
-      // draw current-path-halo if appropriate
-      if (onCurrentPath) {
-        Shape s = g.getClip();
-        g.clipRect(x, y, 20, 20);
-        g.setColor(ProjectExplorer.VIEWED_TOOL_HALO_COLOR);
-        g.fillOval(x-2, y-2, 23, 23);
-        g.setColor(Color.BLACK);
-        g.setClip(s);
-      }
-
+      ComponentDrawContext context = new ComponentDrawContext(c, null, null, g, g);
       factory.paintIcon(context, x, y, factory.createAttributeSet());
-
-      // draw magnifying glass if appropriate
-      if (isCurrentView) {
-        int tx = x + 13;
-        int ty = y + 13;
-        int[] xp = { tx - 1, x + 18, x + 20, tx + 1 };
-        int[] yp = { ty + 1, y + 20, y + 18, ty - 1 };
-        g.setColor(ProjectExplorer.MAGNIFYING_INTERIOR);
-        g.fillOval(x + 5, y + 5, 10, 10);
-        g.setColor(Color.BLACK);
-        g.drawOval(x + 5, y + 5, 10, 10);
-        g.fillPolygon(xp, yp, xp.length);
-      }
     }
   }
 
   private static final long serialVersionUID = 1L;
 
-  Font plainFont, boldFont;
+  private Font plainFont, boldFont;
+  private int availableWidth, indentPerLevel;
 
   @Override
   public Component getTreeCellRendererComponent(JTree tree, Object value,
       boolean selected, boolean expanded, boolean leaf, int row,
       boolean hasFocus) {
-    Component ret = super.getTreeCellRendererComponent(tree, value,
-        selected, expanded, leaf, row, hasFocus);
+
+    super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus); // returns this
+
     if (plainFont == null) {
-      plainFont = ret.getFont();
+      plainFont = getFont();
       boldFont = new Font(plainFont.getFontName(), Font.BOLD, plainFont.getSize());
     }
-    ret.setFont(plainFont);
-    if (ret instanceof JComponent) {
-      JComponent comp = (JComponent) ret;
-      comp.setToolTipText(null);
-      comp.setOpaque(false);
-    }
-    if (!(ret instanceof JLabel))
-      return ret;
-    JLabel label = (JLabel) ret;
-    if (value instanceof SimulationTreeNode) {
+
+    setFont(plainFont);
+    setToolTipText(null);
+    setOpaque(false);
+
+    if ((value instanceof SimulationTreeNode)) {
       SimulationTreeNode node = (SimulationTreeNode) value;
-      SimulationTreeModel model = (SimulationTreeModel) tree.getModel();
+
       ComponentFactory factory = node.getComponentFactory();
       if (factory != null) {
-        boolean viewed = node.isCurrentView(model);
-        boolean onpath = node.onCurrentViewPath(model);
-        if (viewed) {
-          label.setFont(boldFont);
-          // label.setBackground(ProjectExplorer.VIEWED_TOOL_COLOR);
-          // label.setOpaque(true);
-        }
-        label.setText(node.toString()); // resizes when bold
-        label.setIcon(new RendererIcon(factory, viewed, onpath));
-        label.setToolTipText(S.fmt("simulationToolTip", factory.getDisplayName()));
+        setIcon(factory != null ? new RendererIcon(factory) : null);
+        setToolTipText(S.fmt("simulationToolTip", factory.getDisplayName()));
       }
     }
-    return ret;
+
+    if (selected)
+      setFont(boldFont);
+
+    Container p = tree.getParent();
+    availableWidth = (p instanceof JViewport) ? ((JViewport)p).getWidth() : tree.getVisibleRect().width;
+
+    if (availableWidth <= 0)
+      availableWidth = Integer.MAX_VALUE;
+
+    TreePath path = tree.getPathForRow(row);
+    if (path != null) {
+      if (indentPerLevel == 0)
+        indentPerLevel = indentPerLevel(tree);
+      int depth = path.getPathCount();
+      availableWidth -= depth * indentPerLevel(tree);
+    }
+
+    return this;
   }
+
+  @Override
+  protected void paintComponent(Graphics g) {
+
+    String text = getText();
+
+    // Paint everything but text: icon, background, etc.
+    setText("");
+    super.paintComponent(g);
+    setText(text);
+
+    Insets in = getInsets();
+    int x = in.left;
+    Icon icon = getIcon();
+    if (icon != null)
+      x += icon.getIconWidth() + getIconTextGap();
+
+    java.awt.FontMetrics fm = g.getFontMetrics(getFont());
+    int y = in.top + fm.getAscent();
+
+    int padding = 3;
+    int availableTextWidth = availableWidth - x - padding;
+    if (availableTextWidth >= 0)
+      text = ellipsize(fm, text, availableTextWidth);
+
+    g.setFont(getFont());
+    g.setColor(getForeground());
+    g.drawString(text, x, y);
+  }
+
+  private static int indentPerLevel(JTree tree) {
+    TreeUI ui = tree.getUI();
+    if (ui instanceof BasicTreeUI)
+      return ((BasicTreeUI)ui).getLeftChildIndent() + ((BasicTreeUI)ui).getRightChildIndent();
+    else
+      return 20;
+  }
+
+  private static String ellipsize(FontMetrics fm, String s, int maxWidth) {
+    if (fm.stringWidth(s) <= maxWidth)
+      return s;
+
+    final String ellipsis = "\u2026"; // ellipsis
+    int ellW = fm.stringWidth(ellipsis);
+    if (ellW > maxWidth)
+      return ellipsis;
+
+    int lo = 0, hi = s.length();
+    // Find max prefix length that fits with ellipsis
+    while (lo < hi) {
+      int mid = (lo + hi + 1) >>> 1;
+      String candidate = s.substring(0, mid) + ellipsis;
+      if (fm.stringWidth(candidate) <= maxWidth) lo = mid;
+      else hi = mid - 1;
+    }
+    return s.substring(0, lo) + ellipsis;
+  }
+
 }

@@ -150,7 +150,7 @@ public class MenuSimulate extends Menu {
       } else if (src == delSim || src == LogisimMenuBar.SIMULATE_DELETE_STATE) {
         CircuitState state = proj.getCircuitState();
         if (state != null)
-          proj.removeCircuitState(state);
+          proj.removeCircuitStateAncestor(state);
       }
     }
 

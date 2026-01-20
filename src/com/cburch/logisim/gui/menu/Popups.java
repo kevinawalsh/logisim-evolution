@@ -41,7 +41,6 @@ import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.circuit.Simulator;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.file.LoadedLibrary;
 import com.cburch.logisim.file.LogisimFile;
@@ -357,31 +356,15 @@ public class Popups {
   }
 
   private static class CircuitStatePopup extends PopupMenu {
-    Project proj;
     CircuitState cs;
-    Simulator sim;
-    boolean active;
-
-    static final String reset = "circuitStateReset";
+    
     static final String dup = "circuitStateDuplicate";
-    static final String delete = "circuitStateDelete";
 
-    CircuitStatePopup(Project proj, CircuitState cs) {
+    CircuitStatePopup(CircuitState cs) {
       super(S.get("circuitStateMenu"));
-      this.proj = proj;
       this.cs = cs;
-      this.sim = proj.getSimulator();
-      active = sim != null && sim.getCircuitState() == cs.getAncestorState();
 
-      add(reset, S.get(reset), e -> {
-        if (active)
-          sim.reset();
-        else
-          cs.getAncestorState().reset();
-        proj.repaintCanvas();
-      });
-      add(dup, S.get(dup), e -> { proj.setCircuitState(cs.cloneAsNewRootState()); });
-      add(delete, S.get(delete), e -> { proj.removeCircuitState(cs.getAncestorState()); });
+      add(dup, S.get(dup), e -> { cs.getProject().setCircuitState(cs.cloneAsNewRootState()); });
     }
 
   }
@@ -414,8 +397,8 @@ public class Popups {
     return new ToolbarPopup(null, false);
   }
 
-  public static JPopupMenu forCircuitState(Project proj, CircuitState cs) {
-    return new CircuitStatePopup(proj, cs);
+  public static JPopupMenu forCircuitState(CircuitState cs) {
+    return new CircuitStatePopup(cs);
   }
 
 }

@@ -355,17 +355,19 @@ public class Project {
     return CircuitState.createRootState(this, circuit);
   }
 
-  public void removeCircuitState(CircuitState cs) {
-    Circuit circ = cs.getCircuit();
-    allRootStates.remove(cs);
-    fireEvent(ProjectEvent.ACTION_DELETE_STATE, cs);
-    recentRootState.remove(circ, cs);
+  public void removeCircuitStateAncestor(CircuitState cs) {
     CircuitState root = cs.getAncestorState();
-    if (cs == circuitState) {
+    Circuit circ = cs.getCircuit();
+    allRootStates.remove(root);
+    fireEvent(ProjectEvent.ACTION_DELETE_STATE, root);
+    recentRootState.remove(root.getCircuit(), root);
+    if (circuitState.getAncestorState() == root) {
+      circuitState = null;
+      // Current simulation was just removed
       if (!allRootStates.isEmpty())
-        setCircuitState(allRootStates.get(0));
+        setCircuitState(allRootStates.get(0)); // Switch to existing simulation
       else
-        setCurrentCircuit(circ);
+        setCurrentCircuit(circ); // Will create a new simulation
     }
     if (!referencedInUndoLog(root)
         && !referencedInRedoLog(root)

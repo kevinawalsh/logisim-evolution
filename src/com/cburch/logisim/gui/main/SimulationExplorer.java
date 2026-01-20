@@ -31,39 +31,38 @@
 package com.cburch.logisim.gui.main;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.util.HashMap;
+import java.util.List;
 
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTree;
-import javax.swing.KeyStroke;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
-import javax.swing.ToolTipManager;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.UIManager;
 
 import com.cburch.draw.toolbar.Toolbar;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.gui.menu.MenuListener;
-import com.cburch.logisim.gui.menu.Popups;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 
 class SimulationExplorer extends JPanel
-  implements ProjectListener, MouseListener {
+  implements ProjectListener {
+
   private static final long serialVersionUID = 1L;
   private Project project;
-  private SimulationTreeModel model;
-  private JTree tree;
+
+  private HashMap<CircuitState, SimulationPanel> sims;
+  private SimulationPanel currentCard;
+  private WidthTrackingPanel simListPanel;
 
   SimulationExplorer(Project proj, MenuListener menu) {
     super(new BorderLayout());
@@ -73,108 +72,134 @@ class SimulationExplorer extends JPanel
     Toolbar toolbar = new Toolbar(toolbarModel);
     add(toolbar, BorderLayout.NORTH);
 
-    model = new SimulationTreeModel(proj.getRootCircuitStates());
-    model.setCurrentView(project.getCircuitState());
-    tree = new JTree(model);
-    tree.setCellRenderer(new SimulationTreeRenderer());
-    tree.addMouseListener(this);
-    // tree.setToggleClickCount(3);
+    sims = new HashMap<>();
+    simListPanel = new WidthTrackingPanel();
+    List<CircuitState> states = proj.getRootCircuitStates();
+    for (CircuitState root : states) {
+      SimulationPanel card = new SimulationPanel(root);
+      sims.put(root, card);
+      simListPanel.addChildAndStrut(card);
+    }
 
-    tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-    AbstractAction selectAction = new AbstractAction() {
-      private static final long serialVersionUID = 1L;
-      public void actionPerformed(ActionEvent event) {
-        Object last = tree.getLastSelectedPathComponent();
-        if (last instanceof SimulationTreeCircuitNode) {
-          CircuitState cs = ((SimulationTreeCircuitNode)last).getCircuitState();
-          if (cs != null)
-            project.setCircuitState(cs);
-        }
-      }
-    };
-    ActionMap amap = tree.getActionMap();
-    amap.put(selectAction, selectAction);
-    InputMap imap = tree.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-    imap.put(KeyStroke.getKeyStroke("released SPACE"), selectAction);
-    imap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), selectAction);
+    CircuitState cur = project.getCircuitState();
+    if (cur != null) {
+      currentCard = sims.get(cur.getAncestorState());
+      currentCard.setCurrentView(cur);
+    }
 
-    add(new JScrollPane(tree), BorderLayout.CENTER);
+    simListPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+    simListPanel.setBackground(UIManager.getColor("Panel.background"));
+
+    JScrollPane scrollPane = new JScrollPane(simListPanel);
+    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollPane.getViewport().setBackground(simListPanel.getBackground());
+    add(scrollPane, BorderLayout.CENTER);
+
     proj.addProjectWeakListener(null, this);
-
-    ToolTipManager.sharedInstance().registerComponent(tree);
-
-    Object root = model.getRoot();
-    for (int i = 0; i < model.getChildCount(root); i++)
-      expand((SimulationTreeNode)model.getChild(root, i));
-  }
-
-  private void expand(SimulationTreeNode node) {
-    TreePath path = model.getPath(node);
-    if (path == null)
-      return;
-    int i = tree.getRowForPath(path);
-    if (i < 0)
-      return;
-    tree.expandRow(i);
-  }
-
-  public CircuitState getCircuitStateForLocation(int x, int y) {
-    TreePath path = tree.getPathForLocation(x, y);
-    Object last = path == null ? null : path.getLastPathComponent();
-    if (last instanceof SimulationTreeCircuitNode)
-      return ((SimulationTreeCircuitNode)last).getCircuitState();
-    return null;
-  }
-
-  private void checkForPopup(MouseEvent e) {
-    if (e.isPopupTrigger()) {
-      SwingUtilities.convertMouseEvent(this, e, tree);
-      CircuitState cs = getCircuitStateForLocation(e.getX(), e.getY());
-      if (cs != null) {
-        JPopupMenu menu = Popups.forCircuitState(project, cs);
-        if (menu != null)
-          menu.show(tree, e.getX(), e.getY());
-      }
-    }
-  }
-
-  public void mouseClicked(MouseEvent e) {
-    if (e.getClickCount() == 2) {
-      CircuitState cs = getCircuitStateForLocation(e.getX(), e.getY());
-      if (cs != null)
-        project.setCircuitState(cs);
-    }
-  }
-
-  public void mouseEntered(MouseEvent e) { }
-
-  public void mouseExited(MouseEvent e) { }
-
-  public void mousePressed(MouseEvent e) {
-    // Calling requestFocus() makes this JPanel steal focus from our JTree,
-    // breaking JTree keyboard navigation. Why was requestFocus() called here?
-    // requestFocus();
-    checkForPopup(e);
-  }
-
-  public void mouseReleased(MouseEvent e) {
-    checkForPopup(e);
   }
 
   public void projectChanged(ProjectEvent event) {
     int action = event.getAction();
     if (action == ProjectEvent.ACTION_SET_STATE) {
-      model.setCurrentView(project.getCircuitState());
-      TreePath path = model.mapToPath(project.getCircuitState());
-      if (path != null)
-        tree.scrollPathToVisible(path);
+      CircuitState chosenState = project.getCircuitState();
+      SimulationPanel chosenPanel = sims.get(chosenState.getAncestorState());
+      if (chosenPanel == null)
+        return; // huh?
+      if (chosenPanel != currentCard) {
+        if (currentCard != null)
+          currentCard.setCurrentView(null);
+        currentCard = chosenPanel;
+      }
+      currentCard.setCurrentView(chosenState);
     } else if (action == ProjectEvent.ACTION_CLEAR_STATES) {
-      model.clear();
+      sims.clear();
+      currentCard = null;
+      SwingUtilities.invokeLater(() -> {
+        simListPanel.removeAll();
+        simListPanel.revalidate();
+        simListPanel.repaint();
+      });
     } else if (action == ProjectEvent.ACTION_ADD_STATE) {
-      SimulationTreeNode node = model.addState((CircuitState)event.getData());
-      expand(node);
+      CircuitState root = (CircuitState)event.getData();
+      SimulationPanel card = new SimulationPanel(root);
+      sims.put(root, card);
+      SwingUtilities.invokeLater(() -> {
+        simListPanel.addChildAndStrut(card);
+        simListPanel.revalidate();
+        simListPanel.repaint();
+      });
     } else if (action == ProjectEvent.ACTION_DELETE_STATE) {
-      model.removeState((CircuitState)event.getData());
+      CircuitState root = (CircuitState)event.getData();
+      SimulationPanel card = sims.remove(root);
+      if (card != null) {
+        if (card == currentCard)
+          currentCard = null;
+        SwingUtilities.invokeLater(() -> {
+          simListPanel.removeChildAndStrut(card);
+          simListPanel.revalidate();
+          simListPanel.repaint();
+        });
+      }
     }
   }
+
+
+  private static class WidthTrackingPanel extends JPanel implements Scrollable {
+    public WidthTrackingPanel() {
+      setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+    }
+
+    @Override
+    public Dimension getPreferredScrollableViewportSize() {
+      return getPreferredSize();
+    }
+
+    @Override
+    public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+      return 16;
+    }
+
+    @Override
+    public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+      return Math.max(visibleRect.height - 16, 16);
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportWidth() {
+      return true;
+    }
+
+    @Override
+    public boolean getScrollableTracksViewportHeight() {
+      return false;
+    }
+
+    void addChildAndStrut(Component child) {
+      if (getComponentCount() > 0)
+        add(Box.createVerticalStrut(8));
+      add(child);
+    }
+
+    void removeChildAndStrut(Component child) {
+      int i = getComponentZOrder(child);
+      if (i < 0) return;
+
+      remove(child);
+
+      if (i < getComponentCount()) {
+        Component after = getComponent(i);
+        if (after instanceof Box.Filler) {
+          remove(after);
+        }
+      }
+      else if (i > 0) {
+        Component before = getComponent(i - 1);
+        if (before instanceof Box.Filler) {
+          remove(before);
+        }
+      }
+    }
+
+  }
+
 }
