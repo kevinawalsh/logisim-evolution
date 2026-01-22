@@ -77,15 +77,13 @@ public class VerticalSplitPane extends JPanel {
       } else if (fraction >= 1.0) {
         split = maxWidth;
       } else {
-        split = (int) Math.round(maxWidth * fraction);
-        split = Math
-            .min(split, maxWidth - comp1.getMinimumSize().width);
+        split = (int)Math.round(maxWidth * fraction);
+        split = Math.min(split, maxWidth - comp1.getMinimumSize().width);
         split = Math.max(split, comp0.getMinimumSize().width);
       }
 
       comp0.setBounds(in.left, in.top, split, maxHeight);
-      comp1.setBounds(in.left + split, in.top, maxWidth - split,
-          maxHeight);
+      comp1.setBounds(in.left + split, in.top, maxWidth - split, maxHeight);
       dragbar.setBounds(in.left + split
           - HorizontalSplitPane.DRAG_TOLERANCE, in.top,
           2 * HorizontalSplitPane.DRAG_TOLERANCE, maxHeight);
