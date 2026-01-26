@@ -560,19 +560,19 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     rightPanel.remove(toolbar);
 
     if (AppPreferences.TOOLBAR_DOWN_MIDDLE.equals(loc)) {
-      toolbar.setOrientation(Toolbar.VERTICAL);
+      toolbar.setPosition(AppPreferences.TOOLBAR_DOWN_MIDDLE);
       rightPanel.add(toolbar, BorderLayout.WEST);
     } else if (Direction.NORTH.toString().equals(loc)) {
-      toolbar.setOrientation(Toolbar.HORIZONTAL);
+      toolbar.setPosition(Direction.NORTH);
       rightPanel.add(toolbar, BorderLayout.NORTH);
     } else if (Direction.SOUTH.toString().equals(loc)) {
-      toolbar.setOrientation(Toolbar.HORIZONTAL);
+      toolbar.setPosition(Direction.SOUTH);
       rightPanel.add(toolbar, BorderLayout.SOUTH);
     } else if (Direction.EAST.toString().equals(loc)) {
-      toolbar.setOrientation(Toolbar.VERTICAL);
+      toolbar.setPosition(Direction.EAST);
       rightPanel.add(toolbar, BorderLayout.EAST);
     } else if (Direction.WEST.toString().equals(loc)) {
-      toolbar.setOrientation(Toolbar.VERTICAL);
+      toolbar.setPosition(Direction.WEST);
       contents.add(toolbar, BorderLayout.WEST);
     }
     contents.validate();

@@ -74,7 +74,6 @@ import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.DragDrop;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.InputEventUtil;
-import com.cburch.logisim.util.StringUtil;
 
 class LayoutToolbarModel extends AbstractToolbarModel {
   private class MyListener implements ProjectListener, AttributeListener,
@@ -151,9 +150,12 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     @Override
     public void attributeValueChanged(AttributeEvent e) {
       if (e.getAttribute() == VhdlEntity.NAME_ATTR
-          || e.getAttribute() == CircuitAttributes.NAME_ATTR)
+          || e.getAttribute() == CircuitAttributes.NAME_ATTR) {
         makeLabel();
-      fireToolbarAppearanceChanged();
+        fireToolbarContentsChanged();
+      } else {
+        fireToolbarAppearanceChanged();
+      }
     }
 
     @Override
