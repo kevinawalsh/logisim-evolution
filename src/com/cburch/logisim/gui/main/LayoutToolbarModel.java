@@ -204,7 +204,8 @@ class LayoutToolbarModel extends AbstractToolbarModel {
       if (tool == haloedTool
           && AppPreferences.ATTRIBUTE_HALO.get()) {
         g.setColor(Canvas.HALO_COLOR);
-        g.fillRect(1, 1, 22, 22);
+        Dimension dim = dest.getPreferredSize();
+        g.fillRect(1, 1, dim.width-2, dim.height-2);
       }
 
       // draw tool icon
