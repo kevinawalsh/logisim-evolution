@@ -32,8 +32,8 @@ package com.cburch.logisim.std.base;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
@@ -81,13 +81,13 @@ public class Callout extends Text implements Reshapable {
   }
 
   @Override
-  public void paint(InstancePainter painter, boolean border) {
+  public void paint(InstancePainter painter, boolean drawBoundingBox, Integer altTextWidth) {
     CalloutAttributes attrs = (CalloutAttributes) painter.getAttributeSet();
     int dx = attrs.getDx();
     int dy = attrs.getDy();
     Location loc = painter.getLocation();
     Location focus = loc.translate(dx, dy);
-    paint(painter, border, focus);
+    paint(painter, drawBoundingBox, focus, altTextWidth);
   }
 
   @Override
@@ -96,18 +96,24 @@ public class Callout extends Text implements Reshapable {
     int dx = attrs.getDx();
     int dy = attrs.getDy();
     Location loc = painter.getLocation();
-    Location focus = loc.translate(dx + rdx, dy + rdy);
-    paint(painter, false, focus);
+    Location focus = loc.translate(dx, dy);
+    if (handle.equals(focus)) {
+      focus = focus.translate(rdx, rdy);
+      paint(painter, false, focus, null);
+    } else {
+      int altTextWidth = calculateNewTextWidth(loc, attrs, handle, rdx, rdy);
+      paint(painter, true, focus, altTextWidth);
+    }
   }
 
-  void paint(InstancePainter painter, boolean border, Location focus) {
-    super.paint(painter, border);
+  void paint(InstancePainter painter, boolean drawBoundingBox, Location focus, Integer altTextWidth) {
+    super.paint(painter, drawBoundingBox, altTextWidth);
     CalloutAttributes attrs = (CalloutAttributes) painter.getAttributeSet();
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     Graphics g = painter.getGraphics();
     Location loc = painter.getLocation();
-    Bounds tbds = getTextOnlyVisibleBounds(loc, attrs, g);
+    Bounds tbds = getTextOnlyVisibleBounds(loc, attrs, g, altTextWidth);
 
     g.setColor(attrs.getFGColor());
    
@@ -184,17 +190,25 @@ public class Callout extends Text implements Reshapable {
   public Collection<Location> getReshapeHandles(Component comp) {
     CalloutAttributes attrs = (CalloutAttributes)comp.getAttributeSet();
     Location focus = comp.getLocation().translate(attrs.getDx(), attrs.getDy());
-    return Collections.singletonList(focus);
+    ArrayList<Location> handles = new ArrayList<>();
+    handles.add(focus);
+    handles.addAll(super.getReshapeHandles(comp));
+    return handles;
   }
 
   @Override
   public void doReshapeAction(Project proj, Circuit circ, Component comp,
       Location handle, int rdx, int rdy) {
     CalloutAttributes attrs = (CalloutAttributes)comp.getAttributeSet();
-    SetAttributeAction act = new SetAttributeAction(circ, S.getter("calloutReshape"));
-    act.set(comp, ATTR_DX, attrs.getDx() + rdx);
-    act.set(comp, ATTR_DY, attrs.getDy() + rdy);
-    proj.doAction(act);
+    Location focus = comp.getLocation().translate(attrs.getDx(), attrs.getDy());
+    if (handle.equals(focus)) {
+      SetAttributeAction act = new SetAttributeAction(circ, S.getter("calloutReshape"));
+      act.set(comp, ATTR_DX, attrs.getDx() + rdx);
+      act.set(comp, ATTR_DY, attrs.getDy() + rdy);
+      proj.doAction(act);
+    } else {
+      super.doReshapeAction(proj, circ, comp, handle, rdx, rdy);
+    }
   }
 
   @Override

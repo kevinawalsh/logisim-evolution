@@ -27,55 +27,37 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.cburch.logisim.gui.generic;
 
-package com.cburch.logisim.std.base;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
-import java.util.Arrays;
-import java.util.List;
+import com.cburch.logisim.gui.main.Frame;
+import com.cburch.logisim.proj.Project;
 
-import com.cburch.logisim.data.Attribute;
+public class HelpTabContent extends JScrollPane {
 
-class CalloutAttributes extends TextAttributes {
+  private JPanel panel = new JPanel();
+  private Project proj;
 
-  private static final List<Attribute<?>> ATTRIBUTES =
-      Arrays.asList(new Attribute<?>[] {
-        Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
-        Text.FG_COLOR, Text.BG_COLOR, Text.TEXT_WRAP, Text.TEXT_WIDTH,
-        Callout.ATTR_DX, Callout.ATTR_DY });
+  public HelpTabContent(Frame frame) {
+    super();
+    setViewportView(panel);
+    proj = frame.getProject();
+    getVerticalScrollBar().setUnitIncrement(16);
 
-  private int dx, dy;
-
-  public CalloutAttributes() {
-    dx = dy = 40;
+    view("default");
   }
 
-  @Override
-  public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
-  }
-
-  int getDx() { return dx; }
-  int getDy() { return dy; }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <V> V getValue(Attribute<V> attr) {
-    if (attr == Callout.ATTR_DX)
-      return (V) (Integer)dx;
-    else if (attr == Callout.ATTR_DY)
-      return (V) (Integer)dy;
-    else
-      return super.getValue(attr);
-  }
-
-  @Override
-  public <V> void updateAttr(Attribute<V> attr, V value) {
-    if (attr == Callout.ATTR_DX)
-      dx = (Integer) value;
-    else if (attr == Callout.ATTR_DY)
-      dy = (Integer) value;
-    else
-      super.updateAttr(attr, value);
+  public void view(String s) {
+    panel.removeAll();
+    panel.add(new JLabel("quick help goes here"));
+    panel.add(new JLabel("for " + s));
   }
 
 }

@@ -31,11 +31,15 @@
 package com.cburch.logisim.std.base;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.util.Collection;
+import java.util.List;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
+import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.TextField;
@@ -50,12 +54,17 @@ import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.CustomHandles;
+import com.cburch.logisim.tools.Reshapable;
+import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
 
-public class Text extends InstanceFactory implements CustomHandles {
+public class Text extends InstanceFactory implements CustomHandles, Reshapable {
+
+  static final int PAD = 4;
 
   static class MultilineAttribute extends Attribute<String> {
     MultilineAttribute(String name, StringGetter disp) {
@@ -157,6 +166,13 @@ public class Text extends InstanceFactory implements CustomHandles {
   static final Attribute<Color> BG_COLOR = Attributes.forColor(
       "background", S.getter("textBackgroundColorAttr"));
 
+  static final Attribute<Boolean> TEXT_WRAP = Attributes.forBoolean(
+      "wrap", S.getter("textWrapping"));
+  static final int TEXT_MIN_WIDTH = 10;
+  static final int TEXT_MAX_WIDTH = 10000;
+  static final Attribute<Integer> TEXT_WIDTH = Attributes.forIntegerRange(
+      "textwidth", S.getter("textWidth"), TEXT_MIN_WIDTH, TEXT_MAX_WIDTH);
+
   public static final Text FACTORY = new Text();
 
   private Text() {
@@ -236,30 +252,36 @@ public class Text extends InstanceFactory implements CustomHandles {
   
   @Override
   public Bounds getVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
-    return getTextOnlyVisibleOffsetBounds(attrsBase, g);
+    return getTextOnlyVisibleOffsetBounds(attrsBase, g, null);
   }
 
-  protected final Bounds getTextOnlyVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
+  protected final Bounds getTextOnlyVisibleOffsetBounds(AttributeSet attrsBase, Graphics g, Integer altTextWidth) { // visible
     TextAttributes attrs = (TextAttributes) attrsBase;
-    String text = attrs.getText();
-    if (text == null || text.equals(""))
-      return Bounds.EMPTY_BOUNDS; // should never happen
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     Font font = attrs.getFont();
-
-    String lines[] = text.split("\n", -1); // keep blank lines, so halo matches caret
+    String[] lines = attrs.getLines(g, altTextWidth);
     Rectangle r = GraphicsUtil.getTextBounds(g, font, lines, 0, 0, halign, valign);
-
-    return Bounds.create(r).expand(4);
+    if (attrs.isWrapping()) {
+      // force to textWidth
+      int w = altTextWidth != null ? altTextWidth : attrs.getTextWidth();
+      if (r.width != w) {
+        if (halign == TextField.H_CENTER)
+          r.x -= (w - r.width) / 2;
+        else if (halign == TextField.H_RIGHT)
+          r.x -= (w - r.width);
+        r.width = w;
+      }
+    }
+    return Bounds.create(r).expand(PAD);
   }
 
   private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
     return getVisibleOffsetBounds(attrsBase, g).translate(loc);
   }
 
-  protected Bounds getTextOnlyVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
-    return getTextOnlyVisibleOffsetBounds(attrsBase, g).translate(loc);
+  protected Bounds getTextOnlyVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g, Integer altTextWidth) { // visible
+    return getTextOnlyVisibleOffsetBounds(attrsBase, g, altTextWidth).translate(loc);
   }
 
   @Override
@@ -274,42 +296,53 @@ public class Text extends InstanceFactory implements CustomHandles {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    paint(painter, true);
+    paint(painter, true, null);
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    paint(painter, false);
+    paint(painter, false, null);
   }
 
-  public void paint(InstancePainter painter, boolean border) {
+  @Override
+  public void drawReshaping(InstancePainter painter, Location handle, int rdx, int rdy) {
+    TextAttributes attrs = (TextAttributes)painter.getAttributeSet();
+    Location loc = painter.getLocation();
+    int altTextWidth = calculateNewTextWidth(loc, attrs, handle, rdx, rdy);
+    paint(painter, true, altTextWidth);
+  }
+
+  public void paint(InstancePainter painter, boolean drawBoundingBox, Integer altTextWidth) {
     TextAttributes attrs = (TextAttributes)painter.getAttributeSet();
     Location loc = painter.getLocation();
     Graphics g = painter.getGraphics();
-    if (border) {
+    int halign = attrs.getHorizontalAlign();
+    int valign = attrs.getVerticalAlign();
+    if (altTextWidth != null) {
+      // width-reshaping: use alternative width and draw a text-only border
+      Bounds bds = getTextOnlyVisibleBounds(loc, attrs, g, altTextWidth);
+      bds.draw(g, Color.GRAY);
+    } else if (drawBoundingBox) {
+      // ghost: draw full bounding box
       Bounds bds = getTextVisibleBounds(loc, attrs, g);
-      g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
+      bds.draw(g, Color.GRAY);
     } else {
-      Bounds bds = getTextOnlyVisibleBounds(loc, attrs, g);
-      g.setColor(attrs.getBGColor());
-      g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
-      g.setColor(attrs.getFGColor());
+      // normal: text-only background fill
+      Bounds bds = getTextOnlyVisibleBounds(loc, attrs, g, null);
+      bds.fill(g, attrs.getBGColor());
     }
+    g.setColor(attrs.getFGColor());
     // Note: This next code is essentially identical to painter.drawLabel(),
     // which draws by using TextFieldMultiline, which in turn uses GraphicsUtil.
     // But painter.drawLabel() only works when there is a Component, not when
     // there is only a Factory and AttributeSet, because the textField needed is
     // within the Component. So we duplicate the code here.
-    String text = attrs.getText();
-    if (text == null || text.equals(""))
-      return; // should never happen
-    String[] lines = text.split("\n"); // no need to draw trailing blank lines
-    int halign = attrs.getHorizontalAlign();
-    int valign = attrs.getVerticalAlign();
     Font font = attrs.getFont();
+    String[] lines = attrs.getLines(g, altTextWidth);
     GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
   }
 
+  // TODO: pink handles for resize
   @Override
   public void drawHandles(ComponentDrawContext context) {
     Graphics g = context.getGraphics();
@@ -318,5 +351,58 @@ public class Text extends InstanceFactory implements CustomHandles {
     Bounds bds = getTextVisibleBounds(painter.getLocation(), painter.getAttributeSet(), g);
     g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     painter.drawHandles();
+  }
+
+  @Override
+  public Collection<Location> getReshapeHandles(Component comp) {
+    TextAttributes attrs = (TextAttributes)comp.getAttributeSet();
+    if (attrs.isWrapping() == false)
+      return List.of(); // empty
+    Location loc = comp.getLocation();
+    int tw = attrs.getTextWidth();
+    if (attrs.getHorizontalAlign() == TextField.H_LEFT)
+      return List.of(loc.translate(tw + PAD, 0));
+    else if (attrs.getHorizontalAlign() == TextField.H_RIGHT)
+      return List.of(loc.translate(-(tw + PAD), 0));
+    else // H_CENTER
+      return List.of(
+          loc.translate(-(tw/2 + PAD), 0),
+          loc.translate(tw-tw/2 + PAD, 0));
+  }
+
+  protected int calculateNewTextWidth(Location loc, TextAttributes attrs, Location handle, int rdx, int rdy) {
+    int textWidth;
+    if (attrs.getHorizontalAlign() == TextField.H_LEFT)
+      textWidth = (handle.getX() - PAD + rdx) - loc.getX();
+    else if (attrs.getHorizontalAlign() == TextField.H_RIGHT)
+      textWidth = loc.getX() - (handle.getX() + PAD + rdx);
+    else if (handle.getX() >= loc.getX()) // H_CENTER, adjusting right handle
+      textWidth = 2*((handle.getX() - PAD + rdx) - loc.getX());
+    else // H_CENTER, adjusting left handle
+      textWidth = 2*(loc.getX() - (handle.getX() + PAD + rdx));
+    return clamp(textWidth, TEXT_MIN_WIDTH, TEXT_MAX_WIDTH);
+  }
+
+  @Override
+  public void doReshapeAction(Project proj, Circuit circ, Component comp,
+      Location handle, int rdx, int rdy) {
+    TextAttributes attrs = (TextAttributes)comp.getAttributeSet();
+    Location loc = comp.getLocation();
+    int textWidth = calculateNewTextWidth(loc, attrs, handle, rdx, rdy);
+    SetAttributeAction act = new SetAttributeAction(circ, S.getter("textReshape"));
+    act.set(comp, TEXT_WIDTH, textWidth);
+    proj.doAction(act);
+  }
+
+  @Override
+  public Object getInstanceFeature(Instance instance, Object key) {
+    if (key == Reshapable.class)
+      return this;
+    else
+      return super.getInstanceFeature(instance, key);
+  }
+
+  int clamp(int val, int min, int max) {
+    return Math.min(Math.max(val, min), max);
   }
 }

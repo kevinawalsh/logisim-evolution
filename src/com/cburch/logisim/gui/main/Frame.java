@@ -76,6 +76,7 @@ import com.cburch.logisim.gui.generic.AttrTableModel;
 import com.cburch.logisim.gui.generic.BasicZoomModel;
 import com.cburch.logisim.gui.generic.CanvasPane;
 import com.cburch.logisim.gui.generic.CardPanel;
+import com.cburch.logisim.gui.generic.HelpTabContent;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.generic.RegTabContent;
 import com.cburch.logisim.gui.generic.ZoomControl;
@@ -344,6 +345,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   private SimulationExplorer simExplorer;
   private AttrTable attrTable;
   private RegTabContent regPanel;
+  private HelpTabContent helpPanel;
   // private VhdlSimState vhdlSimState;
   private ZoomControl zoom;
   // for the Layout view
@@ -401,6 +403,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     bottomTab.setFont(new Font("Dialog", Font.BOLD, 9));
     bottomTab.addTab("Properties", attrTable = new AttrTable(this));
     bottomTab.addTab("State", regPanel = new RegTabContent(this));
+    bottomTab.addTab("Help", helpPanel = new HelpTabContent(this));
     if (Main.MacOS) // adjust space above/below
       bottomTab.setBorder(BorderFactory.createEmptyBorder(5, 0, -5, 0));
 
@@ -615,9 +618,11 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       Tool tool = ((AttrTableToolModel) value).getTool();
       toolbox.setHaloedTool(tool);
       layoutToolbarModel.setHaloedTool(tool);
+      helpPanel.view(tool.toString());
     } else {
       toolbox.setHaloedTool(null);
       layoutToolbarModel.setHaloedTool(null);
+      helpPanel.view("none");
     }
     if (value instanceof AttrTableComponentModel) {
       Circuit circ = ((AttrTableComponentModel) value).getCircuit();

@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.data;
 
+import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import com.cburch.logisim.util.Cache;
@@ -336,4 +338,23 @@ public class Bounds {
   public boolean isEmpty() {
     return height == 0 && width == 0;
   }
+
+  public void draw(Graphics g) {
+    g.drawRect(x, y, width, height);
+  }
+
+  public void fill(Graphics g) {
+    g.fillRect(x, y, width, height);
+  }
+
+  public void draw(Graphics g, Color c) {
+    g.setColor(c);
+    g.drawRect(x, y, width, height);
+  }
+
+  public void fill(Graphics g, Color c) {
+    g.setColor(c);
+    g.fillRect(x, y, width, height);
+  }
+
 }

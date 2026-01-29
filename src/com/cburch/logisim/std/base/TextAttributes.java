@@ -32,6 +32,7 @@ package com.cburch.logisim.std.base;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,11 +40,13 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.util.TextWrapping;
 
 class TextAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
-        Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR });
+        Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
+        Text.TEXT_WRAP, Text.TEXT_WIDTH });
 
   private String text;
   private Font font;
@@ -51,6 +54,10 @@ class TextAttributes extends AbstractAttributeSet {
   private AttributeOption valign;
   private Color fg;
   private Color bg;
+  private boolean wrap;
+  private int width;
+  private String lines[]; // cached, depends on text, font, wrap, and width
+  private Object lock = new Object();
 
   private static final Color CLEAR = new Color(255, 255, 255, 0);
 
@@ -61,6 +68,8 @@ class TextAttributes extends AbstractAttributeSet {
     valign = Text.ATTR_VALIGN.parse("base");
     fg = Color.BLACK;
     bg = CLEAR;
+    wrap = false;
+    width = 400;
   }
 
   @Override
@@ -93,6 +102,14 @@ class TextAttributes extends AbstractAttributeSet {
     return bg;
   }
 
+  boolean isWrapping() {
+    return wrap;
+  }
+
+  int getTextWidth() {
+    return width;
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
@@ -108,6 +125,10 @@ class TextAttributes extends AbstractAttributeSet {
       return (V) fg;
     if (attr == Text.BG_COLOR)
       return (V) bg;
+    if (attr == Text.TEXT_WRAP)
+      return (V) (Boolean)wrap;
+    if (attr == Text.TEXT_WIDTH)
+      return (V) (Integer)width;
     return null;
   }
 
@@ -118,12 +139,18 @@ class TextAttributes extends AbstractAttributeSet {
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Text.ATTR_TEXT) {
-      text = (String) value;
-      if (text == null || text.length() == 0)
-        text = "text";
+      synchronized (lock) {
+        text = (String) value;
+        if (text == null || text.length() == 0)
+          text = "text";
+        lines = null;
+      }
     }
     else if (attr == Text.ATTR_FONT)
-      font = (Font) value;
+      synchronized (lock) {
+        font = (Font) value;
+        lines = null;
+      }
     else if (attr == Text.ATTR_HALIGN)
       halign = (AttributeOption) value;
     else if (attr == Text.ATTR_VALIGN)
@@ -132,6 +159,40 @@ class TextAttributes extends AbstractAttributeSet {
       fg = (Color) value;
     else if (attr == Text.BG_COLOR)
       bg = (Color) value;
+    else if (attr == Text.TEXT_WRAP)
+      synchronized (lock) {
+        wrap = (Boolean) value;
+        lines = null;
+      }
+    else if (attr == Text.TEXT_WIDTH)
+      synchronized (lock) {
+        width = (Integer) value;
+        lines = null;
+      }
+  }
+
+  String[] getLines(Graphics g) {
+    synchronized (lock) {
+
+      if (lines != null)
+        return lines;
+
+      if (text == null || text.equals(""))
+        lines = new String[] { "" };
+      else if (wrap)
+        lines = TextWrapping.split(text, width, g, font);
+      else
+        lines = text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+
+      return lines;
+    }
+  }
+
+  String[] getLines(Graphics g, Integer altTextWidth) {
+    if (altTextWidth != null)
+      return TextWrapping.split(text, altTextWidth, g, font);
+    else
+      return getLines(g);
   }
 
 }
