@@ -110,7 +110,7 @@ public final class Instance implements Location.At {
   // Not every Component that exists is an InstanceComponent. But for those
   // Components that are, this function will get the matching Instance for it.
   // For Components that are not InstanceComponents, this just returns null.
-  // If you already have InstanceComponent, just call geetInstance(). If you
+  // If you already have InstanceComponent, just call getInstance(). If you
   // don't, but you are sure of the types, this saves a typecast, but that's it.
   public static Instance getInstanceFor(Component comp) {
     if (comp instanceof InstanceComponent) {
@@ -202,11 +202,7 @@ public final class Instance implements Location.At {
 
   public void setTextField(Attribute<String> labelAttr,
       Attribute<Font> fontAttr, int x, int y, int halign, int valign) {
-    setTextField(labelAttr, fontAttr, x, y, halign, valign, false);
-  }
-  public void setTextField(Attribute<String> labelAttr,
-      Attribute<Font> fontAttr, int x, int y, int halign, int valign, boolean multiline) {
-    comp.setTextField(labelAttr, fontAttr, x, y, halign, valign, multiline);
+    comp.setTextField(labelAttr, fontAttr, x, y, halign, valign);
   }
 
   public static final int AVOID_TOP = 1;

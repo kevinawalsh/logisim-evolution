@@ -37,17 +37,20 @@ import java.util.ArrayList;
 
 public class TextWrapping {
       
-  final static boolean HARD_BREAK_LONG_TOKENS = true;
-
-  public static String[] split(String text, int textWidth, Graphics g, Font font) {
+  // final static boolean HARD_BREAK_LONG_TOKENS = true;
+  
+  public static String[] split(String text) {
     if (text == null || text.isEmpty())
       return new String[] { "" };
+    text = text.replace("\r\n", "\n").replace('\r', '\n'); // replace CRLF and CR with LF
+    return text.split("\\n", -1);
+  }
 
-    if (textWidth <= 0 || textWidth == Integer.MAX_VALUE)
-      return text.split("\\R", -1);
+  public static String[] split(String text, int textWidth, Graphics g, Font font) {
+      return split(text);
+  }
 
-    text = text.replace("\r\n", "\n").replace('\r', '\n');
-
+      /*
     Font old = g.getFont();
     try {
       g.setFont(font);
@@ -111,11 +114,13 @@ public class TextWrapping {
       g.setFont(old);
     }
   }
+    */
 
   /**
    * Returns the maximum end index (exclusive) such that substring(start, end) fits within textWidth.
    * Guaranteed: end > start unless the string is empty.
    */
+  /*
   private static int findMaxFittingEnd(String s, int start, int textWidth, FontMetrics fm) {
     int lo = start + 1;
     int hi = s.length();
@@ -134,7 +139,9 @@ public class TextWrapping {
     }
     return best;
   }
+  */
 
+  /*
   private static int lastWhitespaceBetween(String s, int start, int endExclusive) {
     // Look for last whitespace char in s[start, endExclusive)
     for (int i = endExclusive - 1; i >= start; i--) {
@@ -144,18 +151,23 @@ public class TextWrapping {
     }
     return -1;
   }
+  */
 
+  /*
   private static int skipWhitespaceForward(String s, int idx) {
     int i = idx;
     int n = s.length();
     while (i < n && Character.isWhitespace(s.charAt(i))) i++;
     return i;
   }
+  */
 
+  /*
   private static String rstrip(String s) {
     int i = s.length();
     while (i > 0 && Character.isWhitespace(s.charAt(i - 1))) i--;
     return (i == s.length()) ? s : s.substring(0, i);
   }
+  */
 
 }

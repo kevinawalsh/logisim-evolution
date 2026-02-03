@@ -37,11 +37,11 @@ import java.util.List;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Rectangle;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
+import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -54,11 +54,13 @@ import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CustomHandles;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
-import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.tools.TextEditable;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
 
@@ -73,7 +75,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
     @Override
     public String parse(String unescapedFromXML) {
-      return unescapedFromXML;
+      return unescapedFromXML.replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
     }
 
     // Note: in the UI's left side panel attribute table, it's
@@ -106,7 +108,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       }
       if (escape) // bad trailing escape, leave alone, don't eat it.
         s.append('\\');
-      return s.toString();
+      return s.toString().replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
     }
 
     public String toDisplayString(String s) {
@@ -191,8 +193,6 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   protected void configureLabel(Instance instance) {
     TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
     Location loc = instance.getLocation();
-    instance.setTextField(ATTR_TEXT, ATTR_FONT, loc.getX(), loc.getY(),
-        attrs.getHorizontalAlign(), attrs.getVerticalAlign(), true);
   }
 
   @Override
@@ -206,25 +206,63 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     return new TextAttributes();
   }
 
+  protected static class TextInstanceComponent extends InstanceComponent implements TextEditable {
+
+    public TextInstanceComponent(Text factory, Location loc, TextAttributes attrs) {
+      super(factory, loc, attrs);
+    }
+
+    // @Override
+    // public Bounds getNominalBounds() {
+    //   return getFactory().getOffsetBounds(getAttributeSet()).translate(getLocation()); // nominal
+    // }
+      
+    @Override
+    public boolean visiblyContains(Location pt, Graphics g) {
+      return getVisibleBounds(g).contains(pt);
+    }
+
+    @Override
+    public Bounds getVisibleBounds(Graphics g) {
+      return ((Text)getFactory()).getTextVisibleBounds(getLocation(), getAttributeSet(), g);
+    }
+
+    @Override
+    public String toString() {
+      String text = ((TextAttributes)getAttributeSet()).getText();
+      return "TextInstanceComponent{factory="+getFactory().getName()
+        +",loc="+getLocation()+",text="+text+"}@"+System.identityHashCode(this);
+    }
+
+    @Override
+    public Object getFeature(Object key) {
+      if (key == TextEditable.class)
+        return this;
+      return super.getFeature(key);
+    }
+
+    @Override
+    public Action getCommitAction(Circuit circuit, String oldText, String newText) {
+      SetAttributeAction act = new SetAttributeAction(circuit, S.getter("changeTextAction"));
+      if (newText != null)
+        newText = newText.replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
+      if ((oldText == null) != (newText == null) || (newText != null && !newText.equals(oldText)))
+        act.set(this, ATTR_TEXT, newText);
+      return act;
+    }
+
+    @Override
+    public Caret getTextCaret(ComponentUserEvent event) {
+      TextAttributes attrs = (TextAttributes)getAttributeSet();
+      Location loc = getLocation();
+      return new TextCaret(attrs, event.getCanvas(), loc, event.getX(), event.getY());
+    }
+
+  }
+
   @Override
   public Component createComponent(Location loc, AttributeSet attrs) {
-    InstanceComponent ret = new InstanceComponent(this, loc, attrs) {
-      // @Override
-      // public Bounds getNominalBounds() {
-      //   return getFactory().getOffsetBounds(getAttributeSet()).translate(getLocation()); // nomminal
-      // }
-      @Override
-      public boolean visiblyContains(Location pt, Graphics g) {
-        return getVisibleBounds(g).contains(pt);
-      }
-      @Override
-      public Bounds getVisibleBounds(Graphics g) {
-        // Note: textField.getBounds() would work here, if superclass provided
-        // access. But for consistency, call the factory instead since the
-        // factory must implement getOffsetBounds(attr, g) anyway.
-        return ((Text)getFactory()).getTextVisibleBounds(getLocation(), getAttributeSet(), g);
-      }
-    };
+    TextInstanceComponent ret = new TextInstanceComponent(this, loc, (TextAttributes)attrs);
     configureNewInstance(ret.getInstance());
     return ret;
   }
@@ -256,25 +294,15 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   }
 
   protected final Bounds getTextOnlyVisibleOffsetBounds(AttributeSet attrsBase, Graphics g, Integer altTextWidth) { // visible
+    Location loc = Location.ORIGIN;
     TextAttributes attrs = (TextAttributes) attrsBase;
+    String text = attrs.getText();
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
+    int textWidth = altTextWidth != null ? altTextWidth : attrs.isWrapping() ? attrs.getTextWidth() : -1;
     Font font = attrs.getFont();
-    String[] lines = attrs.getLines(g, altTextWidth);
-    Rectangle r = GraphicsUtil.getTextBounds(g, font, lines, 0, 0, halign, valign);
-    if (attrs.isWrapping()) {
-      // force to textWidth
-      int w = altTextWidth != null ? altTextWidth : attrs.getTextWidth();
-      if (r.width != w) {
-        if (halign == TextField.H_CENTER)
-          r.x -= (w - r.width) / 2;
-        else if (halign == TextField.H_RIGHT)
-          r.x -= (w - r.width);
-        r.width = w;
-      }
-    }
-    return Bounds.create(r).expand(PAD);
-  }
+    return TextCaret.getBounds(g, text, loc, textWidth, font, halign, valign).expand(PAD);
+  } 
 
   private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
     return getVisibleOffsetBounds(attrsBase, g).translate(loc);
@@ -332,17 +360,14 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       bds.fill(g, attrs.getBGColor());
     }
     g.setColor(attrs.getFGColor());
-    // Note: This next code is essentially identical to painter.drawLabel(),
-    // which draws by using TextFieldMultiline, which in turn uses GraphicsUtil.
-    // But painter.drawLabel() only works when there is a Component, not when
-    // there is only a Factory and AttributeSet, because the textField needed is
-    // within the Component. So we duplicate the code here.
     Font font = attrs.getFont();
-    String[] lines = attrs.getLines(g, altTextWidth);
-    GraphicsUtil.drawText(g, font, lines, loc.getX(), loc.getY(), halign, valign);
+    boolean wrapping = attrs.isWrapping();
+    int textWidth = (altTextWidth != null ? altTextWidth : wrapping ? attrs.getTextWidth() : -1);
+    String text = attrs.getText();
+    TextCaret.drawMultilineText(g, text, loc, textWidth, font, halign, valign);
   }
 
-  // TODO: pink handles for resize
+
   @Override
   public void drawHandles(ComponentDrawContext context) {
     Graphics g = context.getGraphics();
@@ -397,6 +422,8 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   @Override
   public Object getInstanceFeature(Instance instance, Object key) {
     if (key == Reshapable.class)
+      return this;
+    else if (key == TextEditable.class)
       return this;
     else
       return super.getInstanceFeature(instance, key);

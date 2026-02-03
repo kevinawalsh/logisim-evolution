@@ -48,7 +48,7 @@ class TextAttributes extends AbstractAttributeSet {
         Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
         Text.TEXT_WRAP, Text.TEXT_WIDTH });
 
-  private String text;
+  private String text; // note: never contains CRLF or CR, only LF
   private Font font;
   private AttributeOption halign;
   private AttributeOption valign;
@@ -139,10 +139,13 @@ class TextAttributes extends AbstractAttributeSet {
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Text.ATTR_TEXT) {
+        String str = (String) value;
+        if (str == null || str.isEmpty())
+          str = "text";
+        else
+          str = str.replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
       synchronized (lock) {
-        text = (String) value;
-        if (text == null || text.length() == 0)
-          text = "text";
+        text = str;
         lines = null;
       }
     }
@@ -182,7 +185,7 @@ class TextAttributes extends AbstractAttributeSet {
       else if (wrap)
         lines = TextWrapping.split(text, width, g, font);
       else
-        lines = text.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        lines = text.split("\n", -1);
 
       return lines;
     }

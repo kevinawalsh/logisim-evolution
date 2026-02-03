@@ -68,10 +68,10 @@ import com.cburch.logisim.util.UnmodifiableList;
 // different? Maybe some kind of java bytecode lazy loading optimization? For
 // now, I've marked these both as "final". If something breaks, maybe we'll find
 // out. 
-// Edit: InstanceComponent is no longer final, and now has an (anonymous)
-// subclass within std/base/Text and std/wiring/Tunnel. Those class has some
-// trouble with computing Bounds (unlike all other components, they really needs
-// a graphics context to get the bounds), so they now have their own sublass of
+// Edit: InstanceComponent is no longer final, and now has subclasses within
+// std/base/Text and std/wiring/Tunnel. Those classes have some trouble with
+// computing Bounds (unlike all other components, they really needs a graphics
+// context to get the bounds), so they now have their own sublass of
 // InstanceComponent.
 // 
 // So, to sum up:
@@ -95,7 +95,7 @@ public /*final*/ class InstanceComponent
   private HashSet<Attribute<BitWidth>> widthAttrs;
   private AttributeSet attrs;
   private boolean attrListenRequested;
-  private InstanceTextField textField;
+  private InstanceTextField textField; // note: not used by Text or Callout
   private InstanceStateImpl instanceState;
 
   public InstanceComponent(InstanceFactory factory, Location loc,
@@ -232,7 +232,7 @@ public /*final*/ class InstanceComponent
     factory.paintInstance(painter);
   }
 
-  public void drawLabel(ComponentDrawContext context) {
+  public void drawLabel(ComponentDrawContext context) { // note: not used by Text or Callout
     InstanceTextField field = textField;
     if (field != null)
       field.draw(this, context);
@@ -286,7 +286,7 @@ public /*final*/ class InstanceComponent
     return nominalBounds;
   }
 
-  public Bounds getVisibleBounds(Graphics g) { // note: Text and Tunnel override this
+  public Bounds getVisibleBounds(Graphics g) { // note: Text overrides this
     Bounds ret = nominalBounds;
     InstanceTextField field = textField;
     if (field != null)
@@ -312,7 +312,7 @@ public /*final*/ class InstanceComponent
     return factory;
   }
 
-  public Object getFeature(Object key) {
+  public Object getFeature(Object key) { // note: Text overrides this for key==TextEditable
     Object ret = factory.getInstanceFeature(instance, key);
     if (ret != null) {
       return ret;
@@ -392,18 +392,18 @@ public /*final*/ class InstanceComponent
   }
 
   void setTextField(Attribute<String> labelAttr, Attribute<Font> fontAttr,
-      int x, int y, int halign, int valign, boolean multiline) {
+      int x, int y, int halign, int valign) { // note: not used by Text or Callout
     InstanceTextField field = textField;
     if (field == null) {
       field = new InstanceTextField(this);
-      field.update(labelAttr, fontAttr, x, y, halign, valign, multiline);
+      field.update(labelAttr, fontAttr, x, y, halign, valign);
       textField = field;
     } else {
-      field.update(labelAttr, fontAttr, x, y, halign, valign, multiline);
+      field.update(labelAttr, fontAttr, x, y, halign, valign);
     }
   }
 
-  public String toString() {
+  public String toString() { // note: Text overrides this
     InstanceTextField field = textField;
     if (field != null) {
       String label = field.getText();

@@ -39,9 +39,6 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.comp.TextField;
-import com.cburch.logisim.comp.TextFieldMultiline;
-import com.cburch.logisim.comp.TextFieldEvent;
-import com.cburch.logisim.comp.TextFieldListener;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
@@ -54,7 +51,7 @@ import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.TextEditable;
 
 public class InstanceTextField
-  implements AttributeListener, TextFieldListener, TextEditable {
+  implements AttributeListener, TextEditable {
   private Canvas canvas;
   private InstanceComponent comp;
   private TextField field;
@@ -64,7 +61,6 @@ public class InstanceTextField
   private int fieldY;
   private int halign;
   private int valign;
-  private boolean multiline;
 
   InstanceTextField(InstanceComponent comp) {
     this.comp = comp;
@@ -88,12 +84,8 @@ public class InstanceTextField
 
   private void createField(AttributeSet attrs, String text) {
     Font font = attrs.getValue(fontAttr);
-    if (multiline)
-      field = new TextFieldMultiline(fieldX, fieldY, halign, valign, font);
-    else
-      field = new TextField(fieldX, fieldY, halign, valign, font);
+    field = new TextField(fieldX, fieldY, halign, valign, font);
     field.setText(text);
-    field.addTextFieldListener(this);
   }
 
   void draw(Component comp, ComponentDrawContext context) {
@@ -109,7 +101,7 @@ public class InstanceTextField
   }
 
   public Action getCommitAction(Circuit circuit, String oldText, String newText) {
-    SetAttributeAction act = new SetAttributeAction(circuit, S.getter(multiline ? "changeTextAction" : "changeLabelAction"));
+    SetAttributeAction act = new SetAttributeAction(circuit, S.getter("changeLabelAction"));
     if ((oldText == null) != (newText == null) || (newText != null && !newText.equals(oldText)))
       act.set(comp, labelAttr, newText);
     return act;
@@ -134,10 +126,8 @@ public class InstanceTextField
     return labelAttr != null || fontAttr != null;
   }
 
-  public void textChanged(TextFieldEvent e) { }
-
   void update(Attribute<String> labelAttr, Attribute<Font> fontAttr, int x,
-      int y, int halign, int valign, boolean multiline) {
+      int y, int halign, int valign) {
     boolean wasReg = shouldRegister();
     this.labelAttr = labelAttr;
     this.fontAttr = fontAttr;
@@ -145,7 +135,6 @@ public class InstanceTextField
     this.fieldY = y;
     this.halign = halign;
     this.valign = valign;
-    this.multiline = multiline;
     boolean shouldReg = shouldRegister();
     AttributeSet attrs = comp.getAttributeSet();
     if (!wasReg && shouldReg)
@@ -163,10 +152,7 @@ public class InstanceTextField
   private void updateField(AttributeSet attrs) {
     String text = attrs.getValue(labelAttr);
     if (text == null || text.equals("")) {
-      if (field != null) {
-        field.removeTextFieldListener(this);
         field = null;
-      }
     } else {
       if (field == null) {
         createField(attrs, text);
