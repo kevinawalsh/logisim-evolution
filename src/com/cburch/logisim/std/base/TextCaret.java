@@ -37,7 +37,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -192,7 +191,6 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public void draw(Graphics g) {
-    String lines[] = curText.split("\n", -1); // keep blank lines at end
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     int x = loc.x;
@@ -282,8 +280,8 @@ class TextCaret implements Caret, AttributeListener {
     final int end;       // global UTF-16 index into curText (exclusive) -- excludes '\n'
     final boolean hardBreakAfter; // true if this line is followed by a '\n' in curText
     final TextLayout layout;
-    final float x;       // draw origin x (where layout.draw() is called)
-    final float baselineY; // baseline y (where layout.draw() is called)
+    /*final*/ float x;     // draw origin x, where layout.draw() is called
+    final float baselineY; // baseline y, where layout.draw() is called
 
     VisualLine(int start, int end, boolean hardBreakAfter, TextLayout layout, float x, float baselineY) {
       this.start = start;
@@ -292,10 +290,6 @@ class TextCaret implements Caret, AttributeListener {
       this.layout = layout;
       this.x = x;
       this.baselineY = baselineY;
-    }
-
-    VisualLine withX(float newX) {
-      return new VisualLine(start, end, hardBreakAfter, layout, newX, baselineY);
     }
 
     float topY() { return baselineY - layout.getAscent(); }
@@ -340,10 +334,6 @@ class TextCaret implements Caret, AttributeListener {
     int x = loc.x;
     int y = loc.y;
 
-    // Auto-wrap alignment handled here, manual-wrap alignment handled later.
-    if (autoWrap)
-      x -= halignAdjust(textWidth, halign);
-
     boolean firstLine = true;
     float dy = 0f;
     float interParagraphSpace = 0f;
@@ -357,7 +347,7 @@ class TextCaret implements Caret, AttributeListener {
       String para = paragraphs[p];
       dy += interParagraphSpace;
 
-      // handle empty paragraph
+      // handle empty paragraph, for both auto-wrap and manual-wrap modes
       if (para.isEmpty()) {
         // Use a single-space layout to get a sensible line height
         TextLayout layout = new TextLayout(" ", font, frc);
@@ -370,12 +360,12 @@ class TextCaret implements Caret, AttributeListener {
         dy += layout.getAscent();
         float baselineY = y + dy;
 
-        float drawX = x; // manual-wrap x alignment wil be fixed below
+        float drawX = 0; // calculated later
         boolean hardBreakAfter = (p < paragraphs.length - 1);
 
         lines.add(new VisualLine(globalParaStart, globalParaStart, hardBreakAfter, layout, drawX, baselineY));
 
-        maxAdvance = Math.max(maxAdvance, layout.getVisibleAdvance());
+        maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
 
         dy += layout.getDescent() + layout.getLeading();
 
@@ -396,8 +386,8 @@ class TextCaret implements Caret, AttributeListener {
 
         dy += layout.getAscent();
         float baselineY = y + dy;
-
-        float drawX = x; // manual-wrap x alignment wil be fixed below
+        float drawX = 0; // calculated later
+        
         boolean hardBreakAfter = (p < paragraphs.length - 1);
 
         int globalStart = globalParaStart;
@@ -405,7 +395,7 @@ class TextCaret implements Caret, AttributeListener {
 
         lines.add(new VisualLine(globalStart, globalEnd, hardBreakAfter, layout, drawX, baselineY));
 
-        maxAdvance = Math.max(maxAdvance, layout.getVisibleAdvance());
+        maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
 
         dy += layout.getDescent() + layout.getLeading();
 
@@ -428,9 +418,7 @@ class TextCaret implements Caret, AttributeListener {
 
           dy += layout.getAscent();
           float baselineY = y + dy;
-
-          float dx = layout.isLeftToRight() ? 0 : (textWidth - layout.getAdvance());
-          float drawX = x + dx;
+          float drawX = 0f; // calculated later
 
           int globalStart = globalParaStart + localStart;
           int globalEnd   = globalParaStart + localEnd; // excludes '\n'
@@ -449,16 +437,15 @@ class TextCaret implements Caret, AttributeListener {
         globalParaStart += 1;
     }
 
-    // For manual-wrap, fix bounds and x alignment now that text width is known
-    if (!autoWrap) {
+    if (!autoWrap)
       textWidth = (int) Math.ceil(maxAdvance);
-      x -= halignAdjust(textWidth, halign);
-      float dxAll = x - loc.x;
-      if (dxAll != 0f) {
-        for (int i = 0; i < lines.size(); i++) {
-          lines.set(i, lines.get(i).withX(lines.get(i).x + dxAll)); // see note below
-        }
-      }
+
+    x -= halignAdjust(textWidth, halign);
+
+    for (VisualLine line : lines) {
+      float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
+      float dx = halignAdjustLine(textWidth, lineWidth, halign);
+      line.x = x + dx;
     }
 
     Bounds b = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
@@ -476,14 +463,23 @@ class TextCaret implements Caret, AttributeListener {
     else // V_TOP
       return 0;
   }
+  
+  private static float halignAdjust(int textWidth, int halign) {
+    if (halign == H_RIGHT)
+      return textWidth;
+    else if (halign == H_CENTER)
+      return textWidth / 2;
+    else // H_LEFT
+      return 0;
+  }
 
-  private static int halignAdjust(int textWidth, int halign) {
-      if (halign == H_RIGHT)
-        return textWidth;
-      else if (halign == H_CENTER)
-        return textWidth / 2;
-      else // H_LEFT
-        return 0;
+  private static float halignAdjustLine(int textWidth, float lineWidth, int halign) {
+    if (halign == H_RIGHT)
+      return (textWidth - lineWidth);
+    else if (halign == H_CENTER)
+      return (textWidth - lineWidth)/2;
+    else // H_LEFT
+      return 0;
   }
 
   private BoxLayout computeLayout(Graphics g) {

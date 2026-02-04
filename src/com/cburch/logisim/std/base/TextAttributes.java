@@ -32,7 +32,6 @@ package com.cburch.logisim.std.base;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,13 +39,17 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.util.TextWrapping;
 
 class TextAttributes extends AbstractAttributeSet {
-  private static final List<Attribute<?>> ATTRIBUTES =
+  private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
         Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
         Text.TEXT_WRAP, Text.TEXT_WIDTH });
+
+  private static final List<Attribute<?>> ATTRIBUTES_MANUAL_WRAPPING =
+      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
+        Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
+        Text.TEXT_WRAP });
 
   private String text; // note: never contains CRLF or CR, only LF
   private Font font;
@@ -56,8 +59,6 @@ class TextAttributes extends AbstractAttributeSet {
   private Color bg;
   private boolean wrap;
   private int width;
-  private String lines[]; // cached, depends on text, font, wrap, and width
-  private Object lock = new Object();
 
   private static final Color CLEAR = new Color(255, 255, 255, 0);
 
@@ -79,7 +80,7 @@ class TextAttributes extends AbstractAttributeSet {
 
   @Override
   public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
+    return wrap ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
   }
 
   Font getFont() {
@@ -139,63 +140,26 @@ class TextAttributes extends AbstractAttributeSet {
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Text.ATTR_TEXT) {
-        String str = (String) value;
-        if (str == null || str.isEmpty())
-          str = "text";
-        else
-          str = str.replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
-      synchronized (lock) {
-        text = str;
-        lines = null;
-      }
-    }
-    else if (attr == Text.ATTR_FONT)
-      synchronized (lock) {
-        font = (Font) value;
-        lines = null;
-      }
-    else if (attr == Text.ATTR_HALIGN)
-      halign = (AttributeOption) value;
-    else if (attr == Text.ATTR_VALIGN)
-      valign = (AttributeOption) value;
-    else if (attr == Text.FG_COLOR)
-      fg = (Color) value;
-    else if (attr == Text.BG_COLOR)
-      bg = (Color) value;
-    else if (attr == Text.TEXT_WRAP)
-      synchronized (lock) {
-        wrap = (Boolean) value;
-        lines = null;
-      }
-    else if (attr == Text.TEXT_WIDTH)
-      synchronized (lock) {
-        width = (Integer) value;
-        lines = null;
-      }
-  }
-
-  String[] getLines(Graphics g) {
-    synchronized (lock) {
-
-      if (lines != null)
-        return lines;
-
-      if (text == null || text.equals(""))
-        lines = new String[] { "" };
-      else if (wrap)
-        lines = TextWrapping.split(text, width, g, font);
+      String str = (String) value;
+      if (str == null || str.isEmpty())
+        text = "text";
       else
-        lines = text.split("\n", -1);
-
-      return lines;
-    }
-  }
-
-  String[] getLines(Graphics g, Integer altTextWidth) {
-    if (altTextWidth != null)
-      return TextWrapping.split(text, altTextWidth, g, font);
-    else
-      return getLines(g);
+        text = str.replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
+    } else if (attr == Text.ATTR_FONT) {
+      font = (Font) value;
+    } else if (attr == Text.ATTR_HALIGN) {
+      halign = (AttributeOption) value;
+    } else if (attr == Text.ATTR_VALIGN) {
+      valign = (AttributeOption) value;
+    } else if (attr == Text.FG_COLOR) {
+      fg = (Color) value;
+    } else if (attr == Text.BG_COLOR) {
+      bg = (Color) value;
+    } else if (attr == Text.TEXT_WRAP) {
+      wrap = (Boolean) value;
+      fireAttributeListChanged();
+    } else if (attr == Text.TEXT_WIDTH)
+      width = (Integer) value;
   }
 
 }
