@@ -40,14 +40,8 @@ import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class TextField {
-  public static final int H_LEFT = GraphicsUtil.H_LEFT;
-  public static final int H_CENTER = GraphicsUtil.H_CENTER;
-  public static final int H_RIGHT = GraphicsUtil.H_RIGHT;
-  public static final int V_TOP = GraphicsUtil.V_TOP;
-  public static final int V_CENTER = GraphicsUtil.V_CENTER;
-  public static final int V_CENTER_OVERALL = GraphicsUtil.V_CENTER_OVERALL;
-  public static final int V_BASELINE = GraphicsUtil.V_BASELINE;
-  public static final int V_BOTTOM = GraphicsUtil.V_BOTTOM;
+
+  public static final GraphicsUtil ALIGN = GraphicsUtil.ALIGN;
 
   protected int x;
   protected int y;

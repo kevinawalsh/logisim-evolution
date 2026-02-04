@@ -47,7 +47,8 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
-import com.cburch.logisim.util.GraphicsUtil;
+
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 public class Callout extends Text implements Reshapable {
 
@@ -143,15 +144,15 @@ public class Callout extends Text implements Reshapable {
     Location p7 = Location.create(left, bot);
     Location p8 = Location.create(left, top+hgt/2);
     Location p = p1;
-    if (valign == GraphicsUtil.V_TOP && halign == GraphicsUtil.H_LEFT) p = p1;
-    else if (valign == GraphicsUtil.V_TOP && halign == GraphicsUtil.H_CENTER) p = p2;
-    else if (valign == GraphicsUtil.V_TOP && halign == GraphicsUtil.H_RIGHT) p = p3;
-    else if (valign == GraphicsUtil.V_CENTER && halign == GraphicsUtil.H_RIGHT) p = p4;
-    else if (valign == GraphicsUtil.V_BOTTOM && halign == GraphicsUtil.H_RIGHT) p = p5;
-    else if (valign == GraphicsUtil.V_BOTTOM && halign == GraphicsUtil.H_CENTER) p = p6;
-    else if (valign == GraphicsUtil.V_BOTTOM && halign == GraphicsUtil.H_LEFT) p = p7;
-    else if (valign == GraphicsUtil.V_CENTER && halign == GraphicsUtil.H_LEFT) p = p8;
-    else if (valign == GraphicsUtil.V_BASELINE && halign == GraphicsUtil.H_LEFT) {
+    if (valign == ALIGN.V_TOP && halign == ALIGN.H_LEFT) p = p1;
+    else if (valign == ALIGN.V_TOP && halign == ALIGN.H_CENTER) p = p2;
+    else if (valign == ALIGN.V_TOP && halign == ALIGN.H_RIGHT) p = p3;
+    else if (valign == ALIGN.V_CENTER && halign == ALIGN.H_RIGHT) p = p4;
+    else if (valign == ALIGN.V_BOTTOM && halign == ALIGN.H_RIGHT) p = p5;
+    else if (valign == ALIGN.V_BOTTOM && halign == ALIGN.H_CENTER) p = p6;
+    else if (valign == ALIGN.V_BOTTOM && halign == ALIGN.H_LEFT) p = p7;
+    else if (valign == ALIGN.V_CENTER && halign == ALIGN.H_LEFT) p = p8;
+    else if (valign == ALIGN.V_BASELINE && halign == ALIGN.H_LEFT) {
       // left bar, auto pivot
       if (focus.getX() < left && top - focus.getY() < left - focus.getX() && focus.getY() - bot < left - focus.getX())
         p = p8;
@@ -159,7 +160,7 @@ public class Callout extends Text implements Reshapable {
         p = p1;
       else
         p = p7;
-    } else if (valign == GraphicsUtil.V_BASELINE && halign == GraphicsUtil.H_RIGHT) {
+    } else if (valign == ALIGN.V_BASELINE && halign == ALIGN.H_RIGHT) {
       // right bar, auto pivot
       if (focus.getX() > right && top - focus.getY() < focus.getX() - right && focus.getY() - bot < focus.getX() - right)
         p = p4;
@@ -180,9 +181,9 @@ public class Callout extends Text implements Reshapable {
     }
 
     g.drawLine(p.getX(), p.getY(), focus.getX(), focus.getY());
-    if (valign == GraphicsUtil.V_TOP || p == p2) g.drawLine(left, top, right, top);
-    else if (valign == GraphicsUtil.V_BOTTOM || p == p6) g.drawLine(left, bot, right, bot);
-    else if (halign == GraphicsUtil.H_RIGHT || p == p4) g.drawLine(right, top, right, bot);
+    if (valign == ALIGN.V_TOP || p == p2) g.drawLine(left, top, right, top);
+    else if (valign == ALIGN.V_BOTTOM || p == p6) g.drawLine(left, bot, right, bot);
+    else if (halign == ALIGN.H_RIGHT || p == p4) g.drawLine(right, top, right, bot);
     else g.drawLine(left, top, left, bot);
   }
 

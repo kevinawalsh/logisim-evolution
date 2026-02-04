@@ -45,6 +45,8 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.GraphicsUtil;
 
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
+
 public final class ComponentDrawContext {
   private static final int PIN_OFFS = 2;
   private static final int PIN_RAD = 4;
@@ -192,17 +194,13 @@ public final class ComponentDrawContext {
     g.fillOval(x - PIN_OFFS, y - PIN_OFFS, PIN_RAD, PIN_RAD);
     g.setColor(curColor);
     if (dir == Direction.EAST) {
-      GraphicsUtil.drawText(g, label, x + 3, y, GraphicsUtil.H_LEFT,
-          GraphicsUtil.V_CENTER);
+      GraphicsUtil.drawText(g, label, x + 3, y, ALIGN.H_LEFT, ALIGN.V_CENTER);
     } else if (dir == Direction.WEST) {
-      GraphicsUtil.drawText(g, label, x - 3, y, GraphicsUtil.H_RIGHT,
-          GraphicsUtil.V_CENTER);
+      GraphicsUtil.drawText(g, label, x - 3, y, ALIGN.H_RIGHT, ALIGN.V_CENTER);
     } else if (dir == Direction.SOUTH) {
-      GraphicsUtil.drawText(g, label, x, y - 3, GraphicsUtil.H_CENTER,
-          GraphicsUtil.V_BASELINE);
+      GraphicsUtil.drawText(g, label, x, y - 3, ALIGN.H_CENTER, ALIGN.V_BASELINE);
     } else if (dir == Direction.NORTH) {
-      GraphicsUtil.drawText(g, label, x, y + 3, GraphicsUtil.H_CENTER,
-          GraphicsUtil.V_TOP);
+      GraphicsUtil.drawText(g, label, x, y + 3, ALIGN.H_CENTER, ALIGN.V_TOP);
     }
   }
 

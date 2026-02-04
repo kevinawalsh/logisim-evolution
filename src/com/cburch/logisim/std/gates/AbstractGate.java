@@ -40,7 +40,6 @@ import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
-import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
@@ -138,7 +137,7 @@ abstract class AbstractGate extends InstanceFactory {
       cy = loc.getY() + perp;
     }
     instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, cx, cy,
-        TextField.H_CENTER, TextField.V_CENTER);
+        GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER);
   }
 
   protected abstract Value computeOutput(Value[] inputs, int numInputs,

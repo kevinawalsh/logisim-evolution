@@ -42,7 +42,8 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.util.GraphicsUtil;
+
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // Tentative Design Notes (1 of 3): The relationship between Instances,
 // InstanceState, InstanceFactory, etc. can be very confusing. Ignoring logisim
@@ -227,8 +228,8 @@ public final class Instance implements Location.At {
     Bounds bds = getNominalBounds();
     int x = bds.getX() + bds.getWidth() / 2;
     int y = bds.getY() + bds.getHeight() / 2;
-    int halign = GraphicsUtil.H_CENTER;
-    int valign = GraphicsUtil.V_CENTER;
+    int halign = ALIGN.H_CENTER;
+    int valign = ALIGN.V_CENTER;
     if (labelLoc == StdAttr.LABEL_CENTER) {
       int offset = 0;
       if ((avoid & AVOID_CENTER) != 0)
@@ -237,31 +238,31 @@ public final class Instance implements Location.At {
       y = bds.getY() + (bds.getHeight() - offset) / 2;
     } else if (labelLoc == Direction.NORTH) {
       y = bds.getY() - 2;
-      valign = GraphicsUtil.V_BOTTOM;
+      valign = ALIGN.V_BOTTOM;
       if ((avoid & AVOID_TOP) != 0) {
         x += 2;
-        halign = GraphicsUtil.H_LEFT;
+        halign = ALIGN.H_LEFT;
       }
     } else if (labelLoc == Direction.SOUTH) {
       y = bds.getY() + bds.getHeight() + 2;
-      valign = GraphicsUtil.V_TOP;
+      valign = ALIGN.V_TOP;
       if ((avoid & AVOID_BOTTOM) != 0) {
         x += 2;
-        halign = GraphicsUtil.H_LEFT;
+        halign = ALIGN.H_LEFT;
       }
     } else if (labelLoc == Direction.EAST) {
       x = bds.getX() + bds.getWidth() + 2;
-      halign = GraphicsUtil.H_LEFT;
+      halign = ALIGN.H_LEFT;
       if ((avoid & AVOID_RIGHT) != 0) {
         y -= 2;
-        valign = GraphicsUtil.V_BOTTOM;
+        valign = ALIGN.V_BOTTOM;
       }
     } else if (labelLoc == Direction.WEST) {
       x = bds.getX() - 2;
-      halign = GraphicsUtil.H_RIGHT;
+      halign = ALIGN.H_RIGHT;
       if ((avoid & AVOID_LEFT) != 0) {
         y -= 2;
-        valign = GraphicsUtil.V_BOTTOM;
+        valign = ALIGN.V_BOTTOM;
       }
     }
     setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign, valign);

@@ -41,7 +41,6 @@ import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
-import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -74,20 +73,20 @@ class NotGate extends InstanceFactory {
     if (facing == Direction.NORTH || facing == Direction.SOUTH) {
       x = bds.getX() + bds.getWidth() / 2 + 2;
       y = bds.getY() - 2;
-      halign = TextField.H_LEFT;
+      halign = GraphicsUtil.H_LEFT;
     } else { // west or east
       y = isRectangular ? bds.getY() - 2 : bds.getY();
       if (control != null && control.getY() == bds.getY()) {
         // the control line will get in the way
         x = control.getX() + 2;
-        halign = TextField.H_LEFT;
+        halign = GraphicsUtil.H_LEFT;
       } else {
         x = bds.getX() + bds.getWidth() / 2;
-        halign = TextField.H_CENTER;
+        halign = GraphicsUtil.H_CENTER;
       }
     }
     instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign,
-        TextField.V_BASELINE);
+        GraphicsUtil.V_BASELINE);
   }
 
   public static final AttributeOption SIZE_NARROW = new AttributeOption(

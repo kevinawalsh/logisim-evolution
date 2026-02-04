@@ -376,15 +376,31 @@ public class GraphicsUtil {
   }
 
   public static final int H_LEFT = -1;
-
   public static final int H_CENTER = 0;
-
   public static final int H_RIGHT = 1;
-  public static final int V_TOP = -1;
 
+  public static final int V_TOP = -1;
   public static final int V_CENTER = 0;
   public static final int V_BASELINE = 1;
   public static final int V_BOTTOM = 2;
 
   public static final int V_CENTER_OVERALL = 3;
+
+  // Many classes have code like:
+  //    import com.cburch.logisim.util.GraphicsUtil;
+  //    ...
+  //    ... GraphicsUtil.switchToWidth(g, 2);
+  //    ... GraphicsUtil.drawText(text, font, x, y, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
+  //    ...
+  // The long name "GraphicsUtil" can be tedious, so there is a temptation to declare local helpers,
+  // or to locally re-declare alignment constants. Instead, use static imports for the constants:
+  //    import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
+  //    ... GraphicsUtil.switchToWidth(g, 2);
+  //    ... GraphicsUtil.drawText(text, font, x, y, ALIGN.H_LEFT, ALIGN.V_TOP);
+  // Or import static everything:
+  //    import static com.cburch.logisim.util.GraphicsUtil.*;
+  //    ... switchToWidth(g, 2);
+  //    ... drawText(text, font, x, y, H_LEFT, V_TOP); // or ALIGN.H_LEFT, ALIGN.V_TOP
+  public static final GraphicsUtil ALIGN = new GraphicsUtil();
+  private GraphicsUtil() { }
 }

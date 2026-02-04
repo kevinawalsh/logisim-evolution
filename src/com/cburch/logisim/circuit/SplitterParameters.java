@@ -31,7 +31,8 @@
 package com.cburch.logisim.circuit;
 
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.util.GraphicsUtil;
+
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 class SplitterParameters {
   private int dxEnd0; // location of split end 0 relative to origin
@@ -81,8 +82,8 @@ class SplitterParameters {
       dxSpine1 = m * justify * offs;
       dySpine1 = -m * offs;
       textAngle = 90;
-      halign = m > 0 ? GraphicsUtil.H_RIGHT : GraphicsUtil.H_LEFT;
-      valign = GraphicsUtil.V_BASELINE;
+      halign = m > 0 ? ALIGN.H_RIGHT : ALIGN.H_LEFT;
+      valign = ALIGN.V_BASELINE;
     } else { // > or <
       int m = facing == Direction.WEST ? -1 : 1;
       dxEnd0 = m * width;
@@ -97,9 +98,9 @@ class SplitterParameters {
       dxSpine1 = m * offs;
       dySpine1 = m * justify * offs;
       textAngle = 0;
-      halign = m > 0 ? GraphicsUtil.H_LEFT : GraphicsUtil.H_RIGHT;
-      valign = m * justify < 0 ? GraphicsUtil.V_TOP
-          : GraphicsUtil.V_BASELINE;
+      halign = m > 0 ? ALIGN.H_LEFT : ALIGN.H_RIGHT;
+      valign = m * justify < 0 ? ALIGN.V_TOP
+          : ALIGN.V_BASELINE;
     }
   }
 

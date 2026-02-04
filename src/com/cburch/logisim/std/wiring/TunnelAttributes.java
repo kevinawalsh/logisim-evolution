@@ -34,12 +34,13 @@ import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
+
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 class TunnelAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
@@ -73,23 +74,23 @@ class TunnelAttributes extends AbstractAttributeSet {
     if (facing == Direction.NORTH) {
       x = 0;
       y = margin;
-      halign = TextField.H_CENTER;
-      valign = TextField.V_TOP;
+      halign = ALIGN.H_CENTER;
+      valign = ALIGN.V_TOP;
     } else if (facing == Direction.SOUTH) {
       x = 0;
       y = -margin;
-      halign = TextField.H_CENTER;
-      valign = TextField.V_BOTTOM;
+      halign = ALIGN.H_CENTER;
+      valign = ALIGN.V_BOTTOM;
     } else if (facing == Direction.EAST) {
       x = -margin;
       y = 0;
-      halign = TextField.H_RIGHT;
-      valign = TextField.V_CENTER_OVERALL;
+      halign = ALIGN.H_RIGHT;
+      valign = ALIGN.V_CENTER_OVERALL;
     } else {
       x = margin;
       y = 0;
-      halign = TextField.H_LEFT;
-      valign = TextField.V_CENTER_OVERALL;
+      halign = ALIGN.H_LEFT;
+      valign = ALIGN.V_CENTER_OVERALL;
     }
     labelAnchorXOffset = x;
     labelAnchorYOffset = y;

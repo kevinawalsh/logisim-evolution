@@ -35,6 +35,8 @@ import java.awt.FontMetrics;
 
 import com.cburch.logisim.data.Bounds;
 
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
+
 public class StringUtil {
   public static <T> StringGetter constantGetter(final T value) {
     return new StringGetter() {
@@ -83,7 +85,7 @@ public class StringUtil {
   }
 
   public static Bounds estimateBounds(String text, Font font) {
-    return estimateAlignedBounds(text, font, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
+    return estimateAlignedBounds(text, font, ALIGN.H_LEFT, ALIGN.V_TOP);
   }
 
   // Note: For legacy reasons, vAlign is relative only to the first line of text.
@@ -123,22 +125,22 @@ public class StringUtil {
     float a  = size * 8.5f / 12.0f;
     float x;
     float y;
-    if (hAlign == GraphicsUtil.H_LEFT) {
+    if (hAlign == ALIGN.H_LEFT) {
       x = 0;
-    } else if (hAlign == GraphicsUtil.H_RIGHT) {
+    } else if (hAlign == ALIGN.H_RIGHT) {
       x = -w;
     } else {
       x = -w / 2;
     }
-    if (vAlign == GraphicsUtil.V_TOP) {
+    if (vAlign == ALIGN.V_TOP) {
       y = 0;
-    } else if (vAlign == GraphicsUtil.V_CENTER) {
+    } else if (vAlign == ALIGN.V_CENTER) {
       y = -a / 2; // center of first line ascent
-    } else if (vAlign == GraphicsUtil.V_CENTER_OVERALL) {
+    } else if (vAlign == ALIGN.V_CENTER_OVERALL) {
       y = -h / 2; // center of all lines of text
-    } else if (vAlign == GraphicsUtil.V_BASELINE) {
+    } else if (vAlign == ALIGN.V_BASELINE) {
       y = -a; // ascent of first line of text
-    } else { // GraphicsUtil.V_BOTTOM
+    } else { // ALIGN.V_BOTTOM
       // y = -h; // bottom of all lines of text
       y = -size; // bottom of first line of text
     }

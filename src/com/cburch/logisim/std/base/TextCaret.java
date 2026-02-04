@@ -117,15 +117,6 @@ class TextCaret implements Caret, AttributeListener {
   public static final Color EDIT_BORDER = TextFieldCaret.EDIT_BORDER;
   public static final Color SELECTION_BACKGROUND = TextFieldCaret.SELECTION_BACKGROUND;
 
-  public static final int H_LEFT = GraphicsUtil.H_LEFT;
-  public static final int H_CENTER = GraphicsUtil.H_CENTER;
-  public static final int H_RIGHT = GraphicsUtil.H_RIGHT;
-  public static final int V_TOP = GraphicsUtil.V_TOP;
-  public static final int V_CENTER = GraphicsUtil.V_CENTER;
-  // public static final int V_CENTER_OVERALL = GraphicsUtil.V_CENTER_OVERALL; // not currently used for multi-line text
-  public static final int V_BASELINE = GraphicsUtil.V_BASELINE;
-  public static final int V_BOTTOM = GraphicsUtil.V_BOTTOM;
-
   // From TextFieldCaret
   private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
   private TextAttributes attrs;
@@ -200,7 +191,7 @@ class TextCaret implements Caret, AttributeListener {
       g.setFont(font);
 
     // draw boundary
-    Bounds area = getBounds(g);
+    Bounds area = getBounds(g).expand(Text.PAD);
     area.fill(g, EDIT_BACKGROUND);
     area.draw(g, EDIT_BORDER);
 
@@ -214,28 +205,31 @@ class TextCaret implements Caret, AttributeListener {
       Graphics2D g2 = (Graphics2D) g;
       g2.setColor(SELECTION_BACKGROUND);
 
+      int lineno = 0;
       for (VisualLine vl : vlines) {
+        lineno++;
         // Selection against a visual line range [vl.start, vl.end]
-        // Special note: newline selection is awkward; this PoC treats '\n' as belonging to the previous line.
         int lineA = vl.start;
         int lineB = vl.end;
 
-        // overlap?
+        // compute overlap
         int a = Math.max(selA, lineA);
         int b = Math.min(selB, lineB);
 
         if (a < b) {
-          int la = a - vl.start;
-          int lb = b - vl.start;
+          int la = a - lineA;
+          int lb = b - lineA;
           Shape highlight = vl.layout.getLogicalHighlightShape(la, lb);
           AffineTransform tx = AffineTransform.getTranslateInstance(vl.x, vl.baselineY);
           Shape s = tx.createTransformedShape(highlight);
           g2.fill(s);
-        } else if (selA <= vl.end && selB > vl.end && vl.hardBreakAfter) {
-          // If selection spans the newline after this line, extend highlight to visible end (rough approximation)
-          // This makes selecting across lines look less “missing a pixel”.
-          float vis = vl.layout.getVisibleAdvance();
-          Rectangle2D r = new Rectangle2D.Float(vl.x, vl.topY(), vis, vl.height());
+        }
+        if (selA <= lineB && selB > lineB && vl.hardBreakAfter) {
+          // If selection spans a trailing newline, highlight that newline.
+          float end = vl.isEmpty() ? 0 : vl.layout.getAdvance();
+          float newlineWidth = vl.height()*0.4f; // 40% aspect ratio for newline char seems reasonable
+          System.out.println("select newline");
+          Rectangle2D r = new Rectangle2D.Float(vl.x + end, vl.topY(), newlineWidth, vl.height());
           g2.fill(r);
         }
       }
@@ -264,7 +258,7 @@ class TextCaret implements Caret, AttributeListener {
   }
 
   private static VisualLine findLineContaining(List<VisualLine> lines, int pos) {
-    // Find line where pos ∈ [start, end], but allow pos==end to stick to that line
+    // Find line where pos is in [start, end], but allow pos==end to stick to that line
     for (int i = 0; i < lines.size(); i++) {
       VisualLine vl = lines.get(i);
       if (pos < vl.start) return (i > 0) ? lines.get(i - 1) : vl;
@@ -306,13 +300,17 @@ class TextCaret implements Caret, AttributeListener {
 
     int hitTestGlobal(float px) {
       float relX = px - x;
-      // y arg is offset from baseline; 0 is fine for “near baseline”
+      // y arg is offset from baseline; 0 is fine for "near baseline"
       TextHitInfo hit = layout.hitTestChar(relX, 0);
       return start + hit.getInsertionIndex();
     }
 
     private static int clamp(int v, int lo, int hi) {
       return (v < lo) ? lo : (v > hi ? hi : v);
+    }
+
+    boolean isEmpty() {
+      return start == end;
     }
   }
 
@@ -330,116 +328,61 @@ class TextCaret implements Caret, AttributeListener {
     FontRenderContext frc = g2.getFontRenderContext();
 
     final boolean autoWrap = textWidth > 0;
-
-    int x = loc.x;
     int y = loc.y;
-
-    boolean firstLine = true;
     float dy = 0f;
-    float interParagraphSpace = 0f;
+    float interParagraphSpace = autoWrap ? font.getSize2D() * INTER_PARAGRAPH_SPACE : 0;
 
     ArrayList<VisualLine> lines = new ArrayList<>();
-    int globalParaStart = 0;
+    int start = 0;
 
     float maxAdvance = 0f; // used to compute bounds width in manual-wrap mode
 
     for (int p = 0; p < paragraphs.length; p++) {
       String para = paragraphs[p];
-      dy += interParagraphSpace;
 
-      // handle empty paragraph, for both auto-wrap and manual-wrap modes
-      if (para.isEmpty()) {
-        // Use a single-space layout to get a sensible line height
-        TextLayout layout = new TextLayout(" ", font, frc);
+      if (p != 0)
+        dy += interParagraphSpace;
 
-        if (firstLine) {
+      boolean hardBreakAfter = (p < paragraphs.length - 1);
+      int end = start + para.length();
+      boolean empty = para.isEmpty();
+
+      if (empty || !autoWrap) { // empty or manual-wrap: one visual line for entire paragraph
+        // empty paragraph uses a space, to get sensible line height
+        TextLayout layout = new TextLayout(empty ? " " : para, font, frc);
+        if (lines.isEmpty())
           y -= valignAdjust(layout, valign);
-          firstLine = false;
-        }
-
         dy += layout.getAscent();
-        float baselineY = y + dy;
-
-        float drawX = 0; // calculated later
-        boolean hardBreakAfter = (p < paragraphs.length - 1);
-
-        lines.add(new VisualLine(globalParaStart, globalParaStart, hardBreakAfter, layout, drawX, baselineY));
-
+        lines.add(new VisualLine(start, end, hardBreakAfter, layout, 0, y + dy));
         maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
-
-        dy += layout.getDescent() + layout.getLeading();
-
-        if (autoWrap)
-          interParagraphSpace = font.getSize2D() * INTER_PARAGRAPH_SPACE;
-        if (p < paragraphs.length - 1)
-          globalParaStart += 1;
-        continue;
-      }
-
-      if (!autoWrap) { // Manual-wrap: exactly one visual line for this paragraph
-        TextLayout layout = new TextLayout(para, font, frc);
-
-        if (firstLine) {
-          y -= valignAdjust(layout, valign);
-          firstLine = false;
-        }
-
-        dy += layout.getAscent();
-        float baselineY = y + dy;
-        float drawX = 0; // calculated later
-        
-        boolean hardBreakAfter = (p < paragraphs.length - 1);
-
-        int globalStart = globalParaStart;
-        int globalEnd = globalParaStart + para.length();
-
-        lines.add(new VisualLine(globalStart, globalEnd, hardBreakAfter, layout, drawX, baselineY));
-
-        maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
-
         dy += layout.getDescent() + layout.getLeading();
 
       } else { // Auto-wrap: LineBreakMeasurer produces multiple visual lines per paragraph
-
         AttributedString astr = new AttributedString(para);
         AttributedCharacterIterator it = astr.getIterator();
         LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
         measurer.setPosition(it.getBeginIndex());
 
         while (measurer.getPosition() < it.getEndIndex()) {
-          int localStart = measurer.getPosition();
+          int a = measurer.getPosition();
           TextLayout layout = measurer.nextLayout(textWidth);
-          int localEnd = measurer.getPosition();
-
-          if (firstLine) {
+          int b = measurer.getPosition();
+          if (lines.isEmpty())
             y -= valignAdjust(layout, valign);
-            firstLine = false;
-          }
-
           dy += layout.getAscent();
-          float baselineY = y + dy;
-          float drawX = 0f; // calculated later
-
-          int globalStart = globalParaStart + localStart;
-          int globalEnd   = globalParaStart + localEnd; // excludes '\n'
-          boolean hardBreakAfter = (p < paragraphs.length - 1) && (localEnd == para.length());
-
-          lines.add(new VisualLine(globalStart, globalEnd, hardBreakAfter, layout, drawX, baselineY));
-
+          lines.add(new VisualLine(start + a, start + b, hardBreakAfter && (b == para.length()), layout, 0, y + dy));
           dy += layout.getDescent() + layout.getLeading();
         }
 
-        interParagraphSpace = font.getSize2D() * INTER_PARAGRAPH_SPACE;
       }
 
-      globalParaStart += para.length();
-      if (p < paragraphs.length - 1)
-        globalParaStart += 1;
+      start = end + 1; // add one, for newline between paragraphs
     }
 
     if (!autoWrap)
       textWidth = (int) Math.ceil(maxAdvance);
 
+    int x = loc.x;
     x -= halignAdjust(textWidth, halign);
 
     for (VisualLine line : lines) {
@@ -454,29 +397,29 @@ class TextCaret implements Caret, AttributeListener {
 
   private static int valignAdjust(TextLayout layout, int valign) {
     float h = layout.getAscent() + layout.getDescent() + layout.getLeading();
-    if (valign == V_BASELINE)
+    if (valign == GraphicsUtil.V_BASELINE)
       return (int) layout.getAscent();
-    else if (valign == V_BOTTOM)
+    else if (valign == GraphicsUtil.V_BOTTOM)
       return (int) h;
-    else if (valign == V_CENTER)
+    else if (valign == GraphicsUtil.V_CENTER)
       return (int) (h / 2f);
     else // V_TOP
       return 0;
   }
   
   private static float halignAdjust(int textWidth, int halign) {
-    if (halign == H_RIGHT)
+    if (halign == GraphicsUtil.H_RIGHT)
       return textWidth;
-    else if (halign == H_CENTER)
+    else if (halign == GraphicsUtil.H_CENTER)
       return textWidth / 2;
     else // H_LEFT
       return 0;
   }
 
   private static float halignAdjustLine(int textWidth, float lineWidth, int halign) {
-    if (halign == H_RIGHT)
+    if (halign == GraphicsUtil.H_RIGHT)
       return (textWidth - lineWidth);
-    else if (halign == H_CENTER)
+    else if (halign == GraphicsUtil.H_CENTER)
       return (textWidth - lineWidth)/2;
     else // H_LEFT
       return 0;
@@ -1263,3 +1206,116 @@ class TextCaret implements Caret, AttributeListener {
 
 }
 
+/*
+// tab stop rendering
+public void paint(Graphics graphics) {
+
+     float leftMargin = 10, rightMargin = 310;
+     float[] tabStops = { 100, 250 };
+
+     // assume styledText is an AttributedCharacterIterator, and the number
+     // of tabs in styledText is tabCount
+
+     int[] tabLocations = new int[tabCount+1];
+
+     int i = 0;
+     for (char c = styledText.first(); c != styledText.DONE; c = styledText.next()) {
+         if (c == '\t') {
+             tabLocations[i++] = styledText.getIndex();
+         }
+     }
+     tabLocations[tabCount] = styledText.getEndIndex() - 1;
+
+     // Now tabLocations has an entry for every tab's offset in
+     // the text.  For convenience, the last entry is tabLocations
+     // is the offset of the last character in the text.
+
+     LineBreakMeasurer measurer = new LineBreakMeasurer(styledText);
+     int currentTab = 0;
+     float verticalPos = 20;
+
+     while (measurer.getPosition() < styledText.getEndIndex()) {
+
+         // Lay out and draw each line.  All segments on a line
+         // must be computed before any drawing can occur, since
+         // we must know the largest ascent on the line.
+         // TextLayouts are computed and stored in a Vector;
+         // their horizontal positions are stored in a parallel
+         // Vector.
+
+         // lineContainsText is true after first segment is drawn
+         boolean lineContainsText = false;
+         boolean lineComplete = false;
+         float maxAscent = 0, maxDescent = 0;
+         float horizontalPos = leftMargin;
+         Vector layouts = new Vector(1);
+         Vector penPositions = new Vector(1);
+
+         while (!lineComplete) {
+             float wrappingWidth = rightMargin - horizontalPos;
+             TextLayout layout =
+                     measurer.nextLayout(wrappingWidth,
+                                         tabLocations[currentTab]+1,
+                                         lineContainsText);
+
+             // layout can be null if lineContainsText is true
+             if (layout != null) {
+                 layouts.addElement(layout);
+                 penPositions.addElement(Float.valueOf(horizontalPos));
+                 horizontalPos += layout.getAdvance();
+                 maxAscent = Math.max(maxAscent, layout.getAscent());
+                 maxDescent = Math.max(maxDescent,
+                     layout.getDescent() + layout.getLeading());
+             } else {
+                 lineComplete = true;
+             }
+
+             lineContainsText = true;
+
+             if (measurer.getPosition() == tabLocations[currentTab]+1) {
+                 currentTab++;
+             }
+
+             if (measurer.getPosition() == styledText.getEndIndex())
+                 lineComplete = true;
+             else if (horizontalPos >= tabStops[tabStops.length-1])
+                 lineComplete = true;
+
+             if (!lineComplete) {
+                 // move to next tab stop
+                 int j;
+                 for (j=0; horizontalPos >= tabStops[j]; j++) {}
+                 horizontalPos = tabStops[j];
+             }
+         }
+
+         verticalPos += maxAscent;
+
+         Enumeration layoutEnum = layouts.elements();
+         Enumeration positionEnum = penPositions.elements();
+
+         // now iterate through layouts and draw them
+         while (layoutEnum.hasMoreElements()) {
+             TextLayout nextLayout = (TextLayout) layoutEnum.nextElement();
+             Float nextPosition = (Float) positionEnum.nextElement();
+             nextLayout.draw(graphics, nextPosition.floatValue(), verticalPos);
+         }
+
+         verticalPos += maxDescent;
+     }
+ }
+*/
+// FIXME / TODO
+// x In auto-wrap mode, allow trailing whitespace to overhang textWidth
+// - Backspace/delete full glyph at a time
+// - Markdown-like styling (header, bullets)
+// - tab stops
+// - verify hit-test
+// - review all code
+// - caching
+// - don't render original component when caret is shown
+// - when placing new "text", select all initially
+// - when placing text initially, sizing, or moving, snap to grid unless alt is held?
+// - cursor movement with RTL text
+//   (for the caret index i, use TextHitInfo.afterOffset(i) or leading/trailing depending on what
+//   side you intend.)

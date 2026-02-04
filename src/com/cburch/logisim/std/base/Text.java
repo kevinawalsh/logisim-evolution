@@ -42,7 +42,6 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.comp.ComponentUserEvent;
-import com.cburch.logisim.comp.TextField;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -63,6 +62,8 @@ import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.TextEditable;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
+
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
@@ -136,11 +137,11 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
           "halign",
           S.getter("textHorzAlignAttr"),
           new AttributeOption[] {
-            new AttributeOption(Integer.valueOf(TextField.H_LEFT),
+            new AttributeOption(Integer.valueOf(ALIGN.H_LEFT),
                 "left", S.getter("textHorzAlignLeftOpt")),
-            new AttributeOption(Integer.valueOf(TextField.H_RIGHT),
+            new AttributeOption(Integer.valueOf(ALIGN.H_RIGHT),
                 "right", S.getter("textHorzAlignRightOpt")),
-            new AttributeOption(Integer.valueOf(TextField.H_CENTER),
+            new AttributeOption(Integer.valueOf(ALIGN.H_CENTER),
                 "center", S.getter("textHorzAlignCenterOpt")),
           });
 
@@ -153,13 +154,13 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
           "valign",
           S.getter("textVertAlignAttr"),
           new AttributeOption[] {
-            new AttributeOption(Integer.valueOf(TextField.V_TOP),
+            new AttributeOption(Integer.valueOf(ALIGN.V_TOP),
                 "top", S.getter("textVertAlignTopOpt")),
-            new AttributeOption(Integer.valueOf(TextField.V_BASELINE),
+            new AttributeOption(Integer.valueOf(ALIGN.V_BASELINE),
                 "base", S.getter("textVertAlignBaseOpt")),
-            new AttributeOption(Integer.valueOf(TextField.V_BOTTOM),
+            new AttributeOption(Integer.valueOf(ALIGN.V_BOTTOM),
                 "bottom", S.getter("textVertAlignBottomOpt")),
-            new AttributeOption(Integer.valueOf(TextField.V_CENTER),
+            new AttributeOption(Integer.valueOf(ALIGN.V_CENTER),
                 "center", S.getter("textVertAlignCenterOpt")),
           });
 
@@ -385,9 +386,9 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       return List.of(); // empty
     Location loc = comp.getLocation();
     int tw = attrs.getTextWidth();
-    if (attrs.getHorizontalAlign() == TextField.H_LEFT)
+    if (attrs.getHorizontalAlign() == ALIGN.H_LEFT)
       return List.of(loc.translate(tw + PAD, 0));
-    else if (attrs.getHorizontalAlign() == TextField.H_RIGHT)
+    else if (attrs.getHorizontalAlign() == ALIGN.H_RIGHT)
       return List.of(loc.translate(-(tw + PAD), 0));
     else // H_CENTER
       return List.of(
@@ -397,9 +398,9 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   protected int calculateNewTextWidth(Location loc, TextAttributes attrs, Location handle, int rdx, int rdy) {
     int textWidth;
-    if (attrs.getHorizontalAlign() == TextField.H_LEFT)
+    if (attrs.getHorizontalAlign() == ALIGN.H_LEFT)
       textWidth = (handle.getX() - PAD + rdx) - loc.getX();
-    else if (attrs.getHorizontalAlign() == TextField.H_RIGHT)
+    else if (attrs.getHorizontalAlign() == ALIGN.H_RIGHT)
       textWidth = loc.getX() - (handle.getX() + PAD + rdx);
     else if (handle.getX() >= loc.getX()) // H_CENTER, adjusting right handle
       textWidth = 2*((handle.getX() - PAD + rdx) - loc.getX());
