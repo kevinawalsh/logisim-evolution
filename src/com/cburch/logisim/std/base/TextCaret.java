@@ -611,18 +611,19 @@ class TextCaret implements Caret, AttributeListener {
   void doPaste() {
     try {
       String s = (String)Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-      String cleaned = "";
-      boolean lastWasSpace = false;
-      for (int i = 0; i < s.length(); i++) {
-        char c = s.charAt(i);
-        if (!allowedCharacter(c)) {
-          if (lastWasSpace)
-            continue;
-          c = ' ';
-        }
-        lastWasSpace = (c == ' ');
-        cleaned += c;
-      }
+      // String cleaned = "";
+      // boolean lastWasSpace = false;
+      // for (int i = 0; i < s.length(); i++) {
+      //   char c = s.charAt(i);
+      //   if (!allowedCharacter(c)) {
+      //     if (lastWasSpace)
+      //       continue;
+      //     c = ' ';
+      //   }
+      //   lastWasSpace = (c == ' ');
+      //   cleaned += c;
+      // }
+      String cleaned = TextAttributes.normalize(s);
       log.doAction(new TextAction(cleaned));
     } catch (Exception ex) {
     }
@@ -913,6 +914,9 @@ class TextCaret implements Caret, AttributeListener {
         return;
     }
     e.consume();
+    if (c == '\u000B' || c == '\u000C' || c == '\u0085' || c == '\u2029')
+      c = '\n';
+    // Note: we don't (yet) strip unpaired surrogates here... but maybe we should?
     if (allowedCharacter(c))
       log.doAction(new TextAction("" + c));
   }
