@@ -163,7 +163,7 @@ class TextCaret implements Caret, AttributeListener {
     cursorReverseBias = (cursor == vl.end);
     editMenuHandler = new TextCaretEditHandler();
 
-    // attrs.addAttributeListener(this); // FIXME: not supported yet
+    attrs.addAttributeWeakListener(null, this);
   }
 
   @Override
@@ -183,7 +183,7 @@ class TextCaret implements Caret, AttributeListener {
     cursorReverseBias = false;
     for (CaretListener l : new ArrayList<CaretListener>(listeners))
       l.editingCanceled(e);
-    // attrs.removeAttributeListener(this); // FIXME: not supported yet
+    attrs.removeAttributeWeakListener(null, this);
     log.clear();
     editMenuHandler.computeEnabled();
   }
@@ -952,7 +952,6 @@ class TextCaret implements Caret, AttributeListener {
     VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
     boolean revBias = (p == vl.end);
-    // FIXME: what to do with revBias here?
     boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
     if (shift)
       selectOrigin = (p <= (cursor+anchor)/2) ? Math.max(cursor, anchor) : Math.min(cursor, anchor);
@@ -1006,7 +1005,7 @@ class TextCaret implements Caret, AttributeListener {
   @Override
   public void stopEditing() {
     CaretEvent e = new CaretEvent(this, oldText, curText);
-    // attrs.removeAttributeListener(this); // FIXME: not supported yet
+    attrs.removeAttributeWeakListener(null, this);
     // attrs.setText(curText); // action will take care of it?
     for (CaretListener l : new ArrayList<CaretListener>(listeners))
       l.editingStopped(e);
@@ -1019,11 +1018,12 @@ class TextCaret implements Caret, AttributeListener {
   public void attributeValueChanged(AttributeEvent e) {
     Attribute<?> attr = e.getAttribute();
     if (attr == Text.ATTR_TEXT) {
-      oldText = curText = (String)e.getValue();
-      cursor = anchor = curText.length();
-      cursorReverseBias = false;
-      log.clear();
-      editMenuHandler.computeEnabled();
+      // oldText = curText = (String)e.getValue();
+      // cursor = anchor = curText.length();
+      // cursorReverseBias = false;
+      // log.clear();
+      // editMenuHandler.computeEnabled();
+      cancelEditing();
     }
   }
 
@@ -1235,114 +1235,15 @@ class TextCaret implements Caret, AttributeListener {
 
 }
 
-/*
-// tab stop rendering
-public void paint(Graphics graphics) {
-
-     float leftMargin = 10, rightMargin = 310;
-     float[] tabStops = { 100, 250 };
-
-     // assume styledText is an AttributedCharacterIterator, and the number
-     // of tabs in styledText is tabCount
-
-     int[] tabLocations = new int[tabCount+1];
-
-     int i = 0;
-     for (char c = styledText.first(); c != styledText.DONE; c = styledText.next()) {
-         if (c == '\t') {
-             tabLocations[i++] = styledText.getIndex();
-         }
-     }
-     tabLocations[tabCount] = styledText.getEndIndex() - 1;
-
-     // Now tabLocations has an entry for every tab's offset in
-     // the text.  For convenience, the last entry is tabLocations
-     // is the offset of the last character in the text.
-
-     LineBreakMeasurer measurer = new LineBreakMeasurer(styledText);
-     int currentTab = 0;
-     float verticalPos = 20;
-
-     while (measurer.getPosition() < styledText.getEndIndex()) {
-
-         // Lay out and draw each line.  All segments on a line
-         // must be computed before any drawing can occur, since
-         // we must know the largest ascent on the line.
-         // TextLayouts are computed and stored in a Vector;
-         // their horizontal positions are stored in a parallel
-         // Vector.
-
-         // lineContainsText is true after first segment is drawn
-         boolean lineContainsText = false;
-         boolean lineComplete = false;
-         float maxAscent = 0, maxDescent = 0;
-         float horizontalPos = leftMargin;
-         Vector layouts = new Vector(1);
-         Vector penPositions = new Vector(1);
-
-         while (!lineComplete) {
-             float wrappingWidth = rightMargin - horizontalPos;
-             TextLayout layout =
-                     measurer.nextLayout(wrappingWidth,
-                                         tabLocations[currentTab]+1,
-                                         lineContainsText);
-
-             // layout can be null if lineContainsText is true
-             if (layout != null) {
-                 layouts.addElement(layout);
-                 penPositions.addElement(Float.valueOf(horizontalPos));
-                 horizontalPos += layout.getAdvance();
-                 maxAscent = Math.max(maxAscent, layout.getAscent());
-                 maxDescent = Math.max(maxDescent,
-                     layout.getDescent() + layout.getLeading());
-             } else {
-                 lineComplete = true;
-             }
-
-             lineContainsText = true;
-
-             if (measurer.getPosition() == tabLocations[currentTab]+1) {
-                 currentTab++;
-             }
-
-             if (measurer.getPosition() == styledText.getEndIndex())
-                 lineComplete = true;
-             else if (horizontalPos >= tabStops[tabStops.length-1])
-                 lineComplete = true;
-
-             if (!lineComplete) {
-                 // move to next tab stop
-                 int j;
-                 for (j=0; horizontalPos >= tabStops[j]; j++) {}
-                 horizontalPos = tabStops[j];
-             }
-         }
-
-         verticalPos += maxAscent;
-
-         Enumeration layoutEnum = layouts.elements();
-         Enumeration positionEnum = penPositions.elements();
-
-         // now iterate through layouts and draw them
-         while (layoutEnum.hasMoreElements()) {
-             TextLayout nextLayout = (TextLayout) layoutEnum.nextElement();
-             Float nextPosition = (Float) positionEnum.nextElement();
-             nextLayout.draw(graphics, nextPosition.floatValue(), verticalPos);
-         }
-
-         verticalPos += maxDescent;
-     }
- }
-*/
 // FIXME / TODO
 // x In auto-wrap mode, allow trailing whitespace to overhang textWidth
+// x goto start/end line movements should stop at soft wraps
+// x triple-click to select entire line should stop at soft wrap? actually no.
+// x verify hit-test, esp with newline at end, or blank line (replaced by space)
+// x review all code
 // - Backspace/delete full glyph at a time
 // - Markdown-like styling (header, bullets)
 // - tab stops
-// - goto start/end line movements should stop at soft wraps
-// - click to select entire line should stop at soft wrap? or no?
-// - verify hit-test, esp with newline at end, or blank line (replaced by space)
-// - review all code
 // - caching (layout is computed repeatedly even within same action)
 // - don't render original component when caret is shown
 // - when placing new "text", select all initially
