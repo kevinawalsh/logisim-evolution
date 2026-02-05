@@ -52,7 +52,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
+import java.text.BreakIterator;
 import java.util.List;
+import java.util.Locale;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.comp.TextFieldCaret;
@@ -115,6 +117,7 @@ class TextCaret implements Caret, AttributeListener {
 
   static final float INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
 
+  public static final Color EDIT_MASK = new Color(200, 200, 200, 200);
   public static final Color EDIT_BACKGROUND = TextFieldCaret.EDIT_BACKGROUND;
   public static final Color EDIT_BORDER = TextFieldCaret.EDIT_BORDER;
   public static final Color SELECTION_BACKGROUND = TextFieldCaret.SELECTION_BACKGROUND;
@@ -150,6 +153,7 @@ class TextCaret implements Caret, AttributeListener {
   private int selectOrigin = 0;
 
   private Location loc;
+  private Bounds initialBounds;
   
   public TextCaret(TextAttributes attrs, Canvas canvas, Location loc, int px, int py) {
     this.attrs = attrs;
@@ -162,6 +166,7 @@ class TextCaret implements Caret, AttributeListener {
     cursor = anchor = vl.positionForX(px);
     cursorReverseBias = (cursor == vl.end);
     editMenuHandler = new TextCaretEditHandler();
+    initialBounds = box.bounds.expand(Text.PAD);
 
     attrs.addAttributeWeakListener(null, this);
   }
@@ -202,6 +207,9 @@ class TextCaret implements Caret, AttributeListener {
   public void draw(Graphics g) {
     
     BoxLayout box = computeLayout(g);
+
+    // fill initial bounds in translucent gray, to obscure the original text
+    initialBounds.fill(g, EDIT_MASK);
 
     // draw boundary
     Bounds area = box.bounds.expand(Text.PAD);
@@ -262,6 +270,7 @@ class TextCaret implements Caret, AttributeListener {
 
   static class VisualLine {
     final int lineno;
+    final String fullText;        // ugh: copy of curText from outer class
     final int start;              // utf16 index into curText (inclusive)
     final int end;                // utf16 index into curText (exclusive) -- excludes '\n'
     final boolean hardBreakAfter; // whether line is followed by '\n' in curText
@@ -269,8 +278,9 @@ class TextCaret implements Caret, AttributeListener {
     /*final*/ float x;     // draw origin x, where layout.draw() is called
     final float baselineY; // baseline y, where layout.draw() is called
 
-    VisualLine(int lineno, int start, int end, boolean hardBreakAfter, TextLayout layout, float x, float baselineY) {
+    VisualLine(int lineno, String fullText, int start, int end, boolean hardBreakAfter, TextLayout layout, float x, float baselineY) {
       this.lineno = lineno;
+      this.fullText = fullText;
       this.start = start;
       this.end = end; // does not include newline
       this.hardBreakAfter = hardBreakAfter;
@@ -285,21 +295,25 @@ class TextCaret implements Caret, AttributeListener {
 
     float caretXForPosition(int pos) {
       int local = clamp(pos - start, 0, end - start);
-      // TextLayout wants local insertion index
       TextHitInfo hit = TextHitInfo.leading(local);
-      float[] caretInfo = layout.getCaretInfo(hit); // [x1, y1, x2, y2] but typically x positions
+      float[] caretInfo = layout.getCaretInfo(hit); // [x_along_baseline, inverse_slope]
       return x + caretInfo[0];
     }
 
-    int positionForX(float px) {
-      float relX = px - x;
-      // y arg is offset from baseline; 0 is fine for "near baseline"
+    // int positionForX(float px, boolean biasReverse) {
+    //   float relX = px - x, relY = 0; // 0 means baseline
+    //   TextHitInfo hit = layout.hitTestChar(relX, 0);
+    //   int pos = start + hit.getInsertionIndex();
+    //   pos = clamp(pos, start, end);
+    //   return snapToGraphemeBoundary(pos, biasReverse, start, end);
+    // }
+
+    int positionForX(float px) { // snaps to visually closest grapheme boundary
+      float relX = px - x, relY = 0; // 0 means baseline
       TextHitInfo hit = layout.hitTestChar(relX, 0);
       int pos = start + hit.getInsertionIndex();
-      // clamp to [start, end]
-      if (pos < start) return start;
-      else if (pos > end) return end;
-      else return pos;
+      pos = clamp(pos, start, end);
+      return snapToGraphemeBoundary(pos, px, this);
     }
 
     private static int clamp(int v, int lo, int hi) {
@@ -411,7 +425,7 @@ class TextCaret implements Caret, AttributeListener {
         if (lines.isEmpty())
           y -= valignAdjust(layout, valign);
         dy += layout.getAscent();
-        lines.add(new VisualLine(lines.size(), start, end, hardBreakAfter, layout, 0, y + dy));
+        lines.add(new VisualLine(lines.size(), text, start, end, hardBreakAfter, layout, 0, y + dy));
         maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
         dy += layout.getDescent() + layout.getLeading();
 
@@ -428,7 +442,7 @@ class TextCaret implements Caret, AttributeListener {
           if (lines.isEmpty())
             y -= valignAdjust(layout, valign);
           dy += layout.getAscent();
-          lines.add(new VisualLine(lines.size(), start + a, start + b, hardBreakAfter && (b == para.length()), layout, 0, y + dy));
+          lines.add(new VisualLine(lines.size(), text, start + a, start + b, hardBreakAfter && (b == para.length()), layout, 0, y + dy));
           dy += layout.getDescent() + layout.getLeading();
         }
 
@@ -703,11 +717,8 @@ class TextCaret implements Caret, AttributeListener {
 
     if (move < -6 || move == 0 || move > +6) { // invalid
       return;
-    } else if (move == -6) { // start of text
-      cursor = 0;
-      cursorReverseBias = false;
-    } else if (move == +6) { // end of text
-      cursor = curText.length();
+    } else if (move == -6 || move == +6) { // start/end of text
+      cursor = (move < 0) ? 0 : curText.length();
       cursorReverseBias = false;
     } else if (move == -5 || move == +5) { // start/end of para
       if (!shift && cursor != anchor)
@@ -757,7 +768,6 @@ class TextCaret implements Caret, AttributeListener {
         cursor = dest.positionForX(preferredCaretX);
       }
     } else { // next/prev char, next/prev word
-      int dx = (move < 0 ? -1 : +1);
       boolean byword = (move == -2 || move == +2);
       if (!shift && cursor != anchor) {
         // selection is being canceled by left/right movement,
@@ -765,12 +775,11 @@ class TextCaret implements Caret, AttributeListener {
         cancelSelection(move);
       } else {
         // move one char left/right as the first step, if possible
-        if (dx < 0 && cursor > 0) cursor--;
-        else if (dx > 0 && cursor < curText.length()) cursor++;
+        cursor = move < 0 ? prevGraphemeBoundary(cursor) : nextGraphemeBoundary(cursor);
       }
       if (byword) {
         while (!wordBoundary(cursor))
-          cursor += dx;
+          cursor = move < 0 ? prevGraphemeBoundary(cursor) : nextGraphemeBoundary(cursor);
       }
       preferredCaretX = Float.NaN; // horizontal movement resets vertical goal x
       cursorReverseBias = false; // horizontal movement resets bias
@@ -780,7 +789,8 @@ class TextCaret implements Caret, AttributeListener {
       anchor = cursor;
     editMenuHandler.computeEnabled();
   }
-  
+ 
+  // NOTE: This doesn't handle RTL text intuitively. Oh well.
   private void processMovementKeys(KeyEvent e, boolean shift, boolean wordkey, boolean menukey) {
     int dir = +1;
     switch (e.getKeyCode()) {
@@ -849,17 +859,23 @@ class TextCaret implements Caret, AttributeListener {
       e.consume();
       break;
     case KeyEvent.VK_BACK_SPACE: // DELETE on MacOS?
-      if (cursor != anchor)
+      if (cursor != anchor) {
         log.doAction(new TextAction(""));
-      else if (cursor > 0)
-        log.doAction(new TextAction(cursor-1, cursor, ""));
+      } else {
+        int left = prevGraphemeBoundary(cursor);
+        if (left < cursor)
+          log.doAction(new TextAction(left, cursor, ""));
+      }
       e.consume();
       break;
     case KeyEvent.VK_DELETE: // BACK_SPACE on MacOS?
-      if (cursor != anchor)
+      if (cursor != anchor) {
         log.doAction(new TextAction(""));
-      else if (cursor < curText.length())
-        log.doAction(new TextAction(cursor, cursor+1, ""));
+      } else {
+        int right = nextGraphemeBoundary(cursor);
+        if (cursor < right)
+          log.doAction(new TextAction(cursor, right, ""));
+      }
       e.consume();
       break;
     default:
@@ -944,6 +960,55 @@ class TextCaret implements Caret, AttributeListener {
         p--;
     }
     return p;
+  }
+
+  private int prevGraphemeBoundary(int pos) {
+    if (pos <= 0)
+      return 0;
+    BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
+    bi.setText(curText);
+    int b = bi.preceding(pos);
+    return (b == BreakIterator.DONE) ? 0 : b;
+  }
+
+  private int nextGraphemeBoundary(int pos) {
+    int n = curText.length();
+    if (pos >= n)
+      return n;
+    BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
+    bi.setText(curText);
+    int b = bi.following(pos);
+    return (b == BreakIterator.DONE) ? n : b;
+  }
+
+  // private int snapToGraphemeBoundary(int pos, boolean reverseBias, int start, int end) {
+  //   BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
+  //   bi.setText(curText);
+  //   if (bi.isBoundary(pos)) {
+  //     return pos;
+  //   } else if (reverseBias) {
+  //     int prev = bi.preceding(pos);
+  //     return (prev == BreakIterator.DONE || prev < start) ? start : prev;
+  //   } else {
+  //     int next = bi.following(pos);
+  //     return (next == BreakIterator.DONE || next > end) ? end : next;
+  //   }
+  // }
+
+  private static int snapToGraphemeBoundary(int pos, float px, VisualLine vl) {
+    BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
+    bi.setText(vl.fullText);
+    if (bi.isBoundary(pos))
+      return pos;
+    int prev = bi.preceding(pos);
+    if (prev == BreakIterator.DONE || prev < vl.start)
+      prev = vl.start;
+    int next = bi.following(pos);
+    if (next == BreakIterator.DONE || next > vl.end)
+      next = vl.end;
+    float prevX = vl.caretXForPosition(prev);
+    float nextX = vl.caretXForPosition(next);
+    return (Math.abs(px - prevX) <= Math.abs(px - nextX)) ? prev : next;
   }
 
   @Override
@@ -1079,10 +1144,12 @@ class TextCaret implements Caret, AttributeListener {
       TextAction prev = (TextAction)other;
       if (this.repl.length() == 0) {
         // now strictly deleting text, e.g. backspace, or selection-delete
-        if (right - left != 1)
-          return false; // erased multiple, e.g. selection-delete
+        if (this.cursorPos != this.anchorPos)
+          return false; // selection-delete
         else if (prev.repl.length() != 0)
           return false; // previous was not strictly deleting text
+        if (prev.cursorPos != prev.anchorPos)
+          return false; // previous was selection-delete
         else if (this.right != prev.left)
           return false; // previous deletion was not right-adjacent to this deletion
         else if (this.ts - prev.te > MAX_KEYSTROKE_DELAY_NS)
@@ -1241,13 +1308,10 @@ class TextCaret implements Caret, AttributeListener {
 // x triple-click to select entire line should stop at soft wrap? actually no.
 // x verify hit-test, esp with newline at end, or blank line (replaced by space)
 // x review all code
+// x don't render original component when caret is shown
+// x when placing new "text", select all initially
 // - Backspace/delete full glyph at a time
 // - Markdown-like styling (header, bullets)
 // - tab stops
 // - caching (layout is computed repeatedly even within same action)
-// - don't render original component when caret is shown
-// - when placing new "text", select all initially
 // - when placing text initially, sizing, or moving, snap to grid unless alt is held?
-// - cursor movement with RTL text
-//   (for the caret index i, use TextHitInfo.afterOffset(i) or leading/trailing depending on what
-//   side you intend.)
