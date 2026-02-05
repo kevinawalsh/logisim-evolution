@@ -290,35 +290,32 @@ public class TextFieldCaret implements Caret, TextFieldListener {
   }
 
   // Text field movement shortcuts...
-  // For a multi-line text field are ten possible cursor movements:
-  //    ______________________________________
-  //   |(-5)                                  |   (+1) next char      (-1) prev char
-  //   |                 (-4)                 |   (+2) next word      (-2) prev word
-  //   |(-3)    (-2)   (-1)I(+1)   (+2)   (+3)|   (+3) anchor of line    (-3) start of line
-  //   |                 (+4)             ____|   (+4) down a line    (-4) up a line
-  //   |_____________________________(+5)|        (+5) anchor of text    (-5) start of text
+  // For a single-line text field are six possible cursor movements:
+  //                                            
+  //   .--------------------------------------.   (+1) next char      (-1) prev char
+  //   |(-3)    (-2)   (-1)I(+1)   (+2)   (+3)|   (+2) next word      (-2) prev word
+  //   '--------------------------------------'   (+3) end of line    (-3) start of line
   // 
-  // When cursor is on first or last line, 4 degenerates to 5.
-  // For a single-line text field the same holds except that 3, 4 and 5 are all equivalent.
+  // For similar multi-line cursor mevements, see std/base/TextCaret.
   //
   //                                                   single-line          multi-line
   //          key          modifiers                   textfield action     textfield action
   // MacOS:
   //          left/right   -                           +/- 1                +/- 1            
   //          left/right   option/wordkey              +/- 2                +/- 2             
-  //          left/right   command/menukey             +/- 5                +/- 3
-  //          up/down      -                           +/- 5                +/- 4
-  //          up/down      command/menukey             +/- 5                +/- 5
-  //          home/anchor     -                           +/- 5                +/- 5
-  //          pgup/pgdn    -                           +/- 5                +/- 5
+  //          left/right   command/menukey             +/- 3                +/- 3
+  //          up/down      -                           +/- 3                +/- 4
+  //          up/down      command/menukey             +/- 3                +/- 5
+  //          home/end     -                           +/- 3                +/- 5
+  //          pgup/pgdn    -                           +/- 3                +/- 5
   // Linux/Windows:
   //          left/right   -                           +/- 1                +/- 1            
   //          left/right   control/wordkey/menukey     +/- 2                +/- 2             
-  //          up/down      -                           +/- 5                +/- 4
-  //          up/down      control/wordkey/menukey     +/- 5                +/- 5
-  //          home/anchor     -                           +/- 5                +/- 3
-  //          home/anchor     control/wordkey/menukey     +/- 5                +/- 5
-  //          pgup/pgdn    -                           +/- 5                +/- 5
+  //          up/down      -                           +/- 3                +/- 4
+  //          up/down      control/wordkey/menukey     +/- 3                +/- 5
+  //          home/end     -                           +/- 3                +/- 3
+  //          home/end     control/wordkey/menukey     +/- 3                +/- 5
+  //          pgup/pgdn    -                           +/- 3                +/- 5
   //
   // TODO: support for old style linux/apple movemet keys, like control-A / control-E ?
 
@@ -346,7 +343,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
       return;
     } else if (move <= -3) { // start of line, up a line, start of text
       cursor = 0;
-    } else if (move >= +3) { // anchor of line, down a line, anchor of text
+    } else if (move >= +3) { // end of line, down a line, end of text
       cursor = curText.length();
     } else { // next/prev char, next/prev word
       int dx = (move < 0 ? -1 : +1);
@@ -370,7 +367,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
       anchor = cursor;
     editMenuHandler.computeEnabled();
   }
-  
+
   protected void processMovementKeys(KeyEvent e, boolean shift, boolean wordkey, boolean menukey) {
     int dir = +1;
     switch (e.getKeyCode()) {
@@ -381,7 +378,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     case KeyEvent.VK_RIGHT:
     case KeyEvent.VK_KP_RIGHT:
       if (menukey && !wordkey)
-        moveCaret(dir*3, shift); // MacOS start/anchor of line
+        moveCaret(dir*3, shift); // MacOS start/end of line
       else if (wordkey)
         moveCaret(dir*2, shift); // prev/next word
       else 
@@ -395,7 +392,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     case KeyEvent.VK_DOWN:
     case KeyEvent.VK_KP_DOWN:
       if (menukey)
-        moveCaret(dir*5, shift); // start/anchor of text
+        moveCaret(dir*5, shift); // start/end of text
       else
         moveCaret(dir*4, shift); // up/down a line
       e.consume();
@@ -404,7 +401,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
       dir = -1;
       // fall through
     case KeyEvent.VK_PAGE_DOWN:
-      moveCaret(dir*5, shift); // start/anchor of text
+      moveCaret(dir*5, shift); // start/end of text
       e.consume();
       break;
     case KeyEvent.VK_HOME:
@@ -412,11 +409,11 @@ public class TextFieldCaret implements Caret, TextFieldListener {
       // fall through
     case KeyEvent.VK_END:
       if (Main.MacOS)
-        moveCaret(dir*5, shift); //  MacOS start/anchor of text
+        moveCaret(dir*5, shift); //  MacOS start/end of text
       else if (menukey)
-        moveCaret(dir*5, shift); // start/anchor of text
+        moveCaret(dir*5, shift); // start/end of text
       else 
-        moveCaret(dir*3, shift); // start/anchor of line
+        moveCaret(dir*3, shift); // start/end of line
       e.consume();
       break;
     default:

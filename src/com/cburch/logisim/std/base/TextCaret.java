@@ -113,28 +113,42 @@ import com.cburch.logisim.util.UndoRedo;
 
 class TextCaret implements Caret, AttributeListener {
 
+  static final float INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
+
   public static final Color EDIT_BACKGROUND = TextFieldCaret.EDIT_BACKGROUND;
   public static final Color EDIT_BORDER = TextFieldCaret.EDIT_BORDER;
   public static final Color SELECTION_BACKGROUND = TextFieldCaret.SELECTION_BACKGROUND;
 
-  // From TextFieldCaret
   private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
   private TextAttributes attrs;
   private Graphics g;
   private String oldText;
   private String curText;
-  private int cursor, anchor; // text between cursor and anchor is selected
   private TextCaretEditHandler editMenuHandler;
   private UndoRedo log = new UndoRedo();
   private Canvas canvas;
   private float preferredCaretX = Float.NaN; // remembered x for vertical movement
+ 
+  // If cursor==anchor, then no text is selected, and a caret is usually shown 
+  // between the characters at positions cursor-1 and cursor.
+  //
+  // Otherwise, text within [cursor, anchor] is selected, and highlight is shown.
+  //
+  // There are some special cases:
+  // - cursor==0: the cursor is shown at the start of the text.
+  // - cursor==curText.length: the cursor is usually shown at the end of the text.
+  // - cursor==anchor and caret is "between" line i-1 and line i, i.e. if
+  //   curText[cursor-1] is a newline, or if curText[cursor-1] is the last character shown
+  //   on some soft-wrapped line. Here, the caretBias controls whether the caret is shown
+  //   at the end of line i-1 or the start of line i.
+  private int cursor, anchor;
+  private boolean cursorReverseBias; // true == reverse bias, false == forward bias
 
   // used during mouse selection
   private boolean selectByWord = false;
-  private boolean selectByLine = false;
+  private boolean selectByPara = false;
   private int selectOrigin = 0;
 
-  // from TextField
   private Location loc;
   
   public TextCaret(TextAttributes attrs, Canvas canvas, Location loc, int px, int py) {
@@ -143,8 +157,10 @@ class TextCaret implements Caret, AttributeListener {
     this.g = canvas.getGraphics();
     this.oldText = this.curText = attrs.getText();
     this.loc = loc;
-    this.cursor = this.anchor = findCaret(px, py);
-    
+    BoxLayout box = computeLayout(g);
+    VisualLine vl = box.lineForY(py);
+    cursor = anchor = vl.positionForX(px);
+    cursorReverseBias = (cursor == vl.end);
     editMenuHandler = new TextCaretEditHandler();
 
     // attrs.addAttributeListener(this); // FIXME: not supported yet
@@ -164,6 +180,7 @@ class TextCaret implements Caret, AttributeListener {
     CaretEvent e = new CaretEvent(this, oldText, oldText);
     curText = oldText;
     cursor = anchor = curText.length();
+    cursorReverseBias = false;
     for (CaretListener l : new ArrayList<CaretListener>(listeners))
       l.editingCanceled(e);
     // attrs.removeAttributeListener(this); // FIXME: not supported yet
@@ -175,6 +192,7 @@ class TextCaret implements Caret, AttributeListener {
   public void commitText(String text) {
     curText = text;
     cursor = anchor = curText.length();
+    cursorReverseBias = false;
     log.clear();
     // attrs.setText(text); // action will handle it?
     editMenuHandler.computeEnabled();
@@ -182,22 +200,15 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public void draw(Graphics g) {
-    int halign = attrs.getHorizontalAlign();
-    int valign = attrs.getVerticalAlign();
-    int x = loc.x;
-    int y = loc.y;
-    Font font = attrs.getFont();
-    if (font != null)
-      g.setFont(font);
+    
+    BoxLayout box = computeLayout(g);
 
     // draw boundary
-    Bounds area = getBounds(g).expand(Text.PAD);
+    Bounds area = box.bounds.expand(Text.PAD);
     area.fill(g, EDIT_BACKGROUND);
     area.draw(g, EDIT_BORDER);
 
     // draw selection
-    BoxLayout box = computeLayout(g);
-    List<VisualLine> vlines = box.lines;
     if (cursor != anchor) {
       int selA = Math.min(cursor, anchor);
       int selB = Math.max(cursor, anchor);
@@ -205,9 +216,7 @@ class TextCaret implements Caret, AttributeListener {
       Graphics2D g2 = (Graphics2D) g;
       g2.setColor(SELECTION_BACKGROUND);
 
-      int lineno = 0;
-      for (VisualLine vl : vlines) {
-        lineno++;
+      for (VisualLine vl : box.lines) {
         // Selection against a visual line range [vl.start, vl.end]
         int lineA = vl.start;
         int lineB = vl.end;
@@ -228,7 +237,6 @@ class TextCaret implements Caret, AttributeListener {
           // If selection spans a trailing newline, highlight that newline.
           float end = vl.isEmpty() ? 0 : vl.layout.getAdvance();
           float newlineWidth = vl.height()*0.4f; // 40% aspect ratio for newline char seems reasonable
-          System.out.println("select newline");
           Rectangle2D r = new Rectangle2D.Float(vl.x + end, vl.topY(), newlineWidth, vl.height());
           g2.fill(r);
         }
@@ -236,52 +244,37 @@ class TextCaret implements Caret, AttributeListener {
     }
 
     // draw text
-    g.setColor(Color.BLACK);
-    // GraphicsUtil.drawText(g, lines, x, y, halign, valign);
-    int textWidth = (attrs.isWrapping() ? attrs.getTextWidth() : -1);
-    drawMultilineText(g, curText, loc, textWidth, font, halign, valign);
-
+    g.setColor(attrs.getFGColor());
+    box.drawText(g);
 
     // draw caret
     if (cursor == anchor) {
       Graphics2D g2 = (Graphics2D) g;
-      VisualLine vl = findLineContaining(vlines, cursor);
-      if (vl != null) {
-        float cx = vl.caretXForGlobalIndex(cursor);
-        int top = (int) Math.floor(vl.topY());
-        int bot = (int) Math.ceil(vl.bottomY());
-        g2.setColor(Color.BLACK);
-        g2.drawLine((int) cx, top, (int) cx, bot);
-      }
+      VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
+      float cx = vl.caretXForPosition(cursor);
+      int top = (int) Math.floor(vl.topY());
+      int bot = (int) Math.ceil(vl.bottomY());
+      g2.setColor(Color.BLACK);
+      g2.drawLine((int) cx, top, (int) cx, bot);
     }
 
   }
-
-  private static VisualLine findLineContaining(List<VisualLine> lines, int pos) {
-    // Find line where pos is in [start, end], but allow pos==end to stick to that line
-    for (int i = 0; i < lines.size(); i++) {
-      VisualLine vl = lines.get(i);
-      if (pos < vl.start) return (i > 0) ? lines.get(i - 1) : vl;
-      if (pos <= vl.end) return vl;
-    }
-    return lines.isEmpty() ? null : lines.get(lines.size() - 1);
-  }
-
-  static final float INTER_PARAGRAPH_SPACE = 0.7f;
 
   static class VisualLine {
-    final int start;     // global UTF-16 index into curText (inclusive)
-    final int end;       // global UTF-16 index into curText (exclusive) -- excludes '\n'
-    final boolean hardBreakAfter; // true if this line is followed by a '\n' in curText
+    final int lineno;
+    final int start;              // utf16 index into curText (inclusive)
+    final int end;                // utf16 index into curText (exclusive) -- excludes '\n'
+    final boolean hardBreakAfter; // whether line is followed by '\n' in curText
     final TextLayout layout;
     /*final*/ float x;     // draw origin x, where layout.draw() is called
     final float baselineY; // baseline y, where layout.draw() is called
 
-    VisualLine(int start, int end, boolean hardBreakAfter, TextLayout layout, float x, float baselineY) {
+    VisualLine(int lineno, int start, int end, boolean hardBreakAfter, TextLayout layout, float x, float baselineY) {
+      this.lineno = lineno;
       this.start = start;
-      this.end = end;
+      this.end = end; // does not include newline
       this.hardBreakAfter = hardBreakAfter;
-      this.layout = layout;
+      this.layout = layout; // does not include newline
       this.x = x;
       this.baselineY = baselineY;
     }
@@ -290,19 +283,23 @@ class TextCaret implements Caret, AttributeListener {
     float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
     float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
 
-    float caretXForGlobalIndex(int globalIndex) {
-      int local = clamp(globalIndex - start, 0, end - start);
+    float caretXForPosition(int pos) {
+      int local = clamp(pos - start, 0, end - start);
       // TextLayout wants local insertion index
       TextHitInfo hit = TextHitInfo.leading(local);
       float[] caretInfo = layout.getCaretInfo(hit); // [x1, y1, x2, y2] but typically x positions
       return x + caretInfo[0];
     }
 
-    int hitTestGlobal(float px) {
+    int positionForX(float px) {
       float relX = px - x;
       // y arg is offset from baseline; 0 is fine for "near baseline"
       TextHitInfo hit = layout.hitTestChar(relX, 0);
-      return start + hit.getInsertionIndex();
+      int pos = start + hit.getInsertionIndex();
+      // clamp to [start, end]
+      if (pos < start) return start;
+      else if (pos > end) return end;
+      else return pos;
     }
 
     private static int clamp(int v, int lo, int hi) {
@@ -315,17 +312,78 @@ class TextCaret implements Caret, AttributeListener {
   }
 
   static class BoxLayout {
-    final Bounds bounds;          // overall bounds (same as getBounds)
-    final List<VisualLine> lines; // visual lines in draw order (wrapped)
-    BoxLayout(Bounds b, List<VisualLine> ls) { bounds = b; lines = ls; }
+    final int halign, valign;
+    final Font font;
+    final int textWidth; // accurate, even for manual-wrap mode
+    final Bounds bounds;
+    final List<VisualLine> lines;
+    // visual lines are in in top-to-bottom draw order (wrapped, if needed),
+    // with all text accounted for EXCEPT newlines:
+    //   lines[0].start == 0
+    //   lines[i].end == lines[i+1].start (for soft breaks)
+    //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
+    //   lines[n-1].end == len-1
+    
+    BoxLayout(Bounds b, List<VisualLine> ls, int tw, Font f, int h, int v) {
+      this.bounds = b;
+      this.lines = ls;
+      this.textWidth = tw;
+      this.font = f;
+      this.halign = h;
+      this.valign = v;
+    }
+
+    void drawText(Graphics g) {
+      Graphics2D g2 = (Graphics2D) g;
+      g2.setFont(font);
+      for (VisualLine line : lines)
+        line.layout.draw(g2, line.x, line.baselineY);
+    }
+
+    VisualLine firstLineOfParagraphContaining(VisualLine vl) {
+      while (vl.lineno > 0) {
+        VisualLine prev = lines.get(vl.lineno - 1);
+        if (prev.hardBreakAfter)
+          break;
+        vl = prev;
+      }
+      return vl;
+    }
+
+    VisualLine lastLineOfParagraphContaining(VisualLine vl) {
+      while (vl.lineno < lines.size() - 1 && !vl.hardBreakAfter)
+        vl = lines.get(vl.lineno + 1);
+      return vl;
+    }
+
+    VisualLine lineForPosition(int pos, boolean reverseBias) {
+      for (VisualLine vl : lines) {
+        int end = vl.hardBreakAfter ? vl.end+1 : vl.end;
+        if (pos < end || (pos == end && reverseBias))
+          return vl;
+      }
+      return lines.get(lines.size() - 1);
+    }
+
+    VisualLine lineForY(int py) {
+      for (VisualLine vl : lines) {
+        if (py < vl.bottomY()) {
+          return vl;
+        }
+      }
+      return lines.get(lines.size() - 1);
+    }
+
   }
 
-  static BoxLayout layoutWrappedText(Graphics g, String[] paragraphs, Location loc,
+  static BoxLayout layoutWrappedText(Graphics g, String text, Location loc,
       int textWidth, Font font, int halign, int valign) {
 
     Graphics2D g2 = (Graphics2D) g;
     g2.setFont(font);
     FontRenderContext frc = g2.getFontRenderContext();
+    
+    String[] paragraphs = text.split("\n", -1);
 
     final boolean autoWrap = textWidth > 0;
     int y = loc.y;
@@ -353,7 +411,7 @@ class TextCaret implements Caret, AttributeListener {
         if (lines.isEmpty())
           y -= valignAdjust(layout, valign);
         dy += layout.getAscent();
-        lines.add(new VisualLine(start, end, hardBreakAfter, layout, 0, y + dy));
+        lines.add(new VisualLine(lines.size(), start, end, hardBreakAfter, layout, 0, y + dy));
         maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
         dy += layout.getDescent() + layout.getLeading();
 
@@ -370,7 +428,7 @@ class TextCaret implements Caret, AttributeListener {
           if (lines.isEmpty())
             y -= valignAdjust(layout, valign);
           dy += layout.getAscent();
-          lines.add(new VisualLine(start + a, start + b, hardBreakAfter && (b == para.length()), layout, 0, y + dy));
+          lines.add(new VisualLine(lines.size(), start + a, start + b, hardBreakAfter && (b == para.length()), layout, 0, y + dy));
           dy += layout.getDescent() + layout.getLeading();
         }
 
@@ -392,7 +450,7 @@ class TextCaret implements Caret, AttributeListener {
     }
 
     Bounds b = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
-    return new BoxLayout(b, lines);
+    return new BoxLayout(b, lines, textWidth, font, halign, valign);
   }
 
   private static int valignAdjust(TextLayout layout, int valign) {
@@ -430,48 +488,25 @@ class TextCaret implements Caret, AttributeListener {
     int valign = attrs.getVerticalAlign();
     int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
     Font font = attrs.getFont();
-    String[] paragraphs = curText.split("\n", -1);
-    return layoutWrappedText(g, paragraphs, loc, textWidth, font, halign, valign);
-  }
-
-  static void drawMultilineText(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    String[] paragraphs = text.split("\n", -1); // keep empty paragraph at end
-    if (textWidth <= 0) {
-      GraphicsUtil.drawText(g, font, paragraphs, loc.x, loc.y, halign, valign);
-    } else {
-      drawWrappedText(g, paragraphs, loc, textWidth, font, halign, valign);
-    }
-  }
-
-  static void drawWrappedText(Graphics g, String[] paragraphs, Location loc,
-      int textWidth, Font font, int halign, int valign) {
-    BoxLayout wl = layoutWrappedText(g, paragraphs, loc, textWidth, font, halign, valign);
-    Graphics2D g2 = (Graphics2D) g;
-    g2.setFont(font);
-    for (VisualLine line : wl.lines) {
-      line.layout.draw(g2, line.x, line.baselineY);
-    }
+    return layoutWrappedText(g, curText, loc, textWidth, font, halign, valign);
   }
 
   @Override
   public Bounds getBounds(Graphics g) {
-    int halign = attrs.getHorizontalAlign();
-    int valign = attrs.getVerticalAlign();
-    int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
-    Font font = attrs.getFont();
-    return getBounds(g, curText, loc, textWidth, font, halign, valign);
+    return computeLayout(g).bounds.expand(Text.PAD);
   }
 
+  // This is used by Text.paint()
+  static void drawMultilineText(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
+    BoxLayout box = layoutWrappedText(g, text, loc, textWidth, font, halign, valign);
+    box.drawText(g);
+  }
+
+  // This is used by Text.get*Bounds()
   static Bounds getBounds(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    String[] paragraphs = text.split("\n", -1); // keep blank lines at end
-    if (textWidth <= 0) {
-      return Bounds.create(GraphicsUtil.getTextBounds(g, font, paragraphs, loc.x, loc.y, halign, valign));
-    } else {
-      BoxLayout wl = layoutWrappedText(g, paragraphs, loc, textWidth, font, halign, valign);
-      return wl.bounds;
-    }
+    BoxLayout box = layoutWrappedText(g, text, loc, textWidth, font, halign, valign);
+    return box.bounds;
   }
-
 
   @Override
   public String getText() {
@@ -521,10 +556,12 @@ class TextCaret implements Caret, AttributeListener {
         && (c == '\n' || c == '\t' || !Character.isISOControl(c));
   }
 
+  // FIXME: select all when placing new text using TextTool
   // @Override
   // public void selectAll() {
   //   cursor = 0;
   //   anchor = curText.length();
+  //   cursorReverseBias = false;
   //   editMenuHandler.computeEnabled();
   // }
 
@@ -570,6 +607,7 @@ class TextCaret implements Caret, AttributeListener {
     case KeyEvent.VK_A: // select all
       cursor = 0;
       anchor = curText.length();
+      cursorReverseBias = false;
       editMenuHandler.computeEnabled();
       e.consume();
       break;
@@ -602,44 +640,52 @@ class TextCaret implements Caret, AttributeListener {
     }
   }
 
-  // Text field movement shortcuts...
-  // For a multi-line text field are ten possible cursor movements:
-  //    ______________________________________
-  //   |(-5)                                  |   (+1) next char      (-1) prev char
-  //   |                 (-4)                 |   (+2) next word      (-2) prev word
-  //   |(-3)    (-2)   (-1)I(+1)   (+2)   (+3)|   (+3) anchor of line    (-3) start of line
-  //   |                 (+4)             ____|   (+4) down a line    (-4) up a line
-  //   |_____________________________(+5)|        (+5) anchor of text    (-5) start of text
-  // 
-  // When cursor is on first or last line, 4 degenerates to 5.
-  // For a single-line text field the same holds except that 3, 4 and 5 are all equivalent.
+  // Text caret movement shortcuts...
   //
+  // For multi-line capable text there are twelve possible cursor movements:
+  //    ______________________________________
+  //   |(-6)                                  |   (+1) next char      (-1) prev char
+  //   |(-5)             (-4)                 |   (+2) next word      (-2) prev word
+  //   |(-3)    (-2)   (-1)I(+1)   (+2)   (+3)|   (+3) end of line    (-3) start of line
+  //   |                 (+4)         (+5)____|   (+4) down a line    (-4) up a line
+  //   |_____________________________(+6)|        (+5) end of para    (-5) start of para
+  //                                              (+6) end of text    (-6) start of text
+  // 
+  // For single-line only text, there are six possible cursor movements:
+  //                                            
+  //   .--------------------------------------.   (+1) next char      (-1) prev char
+  //   |(<=-3)   (-2)  (-1)I(+1)  (+2)  (>=+3)|   (+2) next word      (-2) prev word
+  //   '--------------------------------------'   (>=+3) end of line  (<=-3) start of line
+  // 
   //                                                   single-line          multi-line
   //          key          modifiers                   textfield action     textfield action
   // MacOS:
   //          left/right   -                           +/- 1                +/- 1            
   //          left/right   option/wordkey              +/- 2                +/- 2             
-  //          left/right   command/menukey             +/- 5                +/- 3
-  //          up/down      -                           +/- 5                +/- 4
-  //          up/down      command/menukey             +/- 5                +/- 5
-  //          home/anchor     -                           +/- 5                +/- 5
-  //          pgup/pgdn    -                           +/- 5                +/- 5
+  //          left/right   command/menukey             +/- 3                +/- 3
+  //          up/down      -                           +/- 3                +/- 4
+  //          up/down      command/menukey             +/- 3                +/- 6
+  //          home/end     -                           +/- 3                +/- 6
+  //          pgup/pgdn    -                           +/- 3                +/- 6
   // Linux/Windows:
   //          left/right   -                           +/- 1                +/- 1            
   //          left/right   control/wordkey/menukey     +/- 2                +/- 2             
-  //          up/down      -                           +/- 5                +/- 4
-  //          up/down      control/wordkey/menukey     +/- 5                +/- 5
-  //          home/anchor     -                           +/- 5                +/- 3
-  //          home/anchor     control/wordkey/menukey     +/- 5                +/- 5
-  //          pgup/pgdn    -                           +/- 5                +/- 5
+  //          up/down      -                           +/- 3                +/- 4
+  //          up/down      control/wordkey/menukey     +/- 3                +/- 6
+  //          home/end     -                           +/- 3                +/- 3
+  //          home/end     control/wordkey/menukey     +/- 3                +/- 6
+  //          pgup/pgdn    -                           +/- 3                +/- 6
   //
+  // Note: there are no keyboard shortcuts for start/end paragraph.
   // TODO: support for old style linux/apple movemet keys, like control-A / control-E ?
 
   private void cancelSelection(int direction) {
     // selection is being canceled by left/right movement
-    if (direction < 0) anchor = cursor;
-    else cursor = anchor;
-    editMenuHandler.computeEnabled();
+    if (direction < 0)
+      anchor = cursor;
+    else
+      cursor = anchor;
+    cursorReverseBias = false;
   }
  
   // swap, if needed, so cursor <= anchor
@@ -655,65 +701,61 @@ class TextCaret implements Caret, AttributeListener {
     if (!shift)
       normalizeSelection();
 
-    if (move == -3 || move == +3) { // start/end of line
+    if (move < -6 || move == 0 || move > +6) { // invalid
+      return;
+    } else if (move == -6) { // start of text
+      cursor = 0;
+      cursorReverseBias = false;
+    } else if (move == +6) { // end of text
+      cursor = curText.length();
+      cursorReverseBias = false;
+    } else if (move == -5 || move == +5) { // start/end of para
       if (!shift && cursor != anchor)
         cancelSelection(move);
-
       BoxLayout box = computeLayout(g);
-      List<VisualLine> lines = box.lines;
-      VisualLine vl = findLineContaining(lines, cursor);
-
-      if (vl != null) {
-        cursor = (move < 0) ? vl.start : vl.end;
-        preferredCaretX = Float.NaN;
-      } else {
-        cursor = (move < 0) ? 0 : curText.length();
-      }
+      VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
+      if (move < 0)
+          vl = box.firstLineOfParagraphContaining(vl);
+      else
+          vl = box.lastLineOfParagraphContaining(vl);
+      cursor = (move < 0) ? vl.start : vl.end;
+      cursorReverseBias = (move > 0);
+      preferredCaretX = Float.NaN;
+    } else if (move == -3 || move == +3) { // start/end of line
+      if (!shift && cursor != anchor)
+        cancelSelection(move);
+    
+      BoxLayout box = computeLayout(g);
+      VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
+      cursor = (move < 0) ? vl.start : vl.end;
+      cursorReverseBias = (move > 0);
+      preferredCaretX = Float.NaN;
     } else if (move == -4 || move == +4) { // up/down a line
       if (!shift && cursor != anchor)
         cancelSelection(move);
-
+        
       BoxLayout box = computeLayout(g);
-      List<VisualLine> lines = box.lines;
-      if (lines.isEmpty()) {
-        cursor = (move < 0) ? 0 : curText.length();
+      int dir = (move < 0) ? -1 : +1;
+
+      // Determine current line index
+      VisualLine cur = box.lineForPosition(cursor, cursorReverseBias);
+
+      // Save preferred X on first vertical move.
+      if (Float.isNaN(preferredCaretX))
+        preferredCaretX = cur.caretXForPosition(cursor);
+
+      // MSWord ignores traversal up from first line, or down from last line.
+      // Google Docs moves to start/end of line, but retains preferredCaretX and bias.
+      // Let's do the latter.
+      int tgt = cur.lineno + dir;
+      if (tgt < 0) {
+        cursor = 0;
+      } else if (tgt >= box.lines.size()) {
+        cursor = curText.length();
       } else {
-        int dir = (move < 0) ? -1 : +1;
-
-        // Determine current line index
-        int idx = 0;
-        VisualLine cur = null;
-        for (int i = 0; i < lines.size(); i++) {
-          VisualLine vl = lines.get(i);
-          if (cursor <= vl.end) { idx = i; cur = vl; break; }
-        }
-        if (cur == null) { idx = lines.size() - 1; cur = lines.get(idx); }
-
-        // Remember preferred X (update it on first vertical move)
-        if (Float.isNaN(preferredCaretX)) {
-          preferredCaretX = cur.caretXForGlobalIndex(cursor);
-        }
-
-        int tgt = idx + dir;
-        if (tgt < 0) {
-          cursor = 0;
-        } else if (tgt >= lines.size()) {
-          cursor = curText.length();
-        } else {
-          VisualLine dest = lines.get(tgt);
-          // hit-test in destination line at preferredCaretX
-          int newPos = dest.hitTestGlobal(preferredCaretX);
-          if (newPos < dest.start) newPos = dest.start;
-          if (newPos > dest.end) newPos = dest.end;
-          cursor = newPos;
-        }
+        VisualLine dest = box.lines.get(tgt);
+        cursor = dest.positionForX(preferredCaretX);
       }
-    } else if (move < -5 || move == 0 || move > 5) { // invalid
-      return;
-    } else if (move <= -3) { // start of line, up a line, start of text
-      cursor = 0;
-    } else if (move >= +3) { // anchor of line, down a line, anchor of text
-      cursor = curText.length();
     } else { // next/prev char, next/prev word
       int dx = (move < 0 ? -1 : +1);
       boolean byword = (move == -2 || move == +2);
@@ -731,6 +773,7 @@ class TextCaret implements Caret, AttributeListener {
           cursor += dx;
       }
       preferredCaretX = Float.NaN; // horizontal movement resets vertical goal x
+      cursorReverseBias = false; // horizontal movement resets bias
     }
 
     if (!shift)
@@ -748,7 +791,7 @@ class TextCaret implements Caret, AttributeListener {
     case KeyEvent.VK_RIGHT:
     case KeyEvent.VK_KP_RIGHT:
       if (menukey && !wordkey)
-        moveCaret(dir*3, shift); // MacOS start/anchor of line
+        moveCaret(dir*3, shift); // MacOS start/end of line
       else if (wordkey)
         moveCaret(dir*2, shift); // prev/next word
       else 
@@ -762,7 +805,7 @@ class TextCaret implements Caret, AttributeListener {
     case KeyEvent.VK_DOWN:
     case KeyEvent.VK_KP_DOWN:
       if (menukey)
-        moveCaret(dir*5, shift); // start/anchor of text
+        moveCaret(dir*6, shift); // start/end of text
       else
         moveCaret(dir*4, shift); // up/down a line
       e.consume();
@@ -771,7 +814,7 @@ class TextCaret implements Caret, AttributeListener {
       dir = -1;
       // fall through
     case KeyEvent.VK_PAGE_DOWN:
-      moveCaret(dir*5, shift); // start/anchor of text
+      moveCaret(dir*6, shift); // start/end of text
       e.consume();
       break;
     case KeyEvent.VK_HOME:
@@ -779,11 +822,11 @@ class TextCaret implements Caret, AttributeListener {
       // fall through
     case KeyEvent.VK_END:
       if (Main.MacOS)
-        moveCaret(dir*5, shift); //  MacOS start/anchor of text
+        moveCaret(dir*6, shift); //  MacOS start/end of text
       else if (menukey)
-        moveCaret(dir*5, shift); // start/anchor of text
+        moveCaret(dir*6, shift); // start/end of text
       else 
-        moveCaret(dir*3, shift); // start/anchor of line
+        moveCaret(dir*3, shift); // start/end of line
       e.consume();
       break;
     default:
@@ -835,17 +878,17 @@ class TextCaret implements Caret, AttributeListener {
 
     e.consume();
     char c = e.getKeyChar();
-    if (allowedCharacter(c)) {
+    if (allowedCharacter(c))
       log.doAction(new TextAction("" + c));
-    } else if (c == '\n') {
-      stopEditing();
-    }
   }
 
   @Override
   public void mouseDragged(MouseEvent e) {
-    int p = findCaret(e.getX(), e.getY());
-    if (selectByLine) {
+    BoxLayout box = computeLayout(g);
+    VisualLine vl = box.lineForY(e.getY());
+    int p = vl.positionForX(e.getX());
+    boolean revBias = (p == vl.end);
+    if (selectByPara) {
       if (p < selectOrigin) {
         cursor = selectOrigin;
         moveCaret(+3, false); // will set anchor
@@ -905,27 +948,31 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public void mousePressed(MouseEvent e) {
-    int p = findCaret(e.getX(), e.getY());
+    BoxLayout box = computeLayout(g);
+    VisualLine vl = box.lineForY(e.getY());
+    int p = vl.positionForX(e.getX());
+    boolean revBias = (p == vl.end);
+    // FIXME: what to do with revBias here?
     boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
     if (shift)
       selectOrigin = (p <= (cursor+anchor)/2) ? Math.max(cursor, anchor) : Math.min(cursor, anchor);
     else
       selectOrigin = p;
-    int n = e.getClickCount();
-    if (n >= 3) {
-      // expand to entire line
+    int clicks = e.getClickCount();
+    if (clicks >= 3) {
+      // expand to entire paragraph
       selectByWord = false;
-      selectByLine = true;
+      selectByPara = true;
       cursor = Math.min(selectOrigin, p);
-      moveCaret(-3, false); // will set anchor
+      moveCaret(-5, false); // will set anchor
       cursor = Math.max(selectOrigin, p);
-      moveCaret(+3, true); // only sets cursor
+      moveCaret(+5, true); // only sets cursor
       if (cursor < curText.length() && curText.charAt(cursor) == '\n')
         cursor++;
-    } else if (n == 2) {
+    } else if (clicks == 2) {
       // expand to entire word, or to whitespace between words
       selectByWord = true;
-      selectByLine = false;
+      selectByPara = false;
       if (p == curText.length()) {
         // select nothing, but drag may be coming
         anchor = selectOrigin;
@@ -945,38 +992,16 @@ class TextCaret implements Caret, AttributeListener {
       }
     } else {
       selectByWord = false;
-      selectByLine = false;
+      selectByPara = false;
       anchor = selectOrigin;
       cursor = p;
+      cursorReverseBias = revBias; // only matters if anchor == cursor
     }
     editMenuHandler.computeEnabled();
   }
 
   @Override
   public void mouseReleased(MouseEvent e) { }
-
-  private int findCaret(int px, int py) {
-    BoxLayout box = computeLayout(g);
-    List<VisualLine> lines = box.lines;
-    if (lines.isEmpty()) return 0;
-
-    // If above first line, clamp to start
-    if (py < lines.get(0).topY()) return 0;
-
-    // Find the visual line by y
-    for (VisualLine vl : lines) {
-      if (py >= vl.topY() && py < vl.bottomY()) {
-        int hit = vl.hitTestGlobal(px);
-        // clamp into [vl.start, vl.end]
-        if (hit < vl.start) hit = vl.start;
-        if (hit > vl.end) hit = vl.end;
-        return hit;
-      }
-    }
-
-    // Below last line => end of text
-    return curText.length();
-  }
 
   @Override
   public void stopEditing() {
@@ -996,6 +1021,7 @@ class TextCaret implements Caret, AttributeListener {
     if (attr == Text.ATTR_TEXT) {
       oldText = curText = (String)e.getValue();
       cursor = anchor = curText.length();
+      cursorReverseBias = false;
       log.clear();
       editMenuHandler.computeEnabled();
     }
@@ -1121,6 +1147,7 @@ class TextCaret implements Caret, AttributeListener {
       else
         curText = curText.substring(0, left) + repl;
       cursor = anchor = left + repl.length();
+      cursorReverseBias = false;
       editMenuHandler.computeEnabled();
     }
 
@@ -1132,6 +1159,7 @@ class TextCaret implements Caret, AttributeListener {
         curText = curText.substring(0, left) + old;
       cursor = cursorPos;
       anchor = anchorPos;
+      cursorReverseBias = false;
       editMenuHandler.computeEnabled();
     }
 
@@ -1199,6 +1227,7 @@ class TextCaret implements Caret, AttributeListener {
     public void selectAll() {
       cursor = 0;
       anchor = curText.length();
+      cursorReverseBias = false;
       editMenuHandler.computeEnabled();
       canvas.getProject().repaintCanvas();
     }
@@ -1310,9 +1339,11 @@ public void paint(Graphics graphics) {
 // - Backspace/delete full glyph at a time
 // - Markdown-like styling (header, bullets)
 // - tab stops
-// - verify hit-test
+// - goto start/end line movements should stop at soft wraps
+// - click to select entire line should stop at soft wrap? or no?
+// - verify hit-test, esp with newline at end, or blank line (replaced by space)
 // - review all code
-// - caching
+// - caching (layout is computed repeatedly even within same action)
 // - don't render original component when caret is shown
 // - when placing new "text", select all initially
 // - when placing text initially, sizing, or moving, snap to grid unless alt is held?
