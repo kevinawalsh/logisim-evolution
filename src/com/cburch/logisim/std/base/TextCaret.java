@@ -69,8 +69,9 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.UndoRedo;
+
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // This class is like a combination of TextField and TextFieldCaret, but handles
 // multi-line text, and eliminates a bunch of indirection.
@@ -241,7 +242,7 @@ class TextCaret implements Caret, AttributeListener {
           Shape s = tx.createTransformedShape(highlight);
           g2.fill(s);
         }
-        if (selA <= lineB && selB > lineB && vl.hardBreakAfter) {
+        if (selA <= lineB && selB > lineB && !vl.softBreakAfter) {
           // If selection spans a trailing newline, highlight that newline.
           float end = vl.isEmpty() ? 0 : vl.layout.getAdvance();
           float newlineWidth = vl.height()*0.4f; // 40% aspect ratio for newline char seems reasonable
@@ -273,17 +274,21 @@ class TextCaret implements Caret, AttributeListener {
     final String fullText;        // ugh: copy of curText from outer class
     final int start;              // utf16 index into curText (inclusive)
     final int end;                // utf16 index into curText (exclusive) -- excludes '\n'
-    final boolean hardBreakAfter; // whether line is followed by '\n' in curText
+    final boolean paraBreakAfter; // whether line is followed by '\n' in curText
+    final boolean lineBreakAfter; // whether line is followed by '\u2028' LINE SEPARATOR in curText
+    final boolean softBreakAfter; // otherwise
     final TextLayout layout;
     /*final*/ float x;     // draw origin x, where layout.draw() is called
     final float baselineY; // baseline y, where layout.draw() is called
 
-    VisualLine(int lineno, String fullText, int start, int end, boolean hardBreakAfter, TextLayout layout, float x, float baselineY) {
+    VisualLine(int lineno, String fullText, int start, int end, boolean paraBreakAfter, boolean lineBreakAfter, TextLayout layout, float x, float baselineY) {
       this.lineno = lineno;
       this.fullText = fullText;
       this.start = start;
       this.end = end; // does not include newline
-      this.hardBreakAfter = hardBreakAfter;
+      this.paraBreakAfter = paraBreakAfter;
+      this.lineBreakAfter = lineBreakAfter;
+      this.softBreakAfter = !(paraBreakAfter || lineBreakAfter);
       this.layout = layout; // does not include newline
       this.x = x;
       this.baselineY = baselineY;
@@ -357,7 +362,7 @@ class TextCaret implements Caret, AttributeListener {
     VisualLine firstLineOfParagraphContaining(VisualLine vl) {
       while (vl.lineno > 0) {
         VisualLine prev = lines.get(vl.lineno - 1);
-        if (prev.hardBreakAfter)
+        if (prev.paraBreakAfter)
           break;
         vl = prev;
       }
@@ -365,14 +370,14 @@ class TextCaret implements Caret, AttributeListener {
     }
 
     VisualLine lastLineOfParagraphContaining(VisualLine vl) {
-      while (vl.lineno < lines.size() - 1 && !vl.hardBreakAfter)
+      while (vl.lineno < lines.size() - 1 && !vl.paraBreakAfter)
         vl = lines.get(vl.lineno + 1);
       return vl;
     }
 
     VisualLine lineForPosition(int pos, boolean reverseBias) {
       for (VisualLine vl : lines) {
-        int end = vl.hardBreakAfter ? vl.end+1 : vl.end;
+        int end = vl.softBreakAfter ? (vl.end) : (vl.end + 1);
         if (pos < end || (pos == end && reverseBias))
           return vl;
       }
@@ -410,45 +415,52 @@ class TextCaret implements Caret, AttributeListener {
     float maxAdvance = 0f; // used to compute bounds width in manual-wrap mode
 
     for (int p = 0; p < paragraphs.length; p++) {
-      String para = paragraphs[p];
-
+      String paraWithBreaks = paragraphs[p];
+      
       if (p != 0)
         dy += interParagraphSpace;
 
-      boolean hardBreakAfter = (p < paragraphs.length - 1);
-      int end = start + para.length();
-      boolean empty = para.isEmpty();
+      String[] subparagraphs = paraWithBreaks.split("\u2028", -1);
+      for (int s = 0; s < subparagraphs.length; s++) {
+        String para = subparagraphs[s];
 
-      if (empty || !autoWrap) { // empty or manual-wrap: one visual line for entire paragraph
-        // empty paragraph uses a space, to get sensible line height
-        TextLayout layout = new TextLayout(empty ? " " : para, font, frc);
-        if (lines.isEmpty())
-          y -= valignAdjust(layout, valign);
-        dy += layout.getAscent();
-        lines.add(new VisualLine(lines.size(), text, start, end, hardBreakAfter, layout, 0, y + dy));
-        maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
-        dy += layout.getDescent() + layout.getLeading();
+        int end = start + para.length();
+        boolean empty = para.isEmpty();
+        boolean lineBreakAfter = (s < subparagraphs.length - 1);
+        boolean paraBreakAfter = !lineBreakAfter && (p < paragraphs.length - 1);
 
-      } else { // Auto-wrap: LineBreakMeasurer produces multiple visual lines per paragraph
-        AttributedString astr = new AttributedString(para);
-        AttributedCharacterIterator it = astr.getIterator();
-        LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
-        measurer.setPosition(it.getBeginIndex());
-
-        while (measurer.getPosition() < it.getEndIndex()) {
-          int a = measurer.getPosition();
-          TextLayout layout = measurer.nextLayout(textWidth);
-          int b = measurer.getPosition();
+        if (empty || !autoWrap) { // empty or manual-wrap: one visual line for entire paragraph
+                                  // empty paragraph uses a space, to get sensible line height
+          TextLayout layout = new TextLayout(empty ? " " : para, font, frc);
           if (lines.isEmpty())
             y -= valignAdjust(layout, valign);
           dy += layout.getAscent();
-          lines.add(new VisualLine(lines.size(), text, start + a, start + b, hardBreakAfter && (b == para.length()), layout, 0, y + dy));
+          lines.add(new VisualLine(lines.size(), text, start, end, paraBreakAfter, lineBreakAfter, layout, 0, y + dy));
+          maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
           dy += layout.getDescent() + layout.getLeading();
+
+        } else { // Auto-wrap: LineBreakMeasurer produces multiple visual lines per paragraph
+          AttributedString astr = new AttributedString(para);
+          AttributedCharacterIterator it = astr.getIterator();
+          LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
+          measurer.setPosition(it.getBeginIndex());
+
+          while (measurer.getPosition() < it.getEndIndex()) {
+            int a = measurer.getPosition();
+            TextLayout layout = measurer.nextLayout(textWidth);
+            int b = measurer.getPosition();
+            if (lines.isEmpty())
+              y -= valignAdjust(layout, valign);
+            dy += layout.getAscent();
+            boolean last = (b == para.length());
+            lines.add(new VisualLine(lines.size(), text, start + a, start + b, paraBreakAfter && last, lineBreakAfter && last, layout, 0, y + dy));
+            dy += layout.getDescent() + layout.getLeading();
+          }
+
         }
 
+        start = end + 1; // add one, for newline between paragraphs, or lineseparator between subparagraphs
       }
-
-      start = end + 1; // add one, for newline between paragraphs
     }
 
     if (!autoWrap)
@@ -469,29 +481,29 @@ class TextCaret implements Caret, AttributeListener {
 
   private static int valignAdjust(TextLayout layout, int valign) {
     float h = layout.getAscent() + layout.getDescent() + layout.getLeading();
-    if (valign == GraphicsUtil.V_BASELINE)
+    if (valign == ALIGN.V_BASELINE)
       return (int) layout.getAscent();
-    else if (valign == GraphicsUtil.V_BOTTOM)
+    else if (valign == ALIGN.V_BOTTOM)
       return (int) h;
-    else if (valign == GraphicsUtil.V_CENTER)
+    else if (valign == ALIGN.V_CENTER)
       return (int) (h / 2f);
     else // V_TOP
       return 0;
   }
   
   private static float halignAdjust(int textWidth, int halign) {
-    if (halign == GraphicsUtil.H_RIGHT)
+    if (halign == ALIGN.H_RIGHT)
       return textWidth;
-    else if (halign == GraphicsUtil.H_CENTER)
+    else if (halign == ALIGN.H_CENTER)
       return textWidth / 2;
     else // H_LEFT
       return 0;
   }
 
   private static float halignAdjustLine(int textWidth, float lineWidth, int halign) {
-    if (halign == GraphicsUtil.H_RIGHT)
+    if (halign == ALIGN.H_RIGHT)
       return (textWidth - lineWidth);
-    else if (halign == GraphicsUtil.H_CENTER)
+    else if (halign == ALIGN.H_CENTER)
       return (textWidth - lineWidth)/2;
     else // H_LEFT
       return 0;
@@ -888,12 +900,19 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public void keyTyped(KeyEvent e) {
-    int ign = InputEvent.ALT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK | InputEvent.META_DOWN_MASK;
-    if ((e.getModifiersEx() & ign) != 0)
-      return;
-
-    e.consume();
+    // shift-enter and ctrl-enter both generate U+2028 LINE SEPARATOR
     char c = e.getKeyChar();
+    if (((c == '\r' || c == '\n'))
+      && (e.getModifiersEx() & (InputEvent.ALT_DOWN_MASK | InputEvent.META_DOWN_MASK)) == 0
+        && (((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0)
+            != ((e.getModifiersEx() & InputEvent.CTRL_DOWN_MASK) != 0))) {
+      c = '\u2028';
+    } else {
+      int ign = InputEvent.ALT_DOWN_MASK | InputEvent.CTRL_DOWN_MASK | InputEvent.META_DOWN_MASK;
+      if ((e.getModifiersEx() & ign) != 0)
+        return;
+    }
+    e.consume();
     if (allowedCharacter(c))
       log.doAction(new TextAction("" + c));
   }
@@ -1310,7 +1329,7 @@ class TextCaret implements Caret, AttributeListener {
 // x review all code
 // x don't render original component when caret is shown
 // x when placing new "text", select all initially
-// - Backspace/delete full glyph at a time
+// x Backspace/delete full glyph at a time
 // - Markdown-like styling (header, bullets)
 // - tab stops
 // - caching (layout is computed repeatedly even within same action)

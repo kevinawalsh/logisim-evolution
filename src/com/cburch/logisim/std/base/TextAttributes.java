@@ -144,7 +144,7 @@ class TextAttributes extends AbstractAttributeSet {
       if (str == null || str.isEmpty())
         text = "text";
       else
-        text = str.replace("\r\n", "\n").replace("\r", "\n"); // eliminate CRLF and CR
+        text = normalize(str);
     } else if (attr == Text.ATTR_FONT) {
       font = (Font) value;
     } else if (attr == Text.ATTR_HALIGN) {
@@ -161,5 +161,87 @@ class TextAttributes extends AbstractAttributeSet {
     } else if (attr == Text.TEXT_WIDTH)
       width = (Integer) value;
   }
+
+  // public static normalize(String str) {
+  //     // eliminate "\r\n" and any stray remaining "\r" in favor of "\n"
+  //     str = str.replace("\r\n", "\n").replace("\r", "\n");
+  //     return str;
+  // }
+  
+  public static boolean needsNormalization(String s) {
+    for (int i = 0; i < s.length(); i++) {
+      char ch = s.charAt(i);
+      if ((ch >= 0x0000 && ch <= 0x001F && ch != '\n' && ch != '\t')
+          || (ch >= 0x007F && ch <= 0x009F)
+          || ch == '\u2028'
+          || ch == '\u2029'
+          || Character.isSurrogate(ch))
+        return true;
+    }
+    return false;
+  }
+
+  public static String normalize(String s) {
+    if (!needsNormalization(s))
+      return s;
+
+    StringBuilder out = new StringBuilder(s.length());
+    for (int i = 0; i < s.length(); i++) {
+      char ch = s.charAt(i);
+
+      // Normalize CRLF/CR -> LF
+      if (ch == '\r') {
+        if (i + 1 < s.length() && s.charAt(i + 1) == '\n')
+          i++; // consume LF in CRLF
+        out.append('\n');
+        continue;
+      }
+
+      // Normalize other newline-ish separators -> LF
+      // except for LINE SEPARATOR U+2028, which is used as a non-paragraph line break
+      if (ch == '\u000B' || ch == '\u000C' || ch == '\u0085' || ch == '\u2029') {
+        out.append('\n');
+        continue;
+      }
+
+      // Keep TAB and LF as-is
+      if (ch == '\n' || ch == '\t') {
+        out.append(ch);
+        continue;
+      }
+
+      // Strip NUL (0x00) + DEL (0x7F) + odd C0 (0x00-0x1F) controls + odd C1 controls (0x80-0x9F)
+      if ((ch >= 0x0000 && ch <= 0x001F) || (ch >= 0x007F && ch <= 0x009F)) {
+        continue;
+      }
+
+      // Replace ill-formed surrogate pairs with U+FFFD
+      if (Character.isHighSurrogate(ch)) {
+        if (i + 1 < s.length()) {
+          char lo = s.charAt(i + 1);
+          if (Character.isLowSurrogate(lo)) {
+            out.append(ch).append(lo);
+            i++; // consumed low surrogate
+          } else {
+            out.append('\uFFFD');
+          }
+        } else {
+          out.append('\uFFFD');
+        }
+        continue;
+      }
+      if (Character.isLowSurrogate(ch)) {
+        // unpaired low surrogate
+        out.append('\uFFFD');
+        continue;
+      }
+
+      // Otherwise, keep as-is
+      out.append(ch);
+    }
+
+    return out.toString();
+  }
+
 
 }
