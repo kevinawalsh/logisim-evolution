@@ -34,24 +34,31 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 
 class CalloutAttributes extends TextAttributes {
 
-  private static final List<Attribute<?>> ATTRIBUTES =
+  private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
       Arrays.asList(new Attribute<?>[] {
         Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
-        Text.FG_COLOR, Text.BG_COLOR, Text.TEXT_WRAP, Text.TEXT_WIDTH,
+        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_FORMAT, Text.TEXT_WIDTH,
+        Callout.ATTR_DX, Callout.ATTR_DY });
+  private static final List<Attribute<?>> ATTRIBUTES_MANUAL_WRAPPING =
+      Arrays.asList(new Attribute<?>[] {
+        Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
+        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_FORMAT,
         Callout.ATTR_DX, Callout.ATTR_DY });
 
   private int dx, dy;
 
   public CalloutAttributes() {
     dx = dy = 40;
+    width = 100;
   }
 
   @Override
   public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
+    return isWrapping() ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
   }
 
   int getDx() { return dx; }
@@ -64,18 +71,24 @@ class CalloutAttributes extends TextAttributes {
       return (V) (Integer)dx;
     else if (attr == Callout.ATTR_DY)
       return (V) (Integer)dy;
+    else if (attr == Callout.ATTR_FORMAT)
+      return (V) format;
     else
       return super.getValue(attr);
   }
 
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
-    if (attr == Callout.ATTR_DX)
+    if (attr == Callout.ATTR_DX) {
       dx = (Integer) value;
-    else if (attr == Callout.ATTR_DY)
+    } else if (attr == Callout.ATTR_DY) {
       dy = (Integer) value;
-    else
+    } else if (attr == Callout.ATTR_FORMAT) {
+      format = (AttributeOption) value;
+      fireAttributeListChanged();
+    } else {
       super.updateAttr(attr, value);
+    }
   }
 
 }

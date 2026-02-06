@@ -169,8 +169,18 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   static final Attribute<Color> BG_COLOR = Attributes.forColor(
       "background", S.getter("textBackgroundColorAttr"));
 
-  static final Attribute<Boolean> TEXT_WRAP = Attributes.forBoolean(
-      "wrap", S.getter("textWrapping"));
+  public final static AttributeOption TEXT_FORMAT_PLAIN =
+    new AttributeOption("plain", S.getter("textFormatPlain"));
+  public final static AttributeOption TEXT_FORMAT_WRAPPED =
+    new AttributeOption("wrapped", S.getter("textFormatWrapped"));
+  public final static AttributeOption TEXT_FORMAT_MARKDOWNISH =
+    new AttributeOption("markdownish", S.getter("textFormatMarkdownish"));
+  public static Attribute<AttributeOption> ATTR_FORMAT = Attributes.forOption(
+          "format",
+          S.getter("textFormatAttr"),
+          new AttributeOption[] {
+            TEXT_FORMAT_PLAIN, TEXT_FORMAT_WRAPPED, TEXT_FORMAT_MARKDOWNISH });
+
   static final int TEXT_MIN_WIDTH = 10;
   static final int TEXT_MAX_WIDTH = 10000;
   static final Attribute<Integer> TEXT_WIDTH = Attributes.forIntegerRange(

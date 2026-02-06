@@ -44,12 +44,12 @@ class TextAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
         Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
-        Text.TEXT_WRAP, Text.TEXT_WIDTH });
+        Text.ATTR_FORMAT, Text.TEXT_WIDTH });
 
   private static final List<Attribute<?>> ATTRIBUTES_MANUAL_WRAPPING =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
         Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
-        Text.TEXT_WRAP });
+        Text.ATTR_FORMAT });
 
   private String text; // note: never contains CRLF or CR, only LF
   private Font font;
@@ -57,7 +57,7 @@ class TextAttributes extends AbstractAttributeSet {
   private AttributeOption valign;
   private Color fg;
   private Color bg;
-  private boolean wrap;
+  protected AttributeOption format;
   private int width;
 
   private static final Color CLEAR = new Color(255, 255, 255, 0);
@@ -69,8 +69,8 @@ class TextAttributes extends AbstractAttributeSet {
     valign = Text.ATTR_VALIGN.parse("base");
     fg = Color.BLACK;
     bg = CLEAR;
-    wrap = false;
-    width = 400;
+    format = Text.TEXT_FORMAT_PLAIN;
+    width = 300;
   }
 
   @Override
@@ -80,7 +80,7 @@ class TextAttributes extends AbstractAttributeSet {
 
   @Override
   public List<Attribute<?>> getAttributes() {
-    return wrap ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
+    return isWrapping() ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
   }
 
   Font getFont() {
@@ -103,8 +103,16 @@ class TextAttributes extends AbstractAttributeSet {
     return bg;
   }
 
+  AttributeOption getFormat() {
+    return format;
+  }
+
   boolean isWrapping() {
-    return wrap;
+    return (format != Text.TEXT_FORMAT_PLAIN);
+  }
+
+  boolean isMarkdownish() {
+    return (format == Text.TEXT_FORMAT_MARKDOWNISH);
   }
 
   int getTextWidth() {
@@ -126,8 +134,8 @@ class TextAttributes extends AbstractAttributeSet {
       return (V) fg;
     if (attr == Text.BG_COLOR)
       return (V) bg;
-    if (attr == Text.TEXT_WRAP)
-      return (V) (Boolean)wrap;
+    if (attr == Text.ATTR_FORMAT)
+      return (V) format;
     if (attr == Text.TEXT_WIDTH)
       return (V) (Integer)width;
     return null;
@@ -155,8 +163,8 @@ class TextAttributes extends AbstractAttributeSet {
       fg = (Color) value;
     } else if (attr == Text.BG_COLOR) {
       bg = (Color) value;
-    } else if (attr == Text.TEXT_WRAP) {
-      wrap = (Boolean) value;
+    } else if (attr == Text.ATTR_FORMAT) {
+      format = (AttributeOption) value;
       fireAttributeListChanged();
     } else if (attr == Text.TEXT_WIDTH)
       width = (Integer) value;

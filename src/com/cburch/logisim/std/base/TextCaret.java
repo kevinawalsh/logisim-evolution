@@ -116,8 +116,6 @@ import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 class TextCaret implements Caret, AttributeListener {
 
-  static final float INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
-
   public static final Color EDIT_MASK = new Color(200, 200, 200, 200);
   public static final Color EDIT_BACKGROUND = TextFieldCaret.EDIT_BACKGROUND;
   public static final Color EDIT_BORDER = TextFieldCaret.EDIT_BORDER;
@@ -163,7 +161,7 @@ class TextCaret implements Caret, AttributeListener {
     this.oldText = this.curText = attrs.getText();
     this.loc = loc;
     BoxLayout box = computeLayout(g);
-    VisualLine vl = box.lineForY(py);
+    BoxLayout.VisualLine vl = box.lineForY(py);
     cursor = anchor = vl.positionForX(px);
     cursorReverseBias = (cursor == vl.end);
     editMenuHandler = new TextCaretEditHandler();
@@ -225,7 +223,7 @@ class TextCaret implements Caret, AttributeListener {
       Graphics2D g2 = (Graphics2D) g;
       g2.setColor(SELECTION_BACKGROUND);
 
-      for (VisualLine vl : box.lines) {
+      for (BoxLayout.VisualLine vl : box.lines) {
         // Selection against a visual line range [vl.start, vl.end]
         int lineA = vl.start;
         int lineB = vl.end;
@@ -259,7 +257,7 @@ class TextCaret implements Caret, AttributeListener {
     // draw caret
     if (cursor == anchor) {
       Graphics2D g2 = (Graphics2D) g;
-      VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
+      BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       float cx = vl.caretXForPosition(cursor);
       int top = (int) Math.floor(vl.topY());
       int bot = (int) Math.ceil(vl.bottomY());
@@ -269,252 +267,12 @@ class TextCaret implements Caret, AttributeListener {
 
   }
 
-  static class VisualLine {
-    final int lineno;
-    final String fullText;        // ugh: copy of curText from outer class
-    final int start;              // utf16 index into curText (inclusive)
-    final int end;                // utf16 index into curText (exclusive) -- excludes '\n'
-    final boolean paraBreakAfter; // whether line is followed by '\n' in curText
-    final boolean lineBreakAfter; // whether line is followed by '\u2028' LINE SEPARATOR in curText
-    final boolean softBreakAfter; // otherwise
-    final TextLayout layout;
-    /*final*/ float x;     // draw origin x, where layout.draw() is called
-    final float baselineY; // baseline y, where layout.draw() is called
-
-    VisualLine(int lineno, String fullText, int start, int end, boolean paraBreakAfter, boolean lineBreakAfter, TextLayout layout, float x, float baselineY) {
-      this.lineno = lineno;
-      this.fullText = fullText;
-      this.start = start;
-      this.end = end; // does not include newline
-      this.paraBreakAfter = paraBreakAfter;
-      this.lineBreakAfter = lineBreakAfter;
-      this.softBreakAfter = !(paraBreakAfter || lineBreakAfter);
-      this.layout = layout; // does not include newline
-      this.x = x;
-      this.baselineY = baselineY;
-    }
-
-    float topY() { return baselineY - layout.getAscent(); }
-    float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
-    float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
-
-    float caretXForPosition(int pos) {
-      int local = clamp(pos - start, 0, end - start);
-      TextHitInfo hit = TextHitInfo.leading(local);
-      float[] caretInfo = layout.getCaretInfo(hit); // [x_along_baseline, inverse_slope]
-      return x + caretInfo[0];
-    }
-
-    // int positionForX(float px, boolean biasReverse) {
-    //   float relX = px - x, relY = 0; // 0 means baseline
-    //   TextHitInfo hit = layout.hitTestChar(relX, 0);
-    //   int pos = start + hit.getInsertionIndex();
-    //   pos = clamp(pos, start, end);
-    //   return snapToGraphemeBoundary(pos, biasReverse, start, end);
-    // }
-
-    int positionForX(float px) { // snaps to visually closest grapheme boundary
-      float relX = px - x, relY = 0; // 0 means baseline
-      TextHitInfo hit = layout.hitTestChar(relX, 0);
-      int pos = start + hit.getInsertionIndex();
-      pos = clamp(pos, start, end);
-      return snapToGraphemeBoundary(pos, px, this);
-    }
-
-    private static int clamp(int v, int lo, int hi) {
-      return (v < lo) ? lo : (v > hi ? hi : v);
-    }
-
-    boolean isEmpty() {
-      return start == end;
-    }
-  }
-
-  static class BoxLayout {
-    final int halign, valign;
-    final Font font;
-    final int textWidth; // accurate, even for manual-wrap mode
-    final Bounds bounds;
-    final List<VisualLine> lines;
-    // visual lines are in in top-to-bottom draw order (wrapped, if needed),
-    // with all text accounted for EXCEPT newlines:
-    //   lines[0].start == 0
-    //   lines[i].end == lines[i+1].start (for soft breaks)
-    //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
-    //   lines[n-1].end == len-1
-    
-    BoxLayout(Bounds b, List<VisualLine> ls, int tw, Font f, int h, int v) {
-      this.bounds = b;
-      this.lines = ls;
-      this.textWidth = tw;
-      this.font = f;
-      this.halign = h;
-      this.valign = v;
-    }
-
-    void drawText(Graphics g) {
-      Graphics2D g2 = (Graphics2D) g;
-      g2.setFont(font);
-      for (VisualLine line : lines)
-        line.layout.draw(g2, line.x, line.baselineY);
-    }
-
-    VisualLine firstLineOfParagraphContaining(VisualLine vl) {
-      while (vl.lineno > 0) {
-        VisualLine prev = lines.get(vl.lineno - 1);
-        if (prev.paraBreakAfter)
-          break;
-        vl = prev;
-      }
-      return vl;
-    }
-
-    VisualLine lastLineOfParagraphContaining(VisualLine vl) {
-      while (vl.lineno < lines.size() - 1 && !vl.paraBreakAfter)
-        vl = lines.get(vl.lineno + 1);
-      return vl;
-    }
-
-    VisualLine lineForPosition(int pos, boolean reverseBias) {
-      for (VisualLine vl : lines) {
-        int end = vl.softBreakAfter ? (vl.end) : (vl.end + 1);
-        if (pos < end || (pos == end && reverseBias))
-          return vl;
-      }
-      return lines.get(lines.size() - 1);
-    }
-
-    VisualLine lineForY(int py) {
-      for (VisualLine vl : lines) {
-        if (py < vl.bottomY()) {
-          return vl;
-        }
-      }
-      return lines.get(lines.size() - 1);
-    }
-
-  }
-
-  static BoxLayout layoutWrappedText(Graphics g, String text, Location loc,
-      int textWidth, Font font, int halign, int valign) {
-
-    Graphics2D g2 = (Graphics2D) g;
-    g2.setFont(font);
-    FontRenderContext frc = g2.getFontRenderContext();
-    
-    String[] paragraphs = text.split("\n", -1);
-
-    final boolean autoWrap = textWidth > 0;
-    int y = loc.y;
-    float dy = 0f;
-    float interParagraphSpace = autoWrap ? font.getSize2D() * INTER_PARAGRAPH_SPACE : 0;
-
-    ArrayList<VisualLine> lines = new ArrayList<>();
-    int start = 0;
-
-    float maxAdvance = 0f; // used to compute bounds width in manual-wrap mode
-
-    for (int p = 0; p < paragraphs.length; p++) {
-      String paraWithBreaks = paragraphs[p];
-      
-      if (p != 0)
-        dy += interParagraphSpace;
-
-      String[] subparagraphs = paraWithBreaks.split("\u2028", -1);
-      for (int s = 0; s < subparagraphs.length; s++) {
-        String para = subparagraphs[s];
-
-        int end = start + para.length();
-        boolean empty = para.isEmpty();
-        boolean lineBreakAfter = (s < subparagraphs.length - 1);
-        boolean paraBreakAfter = !lineBreakAfter && (p < paragraphs.length - 1);
-
-        if (empty || !autoWrap) { // empty or manual-wrap: one visual line for entire paragraph
-                                  // empty paragraph uses a space, to get sensible line height
-          TextLayout layout = new TextLayout(empty ? " " : para, font, frc);
-          if (lines.isEmpty())
-            y -= valignAdjust(layout, valign);
-          dy += layout.getAscent();
-          lines.add(new VisualLine(lines.size(), text, start, end, paraBreakAfter, lineBreakAfter, layout, 0, y + dy));
-          maxAdvance = Math.max(maxAdvance, layout.getAdvance()); // with manual-wrap, trailing spaces make the bounds wider
-          dy += layout.getDescent() + layout.getLeading();
-
-        } else { // Auto-wrap: LineBreakMeasurer produces multiple visual lines per paragraph
-          AttributedString astr = new AttributedString(para);
-          AttributedCharacterIterator it = astr.getIterator();
-          LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
-          measurer.setPosition(it.getBeginIndex());
-
-          while (measurer.getPosition() < it.getEndIndex()) {
-            int a = measurer.getPosition();
-            TextLayout layout = measurer.nextLayout(textWidth);
-            int b = measurer.getPosition();
-            if (lines.isEmpty())
-              y -= valignAdjust(layout, valign);
-            dy += layout.getAscent();
-            boolean last = (b == para.length());
-            lines.add(new VisualLine(lines.size(), text, start + a, start + b, paraBreakAfter && last, lineBreakAfter && last, layout, 0, y + dy));
-            dy += layout.getDescent() + layout.getLeading();
-          }
-
-        }
-
-        start = end + 1; // add one, for newline between paragraphs, or lineseparator between subparagraphs
-      }
-    }
-
-    if (!autoWrap)
-      textWidth = (int) Math.ceil(maxAdvance);
-
-    int x = loc.x;
-    x -= halignAdjust(textWidth, halign);
-
-    for (VisualLine line : lines) {
-      float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
-      float dx = halignAdjustLine(textWidth, lineWidth, halign);
-      line.x = x + dx;
-    }
-
-    Bounds b = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
-    return new BoxLayout(b, lines, textWidth, font, halign, valign);
-  }
-
-  private static int valignAdjust(TextLayout layout, int valign) {
-    float h = layout.getAscent() + layout.getDescent() + layout.getLeading();
-    if (valign == ALIGN.V_BASELINE)
-      return (int) layout.getAscent();
-    else if (valign == ALIGN.V_BOTTOM)
-      return (int) h;
-    else if (valign == ALIGN.V_CENTER)
-      return (int) (h / 2f);
-    else // V_TOP
-      return 0;
-  }
-  
-  private static float halignAdjust(int textWidth, int halign) {
-    if (halign == ALIGN.H_RIGHT)
-      return textWidth;
-    else if (halign == ALIGN.H_CENTER)
-      return textWidth / 2;
-    else // H_LEFT
-      return 0;
-  }
-
-  private static float halignAdjustLine(int textWidth, float lineWidth, int halign) {
-    if (halign == ALIGN.H_RIGHT)
-      return (textWidth - lineWidth);
-    else if (halign == ALIGN.H_CENTER)
-      return (textWidth - lineWidth)/2;
-    else // H_LEFT
-      return 0;
-  }
-
   private BoxLayout computeLayout(Graphics g) {
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
     Font font = attrs.getFont();
-    return layoutWrappedText(g, curText, loc, textWidth, font, halign, valign);
+    return new BoxLayout(g, curText, loc, textWidth, font, halign, valign);
   }
 
   @Override
@@ -524,13 +282,13 @@ class TextCaret implements Caret, AttributeListener {
 
   // This is used by Text.paint()
   static void drawMultilineText(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = layoutWrappedText(g, text, loc, textWidth, font, halign, valign);
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
     box.drawText(g);
   }
 
   // This is used by Text.get*Bounds()
   static Bounds getBounds(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = layoutWrappedText(g, text, loc, textWidth, font, halign, valign);
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
     return box.bounds;
   }
 
@@ -737,7 +495,7 @@ class TextCaret implements Caret, AttributeListener {
       if (!shift && cursor != anchor)
         cancelSelection(move);
       BoxLayout box = computeLayout(g);
-      VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
+      BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       if (move < 0)
           vl = box.firstLineOfParagraphContaining(vl);
       else
@@ -750,7 +508,7 @@ class TextCaret implements Caret, AttributeListener {
         cancelSelection(move);
     
       BoxLayout box = computeLayout(g);
-      VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
+      BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       cursor = (move < 0) ? vl.start : vl.end;
       cursorReverseBias = (move > 0);
       preferredCaretX = Float.NaN;
@@ -762,7 +520,7 @@ class TextCaret implements Caret, AttributeListener {
       int dir = (move < 0) ? -1 : +1;
 
       // Determine current line index
-      VisualLine cur = box.lineForPosition(cursor, cursorReverseBias);
+      BoxLayout.VisualLine cur = box.lineForPosition(cursor, cursorReverseBias);
 
       // Save preferred X on first vertical move.
       if (Float.isNaN(preferredCaretX))
@@ -777,7 +535,7 @@ class TextCaret implements Caret, AttributeListener {
       } else if (tgt >= box.lines.size()) {
         cursor = curText.length();
       } else {
-        VisualLine dest = box.lines.get(tgt);
+        BoxLayout.VisualLine dest = box.lines.get(tgt);
         cursor = dest.positionForX(preferredCaretX);
       }
     } else { // next/prev char, next/prev word
@@ -788,11 +546,11 @@ class TextCaret implements Caret, AttributeListener {
         cancelSelection(move);
       } else {
         // move one char left/right as the first step, if possible
-        cursor = move < 0 ? prevGraphemeBoundary(cursor) : nextGraphemeBoundary(cursor);
+        cursor = move < 0 ? BoxLayout.prevGraphemeBoundary(cursor, curText) : BoxLayout.nextGraphemeBoundary(cursor, curText);
       }
       if (byword) {
         while (!wordBoundary(cursor))
-          cursor = move < 0 ? prevGraphemeBoundary(cursor) : nextGraphemeBoundary(cursor);
+          cursor = move < 0 ? BoxLayout.prevGraphemeBoundary(cursor, curText) : BoxLayout.nextGraphemeBoundary(cursor, curText);
       }
       preferredCaretX = Float.NaN; // horizontal movement resets vertical goal x
       cursorReverseBias = false; // horizontal movement resets bias
@@ -875,7 +633,7 @@ class TextCaret implements Caret, AttributeListener {
       if (cursor != anchor) {
         log.doAction(new TextAction(""));
       } else {
-        int left = prevGraphemeBoundary(cursor);
+        int left = BoxLayout.prevGraphemeBoundary(cursor, curText);
         if (left < cursor)
           log.doAction(new TextAction(left, cursor, ""));
       }
@@ -885,7 +643,7 @@ class TextCaret implements Caret, AttributeListener {
       if (cursor != anchor) {
         log.doAction(new TextAction(""));
       } else {
-        int right = nextGraphemeBoundary(cursor);
+        int right = BoxLayout.nextGraphemeBoundary(cursor, curText);
         if (cursor < right)
           log.doAction(new TextAction(cursor, right, ""));
       }
@@ -924,7 +682,7 @@ class TextCaret implements Caret, AttributeListener {
   @Override
   public void mouseDragged(MouseEvent e) {
     BoxLayout box = computeLayout(g);
-    VisualLine vl = box.lineForY(e.getY());
+    BoxLayout.VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
     boolean revBias = (p == vl.end);
     if (selectByPara) {
@@ -985,59 +743,10 @@ class TextCaret implements Caret, AttributeListener {
     return p;
   }
 
-  private int prevGraphemeBoundary(int pos) {
-    if (pos <= 0)
-      return 0;
-    BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
-    bi.setText(curText);
-    int b = bi.preceding(pos);
-    return (b == BreakIterator.DONE) ? 0 : b;
-  }
-
-  private int nextGraphemeBoundary(int pos) {
-    int n = curText.length();
-    if (pos >= n)
-      return n;
-    BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
-    bi.setText(curText);
-    int b = bi.following(pos);
-    return (b == BreakIterator.DONE) ? n : b;
-  }
-
-  // private int snapToGraphemeBoundary(int pos, boolean reverseBias, int start, int end) {
-  //   BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
-  //   bi.setText(curText);
-  //   if (bi.isBoundary(pos)) {
-  //     return pos;
-  //   } else if (reverseBias) {
-  //     int prev = bi.preceding(pos);
-  //     return (prev == BreakIterator.DONE || prev < start) ? start : prev;
-  //   } else {
-  //     int next = bi.following(pos);
-  //     return (next == BreakIterator.DONE || next > end) ? end : next;
-  //   }
-  // }
-
-  private static int snapToGraphemeBoundary(int pos, float px, VisualLine vl) {
-    BreakIterator bi = BreakIterator.getCharacterInstance(Locale.ROOT);
-    bi.setText(vl.fullText);
-    if (bi.isBoundary(pos))
-      return pos;
-    int prev = bi.preceding(pos);
-    if (prev == BreakIterator.DONE || prev < vl.start)
-      prev = vl.start;
-    int next = bi.following(pos);
-    if (next == BreakIterator.DONE || next > vl.end)
-      next = vl.end;
-    float prevX = vl.caretXForPosition(prev);
-    float nextX = vl.caretXForPosition(next);
-    return (Math.abs(px - prevX) <= Math.abs(px - nextX)) ? prev : next;
-  }
-
   @Override
   public void mousePressed(MouseEvent e) {
     BoxLayout box = computeLayout(g);
-    VisualLine vl = box.lineForY(e.getY());
+    BoxLayout.VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
     boolean revBias = (p == vl.end);
     boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);

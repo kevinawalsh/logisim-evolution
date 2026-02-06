@@ -38,6 +38,7 @@ import java.util.Collection;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
@@ -56,6 +57,12 @@ public class Callout extends Text implements Reshapable {
       Attributes.forInteger("dx", S.getter("calloutDeltaX"));
   public static final Attribute<Integer> ATTR_DY =
       Attributes.forInteger("dy", S.getter("calloutDeltaY"));
+
+  public static Attribute<AttributeOption> ATTR_FORMAT = Attributes.forOption(
+          "format",
+          S.getter("textFormatAttr"),
+          new AttributeOption[] {
+            TEXT_FORMAT_PLAIN, TEXT_FORMAT_WRAPPED /* , TEXT_FORMAT_MARKDOWNISH */ });
 
   public static final Callout FACTORY = new Callout();
 
