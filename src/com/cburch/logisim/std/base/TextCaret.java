@@ -269,18 +269,6 @@ class TextCaret implements Caret, AttributeListener {
     return computeLayout(g).bounds.expand(Text.PAD);
   }
 
-  // This is used by Text.paint()
-  static void drawMultilineText(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
-    box.drawText(g);
-  }
-
-  // This is used by Text.get*Bounds()
-  static Bounds getBounds(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
-    return box.bounds;
-  }
-
   @Override
   public String getText() {
     return curText;

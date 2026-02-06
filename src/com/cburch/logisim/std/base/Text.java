@@ -312,7 +312,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     int valign = attrs.getVerticalAlign();
     int textWidth = altTextWidth != null ? altTextWidth : attrs.isWrapping() ? attrs.getTextWidth() : -1;
     Font font = attrs.getFont();
-    return TextCaret.getBounds(g, text, loc, textWidth, font, halign, valign).expand(PAD);
+    return BoxLayout.getBounds(g, text, loc, textWidth, font, halign, valign).expand(PAD);
   } 
 
   private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
@@ -375,7 +375,10 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     boolean wrapping = attrs.isWrapping();
     int textWidth = (altTextWidth != null ? altTextWidth : wrapping ? attrs.getTextWidth() : -1);
     String text = attrs.getText();
-    TextCaret.drawMultilineText(g, text, loc, textWidth, font, halign, valign);
+    if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH)
+      BoxLayout.drawMarkdownishText(g, text, loc, textWidth, font, valign);
+    else
+      BoxLayout.drawMultilineText(g, text, loc, textWidth, font, halign, valign);
   }
 
 

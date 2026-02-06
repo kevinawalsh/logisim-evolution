@@ -85,7 +85,24 @@ public class BoxLayout {
     lines = new ArrayList<>();
     bounds = null;
 
-    layout();
+    layoutMultiline();
+    g2 = null;
+  }
+
+  public BoxLayout(Graphics g, String t, Location l, int tw, Font f, int v) { // markdown-ish
+    g2 = (Graphics2D)g;
+    text = t;
+    loc = l;
+    textWidth = tw; // must be positive
+    autoWrap = true;
+    font = f;
+    halign = ALIGN.H_LEFT; // with markdown, the only left align is sensible
+    valign = v;
+
+    lines = new ArrayList<>();
+    bounds = null;
+
+    layoutMarkdownish();
     g2 = null;
   }
 
@@ -123,7 +140,7 @@ public class BoxLayout {
   }
 
 
-  private void layout() {
+  private void layoutMultiline() {
 
     g2.setFont(font);
     FontRenderContext frc = g2.getFontRenderContext();
@@ -168,6 +185,50 @@ public class BoxLayout {
         }
 
         start = end + 1; // add one, for newline between paragraphs, or lineseparator between subparagraphs
+      }
+    }
+
+    int x = (int)Math.round(loc.x - halignAdjust(textWidth, halign));
+    int y = (int)Math.round(loc.y - valignAdjust(lines.get(0).layout, valign)); // valign relative to first line
+
+    for (VisualLine line : lines) {
+      float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
+      line.x += x + halignAdjustLine(textWidth, lineWidth, halign);
+      line.baselineY += y;
+    }
+
+    bounds = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
+    g2 = null;
+  }
+
+
+  private void layoutMarkdownish() {
+
+    // FIXME: need a monospace font option
+    Font baseFont = font; 
+    Font monoFont = new Font("Monospaced", Font.PLAIN, font.getSize());
+
+    g2.setFont(baseFont);
+    FontRenderContext frc = g2.getFontRenderContext();
+  
+    Markdownish md = new Markdownish(text, baseFont, monoFont);
+    for (Markdownish.Block block : md.blocks) {
+      // FIXME: split LINESEP earlier
+      AttributedString astr = block.buildAttributedString();
+      AttributedCharacterIterator it = astr.getIterator();
+      LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
+      measurer.setPosition(it.getBeginIndex());
+
+      boolean lineBreakAfter = false;
+      boolean paraBreakAfter = true; // FIXME, record positions, or last, in md
+          
+      int left = measurer.getPosition();
+      while (left < it.getEndIndex()) {
+        TextLayout layout = measurer.nextLayout(textWidth);
+        int right = measurer.getPosition();
+        boolean last = (right >= it.getEndIndex());
+        append(layout, block.start + left, block.start + right, paraBreakAfter && last, lineBreakAfter && last);
+        left = right;
       }
     }
 
@@ -358,6 +419,24 @@ public class BoxLayout {
     float prevX = vl.caretXForPosition(prev);
     float nextX = vl.caretXForPosition(next);
     return (Math.abs(px - prevX) <= Math.abs(px - nextX)) ? prev : next;
+  }
+
+  // This is used by Text.get*Bounds()
+  static Bounds getBounds(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
+    return box.bounds;
+  }
+
+  // This is used by Text.paint()
+  static void drawMultilineText(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
+    box.drawText(g);
+  }
+
+  // This is used by Text.paint()
+  static void drawMarkdownishText(Graphics g, String text, Location loc, int textWidth, Font font, int valign) {
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, valign);
+    box.drawText(g);
   }
 
 }
