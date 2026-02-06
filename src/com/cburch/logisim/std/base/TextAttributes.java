@@ -58,7 +58,7 @@ class TextAttributes extends AbstractAttributeSet {
   private Color fg;
   private Color bg;
   protected AttributeOption format;
-  private int width;
+  protected int width;
 
   private static final Color CLEAR = new Color(255, 255, 255, 0);
 

@@ -44,17 +44,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.font.FontRenderContext;
-import java.awt.font.LineBreakMeasurer;
-import java.awt.font.TextHitInfo;
-import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
-import java.text.AttributedCharacterIterator;
-import java.text.AttributedString;
-import java.text.BreakIterator;
-import java.util.List;
-import java.util.Locale;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.comp.TextFieldCaret;
@@ -70,8 +61,6 @@ import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
 import com.cburch.logisim.util.UndoRedo;
-
-import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // This class is like a combination of TextField and TextFieldCaret, but handles
 // multi-line text, and eliminates a bunch of indirection.

@@ -42,23 +42,10 @@ import java.awt.font.TextLayout;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
-import java.util.List;
 import java.util.Locale;
 
-import com.cburch.logisim.Main;
-import com.cburch.logisim.comp.TextFieldCaret;
-import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeEvent;
-import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.gui.main.Canvas;
-import com.cburch.logisim.gui.menu.EditHandler;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
-import com.cburch.logisim.tools.Caret;
-import com.cburch.logisim.tools.CaretEvent;
-import com.cburch.logisim.tools.CaretListener;
-import com.cburch.logisim.util.UndoRedo;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
