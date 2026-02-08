@@ -264,11 +264,22 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
     @Override
     public Caret getTextCaret(ComponentUserEvent event) {
+      Text text = (Text)getFactory();
       TextAttributes attrs = (TextAttributes)getAttributeSet();
       Location loc = getLocation();
-      return new TextCaret(attrs, event.getCanvas(), loc, event.getX(), event.getY());
+      CaretPosition p = text.getTextCaretPosition(loc, attrs,
+          event.getCanvas().getGraphics(), event.getX(), event.getY());
+      // Bounds bds = text.getTextOnlyVisibleBounds(loc, attrs, event.getCanvas().getGraphics(), null);
+      return new TextCaret(attrs, event.getCanvas(), loc, p.cursor, p.revBias, p.bounds);
     }
 
+  }
+
+  private static final class CaretPosition {
+    Bounds bounds;
+    int cursor;
+    boolean revBias;
+    CaretPosition(Bounds b, int c, boolean rb) { bounds = b; cursor = c; revBias = rb;}
   }
 
   @Override
@@ -312,7 +323,10 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     int valign = attrs.getVerticalAlign();
     int textWidth = altTextWidth != null ? altTextWidth : attrs.isWrapping() ? attrs.getTextWidth() : -1;
     Font font = attrs.getFont();
-    return BoxLayout.getBounds(g, text, loc, textWidth, font, halign, valign).expand(PAD);
+    if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH)
+      return StyledBoxLayout.getBounds(g, text, loc, textWidth, font, valign).expand(PAD);
+    else
+      return BoxLayout.getBounds(g, text, loc, textWidth, font, halign, valign).expand(PAD);
   } 
 
   private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
@@ -321,6 +335,27 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   protected Bounds getTextOnlyVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g, Integer altTextWidth) { // visible
     return getTextOnlyVisibleOffsetBounds(attrsBase, g, altTextWidth).translate(loc);
+  }
+
+  protected CaretPosition getTextCaretPosition(Location loc, TextAttributes attrs, Graphics g, int px, int py) {
+    String text = attrs.getText();
+    int halign = attrs.getHorizontalAlign();
+    int valign = attrs.getVerticalAlign();
+    int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
+    Font font = attrs.getFont();
+    if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH) {
+      StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
+      StyledBoxLayout.VisualLine vl = box.lineForY(py);
+      int cursor = box.snapToGraphemeBoundary(vl.sourcePositionForX(px));
+      boolean revBias = vl.getBiasForX(px);
+      return new CaretPosition(box.bounds.expand(PAD), cursor, revBias);
+    } else {
+      BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
+      BoxLayout.VisualLine vl = box.lineForY(py);
+      int cursor = vl.positionForX(px);
+      boolean revBias = (cursor == vl.end);
+      return new CaretPosition(box.bounds.expand(PAD), cursor, revBias);
+    }
   }
 
   @Override
@@ -376,7 +411,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     int textWidth = (altTextWidth != null ? altTextWidth : wrapping ? attrs.getTextWidth() : -1);
     String text = attrs.getText();
     if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH)
-      BoxLayout.drawMarkdownishText(g, text, loc, textWidth, font, valign);
+      StyledBoxLayout.drawMarkdownishText(g, text, loc, textWidth, font, valign);
     else
       BoxLayout.drawMultilineText(g, text, loc, textWidth, font, halign, valign);
   }

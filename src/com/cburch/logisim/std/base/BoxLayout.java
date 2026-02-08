@@ -49,17 +49,17 @@ import com.cburch.logisim.data.Location;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
-// BoxLayout handles text rendering for Text and Callout, optionally providing auto-wrap,
-// markdown-ish styling, etc.
+// BoxLayout handles text rendering for Text and Callout, optionally providing auto-wrap.
 public class BoxLayout {
-
-  static final float INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
+  
+  static final float DEFAULT_INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
 
   final Location loc;
   final int halign, valign;
   final Font font;
   final boolean autoWrap;
   final String text;
+  final float interParaSpace;
 
   int textWidth; // accurate, even for manual-wrap mode, once layout is complete
   Bounds bounds;  // accurate once layout is complete
@@ -72,12 +72,13 @@ public class BoxLayout {
   //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
   //   lines[n-1].end == len-1
 
-  public BoxLayout(Graphics g, String t, Location l, int tw, Font f, int h, int v) {
+  public BoxLayout(Graphics g, String t, Location l, int tw, Font f, int h, int v, boolean spacing) {
     g2 = (Graphics2D)g;
     text = t;
     loc = l;
     textWidth = tw;
     autoWrap = (tw > 0);
+    interParaSpace = (spacing ? DEFAULT_INTER_PARAGRAPH_SPACE : 0);
     font = f;
     halign = h;
     valign = v;
@@ -86,23 +87,6 @@ public class BoxLayout {
     bounds = null;
 
     layoutMultiline();
-    g2 = null;
-  }
-
-  public BoxLayout(Graphics g, String t, Location l, int tw, Font f, int v) { // markdown-ish
-    g2 = (Graphics2D)g;
-    text = t;
-    loc = l;
-    textWidth = tw; // must be positive
-    autoWrap = true;
-    font = f;
-    halign = ALIGN.H_LEFT; // with markdown, the only left align is sensible
-    valign = v;
-
-    lines = new ArrayList<>();
-    bounds = null;
-
-    layoutMarkdownish();
     g2 = null;
   }
 
@@ -124,7 +108,7 @@ public class BoxLayout {
     if (autoWrap && !lines.isEmpty()) {
       VisualLine prev = lines.get(lines.size() - 1);
       if (prev.paraBreakAfter) {
-        float gap = prev.height() * INTER_PARAGRAPH_SPACE;
+        float gap = prev.height() * interParaSpace;
         dy += gap;
       }
     }
@@ -202,50 +186,6 @@ public class BoxLayout {
   }
 
 
-  private void layoutMarkdownish() {
-
-    // FIXME: need a monospace font option
-    Font baseFont = font; 
-    Font monoFont = new Font("Monospaced", Font.PLAIN, font.getSize());
-
-    g2.setFont(baseFont);
-    FontRenderContext frc = g2.getFontRenderContext();
-  
-    Markdownish md = new Markdownish(text, baseFont, monoFont);
-    for (Markdownish.Block block : md.blocks) {
-      // FIXME: split LINESEP earlier
-      AttributedString astr = block.buildAttributedString();
-      AttributedCharacterIterator it = astr.getIterator();
-      LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
-      measurer.setPosition(it.getBeginIndex());
-
-      boolean lineBreakAfter = false;
-      boolean paraBreakAfter = true; // FIXME, record positions, or last, in md
-          
-      int left = measurer.getPosition();
-      while (left < it.getEndIndex()) {
-        TextLayout layout = measurer.nextLayout(textWidth);
-        int right = measurer.getPosition();
-        boolean last = (right >= it.getEndIndex());
-        append(layout, block.start + left, block.start + right, paraBreakAfter && last, lineBreakAfter && last);
-        left = right;
-      }
-    }
-
-    int x = (int)Math.round(loc.x - halignAdjust(textWidth, halign));
-    int y = (int)Math.round(loc.y - valignAdjust(lines.get(0).layout, valign)); // valign relative to first line
-
-    for (VisualLine line : lines) {
-      float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
-      line.x += x + halignAdjustLine(textWidth, lineWidth, halign);
-      line.baselineY += y;
-    }
-
-    bounds = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
-    g2 = null;
-  }
-
-
   VisualLine firstLineOfParagraphContaining(VisualLine vl) {
     while (vl.lineno > 0) {
       VisualLine prev = lines.get(vl.lineno - 1);
@@ -271,7 +211,7 @@ public class BoxLayout {
     return lines.get(lines.size() - 1);
   }
 
-  VisualLine lineForY(int py) {
+  public VisualLine lineForY(int py) {
     for (VisualLine vl : lines) {
       if (py < vl.bottomY()) {
         return vl;
@@ -423,19 +363,13 @@ public class BoxLayout {
 
   // This is used by Text.get*Bounds()
   static Bounds getBounds(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
     return box.bounds;
   }
 
   // This is used by Text.paint()
   static void drawMultilineText(Graphics g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign);
-    box.drawText(g);
-  }
-
-  // This is used by Text.paint()
-  static void drawMarkdownishText(Graphics g, String text, Location loc, int textWidth, Font font, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, valign);
+    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
     box.drawText(g);
   }
 

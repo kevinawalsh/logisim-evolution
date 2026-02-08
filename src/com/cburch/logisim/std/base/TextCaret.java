@@ -104,6 +104,8 @@ import com.cburch.logisim.util.UndoRedo;
 //     cursor positioning info
 
 class TextCaret implements Caret, AttributeListener {
+    
+  Font markdownEditFont = new Font("Monospaced", Font.PLAIN, 12);
 
   public static final Color EDIT_MASK = new Color(200, 200, 200, 200);
   public static final Color EDIT_BACKGROUND = TextFieldCaret.EDIT_BACKGROUND;
@@ -143,18 +145,17 @@ class TextCaret implements Caret, AttributeListener {
   private Location loc;
   private Bounds initialBounds;
   
-  public TextCaret(TextAttributes attrs, Canvas canvas, Location loc, int px, int py) {
+  public TextCaret(TextAttributes attrs, Canvas canvas, Location loc, int cursor, boolean revBias, Bounds initialBounds) {
     this.attrs = attrs;
     this.canvas = canvas;
     this.g = canvas.getGraphics();
     this.oldText = this.curText = attrs.getText();
     this.loc = loc;
+    this.cursor = this.anchor = cursor;
+    this.cursorReverseBias = revBias;
+    this.initialBounds = initialBounds;
     BoxLayout box = computeLayout(g);
-    BoxLayout.VisualLine vl = box.lineForY(py);
-    cursor = anchor = vl.positionForX(px);
-    cursorReverseBias = (cursor == vl.end);
     editMenuHandler = new TextCaretEditHandler();
-    initialBounds = box.bounds.expand(Text.PAD);
 
     attrs.addAttributeWeakListener(null, this);
   }
@@ -261,7 +262,10 @@ class TextCaret implements Caret, AttributeListener {
     int valign = attrs.getVerticalAlign();
     int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
     Font font = attrs.getFont();
-    return new BoxLayout(g, curText, loc, textWidth, font, halign, valign);
+    if (attrs.isMarkdownish())
+      font = markdownEditFont.deriveFont(font.getSize2D());
+    boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();;
+    return new BoxLayout(g, curText, loc, textWidth, font, halign, valign, spacing);
   }
 
   @Override
