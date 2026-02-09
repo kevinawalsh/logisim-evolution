@@ -95,12 +95,14 @@ public class Markdownish {
   static final float PARAGRAPH_BELOW_GAP = 0.5f; // relative to base font size
 
   public final String src;
+  public final int EOF;
   public final Font baseFont, monoFont;
   public final ArrayList<Block> blocks;
   public Block lastBlock;
 
   public Markdownish(String src, Font baseFont, Font monoFont) {
     this.src = src;
+    this.EOF = src.length();
     this.baseFont = baseFont;
     this.monoFont = monoFont;
     blocks = new ArrayList<>();
@@ -113,20 +115,20 @@ public class Markdownish {
       private static final long serialVersionUID = 1L;
     };
 
-  enum BlockType { HEADER, PARAGRAPH }
+  enum BlockType { HEADER, PARAGRAPH, FENCED_CODE }
   public final class Block {
     final BlockType type;
     final int blockno;
-    final ArrayList<Span> spans;
+    final ArrayList<Span> spans; // not empty; otherwise, we can't map block to src text index
     final int headerLevel; // 1..N for headers, unused for other block types
-    final boolean paraContinuation; // this para continues previous one, after a hard-break
+    final boolean continuation; // this para or code continues previous one, after a hard-break
 
-    private Block(BlockType type, ArrayList<Span> spans, int headerLevel, boolean paraContinuation) {
+    private Block(BlockType type, ArrayList<Span> spans, int headerLevel, boolean continuation) {
       this.type = type;
       this.blockno = blocks.size();
       this.spans = spans;
       this.headerLevel = headerLevel;
-      this.paraContinuation = paraContinuation;
+      this.continuation = continuation;
     }
 
     public AttributedString buildAttributedString() {
@@ -138,6 +140,8 @@ public class Markdownish {
         font = baseFont.deriveFont(
             baseFont.getStyle() | Font.BOLD,
             baseFont.getSize2D() * HEADER_FONT_SIZE[headerLevel]);
+      } else if (type == BlockType.FENCED_CODE) {
+        font = monoFont;
       } else {
         font = baseFont;
       }
@@ -161,7 +165,6 @@ public class Markdownish {
           runs.add(run);
           prev = run;
         }
-
       }
       AttributedString as = new AttributedString(sb.toString());
       for (AttrRun r : runs)
@@ -171,7 +174,7 @@ public class Markdownish {
 
     private float gapAbove() {
       float sz = baseFont.getSize2D();
-      if (type == BlockType.PARAGRAPH)
+      if (type == BlockType.PARAGRAPH || type == BlockType.FENCED_CODE)
         return sz * PARAGRAPH_ABOVE_GAP;
       else
         return sz * HEADER_ABOVE_GAP;
@@ -179,10 +182,14 @@ public class Markdownish {
 
     private float gapBelow() {
       float sz = baseFont.getSize2D();
-      if (type == BlockType.PARAGRAPH)
+      if (type == BlockType.PARAGRAPH || type == BlockType.FENCED_CODE)
         return sz * PARAGRAPH_BELOW_GAP;
       else
         return sz * HEADER_BELOW_GAP;
+    }
+
+    public boolean wrapped() {
+      return type != BlockType.FENCED_CODE;
     }
   }
 
@@ -191,17 +198,11 @@ public class Markdownish {
     lastBlock = nextBlock;
   }
 
-  private void emitParagraph(ArrayList<Span> spans, boolean paraContinuation) {
-    if (spans.isEmpty())
-      return;
-    emit(new Block(BlockType.PARAGRAPH, spans, 0, paraContinuation));
-  }
-
   public float gapAbove(Block next) {
     if (next.blockno == 0)
       return 0f;
     Block prev = blocks.get(next.blockno - 1);
-    if (prev.type == BlockType.PARAGRAPH && next.type == BlockType.PARAGRAPH && next.paraContinuation)
+    if (prev.type == next.type && next.continuation)
       return 0f;
     return Math.max(prev.gapBelow(), next.gapAbove());
   }
@@ -213,9 +214,9 @@ public class Markdownish {
   static final int BOLD_ITALIC = BOLD|ITALIC;
   
   Font adjustForStyle(Font font, int style) {
-    switch (style) {
-      case CODE:
-        return monoFont.deriveFont(font.getStyle(), font.getSize2D());
+    if ((style & CODE) != 0)
+      font = monoFont.deriveFont(font.getStyle(), font.getSize2D());
+    switch (style & ~CODE) {
       case BOLD:
         return font.deriveFont(font.getStyle() | Font.BOLD);
       case ITALIC:
@@ -273,7 +274,9 @@ public class Markdownish {
           // does not render
           break;
         case DELIM:
-          sb.append(src, start, end);
+          // render iff unpaired
+          if (!pairedLeft && !pairedRight)
+            sb.append(src, start, end);
           break;
       }
     }
@@ -315,201 +318,187 @@ public class Markdownish {
       value = v;
     }
   }
-
-  private final class ParaBuilder {
-    ArrayList<Span> spans = new ArrayList<>();
-    // invariant: first span in list is not a SPACE and
-    //            first span after any HARDBREAK is not a SPACE
-    //            (we drop the initial SPACE in these cases)
-    // invariant: no consecutive HARDBREAK spans
-    //            (we insert a SPACE if needed)
-    // invariant: no consecutive SPACE spans
-    //            (we drop the second SPACE in this case)
-
-    Span getCurrentSectionLastSpan() {
-      // returns null if entire paragraph is empty, or the current section is empty,
-      // i.e. if the most recent span was a hardbreak.
-      if (spans.isEmpty())
-        return null;
-      Span last = spans.get(spans.size()-1);
-      if (last.type == SpanType.HARDBREAK)
-        return null;
-      return last;
-    }
-
-    void extend(int ls, ArrayList<Span> more) {
-      if (more.isEmpty())
-        return;
-      Span next = more.get(0);
-      Span last = getCurrentSectionLastSpan();
-      if (last == null) {
-        if (next.type == SpanType.SPACE)
-          more.remove(0); // remove leading SPACE in a section
-      } else if (last.type == SpanType.SPACE && next.type == SpanType.SPACE) {
-        more.remove(0); // remove consecutive SPACE
-      } else if (last.type != SpanType.SPACE && next.type != SpanType.SPACE) {
-        // insert SPACE between last and next, where newline must have been
-        spans.add(Span_space(ls-1, ls));
-      }
-      spans.addAll(more);
-    }
-
-    void emitAndReset() { // encountered a non-paragraph line
-      if (spans.isEmpty())
-        return;
-      applyInlineStylesAndEmitParagraphs(spans);
-      spans = new ArrayList<>();
-    }
-  }
-
+  
   private void parseBlocks() {
-    int i = 0, n = src.length();
+    int ls = 0;
+    while (ls < EOF) {
+      int le = lineEnd(ls); // line is [ls, le), and le is EOL or EOF
 
-    ParaBuilder para = new ParaBuilder();
-
-    while (i < n) {
-      int ls = i;
-      int le = lineEnd(i); // line is [ls, le), followed by EOL
-      int next = (le < n) ? le + 1 : n; // consume '\n' if present
-
-      // Skip blank lines
+      // skip blank lines
       if (isBlankLine(ls, le)) {
-        para.emitAndReset();
-        i = next;
-        continue;
+        ls = le + 1; // skip EOL or EOF
       }
 
-      // Header block
-      Block header = parseHeaderLine(ls, le);
-      if (header != null) {
-        para.emitAndReset();
-        emit(header);
-        i = next;
-        continue;
+      // parse header block
+      else if (isHeaderLine(ls, le)) {
+        parseHeaderLine(ls, le);
+        ls = le + 1; // skip EOL or EOF
       }
 
-      // Paragraph block (consecutive non-blank, non-header lines)
-      para.extend(ls, parseLineSpans(ls, le));
+      // parse fenced code block
+      else if (isOpeningCodeFence(ls, le)) {
+        ls = parseFencedCode(ls, le);
+      }
 
-      i = next;
+      // anything else must be a paragraph
+      else {
+        ls = parseParagraph(ls);
+      }
     }
-
-    // emit any remaining accumulated paragraph
-    para.emitAndReset();
   }
+
 
   private final class SpanList {
     ArrayList<Span> spans = new ArrayList<>();
-    int textRunStart = -1;
-    int wsRunStart = -1;
+    int spaceRunStart = -1; // spaces, tabs, newlines
+    int textRunStart = -1; // anything else
 
-    void markText(int pos) {
+    void startOfText(int pos) {
+      endOfSpace(pos);
       if (textRunStart < 0)
         textRunStart = pos;
     }
 
-    void flushTextUpTo(int pos) {
-      if (textRunStart >= 0 && textRunStart < pos) {
+    void endOfText(int pos) {
+      if (textRunStart >= 0 && textRunStart < pos)
         spans.add(Span_text(textRunStart, pos));
-      }
       textRunStart = -1;
     };
 
-    void markWs(int pos) {
-      if (wsRunStart < 0)
-        wsRunStart = pos;
+    void startOfSpace(int pos) {
+      endOfText(pos);
+      if (spaceRunStart < 0)
+        spaceRunStart = pos;
     }
 
-    void flushWsUpTo(int pos) {
-      if (wsRunStart >= 0 && wsRunStart < pos) {
-        spans.add(Span_space(wsRunStart, pos));
-      }
-      wsRunStart = -1;
+    void endOfSpace(int pos) {
+      if (spaceRunStart >= 0 && spaceRunStart < pos)
+        spans.add(Span_space(spaceRunStart, pos));
+      spaceRunStart = -1;
     };
 
-    void flushAllUpTo(int pos) {
-      flushTextUpTo(pos);
-      flushWsUpTo(pos);
+    boolean hasTwoSpacesBefore(int pos) {
+      if (spaceRunStart < 0)
+        return false;
+      if (pos - spaceRunStart < 2)
+        return false;
+      return src.charAt(pos-1) == ' ' && src.charAt(pos-2) == ' ';
+    }
+
+    void flush(int pos) {
+      endOfText(pos);
+      endOfSpace(pos);
+    }
+    
+    void removeLeadingSpace() {
+      int n = spans.size();
+      if (n == 1 && spans.get(0).type == SpanType.SPACE)
+        spans.remove(0);
+      else if (n >= 2
+          && spans.get(n-2).type == SpanType.HARDBREAK
+          && spans.get(n-1).type == SpanType.SPACE)
+        spans.remove(n-1);
+    }
+
+    void addSpaceIfEmptySection(int pos) {
+      if (spans.isEmpty() || spans.get(spans.size() - 1).type == SpanType.HARDBREAK) {
+        if (pos > 0 && isSpaceOrTabOrNewline(src.charAt(pos-1)))
+          spans.add(Span_space(pos-1, pos));
+        else
+          spans.add(Span_space(pos, pos+1)); // src is not actually a space, but oh well
+      }
     }
   }
 
-  // Parse the single line of src text [s, e) into Spans.
+  // Parse src text [ps, pe) as inline spans. 
+  // Precondition:
+  //  There are no blank lines within [ps, pe)
   // Approximately, this handles...
+  //  (0) leading and trailing spaces, tabs, and newlines --> ignored
   //  (1) most regular text and punctuation --> TEXT
-  //  (2) sequence of 2 or more spaces before EOL --> HARDBREAK
+  //  (2) sequence of 2 or more spaces before newline --> HARDBREAK
   //  (3) sequence of spaces and tabs elsewhere --> SPACE
   //  (4) escaped punctuation --> TEXT
-  //  (5) unescaped backslash before EOL --> HARDBREAK
+  //  (5) unescaped backslash before newline or pe --> HARDBREAK
   //  (6) unescaped backslash elsewhere --> TEXT
   //  (7) left or right flanking delimiter run of * or _ chars --> DELIM
-  private ArrayList<Span> parseLineSpans(int ls, int le) {
+  //  (8) newline --> SPACE
+  // Postconditions for resulting list:
+  //  (a) List is not empty
+  //      (we insert a SPACE, if needed)
+  //  (b) Before, after, and between each HARDBREAK is some other span
+  //      (we insert a SPACE, if needed)
+  //  (c) SPACE does not appear as first or last span, or directly before or after HARDBREAK,
+  //      unless it is the only span in that section
+  //      (we omit leading and trailing SPACE, where possible)
+  private ArrayList<Span> parseInlineSpans(int ps, int pe) {
     SpanList out = new SpanList();
-
-    // (2) or (5): find and strip trailing hardbreak, if present
-    int hb = trailingHardBreak(ls, le);
-    int e = hb < 0 ? le : hb;
+    
+    // (0) strip trailing spaces, tabs, and newlines
+    while (ps < pe && isSpaceOrTabOrNewline(src.charAt(pe-1))) pe++;
+    
+    // (0) strip leading spaces, tabs, and newlines
+    while (ps < pe && isSpaceOrTabOrNewline(src.charAt(ps))) ps++;
 
     // Process remaining text
-    for (int s = ls; s < e; s++) {
+    for (int s = ps; s < pe; s++) {
       char ch = src.charAt(s);
 
-      if (ch == '\\' && s + 1 < e && isAsciiPunct(src.charAt(s+1))) {
+      if (ch == '\\' && (s + 1 == pe || src.charAt(s+1) == '\n')) {
+        // (5) unescaped backslash before newline or pe --> HARDBREAK
+        out.flush(s);
+        out.addSpaceIfEmptySection(s); // ensure no hardbreak at start, no consecutive hardbreak
+        out.spans.add(Span_hardbreak(s, s+1)); // just the backslash
+      } else if (ch == '\n' && out.hasTwoSpacesBefore(s)) {
+        // (2) sequence of 2 or more spaces before newline --> HARDBREAK
+        out.flush(s);
+        int hbStart = out.spaceRunStart;
+        out.spaceRunStart = -1;
+        out.addSpaceIfEmptySection(hbStart); // ensure no hardbreak at start, no consecutive hardbreak
+        out.spans.add(Span_hardbreak(hbStart, s-1)); // just the whitespace
+      } else if (ch == '\\' && s + 1 < pe && isAsciiPunct(src.charAt(s+1))) {
         // (4) escaped punctuation --> TEXT
-        out.flushAllUpTo(s);
+        out.flush(s);
+        out.removeLeadingSpace();
         s++; // swallow escape
         out.spans.add(Span_text(s, s+1)); // just the punctuation
       } else if (ch == '*' || ch == '_') {
         // (7) unescaped delimiters --> DELIM
-        out.flushAllUpTo(s);
+        out.flush(s);
+        out.removeLeadingSpace();
         int count = 0;
         while (src.charAt(s+count) == ch)
           count++;
         out.spans.add(Span_delim(s, s+count));
         s += count-1;
-      } else if (ch == ' ' || ch == '\t') {
+      } else if (ch == ' ' || ch == '\t' || ch == '\n') {
         // (3) sequence of spaces and tabs --> SPACE
-        out.flushTextUpTo(s);
-        out.markWs(s);
+        // (8) newline --> SPACE
+        out.startOfSpace(s);
       } else {
-        // (1) regular text and punctuation, or (6) unescaped backslash --> TEXT
-        out.flushWsUpTo(s);
-        out.markText(s);
+        // (1) regular text and punctuation --> TEXT
+        // (6) unescaped backslash --> TEXT
+        out.removeLeadingSpace();
+        out.startOfText(s);
       }
     }
-    out.flushAllUpTo(e);
-
-    // Append hardbreak, if needed
-    if (hb >= 0)
-      out.spans.add(Span_hardbreak(hb, le));
+    out.flush(pe);
+    out.addSpaceIfEmptySection(pe);
     
     return out.spans;
   }
 
-  // Scan the raw spans and apply styles.
-  // Approximately, this means:
-  // (1) Remove misplaced trailing HARDBREAK, or convert it to TEXT
-  // (2) Remove matched DELIM spans, and apply style to the spans they encompass
-  private ArrayList<Span> applyInlineStyles(ArrayList<Span> raw) {
-    ArrayList<Span> out = new ArrayList<>();
-    int n = raw.size();
-
-    if (n ==  0)
-      return out;
-
-    // detect misplaced trailing hardbreak
-    Span misplacedHardbreak = null;
-    if (raw.get(n - 1).type == SpanType.HARDBREAK) {
-      misplacedHardbreak = raw.get(n - 1);
-      n--;
-    }
+  // Match DELIM spans, and apply corresponding style to the spans they encompass
+  private void applyInlineStyles(ArrayList<Span> spans) {
+    int n = spans.size();
 
     // identify DELIM pairings
     for (int i = 0; i < n; i++) {
-      Span span = raw.get(i);
+      Span span = spans.get(i);
       if (span.type == SpanType.DELIM && span.canPairLeft()) {
         // search rightward, first match wins
         for (int j = i+1; j < n; j++) {
-          Span right = raw.get(j);
+          Span right = spans.get(j);
           if (right.canPairRight() && span.matchingDelim(right)) {
             span.pairedLeft = true;
             right.pairedRight = true;
@@ -519,35 +508,32 @@ public class Markdownish {
       }
     }
 
-    // apply styles and remove matched DELIM spans
+    // apply styles
     int bold = 0, italic = 0;
     for (int i = 0; i < n; i++) {
-      Span span = raw.get(i);
+      Span span = spans.get(i);
+      
       if (span.type == SpanType.DELIM && span.pairedLeft) {
+        // begin styled range
         int delimLen = span.end - span.start;
         if (delimLen == 1) { italic++; }
         else if (delimLen == 2) { bold++; }
         else if (delimLen >= 3) { italic++; bold++; } // note: non-standard
-        // do not emit 
-      } else if (span.type == SpanType.DELIM && span.pairedRight) {
+      }
+
+      // apply current styles
+      if (bold > 0) span.style |= BOLD;
+      if (italic > 0) span.style |= ITALIC;
+
+      if (span.type == SpanType.DELIM && span.pairedRight) {
+        // end styled range
         int delimLen = span.end - span.start;
         if (delimLen == 1) { italic--; }
         else if (delimLen == 2) { bold--; }
         else if (delimLen >= 3) { italic--; bold--; } // note: non-standard
-        // do not emit 
-      } else {
-        if (bold > 0) span.style |= BOLD;
-        if (italic > 0) span.style |= ITALIC;
-        // emit
-        out.add(span);
       }
     }
 
-    // convert misplaced trailing hardbreak to TEXT if it was a backslash
-    if (misplacedHardbreak != null && src.charAt(misplacedHardbreak.start) == '\\')
-      out.add(Span_text(misplacedHardbreak.start, misplacedHardbreak.end));
-
-    return out;
   }
 
   private int countTrailing(int ls, int le, char ch) {
@@ -570,15 +556,19 @@ public class Markdownish {
   }
 
   // All \r should have been stripped already, so only \n or end of source can end a line
-  private int lineEnd(int i) {
-    while (i < src.length() && src.charAt(i) != '\n')
-      i++;
-    return i; // exclusive, points at '\n', or n
+  private int lineEnd(int s) {
+    while (s < src.length() && src.charAt(s) != '\n')
+      s++;
+    return s; // exclusive, points at '\n', or EOF
   }
 
   // whitespace within a line: only plain spaces and tabs
   private boolean isSpaceOrTab(char ch) {
     return ch == ' ' || ch == '\t';
+  }
+
+  private boolean isSpaceOrTabOrNewline(char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n';
   }
 
   // blank line: only plain spaces and tabs
@@ -590,24 +580,107 @@ public class Markdownish {
     return true;
   }
 
-  private Block parseHeaderLine(int ls, int le) {
-    int s = ls, e = le;
-    // ignore up to 3 leading spaces
-    if (s < e && src.charAt(s) == ' ') s++;
-    if (s < e && src.charAt(s) == ' ') s++;
-    if (s < e && src.charAt(s) == ' ') s++;
+  private int ignore3LeadingSpaces(int ls) {
+    int s = ls;
+    if (s < EOF && src.charAt(s) == ' ') s++;
+    if (s < EOF && src.charAt(s) == ' ') s++;
+    if (s < EOF && src.charAt(s) == ' ') s++;
+    return s;
+  }
+
+  private int ignoreNLeadingSpaces(int ls, int n) {
+    int s = ls;
+    while (n-- > 0 && s < EOF && src.charAt(s) == ' ') s++;
+    return s;
+  }
+
+  private boolean isOpeningCodeFence(int ls, int le) {
+    int s = ignore3LeadingSpaces(ls);
+    if (s == le)
+      return false;
+    // 3 or more backtick or tilde chars
+    char delim = src.charAt(ls);
+    if (delim != '`' && delim != '~')
+      return false;
+    int count;
+    for (count = 0; s < le && src.charAt(s) == delim; s++)
+      count++;
+    if (count < 3)
+      return false;
+    return true;
+  }
+
+  private boolean isClosingCodeFence(int ls, char delim, int delimLen) {
+    int s = ignore3LeadingSpaces(ls);
+    if (s == EOF)
+      return false;
+    // count or more backtick or tilde chars
+    int count;
+    for (count = 0; s < EOF && src.charAt(s) == delim; s++)
+      count++;
+    if (count < delimLen)
+      return false;
+    // rest of line must be only spaces and tabs
+    while (s < EOF && isSpaceOrTab(src.charAt(s))) s++;
+    return s == EOF || src.charAt(s) == '\n';
+  }
+
+  private int parseFencedCode(int ls, int le) {
+    if (le == EOF) {
+      // special case: empty fenced code black at end of file
+      ArrayList<Span> spans = new ArrayList<>();
+      spans.add(Span_space(le-1, le));
+      emit(new Block(BlockType.FENCED_CODE, spans, 0, false));
+      return le; 
+    }
+    int s = ignore3LeadingSpaces(ls);
+    int indentLen = s - ls;
+    char delim = src.charAt(ls);
+    int delimLen;
+    for (delimLen = 0; s < le && src.charAt(s) == delim; s++)
+      delimLen++;
+    // rest of initial line is the "info text", ignore it
+    ls = le + 1;
+    boolean continuation = false;
+    while (ls < EOF && !isClosingCodeFence(ls, delim, delimLen)) {
+      le = lineEnd(ls);
+      // line is [ls, le)
+      // strip only a few leading spaces
+      // (non-standard: ignore tabs, do not treat as 4 spaces)
+      s = ignoreNLeadingSpaces(ls, indentLen);
+      ArrayList<Span> spans = new ArrayList<>();
+      if (s == le) // blank line, replace by SPACE
+        spans.add(Span_space(le-1, le));
+      else
+        spans.add(Span_text(s, le));
+      emit(new Block(BlockType.FENCED_CODE, spans, 0, continuation));
+      continuation = true;
+      ls = le + 1;
+    }
+    return lineEnd(ls);
+  }
+
+  private boolean isHeaderLine(int ls, int le) {
+    int s = ignore3LeadingSpaces(ls);
     // 1-6 "#" chars
-    int lvl = 0;
-    for (int i = s; lvl < 6 && i < e && src.charAt(i) == '#'; i++)
+    int lvl;
+    for (lvl = 0; lvl < 6 && s < le && src.charAt(s) == '#'; s++)
       lvl++;
     if (lvl < 1 || lvl > 6)
-      return null;
-    s += lvl;
+      return false;
     // followed by EOL, space, or tab
-    if (s != e && !isSpaceOrTab(src.charAt(s)))
-      return null;
-    // strip leading spaces and tabs
-    while (s < e && isSpaceOrTab(src.charAt(s))) s++;
+    if (s != le && !isSpaceOrTab(src.charAt(s)))
+      return false;
+    return true;
+  }
+
+  private void parseHeaderLine(int ls, int le) {
+    int e = le;
+    int s = ignore3LeadingSpaces(ls);
+    // count "#" chars
+    int lvl;
+    for (lvl = 0; lvl < 6 && s < le && src.charAt(s) == '#'; s++)
+      lvl++;
     // strip trailing spaces and tabs
     while (s < e && isSpaceOrTab(src.charAt(e-1))) e++;
     // strip optional trailing space-or-tab-then-### sequence
@@ -615,19 +688,10 @@ public class Markdownish {
     while (s < e2 && src.charAt(e2-1) == '#') e2--;
     if (s < e2 && isSpaceOrTab(src.charAt(e2-1))) {
       e = e2;
-      // again strip trailing spaces and tabs
-      while (s < e && isSpaceOrTab(src.charAt(e-1))) e++;
     }
-    if (s == e) {
-      // empty header: to preserve the index mapping, we include an empty SPACE span
-      ArrayList<Span> spans = new ArrayList<>();
-      spans.add(Span_space(s, e));
-      return new Block(BlockType.HEADER, spans, lvl, false);
-    } else {
-      ArrayList<Span> spans = parseLineSpans(s, e);
-      spans = applyInlineStyles(spans);
-      return new Block(BlockType.HEADER, spans, lvl, false);
-    }
+    ArrayList<Span> spans = parseInlineSpans(s, e);
+    applyInlineStyles(spans);
+    emit(new Block(BlockType.HEADER, spans, lvl, false));
   }
 
   // GFM/CommonMark: any ASCII punctuation can be backslash-escaped.
@@ -639,19 +703,31 @@ public class Markdownish {
       || (ch >= 0x5B && ch <= 0x60)
       || (ch >= 0x7B && ch <= 0x7E);
   }
+ 
+  private int parseParagraph(int paraStart) {
+    // find paragraph end
+    int paraEnd = lineEnd(paraStart);
+    while (paraEnd + 1 < EOF) {
+      int ls = paraEnd + 1;
+      int le = lineEnd(ls); // next line is [ls, le), and le is EOL or EOF
 
-  private void applyInlineStylesAndEmitParagraphs(ArrayList<Span> raw) {
-    // apply styles
-    ArrayList<Span> cooked = applyInlineStyles(raw);
-    // split into sections
+      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le))
+        break;
+      paraEnd = le;
+    }
+    ArrayList<Span> spans = parseInlineSpans(paraStart, paraEnd);
+    applyInlineStyles(spans);
+    emitParagraphs(spans);
+    return paraEnd + 1;
+  }
+
+  private void emitParagraphs(ArrayList<Span> spans) {
+    // split by hardbreaks, emit each one as a paragraph
     ArrayList<Span> section = new ArrayList<>();
     boolean cont = false;
-    for (Span span : cooked) {
-      if (span.type == SpanType.DELIM && span.start == span.end) {
-        // drop paired delim
-        continue;
-      } else if (span.type == SpanType.HARDBREAK) {
-        // Emit current section (possibly empty)
+    for (Span span : spans) {
+      if (span.type == SpanType.HARDBREAK) {
+        // Emit current section (skips if empty)
         emitParagraph(section, cont);
         section = new ArrayList<>();
         cont = true;
@@ -659,7 +735,20 @@ public class Markdownish {
         section.add(span);
       }
     }
+    // Emit last section (skips if empty)
     emitParagraph(section, cont);
   }
 
+  private void emitParagraph(ArrayList<Span> spans, boolean continuation) {
+    if (spans.isEmpty())
+      return;
+    emit(new Block(BlockType.PARAGRAPH, spans, 0, continuation));
+  }
+
 }
+
+// TODO:
+//  - links (web, eventually to built-in help pages)
+//  - bullets
+//  - tables (for properties)
+//  - truthtables

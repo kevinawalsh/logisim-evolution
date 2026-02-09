@@ -104,6 +104,22 @@ public class StyledBoxLayout {
 
       AttributedString astr = block.buildAttributedString();
       AttributedCharacterIterator it = astr.getIterator();
+
+      if (!block.wrapped()) {
+        // e.g. FENCED_CODE block
+        int left = it.getBeginIndex();
+        int right = it.getEndIndex();
+        TextLayout layout = new TextLayout(it, frc);
+
+        if (lines.isEmpty())
+          y = (int)Math.round(y - valignAdjust(layout, valign)); // valign relative to first line
+        
+        dy += layout.getAscent();
+        lines.add(new VisualLine(layout, astr, left, right, x + dx, y + dy));
+        dy += layout.getDescent() + layout.getLeading();
+        continue;
+      }
+
       LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
       measurer.setPosition(it.getBeginIndex());
           
