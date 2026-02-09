@@ -662,6 +662,8 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public void mouseDragged(MouseEvent e) {
+    if (!mouseIsPressed)
+      return;
     BoxLayout box = computeLayout(g);
     BoxLayout.VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
@@ -724,8 +726,11 @@ class TextCaret implements Caret, AttributeListener {
     return p;
   }
 
+  boolean mouseIsPressed = false; // necessary to avoid phantom dragging when first creating caret.
+
   @Override
   public void mousePressed(MouseEvent e) {
+    mouseIsPressed = true;
     BoxLayout box = computeLayout(g);
     BoxLayout.VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
@@ -778,7 +783,9 @@ class TextCaret implements Caret, AttributeListener {
   }
 
   @Override
-  public void mouseReleased(MouseEvent e) { }
+  public void mouseReleased(MouseEvent e) {
+    mouseIsPressed = false;
+  }
 
   @Override
   public void stopEditing() {
