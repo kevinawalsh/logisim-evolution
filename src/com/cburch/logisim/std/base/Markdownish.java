@@ -69,7 +69,13 @@ import java.util.ArrayList;
 //    is inserted iff the backslash-newline or space-space-newline sequence is followed directly by
 //    a line that isn't blank (i.e. it contains somethign other than spaces and tabs) and isn't a
 //    header (i.e. it doesn't start with a #-space or #-newline sequence, etc.)
-// 
+//
+// Inline *italics*, **bold**, ***bolditalics***, and `code`
+//  - Underscores work too, but not in the middle of words, as typical.
+//  - Works in headers and paragraphs.
+//
+// Fenced code blocks - start/end with 3 or more backticks, can interrupt a paragraph
+//
 // Notes:
 // - Headers and paragraphs are each rendered with some space below (and above) them, unless there
 //   is no other content below (or above) them. Here, "content" means a header or paragraph.
@@ -208,15 +214,15 @@ public class Markdownish {
   }
 
   static final int PLAIN = 0;
-  static final int CODE = 1;
+  static final int MONOSPACE = 1;
   static final int BOLD = 2;
   static final int ITALIC = 4;
   static final int BOLD_ITALIC = BOLD|ITALIC;
   
   Font adjustForStyle(Font font, int style) {
-    if ((style & CODE) != 0)
+    if ((style & MONOSPACE) != 0)
       font = monoFont.deriveFont(font.getStyle(), font.getSize2D());
-    switch (style & ~CODE) {
+    switch (style & ~MONOSPACE) {
       case BOLD:
         return font.deriveFont(font.getStyle() | Font.BOLD);
       case ITALIC:
@@ -232,6 +238,7 @@ public class Markdownish {
   enum SpanType {
     TEXT,      // TEXT renders directly from src indices [start, end)
     SPACE,     // SPACE renders as " "
+    CODE_SPAN, // renders from src indices [start, end) but replaces newlines with spaces
     HARDBREAK, // HARDBREAK is not rendered
                // Note: a misspaced hardbreak at the end of a paragraph is replaced by TEXT
                // just before applying styles, and all remaining hardbreaks are removed
@@ -243,6 +250,7 @@ public class Markdownish {
   }
 
   private Span Span_text(int s, int e) { return new Span(SpanType.TEXT, s, e); }
+  private Span Span_code(int s, int e) { return new Span(SpanType.CODE_SPAN, s, e); }
   private Span Span_hardbreak(int s, int e) { return new Span(SpanType.HARDBREAK, s, e); }
   private Span Span_space(int s, int e) { return new Span(SpanType.SPACE, s, e); }
   private Span Span_delim(int s, int e) { return new Span(SpanType.DELIM, s, e); }
@@ -252,7 +260,7 @@ public class Markdownish {
     final SpanType type;
     final int start;     // index in src text (inclusive)
     final int end;       // index in src text (exclusive)
-    int style = PLAIN;   // adjusted during second stage of parsing
+    int style;           // adjusted during second stage of parsing
     boolean pairedLeft;  // DELIM is the left part of a matching pair
     boolean pairedRight; // DELIM is the right part of a matching pair
 
@@ -260,12 +268,16 @@ public class Markdownish {
       type = t;
       start = s;
       end = e;
+      style = (type == SpanType.CODE_SPAN ? MONOSPACE : PLAIN);
     }
 
     void renderTo(StringBuilder sb) {
       switch (type) {
         case TEXT:
           sb.append(src, start, end);
+          break;
+        case CODE_SPAN:
+          sb.append(src.substring(start, end).replace('\n', ' '));
           break;
         case SPACE:
           sb.append(' ');
@@ -287,6 +299,9 @@ public class Markdownish {
       // right side can't be whitespace (or end of line, or end of src text)
       if (end == src.length() - 1 || Character.isWhitespace(src.charAt(end)))
         return false;
+      // for underscores, must have whitespace on left side, or start of src text
+      if (src.charAt(start) == '_' && !(start == 0 || Character.isWhitespace(src.charAt(start-1))))
+        return false;
       return true;
     }
 
@@ -295,6 +310,9 @@ public class Markdownish {
         return false;
       // left side can't be whitespace (or start of line, or start of src text)
       if (start == 0 || Character.isWhitespace(src.charAt(start-1)))
+        return false;
+      // for underscores, must have whitespace on right side, or end of src text
+      if (src.charAt(start) == '_' && !(end == src.length() - 1 || Character.isWhitespace(src.charAt(end))))
         return false;
       return true;
     }
@@ -355,6 +373,7 @@ public class Markdownish {
 
     void startOfText(int pos) {
       endOfSpace(pos);
+      removeLeadingSpace();
       if (textRunStart < 0)
         textRunStart = pos;
     }
@@ -423,6 +442,8 @@ public class Markdownish {
   //  (6) unescaped backslash elsewhere --> TEXT
   //  (7) left or right flanking delimiter run of * or _ chars --> DELIM
   //  (8) newline --> SPACE
+  //  (9) backticks around text --> CODE
+  //  (10) unmatched backticks --> TEXT
   // Postconditions for resulting list:
   //  (a) List is not empty
   //      (we insert a SPACE, if needed)
@@ -444,7 +465,48 @@ public class Markdownish {
     for (int s = ps; s < pe; s++) {
       char ch = src.charAt(s);
 
-      if (ch == '\\' && (s + 1 == pe || src.charAt(s+1) == '\n')) {
+      if (ch == '`') {
+        int delimLen = 1;
+        while (s+delimLen < pe && src.charAt(s+delimLen) == '`')
+          delimLen++;
+        int cs = s+delimLen;
+        int ce = cs+1;
+        int ticks = 0;
+        boolean found = false;
+        boolean allBlank = true;
+        while (!found && ce < pe+1) {
+          ch = ce == pe ? '\0' : src.charAt(ce);
+          if (ch == '`') {
+            ticks++;
+            ce++;
+          } else if (ticks == delimLen) {
+            found = true;
+            ce -= ticks;
+          } else {
+            if (ticks > 0 || !isSpaceOrTabOrNewline(ch))
+              allBlank = false;
+            ticks = 0;
+            ce++;
+          }
+        }
+        if (!found) {
+          // (10) unmatched backticks --> TEXT
+          out.startOfText(s);
+          s = cs - 1;
+          out.startOfText(s);
+        } else {
+          s += ce + delimLen - 1;
+          // (9) backticks around text --> CODE
+          // [cs, ce) is the code, it will be non-empty
+          if (!allBlank && src.charAt(cs) == ' ' && src.charAt(ce-1) == ' ') {
+            cs++;
+            ce--;
+          }
+          out.flush(s);
+          out.removeLeadingSpace();
+          out.spans.add(Span_code(cs, ce));
+        }
+      } if (ch == '\\' && (s + 1 == pe || src.charAt(s+1) == '\n')) {
         // (5) unescaped backslash before newline or pe --> HARDBREAK
         out.flush(s);
         out.addSpaceIfEmptySection(s); // ensure no hardbreak at start, no consecutive hardbreak
@@ -478,7 +540,6 @@ public class Markdownish {
       } else {
         // (1) regular text and punctuation --> TEXT
         // (6) unescaped backslash --> TEXT
-        out.removeLeadingSpace();
         out.startOfText(s);
       }
     }
