@@ -264,7 +264,7 @@ class TextCaret implements Caret, AttributeListener {
     Font font = attrs.getFont();
     if (attrs.isMarkdownish())
       font = markdownEditFont.deriveFont(font.getSize2D());
-    boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();;
+    boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();
     return new BoxLayout(g, curText, loc, textWidth, font, halign, valign, spacing);
   }
 

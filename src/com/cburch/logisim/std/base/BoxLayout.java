@@ -37,6 +37,7 @@ import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
+import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
 import java.awt.font.TextLayout;
 import java.text.AttributedCharacterIterator;
@@ -92,7 +93,6 @@ public class BoxLayout {
 
   public void drawText(Graphics g) {
     Graphics2D g2 = (Graphics2D) g;
-    g2.setFont(font);
     for (VisualLine line : lines)
       line.layout.draw(g2, line.x, line.baselineY);
   }
@@ -126,7 +126,6 @@ public class BoxLayout {
 
   private void layoutMultiline() {
 
-    g2.setFont(font);
     FontRenderContext frc = g2.getFontRenderContext();
     
     String[] paragraphs = text.split("\n", -1);
@@ -153,6 +152,7 @@ public class BoxLayout {
         } else { // Auto-wrap: LineBreakMeasurer produces multiple visual lines per paragraph
           
           AttributedString astr = new AttributedString(para);
+          astr.addAttribute(TextAttribute.FONT, font);
           AttributedCharacterIterator it = astr.getIterator();
           LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
           measurer.setPosition(it.getBeginIndex());

@@ -141,18 +141,14 @@ public class Markdownish {
       } else {
         font = baseFont;
       }
-      
+
       AttrRun prev = null;
       for (Span span : spans) {
         int outStart = sb.length();
-        if (span.type == SpanType.SPACE) {
-          sb.append(' ');
-        } else { // TEXT
-          sb.append(src, span.start, span.end);
-        }
+        span.renderTo(sb);
         int outEnd = sb.length();
         if (outEnd == outStart) continue;
-          
+
         runs.add(new AttrRun(outStart, outEnd, SPAN_ID, span));
 
         Font f = adjustForStyle(font, span.style);
@@ -190,19 +186,15 @@ public class Markdownish {
     }
   }
 
-  private void add(Block nextBlock) {
+  private void emit(Block nextBlock) {
     blocks.add(nextBlock);
     lastBlock = nextBlock;
   }
 
-  private void emitHeader(ArrayList<Span> spans, int level) {
-    add(new Block(BlockType.HEADER, spans, level, false));
-  }
-
   private void emitParagraph(ArrayList<Span> spans, boolean paraContinuation) {
-    if (spans.isEmpty()) // note: probably always non-empty here, but check anyway
+    if (spans.isEmpty())
       return;
-    add(new Block(BlockType.PARAGRAPH, spans, 0, paraContinuation));
+    emit(new Block(BlockType.PARAGRAPH, spans, 0, paraContinuation));
   }
 
   public float gapAbove(Block next) {
@@ -214,8 +206,13 @@ public class Markdownish {
     return Math.max(prev.gapBelow(), next.gapAbove());
   }
 
-  enum InlineStyle { PLAIN, BOLD, ITALIC, BOLD_ITALIC, CODE }
-  Font adjustForStyle(Font font, InlineStyle style) {
+  static final int PLAIN = 0;
+  static final int CODE = 1;
+  static final int BOLD = 2;
+  static final int ITALIC = 4;
+  static final int BOLD_ITALIC = BOLD|ITALIC;
+  
+  Font adjustForStyle(Font font, int style) {
     switch (style) {
       case CODE:
         return monoFont.deriveFont(font.getStyle(), font.getSize2D());
@@ -231,26 +228,79 @@ public class Markdownish {
     }
   }
 
-  enum SpanType { TEXT, SPACE }
-  static final class Span {
-    final SpanType type;
-    final int start;   // index in src text (inclusive)
-    final int end;     // index in src text (exclusive)
-    final InlineStyle style;
+  enum SpanType {
+    TEXT,      // TEXT renders directly from src indices [start, end)
+    SPACE,     // SPACE renders as " "
+    HARDBREAK, // HARDBREAK is not rendered
+               // Note: a misspaced hardbreak at the end of a paragraph is replaced by TEXT
+               // just before applying styles, and all remaining hardbreaks are removed
+               // as styles are applied just before emitting paragraphs.
+               // So no hardbreaks reach the rendering stage.
+    DELIM      // DELIM renders directly from src indices [start, end)
+               // Note: paired delimiters are removed before rendering, only unpaired delimiters
+               // will reach the rendering stage.
+  }
 
-    Span(SpanType t, int s, int e, InlineStyle y) {
+  private Span Span_text(int s, int e) { return new Span(SpanType.TEXT, s, e); }
+  private Span Span_hardbreak(int s, int e) { return new Span(SpanType.HARDBREAK, s, e); }
+  private Span Span_space(int s, int e) { return new Span(SpanType.SPACE, s, e); }
+  private Span Span_delim(int s, int e) { return new Span(SpanType.DELIM, s, e); }
+
+  final class Span {
+
+    final SpanType type;
+    final int start;     // index in src text (inclusive)
+    final int end;       // index in src text (exclusive)
+    int style = PLAIN;   // adjusted during second stage of parsing
+    boolean pairedLeft;  // DELIM is the left part of a matching pair
+    boolean pairedRight; // DELIM is the right part of a matching pair
+
+    Span(SpanType t, int s, int e) {
       type = t;
-      style = y;
       start = s;
       end = e;
     }
 
-    static Span text(int s, int e, InlineStyle y) { // render substring of src
-      return new Span(SpanType.TEXT, s, e, y);
+    void renderTo(StringBuilder sb) {
+      switch (type) {
+        case TEXT:
+          sb.append(src, start, end);
+          break;
+        case SPACE:
+          sb.append(' ');
+          break;
+        case HARDBREAK:
+          // does not render
+          break;
+        case DELIM:
+          sb.append(src, start, end);
+          break;
+      }
     }
-    static Span space(int s, int e) { // render as single ' '
-      return new Span(SpanType.SPACE, s, e, InlineStyle.PLAIN);
+
+    boolean canPairLeft() { // this DELIM can be the left part of a pair
+      if (pairedLeft || pairedRight)
+        return false;
+      // right side can't be whitespace (or end of line, or end of src text)
+      if (end == src.length() - 1 || Character.isWhitespace(src.charAt(end)))
+        return false;
+      return true;
     }
+
+    boolean canPairRight() { // this DELIM can be the right part of a pair
+      if (pairedLeft || pairedRight)
+        return false;
+      // left side can't be whitespace (or start of line, or start of src text)
+      if (start == 0 || Character.isWhitespace(src.charAt(start-1)))
+        return false;
+      return true;
+    }
+
+    boolean matchingDelim(Span other) { // this and other DELIM have same text
+      return src.charAt(this.start) == src.charAt(other.start)
+        && (this.end - this.start) == (other.end - other.start);
+    }
+
   }
 
   static final class AttrRun {
@@ -268,77 +318,47 @@ public class Markdownish {
 
   private final class ParaBuilder {
     ArrayList<Span> spans = new ArrayList<>();
-    // invariant: first span (if any) is not a SPACE 
-    // invariant: span does not contain consecutive SPACEs
-    boolean isContinuation;
-    int hardBreakIndex = -1;
+    // invariant: first span in list is not a SPACE and
+    //            first span after any HARDBREAK is not a SPACE
+    //            (we drop the initial SPACE in these cases)
+    // invariant: no consecutive HARDBREAK spans
+    //            (we insert a SPACE if needed)
+    // invariant: no consecutive SPACE spans
+    //            (we drop the second SPACE in this case)
+
+    Span getCurrentSectionLastSpan() {
+      // returns null if entire paragraph is empty, or the current section is empty,
+      // i.e. if the most recent span was a hardbreak.
+      if (spans.isEmpty())
+        return null;
+      Span last = spans.get(spans.size()-1);
+      if (last.type == SpanType.HARDBREAK)
+        return null;
+      return last;
+    }
 
     void extend(int ls, ArrayList<Span> more) {
       if (more.isEmpty())
         return;
       Span next = more.get(0);
-      if (spans.isEmpty()) {
+      Span last = getCurrentSectionLastSpan();
+      if (last == null) {
         if (next.type == SpanType.SPACE)
-          more.remove(0);
-      } else {
-        Span last = spans.get(spans.size() - 1);
-        if (last.type == SpanType.SPACE && next.type == SpanType.SPACE) {
-          more.remove(0);
-        } else if (last.type != SpanType.SPACE && next.type != SpanType.SPACE) {
-          // insert space between last and next, where newline must have been
-          spans.add(Span.space(ls-1, ls));
-        }
+          more.remove(0); // remove leading SPACE in a section
+      } else if (last.type == SpanType.SPACE && next.type == SpanType.SPACE) {
+        more.remove(0); // remove consecutive SPACE
+      } else if (last.type != SpanType.SPACE && next.type != SpanType.SPACE) {
+        // insert SPACE between last and next, where newline must have been
+        spans.add(Span_space(ls-1, ls));
       }
       spans.addAll(more);
     }
 
-    void flushHardBreak() {
-      if (hardBreakIndex >= 0) {
-        if (src.charAt(hardBreakIndex) == '\\') {
-          spans.add(Span.text(hardBreakIndex, hardBreakIndex+1, 
-                spans.get(spans.size() - 1).style));
-        }
-        hardBreakIndex = -1;
-      }
-    }
-
     void emitAndReset() { // encountered a non-paragraph line
-      flushHardBreak();
-      if (!spans.isEmpty()) {
-        if (spans.get(spans.size() - 1).type == SpanType.SPACE)
-          spans.remove(spans.size() -1);
-        emitParagraph(spans, isContinuation);
-        spans = new ArrayList<>();
-      }
-      isContinuation = false;
-    }
-
-    void encounteredParagraphLine() {
-      if (hardBreakIndex < 0) {
-        // encountered a valid paragraph line after a previous paragraph without hard break...
-        // do nothing: this line simply extends the current paragraph
+      if (spans.isEmpty())
         return;
-      }
-      // encountered a valid paragraph line after a previous paragraph with hard break...
-      // prep for new continuation-paragraph: swallow the hard break, emit current paragraph, and
-      if (spans.isEmpty()) {
-        // The just-completed paragraph section was empty and will be rendered as a blank line. To
-        // preserve the index mapping, we include a SPACE span where the hard break was
-        spans.add(Span.space(hardBreakIndex, hardBreakIndex+1));
-        emitParagraph(spans, isContinuation);
-        spans = new ArrayList<>();
-      } else {
-        // non-empty section of paragraph, strip trailing space and emit it.
-        if (spans.size() > 1) {
-          Span last = spans.get(spans.size() - 1);
-          if (last.type == SpanType.SPACE)
-            spans.remove(spans.size() - 1);
-        }
-        emitParagraph(spans, isContinuation);
-        spans = new ArrayList<>();
-      }
-      hardBreakIndex = -1;
-      isContinuation = true;
+      applyInlineStylesAndEmitParagraphs(spans);
+      spans = new ArrayList<>();
     }
   }
 
@@ -360,25 +380,17 @@ public class Markdownish {
       }
 
       // Header block
-      if (parseHeaderLine(ls, le)) {
+      Block header = parseHeaderLine(ls, le);
+      if (header != null) {
         para.emitAndReset();
+        emit(header);
         i = next;
         continue;
       }
 
       // Paragraph block (consecutive non-blank, non-header lines)
-      para.encounteredParagraphLine();
-
-      // Check for trailing hard-break
-      int hb = trailingHardBreak(ls, le);
-      if (hb >= 0) {
-        para.hardBreakIndex = hb;
-        le = hb;
-      } else {
-        para.hardBreakIndex = -1;
-      }
-
       para.extend(ls, parseLineSpans(ls, le));
+
       i = next;
     }
 
@@ -395,10 +407,10 @@ public class Markdownish {
       if (textRunStart < 0)
         textRunStart = pos;
     }
-    
+
     void flushTextUpTo(int pos) {
       if (textRunStart >= 0 && textRunStart < pos) {
-        spans.add(Span.text(textRunStart, pos, InlineStyle.PLAIN));
+        spans.add(Span_text(textRunStart, pos));
       }
       textRunStart = -1;
     };
@@ -410,49 +422,150 @@ public class Markdownish {
 
     void flushWsUpTo(int pos) {
       if (wsRunStart >= 0 && wsRunStart < pos) {
-        spans.add(Span.space(wsRunStart, pos));
+        spans.add(Span_space(wsRunStart, pos));
       }
       wsRunStart = -1;
     };
+
+    void flushAllUpTo(int pos) {
+      flushTextUpTo(pos);
+      flushWsUpTo(pos);
+    }
   }
 
-  // parse the single line of src text [s, e) into Spans
-  private ArrayList<Span> parseLineSpans(int s, int e) {
-   
-    // do NOT strip leading spaces and tabs
-    // while (s < e && isSpaceOrTab(src.charAt(s))) s++;
-    
-    // do NOT strip trailing spaces and tabs
-    // while (s < e && isSpaceOrTab(src.charAt(e-1))) e++;
-    
-    SpanList c = new SpanList();
-    while (s < e) {
+  // Parse the single line of src text [s, e) into Spans.
+  // Approximately, this handles...
+  //  (1) most regular text and punctuation --> TEXT
+  //  (2) sequence of 2 or more spaces before EOL --> HARDBREAK
+  //  (3) sequence of spaces and tabs elsewhere --> SPACE
+  //  (4) escaped punctuation --> TEXT
+  //  (5) unescaped backslash before EOL --> HARDBREAK
+  //  (6) unescaped backslash elsewhere --> TEXT
+  //  (7) left or right flanking delimiter run of * or _ chars --> DELIM
+  private ArrayList<Span> parseLineSpans(int ls, int le) {
+    SpanList out = new SpanList();
+
+    // (2) or (5): find and strip trailing hardbreak, if present
+    int hb = trailingHardBreak(ls, le);
+    int e = hb < 0 ? le : hb;
+
+    // Process remaining text
+    for (int s = ls; s < e; s++) {
       char ch = src.charAt(s);
-      if (isSpaceOrTab(ch)) {
-        c.flushTextUpTo(s);
-        c.markWs(s);
+
+      if (ch == '\\' && s + 1 < e && isAsciiPunct(src.charAt(s+1))) {
+        // (4) escaped punctuation --> TEXT
+        out.flushAllUpTo(s);
+        s++; // swallow escape
+        out.spans.add(Span_text(s, s+1)); // just the punctuation
+      } else if (ch == '*' || ch == '_') {
+        // (7) unescaped delimiters --> DELIM
+        out.flushAllUpTo(s);
+        int count = 0;
+        while (src.charAt(s+count) == ch)
+          count++;
+        out.spans.add(Span_delim(s, s+count));
+        s += count-1;
+      } else if (ch == ' ' || ch == '\t') {
+        // (3) sequence of spaces and tabs --> SPACE
+        out.flushTextUpTo(s);
+        out.markWs(s);
       } else {
-        c.flushWsUpTo(s);
-        c.markText(s);
+        // (1) regular text and punctuation, or (6) unescaped backslash --> TEXT
+        out.flushWsUpTo(s);
+        out.markText(s);
       }
-      s++;
     }
-    c.flushTextUpTo(s);
-    c.flushWsUpTo(s);
-    return c.spans;
+    out.flushAllUpTo(e);
+
+    // Append hardbreak, if needed
+    if (hb >= 0)
+      out.spans.add(Span_hardbreak(hb, le));
+    
+    return out.spans;
+  }
+
+  // Scan the raw spans and apply styles.
+  // Approximately, this means:
+  // (1) Remove misplaced trailing HARDBREAK, or convert it to TEXT
+  // (2) Remove matched DELIM spans, and apply style to the spans they encompass
+  private ArrayList<Span> applyInlineStyles(ArrayList<Span> raw) {
+    ArrayList<Span> out = new ArrayList<>();
+    int n = raw.size();
+
+    if (n ==  0)
+      return out;
+
+    // detect misplaced trailing hardbreak
+    Span misplacedHardbreak = null;
+    if (raw.get(n - 1).type == SpanType.HARDBREAK) {
+      misplacedHardbreak = raw.get(n - 1);
+      n--;
+    }
+
+    // identify DELIM pairings
+    for (int i = 0; i < n; i++) {
+      Span span = raw.get(i);
+      if (span.type == SpanType.DELIM && span.canPairLeft()) {
+        // search rightward, first match wins
+        for (int j = i+1; j < n; j++) {
+          Span right = raw.get(j);
+          if (right.canPairRight() && span.matchingDelim(right)) {
+            span.pairedLeft = true;
+            right.pairedRight = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // apply styles and remove matched DELIM spans
+    int bold = 0, italic = 0;
+    for (int i = 0; i < n; i++) {
+      Span span = raw.get(i);
+      if (span.type == SpanType.DELIM && span.pairedLeft) {
+        int delimLen = span.end - span.start;
+        if (delimLen == 1) { italic++; }
+        else if (delimLen == 2) { bold++; }
+        else if (delimLen >= 3) { italic++; bold++; } // note: non-standard
+        // do not emit 
+      } else if (span.type == SpanType.DELIM && span.pairedRight) {
+        int delimLen = span.end - span.start;
+        if (delimLen == 1) { italic--; }
+        else if (delimLen == 2) { bold--; }
+        else if (delimLen >= 3) { italic--; bold--; } // note: non-standard
+        // do not emit 
+      } else {
+        if (bold > 0) span.style |= BOLD;
+        if (italic > 0) span.style |= ITALIC;
+        // emit
+        out.add(span);
+      }
+    }
+
+    // convert misplaced trailing hardbreak to TEXT if it was a backslash
+    if (misplacedHardbreak != null && src.charAt(misplacedHardbreak.start) == '\\')
+      out.add(Span_text(misplacedHardbreak.start, misplacedHardbreak.end));
+
+    return out;
+  }
+
+  private int countTrailing(int ls, int le, char ch) {
+    int count = 0;
+    for(int e = le-1; ls <= e && src.charAt(e) == ch; e--)
+      count++;
+    return count;
   }
 
   private int trailingHardBreak(int ls, int le) {
-    if (ls < le-1 && src.charAt(le-1) == ' ' && src.charAt(le-2) == ' ')
-      return le-1; // double space before EOL is a hard-break
-    // count backslashes
-    int e = le-1, count = 0;
-    while (ls < e && src.charAt(e) == '\\') {
-      count++;
-      e--;
-    }
+    // 2 or more spaces before EOL is a hard-break
+    int count = countTrailing(ls, le, ' ');
+    if (count >= 2)
+      return le - count;
+    // 1 backslash before EOL is a hard-break, but only if odd number of backslashes
+    count = countTrailing(ls, le, '\\');
     if (count % 2 != 0)
-      return le-1; // odd number of backslashes before EOL is a hard-break
+      return le - 1;
     return -1;
   }
 
@@ -477,7 +590,7 @@ public class Markdownish {
     return true;
   }
 
-  private boolean parseHeaderLine(int ls, int le) {
+  private Block parseHeaderLine(int ls, int le) {
     int s = ls, e = le;
     // ignore up to 3 leading spaces
     if (s < e && src.charAt(s) == ' ') s++;
@@ -488,11 +601,11 @@ public class Markdownish {
     for (int i = s; lvl < 6 && i < e && src.charAt(i) == '#'; i++)
       lvl++;
     if (lvl < 1 || lvl > 6)
-      return false;
+      return null;
     s += lvl;
     // followed by EOL, space, or tab
     if (s != e && !isSpaceOrTab(src.charAt(s)))
-      return false;
+      return null;
     // strip leading spaces and tabs
     while (s < e && isSpaceOrTab(src.charAt(s))) s++;
     // strip trailing spaces and tabs
@@ -508,13 +621,216 @@ public class Markdownish {
     if (s == e) {
       // empty header: to preserve the index mapping, we include an empty SPACE span
       ArrayList<Span> spans = new ArrayList<>();
-      spans.add(Span.space(s, e));
-      emitHeader(spans, lvl);
+      spans.add(Span_space(s, e));
+      return new Block(BlockType.HEADER, spans, lvl, false);
     } else {
       ArrayList<Span> spans = parseLineSpans(s, e);
-      emitHeader(spans, lvl);
+      spans = applyInlineStyles(spans);
+      return new Block(BlockType.HEADER, spans, lvl, false);
     }
-    return true;
   }
+
+  // GFM/CommonMark: any ASCII punctuation can be backslash-escaped.
+  private static boolean isAsciiPunct(char ch) {
+    // ASCII punctuation set:
+    // !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+    return (ch >= 0x21 && ch <= 0x2F)
+      || (ch >= 0x3A && ch <= 0x40)
+      || (ch >= 0x5B && ch <= 0x60)
+      || (ch >= 0x7B && ch <= 0x7E);
+  }
+
+  private void applyInlineStylesAndEmitParagraphs(ArrayList<Span> raw) {
+    // apply styles
+    ArrayList<Span> cooked = applyInlineStyles(raw);
+    // split into sections
+    ArrayList<Span> section = new ArrayList<>();
+    boolean cont = false;
+    for (Span span : cooked) {
+      if (span.type == SpanType.DELIM && span.start == span.end) {
+        // drop paired delim
+        continue;
+      } else if (span.type == SpanType.HARDBREAK) {
+        // Emit current section (possibly empty)
+        emitParagraph(section, cont);
+        section = new ArrayList<>();
+        cont = true;
+      } else {
+        section.add(span);
+      }
+    }
+    emitParagraph(section, cont);
+  }
+
+ /* private ArrayList<Span> applyInlineStyles(ArrayList<Span> raw) {
+    ArrayList<Span> out = new ArrayList<>();
+
+    // Stacks hold DELIM indices in the output list
+    ArrayList<Integer> emphStack = new ArrayList<>();  // for * and _
+    ArrayList<Integer> codeStack = new ArrayList<>();  // for backticks
+
+    int codeTickLen = 0;
+
+    for (Span span: raw) {
+
+      if (span.type == SpanType.SPACE || span.type == SpanType.HARDBREAK) {
+        run.flushUpTo(span.start);
+        out.add(span);
+        continue;
+      }
+
+      // TEXT span: scan characters
+      int p = span.start;
+      while (p < span.end) {
+        char ch = src.charAt(p);
+
+        // Inside code: everything is literal CODE text, except a matching backtick run closes.
+        // if (codeTickLen > 0) {
+        //   if (ch == '`') {
+        //     int q = p;
+        //     while (q < span.end && src.charAt(q) == '`') q++;
+        //     int len = q - p;
+        //     if (len == codeTickLen) {
+        //       // close code: emit nothing for delimiter, remove open marker and this marker
+        //       run.flushUpTo(p);
+
+        //       // create closing marker in out so we can pair/remove cleanly
+        //       Span close = Span_delim(p, q, '`', len); // you implement Span_delim(...)
+        //       out.add(close);
+        //       int closeIdx = out.size() - 1;
+
+        //       // find opener (must match len)
+        //       int openIdx = -1;
+        //       for (int t = codeStack.size() - 1; t >= 0; t--) {
+        //         int idx = codeStack.get(t);
+        //         Span open = out.get(idx);
+        //         if (open.delimChar == '`' && open.delimLen == len) { openIdx = idx; codeStack.remove(t); break; }
+        //       }
+
+        //       if (openIdx >= 0) {
+        //         // remove close then open (remove higher index first)
+        //         out.remove(closeIdx);
+        //         // adjust openIdx if needed (closeIdx > openIdx always here)
+        //         out.remove(openIdx);
+        //         // code style already applied while inside; nothing else to do
+        //       } else {
+        //         // should not happen, but if it does: treat close delimiter literally
+        //         out.set(closeIdx, Span_text(p, q, InlineStyle.CODE));
+        //       }
+
+        //       codeTickLen = 0;
+        //       p = q;
+        //       continue;
+        //     }
+        //   }
+
+        //   // normal code character (or non-matching backticks)
+        //   InlineStyle styleNow = InlineStyle.CODE;
+        //   run.ensureAt(p, styleNow);
+        //   p++;
+        //   continue;
+        // }
+
+        // Not inside code:
+
+        // Backslash escapes (GFM): backslash + ASCII punct => literal punct, backslash removed
+        if (ch == '\\' && p + 1 < span.end) {
+          char nxt = src.charAt(p + 1);
+          if (isAsciiPunct(nxt)) {
+            run.flushUpTo(p);
+            // emit a TEXT span that maps to [p,p+2) but renders only nxt
+            out.add(Span_textOverride(p, p + 2, InlineStyle.PLAIN, String.valueOf(nxt)));
+            p += 2;
+            continue;
+          }
+        }
+
+        // Code span open?
+        if (ch == '`') {
+          int q = p;
+          while (q < span.end && src.charAt(q) == '`') q++;
+          int len = q - p;
+
+          run.flushUpTo(p);
+          Span open = Span_delim(p, q, '`', len);
+          out.add(open);
+          codeStack.add(out.size() - 1);
+          codeTickLen = len;
+
+          p = q;
+          continue;
+        }
+
+        // Emphasis delimiter run (* or _) length 1..3
+        if (ch == '*' || ch == '_') {
+          int q = p;
+          int len = 0;
+          while (q < span.end && src.charAt(q) == ch && len < 3) { q++; len++; }
+
+          // If there are >3 in a row, treat just one char literally (first-pass)
+          if (q < span.end && src.charAt(q) == ch) {
+            InlineStyle styleNow = InlineStyle.PLAIN;
+            run.ensureAt(p, styleNow);
+            p++;
+            continue;
+          }
+
+          run.flushUpTo(p);
+
+          int mask = (len == 1) ? 1 : (len == 2) ? 2 : 3;
+
+          // Emit delimiter marker
+          Span del = Span_delim(p, q, ch, len);
+          out.add(del);
+          int closeIdx = out.size() - 1;
+
+          // Try to find a matching opener (same char + same mask/len)
+          int openIdx = -1;
+          for (int t = emphStack.size() - 1; t >= 0; t--) {
+            int idx = emphStack.get(t);
+            Span open = out.get(idx);
+            if (open.delimChar == ch && open.delimLen == len) { openIdx = idx; emphStack.remove(t); break; }
+          }
+
+          if (openIdx >= 0) {
+            // Apply style retroactively while delimiter spans are still present.
+            // (We need the original indices.)
+            retro.applyEmphasis(openIdx, closeIdx, mask);
+
+            // Now remove close then open
+            out.remove(closeIdx);
+            out.remove(openIdx);
+
+          } else {
+            emphStack.add(closeIdx);
+          }
+
+          p = q;
+          continue;
+        }
+
+        // Normal character
+        InlineStyle styleNow = InlineStyle.PLAIN;
+        run.ensureAt(p, styleNow);
+        p++;
+      }
+
+      run.flushUpTo(span.end);
+    }
+
+    // Any remaining delimiter markers are unmatched => convert them to literal TEXT.
+    // For code: unmatched openers become literal backticks.
+    for (int i = 0; i < out.size(); i++) {
+      Span s = out.get(i);
+      if (s.type == SpanType.DELIM) {
+        // Render the literal delimiter text from src substring [start,end)
+        out.set(i, Span_text(s.start, s.end, InlineStyle.PLAIN));
+      }
+    }
+
+    return out;
+  }
+*/
+
 
 }
