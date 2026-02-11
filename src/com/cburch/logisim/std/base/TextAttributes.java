@@ -40,6 +40,8 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.StdAttr;
 
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
+
 class TextAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
@@ -49,6 +51,11 @@ class TextAttributes extends AbstractAttributeSet {
   private static final List<Attribute<?>> ATTRIBUTES_MANUAL_WRAPPING =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
         Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
+        Text.ATTR_FORMAT });
+
+  private static final List<Attribute<?>> ATTRIBUTES_MARKDOWNISH =
+      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
+        Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
         Text.ATTR_FORMAT });
 
   private String text; // note: never contains CRLF or CR, only LF
@@ -80,7 +87,8 @@ class TextAttributes extends AbstractAttributeSet {
 
   @Override
   public List<Attribute<?>> getAttributes() {
-    return isWrapping() ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
+    return isMarkdownish() ? ATTRIBUTES_MARKDOWNISH :
+      isWrapping() ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
   }
 
   Font getFont() {
@@ -88,7 +96,8 @@ class TextAttributes extends AbstractAttributeSet {
   }
 
   int getHorizontalAlign() {
-    return ((Integer) halign.getValue()).intValue();
+    if (isMarkdownish()) return ALIGN.H_LEFT;
+    else return ((Integer) halign.getValue()).intValue();
   }
 
   String getText() {

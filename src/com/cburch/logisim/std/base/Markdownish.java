@@ -943,7 +943,7 @@ public class Markdownish {
 }
 
 // TODO:
-//  - links (web, eventually to built-in help pages)
+//  ~ links (web, eventually to built-in help pages)
 //  - bullets
 //  - tables (for properties)
 //  - truthtables
