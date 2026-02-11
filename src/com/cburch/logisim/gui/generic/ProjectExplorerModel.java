@@ -44,13 +44,20 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.circuit.SubcircuitFactory;
+import com.cburch.logisim.comp.ComponentFactory;
+import com.cburch.logisim.file.LibraryEvent;
+import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
+import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Debug;
 
-class ProjectExplorerModel implements TreeModel, ProjectListener {
+class ProjectExplorerModel implements TreeModel, ProjectListener, LibraryListener {
 
   static abstract class Node<T> {
     protected ProjectExplorerModel model;
@@ -176,6 +183,7 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
     else
       root = new ProjectExplorerLibraryNode(this, proj.getLogisimFile(), null);
     proj.addProjectWeakListener(null, this);
+    proj.addLibraryWeakListener(this);
   }
 
   public void addTreeModelListener(TreeModelListener l) {
@@ -258,6 +266,19 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
     }
   }
 
+  public void libraryChanged(LibraryEvent event) {
+    int act = event.getAction();
+    if (act == LibraryEvent.SET_MAIN) {
+      Node<?> node;
+      node = findCircuit(root, (Circuit)event.getOldData());
+      if (node != null)
+        node.fireAppearanceChanged();
+      node = findCircuit(root, (Circuit)event.getData());
+      if (node != null)
+        node.fireAppearanceChanged();
+    }
+  }
+
   private static Node<?> findObject(Node<?> node, Object value) {
     if (node == null)
       return null;
@@ -270,6 +291,41 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
       return node.children.get(i);
     for (Node<?> child : node.children) {
       Node<?> match = findObject(child, value);
+      if (match != null)
+        return match;
+    }
+    return null;
+  }
+
+  private static boolean isNodeForCircuit(Node<?> node, Circuit circuit) {
+    if (!(node instanceof ProjectExplorerToolNode))
+      return false;
+    ProjectExplorerToolNode toolNode = (ProjectExplorerToolNode)node;
+    Tool tool = toolNode.getValue();
+    if (tool instanceof AddTool) {
+      ComponentFactory fact = ((AddTool) tool).getFactory(false);
+      if (fact instanceof SubcircuitFactory) {
+        Circuit circ = ((SubcircuitFactory) fact).getSubcircuit();
+        if (circ == circuit)
+          return true;
+      }
+    }
+    return false;
+  }
+
+  private static Node<?> findCircuit(Node<?> node, Circuit circuit) {
+    if (node == null)
+      return null;
+    if (isNodeForCircuit(node, circuit))
+      return node;
+    if (node.children == null)
+      return null;
+    for (Node<?> child : node.children) {
+      if (isNodeForCircuit(child, circuit))
+        return child;
+    }
+    for (Node<?> child : node.children) {
+      Node<?> match = findCircuit(child, circuit);
       if (match != null)
         return match;
     }
@@ -316,13 +372,17 @@ class ProjectExplorerModel implements TreeModel, ProjectListener {
     if (proj == value)
       return;
 
-    if (proj != null)
+    if (proj != null) {
       proj.removeProjectWeakListener(null, this);
+      proj.removeLibraryWeakListener(this);
+    }
 
     proj = value;
 
-    if (proj != null)
+    if (proj != null) {
       proj.addProjectWeakListener(null, this);
+      proj.addLibraryWeakListener(this);
+    }
 
     setLogisimFile(proj == null ? null : proj.getLogisimFile());
   }

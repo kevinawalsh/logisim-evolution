@@ -329,6 +329,13 @@ public class LogisimFile extends Library implements LibraryEventSource {
     }
   }
 
+  private void fireEvent(int action, Object data, Object oldData) {
+    LibraryEvent e = new LibraryEvent(this, action, data, oldData);
+    for (LibraryListener l : listeners) {
+      l.libraryChanged(e);
+    }
+  }
+
   // fixme: only for moving circuit. Why not indexOf?
   public AddTool getAddTool(Circuit circ) {
     for (AddTool tool : tools) {
@@ -592,8 +599,9 @@ public class LogisimFile extends Library implements LibraryEventSource {
   public void setMainCircuit(Circuit circuit) {
     if (circuit == null)
       return;
+    Circuit oldMain = this.main;
     this.main = circuit;
-    fireEvent(LibraryEvent.SET_MAIN, circuit);
+    fireEvent(LibraryEvent.SET_MAIN, circuit, oldMain);
   }
 
   public void setName(String name) {

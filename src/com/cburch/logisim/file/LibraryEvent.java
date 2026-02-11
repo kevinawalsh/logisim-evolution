@@ -46,7 +46,14 @@ public class LibraryEvent {
 
   private Library source;
   private int action;
-  private Object data;
+  private Object data, oldData;
+  
+  LibraryEvent(Library source, int action, Object data, Object oldData) {
+    this.source = source;
+    this.action = action;
+    this.data = data;
+    this.oldData = oldData;
+  }
 
   LibraryEvent(Library source, int action, Object data) {
     this.source = source;
@@ -60,6 +67,10 @@ public class LibraryEvent {
 
   public Object getData() {
     return data;
+  }
+
+  public Object getOldData() {
+    return oldData;
   }
 
   public Library getSource() {
