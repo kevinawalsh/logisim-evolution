@@ -209,6 +209,13 @@ public class StyledBoxLayout {
 
   }
 
+  public Text.CaretPosition caretPositionForPoint(int px, int py) {
+    StyledBoxLayout.VisualLine vl = lineForY(py);
+    int cursor = snapToGraphemeBoundary(vl.sourcePositionForX(px));
+    boolean revBias = vl.getBiasForX(px);
+    return new Text.CaretPosition(bounds.expand(Text.PAD), cursor, revBias);
+  }
+
   public VisualLine lineForY(int py) {
     for (VisualLine vl : lines) {
       if (py < vl.bottomY()) {

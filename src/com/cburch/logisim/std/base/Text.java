@@ -196,6 +196,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     super(name, desc);
     setIconName("comment.png");
     setShouldSnap(false);
+    // setInstancePoker(Poker.class); // WIP: possible implementation for markdown links
   }
 
   @Override
@@ -275,7 +276,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   }
 
-  private static final class CaretPosition {
+  static final class CaretPosition {
     Bounds bounds;
     int cursor;
     boolean revBias;
@@ -345,16 +346,10 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     Font font = attrs.getFont();
     if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH) {
       StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
-      StyledBoxLayout.VisualLine vl = box.lineForY(py);
-      int cursor = box.snapToGraphemeBoundary(vl.sourcePositionForX(px));
-      boolean revBias = vl.getBiasForX(px);
-      return new CaretPosition(box.bounds.expand(PAD), cursor, revBias);
+      return box.caretPositionForPoint(px, py);
     } else {
       BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
-      BoxLayout.VisualLine vl = box.lineForY(py);
-      int cursor = vl.positionForX(px);
-      boolean revBias = (cursor == vl.end);
-      return new CaretPosition(box.bounds.expand(PAD), cursor, revBias);
+      return box.caretPositionForPoint(px, py);
     }
   }
 
@@ -481,4 +476,26 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   int clamp(int val, int min, int max) {
     return Math.min(Math.max(val, min), max);
   }
+
+  // WIP: possible implementation for markdown links
+  // private static class Poker extends InstancePoker {
+  //   @Override
+  //   public void mousePressed(InstanceState state, MouseEvent e) {
+  //     Instance instance = state.getInstance();
+  //     // TextInstanceComponent comp = (TextInstanceComponent)instance.getComponent();
+  //     TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
+  //     if (attrs.getFormat() != TEXT_FORMAT_MARKDOWNISH)
+  //       return;
+  //     StyledBoxLayout.drawMarkdownishText(g, text, loc, textWidth, font, valign);
+  //   }
+  // 
+  //   @Override
+  //   public void mouseReleased(InstanceState state, MouseEvent e) {
+  //     Instance instance = state.getInstance();
+  //     // TextInstanceComponent comp = (TextInstanceComponent)instance.getComponent();
+  //     TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
+  //     if (!attrs.isMarkdownish())
+  //       return;
+  //   }
+  // }
 }

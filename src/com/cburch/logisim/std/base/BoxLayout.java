@@ -211,6 +211,13 @@ public class BoxLayout {
     return lines.get(lines.size() - 1);
   }
 
+  public Text.CaretPosition caretPositionForPoint(int px, int py) {
+    BoxLayout.VisualLine vl = lineForY(py);
+    int cursor = vl.positionForX(px);
+    boolean revBias = (cursor == vl.end);
+    return new Text.CaretPosition(bounds.expand(Text.PAD), cursor, revBias);
+  }
+
   public VisualLine lineForY(int py) {
     for (VisualLine vl : lines) {
       if (py < vl.bottomY()) {

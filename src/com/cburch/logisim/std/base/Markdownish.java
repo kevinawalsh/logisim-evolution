@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.std.base;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator;
@@ -43,7 +44,7 @@ import java.util.ArrayList;
 // removing all carriage returns or replacing them with newlines as appropriate.
 //
 // Features from markdown that mostly work as expected, if used in simple ways:
-//   Headers, paragraphs, (soon) bold, (soon) italics, (soon) inline-code, etc.
+//   Headers, paragraphs, fenced code, bold, italics, inline code, etc.
 //
 // See, github-flavored markdown spec for context: https://github.github.com/gfm/
 //
@@ -57,6 +58,7 @@ import java.util.ArrayList;
 //  - Leading #-space sequence, and trailing spaces and optional trailing "#", are all stripped.
 //  - Within header contents, spaces and tabs are collapsed to single spaces.
 //  - Trailing backslash or spaces have no special meaning.
+//  - All of this is pretty much exactly in line with GFM conventions.
 //
 // Paragraphs - Consecutive non-blank, non-header lines make up a paragraph.
 // Notes:
@@ -64,25 +66,47 @@ import java.util.ArrayList;
 //  - Content is rendered with auto-wrapping to fit width of text box.
 //  - A trailing "\", or 2 or more spaces, directly before a newline, acts like an html <br>,
 //    introducing a hard break into the auto-wrapping layout.
-//  - Such hard-breaks do not leave a gap.
+//  - Such hard-breaks do not leave a inter-paragraph gap.
 //  - Such hard-breaks aren't possible on the last line of a paragraph. That is, a hard break
 //    is inserted iff the backslash-newline or space-space-newline sequence is followed directly by
 //    a line that isn't blank (i.e. it contains somethign other than spaces and tabs) and isn't a
-//    header (i.e. it doesn't start with a #-space or #-newline sequence, etc.)
-//
-// Inline *italics*, **bold**, ***bolditalics***, and `code`
-//  - Underscores work too, but not in the middle of words, as typical.
-//  - Works in headers and paragraphs.
+//    header (i.e. it doesn't start with a #-space or #-newline sequence, etc.) or fenced code
+//    block.
+//  - On the other hands, paragraphs can begin with hard breaks, as many as you like!
 //
 // Fenced code blocks - start/end with 3 or more backticks, can interrupt a paragraph
-//
 // Notes:
-// - Headers and paragraphs are each rendered with some space below (and above) them, unless there
-//   is no other content below (or above) them. Here, "content" means a header or paragraph.
-// - Blank lines are not considered "content". They help define the boundaries of paragraphs, but
-//   are not part of the paragraphs. "Blank line" here means a line with only spaces and tabs.
-// - Gaps before/after headers and paragraphs are not additive, they "overlap". There is no gap at
-//   the start or end of the markdown, only between the headers and paragraphs.
+//  - Tabs at the beginning don't function as 4-spaces, as they do in GFM.
+//  - Tabs probably don't render at all, actually. FIXME?
+//
+// Inline *italics*, **bold**, ***bolditalics***, and `code` - keep it simple please.
+// Notes:
+//  - Underscores work too, but not in the middle of words, as typical.
+//  - Works in headers and paragraphs.
+//  - More than 3 delimiters is the same as 3.
+//  - Nesting is fine, but not partial matches. For example, "***" must match with "***" exactly, it
+//    can't match with a "*" to get italics, then later with "**" to get bold.
+//
+// [link text](http://whatever) - Basic links
+// Notes:
+//  - No titles, just the link text and url, unlike GFM.
+//  - Link text can't have unescaped square brackets, unlike GFM.
+//  - Link square brackets have the same precedence as backticks, unlike GFM.
+//    So `this[is`](code://followed+by+garbled+stuff)
+//    But [this`is](http://a.strange.link/followed)by`backtick
+//  - The url can't have unescpaed parens, unlike GFM.
+//  - The url part can't be surrounded by <angles>, unlike GFM.
+//  - The url can't have newlines, spaces, or tabs. Use %20 and other url escapes instead.
+//  - Spaces around the url are discarded.
+//
+// Other Notes:
+// - Header, paragraph, and fenced code blocks are each rendered with some space below (and above)
+//   them, unless there are no other blocks below (or above) them. 
+// - Gaps before/after blocks are not additive, they "overlap". There is no gap at the start or end
+//   of the markdown, only between the blocks.
+// - Blank lines are mostly not considered "content". They only help define the boundaries of
+//   paragraphs, but are not part of the paragraphs. "Blank line" here means a line with only spaces
+//   and tabs.
 //
 // Index Mapping: We keep a mapping such that for each part of rendered text, we can determine the
 // corresponding index in the original source text. But note:
@@ -152,7 +176,9 @@ public class Markdownish {
         font = baseFont;
       }
 
-      AttrRun prev = null;
+      AttrRun prevFont = null;
+      AttrRun prevUnderline = null;
+      AttrRun prevColor = null;
       for (Span span : spans) {
         int outStart = sb.length();
         span.renderTo(sb);
@@ -161,16 +187,36 @@ public class Markdownish {
 
         runs.add(new AttrRun(outStart, outEnd, SPAN_ID, span));
 
+        // Apply font, merging with previous run if same value and adjacent
         Font f = adjustForStyle(font, span.style);
-
-        // Merge with previous run if same font and adjacent
-        if (prev != null && prev.end == outStart && prev.value.equals(f)) {
-          prev.end = outEnd;
+        if (prevFont != null && prevFont.end == outStart && prevFont.value.equals(f)) {
+          prevFont.end = outEnd;
         } else {
           AttrRun run = new AttrRun(outStart, outEnd, TextAttribute.FONT, f);
           runs.add(run);
-          prev = run;
+          prevFont = run;
         }
+
+        // Apply underlining, merging with previous run if same value and adjacent
+        Object u = (span.style & CLICKABLE) != 0 ? TextAttribute.UNDERLINE_ON : null;
+        if (prevUnderline != null && prevUnderline.end == outStart && prevUnderline.value.equals(u)) {
+          prevUnderline.end = outEnd;
+        } else if (u != null) {
+          AttrRun run = new AttrRun(outStart, outEnd, TextAttribute.UNDERLINE, u);
+          runs.add(run);
+          prevUnderline = run;
+        }
+
+        // Apply color, merging with previous run if same value and adjacent
+        Color c = (span.style & CLICKABLE) != 0 ? new Color(155, 155, 0, 128) : null;
+        if (prevColor != null && prevColor.end == outStart && prevColor.value.equals(c)) {
+          prevColor.end = outEnd;
+        } else if (c != null) {
+          AttrRun run = new AttrRun(outStart, outEnd, TextAttribute.BACKGROUND, c);
+          runs.add(run);
+          prevColor = run;
+        }
+
       }
       AttributedString as = new AttributedString(sb.toString());
       for (AttrRun r : runs)
@@ -218,11 +264,12 @@ public class Markdownish {
   static final int BOLD = 2;
   static final int ITALIC = 4;
   static final int BOLD_ITALIC = BOLD|ITALIC;
+  static final int CLICKABLE = 8;
   
   Font adjustForStyle(Font font, int style) {
     if ((style & MONOSPACE) != 0)
       font = monoFont.deriveFont(font.getStyle(), font.getSize2D());
-    switch (style & ~MONOSPACE) {
+    switch (style & (BOLD | ITALIC)) {
       case BOLD:
         return font.deriveFont(font.getStyle() | Font.BOLD);
       case ITALIC:
@@ -239,6 +286,8 @@ public class Markdownish {
     TEXT,      // TEXT renders directly from src indices [start, end)
     SPACE,     // SPACE renders as " "
     CODE_SPAN, // renders from src indices [start, end) but replaces newlines with spaces
+    // LINK_BEGIN,// LINK_BEGIN and LINK_END render as U+200B (zero width space), and change the
+    // LINK_END,  // styling and mouse/click handling of any span between them.
     HARDBREAK, // HARDBREAK is not rendered
                // Note: a misspaced hardbreak at the end of a paragraph is replaced by TEXT
                // just before applying styles, and all remaining hardbreaks are removed
@@ -263,6 +312,7 @@ public class Markdownish {
     int style;           // adjusted during second stage of parsing
     boolean pairedLeft;  // DELIM is the left part of a matching pair
     boolean pairedRight; // DELIM is the right part of a matching pair
+    String url;          // for spans that are part of a link
 
     Span(SpanType t, int s, int e) {
       type = t;
@@ -365,70 +415,6 @@ public class Markdownish {
     }
   }
 
-
-  private final class SpanList {
-    ArrayList<Span> spans = new ArrayList<>();
-    int spaceRunStart = -1; // spaces, tabs, newlines
-    int textRunStart = -1; // anything else
-
-    void startOfText(int pos) {
-      endOfSpace(pos);
-      removeLeadingSpace();
-      if (textRunStart < 0)
-        textRunStart = pos;
-    }
-
-    void endOfText(int pos) {
-      if (textRunStart >= 0 && textRunStart < pos)
-        spans.add(Span_text(textRunStart, pos));
-      textRunStart = -1;
-    };
-
-    void startOfSpace(int pos) {
-      endOfText(pos);
-      if (spaceRunStart < 0)
-        spaceRunStart = pos;
-    }
-
-    void endOfSpace(int pos) {
-      if (spaceRunStart >= 0 && spaceRunStart < pos)
-        spans.add(Span_space(spaceRunStart, pos));
-      spaceRunStart = -1;
-    };
-
-    boolean hasTwoSpacesBefore(int pos) {
-      if (spaceRunStart < 0)
-        return false;
-      if (pos - spaceRunStart < 2)
-        return false;
-      return src.charAt(pos-1) == ' ' && src.charAt(pos-2) == ' ';
-    }
-
-    void flush(int pos) {
-      endOfText(pos);
-      endOfSpace(pos);
-    }
-    
-    void removeLeadingSpace() {
-      int n = spans.size();
-      if (n == 1 && spans.get(0).type == SpanType.SPACE)
-        spans.remove(0);
-      else if (n >= 2
-          && spans.get(n-2).type == SpanType.HARDBREAK
-          && spans.get(n-1).type == SpanType.SPACE)
-        spans.remove(n-1);
-    }
-
-    void addSpaceIfEmptySection(int pos) {
-      if (spans.isEmpty() || spans.get(spans.size() - 1).type == SpanType.HARDBREAK) {
-        if (pos > 0 && isSpaceOrTabOrNewline(src.charAt(pos-1)))
-          spans.add(Span_space(pos-1, pos));
-        else
-          spans.add(Span_space(pos, pos+1)); // src is not actually a space, but oh well
-      }
-    }
-  }
-
   // Parse src text [ps, pe) as inline spans. 
   // Precondition:
   //  There are no blank lines within [ps, pe)
@@ -444,6 +430,7 @@ public class Markdownish {
   //  (8) newline --> SPACE
   //  (9) backticks around text --> CODE
   //  (10) unmatched backticks --> TEXT
+  //  (11) [inline](url) --> LINK_BEGIN, ..., LINK_END
   // Postconditions for resulting list:
   //  (a) List is not empty
   //      (we insert a SPACE, if needed)
@@ -453,101 +440,248 @@ public class Markdownish {
   //      unless it is the only span in that section
   //      (we omit leading and trailing SPACE, where possible)
   private ArrayList<Span> parseInlineSpans(int ps, int pe) {
-    SpanList out = new SpanList();
     
     // (0) strip trailing spaces, tabs, and newlines
-    while (ps < pe && isSpaceOrTabOrNewline(src.charAt(pe-1))) pe++;
+    while (ps < pe && isSpaceOrTabOrNewline(src.charAt(pe-1))) pe--;
     
     // (0) strip leading spaces, tabs, and newlines
     while (ps < pe && isSpaceOrTabOrNewline(src.charAt(ps))) ps++;
 
     // Process remaining text
-    for (int s = ps; s < pe; s++) {
-      char ch = src.charAt(s);
+    return new InlineSpanParser(ps, pe).parse();
+  }
 
-      if (ch == '`') {
-        int delimLen = 1;
-        while (s+delimLen < pe && src.charAt(s+delimLen) == '`')
-          delimLen++;
-        int cs = s+delimLen;
-        int ce = cs+1;
-        int ticks = 0;
-        boolean found = false;
-        boolean allBlank = true;
-        while (!found && ce < pe+1) {
-          ch = ce == pe ? '\0' : src.charAt(ce);
-          if (ch == '`') {
-            ticks++;
-            ce++;
-          } else if (ticks == delimLen) {
-            found = true;
-            ce -= ticks;
-          } else {
-            if (ticks > 0 || !isSpaceOrTabOrNewline(ch))
-              allBlank = false;
-            ticks = 0;
-            ce++;
-          }
-        }
-        if (!found) {
-          // (10) unmatched backticks --> TEXT
-          out.startOfText(s);
-          s = cs - 1;
-          out.startOfText(s);
+  private final class InlineSpanParser {
+    ArrayList<Span> spans = new ArrayList<>();
+    int spaceRunStart = -1; // spaces, tabs, newlines
+    int textRunStart = -1; // anything else
+    int pos, end;
+
+    InlineSpanParser(int ps, int pe) { pos = ps; end = pe; }
+    ArrayList<Span> parse() {
+      for (; pos < end; pos++) {
+        char ch = src.charAt(pos);
+
+        if (ch == '`') {
+          // possibly the start of an inline code span
+          parseInlineCode();
+        } else if (ch == '[' && parseLink()) {
+          //  (11) [inline](url) --> LINK_BEGIN, ..., LINK_END
+        } else if (ch == '\\' && (pos + 1 == end || src.charAt(pos+1) == '\n')) {
+          // (5) unescaped backslash before newline or end --> HARDBREAK
+          markAsOther();
+          addSpaceIfEmptySection(); // ensure no hardbreak at start, no consecutive hardbreak
+          spans.add(Span_hardbreak(pos, pos+1)); // just the backslash
+        } else if (ch == '\n' && haveTwoSpacesBefore()) {
+          // (2) sequence of 2 or more spaces before newline --> HARDBREAK
+          int hb = pos;
+          pos = spaceRunStart; // rewind to start of recent spaces
+          spaceRunStart = -1; // cancel recent spaces
+          addSpaceIfEmptySection(); // ensure no hardbreak at start, no consecutive hardbreak
+          spans.add(Span_hardbreak(pos, hb)); // just the whitespace
+          pos = hb; //  fast-forward back to where we started
+        } else if (ch == '\\' && pos + 1 < end && isAsciiPunct(src.charAt(pos+1))) {
+          // (4) escaped punctuation --> TEXT
+          markAsOther();
+          removeLeadingSpace();
+          pos++; // swallow escape
+          spans.add(Span_text(pos, pos+1)); // just the punctuation
+        } else if (ch == '*' || ch == '_') {
+          // (7) unescaped delimiters --> DELIM
+          markAsOther();
+          removeLeadingSpace();
+          int count = 0;
+          while (src.charAt(pos+count) == ch)
+            count++;
+          spans.add(Span_delim(pos, pos+count));
+          pos += count-1; // fast-forward
+        } else if (ch == ' ' || ch == '\t' || ch == '\n') {
+          // (3) sequence of spaces and tabs --> SPACE
+          // (8) newline --> SPACE
+          markAsSpace();
         } else {
-          s += ce + delimLen - 1;
-          // (9) backticks around text --> CODE
-          // [cs, ce) is the code, it will be non-empty
-          if (!allBlank && src.charAt(cs) == ' ' && src.charAt(ce-1) == ' ') {
-            cs++;
-            ce--;
-          }
-          out.flush(s);
-          out.removeLeadingSpace();
-          out.spans.add(Span_code(cs, ce));
+          // (1) regular text and punctuation --> TEXT
+          // (6) unescaped backslash --> TEXT
+          markAsText();
         }
-      } if (ch == '\\' && (s + 1 == pe || src.charAt(s+1) == '\n')) {
-        // (5) unescaped backslash before newline or pe --> HARDBREAK
-        out.flush(s);
-        out.addSpaceIfEmptySection(s); // ensure no hardbreak at start, no consecutive hardbreak
-        out.spans.add(Span_hardbreak(s, s+1)); // just the backslash
-      } else if (ch == '\n' && out.hasTwoSpacesBefore(s)) {
-        // (2) sequence of 2 or more spaces before newline --> HARDBREAK
-        out.flush(s);
-        int hbStart = out.spaceRunStart;
-        out.spaceRunStart = -1;
-        out.addSpaceIfEmptySection(hbStart); // ensure no hardbreak at start, no consecutive hardbreak
-        out.spans.add(Span_hardbreak(hbStart, s-1)); // just the whitespace
-      } else if (ch == '\\' && s + 1 < pe && isAsciiPunct(src.charAt(s+1))) {
-        // (4) escaped punctuation --> TEXT
-        out.flush(s);
-        out.removeLeadingSpace();
-        s++; // swallow escape
-        out.spans.add(Span_text(s, s+1)); // just the punctuation
-      } else if (ch == '*' || ch == '_') {
-        // (7) unescaped delimiters --> DELIM
-        out.flush(s);
-        out.removeLeadingSpace();
-        int count = 0;
-        while (src.charAt(s+count) == ch)
-          count++;
-        out.spans.add(Span_delim(s, s+count));
-        s += count-1;
-      } else if (ch == ' ' || ch == '\t' || ch == '\n') {
-        // (3) sequence of spaces and tabs --> SPACE
-        // (8) newline --> SPACE
-        out.startOfSpace(s);
+      }
+      pos = end; // just in case we overshot
+      markAsOther();
+      addSpaceIfEmptySection();
+
+      return spans;
+    }
+
+    void parseInlineCode() {
+      // possibly the start of an inline code span
+      int delimLen = 1;
+      while (pos+delimLen < end && src.charAt(pos+delimLen) == '`')
+        delimLen++;
+      int cs = pos+delimLen;
+      int ce = cs+1;
+      int ticks = 0;
+      boolean found = false;
+      boolean allBlank = true;
+      while (!found && ce < end+1) {
+        char ch = ce == end ? '\0' : src.charAt(ce);
+        if (ch == '`') {
+          ticks++;
+          ce++;
+        } else if (ticks == delimLen) {
+          found = true;
+          ce -= ticks;
+        } else {
+          if (ticks > 0 || !isSpaceOrTabOrNewline(ch))
+            allBlank = false;
+          ticks = 0;
+          ce++;
+        }
+      }
+      if (!found) {
+        // (10) unmatched backticks --> TEXT
+        markAsText();
+        pos = cs - 1; // fast-forward to end of delimiter run
+        markAsText();
       } else {
-        // (1) regular text and punctuation --> TEXT
-        // (6) unescaped backslash --> TEXT
-        out.startOfText(s);
+        // (9) backticks around text --> CODE
+        // [cs, ce) is the code, it will be non-empty
+        markAsOther();
+        pos += ce + delimLen - 1; // consume
+        if (!allBlank && src.charAt(cs) == ' ' && src.charAt(ce-1) == ' ') {
+          cs++;
+          ce--;
+        }
+        removeLeadingSpace();
+        spans.add(Span_code(cs, ce));
       }
     }
-    out.flush(pe);
-    out.addSpaceIfEmptySection(pe);
+
+    boolean parseLink() {
+      // ensure open brace
+      if (pos == end || src.charAt(pos) != '[')
+        return false;
+      int openBrace = pos;
+
+      // ensure close brace
+      int closeBrace = -1;
+      boolean escaped = false;
+      for (int p = openBrace + 1; closeBrace < 0 && p < end; p++) {
+        char ch = src.charAt(p);
+        if (!escaped && ch == ']') closeBrace = p;
+        else if (ch  == '\\') escaped = !escaped;
+        else escaped = false;
+      }
+      if (closeBrace < 0)
+        return false;
+   
+      // ensure open paren
+      if (closeBrace + 1 == end || src.charAt(closeBrace + 1) != '(')
+        return false;
+      int openParen = closeBrace + 1;
+
+      // ensure close paren
+      int closeParen = -1;
+      escaped = false;
+      for (int p = openParen + 1; closeParen < 0 && p < end; p++) {
+        char ch = src.charAt(p);
+        if (!escaped && ch == ')') closeParen = p;
+        else if (ch == '\\') escaped = !escaped;
+        else if (ch == '\t' || ch == '\n') return false; // disallow tabs and newlines in url
+        else escaped = false;
+      }
+      if (closeParen < 0)
+        return false;
     
-    return out.spans;
+      // trim leading and trailing spaces around url
+      int urlStart = openParen + 1, urlEnd = closeParen;
+      while (urlStart < urlEnd && src.charAt(urlStart) == ' ') urlStart++;
+      while (urlStart < urlEnd && src.charAt(urlEnd - 1) == ' ') urlEnd--;
+
+      // we never bothered to check for spaces in url, oh well
+      String url = src.substring(urlStart, urlEnd);
+
+      markAsOther();
+      pos = closeParen; // fast-forward
+     
+      // // LINK_BEGIN
+      // Span linkBegin = new Span(SpanType.LINK_BEGIN, openBrace, openBrace+1);
+      // linkBegin.url = url;
+      // spans.add(linkBegin);
+
+      // link text
+      ArrayList<Span> linkText = parseInlineSpans(openBrace+1, closeBrace);
+      for (Span span : linkText) {
+        span.style |= CLICKABLE;
+        span.url = url; // good enough? we'll see
+      }
+      spans.addAll(linkText);
+
+      // // LINK_END
+      // Span linkEnd = new Span(SpanType.LINK_END, openBrace, openBrace+1);
+      // linkEnd.url = url;
+      // spans.add(linkEnd);
+
+      return true;
+    }
+
+    void markAsText() {
+      endOfSpace();
+      removeLeadingSpace();
+      if (textRunStart < 0)
+        textRunStart = pos;
+    }
+
+    void endOfText() {
+      if (textRunStart >= 0 && textRunStart < pos)
+        spans.add(Span_text(textRunStart, pos));
+      textRunStart = -1;
+    };
+
+    void markAsSpace() {
+      endOfText();
+      if (spaceRunStart < 0)
+        spaceRunStart = pos;
+    }
+
+    void endOfSpace() {
+      if (spaceRunStart >= 0 && spaceRunStart < pos)
+        spans.add(Span_space(spaceRunStart, pos));
+      spaceRunStart = -1;
+    };
+
+    boolean haveTwoSpacesBefore() {
+      if (spaceRunStart < 0)
+        return false;
+      if (pos - spaceRunStart < 2)
+        return false;
+      return src.charAt(pos-1) == ' ' && src.charAt(pos-2) == ' ';
+    }
+
+    void markAsOther() {
+      endOfText();
+      endOfSpace();
+    }
+    
+    void removeLeadingSpace() {
+      int n = spans.size();
+      if (n == 1 && spans.get(0).type == SpanType.SPACE)
+        spans.remove(0);
+      else if (n >= 2
+          && spans.get(n-2).type == SpanType.HARDBREAK
+          && spans.get(n-1).type == SpanType.SPACE)
+        spans.remove(n-1);
+    }
+
+    void addSpaceIfEmptySection() {
+      if (spans.isEmpty() || spans.get(spans.size() - 1).type == SpanType.HARDBREAK) {
+        if (pos > 0 && isSpaceOrTabOrNewline(src.charAt(pos-1)))
+          spans.add(Span_space(pos-1, pos));
+        else
+          spans.add(Span_space(pos, pos+1)); // src is not actually a space, but oh well
+      }
+    }
   }
+
 
   // Match DELIM spans, and apply corresponding style to the spans they encompass
   private void applyInlineStyles(ArrayList<Span> spans) {
@@ -743,7 +877,7 @@ public class Markdownish {
     for (lvl = 0; lvl < 6 && s < le && src.charAt(s) == '#'; s++)
       lvl++;
     // strip trailing spaces and tabs
-    while (s < e && isSpaceOrTab(src.charAt(e-1))) e++;
+    while (s < e && isSpaceOrTab(src.charAt(e-1))) e--;
     // strip optional trailing space-or-tab-then-### sequence
     int e2 = e;
     while (s < e2 && src.charAt(e2-1) == '#') e2--;
