@@ -99,7 +99,7 @@ public class SerialIn extends InstanceFactory {
     @Override
     public void paint(InstancePainter painter) {
       State state = getState(painter);
-      Graphics2D g = (Graphics2D)painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       Bounds bds = painter.getNominalBounds();
       isOpening = !state.isOpen;
       isClosing = !isOpening && !state.isClosing;
@@ -264,13 +264,13 @@ public class SerialIn extends InstanceFactory {
     int cx = bds.x + bds.width/2;
     int cy = bds.y + bds.height/2;
 
-    drawUsbLogo((Graphics2D)painter.getGraphics(), cx-25, cy-12, 50, 24, Color.BLACK);
+    drawUsbLogo(painter.getGraphics(), cx-25, cy-12, 50, 24, Color.BLACK);
 
     if (painter.getShowState()) {
       State state = (State)painter.getDataAsCustom();
       // Connection status LED
       Color c = (state != null && state.isOpen ? ON_COLOR : OFF_COLOR);
-      Graphics2D g = (Graphics2D)painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       g.setColor(c);
       g.fillRect(bds.x+5, bds.y+bds.height-15, 12, 8);
       g.setColor(Color.GRAY);

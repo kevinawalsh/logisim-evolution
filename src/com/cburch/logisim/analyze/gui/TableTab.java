@@ -31,7 +31,6 @@
 package com.cburch.logisim.analyze.gui;
 import static com.cburch.logisim.analyze.model.Strings.S;
 
-import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -43,7 +42,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -213,7 +211,7 @@ class TableTab extends AnalyzerTab {
       return x;
     }
 
-    void paintHeaders(Graphics g, int x, int y) {
+    void paintHeaders(Graphics2D g, int x, int y) {
       FontMetrics fm = g.getFontMetrics();
       y += fm.getAscent() + 1;
       x += leftPadding;
@@ -226,7 +224,7 @@ class TableTab extends AnalyzerTab {
       }
     }
 
-    void paintRow(Graphics g, FontMetrics fm, int x, int y, int row, boolean isInput) {
+    void paintRow(Graphics2D g, FontMetrics fm, int x, int y, int row, boolean isInput) {
       x += leftPadding;
       int cy = y + fm.getAscent();
       int col = 0;
@@ -383,9 +381,6 @@ class TableTab extends AnalyzerTab {
     return body;
   }
 
-
-  private static Canvas canvas = new Canvas();
-
   private void computePreferredSize() {
     inputVars = table.getInputVariables();
     outputVars = table.getOutputVariables();
@@ -402,8 +397,7 @@ class TableTab extends AnalyzerTab {
     inDim.reset(inputVars);
     outDim.reset(outputVars);
 
-    Graphics g = getGraphics();
-    FontMetrics fm = (g != null ? g.getFontMetrics(HEAD_FONT) : canvas.getFontMetrics(HEAD_FONT));
+    FontMetrics fm = getFontMetrics(HEAD_FONT);
     cellHeight = fm.getHeight();
     inDim.calculate(fm);
     outDim.calculate(fm);
@@ -601,22 +595,17 @@ class TableTab extends AnalyzerTab {
   private class TableBody extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
+      Graphics2D g2 = (Graphics2D)g;
+      Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g2);
       try {
-        paintComponent(g, false, getWidth(), getHeight());
+        paintComponent(g2, false, getWidth(), getHeight());
       } catch (Exception e) {
         // this can happen during transitions between circuits
+      } finally {
+        GraphicsUtil.restoreRenderingHints(g2, oldHints);
       }
     }
-    public void paintComponent(Graphics g, boolean printView, int canvasWidth, int canvasHeight) {
-      /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-      Graphics2D g2 = (Graphics2D)g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
-
+    void paintComponent(Graphics2D g, boolean printView, int canvasWidth, int canvasHeight) {
       if (!printView) {
         super.paintComponent(g);
         caret.paintBackground(g);
@@ -654,18 +643,15 @@ class TableTab extends AnalyzerTab {
   private class TableHeader extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
-      paintComponent(g, false, getWidth(), getHeight());
-    }
-    public void paintComponent(Graphics g, boolean printView, int canvasWidth, int canvasHeight) {
-      /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
       Graphics2D g2 = (Graphics2D)g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
-
+      Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g2);
+      try {
+        paintComponent(g2, false, getWidth(), getHeight());
+      } finally {
+        GraphicsUtil.restoreRenderingHints(g2, oldHints);
+      }
+    }
+    public void paintComponent(Graphics2D g, boolean printView, int canvasWidth, int canvasHeight) {
       if (!printView)
         super.paintComponent(g);
 
@@ -681,7 +667,6 @@ class TableTab extends AnalyzerTab {
 
       g.setColor(Color.BLACK);
       g.setFont(HEAD_FONT);
-      FontMetrics fm = g.getFontMetrics();
       inDim.paintHeaders(g, left, top);
       outDim.paintHeaders(g, left + inDim.width + COLUMNS_HSEP, top);
     }

@@ -29,7 +29,6 @@
  */
 
 package com.cburch.logisim.std.audio;
-import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;

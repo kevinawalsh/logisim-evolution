@@ -31,7 +31,7 @@
 package com.cburch.draw.tools;
 
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.List;
@@ -58,7 +58,7 @@ public abstract class AbstractTool extends CanvasTool {
 	}
 
 	@Override
-	public void draw(Canvas canvas, Graphics g) {
+	public void draw(Canvas canvas, Graphics2D g) {
 	}
 
 	public abstract List<Attribute<?>> getAttributes();

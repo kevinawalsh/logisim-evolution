@@ -125,6 +125,7 @@ public final class CutterTool extends Tool {
         ((WireFactory)c.getFactory()).drawPartialGhost(
             context, COLOR_RECT_SELECT,
             cloc.getX(), cloc.getY(), c.getAttributeSet(), b);
+        context.setGraphics(gBase);
         gDup.dispose();
       }
     }

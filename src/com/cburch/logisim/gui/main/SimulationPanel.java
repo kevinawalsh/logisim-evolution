@@ -235,6 +235,8 @@ class SimulationPanel extends JPanel implements MouseListener {
     // Rounded card background + border
     Graphics2D g2 = (Graphics2D) g.create();
     try {
+      // FIXME: Document why RenderingHints are applied here;
+      // Alternatively, do not apply hints.
       g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
       int arc = 12;

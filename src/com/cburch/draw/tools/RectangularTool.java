@@ -32,7 +32,7 @@ package com.cburch.draw.tools;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -118,7 +118,7 @@ abstract class RectangularTool extends AbstractTool {
 	public abstract CanvasObject createShape(int x, int y, int w, int h);
 
 	@Override
-	public void draw(Canvas canvas, Graphics g) {
+	public void draw(Canvas canvas, Graphics2D g) {
 		Bounds bds = currentBounds;
 		if (active && bds != null && bds != Bounds.EMPTY_BOUNDS) {
 			g.setColor(Color.GRAY);
@@ -127,9 +127,9 @@ abstract class RectangularTool extends AbstractTool {
 		}
 	}
 
-	public abstract void drawShape(Graphics g, int x, int y, int w, int h);
+	public abstract void drawShape(Graphics2D g, int x, int y, int w, int h);
 
-	public abstract void fillShape(Graphics g, int x, int y, int w, int h);
+	public abstract void fillShape(Graphics2D g, int x, int y, int w, int h);
 
 	@Override
 	public Cursor getCursor(Canvas canvas) {

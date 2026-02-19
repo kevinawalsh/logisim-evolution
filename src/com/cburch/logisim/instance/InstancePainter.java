@@ -30,7 +30,7 @@
 
 package com.cburch.logisim.instance;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
@@ -194,7 +194,10 @@ public class InstancePainter implements InstanceState {
     return context.getGateShape();
   }
 
-  public Graphics getGraphics() { // any
+  // Unlike swing/awt Component.getGraphics(), this does *not* create a new
+  // Graphics object, but only borrows the existing Graphics object. The caller
+  // should not dispose it.
+  public Graphics2D getGraphics() { // any
     return context.getGraphics();
   }
 

@@ -269,6 +269,7 @@ public final class SelectTool extends Tool {
         context.setGraphics(gDup);
         c.getFactory().drawGhost(context, COLOR_RECT_SELECT,
             cloc.getX(), cloc.getY(), c.getAttributeSet());
+        context.setGraphics(gBase);
         gDup.dispose();
       }
 
@@ -284,6 +285,7 @@ public final class SelectTool extends Tool {
       context.setGraphics(gDup);
       context.getInstancePainter().setComponent(c);
       handler.drawReshaping(context.getInstancePainter(), start, curDx, curDy);
+      context.setGraphics(gBase);
       gDup.dispose();
     }
   }

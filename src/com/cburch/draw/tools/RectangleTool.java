@@ -31,7 +31,7 @@
 package com.cburch.draw.tools;
 import static com.cburch.draw.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -55,12 +55,12 @@ public class RectangleTool extends RectangularTool {
 	}
 
 	@Override
-	public void drawShape(Graphics g, int x, int y, int w, int h) {
+	public void drawShape(Graphics2D g, int x, int y, int w, int h) {
 		g.drawRect(x, y, w, h);
 	}
 
 	@Override
-	public void fillShape(Graphics g, int x, int y, int w, int h) {
+	public void fillShape(Graphics2D g, int x, int y, int w, int h) {
 		g.fillRect(x, y, w, h);
 	}
 

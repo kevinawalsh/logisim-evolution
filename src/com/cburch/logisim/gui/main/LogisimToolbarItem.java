@@ -35,7 +35,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Composite;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.Icon;
@@ -89,7 +88,7 @@ public class LogisimToolbarItem implements ToolbarItem {
     return menu != null && menu.isEnabled(action);
   }
 
-  public void paintIcon(Component destination, Graphics g) {
+  public void paintIcon(Component destination, Graphics2D g) {
     if (!isSelectable()) {
       Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f);
       ((Graphics2D) g).setComposite(c);

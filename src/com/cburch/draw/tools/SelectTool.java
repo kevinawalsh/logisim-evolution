@@ -33,7 +33,6 @@ import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -119,7 +118,7 @@ public class SelectTool extends AbstractTool {
 	}
 
 	@Override
-	public void draw(Canvas canvas, Graphics g) {
+	public void draw(Canvas canvas, Graphics2D g) {
 		Selection selection = canvas.getSelection();
 		int action = curAction;
 
@@ -144,60 +143,58 @@ public class SelectTool extends AbstractTool {
 		if (gesture != null)
 			moveHandleObj = gesture.getHandle().getObject();
 		if (drawHandles) {
-			// unscale the coordinate system so that the stroke width isn't
-			// scaled
-			double zoom = 1.0;
-			Graphics gCopy = g.create();
-			if (gCopy instanceof Graphics2D) {
-				zoom = canvas.getZoomFactor();
-				if (zoom != 1.0) {
-					((Graphics2D) gCopy).scale(1.0 / zoom, 1.0 / zoom);
-				}
-			}
-			GraphicsUtil.switchToWidth(gCopy, 1);
-
-			int size = (int) Math.ceil(HANDLE_SIZE * Math.sqrt(zoom));
-			int offs = size / 2;
-			for (CanvasObject obj : selection.getSelected()) {
-				List<Handle> handles;
-				if (action == MOVE_HANDLE && obj == moveHandleObj) {
-					handles = obj.getHandles(gesture);
-				} else {
-					handles = obj.getHandles(null);
-				}
-				for (Handle han : handles) {
-					int x = han.getX();
-					int y = han.getY();
-					if (action == MOVE_ALL && dragEffective) {
-						Location delta = selection.getMovingDelta();
-						x += delta.getX();
-						y += delta.getY();
-					}
-					x = (int) Math.round(zoom * x);
-					y = (int) Math.round(zoom * y);
-					gCopy.clearRect(x - offs, y - offs, size, size);
-					gCopy.drawRect(x - offs, y - offs, size, size);
-				}
-			}
-			Handle selHandle = selection.getSelectedHandle();
-			if (selHandle != null) {
-				int x = selHandle.getX();
-				int y = selHandle.getY();
-				if (action == MOVE_ALL && dragEffective) {
-					Location delta = selection.getMovingDelta();
-					x += delta.getX();
-					y += delta.getY();
-				}
-				x = (int) Math.round(zoom * x);
-				y = (int) Math.round(zoom * y);
-				int[] xs = { x - offs, x, x + offs, x };
-				int[] ys = { y, y - offs, y, y + offs };
-				gCopy.setColor(Color.WHITE);
-				gCopy.fillPolygon(xs, ys, 4);
-				gCopy.setColor(Color.BLACK);
-				gCopy.drawPolygon(xs, ys, 4);
-			}
-		}
+			// unscale the coordinate system so that the stroke width isn't scaled
+			Graphics2D gCopy = (Graphics2D)g.create();
+      try {
+        double zoom = canvas.getZoomFactor();
+        if (zoom != 1.0)
+          gCopy.scale(1.0 / zoom, 1.0 / zoom);
+        GraphicsUtil.switchToWidth(gCopy, 1);
+        int size = (int) Math.ceil(HANDLE_SIZE * Math.sqrt(zoom));
+        int offs = size / 2;
+        for (CanvasObject obj : selection.getSelected()) {
+          List<Handle> handles;
+          if (action == MOVE_HANDLE && obj == moveHandleObj) {
+            handles = obj.getHandles(gesture);
+          } else {
+            handles = obj.getHandles(null);
+          }
+          for (Handle han : handles) {
+            int x = han.getX();
+            int y = han.getY();
+            if (action == MOVE_ALL && dragEffective) {
+              Location delta = selection.getMovingDelta();
+              x += delta.getX();
+              y += delta.getY();
+            }
+            x = (int) Math.round(zoom * x);
+            y = (int) Math.round(zoom * y);
+            gCopy.clearRect(x - offs, y - offs, size, size);
+            gCopy.drawRect(x - offs, y - offs, size, size);
+          }
+        }
+        Handle selHandle = selection.getSelectedHandle();
+        if (selHandle != null) {
+          int x = selHandle.getX();
+          int y = selHandle.getY();
+          if (action == MOVE_ALL && dragEffective) {
+            Location delta = selection.getMovingDelta();
+            x += delta.getX();
+            y += delta.getY();
+          }
+          x = (int) Math.round(zoom * x);
+          y = (int) Math.round(zoom * y);
+          int[] xs = { x - offs, x, x + offs, x };
+          int[] ys = { y, y - offs, y, y + offs };
+          gCopy.setColor(Color.WHITE);
+          gCopy.fillPolygon(xs, ys, 4);
+          gCopy.setColor(Color.BLACK);
+          gCopy.drawPolygon(xs, ys, 4);
+        }
+      } finally {
+        gCopy.dispose();
+      }
+    }
 
 		switch (action) {
 		case RECT_SELECT:

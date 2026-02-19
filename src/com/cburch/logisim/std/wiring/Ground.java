@@ -72,31 +72,33 @@ public class Ground extends InstanceFactory {
   }
 
   private void drawInstance(InstancePainter painter, boolean isGhost) {
-    Graphics2D g = (Graphics2D) painter.getGraphics().create();
-    Location loc = painter.getLocation();
-    g.translate(loc.getX(), loc.getY());
+    Graphics2D g = (Graphics2D)painter.getGraphics().create();
+    try {
+      Location loc = painter.getLocation();
+      g.translate(loc.getX(), loc.getY());
 
-    Direction from = painter.getAttributeValue(StdAttr.FACING);
-    int degrees = Direction.EAST.toDegrees() - from.toDegrees();
-    double radians = Math.toRadians((degrees + 360) % 360);
-    g.rotate(radians);
+      Direction from = painter.getAttributeValue(StdAttr.FACING);
+      int degrees = Direction.EAST.toDegrees() - from.toDegrees();
+      double radians = Math.toRadians((degrees + 360) % 360);
+      g.rotate(radians);
 
-    GraphicsUtil.switchToWidth(g, Wire.WIDTH);
-    if (!isGhost && painter.getShowState()) {
-      g.setColor(painter.getPortValue(0).getColor());
+      GraphicsUtil.switchToWidth(g, Wire.WIDTH);
+      if (!isGhost && painter.getShowState()) {
+        g.setColor(painter.getPortValue(0).getColor());
+      }
+      g.drawLine(0, 0, 5, 0);
+
+      GraphicsUtil.switchToWidth(g, 1);
+      if (!isGhost && painter.shouldDrawColor()) {
+        BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
+        g.setColor(Value.repeat(Value.FALSE, width.getWidth()).getColor());
+      }
+      g.drawLine(6, -8, 6, 8);
+      g.drawLine(9, -5, 9, 5);
+      g.drawLine(12, -2, 12, 2);
+    } finally {
+      g.dispose();
     }
-    g.drawLine(0, 0, 5, 0);
-
-    GraphicsUtil.switchToWidth(g, 1);
-    if (!isGhost && painter.shouldDrawColor()) {
-      BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
-      g.setColor(Value.repeat(Value.FALSE, width.getWidth()).getColor());
-    }
-    g.drawLine(6, -8, 6, 8);
-    g.drawLine(9, -5, 9, 5);
-    g.drawLine(12, -2, 12, 2);
-
-    g.dispose();
   }
 
   @Override

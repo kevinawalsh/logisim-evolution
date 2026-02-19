@@ -895,7 +895,7 @@ public class CircuitWires {
   void draw(ComponentDrawContext context, Collection<Component> hidden) {
     boolean showState = context.getShowState();
     CircuitState state = context.getCircuitState();
-    Graphics2D g = (Graphics2D)context.getGraphics();
+    Graphics2D g = context.getGraphics();
     g.setColor(Color.BLACK);
     GraphicsUtil.switchToWidth(g, Wire.WIDTH);
     WireSet highlighted = context.getHighlightedWires();

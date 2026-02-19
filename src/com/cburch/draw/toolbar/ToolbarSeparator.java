@@ -33,7 +33,7 @@ package com.cburch.draw.toolbar;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import javax.swing.JComponent;
 
 public class ToolbarSeparator implements ToolbarItem {
@@ -55,7 +55,7 @@ public class ToolbarSeparator implements ToolbarItem {
 		return false;
 	}
 
-	public void paintIcon(Component destination, Graphics g) {
+	public void paintIcon(Component destination, Graphics2D g) {
     int margin = ToolbarButton.BORDER * 2; // toolbar adds border on all sides
 		Dimension dim = destination.getSize();
     int w = dim.width, h = dim.height, s = size;

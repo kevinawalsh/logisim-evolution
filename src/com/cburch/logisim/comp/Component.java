@@ -104,7 +104,7 @@ public interface Component extends Location.At {
   // component's visual representation, including labels. This may be
   // graphics-sensitive, because precise text metrics can't be determined
   // without a Graphics object. For nearly all components, these bounds are
-  // simply the nomiminal bounds plus, if here is a non-empty label, whatever
+  // simply the nomiminal bounds plus, if there is a non-empty label, whatever
   // space the component's label occupies. For most components without labels,
   // like Wire and Splitter, the visible and nominal sizes are identical. But
   // for Text and Callout, the visible size is computed directly from the text

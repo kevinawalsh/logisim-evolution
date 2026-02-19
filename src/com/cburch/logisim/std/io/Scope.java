@@ -97,7 +97,7 @@ public class Scope extends InstanceFactory {
     @Override
     public void paint(InstancePainter painter) {
       State state = getState(painter);
-      Graphics2D g = (Graphics2D)painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       Bounds bds = painter.getNominalBounds();
       int ax = bds.x + bds.width - 5, ay = bds.y + bds.height - 15;
       int bx = bds.x + bds.width - 5, by = bds.y + bds.height - 5;
@@ -196,6 +196,7 @@ public class Scope extends InstanceFactory {
       if (cnt > domain)
         cnt = domain;
 
+      // The waveform is nicest with anti-aliasing disabled and pure, beveled strokes
       Object aa = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
       Object sc = g.getRenderingHint(RenderingHints.KEY_STROKE_CONTROL);
       Stroke old = g.getStroke();
@@ -282,7 +283,7 @@ public class Scope extends InstanceFactory {
   public void paintInstance(InstancePainter painter) {
 
     AttributeSet attrs = painter.getAttributeSet();
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     
     boolean colorized = painter.shouldDrawColor();

@@ -379,6 +379,8 @@ public class SelectionList extends JTable {
 
     /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
     Graphics2D g2 = (Graphics2D)g;
+    // FIXME: Document why RenderingHints are applied here, and are not restored;
+    // Alternatively, do not apply hints, or restore them.
     g2.setRenderingHint(
         RenderingHints.KEY_TEXT_ANTIALIASING,
         RenderingHints.VALUE_TEXT_ANTIALIAS_ON);

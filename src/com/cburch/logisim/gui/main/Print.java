@@ -61,6 +61,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class Print {
   private static class MyPrintable implements Printable {
@@ -79,6 +80,7 @@ public class Print {
       this.printerView = printerView;
     }
 
+    @Override
     public int print(Graphics base, PageFormat format, int pageIndex) {
       if (pageIndex >= circuits.size())
         return Printable.NO_SUCH_PAGE;
@@ -86,74 +88,78 @@ public class Print {
       Circuit circ = circuits.get(pageIndex);
       CircuitState circState = proj.getCircuitStateForPrinting(circ);
       Graphics2D g = (Graphics2D)base.create();
-      FontMetrics fm = g.getFontMetrics();
-      String head = (header != null && !header.equals("")) ? format(
-          header, pageIndex + 1, circuits.size(), circ.getName())
+      try {
+        GraphicsUtil.setRenderingHintsForCanvas(g);
+        FontMetrics fm = g.getFontMetrics();
+        String head = (header != null && !header.equals("")) ? format(
+            header, pageIndex + 1, circuits.size(), circ.getName())
           : null;
-      int headHeight = (head == null ? 0 : fm.getHeight());
+        int headHeight = (head == null ? 0 : fm.getHeight());
 
-      // Compute image size
-      double imWidth = format.getImageableWidth();
-      double imHeight = format.getImageableHeight();
+        // Compute image size
+        double imWidth = format.getImageableWidth();
+        double imHeight = format.getImageableHeight();
 
-      // Correct coordinate system for page, including
-      // translation and possible rotation.
-      Bounds bds = circ.getCircuitBounds(g).expand(4);
-      double scale = Math.min(imWidth / bds.getWidth(),
-          (imHeight - headHeight) / bds.getHeight());
-      g.translate(format.getImageableX(), format.getImageableY());
-      if (rotateToFit && scale < 1.0 / 1.1) {
-        double scale2 = Math.min(imHeight / bds.getWidth(),
-            (imWidth - headHeight) / bds.getHeight());
-        if (scale2 >= scale * 1.1) { // will rotate
-          scale = scale2;
-          if (imHeight > imWidth) { // portrait -> landscape
-            g.translate(0, imHeight);
-            g.rotate(-Math.PI / 2);
-          } else { // landscape -> portrait
-            g.translate(imWidth, 0);
-            g.rotate(Math.PI / 2);
+        // Correct coordinate system for page, including
+        // translation and possible rotation.
+        Bounds bds = circ.getCircuitBounds(g).expand(4);
+        double scale = Math.min(imWidth / bds.getWidth(),
+            (imHeight - headHeight) / bds.getHeight());
+        g.translate(format.getImageableX(), format.getImageableY());
+        if (rotateToFit && scale < 1.0 / 1.1) {
+          double scale2 = Math.min(imHeight / bds.getWidth(),
+              (imWidth - headHeight) / bds.getHeight());
+          if (scale2 >= scale * 1.1) { // will rotate
+            scale = scale2;
+            if (imHeight > imWidth) { // portrait -> landscape
+              g.translate(0, imHeight);
+              g.rotate(-Math.PI / 2);
+            } else { // landscape -> portrait
+              g.translate(imWidth, 0);
+              g.rotate(Math.PI / 2);
+            }
+            double t = imHeight;
+            imHeight = imWidth;
+            imWidth = t;
           }
-          double t = imHeight;
-          imHeight = imWidth;
-          imWidth = t;
         }
-      }
 
-      // Draw the header line if appropriate
-      if (head != null) {
-        g.drawString(head,
-            (int) Math.round((imWidth - fm.stringWidth(head)) / 2),
-            fm.getAscent());
-        if (g != null) {
-          imHeight -= headHeight;
-          g.translate(0, headHeight);
+        // Draw the header line if appropriate
+        if (head != null) {
+          g.drawString(head,
+              (int) Math.round((imWidth - fm.stringWidth(head)) / 2),
+              fm.getAscent());
+          if (g != null) {
+            imHeight -= headHeight;
+            g.translate(0, headHeight);
+          }
         }
+
+        // Now change coordinate system for circuit, including
+        // translation and possible scaling
+        if (scale < 1.0) {
+          g.scale(scale, scale);
+          imWidth /= scale;
+          imHeight /= scale;
+        }
+        double dx = Math.max(0.0, (imWidth - bds.getWidth()) / 2);
+        g.translate(-bds.getX() + dx, -bds.getY());
+
+        // Ensure that the circuit is eligible to be drawn
+        Rectangle clip = g.getClipBounds();
+        clip.add(bds.getX(), bds.getY());
+        clip.add(bds.getX() + bds.getWidth(), bds.getY() + bds.getHeight());
+        g.setClip(clip);
+
+        // And finally draw the circuit onto the page
+        ComponentDrawContext context = new ComponentDrawContext(proj
+            .getFrame().getCanvas(), circ, circState, base, g,
+            printerView);
+        Collection<Component> noComps = Collections.emptySet();
+        circ.draw(context, noComps);
+      } finally {
+        g.dispose();
       }
-
-      // Now change coordinate system for circuit, including
-      // translation and possible scaling
-      if (scale < 1.0) {
-        g.scale(scale, scale);
-        imWidth /= scale;
-        imHeight /= scale;
-      }
-      double dx = Math.max(0.0, (imWidth - bds.getWidth()) / 2);
-      g.translate(-bds.getX() + dx, -bds.getY());
-
-      // Ensure that the circuit is eligible to be drawn
-      Rectangle clip = g.getClipBounds();
-      clip.add(bds.getX(), bds.getY());
-      clip.add(bds.getX() + bds.getWidth(), bds.getY() + bds.getHeight());
-      g.setClip(clip);
-
-      // And finally draw the circuit onto the page
-      ComponentDrawContext context = new ComponentDrawContext(proj
-          .getFrame().getCanvas(), circ, circState, base, g,
-          printerView);
-      Collection<Component> noComps = Collections.emptySet();
-      circ.draw(context, noComps);
-      g.dispose();
       return Printable.PAGE_EXISTS;
     }
   }

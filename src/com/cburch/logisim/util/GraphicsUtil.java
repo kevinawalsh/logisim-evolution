@@ -33,17 +33,21 @@ package com.cburch.logisim.util;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.Shape;
 
 import com.cburch.draw.util.TextMetrics;
 
 public class GraphicsUtil {
+
+  // FIXME: most of these methods should take a Graphics2D instead of a Graphics.
+
   static public void drawArrow(Graphics g, int x0, int y0, int x1, int y1,
       int stemWidth, int headLength, int headAngle) {
     double offs = headAngle * Math.PI / 180.0;
@@ -385,6 +389,159 @@ public class GraphicsUtil {
   public static final int V_BOTTOM = 2;
 
   public static final int V_CENTER_OVERALL = 3;
+
+  // Painting code using Graphics/Graphics2D seems to fall into three cases:
+  //
+  // 1. UI-like: Part of the regular java/swing/awt user interface, a button or
+  //    icon in the toolbar or in the project explorer tree, as part of the
+  //    attribute table, etc.
+  //
+  //    For UI painting, we don't usually apply any rendering hints, and
+  //    instead rely on the default anti-aliasing and fractional-metrics
+  //    settings. This provides some consistency with any rendering done by
+  //    Swing for buttons, labels, etc.
+  //
+  // 2. Canvas-like: The main circuit/simulation editor pane, circuit
+  //    appearance, exported or printed images of circuits, etc.
+  //
+  //    Although inconsistently applied, most code has been converging to:
+  //
+  //    * KEY_ANTIALIASING => VALUE_ANTIALIAS_ON
+  //
+  //    * KEY_TEXT_ANTIALIASING => VALUE_TEXT_ANTIALIAS_ON
+  //
+  //    Additionally, experiments (on a MacOS M2 2022 model) with Text and
+  //    Callout using longer wrapped layouts, and suggestions online, indicate
+  //    that we would benefit from:
+  //
+  //    * KEY_FRACTIONALMETRICS => VALUE_FRACTIONALMETRICS_ON
+  //
+  // 3. Diagrams: Text-heavy but non-paragraph visualizations, such as K-Map
+  //    table or analysis expression rendering.
+  //
+  //    These use text and regular anti-aliasing ON hints. Fractional-metrics
+  //    probably won't matter for these much.
+  // 
+  // 4. Miscellaneous: In a very few places, stroke control hints are applied.
+  //    This isn't done (yet) in any consistent way.
+  //
+  // Conventions for Graphics and Graphics2D:
+  //
+  // - Graphics2D variables already have appropriate hinting applied. For
+  //   example, a Graphics2D variable within circuit-related painting code
+  //   should be assumed to have ANTIALIAS=ON, TEXT_ANTIALIAS=ON, and
+  //   FRACTIONALMETRICS=ON already. Similarly, a Graphics2D variable within
+  //   icon-painting code can be assumed to have swing/awt defaults.
+  //
+  // - Most Logisim methods should take Graphics2D, not a Graphics. This is a
+  //   signal that the appropriate hinting is already applied.
+  //
+  // - For swing/awt callbacks and entry points that by necessity take a
+  //   Graphics parameter, these are often cast to a Graphics2D. At the point of
+  //   casting, appropriate hinting should be applied using one of the methods
+  //   below, or leave a comment if no hinting is needed.
+  //
+  // - Any remaining `Graphics` variables should be considered suspect. They are
+  //   hopefully purely UI-related, so don't need any hinting.
+  //
+  // - Any method that changes hinting should also restore them, or dispose the
+  //   graphics entirely.
+  //
+  // - Creation of new Graphics and Graphics2D can be through:
+  //    - g2.create() // common, used for isolating drawing side-effects
+  //    - java.awt.Component.getGraphics() // to be avoided where possible
+  //    - BufferedImage.getGraphics() // deprecated
+  //    - BufferedImage.createGraphics() // better
+  //    - possibly other cases?
+  //   In all such cases where a new Graphics/Graphics2D is created:
+  //    - Hinting should be applied at the time of creation, except for
+  //      g2.create() which would inherit the hints from g2.
+  //    - dispose() must be called.
+  //
+  // Note: these conventions are not yet applied consistently everywhere.
+ 
+  // Use this for hinting on the canvas used for circuits, circuit appearance,
+  // exported or printed images of the circuit, etc. This is for case 2 above,
+  // "Canvas-like" scenarios.
+  public static Object[] setRenderingHintsForCanvas(Graphics g) {
+    return setRenderingHintsForNiceText(g);
+  }
+
+  // Use this for hinting in other places where nicer, smoothed text is desired,
+  // for example in K-map visualizations, or analysis expression rendering. This
+  // is for case 3 above, "Diagrams".
+  public static Object[] setRenderingHintsForNiceText(Graphics g) {
+    Graphics2D g2 = (Graphics2D)g;
+    Object aa = g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+    Object ta = g2.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
+    Object fm = g2.getRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS);
+    if (aa == RenderingHints.VALUE_ANTIALIAS_ON
+        && ta == RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+        && fm == RenderingHints.VALUE_FRACTIONALMETRICS_ON)
+      return null; // no need to set or restore anything
+    Object[] old = new Object[3];
+    if (aa != RenderingHints.VALUE_ANTIALIAS_ON) {
+      old[0] = aa;
+      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+          RenderingHints.VALUE_ANTIALIAS_ON);
+    }
+    if (ta != RenderingHints.VALUE_TEXT_ANTIALIAS_ON) {
+      old[1] = ta;
+      g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    }
+    if (fm != RenderingHints.VALUE_FRACTIONALMETRICS_ON) {
+      old[2] = fm;
+      g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+          RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+    }
+    return old;
+  }
+
+  // Use this after calling either setRenderingHintsForCanvas(g) or
+  // setRenderingHintsForNiceText(g), unless g will be destroyed anyway.
+  public static void restoreRenderingHints(Graphics g, Object[] old) {
+    if (old == null)
+      return;
+    Graphics2D g2 = (Graphics2D)g;
+    if (old[0] != null)
+      g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, old[0]);
+    if (old[1] != null)
+      g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, old[1]);
+    if (old[2] != null)
+      g2.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, old[2]);
+  }
+
+  // This is a convenience helper for case 4 above, "Miscellaneous" rendering.
+  public static Object usePureStrokeRendering(Graphics g) {
+    Graphics2D g2 = (Graphics2D)g;
+    Object old = g2.getRenderingHint(RenderingHints.KEY_STROKE_CONTROL);
+    if (old == RenderingHints.VALUE_STROKE_PURE)
+      return null; // no need to set or restore anything
+    g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+        RenderingHints.VALUE_STROKE_PURE);
+    return old;
+  }
+
+  // This is a convenience helper for case 4 above, "Miscellaneous" rendering.
+  public static Object useDefaultStrokeRendering(Graphics g) {
+    Graphics2D g2 = (Graphics2D)g;
+    Object old = g2.getRenderingHint(RenderingHints.KEY_STROKE_CONTROL);
+    if (old == RenderingHints.VALUE_STROKE_DEFAULT)
+      return null; // no need to set or restore anything
+    g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+        RenderingHints.VALUE_STROKE_DEFAULT);
+    return old;
+  }
+
+  // Use this after calling either usePureStrokeRendering(g) or
+  // useDefaultStrokeRendering(g), unless g will be destroyed anyway.
+  public static void restoreStrokeRendering(Graphics g, Object old) {
+    if (old == null)
+      return;
+    Graphics2D g2 = (Graphics2D)g;
+    g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, old);
+  }
 
   // Many classes have code like:
   //    import com.cburch.logisim.util.GraphicsUtil;

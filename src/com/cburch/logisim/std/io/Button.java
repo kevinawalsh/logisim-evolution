@@ -310,7 +310,7 @@ public class Button extends InstanceFactory {
         color = color.darker();
     }
 
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     
     // centered labels shift when button is pressed or latched
     double labelOffset = 0;

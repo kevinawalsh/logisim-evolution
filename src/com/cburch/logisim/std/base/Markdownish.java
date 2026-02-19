@@ -99,6 +99,18 @@ import java.util.ArrayList;
 //  - The url can't have newlines, spaces, or tabs. Use %20 and other url escapes instead.
 //  - Spaces around the url are discarded.
 //
+// | table | with | headers |
+// | :---- | :--: | ------: |
+// | or    | without | them |
+// Notes:
+// - at most 3 spaces, then starts with unescaped pipe, ends with unescaped pipe
+// - row with only dashes (and spaces) makes a horizontal separator between rows
+// - row with only 
+// - inline formatting within cells is fine
+// - if table width doesn't fit within text width, columns are allocated space proportionally to how
+// many dashes they have in the 
+//
+//
 // Other Notes:
 // - Header, paragraph, and fenced code blocks are each rendered with some space below (and above)
 //   them, unless there are no other blocks below (or above) them. 

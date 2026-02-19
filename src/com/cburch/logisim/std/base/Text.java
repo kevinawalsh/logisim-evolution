@@ -37,6 +37,7 @@ import java.util.List;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
@@ -62,6 +63,7 @@ import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.TextEditable;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
+import com.cburch.logisim.util.GraphicsUtil;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
@@ -317,18 +319,24 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   }
 
   protected final Bounds getTextOnlyVisibleOffsetBounds(AttributeSet attrsBase, Graphics g, Integer altTextWidth) { // visible
-    Location loc = Location.ORIGIN;
-    TextAttributes attrs = (TextAttributes) attrsBase;
-    String text = attrs.getText();
-    int halign = attrs.getHorizontalAlign();
-    int valign = attrs.getVerticalAlign();
-    int textWidth = altTextWidth != null ? altTextWidth : attrs.isWrapping() ? attrs.getTextWidth() : -1;
-    Font font = attrs.getFont();
-    if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH)
-      return StyledBoxLayout.getBounds(g, text, loc, textWidth, font, valign).expand(PAD);
-    else
-      return BoxLayout.getBounds(g, text, loc, textWidth, font, halign, valign).expand(PAD);
-  } 
+    Graphics2D g2 = (Graphics2D)g; // g should really have been a Graphics2D, it very likely already had hinting applied
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
+    try {
+      Location loc = Location.ORIGIN;
+      TextAttributes attrs = (TextAttributes) attrsBase;
+      String text = attrs.getText();
+      int halign = attrs.getHorizontalAlign();
+      int valign = attrs.getVerticalAlign();
+      int textWidth = altTextWidth != null ? altTextWidth : attrs.isWrapping() ? attrs.getTextWidth() : -1;
+      Font font = attrs.getFont();
+      if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH)
+        return StyledBoxLayout.getBounds(g2, text, loc, textWidth, font, valign).expand(PAD);
+      else
+        return BoxLayout.getBounds(g2, text, loc, textWidth, font, halign, valign).expand(PAD);
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g2, oldHints);
+    }
+  }
 
   private Bounds getTextVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
     return getVisibleOffsetBounds(attrsBase, g).translate(loc);
@@ -339,17 +347,23 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   }
 
   protected CaretPosition getTextCaretPosition(Location loc, TextAttributes attrs, Graphics g, int px, int py) {
-    String text = attrs.getText();
-    int halign = attrs.getHorizontalAlign();
-    int valign = attrs.getVerticalAlign();
-    int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
-    Font font = attrs.getFont();
-    if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH) {
-      StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
-      return box.caretPositionForPoint(px, py);
-    } else {
-      BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
-      return box.caretPositionForPoint(px, py);
+    Graphics2D g2 = (Graphics2D)g; // g should really have been a Graphics2D, it very likely already had hinting applied
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
+    try {
+      String text = attrs.getText();
+      int halign = attrs.getHorizontalAlign();
+      int valign = attrs.getVerticalAlign();
+      int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
+      Font font = attrs.getFont();
+      if (attrs.getFormat() == TEXT_FORMAT_MARKDOWNISH) {
+        StyledBoxLayout box = new StyledBoxLayout(g2, text, loc, textWidth, font, valign);
+        return box.caretPositionForPoint(px, py);
+      } else {
+        BoxLayout box = new BoxLayout(g2, text, loc, textWidth, font, halign, valign, textWidth > 0);
+        return box.caretPositionForPoint(px, py);
+      }
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g2, oldHints);
     }
   }
 
@@ -384,7 +398,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   public void paint(InstancePainter painter, boolean drawBoundingBox, Integer altTextWidth) {
     TextAttributes attrs = (TextAttributes)painter.getAttributeSet();
     Location loc = painter.getLocation();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     if (altTextWidth != null) {
@@ -414,7 +428,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   @Override
   public void drawHandles(ComponentDrawContext context) {
-    Graphics g = context.getGraphics();
+    Graphics2D g = context.getGraphics();
     g.setColor(Color.GRAY);
     InstancePainter painter = context.getInstancePainter();
     Bounds bds = getTextVisibleBounds(painter.getLocation(), painter.getAttributeSet(), g);

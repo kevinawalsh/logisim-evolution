@@ -54,14 +54,21 @@ public final class ComponentDrawContext {
   private final java.awt.Component dest;
   private final Circuit circuit;
   private final CircuitState circuitState;
-  private final Graphics2D base;
-  private /*final*/ Graphics2D g;
+  private final Graphics2D base; // untransformed, to be used only for measuring text, obtaining font metrics, etc.
+  private /*final*/ Graphics2D g; // potentially transformed, to be used for all drawing
   private /*final*/ boolean showState;
   private /*final*/ boolean showColor;
   private final boolean printView;
   private /*final*/ WireSet highlightedWires;
   private final InstancePainter instancePainter;
 
+  // FIXME:
+  // - Base should perhaps be a FontRenderContext, not a Graphics.
+  // - Use Graphics2D everywhere, not Graphics, to indicate these are not
+  //   awt/swing methods, and to signal that anti-aliasing/fractional-metrics
+  //   hinting should have already been applied to both.
+  // - Eliminate setGraphics(), provide some kind of replace-with-fresh-graphics
+  //   feature instead.
   public ComponentDrawContext(java.awt.Component dest, Circuit circuit,
       CircuitState circuitState, Graphics base, Graphics g) {
     this(dest, circuit, circuitState, base, g, false);
@@ -290,6 +297,9 @@ public final class ComponentDrawContext {
     return AppPreferences.GATE_SHAPE.get();
   }
 
+  // Unlike swing/awt Component.getGraphics(), this does *not* create a new
+  // Graphics object, but only borrows the existing Graphics object. The caller
+  // should not dispose it.
   public Graphics2D getGraphics() {
     return g;
   }

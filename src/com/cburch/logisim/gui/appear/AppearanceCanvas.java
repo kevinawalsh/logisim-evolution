@@ -31,7 +31,6 @@
 package com.cburch.logisim.gui.appear;
 
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
@@ -261,19 +260,22 @@ public class AppearanceCanvas extends Canvas
   }
 
   @Override
-  protected void paintBackground(Graphics g) {
+  protected void paintBackground(Graphics2D g) {
     super.paintBackground(g);
     grid.paintGrid(g);
   }
 
   @Override
-  protected void paintForeground(Graphics g) {
+  protected void paintForeground(Graphics2D g) {
     double zoom = grid.getZoomFactor();
-    Graphics gScaled = g.create();
-    if (zoom != 1.0 && zoom != 0.0)
-      ((Graphics2D) gScaled).scale(zoom, zoom);
-    super.paintForeground(gScaled);
-    gScaled.dispose();
+    Graphics2D gScaled = (Graphics2D)g.create();
+    try {
+      if (zoom != 1.0 && zoom != 0.0)
+        ((Graphics2D) gScaled).scale(zoom, zoom);
+      super.paintForeground(gScaled);
+    } finally {
+      gScaled.dispose();
+    }
   }
 
   @Override

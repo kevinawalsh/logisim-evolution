@@ -31,9 +31,8 @@
 package com.cburch.draw.canvas;
 
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JComponent;
@@ -42,6 +41,7 @@ import javax.swing.JPopupMenu;
 import com.cburch.draw.model.CanvasModel;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.draw.undo.Action;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class Canvas extends JComponent {
 	private static final long serialVersionUID = 1L;
@@ -84,26 +84,23 @@ public class Canvas extends JComponent {
 		return 1.0; // subclass will have to override this
 	}
 
-	protected void paintBackground(Graphics g) {
-		/* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-		Graphics2D g2 = (Graphics2D)g;
-		g2.setRenderingHint(
-				RenderingHints.KEY_TEXT_ANTIALIASING,
-				RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		g2.setRenderingHint(
-				RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON);
-		
+	protected void paintBackground(Graphics2D g) {
 		g.clearRect(0, 0, getWidth(), getHeight());
 	}
 
 	@Override
 	public void paintComponent(Graphics g) {
-		paintBackground(g);
-		paintForeground(g);
+    Graphics2D g2 = (Graphics2D)g;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
+    try {
+      paintBackground(g2);
+      paintForeground(g2);
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g2, oldHints);
+    }
 	}
 
-	protected void paintForeground(Graphics g) {
+	protected void paintForeground(Graphics2D g) {
 		CanvasModel cModel = this.model;
 		CanvasTool tool = listener.getTool();
 		if (cModel != null) {
@@ -112,7 +109,7 @@ public class Canvas extends JComponent {
 			dup.dispose();
 		}
 		if (tool != null) {
-			Graphics dup = g.create();
+			Graphics2D dup = (Graphics2D)g.create();
 			tool.draw(this, dup);
 			dup.dispose();
 		}

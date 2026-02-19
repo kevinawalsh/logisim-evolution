@@ -31,6 +31,7 @@
 package com.cburch.logisim.instance;
 
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -73,20 +74,23 @@ class InstancePokerAdapter extends AbstractCaret implements Pokable {
   }
 
   @Override
-  public void draw(Graphics g) {
+  public void draw(Graphics2D g) {
     if (poker != null) {
-      context.setGraphics(g);
+      context.setGraphics(g); // note: should set context.base so it isn't null?
       InstancePainter painter = new InstancePainter(context, comp);
       poker.paint(painter);
+      context.setGraphics(null);
     }
   }
 
   @Override
   public Bounds getBounds(Graphics g) {
     if (poker != null) {
-      context.setGraphics(g);
+      context.setGraphics(g); // note: should set context.base so it isn't null?
       InstancePainter painter = new InstancePainter(context, comp);
-      return poker.getNominalBounds(painter);
+      Bounds bounds = poker.getNominalBounds(painter);
+      context.setGraphics(null);
+      return bounds;
     } else {
       return Bounds.EMPTY_BOUNDS;
     }

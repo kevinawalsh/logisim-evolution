@@ -73,29 +73,31 @@ public class Power extends InstanceFactory {
   }
 
   private void drawInstance(InstancePainter painter, boolean isGhost) {
-    Graphics2D g = (Graphics2D) painter.getGraphics().create();
-    Location loc = painter.getLocation();
-    g.translate(loc.getX(), loc.getY());
+    Graphics2D g = (Graphics2D)painter.getGraphics().create();
+    try {
+      Location loc = painter.getLocation();
+      g.translate(loc.getX(), loc.getY());
 
-    Direction from = painter.getAttributeValue(StdAttr.FACING);
-    int degrees = Direction.EAST.toDegrees() - from.toDegrees();
-    double radians = Math.toRadians((degrees + 360) % 360);
-    g.rotate(radians);
+      Direction from = painter.getAttributeValue(StdAttr.FACING);
+      int degrees = Direction.EAST.toDegrees() - from.toDegrees();
+      double radians = Math.toRadians((degrees + 360) % 360);
+      g.rotate(radians);
 
-    GraphicsUtil.switchToWidth(g, Wire.WIDTH);
-    if (!isGhost && painter.getShowState()) {
-      g.setColor(painter.getPortValue(0).getColor());
+      GraphicsUtil.switchToWidth(g, Wire.WIDTH);
+      if (!isGhost && painter.getShowState()) {
+        g.setColor(painter.getPortValue(0).getColor());
+      }
+      g.drawLine(0, 0, 5, 0);
+
+      GraphicsUtil.switchToWidth(g, 1);
+      if (!isGhost && painter.shouldDrawColor()) {
+        BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
+        g.setColor(Value.repeat(Value.TRUE, width.getWidth()).getColor());
+      }
+      g.drawPolygon(new int[] { 6, 14, 6 }, new int[] { -8, 0, 8 }, 3);
+    } finally {
+      g.dispose();
     }
-    g.drawLine(0, 0, 5, 0);
-
-    GraphicsUtil.switchToWidth(g, 1);
-    if (!isGhost && painter.shouldDrawColor()) {
-      BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
-      g.setColor(Value.repeat(Value.TRUE, width.getWidth()).getColor());
-    }
-    g.drawPolygon(new int[] { 6, 14, 6 }, new int[] { -8, 0, 8 }, 3);
-
-    g.dispose();
   }
 
   @Override

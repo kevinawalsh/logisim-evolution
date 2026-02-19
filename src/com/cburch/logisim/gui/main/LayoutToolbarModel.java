@@ -36,7 +36,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.InputEvent;
 import java.beans.PropertyChangeEvent;
@@ -198,7 +197,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     }
 
     @Override
-    public void paintIcon(Component dest, Graphics g) {
+    public void paintIcon(Component dest, Graphics2D g) {
       // draw halo
       if (tool == haloedTool
           && AppPreferences.ATTRIBUTE_HALO.get()) {
@@ -209,24 +208,25 @@ class LayoutToolbarModel extends AbstractToolbarModel {
 
       // draw tool icon
       g.setColor(Color.BLACK);
-      Graphics g_copy = g.create();
-      ComponentDrawContext c = new ComponentDrawContext(dest, null, null, g, g_copy);
-      tool.paintIcon(c, 2, 2);
+      Graphics2D g_copy = (Graphics2D)g.create();
+      try {
+        ComponentDrawContext c = new ComponentDrawContext(dest, null, null, g, g_copy);
+        tool.paintIcon(c, 2, 2);
 
-      if (label != null) {
-        Dimension dim = dest.getPreferredSize();
-        if (dim.width >= dim.height) {
-          GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
-              GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
-        } else {
-          ((Graphics2D)g_copy).rotate(Math.PI/2, 24/2, 24/2);
-          GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
-              GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        if (label != null) {
+          Dimension dim = dest.getPreferredSize();
+          if (dim.width >= dim.height) {
+            GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
+                GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          } else {
+            g_copy.rotate(Math.PI/2, 24/2, 24/2);
+            GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
+                GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          }
         }
+      } finally {
+        g_copy.dispose();
       }
-
-      g_copy.dispose();
-
     }
   }
 

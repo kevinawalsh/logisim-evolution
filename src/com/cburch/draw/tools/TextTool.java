@@ -32,7 +32,7 @@ package com.cburch.draw.tools;
 import static com.cburch.draw.Strings.S;
 
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -153,7 +153,7 @@ public class TextTool extends AbstractTool {
 	}
 
 	@Override
-	public void draw(Canvas canvas, Graphics g) {
+	public void draw(Canvas canvas, Graphics2D g) {
 		; // actually, there's nothing to do here - it's handled by the field
 	}
 

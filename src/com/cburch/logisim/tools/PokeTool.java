@@ -40,6 +40,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
 import javax.swing.Icon;
@@ -182,7 +183,7 @@ public final class PokeTool extends Tool {
     }
 
     @Override
-    public void draw(Graphics g) {
+    public void draw(Graphics2D g) {
       Value v = canvas.getCircuitState().getValue(wire.getEnd0());
     
       String vStr0, vStr1 = null, lStr0 = null, lStr1 = null;
@@ -483,7 +484,7 @@ public final class PokeTool extends Tool {
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    Graphics g = c.getGraphics();
+    Graphics2D g = c.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
     } else {

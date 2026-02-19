@@ -46,6 +46,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.comp.TextFieldCaret;
@@ -60,6 +61,7 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
+import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.UndoRedo;
 
 // This class is like a combination of TextField and TextFieldCaret, but handles
@@ -114,7 +116,6 @@ class TextCaret implements Caret, AttributeListener {
 
   private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
   private TextAttributes attrs;
-  private Graphics g;
   private String oldText;
   private String curText;
   private TextCaretEditHandler editMenuHandler;
@@ -144,20 +145,27 @@ class TextCaret implements Caret, AttributeListener {
 
   private Location loc;
   private Bounds initialBounds;
+  private BoxLayout cachedLayout;
   
   public TextCaret(TextAttributes attrs, Canvas canvas, Location loc, int cursor, boolean revBias, Bounds initialBounds) {
     this.attrs = attrs;
     this.canvas = canvas;
-    this.g = canvas.getGraphics();
     this.oldText = this.curText = attrs.getText();
     this.loc = loc;
     this.cursor = this.anchor = cursor;
     this.cursorReverseBias = revBias;
     this.initialBounds = initialBounds;
-    BoxLayout box = computeLayout(g);
+    cachedLayout = computeLayoutBadIdea();
     editMenuHandler = new TextCaretEditHandler();
-
     attrs.addAttributeWeakListener(null, this);
+  }
+
+  // FIXME: probably should not be using Canvas.getGraphics() like this, we should move to
+  // FontRenderContext instead for layout, stop depending on Graphics.
+  private Graphics2D getGraphicsBadIdea() {
+    Graphics2D g = (Graphics2D)canvas.getGraphics();
+    GraphicsUtil.setRenderingHintsForCanvas(g);
+    return g;
   }
 
   @Override
@@ -193,7 +201,7 @@ class TextCaret implements Caret, AttributeListener {
   }
 
   @Override
-  public void draw(Graphics g) {
+  public void draw(Graphics2D g) {
     
     BoxLayout box = computeLayout(g);
 
@@ -257,7 +265,29 @@ class TextCaret implements Caret, AttributeListener {
 
   }
 
-  private BoxLayout computeLayout(Graphics g) {
+  private void invalidateCachedLayout() {
+    if (SwingUtilities.isEventDispatchThread()) {
+      cachedLayout = null;
+    } else {
+      SwingUtilities.invokeLater(() -> { cachedLayout = null; });
+    }
+  }
+  
+  private BoxLayout computeLayoutBadIdea() {
+    Graphics2D g = getGraphicsBadIdea();
+    try {
+      return computeLayout(g);
+    } finally {
+      g.dispose();
+    }
+  }
+
+  private BoxLayout computeLayout(Graphics2D g) {
+    if (SwingUtilities.isEventDispatchThread()
+        && cachedLayout != null
+        && cachedLayout.compatibleWith(g)) {
+      return cachedLayout;
+    }
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
@@ -265,12 +295,23 @@ class TextCaret implements Caret, AttributeListener {
     if (attrs.isMarkdownish())
       font = markdownEditFont.deriveFont(font.getSize2D());
     boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();
-    return new BoxLayout(g, curText, loc, textWidth, font, halign, valign, spacing);
+    BoxLayout box = new BoxLayout(g, curText, loc, textWidth, font, halign, valign, spacing);
+    if (SwingUtilities.isEventDispatchThread()) {
+      cachedLayout = box;
+    }
+    return box;
   }
 
   @Override
   public Bounds getBounds(Graphics g) {
-    return computeLayout(g).bounds.expand(Text.PAD);
+    // FIXME: g should probably have been a Graphics2D, very likely already hinted
+    Graphics2D g2 = (Graphics2D)g;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
+    try {
+      return computeLayout(g2).bounds.expand(Text.PAD);
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g2, oldHints);
+    }
   }
 
   @Override
@@ -475,7 +516,7 @@ class TextCaret implements Caret, AttributeListener {
     } else if (move == -5 || move == +5) { // start/end of para
       if (!shift && cursor != anchor)
         cancelSelection(move);
-      BoxLayout box = computeLayout(g);
+      BoxLayout box = computeLayoutBadIdea();
       BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       if (move < 0)
           vl = box.firstLineOfParagraphContaining(vl);
@@ -488,7 +529,7 @@ class TextCaret implements Caret, AttributeListener {
       if (!shift && cursor != anchor)
         cancelSelection(move);
     
-      BoxLayout box = computeLayout(g);
+      BoxLayout box = computeLayoutBadIdea();
       BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       cursor = (move < 0) ? vl.start : vl.end;
       cursorReverseBias = (move > 0);
@@ -497,7 +538,7 @@ class TextCaret implements Caret, AttributeListener {
       if (!shift && cursor != anchor)
         cancelSelection(move);
         
-      BoxLayout box = computeLayout(g);
+      BoxLayout box = computeLayoutBadIdea();
       int dir = (move < 0) ? -1 : +1;
 
       // Determine current line index
@@ -664,7 +705,7 @@ class TextCaret implements Caret, AttributeListener {
   public void mouseDragged(MouseEvent e) {
     if (!mouseIsPressed)
       return;
-    BoxLayout box = computeLayout(g);
+    BoxLayout box = computeLayoutBadIdea();
     BoxLayout.VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
     boolean revBias = (p == vl.end);
@@ -731,7 +772,7 @@ class TextCaret implements Caret, AttributeListener {
   @Override
   public void mousePressed(MouseEvent e) {
     mouseIsPressed = true;
-    BoxLayout box = computeLayout(g);
+    BoxLayout box = computeLayoutBadIdea();
     BoxLayout.VisualLine vl = box.lineForY(e.getY());
     int p = vl.positionForX(e.getX());
     boolean revBias = (p == vl.end);
@@ -797,10 +838,13 @@ class TextCaret implements Caret, AttributeListener {
   }
 
   @Override
-  public void attributeListChanged(AttributeEvent e) { }
+  public void attributeListChanged(AttributeEvent e) {
+    invalidateCachedLayout();
+  }
 
   @Override
   public void attributeValueChanged(AttributeEvent e) {
+    invalidateCachedLayout();
     Attribute<?> attr = e.getAttribute();
     if (attr == Text.ATTR_TEXT) {
       // oldText = curText = (String)e.getValue();

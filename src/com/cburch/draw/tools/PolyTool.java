@@ -33,7 +33,7 @@ import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -93,7 +93,7 @@ public class PolyTool extends AbstractTool {
 	}
 
 	@Override
-	public void draw(Canvas canvas, Graphics g) {
+	public void draw(Canvas canvas, Graphics2D g) {
 		if (active) {
 			g.setColor(Color.GRAY);
 			int size = locations.size();

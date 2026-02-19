@@ -73,7 +73,7 @@ class CanvasPainter implements PropertyChangeListener {
     AppPreferences.ATTRIBUTE_HALO.addPropertyChangeListener(this);
   }
 
-  private void drawWidthIncompatibilityData(Graphics base, Graphics g,
+  private void drawWidthIncompatibilityData(Graphics2D base, Graphics2D g,
       Project proj) {
     Circuit circ = proj.getCurrentCircuit();
     if (circ == null)
@@ -128,7 +128,7 @@ class CanvasPainter implements PropertyChangeListener {
     GraphicsUtil.switchToWidth(g, 1);
   }
 
-  private void drawWithUserState(Graphics base, Graphics g, Project proj) {
+  private void drawWithUserState(Graphics2D base, Graphics2D g, Project proj) {
     Circuit circ = proj.getCurrentCircuit();
     if (circ == null)
       return;
@@ -182,6 +182,7 @@ class CanvasPainter implements PropertyChangeListener {
       Graphics gCopy = g.create();
       context.setGraphics(gCopy);
       tool.draw(canvas, context);
+      context.setGraphics(g);
       gCopy.dispose();
     }
   }
@@ -220,7 +221,7 @@ class CanvasPainter implements PropertyChangeListener {
   //
   // painting methods
   //
-  void paintContents(Graphics g, Project proj) {
+  void paintContents(Graphics2D g, Project proj) {
     CircuitState circState = proj.getCircuitState();
     if (circState == null)
       return;
@@ -237,23 +238,26 @@ class CanvasPainter implements PropertyChangeListener {
     grid.paintGrid(g);
     g.setColor(Color.black);
 
-    Graphics gScaled = g.create();
-    if (zoomFactor != 1.0)
-      ((Graphics2D) gScaled).scale(zoomFactor, zoomFactor);
-    drawWithUserState(g, gScaled, proj);
-    drawWidthIncompatibilityData(g, gScaled, proj);
-    Circuit circ = proj.getCurrentCircuit();
+    Graphics2D gScaled = (Graphics2D)g.create();
+    try {
+      if (zoomFactor != 1.0)
+        gScaled.scale(zoomFactor, zoomFactor);
+      drawWithUserState(g, gScaled, proj);
+      drawWidthIncompatibilityData(g, gScaled, proj);
+      Circuit circ = proj.getCurrentCircuit();
 
-    ComponentDrawContext ptContext = new ComponentDrawContext(canvas, circ,
-        circState, g, gScaled);
-    ptContext.setHighlightedWires(highlightedWires);
-    gScaled.setColor(Color.RED);
-    circState.drawOscillatingPoints(ptContext);
-    gScaled.setColor(Color.BLUE);
-    proj.getSimulator().drawStepPoints(ptContext);
-    gScaled.setColor(Color.MAGENTA);
-    proj.getSimulator().drawPendingInputs(ptContext);
-    gScaled.dispose();
+      ComponentDrawContext ptContext = new ComponentDrawContext(canvas, circ,
+          circState, g, gScaled);
+      ptContext.setHighlightedWires(highlightedWires);
+      gScaled.setColor(Color.RED);
+      circState.drawOscillatingPoints(ptContext);
+      gScaled.setColor(Color.BLUE);
+      proj.getSimulator().drawStepPoints(ptContext);
+      gScaled.setColor(Color.MAGENTA);
+      proj.getSimulator().drawPendingInputs(ptContext);
+    } finally {
+      gScaled.dispose();
+    }
   }
 
   public void propertyChange(PropertyChangeEvent event) {

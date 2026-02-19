@@ -33,9 +33,7 @@ package com.cburch.hex;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -55,6 +53,8 @@ import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class Caret {
 	private class Listener implements MouseListener, MouseMotionListener,
@@ -287,20 +287,19 @@ public class Caret {
 		return mark;
 	}
 
-	void paintForeground(Graphics g, long start, long end) {
+	void paintForeground(Graphics2D g2, long start, long end) {
 		if (cursor >= start && cursor < end && hex.isFocusOwner()) {
 			Measures measures = hex.getMeasures();
 			int x = measures.toX(cursor);
 			int y = measures.toY(cursor);
-			Graphics2D g2 = (Graphics2D) g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_STROKE_CONTROL,
-          RenderingHints.VALUE_STROKE_PURE);
+      // Caret looks best with "pure" stroke?
+      Object oldHint = GraphicsUtil.usePureStrokeRendering(g2);
 			Stroke oldStroke = g2.getStroke();
 			g2.setColor(hex.getForeground());
 			g2.setStroke(CURSOR_STROKE);
 			g2.drawRect(x, y, measures.getCellWidth(), measures.getCellHeight());
 			g2.setStroke(oldStroke);
+      GraphicsUtil.restoreStrokeRendering(g2, oldHint);
 		}
 	}
 

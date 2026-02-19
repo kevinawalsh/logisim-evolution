@@ -110,60 +110,64 @@ public class ImageXmlFactory {
 	public void CreateStream(Image BoardPicture) {
 		BufferedImage result = new BufferedImage(Board.IMG_WIDTH, Board.IMG_HEIGHT,
 				BufferedImage.TYPE_3BYTE_BGR);
-		Graphics2D g2 = result.createGraphics();
-		int width = BoardPicture.getWidth(null);
-		int hight = BoardPicture.getHeight(null);
-		PixelGrabber pixelGrabber = new PixelGrabber(BoardPicture, 0, 0, width,
-				hight, false);
-		try {
-			pixelGrabber.grabPixels();
-		} catch (Exception e) {
-			/* TODO: handle exceptions */
-			System.err.printf("PixelGrabber exception: %s\n", e.getMessage());
-		}
-		ColorModel color_model = pixelGrabber.getColorModel();
-		if (pixelGrabber.getPixels() instanceof byte[]) {
-			byte[] the_pixels = (byte[]) pixelGrabber.getPixels();
-			int index = 0;
-			for (int y = 0; y < hight; y++) {
-				for (int x = 0; x < width; x++) {
-					Color PixCol = new Color(
-							color_model.getRed(the_pixels[index]),
-							color_model.getGreen(the_pixels[index]),
-							color_model.getBlue(the_pixels[index++]));
-					g2.setColor(PixCol);
-					g2.fillRect(x, y, 1, 1);
-				}
-			}
-		} else {
-			int[] the_pixels = (int[]) pixelGrabber.getPixels();
-			int index = 0;
-			for (int y = 0; y < hight; y++) {
-				for (int x = 0; x < width; x++) {
-					Color PixCol = new Color(
-							color_model.getRed(the_pixels[index]),
-							color_model.getGreen(the_pixels[index]),
-							color_model.getBlue(the_pixels[index++]));
-					g2.setColor(PixCol);
-					g2.fillRect(x, y, 1, 1);
-				}
-			}
-		}
-		ByteArrayOutputStream blaat = new ByteArrayOutputStream();
-		try {
-			ImageIO.write(result, "jpg", blaat);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.err.printf("JPEG Writer exception: %s\n", e.getMessage());
-		}
-		byte data[] = blaat.toByteArray();
-		CodeTable = CreateCodeTable(data);
-		AsciiStream = new StringBuffer();
-		AsciiStream.append(V2_Identifier);
-		for (int i = 0; i < data.length; i++) {
-			String code = CodeTable[data[i] + 128];
-			AsciiStream.append(code);
-		}
+		Graphics2D g2 = result.createGraphics(); // UI, no custom rendering hints
+    try {
+      int width = BoardPicture.getWidth(null);
+      int hight = BoardPicture.getHeight(null);
+      PixelGrabber pixelGrabber = new PixelGrabber(BoardPicture, 0, 0, width,
+          hight, false);
+      try {
+        pixelGrabber.grabPixels();
+      } catch (Exception e) {
+        /* TODO: handle exceptions */
+        System.err.printf("PixelGrabber exception: %s\n", e.getMessage());
+      }
+      ColorModel color_model = pixelGrabber.getColorModel();
+      if (pixelGrabber.getPixels() instanceof byte[]) {
+        byte[] the_pixels = (byte[]) pixelGrabber.getPixels();
+        int index = 0;
+        for (int y = 0; y < hight; y++) {
+          for (int x = 0; x < width; x++) {
+            Color PixCol = new Color(
+                color_model.getRed(the_pixels[index]),
+                color_model.getGreen(the_pixels[index]),
+                color_model.getBlue(the_pixels[index++]));
+            g2.setColor(PixCol);
+            g2.fillRect(x, y, 1, 1);
+          }
+        }
+      } else {
+        int[] the_pixels = (int[]) pixelGrabber.getPixels();
+        int index = 0;
+        for (int y = 0; y < hight; y++) {
+          for (int x = 0; x < width; x++) {
+            Color PixCol = new Color(
+                color_model.getRed(the_pixels[index]),
+                color_model.getGreen(the_pixels[index]),
+                color_model.getBlue(the_pixels[index++]));
+            g2.setColor(PixCol);
+            g2.fillRect(x, y, 1, 1);
+          }
+        }
+      }
+      ByteArrayOutputStream blaat = new ByteArrayOutputStream();
+      try {
+        ImageIO.write(result, "jpg", blaat);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        System.err.printf("JPEG Writer exception: %s\n", e.getMessage());
+      }
+      byte data[] = blaat.toByteArray();
+      CodeTable = CreateCodeTable(data);
+      AsciiStream = new StringBuffer();
+      AsciiStream.append(V2_Identifier);
+      for (int i = 0; i < data.length; i++) {
+        String code = CodeTable[data[i] + 128];
+        AsciiStream.append(code);
+      }
+    } finally {
+      g2.dispose();
+    }
 	}
 
 	public String GetCodeTable() {
@@ -229,47 +233,51 @@ public class ImageXmlFactory {
 		} else {
 			result = new BufferedImage(width, height,
 					BufferedImage.TYPE_3BYTE_BGR);
-			Graphics2D g2 = result.createGraphics();
-			g2.setBackground(Color.BLACK);
-			String CurRedComp, CurGreenComp, CurBlueComp;
-			for (int y = 0; y < height; y++) {
-				for (int x = 0; x < width; x++) {
-					if (TwoCodes.contains(AsciiStream.substring(index,
-							index + 1))) {
-						CurRedComp = AsciiStream.substring(index, index + 2);
-						index += 2;
-					} else {
-						CurRedComp = AsciiStream.substring(index, index + 1);
-						index++;
-					}
-					if (TwoCodes.contains(AsciiStream.substring(index,
-							index + 1))) {
-						CurGreenComp = AsciiStream.substring(index, index + 2);
-						index += 2;
-					} else {
-						CurGreenComp = AsciiStream.substring(index, index + 1);
-						index++;
-					}
-					if (TwoCodes.contains(AsciiStream.substring(index,
-							index + 1))) {
-						CurBlueComp = AsciiStream.substring(index, index + 2);
-						index += 2;
-					} else {
-						CurBlueComp = AsciiStream.substring(index, index + 1);
-						index++;
-					}
-					if (!CodeLookupTable.containsKey(CurRedComp)
-							|| !CodeLookupTable.containsKey(CurGreenComp)
-							|| !CodeLookupTable.containsKey(CurBlueComp)) {
-						return null;
-					}
-					Color PixCol = new Color(CodeLookupTable.get(CurRedComp),
-							CodeLookupTable.get(CurGreenComp),
-							CodeLookupTable.get(CurBlueComp));
-					g2.setColor(PixCol);
-					g2.fillRect(x, y, 1, 1);
-				}
-			}
+			Graphics2D g2 = result.createGraphics(); // UI, no custom rendering hints
+      try {
+        g2.setBackground(Color.BLACK);
+        String CurRedComp, CurGreenComp, CurBlueComp;
+        for (int y = 0; y < height; y++) {
+          for (int x = 0; x < width; x++) {
+            if (TwoCodes.contains(AsciiStream.substring(index,
+                    index + 1))) {
+              CurRedComp = AsciiStream.substring(index, index + 2);
+              index += 2;
+            } else {
+              CurRedComp = AsciiStream.substring(index, index + 1);
+              index++;
+            }
+            if (TwoCodes.contains(AsciiStream.substring(index,
+                    index + 1))) {
+              CurGreenComp = AsciiStream.substring(index, index + 2);
+              index += 2;
+            } else {
+              CurGreenComp = AsciiStream.substring(index, index + 1);
+              index++;
+            }
+            if (TwoCodes.contains(AsciiStream.substring(index,
+                    index + 1))) {
+              CurBlueComp = AsciiStream.substring(index, index + 2);
+              index += 2;
+            } else {
+              CurBlueComp = AsciiStream.substring(index, index + 1);
+              index++;
+            }
+            if (!CodeLookupTable.containsKey(CurRedComp)
+                || !CodeLookupTable.containsKey(CurGreenComp)
+                || !CodeLookupTable.containsKey(CurBlueComp)) {
+              return null;
+                }
+            Color PixCol = new Color(CodeLookupTable.get(CurRedComp),
+                CodeLookupTable.get(CurGreenComp),
+                CodeLookupTable.get(CurBlueComp));
+            g2.setColor(PixCol);
+            g2.fillRect(x, y, 1, 1);
+          }
+        }
+      } finally {
+        g2.dispose();
+      }
 		}
 		return result;
 	}

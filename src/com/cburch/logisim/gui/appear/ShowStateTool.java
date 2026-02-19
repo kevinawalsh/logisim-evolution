@@ -31,7 +31,7 @@
 package com.cburch.logisim.gui.appear;
 import static com.cburch.logisim.tools.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Dimension;
 import java.awt.Point;
 import javax.swing.Icon;
@@ -78,11 +78,11 @@ public class ShowStateTool implements ToolbarClickableItem {
     }
   }
 
-  public void paintIcon(java.awt.Component destination, Graphics g) {
+  public void paintIcon(java.awt.Component destination, Graphics2D g) {
     icon.paintIcon(destination, g, 4, 4);
   }
 
-  public void paintPressedIcon(java.awt.Component destination, Graphics g) {
+  public void paintPressedIcon(java.awt.Component destination, Graphics2D g) {
     pressed.paintIcon(destination, g, 4, 4);
   }
 

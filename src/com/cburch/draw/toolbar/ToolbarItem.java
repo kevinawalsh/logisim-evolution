@@ -32,7 +32,7 @@ package com.cburch.draw.toolbar;
 
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import javax.swing.JComponent;
 
 public interface ToolbarItem {
@@ -44,5 +44,5 @@ public interface ToolbarItem {
 
 	public boolean isSelectable();
 
-	public void paintIcon(Component destination, Graphics g);
+	public void paintIcon(Component destination, Graphics2D g);
 }

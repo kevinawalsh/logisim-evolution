@@ -31,7 +31,7 @@
 package com.cburch.draw.canvas;
 
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -42,7 +42,7 @@ public abstract class CanvasTool {
 	public void cancelMousePress(Canvas canvas) {
 	}
 
-	public void draw(Canvas canvas, Graphics g) {
+	public void draw(Canvas canvas, Graphics2D g) {
 	}
 
 	public abstract Cursor getCursor(Canvas canvas);

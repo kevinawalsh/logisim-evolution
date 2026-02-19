@@ -195,7 +195,7 @@ public class ScaledMath extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     painter.drawBounds();
     Bounds bds = painter.getNominalBounds();
     double cx = bds.x + bds.width/2.0;

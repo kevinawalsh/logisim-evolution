@@ -37,11 +37,12 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
 import javax.swing.SwingConstants;
+
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class HexEditor extends JComponent implements Scrollable {
 	private class Listener implements HexModelListener {
@@ -166,13 +167,7 @@ public class HexEditor extends JComponent implements Scrollable {
 
 	@Override
 	protected void paintComponent(Graphics g) {
-    Graphics2D g2 = (Graphics2D)g;
-    g2.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    g2.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g);
 
 		measures.ensureComputed(g);
 
@@ -228,7 +223,8 @@ public class HexEditor extends JComponent implements Scrollable {
 			}
 		}
 
-		caret.paintForeground(g, xaddr0, xaddr1);
+		caret.paintForeground((Graphics2D)g, xaddr0, xaddr1);
+    GraphicsUtil.restoreRenderingHints(g, oldHints);
 	}
 
 	public void removeHighlight(Object tag) {

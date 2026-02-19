@@ -177,7 +177,7 @@ public class LineSelect extends InstanceFactory {
     Bounds bds = painter.getNominalBounds();
     boolean wide = painter.getAttributeValue(Plexers.ATTR_SIZE) == Plexers.SIZE_WIDE;
     Direction dir = painter.getAttributeValue(StdAttr.FACING);
-    drawTrapezoid((Graphics2D)painter.getGraphics(), bds, dir, wide);
+    drawTrapezoid(painter.getGraphics(), bds, dir, wide);
   }
 
   static void drawTrapezoid(Graphics2D g, Bounds bds, Direction dir, boolean wide) {
@@ -189,7 +189,7 @@ public class LineSelect extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     boolean wide = painter.getAttributeValue(Plexers.ATTR_SIZE) == Plexers.SIZE_WIDE;
     Direction dir = painter.getAttributeValue(StdAttr.FACING);

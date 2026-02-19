@@ -34,11 +34,9 @@ import static com.cburch.logisim.gui.main.Strings.S;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
@@ -69,6 +67,7 @@ import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 public class ExportImage {
@@ -130,8 +129,12 @@ public class ExportImage {
       bds = circuit.getCircuitBounds(canvas.getGraphics()).expand(BORDER_SIZE);
     } else {
       BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-      Graphics base = img.getGraphics();
-      bds = circuit.getCircuitBounds(base).expand(BORDER_SIZE);
+      Graphics2D base = img.createGraphics();
+      try {
+        bds = circuit.getCircuitBounds(base).expand(BORDER_SIZE);
+      } finally {
+        base.dispose();
+      }
     }
     int width = (int) Math.round(bds.getWidth() * scale);
     int height = (int) Math.round(bds.getHeight() * scale);
@@ -140,42 +143,38 @@ public class ExportImage {
     if (height == 0)
       height = 100;
     BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-    Graphics base = img.getGraphics();
+    Graphics2D base = img.createGraphics();
     Graphics2D g = (Graphics2D)base.create();
-    g.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    g.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
-    g.setColor(Color.white);
-    g.fillRect(0, 0, width, height);
-    g.setColor(Color.black);
-    g.scale(scale, scale);
-    g.translate(-bds.getX(), -bds.getY());
-
-    CircuitState circuitState = canvas.getProject().getCircuitStateForPrinting(circuit);
-    ComponentDrawContext context = new ComponentDrawContext(canvas,
-        circuit, circuitState, base, g, printerView);
-    circuit.draw(context, null);
-
     try {
+      GraphicsUtil.setRenderingHintsForCanvas(g);
+      g.setColor(Color.white);
+      g.fillRect(0, 0, width, height);
+      g.setColor(Color.black);
+      g.scale(scale, scale);
+      g.translate(-bds.getX(), -bds.getY());
+
+      CircuitState circuitState = canvas.getProject().getCircuitStateForPrinting(circuit);
+      ComponentDrawContext context = new ComponentDrawContext(canvas,
+          circuit, circuitState, base, g, printerView);
+      circuit.draw(context, null);
+
       switch (format) {
-      case FORMAT_PNG:
-        ImageIO.write(img, "PNG", dest);
-        break;
-      case FORMAT_JPG:
-        ImageIO.write(img, "JPEG", dest);
-        break;
+        case FORMAT_PNG:
+          ImageIO.write(img, "PNG", dest);
+          break;
+        case FORMAT_JPG:
+          ImageIO.write(img, "JPEG", dest);
+          break;
       }
     } catch (Exception e) {
       return S.get("couldNotCreateFile");
     } finally {
       g.dispose();
+      base.dispose();
       if (monitor != null)
         monitor.close();
+      return null;
     }
-    return null;
   }
 
   private static class OptionsPanel extends JPanel implements ChangeListener {

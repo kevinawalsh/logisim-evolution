@@ -183,7 +183,7 @@ public class HttpIn extends InstanceFactory {
     double cx = bds.x + bds.width/2.0;
     double cy = bds.y + bds.height/2.0;
       
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
 
     g.setColor(Color.DARK_GRAY);
     g.draw(new Ellipse2D.Double(cx-10, cy-10, 20, 20));

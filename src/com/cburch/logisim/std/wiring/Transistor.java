@@ -149,7 +149,7 @@ public class Transistor extends InstanceFactory {
     double radians = Math.toRadians((degrees + 360) % 360);
     int m = flip ? 1 : -1;
 
-    Graphics2D g = (Graphics2D) painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Location loc = painter.getLocation();
     g.translate(loc.getX(), loc.getY());
     g.rotate(radians);

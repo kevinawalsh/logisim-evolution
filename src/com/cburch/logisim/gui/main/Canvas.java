@@ -971,26 +971,35 @@ public class Canvas extends JPanel
     paintCoordinator.requestRepaint();
   }
 
+  static int warned = 0;
   @Override
   public void paintComponent(Graphics g) {
-    Graphics2D g2d = (Graphics2D) g;
-    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
-    // g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-    //    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-    inPaint = true; // volatile
+    // FIXME -- This is a key place, the top level Canvas entrypoint for painting.
+    // Yet it has only *partially* applied anti-aliasing:
+    //   ANTIALIASING ==> ON
+    //   TEXT_ANTIALIASING ==> unspecified
+    if (warned < 10) {
+      warned++;
+      System.out.println("Why was canvas TEXT_AA not on ??????????????????");
+    }
+    Graphics2D g2 = (Graphics2D)g;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
     try {
-      super.paintComponent(g);
-      painter.paintContents(g, proj);
-      if (canvasPane == null)
-        viewport.paintContents(g);
-    } finally {
-      synchronized (repaintLock) {
-        inPaint = false;
-        repaintLock.notifyAll();
+      inPaint = true; // volatile
+      try {
+        super.paintComponent(g2);
+        painter.paintContents(g2, proj);
+        if (canvasPane == null)
+          viewport.paintContents(g2);
+      } finally {
+        synchronized (repaintLock) {
+          inPaint = false;
+          repaintLock.notifyAll();
+        }
+        paintCoordinator.repaintCompleted();
       }
-      paintCoordinator.repaintCompleted();
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g2, oldHints);
     }
   }
 

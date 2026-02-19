@@ -64,7 +64,7 @@ public class LinearMap extends FitRange {
   private static final Font FONT = new Font("monospaced", Font.PLAIN, 6);
 
   protected void paintShape(InstancePainter painter, boolean inner) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     GraphicsUtil.switchToWidth(g, 2);
     g.translate(bds.x, bds.y);

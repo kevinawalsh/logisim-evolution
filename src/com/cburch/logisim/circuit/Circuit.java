@@ -312,7 +312,12 @@ public class Circuit implements AttributeDefaultProvider {
         g_copy.dispose();
         g_copy = g_new;
 
-        c.draw(context);
+        try {
+          c.draw(context);
+        } catch (RuntimeException e) {
+          // this is a JAR developer error - display it and move on
+          e.printStackTrace();
+        }
       }
     } else {
       for (Component c : comps) {

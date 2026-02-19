@@ -29,7 +29,6 @@
  */
 
 package com.cburch.logisim.analyze.gui;
-import static com.cburch.logisim.analyze.model.Strings.S;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -38,7 +37,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
@@ -51,6 +49,7 @@ import com.cburch.logisim.analyze.model.Var;
 import com.cburch.logisim.analyze.model.ParserException;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
+import com.cburch.logisim.util.GraphicsUtil;
 
 class ExpressionRenderer extends JPanel {
 
@@ -81,50 +80,43 @@ class ExpressionRenderer extends JPanel {
     return !colorMatch && super.isOpaque();
   }
 
-  public static final Font OP_FONT = new Font("Serif", Font.PLAIN, 14);
-  public static final Font TXT_FONT = new Font("Serif", Font.BOLD, 14);
-  public static final Font VAR_FONT = new Font("Serif", Font.BOLD | Font.ITALIC, 14);
-  public static final Font SUB_FONT = new Font("Serif", Font.ITALIC, 10);
-  public static final FontMetrics OP_FONT_METRICS;
-  public static final FontMetrics TXT_FONT_METRICS;
-  public static final FontMetrics VAR_FONT_METRICS;
-  public static final FontMetrics SUB_FONT_METRICS;
-  public static final float OP_ASCENT, OP_DESCENT;
-  public static final float TXT_ASCENT, TXT_DESCENT;
-  public static final float VAR_ASCENT, VAR_DESCENT;
-  public static final float SUB_ASCENT, SUB_DESCENT;
-  public static final float TYP_ASCENT, TYP_DESCENT, TYP_HEIGHT;
+  private static final Font OP_FONT = new Font("Serif", Font.PLAIN, 14);
+  private static final Font TXT_FONT = new Font("Serif", Font.BOLD, 14);
+  private static final Font VAR_FONT = new Font("Serif", Font.BOLD | Font.ITALIC, 14);
+  private static final Font SUB_FONT = new Font("Serif", Font.ITALIC, 10);
+  private static final FontMetrics OP_FONT_METRICS;
+  private static final FontMetrics TXT_FONT_METRICS;
+  private static final FontMetrics VAR_FONT_METRICS;
+  private static final FontMetrics SUB_FONT_METRICS;
+  private static final float OP_ASCENT, OP_DESCENT;
+  private static final float TXT_ASCENT, TXT_DESCENT;
+  private static final float VAR_ASCENT, VAR_DESCENT;
+  private static final float SUB_ASCENT, SUB_DESCENT;
+  private static final float TYP_ASCENT, TYP_DESCENT, TYP_HEIGHT;
   static {
-    BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-    Graphics2D g = (Graphics2D)img.getGraphics().create();
-    g.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    g.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
-    g.setFont(OP_FONT);
-    OP_FONT_METRICS = g.getFontMetrics();
-    g.setFont(TXT_FONT);
-    TXT_FONT_METRICS = g.getFontMetrics();
-    g.setFont(VAR_FONT);
-    VAR_FONT_METRICS = g.getFontMetrics();
-    g.setFont(SUB_FONT);
-    SUB_FONT_METRICS = g.getFontMetrics();
+    BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g = img.createGraphics();
+    try {
+      GraphicsUtil.setRenderingHintsForNiceText(g);
+      OP_FONT_METRICS = g.getFontMetrics(OP_FONT);
+      TXT_FONT_METRICS = g.getFontMetrics(TXT_FONT);
+      VAR_FONT_METRICS = g.getFontMetrics(VAR_FONT);
+      SUB_FONT_METRICS = g.getFontMetrics(SUB_FONT);
 
-    OP_ASCENT = OP_FONT_METRICS.getAscent();
-    OP_DESCENT = OP_FONT_METRICS.getDescent();
-    TXT_ASCENT = TXT_FONT_METRICS.getAscent();
-    TXT_DESCENT = TXT_FONT_METRICS.getDescent();
-    VAR_ASCENT = VAR_FONT_METRICS.getAscent();
-    VAR_DESCENT = VAR_FONT_METRICS.getDescent();
-    SUB_ASCENT = SUB_FONT_METRICS.getAscent();
-    SUB_DESCENT = SUB_FONT_METRICS.getDescent();
-    TYP_ASCENT = VAR_ASCENT;
-    TYP_DESCENT = VAR_DESCENT + SUB_DESCENT;
-    TYP_HEIGHT = TYP_ASCENT + TYP_DESCENT;
-
-    g.dispose();
+      OP_ASCENT = OP_FONT_METRICS.getAscent();
+      OP_DESCENT = OP_FONT_METRICS.getDescent();
+      TXT_ASCENT = TXT_FONT_METRICS.getAscent();
+      TXT_DESCENT = TXT_FONT_METRICS.getDescent();
+      VAR_ASCENT = VAR_FONT_METRICS.getAscent();
+      VAR_DESCENT = VAR_FONT_METRICS.getDescent();
+      SUB_ASCENT = SUB_FONT_METRICS.getAscent();
+      SUB_DESCENT = SUB_FONT_METRICS.getDescent();
+      TYP_ASCENT = VAR_ASCENT;
+      TYP_DESCENT = VAR_DESCENT + SUB_DESCENT;
+      TYP_HEIGHT = TYP_ASCENT + TYP_DESCENT;
+    } finally {
+      g.dispose();
+    }
   }
 
   abstract class Box {
@@ -758,19 +750,12 @@ class ExpressionRenderer extends JPanel {
 
   @Override
   public void paintComponent(Graphics g) {
-    /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-    Graphics2D g2 = (Graphics2D)g;
-    g2.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    g2.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
-
-    AffineTransform xform = g2.getTransform();
-
     super.paintComponent(g);
     paintBorder(g);
+    
+    Graphics2D g2 = (Graphics2D)g;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g2);
+    AffineTransform xform = g2.getTransform();
 
     if (centered)
       g2.translate(
@@ -780,7 +765,9 @@ class ExpressionRenderer extends JPanel {
       g2.translate(LEFT_MARGIN, (getHeight() - lines.getHeight())/2);
     g2.setColor(getForeground());
     lines.paint(g2);
+
     g2.setTransform(xform);
+    GraphicsUtil.restoreRenderingHints(g2, oldHints);
   }
 
   Colorizer colorizer;

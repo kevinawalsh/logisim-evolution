@@ -134,7 +134,7 @@ public class FitRange extends InstanceFactory {
   }
 
   protected void paintShape(InstancePainter painter, boolean inner) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     GraphicsUtil.switchToWidth(g, 2);
     g.translate(bds.x, bds.y);
@@ -165,7 +165,7 @@ public class FitRange extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     paintShape(painter, true);
     painter.drawPorts();

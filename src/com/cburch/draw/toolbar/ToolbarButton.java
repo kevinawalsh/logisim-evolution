@@ -197,10 +197,13 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 	public void paintComponent(Graphics g) {
 		if (toolbar.getPressed() == this) {
 			if (item instanceof ToolbarClickableItem) {
-				Graphics g2 = g.create();
-				g2.translate(BORDER, BORDER);
-				((ToolbarClickableItem)item).paintPressedIcon(ToolbarButton.this, g2);
-				g2.dispose();
+				Graphics2D gt = (Graphics2D)g.create(); // UI, no custom rendering hints
+        try {
+          gt.translate(BORDER, BORDER);
+          ((ToolbarClickableItem)item).paintPressedIcon(ToolbarButton.this, gt);
+        } finally {
+          gt.dispose();
+        }
 				return;
 			}
 			Dimension dim = item.getDimension(this, toolbar.getOrientation(position)); 
@@ -212,10 +215,13 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
 			g.setColor(defaultColor);
 		}
 
-		Graphics g2 = g.create();
-		g2.translate(BORDER, BORDER);
-		item.paintIcon(ToolbarButton.this, g2);
-		g2.dispose();
+		Graphics2D gt = (Graphics2D)g.create(); // UI, no custom rendering hints
+    try {
+      gt.translate(BORDER, BORDER);
+      item.paintIcon(ToolbarButton.this, gt);
+    } finally {
+      gt.dispose();
+    }
 
 		// draw selection indicator
 		if (toolbar.getToolbarModel().isSelected(item)) {
@@ -231,17 +237,19 @@ class ToolbarButton extends JComponent implements MouseListener, DragDrop.Suppor
   public static final DragDrop dnd = new DragDrop(ToolbarButton.class, Toolbar.UUID_FLAVOR);
   public DragDrop getDragDrop() { return dnd; }
 
-  public void paintDragImage(JComponent dest, Graphics gr, Dimension dim) {
-		Graphics2D g = (Graphics2D)gr.create();
-    g.setComposite(java.awt.AlphaComposite.SrcOver.derive(0.75f));
-    g.setColor(Color.WHITE);
-    g.fillRect(0, 0, dim.width, dim.height);
-    g.setColor(Color.BLACK);
-    g.drawRect(0, 0, dim.width-1, dim.height-1);
-		g.translate(BORDER, BORDER);
-		item.paintIcon(ToolbarButton.this, g);
-    // ((Graphics2D)g).setComposite(java.awt.AlphaComposite.SrcOver);
-		g.dispose();
+  public void paintDragImage(JComponent dest, Graphics g, Dimension dim) {
+		Graphics2D g2 = (Graphics2D)g.create(); // UI, no custom rendering hints
+    try {
+      g2.setComposite(java.awt.AlphaComposite.SrcOver.derive(0.75f));
+      g2.setColor(Color.WHITE);
+      g2.fillRect(0, 0, dim.width, dim.height);
+      g2.setColor(Color.BLACK);
+      g2.drawRect(0, 0, dim.width-1, dim.height-1);
+      g2.translate(BORDER, BORDER);
+      item.paintIcon(ToolbarButton.this, g2);
+    } finally {
+      g2.dispose();
+    }
 	}
 
   @Override

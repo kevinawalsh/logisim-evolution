@@ -590,6 +590,8 @@ public class Toolbar extends JPanel {
       if (showChrome) {
         Graphics2D g2 = (Graphics2D) g.create();
         try {
+          // FIXME: Document why RenderingHints are applied here;
+          // Alternatively, do not apply hints.
           g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
           int w = getWidth(), h = getHeight();

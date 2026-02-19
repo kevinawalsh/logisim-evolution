@@ -37,7 +37,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -77,7 +76,7 @@ public class SaturatingNegator extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     painter.drawBounds();
     Bounds bds = painter.getNominalBounds();
     double cx = bds.x + bds.width/2.0;

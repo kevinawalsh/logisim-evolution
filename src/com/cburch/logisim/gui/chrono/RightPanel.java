@@ -39,7 +39,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
@@ -58,6 +57,7 @@ import javax.swing.UIManager;
 
 import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Signal;
+import com.cburch.logisim.util.GraphicsUtil;
 
 // Right panel has timeline on top and multiple Waveform components.
 public class RightPanel extends JPanel {
@@ -315,40 +315,35 @@ public class RightPanel extends JPanel {
   @Override
   public void paintComponent(Graphics gr) {
     Graphics2D g = (Graphics2D)gr;
-
-    /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-    Graphics2D g2 = (Graphics2D)g;
-    g2.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    g2.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
-
-    g.setColor(Color.WHITE);
-    g.fillRect(0, 0, getWidth(), getHeight()); // entire viewport, not just (width, height)
-    g.setColor(Color.BLACK);
-    if (rows.size() == 0) {
-      Font f = g.getFont();
-      g.setFont(MSG_FONT);
-      String lines = S.get("NoSignalsSelected");
-      int x = 15, y = 15;
-      for (String s : lines.split("\\|")) {
-        g.drawString(s.trim(), x, y);
-        y += 14;
-      }
-      g.setFont(f);
-      return;
-    }
-    if (width > 32000) {
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g);
+    try {
+      g.setColor(Color.WHITE);
+      g.fillRect(0, 0, getWidth(), getHeight()); // entire viewport, not just (width, height)
       g.setColor(Color.BLACK);
-      g.setFont(MSG_FONT);
-      g.drawString("Oops! Chronogram is too large to display.", 15, 15);
-      g.drawString("Try zooming out, or reset the simulation.", 15, 29);
-    } else {
-      for (Waveform w : rows)
-        w.paintWaveform(g);
-      paintCursor(g);
+      if (rows.size() == 0) {
+        Font f = g.getFont();
+        g.setFont(MSG_FONT);
+        String lines = S.get("NoSignalsSelected");
+        int x = 15, y = 15;
+        for (String s : lines.split("\\|")) {
+          g.drawString(s.trim(), x, y);
+          y += 14;
+        }
+        g.setFont(f);
+        return;
+      }
+      if (width > 32000) {
+        g.setColor(Color.BLACK);
+        g.setFont(MSG_FONT);
+        g.drawString("Oops! Chronogram is too large to display.", 15, 15);
+        g.drawString("Try zooming out, or reset the simulation.", 15, 29);
+      } else {
+        for (Waveform w : rows)
+          w.paintWaveform(g);
+        paintCursor(g);
+      }
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g, oldHints);
     }
   }
 
@@ -666,26 +661,21 @@ public class RightPanel extends JPanel {
     private void createOffscreen() {
       buf = (BufferedImage)createImage(width, WAVE_HEIGHT);
       Graphics2D g = buf.createGraphics();
-      g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
-          RenderingHints.VALUE_STROKE_DEFAULT);
-      /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-      Graphics2D g2 = (Graphics2D)g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
-      boolean bold = model.getSpotlight() == signal;
-      Color[] colors = chronoPanel.rowColors(signal.info, selected);
-      g.setColor(Color.WHITE);
-      g.fillRect(0, 0, width, ChronoPanel.GAP-1);
-      g.fillRect(0, LOW, width, ChronoPanel.GAP-1);
-      g.setColor(colors[0]);
-      g.fillRect(0, HIGH, width, LOW - HIGH);
-      g.setColor(Color.BLACK);
-      drawSignal(g, bold, colors);
-      g.dispose();
+      try {
+        GraphicsUtil.setRenderingHintsForNiceText(g); // no need to restore, g will be disposed
+        GraphicsUtil.useDefaultStrokeRendering(g); // no need to restore, g will be disposed
+        boolean bold = model.getSpotlight() == signal;
+        Color[] colors = chronoPanel.rowColors(signal.info, selected);
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, width, ChronoPanel.GAP-1);
+        g.fillRect(0, LOW, width, ChronoPanel.GAP-1);
+        g.setColor(colors[0]);
+        g.fillRect(0, HIGH, width, LOW - HIGH);
+        g.setColor(Color.BLACK);
+        drawSignal(g, bold, colors);
+      } finally {
+        g.dispose();
+      }
     }
 
     public void paintWaveform(Graphics2D g) {
@@ -761,20 +751,17 @@ public class RightPanel extends JPanel {
     @Override
     public void paintComponent(Graphics gr) {
       Graphics2D g = (Graphics2D)gr;
-      /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-      Graphics2D g2 = (Graphics2D)g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
-      g.setColor(getBackground());
-      g.fillRect(0, 0, getWidth()-1, height-1);
-      g.setColor(borderColor);
-      g.drawLine(0, height-1, getWidth()-1, height-1);
-      paintScale(g);
-      paintCursorWithLabel(g);
+      Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g);
+      try {
+        g.setColor(getBackground());
+        g.fillRect(0, 0, getWidth()-1, height-1);
+        g.setColor(borderColor);
+        g.drawLine(0, height-1, getWidth()-1, height-1);
+        paintScale(g);
+        paintCursorWithLabel(g);
+      } finally {
+        GraphicsUtil.restoreRenderingHints(g, oldHints);
+      }
     }
 
     void paintCursorWithLabel(Graphics2D g) {

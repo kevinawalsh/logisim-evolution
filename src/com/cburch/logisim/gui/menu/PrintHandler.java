@@ -51,6 +51,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
 import com.cburch.logisim.gui.main.ExportImage;
+import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.JFileChoosers;
 
 public abstract class PrintHandler implements Printable {
@@ -132,8 +133,11 @@ public abstract class PrintHandler implements Printable {
     double imWidth = pf.getImageableWidth();
     double imHeight = pf.getImageableHeight();
     Graphics2D g = (Graphics2D) pg;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(pg);
     g.translate(pf.getImageableX(), pf.getImageableY());
-    return print(g, pf, pageNum, imWidth, imHeight);
+    int result = print(g, pf, pageNum, imWidth, imHeight);
+    GraphicsUtil.restoreRenderingHints(g, oldHints);
+    return result;
   }
 
   public abstract int print(Graphics2D g, PageFormat pf, int pageNum, double w, double h);
@@ -157,15 +161,15 @@ public abstract class PrintHandler implements Printable {
     }
 
     BufferedImage img = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_RGB);
-    Graphics base = img.getGraphics();
-    Graphics2D g = (Graphics2D)base.create();
+    Graphics2D g2 = img.createGraphics();
     try {
-      g.setColor(Color.white);
-      g.fillRect(0, 0, d.width, d.height);
-      g.setColor(Color.black);
+      GraphicsUtil.setRenderingHintsForCanvas(g2); // disposed below, so no need to restore
+      g2.setColor(Color.white);
+      g2.fillRect(0, 0, d.width, d.height);
+      g2.setColor(Color.black);
 
       try {
-        paintExportImage(img, g);
+        paintExportImage(img, g2);
       } catch (Exception e) {
         showErr("couldNotCreateImage");
         return;
@@ -185,7 +189,7 @@ public abstract class PrintHandler implements Printable {
         return;
       }
     } finally {
-        g.dispose();
+        g2.dispose();
     }
   }
 

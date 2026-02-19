@@ -34,7 +34,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
-import java.awt.RenderingHints;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -71,15 +70,10 @@ public class LayoutThumbnail extends JComponent {
 
   @Override
   protected void paintComponent(Graphics g) {
-    if (circuitState != null) {
-      Graphics2D g2 = (Graphics2D)g;
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
-
+    if (circuitState == null)
+      return;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g);
+    try {
       Circuit circuit = circuitState.getCircuit();
       Bounds bds = circuit.getCircuitBounds(g);
       Dimension size = getSize();
@@ -88,12 +82,12 @@ public class LayoutThumbnail extends JComponent {
           / bds.getHeight();
       double scale = Math.min(1.0, Math.min(scaleX, scaleY));
 
-      Graphics gCopy = g.create();
+      Graphics2D gCopy = (Graphics2D)g.create();
       int borderX = (int) ((size.width - bds.getWidth() * scale) / 2);
       int borderY = (int) ((size.height - bds.getHeight() * scale) / 2);
       gCopy.translate(borderX, borderY);
       if (scale != 1.0)
-        ((Graphics2D) gCopy).scale(scale, scale);
+        gCopy.scale(scale, scale);
       gCopy.translate(-bds.getX(), -bds.getY());
 
       ComponentDrawContext context = new ComponentDrawContext(this,
@@ -144,6 +138,8 @@ public class LayoutThumbnail extends JComponent {
       g.setColor(Color.BLACK);
       GraphicsUtil.switchToWidth(g, 2);
       g.drawRect(0, 0, size.width - 2, size.height - 2);
+    } finally {
+      GraphicsUtil.restoreRenderingHints(g, oldHints);
     }
   }
 

@@ -173,7 +173,7 @@ class HdlToolbarModel extends AbstractToolbarModel implements HdlModelListener {
       return isEnabled(action);
     }
 
-    public void paintIcon(Component destination, Graphics g) {
+    public void paintIcon(Component destination, Graphics2D g) {
       if (!isSelectable()) {
         Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.3f);
         ((Graphics2D) g).setComposite(c);

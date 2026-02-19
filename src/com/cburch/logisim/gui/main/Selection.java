@@ -547,6 +547,7 @@ public class Selection {
         context.setGraphics(g_new);
         c.getFactory().drawGhost(context, Color.GRAY, loc.getX(),
             loc.getY(), c.getAttributeSet());
+        context.setGraphics(null);
         g_new.dispose();
       }
     }
@@ -561,6 +562,7 @@ public class Selection {
           handler.drawHandles(context);
         else
           context.drawHandles(comp);
+        context.setGraphics(null);
         g_new.dispose();
       }
     }
@@ -570,6 +572,7 @@ public class Selection {
       for (Location loc: reshapeHandles) {
         context.drawReshapeHandle(loc);
       }
+      context.setGraphics(null);
       g_new.dispose();
     }
 
@@ -587,9 +590,11 @@ public class Selection {
       Location loc = comp.getLocation();
       int x = loc.getX() + dx;
       int y = loc.getY() + dy;
-      context.setGraphics(g.create());
+      Graphics g_new = g.create();
+      context.setGraphics(g_new);
       comp.getFactory().drawGhost(context, Color.gray, x, y, attrs);
-      context.getGraphics().dispose();
+      context.setGraphics(null);
+      g_new.dispose();
     }
     context.setGraphics(g);
   }

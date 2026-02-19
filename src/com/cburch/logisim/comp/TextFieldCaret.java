@@ -34,6 +34,7 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -62,7 +63,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
 
   private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
   protected TextField field;
-  protected Graphics g;
+  protected Graphics2D g; // bad idea
   protected String oldText;
   protected String curText;
   protected int cursor, anchor; // text between cursor and anchor is selected
@@ -78,7 +79,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
   public TextFieldCaret(Canvas canvas, TextField field, Graphics g, int pos) {
     this.canvas = canvas;
     this.field = field;
-    this.g = g;
+    this.g = (Graphics2D)g; // bad idea, FIXME
     this.oldText = this.curText = field.getText();
     cursor = anchor = pos;
 
@@ -118,7 +119,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     editMenuHandler.computeEnabled();
   }
 
-  public void draw(Graphics g) {
+  public void draw(Graphics2D g) {
     int x = field.getX();
     int y = field.getY();
     int halign = field.getHAlign();

@@ -142,7 +142,7 @@ public class BitExtender extends InstanceFactory {
   }
 
   private void paintBorder(InstancePainter painter) {
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
 
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     int degrees = Direction.EAST.toDegrees() - facing.toDegrees();
@@ -188,7 +188,7 @@ public class BitExtender extends InstanceFactory {
 
     paintBorder(painter);
 
-    Graphics2D g = (Graphics2D)painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
 
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     int degrees = Direction.EAST.toDegrees() - facing.toDegrees();

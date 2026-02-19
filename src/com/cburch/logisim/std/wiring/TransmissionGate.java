@@ -128,57 +128,60 @@ public class TransmissionGate extends InstanceFactory {
       degrees += 180;
     double radians = Math.toRadians((degrees + 360) % 360);
 
-    Graphics2D g = (Graphics2D) painter.getGraphics().create();
-    g.rotate(radians, bds.getX() + 20, bds.getY() + 20);
-    g.translate(bds.getX(), bds.getY());
-    GraphicsUtil.switchToWidth(g, Wire.WIDTH);
+    Graphics2D g = (Graphics2D)painter.getGraphics().create();
+    try {
+      g.rotate(radians, bds.getX() + 20, bds.getY() + 20);
+      g.translate(bds.getX(), bds.getY());
+      GraphicsUtil.switchToWidth(g, Wire.WIDTH);
 
-    Color gate0 = g.getColor();
-    Color gate1 = gate0;
-    Color input = gate0;
-    Color output = gate0;
-    Color platform = gate0;
-    if (!isGhost && painter.getShowState()) {
-      gate0 = painter.getPortValue(GATE0).getColor();
-      gate1 = painter.getPortValue(GATE0).getColor();
-      input = painter.getPortValue(INPUT).getColor();
-      output = painter.getPortValue(OUTPUT).getColor();
-      platform = computeOutput(painter).getColor();
+      Color gate0 = g.getColor();
+      Color gate1 = gate0;
+      Color input = gate0;
+      Color output = gate0;
+      Color platform = gate0;
+      if (!isGhost && painter.getShowState()) {
+        gate0 = painter.getPortValue(GATE0).getColor();
+        gate1 = painter.getPortValue(GATE0).getColor();
+        input = painter.getPortValue(INPUT).getColor();
+        output = painter.getPortValue(OUTPUT).getColor();
+        platform = computeOutput(painter).getColor();
+      }
+
+      g.setColor(flip ? input : output);
+      g.drawLine(0, 20, 13, 20);
+      g.drawLine(13, 14, 13, 26);
+
+      g.setColor(flip ? output : input);
+      g.drawLine(27, 20, 40, 20);
+      g.drawLine(27, 14, 27, 26);
+
+      g.setColor(gate0);
+      g.drawLine(20, 38, 20, 40);
+      GraphicsUtil.switchToWidth(g, 2);
+      g.drawOval(17, 32, 6, 6);
+      g.drawLine(11, 31, 29, 31);
+      GraphicsUtil.switchToWidth(g, Wire.WIDTH);
+
+      g.setColor(gate1);
+      g.drawLine(20, 7, 20, 0);
+      GraphicsUtil.switchToWidth(g, 2);
+      g.drawLine(11, 9, 29, 9);
+
+      g.setColor(platform);
+      g.drawLine(9, 13, 31, 13);
+      g.drawLine(9, 27, 31, 27);
+      GraphicsUtil.switchToWidth(g, 1);
+      if (flip) { // arrow
+        g.drawLine(19, 18, 21, 20);
+        g.drawLine(19, 22, 21, 20);
+      } else {
+        g.drawLine(21, 18, 19, 20);
+        g.drawLine(21, 22, 19, 20);
+      }
+
+    } finally {
+      g.dispose();
     }
-
-    g.setColor(flip ? input : output);
-    g.drawLine(0, 20, 13, 20);
-    g.drawLine(13, 14, 13, 26);
-
-    g.setColor(flip ? output : input);
-    g.drawLine(27, 20, 40, 20);
-    g.drawLine(27, 14, 27, 26);
-
-    g.setColor(gate0);
-    g.drawLine(20, 38, 20, 40);
-    GraphicsUtil.switchToWidth(g, 2);
-    g.drawOval(17, 32, 6, 6);
-    g.drawLine(11, 31, 29, 31);
-    GraphicsUtil.switchToWidth(g, Wire.WIDTH);
-
-    g.setColor(gate1);
-    g.drawLine(20, 7, 20, 0);
-    GraphicsUtil.switchToWidth(g, 2);
-    g.drawLine(11, 9, 29, 9);
-
-    g.setColor(platform);
-    g.drawLine(9, 13, 31, 13);
-    g.drawLine(9, 27, 31, 27);
-    GraphicsUtil.switchToWidth(g, 1);
-    if (flip) { // arrow
-      g.drawLine(19, 18, 21, 20);
-      g.drawLine(19, 22, 21, 20);
-    } else {
-      g.drawLine(21, 18, 19, 20);
-      g.drawLine(21, 22, 19, 20);
-    }
-
-    g.dispose();
   }
 
   @Override

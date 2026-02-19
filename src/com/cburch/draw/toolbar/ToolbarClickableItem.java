@@ -31,11 +31,11 @@
 package com.cburch.draw.toolbar;
 
 import java.awt.Component;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 public interface ToolbarClickableItem extends ToolbarItem {
 
 	public void clicked();
 
-	public void paintPressedIcon(Component destination, Graphics g);
+	public void paintPressedIcon(Component destination, Graphics2D g);
 }

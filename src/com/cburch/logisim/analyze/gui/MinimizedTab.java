@@ -242,9 +242,9 @@ class MinimizedTab extends AnalyzerTab {
       addMouseListener(m);
     }
     public void paintComponent(Graphics g) {
-      Graphics2D g2 = (Graphics2D)g;
-      super.paintComponent(g2);
+      super.paintComponent(g);
       if (name != null && expr != null) {
+        Graphics2D g2 = (Graphics2D)g;
         AffineTransform xform = g2.getTransform();
         g2.translate(prettyView.getX(), prettyView.getY());
         prettyView.setBackground(selected ? selColor : Color.WHITE);
@@ -585,11 +585,14 @@ class MinimizedTab extends AnalyzerTab {
       int h = kmap.getHeight();
       BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
       Graphics2D g = img.createGraphics();
-      g.setColor(Color.WHITE);
-      g.fillRect(0, 0, w, h);
-      g.setColor(Color.BLACK);
-      kmap.paintKmap(g);
-      g.dispose();
+      try {
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, w, h);
+        g.setColor(Color.BLACK);
+        kmap.paintKmap(g);
+      } finally {
+        g.dispose();
+      }
       setImage(img);
     }
   }
@@ -600,9 +603,12 @@ class MinimizedTab extends AnalyzerTab {
       int h = prettyView.getHeight();
       BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
       Graphics2D g = img.createGraphics();
-      prettyView.setBackground(Color.WHITE);
-      prettyView.paintComponent(g);
-      g.dispose();
+      try {
+        prettyView.setBackground(Color.WHITE);
+        prettyView.paintComponent(g);
+      } finally {
+        g.dispose();
+      }
       setImage(img);
     }
   }

@@ -34,7 +34,6 @@ import java.util.ArrayList;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextHitInfo;
@@ -62,8 +61,11 @@ public class StyledBoxLayout {
   Bounds bounds;  // accurate once layout is complete
   ArrayList<VisualLine> lines;
 
-  public StyledBoxLayout(Graphics g, String t, Location l, int tw, Font f, int v) {
-    text = t;
+  public StyledBoxLayout(Graphics2D g, String t, Location l, int tw, Font f, int v) {
+    // GraphicsUtil.setRenderHints(g); // FIXME experimental
+    text = t + " StyledBoxLayout["+
+      g.getRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)+" / "+
+      g.getRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS)+"]";
     loc = l;
     textWidth = tw; // must be positive
     autoWrap = true;
@@ -73,14 +75,18 @@ public class StyledBoxLayout {
     lines = new ArrayList<>();
     bounds = null;
 
-    layoutMarkdownish((Graphics2D)g);
+    layoutMarkdownish(g);
   }
 
-  public void drawText(Graphics g) {
-    Graphics2D g2 = (Graphics2D) g;
-    g2.setFont(font);
+  public void drawText(Graphics2D g) {
+    g.setFont(font);
     for (VisualLine line : lines)
-      line.layout.draw(g2, line.x, line.baselineY);
+      line.layout.draw(g, line.x, line.baselineY);
+    String tag = " StyledBoxLayout["+
+      g.getRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)+" / "+
+      g.getRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS)+"]";
+    if (!text.endsWith(tag))
+      System.out.println("  ==> Graphics Change!! new tag is " + tag);
   }
 
   private void layoutMarkdownish(Graphics2D g2) {
@@ -239,13 +245,13 @@ public class StyledBoxLayout {
   }
 
   // This is used by Text.get*Bounds()
-  static Bounds getBounds(Graphics g, String text, Location loc, int textWidth, Font font, int valign) {
+  static Bounds getBounds(Graphics2D g, String text, Location loc, int textWidth, Font font, int valign) {
     StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
     return box.bounds;
   }
 
   // This is used by Text.paint()
-  static void drawMarkdownishText(Graphics g, String text, Location loc, int textWidth, Font font, int valign) {
+  static void drawMarkdownishText(Graphics2D g, String text, Location loc, int textWidth, Font font, int valign) {
     StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
     box.drawText(g);
   }

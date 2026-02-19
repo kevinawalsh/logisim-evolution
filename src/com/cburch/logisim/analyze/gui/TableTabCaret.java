@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -527,7 +527,7 @@ class TableTabCaret {
     }
   }
 
-  void paintBackground(Graphics g) {
+  void paintBackground(Graphics2D g) {
     if (hilightRows != null) {
       g.setColor(HIGHLIGHT_COLOR);
       int inputs = table.getInputColumnCount();
@@ -552,7 +552,7 @@ class TableTabCaret {
     }
   }
 
-  void paintForeground(Graphics g) {
+  void paintForeground(Graphics2D g) {
     if (!table.isFocusOwner())
       return;
     Pt p;

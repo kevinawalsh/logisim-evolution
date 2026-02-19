@@ -39,7 +39,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Point;
-import java.awt.RenderingHints;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
@@ -180,8 +179,6 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
   }
 
   void computePreferredSize() {
-    Graphics2D g = (Graphics2D)getGraphics();
-
     TruthTable table = model.getTruthTable();
 
     String message = null;
@@ -191,81 +188,63 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
       message = S.get("karnaughTooManyInputsError");
 
     if (message != null)
-      computePreferredSize(g, message);
+      computePreferredSize(message);
     else
-      computePreferredSize(g, table);
+      computePreferredSize(table);
 
     setPreferredSize(new Dimension(tableWidth, tableHeight));
-    invalidate();
-    if (g != null)
-      repaint();
+    revalidate();
+    repaint();
   }
 
-  private void computePreferredSize(Graphics2D g, String message) {
-    if (g == null) {
-      tableHeight = 15;
-      tableWidth = 100;
-    } else {
-      FontMetrics fm = g.getFontMetrics(BODY_FONT);
-      tableHeight = fm.getHeight();
-      tableWidth = fm.stringWidth(message);
-    }
+  private void computePreferredSize(String message) {
+    FontMetrics fm = getFontMetrics(BODY_FONT);
+    tableHeight = fm.getHeight();
+    tableWidth = fm.stringWidth(message);
   }
 
-  private void computePreferredSize(Graphics2D g, TruthTable table) {
+  private void computePreferredSize(TruthTable table) {
     List<String> inputs = model.getInputs().bits;
     int inputCount = table.getInputColumnCount();
     int rowVars = ROW_VARS[inputCount];
     int colVars = COL_VARS[inputCount];
     String rowHeader = header(inputs, 0, rowVars);
     String colHeader = header(inputs, rowVars, rowVars+colVars);
-    if (g == null) {
-      cellHeight = 16;
-      cellWidth = 24;
-    } else {
-      FontMetrics fm = g.getFontMetrics(BODY_FONT);
-      cellHeight = fm.getAscent() + CELL_VERT_SEP;
-      cellWidth = fm.stringWidth("00") + CELL_HORZ_SEP;
-    }
+    FontMetrics fm = getFontMetrics(BODY_FONT);
+    cellHeight = fm.getAscent() + CELL_VERT_SEP;
+    cellWidth = fm.stringWidth("00") + CELL_HORZ_SEP;
     int rows = 1 << rowVars;
     int cols = 1 << colVars;
     int bodyWidth = cellWidth * (cols + 1);
     int bodyHeight = cellHeight * (rows + 1);
 
-    int colLabelWidth;
-    if (g == null) {
-      headHeight = 16;
-      headWidth = 80;
-      colLabelWidth = 80;
+    FontMetrics headFm = getFontMetrics(HEAD_FONT);
+
+    int rowLabelWidth = headFm.stringWidth(rowHeader);
+    if (rowVars > 1 && rowLabelWidth > Math.max(bodyWidth, 100)) {
+      // use two lines for row header
+      String s1 = inputs.get(0) + ",";
+      String s2 = inputs.get(1);
+      int w1 = headFm.stringWidth(s1);
+      int w2 = headFm.stringWidth(s2) + headFm.getHeight()*cellWidth/cellHeight;
+      headWidth = Math.max(w1, w2);
     } else {
-      FontMetrics headFm = g.getFontMetrics(HEAD_FONT);
+      // use one line for row header
+      headWidth = headFm.stringWidth(rowHeader);
+    }
 
-      int rowLabelWidth = headFm.stringWidth(rowHeader);
-      if (rowVars > 1 && rowLabelWidth > Math.max(bodyWidth, 100)) {
-        // use two lines for row header
-        String s1 = inputs.get(0) + ",";
-        String s2 = inputs.get(1);
-        int w1 = headFm.stringWidth(s1);
-        int w2 = headFm.stringWidth(s2) + headFm.getHeight()*cellWidth/cellHeight;
-        headWidth = Math.max(w1, w2);
-      } else {
-        // use one line for row header
-        headWidth = headFm.stringWidth(rowHeader);
-      }
-
-      colLabelWidth = headFm.stringWidth(colHeader) + cellWidth/2;
-      if (colVars > 1 && colLabelWidth > Math.max(bodyWidth, 100)) {
-        // use two lines for column header
-        headHeight = 2*headFm.getHeight();
-        String s1 = inputs.get(rowVars+0) + ",";
-        String s2 = inputs.get(rowVars+1);
-        int w1 = headFm.stringWidth(s1) + cellWidth/2 - headFm.getHeight()*cellWidth/cellHeight;
-        int w2 = headFm.stringWidth(s2) + cellWidth/2;
-        colLabelWidth = Math.max(w1, w2);
-      } else {
-        // use one line for column header
-        headHeight = headFm.getHeight();
-      }
+    int colLabelWidth = headFm.stringWidth(colHeader) + cellWidth/2;
+    if (colVars > 1 && colLabelWidth > Math.max(bodyWidth, 100)) {
+      // use two lines for column header
+      headHeight = 2*headFm.getHeight();
+      String s1 = inputs.get(rowVars+0) + ",";
+      String s2 = inputs.get(rowVars+1);
+      int w1 = headFm.stringWidth(s1) + cellWidth/2 - headFm.getHeight()*cellWidth/cellHeight;
+      int w2 = headFm.stringWidth(s2) + cellWidth/2;
+      colLabelWidth = Math.max(w1, w2);
+    } else {
+      // use one line for column header
+      headHeight = headFm.getHeight();
     }
 
     tableWidth = headWidth + Math.max(bodyWidth, colLabelWidth);
@@ -419,15 +398,12 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
   }
 
   public void paintKmap(Graphics g) {
-    /* Anti-aliasing changes from https://github.com/hausen/logisim-evolution */
-    Graphics2D g2d = (Graphics2D)g;
-    g2d.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    g2d.setRenderingHint(
-        RenderingHints.KEY_ANTIALIASING,
-        RenderingHints.VALUE_ANTIALIAS_ON);
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g);
+    paintKmapNice(g);
+    GraphicsUtil.restoreRenderingHints(g, oldHints);
+  }
 
+  private void paintKmapNice(Graphics g) {
     TruthTable table = model.getTruthTable();
     int inputCount = table.getInputColumnCount();
     Dimension sz = getSize();
@@ -547,15 +523,17 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
     List<Implicant> implicants = model.getOutputExpressions().getMinimalImplicants(output);
     if (implicants != null) {
       Graphics2D g2 = (Graphics2D)g.create(x, y, cellWidth * cols, cellHeight * rows);
-      g2.setRenderingHint(
-          RenderingHints.KEY_STROKE_CONTROL,
-          RenderingHints.VALUE_STROKE_PURE);
-      g2.setStroke(new BasicStroke(IMP_BORDER));
-      int index = 0;
-      for (Implicant imp : implicants) {
-        g2.setColor(IMP_COLORS[index % IMP_COLORS.length]);
-        paintImplicant(g2, imp, rows, cols);
-        index++;
+      try {
+        GraphicsUtil.usePureStrokeRendering(g2);
+        g2.setStroke(new BasicStroke(IMP_BORDER));
+        int index = 0;
+        for (Implicant imp : implicants) {
+          g2.setColor(IMP_COLORS[index % IMP_COLORS.length]);
+          paintImplicant(g2, imp, rows, cols);
+          index++;
+        }
+      } finally {
+        g2.dispose();
       }
     }
 
