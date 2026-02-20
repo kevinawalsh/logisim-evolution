@@ -100,8 +100,8 @@ public class InstanceTextField
     }
   }
 
-  Bounds getBounds(Graphics g) {
-    return field == null ? Bounds.EMPTY_BOUNDS : field.getBounds(g);
+  Bounds getVisibleBounds() {
+    return field == null ? Bounds.EMPTY_BOUNDS : field.getVisibleBounds();
   }
 
   public Action getCommitAction(Circuit circuit, String oldText, String newText) {

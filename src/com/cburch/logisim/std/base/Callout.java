@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.base;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -83,9 +83,9 @@ public class Callout extends Text implements Reshapable {
   }
 
   @Override
-  public Bounds getVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
+  public Bounds getVisibleOffsetBounds(AttributeSet attrsBase) { // visible
     CalloutAttributes attrs = (CalloutAttributes) attrsBase;
-    return super.getVisibleOffsetBounds(attrsBase, g).add(attrs.getDx(), attrs.getDy());
+    return super.getVisibleOffsetBounds(attrsBase).add(attrs.getDx(), attrs.getDy());
   }
 
   @Override
@@ -119,9 +119,9 @@ public class Callout extends Text implements Reshapable {
     CalloutAttributes attrs = (CalloutAttributes) painter.getAttributeSet();
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Location loc = painter.getLocation();
-    Bounds tbds = getTextOnlyVisibleBounds(loc, attrs, g, altTextWidth);
+    Bounds tbds = getTextOnlyVisibleBounds(loc, attrs, altTextWidth);
 
     g.setColor(attrs.getFGColor());
    

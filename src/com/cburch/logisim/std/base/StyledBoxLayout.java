@@ -45,6 +45,7 @@ import java.util.Locale;
 
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.util.GraphicsUtil;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
@@ -61,11 +62,8 @@ public class StyledBoxLayout {
   Bounds bounds;  // accurate once layout is complete
   ArrayList<VisualLine> lines;
 
-  public StyledBoxLayout(Graphics2D g, String t, Location l, int tw, Font f, int v) {
-    // GraphicsUtil.setRenderHints(g); // FIXME experimental
-    text = t + " StyledBoxLayout["+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)+" / "+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS)+"]";
+  public StyledBoxLayout(String t, Location l, int tw, Font f, int v) {
+    text = t;
     loc = l;
     textWidth = tw; // must be positive
     autoWrap = true;
@@ -75,21 +73,17 @@ public class StyledBoxLayout {
     lines = new ArrayList<>();
     bounds = null;
 
-    layoutMarkdownish(g);
+    layoutMarkdownish();
   }
 
   public void drawText(Graphics2D g) {
     g.setFont(font);
     for (VisualLine line : lines)
       line.layout.draw(g, line.x, line.baselineY);
-    String tag = " StyledBoxLayout["+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)+" / "+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS)+"]";
-    if (!text.endsWith(tag))
-      System.out.println("  ==> Graphics Change!! new tag is " + tag);
   }
 
-  private void layoutMarkdownish(Graphics2D g2) {
+  private void layoutMarkdownish() {
+    FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
 
     int x = loc.x;
     int y = loc.y;
@@ -99,9 +93,6 @@ public class StyledBoxLayout {
     // FIXME: add a monospace font option?
     Font baseFont = font; 
     Font monoFont = new Font("Monospaced", Font.PLAIN, font.getSize());
-
-    g2.setFont(baseFont);
-    FontRenderContext frc = g2.getFontRenderContext();
   
     Markdownish md = new Markdownish(text, baseFont, monoFont);
     for (Markdownish.Block block : md.blocks) {
@@ -245,14 +236,14 @@ public class StyledBoxLayout {
   }
 
   // This is used by Text.get*Bounds()
-  static Bounds getBounds(Graphics2D g, String text, Location loc, int textWidth, Font font, int valign) {
-    StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
+  static Bounds getBounds(String text, Location loc, int textWidth, Font font, int valign) {
+    StyledBoxLayout box = new StyledBoxLayout(text, loc, textWidth, font, valign);
     return box.bounds;
   }
 
   // This is used by Text.paint()
   static void drawMarkdownishText(Graphics2D g, String text, Location loc, int textWidth, Font font, int valign) {
-    StyledBoxLayout box = new StyledBoxLayout(g, text, loc, textWidth, font, valign);
+    StyledBoxLayout box = new StyledBoxLayout(text, loc, textWidth, font, valign);
     box.drawText(g);
   }
 

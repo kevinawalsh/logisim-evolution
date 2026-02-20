@@ -50,8 +50,8 @@ public class SubcircuitPoker extends InstancePoker {
   private boolean mouseDown;
 
   @Override
-  public Bounds getNominalBounds(InstancePainter painter) {
-    Bounds bds = painter.getInstance().getNominalBounds();
+  public Bounds getNominalBounds(InstanceState state) {
+    Bounds bds = state.getInstance().getNominalBounds();
     int cx = bds.getX() + bds.getWidth() / 2;
     int cy = bds.getY() + bds.getHeight() / 2;
     return Bounds.create(cx - 5, cy - 5, 15, 15);

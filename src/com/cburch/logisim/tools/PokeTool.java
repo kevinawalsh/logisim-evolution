@@ -38,7 +38,6 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -420,7 +419,7 @@ public final class PokeTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     if (pokeCaret != null) {
       pokeCaret.mouseDragged(e);
       canvas.getProject().repaintCanvas();
@@ -428,12 +427,12 @@ public final class PokeTool extends Tool {
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     int x = e.getX();
     int y = e.getY();
     Location loc = Location.create(x, y);
     boolean dirty = false;
-    if (pokeCaret != null && !pokeCaret.getBounds(g).contains(loc)) {
+    if (pokeCaret != null && !pokeCaret.getVisibleBounds().contains(loc)) {
       canvas.setHighlightedWires(WireSet.EMPTY);
       dirty = true;
       removeCaret(true);
@@ -443,7 +442,7 @@ public final class PokeTool extends Tool {
     if (pokeCaret == null) {
       ComponentUserEvent event = new ComponentUserEvent(canvas, x, y);
       Circuit circ = canvas.getCircuit();
-      for (Component c : circ.getAllVisiblyContaining(loc, g)) {
+      for (Component c : circ.getAllVisiblyContaining(loc)) {
         if (pokeCaret != null)
           break;
 
@@ -477,7 +476,7 @@ public final class PokeTool extends Tool {
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     if (pokeCaret != null) {
       pokeCaret.mouseReleased(e);
       canvas.getProject().repaintCanvas();

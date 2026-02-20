@@ -243,7 +243,7 @@ public final class TextTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     Project proj = canvas.getProject();
     Circuit circ = canvas.getCircuit();
 
@@ -262,7 +262,7 @@ public final class TextTool extends Tool {
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     caretNeedsSelectAll = false;
     Project proj = canvas.getProject();
     Circuit circ = canvas.getCircuit();
@@ -277,7 +277,7 @@ public final class TextTool extends Tool {
     boolean hadCaret = caret != null;;
     // Maybe user is clicking within the current caret.
     if (hadCaret) {
-      if (caret.getBounds(g).contains(e.getX(), e.getY())) { // Yes
+      if (caret.getVisibleBounds().contains(e.getX(), e.getY())) { // Yes
         caret.mousePressed(e);
         proj.repaintCanvas();
         return;
@@ -294,7 +294,7 @@ public final class TextTool extends Tool {
     ComponentUserEvent event = new ComponentUserEvent(canvas, x, y);
 
     // First search in selection.
-    for (Component comp : proj.getSelection().getComponentsContaining(loc, g)) {
+    for (Component comp : proj.getSelection().getComponentsContaining(loc)) {
       TextEditable editable = (TextEditable) comp.getFeature(TextEditable.class);
       if (editable != null) {
         caret = editable.getTextCaret(event);
@@ -309,7 +309,7 @@ public final class TextTool extends Tool {
 
     // Then search in circuit
     if (caret == null) {
-      for (Component comp : circ.getAllVisiblyContaining(loc, g)) {
+      for (Component comp : circ.getAllVisiblyContaining(loc)) {
         TextEditable editable = (TextEditable) comp.getFeature(TextEditable.class);
         if (editable != null) {
           caret = editable.getTextCaret(event);
@@ -349,7 +349,7 @@ public final class TextTool extends Tool {
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     Project proj = canvas.getProject();
     Circuit circ = canvas.getCircuit();
 

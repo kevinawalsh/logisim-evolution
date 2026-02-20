@@ -124,18 +124,7 @@ public class ExportImage {
   }
 
   public static String exportImage(Canvas canvas, Circuit circuit, double scale, boolean printerView, File dest, String format, ProgressMonitor monitor) {
-    Bounds bds;
-    if (!printerView) {
-      bds = circuit.getCircuitBounds(canvas.getGraphics()).expand(BORDER_SIZE);
-    } else {
-      BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-      Graphics2D base = img.createGraphics();
-      try {
-        bds = circuit.getCircuitBounds(base).expand(BORDER_SIZE);
-      } finally {
-        base.dispose();
-      }
-    }
+    Bounds bds = circuit.getCircuitVisibleBounds().expand(BORDER_SIZE);
     int width = (int) Math.round(bds.getWidth() * scale);
     int height = (int) Math.round(bds.getHeight() * scale);
     if (width == 0)

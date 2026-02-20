@@ -48,9 +48,9 @@ public class MemPoker extends InstancePoker {
 
   private static class AddrPoker extends MemPoker {
     @Override
-    public Bounds getNominalBounds(InstancePainter painter) {
-      MemState data = (MemState) painter.getDataAsCustom();
-      return data.getBounds(-1, painter.getNominalBounds());
+    public Bounds getNominalBounds(InstanceState state) {
+      MemState data = (MemState) state.getDataAsCustom();
+      return data.getBounds(-1, state.getInstance().getNominalBounds());
     }
 
     @Override
@@ -127,9 +127,9 @@ public class MemPoker extends InstancePoker {
     }
 
     @Override
-    public Bounds getNominalBounds(InstancePainter painter) {
-      MemState data = (MemState) painter.getDataAsCustom();
-      Bounds inBounds = painter.getInstance().getNominalBounds();
+    public Bounds getNominalBounds(InstanceState state) {
+      MemState data = (MemState) state.getDataAsCustom();
+      Bounds inBounds = state.getInstance().getNominalBounds();
       return data.getBounds(data.getCursor(), inBounds);
     }
 
@@ -211,7 +211,7 @@ public class MemPoker extends InstancePoker {
   private MemPoker sub;
 
   @Override
-  public Bounds getNominalBounds(InstancePainter state) {
+  public Bounds getNominalBounds(InstanceState state) {
     return sub.getNominalBounds(state);
   }
 

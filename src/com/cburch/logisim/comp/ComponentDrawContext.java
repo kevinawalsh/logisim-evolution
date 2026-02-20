@@ -159,7 +159,7 @@ public final class ComponentDrawContext {
   }
 
   public void drawHandles(Component comp) {
-    Bounds b = comp.getVisibleBounds(g);
+    Bounds b = comp.getVisibleBounds();
     int left = b.getX();
     int right = left + b.getWidth();
     int top = b.getY();

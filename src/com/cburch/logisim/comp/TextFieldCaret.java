@@ -33,7 +33,6 @@ package com.cburch.logisim.comp;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -41,7 +40,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.font.FontRenderContext;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -130,7 +128,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     g.setFont(font);
 
     // draw boundary
-    Bounds box = getBounds(g);
+    Bounds box = getVisibleBounds();
     g.setColor(EDIT_BACKGROUND);
     g.fillRect(box.getX(), box.getY(), box.getWidth(), box.getHeight());
     g.setColor(EDIT_BORDER);
@@ -159,7 +157,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     return curText;
   }
 
-  public Bounds getBounds(Graphics g) {
+  public Bounds getVisibleBounds() {
     int x = field.getX();
     int y = field.getY();
     int halign = field.getHAlign();
@@ -167,9 +165,8 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     Font font = field.getFont();
     if (font == null)
       font = StdAttr.DEFAULT_LABEL_FONT;
-    // Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, curText, x, y, halign, valign));
     Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT, font, curText, x, y, halign, valign));
-    Bounds box = bds.add(field.getBounds(g)).expand(3);
+    Bounds box = bds.add(field.getVisibleBounds()).expand(3);
     return box;
   }
 

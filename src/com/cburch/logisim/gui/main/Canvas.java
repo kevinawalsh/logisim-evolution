@@ -38,7 +38,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -169,23 +168,23 @@ public class Canvas extends JPanel
     public void mouseClicked(MouseEvent e) {
       Tool tool = getToolFor(e);
       if (tool != null)
-        tool.mouseClicked(Canvas.this, getGraphics(), e);
+        tool.mouseClicked(Canvas.this, e);
     }
 
     @Override
     public void mouseDragged(MouseEvent e) {
       if (drag_tool != null)
-        drag_tool.mouseDragged(Canvas.this, getGraphics(), e);
+        drag_tool.mouseDragged(Canvas.this, e);
     }
 
     @Override
     public void mouseEntered(MouseEvent e) {
       if (drag_tool != null) {
-        drag_tool.mouseEntered(Canvas.this, getGraphics(), e);
+        drag_tool.mouseEntered(Canvas.this, e);
       } else {
         Tool tool = getToolFor(e);
         if (tool != null) {
-          tool.mouseEntered(Canvas.this, getGraphics(), e);
+          tool.mouseEntered(Canvas.this, e);
         }
       }
     }
@@ -193,11 +192,11 @@ public class Canvas extends JPanel
     @Override
     public void mouseExited(MouseEvent e) {
       if (drag_tool != null) {
-        drag_tool.mouseExited(Canvas.this, getGraphics(), e);
+        drag_tool.mouseExited(Canvas.this, e);
       } else {
         Tool tool = getToolFor(e);
         if (tool != null) {
-          tool.mouseExited(Canvas.this, getGraphics(), e);
+          tool.mouseExited(Canvas.this, e);
         }
       }
     }
@@ -215,7 +214,7 @@ public class Canvas extends JPanel
 
       Tool tool = getToolFor(e);
       if (tool != null) {
-        tool.mouseMoved(Canvas.this, getGraphics(), e);
+        tool.mouseMoved(Canvas.this, e);
       }
     }
 
@@ -227,7 +226,7 @@ public class Canvas extends JPanel
       Canvas.this.requestFocus();
       drag_tool = getToolFor(e);
       if (drag_tool != null)
-        drag_tool.mousePressed(Canvas.this, getGraphics(), e);
+        drag_tool.mousePressed(Canvas.this, e);
 
       completeAction();
     }
@@ -235,13 +234,13 @@ public class Canvas extends JPanel
     @Override
     public void mouseReleased(MouseEvent e) {
       if (drag_tool != null) {
-        drag_tool.mouseReleased(Canvas.this, getGraphics(), e);
+        drag_tool.mouseReleased(Canvas.this, e);
         drag_tool = null;
       }
 
       Tool tool = proj.getTool();
       if (tool != null) {
-        tool.mouseMoved(Canvas.this, getGraphics(), e);
+        tool.mouseMoved(Canvas.this, e);
       }
 
       completeAction();
@@ -760,7 +759,7 @@ public class Canvas extends JPanel
   public void computeSize(boolean immediate) {
     if (proj.getCurrentCircuit() == null)
       return;
-    Bounds bounds = proj.getCurrentCircuit().getCircuitBounds(getGraphics());
+    Bounds bounds = proj.getCurrentCircuit().getCircuitVisibleBounds();
     int width = bounds.getX() + bounds.getWidth() + BOUNDS_BUFFER;
     int height = bounds.getY() + bounds.getHeight() + BOUNDS_BUFFER;
     Dimension dim;
@@ -788,7 +787,7 @@ public class Canvas extends JPanel
     if (canvasPane != null) {
       viewableBase = viewport.getViewRect();
     } else {
-      Bounds bds = proj.getCurrentCircuit().getCircuitBounds(getGraphics());
+      Bounds bds = proj.getCurrentCircuit().getCircuitVisibleBounds();
       viewableBase = new Rectangle(0, 0, bds.getWidth(), bds.getHeight());
     }
     double zoom = getZoomFactor();
@@ -934,7 +933,7 @@ public class Canvas extends JPanel
       Canvas.snapToGrid(event);
       Location loc = Location.create(event.getX(), event.getY());
       ComponentUserEvent e = null;
-      for (Component comp : getCircuit().getAllVisiblyContaining(loc, getGraphics())) {
+      for (Component comp : getCircuit().getAllVisiblyContaining(loc)) {
         Object makerObj = comp.getFeature(ToolTipMaker.class);
         if (makerObj != null && makerObj instanceof ToolTipMaker) {
           ToolTipMaker maker = (ToolTipMaker) makerObj;
@@ -977,17 +976,8 @@ public class Canvas extends JPanel
     paintCoordinator.requestRepaint();
   }
 
-  static int warned = 0;
   @Override
   public void paintComponent(Graphics g) {
-    // FIXME -- This is a key place, the top level Canvas entrypoint for painting.
-    // Yet it has only *partially* applied anti-aliasing:
-    //   ANTIALIASING ==> ON
-    //   TEXT_ANTIALIASING ==> unspecified
-    if (warned < 10) {
-      warned++;
-      System.out.println("Why was canvas TEXT_AA not on ??????????????????");
-    }
     Graphics2D g2 = (Graphics2D)g;
     Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
     try {

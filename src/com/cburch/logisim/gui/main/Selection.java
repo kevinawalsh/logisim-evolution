@@ -635,7 +635,7 @@ public class Selection {
   //   return ret;
   // }
 
-  public Collection<Component> getComponentsContaining(Location query, Graphics g) {
+  public Collection<Component> getComponentsContaining(Location query) {
     HashSet<Component> ret = new HashSet<Component>();
     for (Component comp : unionSet) {
       // New behavior for 5.0.5-HC: A selected wire has a larger hit-box
@@ -645,7 +645,7 @@ public class Selection {
         if (((Wire)comp).nominallyNearby(query))
           ret.add(comp);
       } else {
-        if (comp.visiblyContains(query, g))
+        if (comp.visiblyContains(query))
           ret.add(comp);
       }
     }
@@ -661,10 +661,10 @@ public class Selection {
   //   return ret;
   // }
 
-  public Collection<Component> getComponentsVisiblyWithin(Bounds bds, Graphics g) {
+  public Collection<Component> getComponentsVisiblyWithin(Bounds bds) {
     HashSet<Component> ret = new HashSet<Component>();
     for (Component comp : unionSet) {
-      if (bds.contains(comp.getVisibleBounds(g)))
+      if (bds.contains(comp.getVisibleBounds()))
         ret.add(comp);
     }
     return ret;

@@ -554,28 +554,31 @@ public class BindingsDialog extends JDialog {
     public int getIconHeight() { return height; }
 
     public void paintIcon(Component c, Graphics g, int x, int y) {
-      RenderingHints hints = new RenderingHints(
-          RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
-      hints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY );
-      ((Graphics2D)g).setRenderingHints(hints);
+      Graphics2D g2 = (Graphics2D)g;
+      Object[] oldHints = GraphicsUtil.setRenderingHintsForNiceText(g2);
+      Object oldRQ = g2.getRenderingHint(RenderingHints.KEY_RENDERING);
+      g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
       int tx = width - GAP - 10 - 4;
       int ty = height / 2;
       Rectangle b = buttonBounds.get(src);
       if (b == null) {
-        Rectangle t = GraphicsUtil.getTextBounds(g, g.getFont(), text, tx, ty,
+        Rectangle t = GraphicsUtil.getTextBounds(g2.getFontRenderContext(), g2.getFont(),
+            text, tx, ty,
             GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
         b = new Rectangle(t.x-GAP, 2, t.width + GAP + 10 + 4 + GAP, height-4);
         buttonBounds.put(src, b); // cache for later, and for hitbox detection
       }
-      g.setColor(rowHasFocus ? TYPE_BUTTON_COLOR : Color.GRAY);
-      g.fillRoundRect(b.x, b.y, b.width, b.height, 10, 10);
-      g.setColor(Color.WHITE);
-      g.drawRoundRect(b.x, b.y, b.width, b.height, 10, 10);
-      GraphicsUtil.drawText(g, text, tx, ty,
+      g2.setColor(rowHasFocus ? TYPE_BUTTON_COLOR : Color.GRAY);
+      g2.fillRoundRect(b.x, b.y, b.width, b.height, 10, 10);
+      g2.setColor(Color.WHITE);
+      g2.drawRoundRect(b.x, b.y, b.width, b.height, 10, 10);
+      GraphicsUtil.drawText(g2, text, tx, ty,
           GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
       int xx = tx + 4;
       int yy = ty - 2;
-      g.fillPolygon(new int[] { xx, xx+5, xx+10 }, new int[] { yy, yy+6, yy }, 3);
+      g2.fillPolygon(new int[] { xx, xx+5, xx+10 }, new int[] { yy, yy+6, yy }, 3);
+      g2.setRenderingHint(RenderingHints.KEY_RENDERING, oldRQ);
+      GraphicsUtil.restoreRenderingHints(g2, oldHints);
     }
   }
 

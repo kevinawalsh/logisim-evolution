@@ -78,7 +78,7 @@ public class TextField {
     }
   }
 
-  public Bounds getBounds(Graphics g) {
+  public Bounds getVisibleBounds() {
     // return Bounds.create(GraphicsUtil.getTextBounds(g, font, text, x, y, halign, valign));
     return Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
           font, text, x, y, halign, valign));

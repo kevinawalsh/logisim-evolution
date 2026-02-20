@@ -33,7 +33,7 @@ import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -175,7 +175,7 @@ public final class SelectTool extends Tool {
     return SelectTool.class.hashCode();
   }
 
-  private void computeDxDy(Project proj, MouseEvent e, Graphics g) {
+  private void computeDxDy(Project proj, MouseEvent e) {
     forceSnap = null;
     int dx = e.getX() - start.getX();
     int dy = e.getY() - start.getY();
@@ -234,7 +234,7 @@ public final class SelectTool extends Tool {
         MoveResult result = gesture.findResult(dx, dy);
         if (result != null) {
           Collection<Wire> wiresToAdd = result.getWiresToAdd();
-          Graphics g = context.getGraphics();
+          Graphics2D g = context.getGraphics();
           GraphicsUtil.switchToWidth(g, 3);
           g.setColor(Color.GRAY);
           for (Wire w : wiresToAdd) {
@@ -256,16 +256,16 @@ public final class SelectTool extends Tool {
     } else if (state == RECT_SELECT) {
       Bounds bds = Bounds.create(start.x, start.y, dx, dy);
 
-      Graphics gBase = context.getGraphics();
+      Graphics2D gBase = context.getGraphics();
       if (bds.width > 3 && bds.height > 3) {
         gBase.setColor(BACKGROUND_RECT_SELECT);
         gBase.fillRect(bds.x + 1, bds.y + 1, bds.width - 2, bds.height - 2);
       }
 
       Circuit circ = canvas.getCircuit();
-      for (Component c : circ.getAllVisiblyWithin(bds, gBase)) {
+      for (Component c : circ.getAllVisiblyWithin(bds)) {
         Location cloc = c.getLocation();
-        Graphics gDup = gBase.create();
+        Graphics2D gDup = (Graphics2D)gBase.create();
         context.setGraphics(gDup);
         c.getFactory().drawGhost(context, COLOR_RECT_SELECT,
             cloc.getX(), cloc.getY(), c.getAttributeSet());
@@ -280,8 +280,8 @@ public final class SelectTool extends Tool {
     } else if (state == RESHAPING) {
       Component c = canvas.getSelection().getComponents().iterator().next();
       Reshapable handler = canvas.getSelection().getReshapeHandler();
-      Graphics gBase = context.getGraphics();
-      Graphics gDup = gBase.create();
+      Graphics2D gBase = context.getGraphics();
+      Graphics2D gDup = (Graphics2D)gBase.create();
       context.setGraphics(gDup);
       context.getInstancePainter().setComponent(c);
       handler.drawReshaping(context.getInstancePainter(), start, curDx, curDy);
@@ -410,14 +410,14 @@ public final class SelectTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     if (state == MOVING_OR_DROPPING_ONE) {
       Project proj = canvas.getProject();
       setState(proj, MOVING);
     }
     if (state == MOVING) {
       Project proj = canvas.getProject();
-      computeDxDy(proj, e, g);
+      computeDxDy(proj, e);
       handleMoveDrag(canvas, curDx, curDy, e.getModifiersEx());
     } else if (state == RECT_SELECT) {
       Project proj = canvas.getProject();
@@ -432,9 +432,9 @@ public final class SelectTool extends Tool {
     }
   }
 
-  private Component highestPriority(Graphics g, Location loc, Component c1, Component c2) {
-    Bounds b1 = c1.getVisibleBounds(g);
-    Bounds b2 = c2.getVisibleBounds(g);
+  private Component highestPriority(Location loc, Component c1, Component c2) {
+    Bounds b1 = c1.getVisibleBounds();
+    Bounds b2 = c2.getVisibleBounds();
     int a1 = b1.getWidth() * b1.getHeight();
     int a2 = b2.getWidth() * b2.getHeight();
     if (a1 < a2) return c1;
@@ -451,21 +451,21 @@ public final class SelectTool extends Tool {
 
   // Pick a single component from comps: the smallest one, with ties broken by
   // distance from loc to center.
-  private Component highestPriority(Graphics g, Location loc, Collection<Component> comps, Collection<Component> disqualify) {
+  private Component highestPriority(Location loc, Collection<Component> comps, Collection<Component> disqualify) {
       Component target = null;
       for (Component comp : comps) {
         if (disqualify == null || !disqualify.contains(comp)) {
           if (target == null)
             target = comp;
           else
-            target = highestPriority(g, start, target, comp);
+            target = highestPriority(start, target, comp);
         }
       }
       return target;
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     canvas.requestFocusInWindow();
     Project proj = canvas.getProject();
     Selection sel = proj.getSelection();
@@ -490,7 +490,7 @@ public final class SelectTool extends Tool {
     }
 
     // If user clicks into the selection, selection is being modified
-    Collection<Component> in_sel = sel.getComponentsContaining(start, g);
+    Collection<Component> in_sel = sel.getComponentsContaining(start);
     if (!in_sel.isEmpty()) {
       if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {
         // Non-shift-click to selected components begins MOVING
@@ -498,7 +498,7 @@ public final class SelectTool extends Tool {
         proj.repaintCanvas();
         return;
       } else {
-        Component target = highestPriority(g, start, in_sel, null);
+        Component target = highestPriority(start, in_sel, null);
         if (target != null) {
           // shift-click to a selected component might begin MOVING, or maybe DROP_ONE
           setState(proj, MOVING_OR_DROPPING_ONE);
@@ -512,10 +512,10 @@ public final class SelectTool extends Tool {
 
     // if the user clicks into a component outside selection, user
     // wants to add/reset selection
-    Collection<Component> clicked = circuit.getAllVisiblyContaining(start, g);
+    Collection<Component> clicked = circuit.getAllVisiblyContaining(start);
     if (!clicked.isEmpty()) {
       if ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) == 0) {
-        if (sel.getComponentsContaining(start, g).isEmpty()) {
+        if (sel.getComponentsContaining(start).isEmpty()) {
           Action act = SelectionActions.dropAll(sel);
           if (act != null) {
             proj.doAction(act);
@@ -525,7 +525,7 @@ public final class SelectTool extends Tool {
       // Old behavior: click on stacked components will select all of them.
       // New behavior: sort by size, take only the smallest. A z-order would be
       // nicer, but we don't maintain that.
-      Component target = highestPriority(g, start, clicked, in_sel);
+      Component target = highestPriority(start, clicked, in_sel);
       if (target != null) {
         sel.add(target);
       }
@@ -546,11 +546,11 @@ public final class SelectTool extends Tool {
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     Project proj = canvas.getProject();
     if (state == MOVING) {
       setState(proj, IDLE);
-      computeDxDy(proj, e, g);
+      computeDxDy(proj, e);
       int dx = curDx;
       int dy = curDy;
       if (dx != 0 || dy != 0) {
@@ -590,8 +590,8 @@ public final class SelectTool extends Tool {
       Bounds bds = Bounds.create(start.x, start.y, curDx, curDy);
       Circuit circuit = canvas.getCircuit();
       Selection sel = proj.getSelection();
-      Collection<Component> in_sel = sel.getComponentsVisiblyWithin(bds, g);
-      for (Component comp : circuit.getAllVisiblyWithin(bds, g)) {
+      Collection<Component> in_sel = sel.getComponentsVisiblyWithin(bds);
+      for (Component comp : circuit.getAllVisiblyWithin(bds)) {
         if (!in_sel.contains(comp))
           sel.add(comp);
       }
@@ -615,9 +615,9 @@ public final class SelectTool extends Tool {
     } else if (state == MOVING_OR_DROPPING_ONE) {
       // drop one
       Selection sel = proj.getSelection();
-      Collection<Component> in_sel = sel.getComponentsContaining(start, g);
+      Collection<Component> in_sel = sel.getComponentsContaining(start);
       if (!in_sel.isEmpty()) {
-        Component target = highestPriority(g, start, in_sel, null);
+        Component target = highestPriority(start, in_sel, null);
         if (target != null) {
           Action act = SelectionActions.drop(sel, Collections.singletonList(target));
           if (act != null)
@@ -629,7 +629,7 @@ public final class SelectTool extends Tool {
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    Graphics g = c.getGraphics();
+    Graphics2D g = c.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
     } else {

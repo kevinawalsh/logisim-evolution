@@ -215,9 +215,9 @@ public /*final*/ class InstanceComponent
     return factory.nominallyContains(translated, instance.getAttributeSet());
   }
 
-  public boolean visiblyContains(Location pt, Graphics g) { // note: Text and Tunnel override this
+  public boolean visiblyContains(Location pt) { // note: Text and Tunnel override this
     InstanceTextField field = textField;
-    if (field != null && field.getBounds(g).contains(pt))
+    if (field != null && field.getVisibleBounds().contains(pt))
       return true;
     else
       return nominallyContains(pt);
@@ -248,7 +248,7 @@ public /*final*/ class InstanceComponent
   }
 
   public void expose(ComponentDrawContext context) {
-    Bounds b = getVisibleBounds(context.getGraphics()); // nominalBounds; // fixme: why not visible bounds?
+    Bounds b = getVisibleBounds();
     context.getDestination().repaint(b.getX(), b.getY(), b.getWidth(), b.getHeight());
   }
 
@@ -286,11 +286,11 @@ public /*final*/ class InstanceComponent
     return nominalBounds;
   }
 
-  public Bounds getVisibleBounds(Graphics g) { // note: Text overrides this
+  public Bounds getVisibleBounds() { // note: Text overrides this
     Bounds ret = nominalBounds;
     InstanceTextField field = textField;
     if (field != null)
-      ret = ret.add(field.getBounds(g));
+      ret = ret.add(field.getVisibleBounds());
     return ret;
   }
 
@@ -298,16 +298,10 @@ public /*final*/ class InstanceComponent
     return endArray[index];
   }
 
-  //
-  // propagation methods
-  //
   public List<EndData> getEnds() {
     return endList;
   }
 
-  //
-  // basic information methods
-  //
   public ComponentFactory getFactory() {
     return factory;
   }

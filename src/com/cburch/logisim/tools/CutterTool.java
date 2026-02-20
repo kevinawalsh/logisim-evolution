@@ -201,7 +201,7 @@ public final class CutterTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     Project proj = canvas.getProject();
     setState(proj, RECT_SELECT);
     curDx = e.getX() - start.getX();
@@ -210,7 +210,7 @@ public final class CutterTool extends Tool {
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     canvas.requestFocusInWindow();
     Project proj = canvas.getProject();
     Circuit circuit = canvas.getCircuit();
@@ -222,7 +222,7 @@ public final class CutterTool extends Tool {
   static final int HITBOX_SIZE = 3;
   
   @Override
-  public void mouseClicked(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseClicked(Canvas canvas, MouseEvent e) {
     Project proj = canvas.getProject();
     curDx = curDy = 0;
     
@@ -296,7 +296,7 @@ public final class CutterTool extends Tool {
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     if (state != RECT_SELECT)
       return;
 

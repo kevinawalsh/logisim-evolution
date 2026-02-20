@@ -33,7 +33,7 @@ import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -165,7 +165,7 @@ public final class EditTool extends Tool {
     if (loc != NULL_LOCATION && loc != null && current != wiring) {
       int x = loc.getX();
       int y = loc.getY();
-      Graphics g = context.getGraphics();
+      Graphics2D g = context.getGraphics();
       g.setColor(Color.MAGENTA);
       GraphicsUtil.switchToWidth(g, 2);
       g.drawOval(x - 5, y - 5, 10, 10);
@@ -421,31 +421,31 @@ public final class EditTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     isClick(e);
-    current.mouseDragged(canvas, g, e);
+    current.mouseDragged(canvas, e);
   }
 
   @Override
-  public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseEntered(Canvas canvas, MouseEvent e) {
     pressX = -1;
-    current.mouseEntered(canvas, g, e);
+    current.mouseEntered(canvas, e);
   }
 
   @Override
-  public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseExited(Canvas canvas, MouseEvent e) {
     pressX = -1;
-    current.mouseExited(canvas, g, e);
+    current.mouseExited(canvas, e);
   }
 
   @Override
-  public void mouseMoved(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseMoved(Canvas canvas, MouseEvent e) {
     updateLocation(canvas, e);
-    select.mouseMoved(canvas, g, e);
+    select.mouseMoved(canvas, e);
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     canvas.requestFocusInWindow();
     boolean wire = updateLocation(canvas, e);
     Location oldWireLoc = wireLoc;
@@ -473,18 +473,18 @@ public final class EditTool extends Tool {
     }
     pressX = e.getX();
     pressY = e.getY();
-    current.mousePressed(canvas, g, e);
+    current.mousePressed(canvas, e);
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     boolean click = isClick(e) && current == wiring;
     canvas.getSelection().setSuppressHandles(null);
-    current.mouseReleased(canvas, g, e);
+    current.mouseReleased(canvas, e);
     if (click) {
       wiring.resetClick();
-      select.mousePressed(canvas, g, e);
-      select.mouseReleased(canvas, g, e);
+      select.mousePressed(canvas, e);
+      select.mouseReleased(canvas, e);
     }
     current = select;
     cache.clear();
@@ -495,7 +495,7 @@ public final class EditTool extends Tool {
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    Graphics g = c.getGraphics();
+    Graphics2D g = c.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
     } else {

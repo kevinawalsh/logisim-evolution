@@ -32,7 +32,7 @@ package com.cburch.logisim.tools;
 import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -274,7 +274,7 @@ public final class MenuTool extends Tool {
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     int x = e.getX();
     int y = e.getY();
     Location pt = Location.create(x, y);
@@ -282,13 +282,13 @@ public final class MenuTool extends Tool {
     JPopupMenu menu;
     Project proj = canvas.getProject();
     Selection sel = proj.getSelection();
-    Collection<Component> selClicked = sel.getComponentsContaining(pt, g);
+    Collection<Component> selClicked = sel.getComponentsContaining(pt);
     if (!selClicked.isEmpty() && sel.getComponents().size() > 1) {
       menu = new MenuSelection(proj);
     } else if (!selClicked.isEmpty()) {
       menu = menuFor(canvas, selClicked.iterator().next());
     } else {
-      Collection<Component> clicked = canvas.getCircuit().getAllVisiblyContaining(pt, g);
+      Collection<Component> clicked = canvas.getCircuit().getAllVisiblyContaining(pt);
       if (!clicked.isEmpty())
         menu = menuFor(canvas, clicked.iterator().next());
       else
@@ -301,7 +301,7 @@ public final class MenuTool extends Tool {
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    Graphics g = c.getGraphics();
+    Graphics2D g = c.getGraphics();
     g.fillRect(x + 2, y + 1, 9, 2);
     g.drawRect(x + 2, y + 3, 15, 12);
     g.setColor(Color.lightGray);

@@ -39,7 +39,6 @@ import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextAttribute;
 import java.awt.font.TextHitInfo;
 import java.awt.font.TextLayout;
-import java.awt.geom.AffineTransform;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
@@ -47,6 +46,7 @@ import java.util.Locale;
 
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.util.GraphicsUtil;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
@@ -68,9 +68,9 @@ public class BoxLayout {
 
   // the FontRenderContext used during layout, to validate future uses of a cached layout
   // final FontRenderContext frc;
-  final boolean frcAntiAliased;
-  final boolean frcUsesFractionalMetrics;
-  final AffineTransform frcTransform;
+  // final boolean frcAntiAliased;
+  // final boolean frcUsesFractionalMetrics;
+  // final AffineTransform frcTransform;
 
   // visual lines are in in top-to-bottom draw order (wrapped, if needed),
   // with all text accounted for EXCEPT newlines:
@@ -79,11 +79,8 @@ public class BoxLayout {
   //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
   //   lines[n-1].end == len-1
 
-  public BoxLayout(Graphics2D g, String t, Location l, int tw, Font f, int h, int v, boolean spacing) {
-    // Graphics2D g2 = GraphicsUtil.setRenderHints(g); // FIXME experimental
-    text = t + " BoxLayout["+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)+" / "+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS)+"]";
+  public BoxLayout(String t, Location l, int tw, Font f, int h, int v, boolean spacing) {
+    text = t;
     loc = l;
     textWidth = tw;
     autoWrap = (tw > 0);
@@ -92,17 +89,10 @@ public class BoxLayout {
     halign = h;
     valign = v;
 
-    FontRenderContext frc = g.getFontRenderContext();
-
-    frcAntiAliased = frc.isAntiAliased();
-    frcUsesFractionalMetrics = frc.usesFractionalMetrics();
-    frcTransform = (AffineTransform)frc.getTransform().clone();
-
     lines = new ArrayList<>();
     bounds = null;
 
-
-    layoutMultiline(frc);
+    layoutMultiline();
     // System.out.println("BoxLayout #" + (seqno++) +" created by " + Thread.currentThread().getName() + "'s " + getCaller());
   }
   static int seqno = 0;
@@ -116,25 +106,10 @@ public class BoxLayout {
     }
   }
 
-  public boolean compatibleWith(Graphics2D g) {
-    FontRenderContext frc = g.getFontRenderContext();
-    boolean ok = frcAntiAliased == frc.isAntiAliased()
-      && frcUsesFractionalMetrics == frc.usesFractionalMetrics()
-      && frcTransform.equals(frc.getTransform());
-    if (!ok) {
-      System.out.println("  incompatible! " + frcAntiAliased + ":" + frcUsesFractionalMetrics + ":" + frcTransform);
-    }
-    return ok;
-  }
-
   public void drawText(Graphics2D g) {
+    g.setFont(font);
     for (VisualLine line : lines)
       line.layout.draw(g, line.x, line.baselineY);
-    String tag = " BoxLayout["+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING)+" / "+
-      g.getRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS)+"]";
-    if (!text.endsWith(tag))
-      System.out.println("  ==> Graphics Change!! new tag is " + tag);
   }
 
   // used during layout
@@ -162,8 +137,8 @@ public class BoxLayout {
 
   }
 
-
-  private void layoutMultiline(FontRenderContext frc) {
+  private void layoutMultiline() {
+    FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
     
     String[] paragraphs = text.split("\n", -1);
 
@@ -405,14 +380,14 @@ public class BoxLayout {
   }
 
   // This is used by Text.get*Bounds()
-  static Bounds getBounds(Graphics2D g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
+  static Bounds getBounds(String text, Location loc, int textWidth, Font font, int halign, int valign) {
+    BoxLayout box = new BoxLayout(text, loc, textWidth, font, halign, valign, textWidth > 0);
     return box.bounds;
   }
 
   // This is used by Text.paint()
   static void drawMultilineText(Graphics2D g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(g, text, loc, textWidth, font, halign, valign, textWidth > 0);
+    BoxLayout box = new BoxLayout(text, loc, textWidth, font, halign, valign, textWidth > 0);
     box.drawText(g);
   }
 

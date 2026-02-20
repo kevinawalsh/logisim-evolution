@@ -227,15 +227,6 @@ public class InstancePainter implements InstanceState {
     }
   }
 
-  // public Bounds getVisibleOffsetBounds() {
-  //   if (comp == null) {
-  //     return factory.getOffsetBounds(attrs, getGraphics());
-  //   } else {
-  //     Location loc = comp.getLocation();
-  //     return comp.getVisibleBounds(getGraphics()).translate(-loc.getX(), -loc.getY());
-  //   }
-  // }
-
   public Value getPortValue(int portIndex) { // (a)
     if (comp != null && circState != null) {
       return circState.getValue(comp.getEnd(portIndex).getLocation());

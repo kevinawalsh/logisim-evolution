@@ -103,13 +103,13 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
   public void keyReleased(Canvas canvas, KeyEvent e) { }
   public void keyTyped(Canvas canvas, KeyEvent e) { }
 
-  public void mouseClicked(Canvas canvas, Graphics g, MouseEvent e) { }
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) { }
-  public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) { }
-  public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) { }
-  public void mouseMoved(Canvas canvas, Graphics g, MouseEvent e) { }
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) { }
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) { }
+  public void mouseClicked(Canvas canvas, MouseEvent e) { }
+  public void mouseDragged(Canvas canvas, MouseEvent e) { }
+  public void mouseEntered(Canvas canvas, MouseEvent e) { }
+  public void mouseExited(Canvas canvas, MouseEvent e) { }
+  public void mouseMoved(Canvas canvas, MouseEvent e) { }
+  public void mousePressed(Canvas canvas, MouseEvent e) { }
+  public void mouseReleased(Canvas canvas, MouseEvent e) { }
 
   public void paintIcon(ComponentDrawContext c, int x, int y) { }
 

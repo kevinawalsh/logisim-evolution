@@ -36,7 +36,6 @@ import java.util.LinkedList;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
@@ -203,7 +202,7 @@ class TextCaret implements Caret, AttributeListener {
   @Override
   public void draw(Graphics2D g) {
     
-    BoxLayout box = computeLayout(g);
+    BoxLayout box = computeLayout();
 
     // fill initial bounds in translucent gray, to obscure the original text
     initialBounds.fill(g, EDIT_MASK);
@@ -276,16 +275,15 @@ class TextCaret implements Caret, AttributeListener {
   private BoxLayout computeLayoutBadIdea() {
     Graphics2D g = getGraphicsBadIdea();
     try {
-      return computeLayout(g);
+      return computeLayout();
     } finally {
       g.dispose();
     }
   }
 
-  private BoxLayout computeLayout(Graphics2D g) {
+  private BoxLayout computeLayout() {
     if (SwingUtilities.isEventDispatchThread()
-        && cachedLayout != null
-        && cachedLayout.compatibleWith(g)) {
+        && cachedLayout != null) {
       return cachedLayout;
     }
     int halign = attrs.getHorizontalAlign();
@@ -295,7 +293,7 @@ class TextCaret implements Caret, AttributeListener {
     if (attrs.isMarkdownish())
       font = markdownEditFont.deriveFont(font.getSize2D());
     boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();
-    BoxLayout box = new BoxLayout(g, curText, loc, textWidth, font, halign, valign, spacing);
+    BoxLayout box = new BoxLayout(curText, loc, textWidth, font, halign, valign, spacing);
     if (SwingUtilities.isEventDispatchThread()) {
       cachedLayout = box;
     }
@@ -303,15 +301,8 @@ class TextCaret implements Caret, AttributeListener {
   }
 
   @Override
-  public Bounds getBounds(Graphics g) {
-    // FIXME: g should probably have been a Graphics2D, very likely already hinted
-    Graphics2D g2 = (Graphics2D)g;
-    Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
-    try {
-      return computeLayout(g2).bounds.expand(Text.PAD);
-    } finally {
-      GraphicsUtil.restoreRenderingHints(g2, oldHints);
-    }
+  public Bounds getVisibleBounds() {
+    return computeLayout().bounds.expand(Text.PAD);
   }
 
   @Override

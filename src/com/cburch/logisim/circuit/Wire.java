@@ -150,7 +150,7 @@ public final class Wire
           && e0.y - 4 <= q.y && q.y <= e1.y + 4;
   }
 
-  public boolean visiblyContains(Location pt, Graphics g) {
+  public boolean visiblyContains(Location pt) {
     return nominallyContains(pt);
   }
 
@@ -193,7 +193,7 @@ public final class Wire
         e1.x - e0.x + 5, e1.y - e0.y + 5);
   }
 
-  public Bounds getVisibleBounds(Graphics g) {
+  public Bounds getVisibleBounds() {
     return getNominalBounds();
   }
 

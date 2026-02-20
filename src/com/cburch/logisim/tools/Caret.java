@@ -51,7 +51,7 @@ public interface Caret {
 
   public void draw(Graphics2D g);
 
-  public Bounds getBounds(Graphics g); // FIXME: should be Graphics2D
+  public Bounds getVisibleBounds();
 
   public String getText();
 

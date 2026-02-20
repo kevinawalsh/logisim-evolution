@@ -117,20 +117,20 @@ public class Tunnel extends InstanceFactory {
     // See same fix in std.base.Text
     InstanceComponent ret = new InstanceComponent(this, loc, attrs) {
       @Override
-      public boolean visiblyContains(Location pt, Graphics g) {
-        return getVisibleBounds(g).contains(pt);
+      public boolean visiblyContains(Location pt) {
+        return getVisibleBounds().contains(pt);
       }
       @Override
-      public Bounds getVisibleBounds(Graphics g) {
-        return ((Tunnel)getFactory()).getTunnelVisibleBounds(getLocation(), getAttributeSet(), g);
+      public Bounds getVisibleBounds() {
+        return ((Tunnel)getFactory()).getTunnelVisibleBounds(getLocation(), getAttributeSet());
       }
     };
     configureNewInstance(ret.getInstance());
     return ret;
   }
 
-  private Bounds getTunnelVisibleBounds(Location loc, AttributeSet attrsBase, Graphics g) { // visible
-    return getVisibleOffsetBounds(attrsBase, g).translate(loc);
+  private Bounds getTunnelVisibleBounds(Location loc, AttributeSet attrsBase) { // visible
+    return getVisibleOffsetBounds(attrsBase).translate(loc);
   }
 
   @Override
@@ -148,7 +148,7 @@ public class Tunnel extends InstanceFactory {
   }
 
   @Override
-  public Bounds getVisibleOffsetBounds(AttributeSet attrsBase, Graphics g) { // visible
+  public Bounds getVisibleOffsetBounds(AttributeSet attrsBase) { // visible
     // See same fix in std.base.Text  
     TunnelAttributes attrs = (TunnelAttributes) attrsBase;
 
@@ -157,7 +157,6 @@ public class Tunnel extends InstanceFactory {
     if (text == null)
       text = "";
     // Note: extra spaces provide font-size-aware padding on left and right
-    // Rectangle r = GraphicsUtil.getTextBounds(g, font, " "+text+" ", 0, 0, 0, 0);
     Rectangle r = GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT, font, " "+text+" ", 0, 0, 0, 0);
 
     return getBoundsForTextbox(r.width, r.height, attrs.getFacing());
@@ -205,7 +204,7 @@ public class Tunnel extends InstanceFactory {
     // Note: extra spaces provide font-size-aware padding on left and right
     GraphicsUtil.drawText(g, font, " "+label+" ", tx, ty, halign, valign);
     
-    Bounds bds = getVisibleOffsetBounds(attrs, g);
+    Bounds bds = getVisibleOffsetBounds(attrs);
 
     int x0 = bds.getX();
     int y0 = bds.getY();

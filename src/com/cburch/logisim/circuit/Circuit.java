@@ -362,10 +362,10 @@ public class Circuit implements AttributeDefaultProvider {
     return ret;
   }
 
-  public Collection<Component> getAllVisiblyContaining(Location pt, Graphics g) {
+  public Collection<Component> getAllVisiblyContaining(Location pt) {
     HashSet<Component> ret = new HashSet<>();
     for (Component comp : getComponents()) {
-      if (comp.visiblyContains(pt, g))
+      if (comp.visiblyContains(pt))
         ret.add(comp);
     }
     return ret;
@@ -380,10 +380,10 @@ public class Circuit implements AttributeDefaultProvider {
   //   return ret;
   // }
 
-  public Collection<Component> getAllVisiblyWithin(Bounds bds, Graphics g) {
+  public Collection<Component> getAllVisiblyWithin(Bounds bds) {
     HashSet<Component> ret = new HashSet<>();
     for (Component comp : getComponents()) {
-      if (bds.contains(comp.getVisibleBounds(g)))
+      if (bds.contains(comp.getVisibleBounds()))
         ret.add(comp);
     }
     return ret;
@@ -403,22 +403,20 @@ public class Circuit implements AttributeDefaultProvider {
     return appearance;
   }
 
-  public Bounds getCircuitBounds(Graphics g) {
-    // Note: g may be null, e.g. if the Canvas superclass awt.Component isn't
-    // yet fully initialized. In that case, we use nominal sizes here.
+  public Bounds getCircuitVisibleBounds() {
     Bounds wireBounds = wires.getWireBounds();
     Iterator<Component> it = comps.iterator();
     if (!it.hasNext())
       return wireBounds;
     Component first = it.next();
-    Bounds firstBounds = g == null ? first.getNominalBounds() : first.getVisibleBounds(g);
+    Bounds firstBounds = first.getVisibleBounds();
     int xMin = firstBounds.getX();
     int yMin = firstBounds.getY();
     int xMax = xMin + firstBounds.getWidth();
     int yMax = yMin + firstBounds.getHeight();
     while (it.hasNext()) {
       Component c = it.next();
-      Bounds bds = g == null ? c.getNominalBounds() : c.getVisibleBounds(g);
+      Bounds bds = c.getVisibleBounds();
       int x0 = bds.getX();
       int x1 = x0 + bds.getWidth();
       int y0 = bds.getY();

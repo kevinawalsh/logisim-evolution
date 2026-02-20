@@ -68,7 +68,7 @@ public interface Component extends Location.At {
 
   public boolean nominallyContains(Location pt);
 
-  public boolean visiblyContains(Location pt, Graphics g);
+  public boolean visiblyContains(Location pt);
 
   public void draw(ComponentDrawContext context);
 
@@ -81,39 +81,54 @@ public interface Component extends Location.At {
   public AttributeSet getAttributeSet();
 
   // getNominalBounds() returns the nominal bounding box for this component's
-  // visual representation, not including labels. This may be only approximate,
-  // but for nearly all components, these bounds are graphics-insensitive, so
-  // the visible size as drawn on screen will exactly match the nominal size.
-  // For Text and Callout components, the nominal size is only an approximation
-  // of the actual visible size.
+  // visual representation, not including labels. Nominal bounds must be
+  // graphics-insensitive, and so may be only approximate and can exclude any
+  // text labels or other text. For many components, if there is no label then
+  // both visible and nominal bounds are identical: the visible size as drawn on
+  // screen will exactly match the nominal size. For components with text
+  // labels, in most cases nominal size simply excludes the text label. For
+  // Tunnel, Text, and Callout components, the nominal size is only a rough
+  // approximation of the actual visible size, because those components have a
+  // shape determined almost entirely by text sizes.
   // Uses:
   //  - Many components use the nominal size for drawing, e.g. when making a
   //    rectangular shape, or drawing ports, or determining where to place a
   //    label. Text and Callout don't use the nominal size in this way, however,
   //    as their visible size is graphics-sensitive.
   //  - Copy/paste and xml sanity checks use the nominal size to check for
-  //    collisions or illegal placement of components. The slightly-incorrect
-  //    sizes for Text and Callout don't matter much here, as the effects aren't
-  //    too annoying. Text might be prevented from being placed very close to
-  //    the canvas edge, or might slightly overflow the canva edge.
+  //    collisions or illegal placement of components. The approximate sizes for
+  //    Tunnel, Text and Callout don't matter much here, as the effects aren't
+  //    too annoying. Text might be mistakenly prevented from being placed very
+  //    close to the canvas edge, or might overflow the canvas edge, for
+  //    example. And the overlapping-component exclusion rule for Tunnel, Text,
+  //    and Callout is enforced less precisely.
   //  - For components with ports, those ports should all be within the nominal
-  //    bounds.
+  //    bounds. The simulation engine depends on this assumption.
   public Bounds getNominalBounds(); 
 
   // getVisibleBounds() returns the accurate visible bounding box for this
   // component's visual representation, including labels. This may be
-  // graphics-sensitive, because precise text metrics can't be determined
-  // without a Graphics object. For nearly all components, these bounds are
+  // graphics-sensitive, because precise text metrics may depend on factors like
+  // the underlying text rendering pipeline, JVM version and vendor, operating
+  // system, installed fonts, screen resolution, rendering destination (e.g.
+  // screen, image, or printer). For nearly all components, these bounds are
   // simply the nomiminal bounds plus, if there is a non-empty label, whatever
   // space the component's label occupies. For most components without labels,
   // like Wire and Splitter, the visible and nominal sizes are identical. But
-  // for Text and Callout, the visible size is computed directly from the text
-  // and does not depend on the nominal bounding box.
+  // for Tunnel, Text, and Callout, the visible size depends largely on the text
+  // to be rendered.
   // Uses:
-  //  - Text and Callout use the visible size for drawing.
+  //  - Tunnel, Text, and Callout use the visible size for drawing.
   //  - SelectTool uses the visible box for selecting components with the mouse.
   //  - Selection handles are drawn using the visible size.
-  public Bounds getVisibleBounds(Graphics g);
+  // Note:
+  //   Previously, a Graphics parameter was provided. Really, only a
+  //   FontRenderContext was evern needed. But in *all* cases, the
+  //   FontRenderContext should be GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
+  //   because every Component is rendering to the on-screen canvas, or a
+  //   printer or image Graphics2D, all of which should (hopefully) have been
+  //   configured with the same rendering hints.
+  public Bounds getVisibleBounds();
 
   default public EndData getEnd(int index) {
     return getEnds().get(index);

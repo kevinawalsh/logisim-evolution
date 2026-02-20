@@ -267,7 +267,7 @@ public class Constant extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Bounds bds = painter.getComponent().getVisibleBounds(painter.getGraphics());
+    Bounds bds = painter.getComponent().getVisibleBounds();
     BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
     ValueWithRadix v = painter.getAttributeValue(ATTR_VALUE);
 

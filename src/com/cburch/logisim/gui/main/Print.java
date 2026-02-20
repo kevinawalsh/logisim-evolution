@@ -102,7 +102,7 @@ public class Print {
 
         // Correct coordinate system for page, including
         // translation and possible rotation.
-        Bounds bds = circ.getCircuitBounds(g).expand(4);
+        Bounds bds = circ.getCircuitVisibleBounds().expand(4);
         double scale = Math.min(imWidth / bds.getWidth(),
             (imHeight - headHeight) / bds.getHeight());
         g.translate(format.getImageableX(), format.getImageableY());

@@ -30,10 +30,6 @@
 
 package com.cburch.logisim.comp;
 
-import java.awt.Graphics;
-import java.util.List;
-
-import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 
@@ -48,7 +44,7 @@ public abstract class AbstractComponent implements Component {
     return bds.contains(pt, 1);
   }
 
-  public boolean visiblyContains(Location pt, Graphics g) {
+  public boolean visiblyContains(Location pt) {
     return nominallyContains(pt);
   }
 
@@ -62,7 +58,7 @@ public abstract class AbstractComponent implements Component {
 
   public abstract Bounds getNominalBounds();
 
-  public Bounds getVisibleBounds(Graphics g) {
+  public Bounds getVisibleBounds() {
     return getNominalBounds();
   }
 

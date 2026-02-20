@@ -147,7 +147,7 @@ class CanvasPainter implements PropertyChangeListener {
     boolean showHalo = AppPreferences.ATTRIBUTE_HALO.get();
     if (showHalo && haloedComponent != null && haloedCircuit == circ
         && !hidden.contains(haloedComponent)) {
-      Bounds bds = haloedComponent.getVisibleBounds(g).expand(5);
+      Bounds bds = haloedComponent.getVisibleBounds().expand(5);
       int x = bds.getX();
       int y = bds.getY();
       int w = bds.getWidth();
@@ -187,11 +187,11 @@ class CanvasPainter implements PropertyChangeListener {
     }
   }
 
-  private void exposeHaloedComponent(Graphics g) {
+  private void exposeHaloedComponent() {
     Component c = haloedComponent;
     if (c == null)
       return;
-    Bounds bds = c.getVisibleBounds(g).expand(8);
+    Bounds bds = c.getVisibleBounds().expand(8);
     int x = bds.getX();
     int y = bds.getY();
     int w = bds.getWidth();
@@ -270,11 +270,10 @@ class CanvasPainter implements PropertyChangeListener {
   public void setHaloedComponent(Circuit circ, Component comp) {
     if (comp == haloedComponent)
       return;
-    Graphics g = canvas.getGraphics();
-    exposeHaloedComponent(g);
+    exposeHaloedComponent();
     haloedCircuit = circ;
     haloedComponent = comp;
-    exposeHaloedComponent(g);
+    exposeHaloedComponent();
   }
 
   void setHighlightedWires(WireSet value) {

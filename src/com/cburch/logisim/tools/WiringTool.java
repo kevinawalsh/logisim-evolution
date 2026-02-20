@@ -33,7 +33,7 @@ import static com.cburch.logisim.tools.Strings.S;
 
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -157,7 +157,7 @@ public final class WiringTool extends Tool {
 
   @Override
   public void draw(Canvas canvas, ComponentDrawContext context) {
-    Graphics g = context.getGraphics();
+    Graphics2D g = context.getGraphics();
     if (pending) {
       Location e0 = anchor;
       Location e1 = cur;
@@ -283,22 +283,22 @@ public final class WiringTool extends Tool {
   }
 
   @Override
-  public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseEntered(Canvas canvas, MouseEvent e) {
     inCanvas = true;
     canvas.getProject().repaintCanvas();
   }
 
   @Override
-  public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseExited(Canvas canvas, MouseEvent e) {
     inCanvas = false;
     canvas.getProject().repaintCanvas();
   }
 
   @Override
-  public void mouseMoved(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseMoved(Canvas canvas, MouseEvent e) {
     inCanvas = true;
     if (pending) {
-      mouseDragged(canvas, g, e);
+      mouseDragged(canvas, e);
       return;
     } 
     Canvas.snapToGrid(e);
@@ -312,7 +312,7 @@ public final class WiringTool extends Tool {
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     if (!canvas.getProject().getLogisimFile().contains(canvas.getCircuit())) {
       pending = false;
       canvas.setErrorMessage(S.getter("cannotModifyError"));
@@ -320,7 +320,7 @@ public final class WiringTool extends Tool {
     }
 
     if (pending) { // Maybe happens if we missed a mouseReleased event?
-      mouseDragged(canvas, g, e);
+      mouseDragged(canvas, e);
       return;
     }
 
@@ -408,7 +408,7 @@ public final class WiringTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     if (!pending)
       return;
 
@@ -500,7 +500,7 @@ public final class WiringTool extends Tool {
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     hideHint();
     if (!pending)
       return;
@@ -588,7 +588,7 @@ public final class WiringTool extends Tool {
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
-    Graphics g = c.getGraphics();
+    Graphics2D g = c.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
     } else {

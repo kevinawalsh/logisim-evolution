@@ -32,7 +32,6 @@ package com.cburch.logisim.comp;
 
 import java.awt.Color;
 import java.awt.Graphics;
-// import java.util.List;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
@@ -128,7 +127,7 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   //   for Text and Callout is is only approximate.
   public Bounds getOffsetBounds(AttributeSet attrs); // nominal
 
-  public default Bounds getVisibleOffsetBounds(AttributeSet attrs, Graphics g) { // visible
+  public default Bounds getVisibleOffsetBounds(AttributeSet attrs) { // visible
     return getOffsetBounds(attrs); // Note: this is incorrect for Text
   }
 

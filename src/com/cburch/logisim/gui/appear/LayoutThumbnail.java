@@ -75,7 +75,7 @@ public class LayoutThumbnail extends JComponent {
     Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g);
     try {
       Circuit circuit = circuitState.getCircuit();
-      Bounds bds = circuit.getCircuitBounds(g);
+      Bounds bds = circuit.getCircuitVisibleBounds();
       Dimension size = getSize();
       double scaleX = (double) (size.width - 2 * BORDER) / bds.getWidth();
       double scaleY = (double) (size.height - 2 * BORDER)

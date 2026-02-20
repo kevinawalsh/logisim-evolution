@@ -36,8 +36,8 @@ import java.awt.event.MouseEvent;
 import com.cburch.logisim.data.Bounds;
 
 public abstract class InstancePoker {
-  public Bounds getNominalBounds(InstancePainter painter) {
-    return painter.getInstance().getNominalBounds();
+  public Bounds getNominalBounds(InstanceState state) {
+    return state.getInstance().getNominalBounds();
   }
 
   public boolean init(InstanceState state, MouseEvent e) {

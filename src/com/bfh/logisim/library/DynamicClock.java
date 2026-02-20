@@ -31,7 +31,7 @@ package com.bfh.logisim.library;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
@@ -67,7 +67,7 @@ public class DynamicClock extends InstanceFactory {
 	}
 	
 	public void paintInstance(InstancePainter painter) {
-		Graphics g = painter.getGraphics();
+		Graphics2D g = painter.getGraphics();
 		g.setColor(Color.BLACK);
 		painter.drawBounds();
 
@@ -79,7 +79,7 @@ public class DynamicClock extends InstanceFactory {
 		painter.drawPort(SPEED);
 	}
 
-  private static void drawTicks(Graphics g, int x, int y, int label, int w, int h, int n) {
+  private static void drawTicks(Graphics2D g, int x, int y, int label, int w, int h, int n) {
     GraphicsUtil.switchToWidth(g, 2);
     g.setColor(h > 0 ? Value.TRUE_COLOR : Value.FALSE_COLOR);
     g.drawLine(x, y, x, y-h);

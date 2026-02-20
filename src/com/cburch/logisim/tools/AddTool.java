@@ -190,7 +190,7 @@ public class AddTool extends Tool {
   @Override
   public void deselect(Canvas canvas) {
     setState(canvas, SHOW_GHOST);
-    moveTo(canvas, canvas.getGraphics(), INVALID_COORD, INVALID_COORD);
+    moveTo(canvas, INVALID_COORD, INVALID_COORD);
     bounds = null;
     lastAddition = null;
   }
@@ -227,8 +227,8 @@ public class AddTool extends Tool {
     }
   }
 
-  private void expose(java.awt.Component c, Graphics g, int x, int y) {
-    Bounds bds = getBounds(g);
+  private void expose(java.awt.Component c, int x, int y) {
+    Bounds bds = getVisibleBounds();
     c.repaint(x + bds.getX(), y + bds.getY(), bds.getWidth(),
         bds.getHeight());
   }
@@ -246,7 +246,7 @@ public class AddTool extends Tool {
     return ret;
   }
 
-  private Bounds getBounds(Graphics g) {
+  private Bounds getVisibleBounds() {
     Bounds ret = bounds;
     if (ret == null) {
       ComponentFactory source = getFactory();
@@ -254,7 +254,7 @@ public class AddTool extends Tool {
         ret = Bounds.EMPTY_BOUNDS;
       } else {
         AttributeSet base = getBaseAttributes();
-        ret = source.getVisibleOffsetBounds(base, g).expand(5);
+        ret = source.getVisibleOffsetBounds(base).expand(5);
       }
       bounds = ret;
     }
@@ -384,16 +384,16 @@ public class AddTool extends Tool {
   }
 
   @Override
-  public void mouseDragged(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseDragged(Canvas canvas, MouseEvent e) {
     if (state != SHOW_NONE) {
       if (shouldSnap)
         Canvas.snapToGrid(e);
-      moveTo(canvas, g, e.getX(), e.getY());
+      moveTo(canvas, e.getX(), e.getY());
     }
   }
 
   @Override
-  public void mouseEntered(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseEntered(Canvas canvas, MouseEvent e) {
     if (state == SHOW_GHOST || state == SHOW_NONE) {
       setState(canvas, SHOW_GHOST);
       canvas.requestFocusInWindow();
@@ -404,27 +404,27 @@ public class AddTool extends Tool {
   }
 
   @Override
-  public void mouseExited(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseExited(Canvas canvas, MouseEvent e) {
     if (state == SHOW_GHOST) {
-      moveTo(canvas, canvas.getGraphics(), INVALID_COORD, INVALID_COORD);
+      moveTo(canvas, INVALID_COORD, INVALID_COORD);
       setState(canvas, SHOW_NONE);
     } else if (state == SHOW_ADD) {
-      moveTo(canvas, canvas.getGraphics(), INVALID_COORD, INVALID_COORD);
+      moveTo(canvas, INVALID_COORD, INVALID_COORD);
       setState(canvas, SHOW_ADD_NO);
     }
   }
 
   @Override
-  public void mouseMoved(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseMoved(Canvas canvas, MouseEvent e) {
     if (state != SHOW_NONE) {
       if (shouldSnap)
         Canvas.snapToGrid(e);
-      moveTo(canvas, g, e.getX(), e.getY());
+      moveTo(canvas, e.getX(), e.getY());
     }
   }
 
   @Override
-  public void mousePressed(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mousePressed(Canvas canvas, MouseEvent e) {
     // verify the addition would be valid
     Circuit circ = canvas.getCircuit();
     if (!canvas.getProject().getLogisimFile().contains(circ)) {
@@ -442,12 +442,12 @@ public class AddTool extends Tool {
 
     if (shouldSnap)
       Canvas.snapToGrid(e);
-    moveTo(canvas, g, e.getX(), e.getY());
+    moveTo(canvas, e.getX(), e.getY());
     setState(canvas, SHOW_ADD);
   }
 
   @Override
-  public void mouseReleased(Canvas canvas, Graphics g, MouseEvent e) {
+  public void mouseReleased(Canvas canvas, MouseEvent e) {
     Component added = null;
     Project proj = canvas.getProject();
     LogisimFile file = proj.getLogisimFile();
@@ -457,7 +457,7 @@ public class AddTool extends Tool {
         return;
       if (shouldSnap)
         Canvas.snapToGrid(e);
-      moveTo(canvas, g, e.getX(), e.getY());
+      moveTo(canvas, e.getX(), e.getY());
 
       Location loc = Location.create(e.getX(), e.getY());
       AttributeSet attrsCopy = (AttributeSet) attrs.clone();
@@ -495,7 +495,7 @@ public class AddTool extends Tool {
         return;
       }
 
-      Bounds bds = c.getVisibleBounds(g);
+      Bounds bds = c.getVisibleBounds();
       if (bds.getX() < 0 || bds.getY() < 0) {
         canvas.setErrorMessage(S.getter("negativeCoordError"));
         return;
@@ -540,13 +540,13 @@ public class AddTool extends Tool {
     }
   }
 
-  private synchronized void moveTo(Canvas canvas, Graphics g, int x, int y) {
+  private synchronized void moveTo(Canvas canvas, int x, int y) {
     if (state != SHOW_NONE)
-      expose(canvas, g, lastX, lastY);
+      expose(canvas, lastX, lastY);
     lastX = x;
     lastY = y;
     if (state != SHOW_NONE)
-      expose(canvas, g, lastX, lastY);
+      expose(canvas, lastX, lastY);
   }
 
   @Override

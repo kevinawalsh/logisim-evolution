@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.tools;
 
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -59,7 +58,7 @@ public class AbstractCaret implements Caret {
 
   public void draw(Graphics2D g) { }
 
-  public Bounds getBounds(Graphics g) {
+  public Bounds getVisibleBounds() {
     return bds;
   }
 
