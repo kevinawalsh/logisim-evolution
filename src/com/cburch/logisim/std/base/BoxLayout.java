@@ -51,26 +51,19 @@ import com.cburch.logisim.util.GraphicsUtil;
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // BoxLayout handles text rendering for Text and Callout, optionally providing auto-wrap.
-public class BoxLayout {
+public class BoxLayout implements Text.LayoutEngine {
   
   static final float DEFAULT_INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
 
-  final Location loc;
-  final int halign, valign;
-  final Font font;
-  final boolean autoWrap;
-  final String text;
-  final float interParaSpace;
+  private final int halign, valign;
+  private final Font font;
+  private final boolean autoWrap;
+  private final String text;
+  private final float interParaSpace;
 
-  int textWidth; // accurate, even for manual-wrap mode, once layout is complete
-  Bounds bounds;  // accurate once layout is complete
+  private int textWidth; // accurate, even for manual-wrap mode, once layout is complete
+  private Bounds bounds;  // accurate once layout is complete
   ArrayList<VisualLine> lines;
-
-  // the FontRenderContext used during layout, to validate future uses of a cached layout
-  // final FontRenderContext frc;
-  // final boolean frcAntiAliased;
-  // final boolean frcUsesFractionalMetrics;
-  // final AffineTransform frcTransform;
 
   // visual lines are in in top-to-bottom draw order (wrapped, if needed),
   // with all text accounted for EXCEPT newlines:
@@ -79,9 +72,8 @@ public class BoxLayout {
   //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
   //   lines[n-1].end == len-1
 
-  public BoxLayout(String t, Location l, int tw, Font f, int h, int v, boolean spacing) {
+  public BoxLayout(String t, int tw, Font f, int h, int v, boolean spacing) {
     text = t;
-    loc = l;
     textWidth = tw;
     autoWrap = (tw > 0);
     interParaSpace = (spacing ? DEFAULT_INTER_PARAGRAPH_SPACE : 0);
@@ -106,10 +98,14 @@ public class BoxLayout {
     }
   }
 
-  public void drawText(Graphics2D g) {
+  public Bounds getBounds(Location loc) {
+    return bounds.translate(loc);
+  }
+
+  public void drawText(Graphics2D g, Location loc) {
     g.setFont(font);
     for (VisualLine line : lines)
-      line.layout.draw(g, line.x, line.baselineY);
+      line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
   }
 
   // used during layout
@@ -184,8 +180,8 @@ public class BoxLayout {
       }
     }
 
-    int x = (int)Math.round(loc.x - halignAdjust(textWidth, halign));
-    int y = (int)Math.round(loc.y - valignAdjust(lines.get(0).layout, valign)); // valign relative to first line
+    int x = (int)Math.round(0 - halignAdjust(textWidth, halign));
+    int y = (int)Math.round(0 - valignAdjust(lines.get(0).layout, valign)); // valign relative to first line
 
     for (VisualLine line : lines) {
       float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
@@ -226,7 +222,7 @@ public class BoxLayout {
     BoxLayout.VisualLine vl = lineForY(py);
     int cursor = vl.positionForX(px);
     boolean revBias = (cursor == vl.end);
-    return new Text.CaretPosition(bounds.expand(Text.PAD), cursor, revBias);
+    return new Text.CaretPosition(bounds, cursor, revBias);
   }
 
   public VisualLine lineForY(int py) {
@@ -377,18 +373,6 @@ public class BoxLayout {
     float prevX = vl.caretXForPosition(prev);
     float nextX = vl.caretXForPosition(next);
     return (Math.abs(px - prevX) <= Math.abs(px - nextX)) ? prev : next;
-  }
-
-  // This is used by Text.get*Bounds()
-  static Bounds getBounds(String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(text, loc, textWidth, font, halign, valign, textWidth > 0);
-    return box.bounds;
-  }
-
-  // This is used by Text.paint()
-  static void drawMultilineText(Graphics2D g, String text, Location loc, int textWidth, Font font, int halign, int valign) {
-    BoxLayout box = new BoxLayout(text, loc, textWidth, font, halign, valign, textWidth > 0);
-    box.drawText(g);
   }
 
 }

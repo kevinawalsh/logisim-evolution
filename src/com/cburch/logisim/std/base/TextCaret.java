@@ -60,7 +60,6 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
-import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.UndoRedo;
 
 // This class is like a combination of TextField and TextFieldCaret, but handles
@@ -154,17 +153,9 @@ class TextCaret implements Caret, AttributeListener {
     this.cursor = this.anchor = cursor;
     this.cursorReverseBias = revBias;
     this.initialBounds = initialBounds;
-    cachedLayout = computeLayoutBadIdea();
+    cachedLayout = computeLayout();
     editMenuHandler = new TextCaretEditHandler();
     attrs.addAttributeWeakListener(null, this);
-  }
-
-  // FIXME: probably should not be using Canvas.getGraphics() like this, we should move to
-  // FontRenderContext instead for layout, stop depending on Graphics.
-  private Graphics2D getGraphicsBadIdea() {
-    Graphics2D g = (Graphics2D)canvas.getGraphics();
-    GraphicsUtil.setRenderingHintsForCanvas(g);
-    return g;
   }
 
   @Override
@@ -208,7 +199,7 @@ class TextCaret implements Caret, AttributeListener {
     initialBounds.fill(g, EDIT_MASK);
 
     // draw boundary
-    Bounds area = box.bounds.expand(Text.PAD);
+    Bounds area = box.getBounds(loc).expand(Text.PAD);
     area.fill(g, EDIT_BACKGROUND);
     area.draw(g, EDIT_BORDER);
 
@@ -233,7 +224,7 @@ class TextCaret implements Caret, AttributeListener {
           int la = a - lineA;
           int lb = b - lineA;
           Shape highlight = vl.layout.getLogicalHighlightShape(la, lb);
-          AffineTransform tx = AffineTransform.getTranslateInstance(vl.x, vl.baselineY);
+          AffineTransform tx = AffineTransform.getTranslateInstance(loc.x + vl.x, loc.y + vl.baselineY);
           Shape s = tx.createTransformedShape(highlight);
           g2.fill(s);
         }
@@ -241,7 +232,7 @@ class TextCaret implements Caret, AttributeListener {
           // If selection spans a trailing newline, highlight that newline.
           float end = vl.isEmpty() ? 0 : vl.layout.getAdvance();
           float newlineWidth = vl.height()*0.4f; // 40% aspect ratio for newline char seems reasonable
-          Rectangle2D r = new Rectangle2D.Float(vl.x + end, vl.topY(), newlineWidth, vl.height());
+          Rectangle2D r = new Rectangle2D.Float(loc.x + vl.x + end, loc.y + vl.topY(), newlineWidth, vl.height());
           g2.fill(r);
         }
       }
@@ -249,17 +240,17 @@ class TextCaret implements Caret, AttributeListener {
 
     // draw text
     g.setColor(attrs.getFGColor());
-    box.drawText(g);
+    box.drawText(g, loc);
 
     // draw caret
     if (cursor == anchor) {
       Graphics2D g2 = (Graphics2D) g;
       BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
-      float cx = vl.caretXForPosition(cursor);
-      int top = (int) Math.floor(vl.topY());
-      int bot = (int) Math.ceil(vl.bottomY());
+      int cx = loc.x + (int) vl.caretXForPosition(cursor);
+      int top = loc.y + (int) Math.floor(vl.topY());
+      int bot = loc.y + (int) Math.ceil(vl.bottomY());
       g2.setColor(Color.BLACK);
-      g2.drawLine((int) cx, top, (int) cx, bot);
+      g2.drawLine(cx, top, cx, bot);
     }
 
   }
@@ -271,19 +262,9 @@ class TextCaret implements Caret, AttributeListener {
       SwingUtilities.invokeLater(() -> { cachedLayout = null; });
     }
   }
-  
-  private BoxLayout computeLayoutBadIdea() {
-    Graphics2D g = getGraphicsBadIdea();
-    try {
-      return computeLayout();
-    } finally {
-      g.dispose();
-    }
-  }
 
   private BoxLayout computeLayout() {
-    if (SwingUtilities.isEventDispatchThread()
-        && cachedLayout != null) {
+    if (SwingUtilities.isEventDispatchThread() && cachedLayout != null) {
       return cachedLayout;
     }
     int halign = attrs.getHorizontalAlign();
@@ -293,7 +274,7 @@ class TextCaret implements Caret, AttributeListener {
     if (attrs.isMarkdownish())
       font = markdownEditFont.deriveFont(font.getSize2D());
     boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();
-    BoxLayout box = new BoxLayout(curText, loc, textWidth, font, halign, valign, spacing);
+    BoxLayout box = new BoxLayout(curText, textWidth, font, halign, valign, spacing);
     if (SwingUtilities.isEventDispatchThread()) {
       cachedLayout = box;
     }
@@ -302,7 +283,7 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public Bounds getVisibleBounds() {
-    return computeLayout().bounds.expand(Text.PAD);
+    return computeLayout().getBounds(loc).expand(Text.PAD);
   }
 
   @Override
@@ -507,7 +488,7 @@ class TextCaret implements Caret, AttributeListener {
     } else if (move == -5 || move == +5) { // start/end of para
       if (!shift && cursor != anchor)
         cancelSelection(move);
-      BoxLayout box = computeLayoutBadIdea();
+      BoxLayout box = computeLayout();
       BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       if (move < 0)
           vl = box.firstLineOfParagraphContaining(vl);
@@ -520,7 +501,7 @@ class TextCaret implements Caret, AttributeListener {
       if (!shift && cursor != anchor)
         cancelSelection(move);
     
-      BoxLayout box = computeLayoutBadIdea();
+      BoxLayout box = computeLayout();
       BoxLayout.VisualLine vl = box.lineForPosition(cursor, cursorReverseBias);
       cursor = (move < 0) ? vl.start : vl.end;
       cursorReverseBias = (move > 0);
@@ -529,7 +510,7 @@ class TextCaret implements Caret, AttributeListener {
       if (!shift && cursor != anchor)
         cancelSelection(move);
         
-      BoxLayout box = computeLayoutBadIdea();
+      BoxLayout box = computeLayout();
       int dir = (move < 0) ? -1 : +1;
 
       // Determine current line index
@@ -537,7 +518,7 @@ class TextCaret implements Caret, AttributeListener {
 
       // Save preferred X on first vertical move.
       if (Float.isNaN(preferredCaretX))
-        preferredCaretX = cur.caretXForPosition(cursor);
+        preferredCaretX = loc.x + cur.caretXForPosition(cursor);
 
       // MSWord ignores traversal up from first line, or down from last line.
       // Google Docs moves to start/end of line, but retains preferredCaretX and bias.
@@ -549,7 +530,7 @@ class TextCaret implements Caret, AttributeListener {
         cursor = curText.length();
       } else {
         BoxLayout.VisualLine dest = box.lines.get(tgt);
-        cursor = dest.positionForX(preferredCaretX);
+        cursor = dest.positionForX(preferredCaretX - loc.x);
       }
     } else { // next/prev char, next/prev word
       boolean byword = (move == -2 || move == +2);
@@ -696,9 +677,9 @@ class TextCaret implements Caret, AttributeListener {
   public void mouseDragged(MouseEvent e) {
     if (!mouseIsPressed)
       return;
-    BoxLayout box = computeLayoutBadIdea();
-    BoxLayout.VisualLine vl = box.lineForY(e.getY());
-    int p = vl.positionForX(e.getX());
+    BoxLayout box = computeLayout();
+    BoxLayout.VisualLine vl = box.lineForY(e.getY() - loc.y);
+    int p = vl.positionForX(e.getX() - loc.x);
     boolean revBias = (p == vl.end);
     if (selectByPara) {
       if (p < selectOrigin) {
@@ -763,9 +744,9 @@ class TextCaret implements Caret, AttributeListener {
   @Override
   public void mousePressed(MouseEvent e) {
     mouseIsPressed = true;
-    BoxLayout box = computeLayoutBadIdea();
-    BoxLayout.VisualLine vl = box.lineForY(e.getY());
-    int p = vl.positionForX(e.getX());
+    BoxLayout box = computeLayout();
+    BoxLayout.VisualLine vl = box.lineForY(e.getY() - loc.y);
+    int p = vl.positionForX(e.getX() - loc.x);
     boolean revBias = (p == vl.end);
     boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
     if (shift)
@@ -968,6 +949,7 @@ class TextCaret implements Caret, AttributeListener {
         curText = curText.substring(0, left) + repl + curText.substring(right);
       else
         curText = curText.substring(0, left) + repl;
+      invalidateCachedLayout();
       cursor = anchor = left + repl.length();
       cursorReverseBias = false;
       editMenuHandler.computeEnabled();
@@ -979,6 +961,7 @@ class TextCaret implements Caret, AttributeListener {
         curText = curText.substring(0, left) + old + curText.substring(left + repl.length());
       else
         curText = curText.substring(0, left) + old;
+      invalidateCachedLayout();
       cursor = cursorPos;
       anchor = anchorPos;
       cursorReverseBias = false;

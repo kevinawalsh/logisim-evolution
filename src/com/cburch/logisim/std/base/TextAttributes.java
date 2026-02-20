@@ -55,8 +55,7 @@ class TextAttributes extends AbstractAttributeSet {
 
   private static final List<Attribute<?>> ATTRIBUTES_MARKDOWNISH =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
-        Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
-        Text.ATTR_FORMAT });
+        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_FORMAT });
 
   private String text; // note: never contains CRLF or CR, only LF
   private Font font;
@@ -66,6 +65,8 @@ class TextAttributes extends AbstractAttributeSet {
   private Color bg;
   protected AttributeOption format;
   protected int width;
+
+  private Text.LayoutEngine layout;
 
   private static final Color CLEAR = new Color(255, 255, 255, 0);
 
@@ -78,6 +79,16 @@ class TextAttributes extends AbstractAttributeSet {
     bg = CLEAR;
     format = Text.TEXT_FORMAT_PLAIN;
     width = 300;
+    computeLayout();
+  }
+
+  private void computeLayout() {
+    if (format == Text.TEXT_FORMAT_MARKDOWNISH)
+      layout = new StyledBoxLayout(text, width, font);
+    else if (format == Text.TEXT_FORMAT_WRAPPED)
+      layout = new BoxLayout(text, width, font, getHorizontalAlign(), getVerticalAlign(), true);
+    else
+      layout = new BoxLayout(text, -1, font, getHorizontalAlign(), getVerticalAlign(), false);
   }
 
   @Override
@@ -91,6 +102,19 @@ class TextAttributes extends AbstractAttributeSet {
       isWrapping() ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
   }
 
+  Text.LayoutEngine getLayout() {
+    return layout;
+  }
+
+  Text.LayoutEngine getLayout(Integer altTextWidth) { // used during resizing
+    if (altTextWidth == null || format == Text.TEXT_FORMAT_PLAIN || altTextWidth == width)
+      return layout;
+    else if (format == Text.TEXT_FORMAT_MARKDOWNISH)
+      return new StyledBoxLayout(text, altTextWidth, font);
+    else
+      return new BoxLayout(text, altTextWidth, font, getHorizontalAlign(), getVerticalAlign(), true);
+  }
+
   Font getFont() {
     return font;
   }
@@ -98,6 +122,11 @@ class TextAttributes extends AbstractAttributeSet {
   int getHorizontalAlign() {
     if (isMarkdownish()) return ALIGN.H_LEFT;
     else return ((Integer) halign.getValue()).intValue();
+  }
+
+  int getVerticalAlign() {
+    if (isMarkdownish()) return ALIGN.V_TOP;
+    else return ((Integer) valign.getValue()).intValue();
   }
 
   String getText() {
@@ -150,10 +179,6 @@ class TextAttributes extends AbstractAttributeSet {
     return null;
   }
 
-  int getVerticalAlign() {
-    return ((Integer) valign.getValue()).intValue();
-  }
-
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Text.ATTR_TEXT) {
@@ -175,8 +200,10 @@ class TextAttributes extends AbstractAttributeSet {
     } else if (attr == Text.ATTR_FORMAT) {
       format = (AttributeOption) value;
       fireAttributeListChanged();
-    } else if (attr == Text.TEXT_WIDTH)
+    } else if (attr == Text.TEXT_WIDTH) {
       width = (Integer) value;
+    }
+    computeLayout();
   }
 
   // public static normalize(String str) {
@@ -259,6 +286,5 @@ class TextAttributes extends AbstractAttributeSet {
 
     return out.toString();
   }
-
 
 }

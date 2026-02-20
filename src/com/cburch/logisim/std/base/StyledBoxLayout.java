@@ -50,10 +50,8 @@ import com.cburch.logisim.util.GraphicsUtil;
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // StyledBoxLayout handles text rendering for Markdownish.
-public class StyledBoxLayout {
+public class StyledBoxLayout implements Text.LayoutEngine {
 
-  final Location loc;
-  final int valign;
   final Font font;
   final boolean autoWrap;
   final String text;
@@ -62,13 +60,11 @@ public class StyledBoxLayout {
   Bounds bounds;  // accurate once layout is complete
   ArrayList<VisualLine> lines;
 
-  public StyledBoxLayout(String t, Location l, int tw, Font f, int v) {
+  public StyledBoxLayout(String t, int tw, Font f) {
     text = t;
-    loc = l;
     textWidth = tw; // must be positive
     autoWrap = true;
     font = f;
-    valign = v;
 
     lines = new ArrayList<>();
     bounds = null;
@@ -76,17 +72,21 @@ public class StyledBoxLayout {
     layoutMarkdownish();
   }
 
-  public void drawText(Graphics2D g) {
+  public Bounds getBounds(Location loc) {
+    return bounds.translate(loc);
+  }
+
+  public void drawText(Graphics2D g, Location loc) {
     g.setFont(font);
     for (VisualLine line : lines)
-      line.layout.draw(g, line.x, line.baselineY);
+      line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
   }
 
   private void layoutMarkdownish() {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
 
-    int x = loc.x;
-    int y = loc.y;
+    int x = 0;
+    int y = 0;
     float dy = 0f;
     float dx = 0f;
 
@@ -107,9 +107,6 @@ public class StyledBoxLayout {
         int left = it.getBeginIndex();
         int right = it.getEndIndex();
         TextLayout layout = new TextLayout(it, frc);
-
-        if (lines.isEmpty())
-          y = (int)Math.round(y - valignAdjust(layout, valign)); // valign relative to first line
         
         dy += layout.getAscent();
         lines.add(new VisualLine(layout, astr, left, right, x + dx, y + dy));
@@ -125,9 +122,6 @@ public class StyledBoxLayout {
         TextLayout layout = measurer.nextLayout(textWidth);
         int right = measurer.getPosition();
         boolean last = (right >= it.getEndIndex());
-
-        if (lines.isEmpty())
-          y = (int)Math.round(y - valignAdjust(layout, valign)); // valign relative to first line
         
         dy += layout.getAscent();
         lines.add(new VisualLine(layout, astr, left, right, x + dx, y + dy));
@@ -139,18 +133,6 @@ public class StyledBoxLayout {
     }
 
     bounds = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
-  }
-
-  private static float valignAdjust(TextLayout layout, int valign) {
-    float h = layout.getAscent() + layout.getDescent() + layout.getLeading();
-    if (valign == ALIGN.V_BASELINE)
-      return layout.getAscent();
-    else if (valign == ALIGN.V_BOTTOM)
-      return h;
-    else if (valign == ALIGN.V_CENTER)
-      return h / 2f;
-    else // V_TOP
-      return 0;
   }
 
   static class VisualLine {
@@ -210,7 +192,7 @@ public class StyledBoxLayout {
     StyledBoxLayout.VisualLine vl = lineForY(py);
     int cursor = snapToGraphemeBoundary(vl.sourcePositionForX(px));
     boolean revBias = vl.getBiasForX(px);
-    return new Text.CaretPosition(bounds.expand(Text.PAD), cursor, revBias);
+    return new Text.CaretPosition(bounds, cursor, revBias);
   }
 
   public VisualLine lineForY(int py) {
@@ -233,18 +215,6 @@ public class StyledBoxLayout {
       int prev = bi.preceding(pos);
       return (prev == BreakIterator.DONE || prev < 0) ? 0 : prev;
     }
-  }
-
-  // This is used by Text.get*Bounds()
-  static Bounds getBounds(String text, Location loc, int textWidth, Font font, int valign) {
-    StyledBoxLayout box = new StyledBoxLayout(text, loc, textWidth, font, valign);
-    return box.bounds;
-  }
-
-  // This is used by Text.paint()
-  static void drawMarkdownishText(Graphics2D g, String text, Location loc, int textWidth, Font font, int valign) {
-    StyledBoxLayout box = new StyledBoxLayout(text, loc, textWidth, font, valign);
-    box.drawText(g);
   }
 
 }
