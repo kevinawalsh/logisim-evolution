@@ -37,7 +37,6 @@ import java.awt.Composite;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,7 +46,6 @@ import javax.swing.JPopupMenu;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -56,7 +54,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
@@ -246,43 +243,45 @@ public class SubcircuitFactory extends InstanceFactory {
 
       int x = bds.getX() + bds.getWidth() / 2;
       int y = bds.getY() + bds.getHeight() / 2;
-      Graphics g = painter.getGraphics().create();
-      double angle = Math.PI / 2
+      Graphics2D g = (Graphics2D)painter.getGraphics().create();
+      try {
+        double angle = Math.PI / 2
           - (up.toRadians() - defaultFacing.toRadians())
           - facing.toRadians();
-      if (Math.abs(angle) > 0.01) {
-        Graphics2D g2 = (Graphics2D) g;
-        g2.rotate(angle, x, y);
-      }
-      g.setFont(font);
-      if (lines == 1 && !backs) {
-        GraphicsUtil.drawCenteredText(g, label, x, y);
-      } else {
-        FontMetrics fm = g.getFontMetrics();
-        int height = fm.getHeight();
-        y = y - (height * lines - fm.getLeading()) / 2 + fm.getAscent();
-        back = label.indexOf('\\');
-        while (back >= 0 && back <= label.length() - 2) {
-          char c = label.charAt(back + 1);
-          if (c == 'n') {
-            String line = label.substring(0, back);
-            GraphicsUtil.drawText(g, line, x, y,
-                GraphicsUtil.H_CENTER, GraphicsUtil.V_BASELINE);
-            y += height;
-            label = label.substring(back + 2);
-            back = label.indexOf('\\');
-          } else if (c == '\\') {
-            label = label.substring(0, back)
-                + label.substring(back + 1);
-            back = label.indexOf('\\', back + 1);
-          } else {
-            back = label.indexOf('\\', back + 2);
-          }
+        if (Math.abs(angle) > 0.01) {
+          g.rotate(angle, x, y);
         }
-        GraphicsUtil.drawText(g, label, x, y, GraphicsUtil.H_CENTER,
-            GraphicsUtil.V_BASELINE);
+        g.setFont(font);
+        if (lines == 1 && !backs) {
+          GraphicsUtil.drawCenteredText(g, label, x, y);
+        } else {
+          FontMetrics fm = g.getFontMetrics();
+          int height = fm.getHeight();
+          y = y - (height * lines - fm.getLeading()) / 2 + fm.getAscent();
+          back = label.indexOf('\\');
+          while (back >= 0 && back <= label.length() - 2) {
+            char c = label.charAt(back + 1);
+            if (c == 'n') {
+              String line = label.substring(0, back);
+              GraphicsUtil.drawText(g, line, x, y,
+                  GraphicsUtil.H_CENTER, GraphicsUtil.V_BASELINE);
+              y += height;
+              label = label.substring(back + 2);
+              back = label.indexOf('\\');
+            } else if (c == '\\') {
+              label = label.substring(0, back)
+                + label.substring(back + 1);
+              back = label.indexOf('\\', back + 1);
+            } else {
+              back = label.indexOf('\\', back + 2);
+            }
+          }
+          GraphicsUtil.drawText(g, label, x, y, GraphicsUtil.H_CENTER,
+              GraphicsUtil.V_BASELINE);
+        }
+      } finally {
+        g.dispose();
       }
-      g.dispose();
     }
   }
 
@@ -370,7 +369,7 @@ public class SubcircuitFactory extends InstanceFactory {
     }
   }
 
-  private void paintBase(InstancePainter painter, Graphics g) {
+  private void paintBase(InstancePainter painter, Graphics2D g) {
     CircuitAttributes attrs = (CircuitAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
     Direction defaultFacing = source.getAppearance().getFacing();
@@ -384,7 +383,7 @@ public class SubcircuitFactory extends InstanceFactory {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Color fg = g.getColor();
     int v = fg.getRed() + fg.getGreen() + fg.getBlue();
     Composite oldComposite = null;

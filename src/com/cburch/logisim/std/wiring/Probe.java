@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.circuit.appear.DynamicElement;
@@ -116,7 +116,7 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
   }
 
   static void paintValue(InstancePainter painter, Value value) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds(); // label not included
     g.setFont(DEFAULT_FONT);
 
@@ -210,7 +210,7 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
   //
   @Override
   public void paintGhost(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalOffsetBounds();
     g.drawOval(bds.getX() + 1, bds.getY() + 1, bds.getWidth() - 1,
         bds.getHeight() - 1);
@@ -220,7 +220,7 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
   public void paintInstance(InstancePainter painter) {
     Value value = painter.getDataOrDefault(Value.NIL);
 
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds(); // label not included
     int x = bds.getX();
     int y = bds.getY();

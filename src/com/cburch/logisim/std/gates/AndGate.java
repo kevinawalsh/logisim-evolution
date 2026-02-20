@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expression;
@@ -87,7 +87,7 @@ class AndGate extends AbstractGate {
 
   @Override
   protected void paintIconShaped(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     int[] xp = new int[] { 10, 2, 2, 10 };
     int[] yp = new int[] { 2, 2, 18, 18 };
     g.drawPolyline(xp, yp, 4);

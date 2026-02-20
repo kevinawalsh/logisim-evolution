@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.appear.DynamicElement;
@@ -161,7 +161,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
   }
 
   private void DrawControl(InstancePainter painter, int xpos, int ypos) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
     int width = widthVal == null ? 8 : widthVal.getWidth();
@@ -277,7 +277,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     int RealYpos = ypos + BitNr * 20;
     boolean first = BitNr == 0;
     boolean last = BitNr == (NrOfBits - 1);
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Font font = g.getFont();
     g.setFont(font.deriveFont(7.0f));
     GraphicsUtil.switchToWidth(g, 2);
@@ -377,7 +377,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
   }
 
   public void DrawCounterClassic(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     RegisterData state = (RegisterData) painter.getDataAsCustom();
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
@@ -443,7 +443,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     }
     int Xpos = painter.getLocation().getX();
     int Ypos = painter.getLocation().getY();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
 

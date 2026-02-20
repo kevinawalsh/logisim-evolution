@@ -39,7 +39,7 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -261,7 +261,7 @@ class PLA extends InstanceFactory {
   }
 
   void paintInstance(InstancePainter painter, boolean ghost) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     int x = bds.getX();
     int y = bds.getY();

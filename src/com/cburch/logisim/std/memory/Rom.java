@@ -32,7 +32,7 @@ package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -213,7 +213,7 @@ public class Rom extends Mem {
   }
 
   private void DrawControlBlock(InstancePainter painter, int xpos, int ypos) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     AttributeSet attrs = painter.getAttributeSet();
     g.drawLine(xpos + 20, ypos, xpos + 20 + SymbolWidth, ypos);
@@ -248,7 +248,7 @@ public class Rom extends Mem {
     int realxpos = xpos + 20;
     boolean FirstBlock = bit == 0;
     boolean LastBlock = bit == (NrOfBits - 1);
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Font font = g.getFont();
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(realxpos, realypos, SymbolWidth, 20);
@@ -392,7 +392,7 @@ public class Rom extends Mem {
     if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
       DrawRomClassic(painter);
     } else {
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       Bounds bds = painter.getNominalBounds();
 
       painter.drawLabel();

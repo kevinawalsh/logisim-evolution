@@ -31,7 +31,6 @@
 package com.cburch.draw.shapes;
 import static com.cburch.draw.Strings.S;
 
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.QuadCurve2D;
 import java.util.List;
@@ -246,13 +245,13 @@ public class Curve extends FillableCanvasObject {
 	}
 
 	@Override
-	public void paint(Graphics g, HandleGesture gesture) {
+	public void paint(Graphics2D g, HandleGesture gesture) {
 		QuadCurve2D curve = getCurve(gesture);
 		if (setForFill(g)) {
-			((Graphics2D) g).fill(curve);
+			g.fill(curve);
 		}
 		if (setForStroke(g)) {
-			((Graphics2D) g).draw(curve);
+			g.draw(curve);
 		}
 	}
 

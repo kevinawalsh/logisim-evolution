@@ -110,7 +110,8 @@ public class SerialIn extends InstanceFactory {
         g.setColor(Color.GRAY);
         s = S.get("serialInputWait");
       }
-      r = GraphicsUtil.getTextBounds(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+      r = GraphicsUtil.getTextBounds(g.getFontRenderContext(), g.getFont(),
+          s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
       g.setColor(Color.WHITE);
       g.fillRect(r.x-3, r.y+2, r.width + 6, r.height-2);
       g.setColor(Color.DARK_GRAY);

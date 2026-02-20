@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
@@ -407,7 +407,7 @@ public class FileViewer extends InstanceFactory {
     State data = getState(painter);
     Bounds bds = painter.getNominalBounds();
     boolean showState = painter.getShowState();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     int lines = data.lines;
     int cols = data.cols;
     
@@ -422,27 +422,31 @@ public class FileViewer extends InstanceFactory {
       int y = bds.getY() + (hh-h)/2;
       g.setColor(Color.LIGHT_GRAY);
       g.fillRect(x-3, y-3, w+6, h+6);
-      Graphics gt = g.create(x-2, y-2, w+4, h+4);
-      x = 2;
-      y = 2;
+      Graphics2D gt = (Graphics2D)g.create(x-2, y-2, w+4, h+4);
+      try {
+        x = 2;
+        y = 2;
 
-      gt.setColor(Color.BLACK);
-      gt.setFont(FONT);
-      int L = GraphicsUtil.H_LEFT;
-      int T = GraphicsUtil.V_TOP;
-      int numlines = data.contents == null ? 0 : data.contents.size();
-      for (int i = 0; i < lines; i++) {
-        int lineno = data.firstline + i;
-        if (lineno < 0 || lineno >= numlines)
-          break;
-        if (lineno == data.selectedline) {
-          gt.setColor(SELECTED_LINE_COLOR);
-          gt.fillRect(x-2, y, w+4, s+2);
-          gt.setColor(Color.BLACK);
-        }
         gt.setColor(Color.BLACK);
-        GraphicsUtil.drawText(gt, data.contents.get(lineno), x, y, L, T);
-        y += s+2;
+        gt.setFont(FONT);
+        int L = GraphicsUtil.H_LEFT;
+        int T = GraphicsUtil.V_TOP;
+        int numlines = data.contents == null ? 0 : data.contents.size();
+        for (int i = 0; i < lines; i++) {
+          int lineno = data.firstline + i;
+          if (lineno < 0 || lineno >= numlines)
+            break;
+          if (lineno == data.selectedline) {
+            gt.setColor(SELECTED_LINE_COLOR);
+            gt.fillRect(x-2, y, w+4, s+2);
+            gt.setColor(Color.BLACK);
+          }
+          gt.setColor(Color.BLACK);
+          GraphicsUtil.drawText(gt, data.contents.get(lineno), x, y, L, T);
+          y += s+2;
+        }
+      } finally {
+        gt.dispose();
       }
     }
 

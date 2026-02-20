@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.io;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Color;
 import java.util.List;
 
@@ -76,7 +76,7 @@ public class MeterShape extends DynamicElement {
   }
 
   @Override
-  public void paintDynamic(Graphics g, CircuitState state) {
+  public void paintDynamic(Graphics2D g, CircuitState state) {
     AttributeSet attrs = path.leaf().getAttributeSet();
     Color dialColor = attrs.getValue(Io.ATTR_COLOR);
 

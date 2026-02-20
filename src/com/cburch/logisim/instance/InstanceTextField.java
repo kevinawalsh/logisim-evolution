@@ -32,6 +32,7 @@ package com.cburch.logisim.instance;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
 
 import com.cburch.logisim.circuit.Circuit;
@@ -90,9 +91,12 @@ public class InstanceTextField
 
   void draw(Component comp, ComponentDrawContext context) {
     if (field != null) {
-      Graphics g = context.getGraphics().create();
-      field.draw(g);
-      g.dispose();
+      Graphics2D g = (Graphics2D)context.getGraphics().create();
+      try {
+        field.draw(g);
+      } finally {
+        g.dispose();
+      }
     }
   }
 
@@ -109,7 +113,6 @@ public class InstanceTextField
 
   public Caret getTextCaret(ComponentUserEvent event) {
     canvas = event.getCanvas();
-    Graphics g = canvas.getGraphics();
 
     // if field is absent, create it empty
     // and if it is empty, just return a caret at its beginning
@@ -117,9 +120,9 @@ public class InstanceTextField
       createField(comp.getAttributeSet(), "");
     String text = field.getText();
     if (text == null || text.equals(""))
-      return field.getCaret(canvas, g, 0);
+      return field.getCaret(canvas, 0);
     else
-      return field.getCaret(canvas, g, event.getX(), event.getY());
+      return field.getCaret(canvas, event.getX(), event.getY());
   }
 
   private boolean shouldRegister() {

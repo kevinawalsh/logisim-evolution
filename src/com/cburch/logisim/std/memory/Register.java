@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.Arrays;
 import java.util.List;
 
@@ -75,7 +75,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
     int len = (nr_of_bits + 3) / 4;
     int wid = 7 * len + 2;
     int xoff = (60 - wid) / 2;
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     if (painter.getShowState()) {
       g.setColor(Color.LIGHT_GRAY);
       g.fillRect(x + xoff, y + 1, wid, 16);
@@ -210,7 +210,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
   }
 
   public void DrawRegisterClassic(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     RegisterData state = (RegisterData) painter.getDataAsCustom();
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);
@@ -288,7 +288,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
           || Trigger.equals(StdAttr.TRIG_LOW);
 
       DrawRegisterEvolution(painter, x, y, width, IsLatch, NegActive, true, a);
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
       painter.drawLabel();
 

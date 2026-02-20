@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expression;
@@ -89,7 +89,7 @@ class OddParityGate extends AbstractGate {
 
   @Override
   public void paintIconRectangular(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.setColor(Color.black);
     g.drawRect(1, 2, 16, 16);
     Font old = g.getFont();

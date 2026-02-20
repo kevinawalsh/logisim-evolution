@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.io;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Color;
 import java.util.List;
 
@@ -62,7 +62,7 @@ public class SevenSegmentShape extends DynamicElement {
   }
 
   @Override
-  public void paintDynamic(Graphics g, CircuitState state) {
+  public void paintDynamic(Graphics2D g, CircuitState state) {
     Color offColor = path.leaf().getAttributeSet().getValue(Io.ATTR_OFF_COLOR);
     Color onColor = path.leaf().getAttributeSet().getValue(Io.ATTR_ON_COLOR);
     Color bgColor = path.leaf().getAttributeSet().getValue(Io.ATTR_BACKGROUND);

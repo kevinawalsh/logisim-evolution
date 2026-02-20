@@ -33,7 +33,7 @@ import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -178,8 +178,8 @@ public class Text extends AbstractCanvasObject {
 	}
 
 	@Override
-	public void paint(Graphics g, HandleGesture gesture) {
-		label.paint(g);
+	public void paint(Graphics2D g, HandleGesture gesture) {
+		label.paintLabel(g);
 	}
 
 	public void setText(String value) {

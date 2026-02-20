@@ -31,24 +31,26 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Color;
-import java.awt.Rectangle;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.LinkedList;
+import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.font.FontRenderContext;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.Caret;
 import com.cburch.logisim.tools.CaretEvent;
 import com.cburch.logisim.tools.CaretListener;
@@ -63,7 +65,6 @@ public class TextFieldCaret implements Caret, TextFieldListener {
 
   private LinkedList<CaretListener> listeners = new LinkedList<CaretListener>();
   protected TextField field;
-  protected Graphics2D g; // bad idea
   protected String oldText;
   protected String curText;
   protected int cursor, anchor; // text between cursor and anchor is selected
@@ -76,10 +77,9 @@ public class TextFieldCaret implements Caret, TextFieldListener {
   boolean selectByLine = false;
   int selectOrigin = 0;
 
-  public TextFieldCaret(Canvas canvas, TextField field, Graphics g, int pos) {
+  public TextFieldCaret(Canvas canvas, TextField field, int pos) {
     this.canvas = canvas;
     this.field = field;
-    this.g = (Graphics2D)g; // bad idea, FIXME
     this.oldText = this.curText = field.getText();
     cursor = anchor = pos;
 
@@ -90,8 +90,8 @@ public class TextFieldCaret implements Caret, TextFieldListener {
 
   public EditHandler getEditHandler() { return editMenuHandler; }
 
-  public TextFieldCaret(Canvas canvas, TextField field, Graphics g, int x, int y) {
-    this(canvas, field, g, 0);
+  public TextFieldCaret(Canvas canvas, TextField field, int x, int y) {
+    this(canvas, field, 0);
     cursor = anchor = findCaret(x, y);
   }
 
@@ -125,8 +125,9 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     int halign = field.getHAlign();
     int valign = field.getVAlign();
     Font font = field.getFont();
-    if (font != null)
-      g.setFont(font);
+    if (font == null)
+      font = StdAttr.DEFAULT_LABEL_FONT;
+    g.setFont(font);
 
     // draw boundary
     Bounds box = getBounds(g);
@@ -138,8 +139,8 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     // draw selection
     if (cursor != anchor) {
       g.setColor(SELECTION_BACKGROUND);
-      Rectangle p = GraphicsUtil.getTextCursor(g, font, curText, x, y, cursor < anchor ? cursor : anchor, halign, valign);
-      Rectangle e = GraphicsUtil.getTextCursor(g, font, curText, x, y, cursor < anchor ? anchor : cursor, halign, valign);
+      Rectangle p = GraphicsUtil.getTextCursor(g.getFontRenderContext(), font, curText, x, y, cursor < anchor ? cursor : anchor, halign, valign);
+      Rectangle e = GraphicsUtil.getTextCursor(g.getFontRenderContext(), font, curText, x, y, cursor < anchor ? anchor : cursor, halign, valign);
       g.fillRect(p.x, p.y - 1, e.x - p.x + 1, e.height + 2);
     }
 
@@ -149,7 +150,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
 
     // draw cursor
     if (cursor == anchor) {
-      Rectangle p = GraphicsUtil.getTextCursor(g, font, curText, x, y, cursor, halign, valign);
+      Rectangle p = GraphicsUtil.getTextCursor(g.getFontRenderContext(), font, curText, x, y, cursor, halign, valign);
       g.drawLine(p.x, p.y, p.x, p.y + p.height);
     }
   }
@@ -164,7 +165,10 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     int halign = field.getHAlign();
     int valign = field.getVAlign();
     Font font = field.getFont();
-    Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, curText, x, y, halign, valign));
+    if (font == null)
+      font = StdAttr.DEFAULT_LABEL_FONT;
+    // Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(g, font, curText, x, y, halign, valign));
+    Bounds bds = Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT, font, curText, x, y, halign, valign));
     Bounds box = bds.add(field.getBounds(g)).expand(3);
     return box;
   }
@@ -587,7 +591,12 @@ public class TextFieldCaret implements Caret, TextFieldListener {
     y -= field.getY();
     int halign = field.getHAlign();
     int valign = field.getVAlign();
-    return GraphicsUtil.getTextPosition(g, field.getFont(), curText, x, y, halign, valign);
+    Font font = field.getFont();
+    if (font == null)
+      font = StdAttr.DEFAULT_LABEL_FONT;
+    return GraphicsUtil.getTextPosition(
+        GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
+        font, curText, x, y, halign, valign);
   }
 
   public void removeCaretListener(CaretListener l) {

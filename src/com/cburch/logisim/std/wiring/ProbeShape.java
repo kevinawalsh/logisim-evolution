@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.List;
@@ -110,7 +110,7 @@ public class ProbeShape extends DynamicElement {
   }
 
   @Override
-  public void paintDynamic(Graphics g, CircuitState state) {
+  public void paintDynamic(Graphics2D g, CircuitState state) {
     calculateBounds();
     int x = bounds.getX();
     int y = bounds.getY();
@@ -128,7 +128,7 @@ public class ProbeShape extends DynamicElement {
         text = radix.toString(val);
       label.setText(text);
     }
-    label.paint(g);
+    label.paintLabel(g);
     drawLabel(g);
   }
 

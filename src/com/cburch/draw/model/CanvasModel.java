@@ -30,7 +30,7 @@
 
 package com.cburch.draw.model;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +63,7 @@ public interface CanvasModel {
 	public Handle moveHandle(HandleGesture gesture);
 
 	// methods that don't change any data in the model
-	public void paint(Graphics g, Selection selection);
+	public void paint(Graphics2D g, Selection selection);
 
 	public void removeCanvasModelWeakListener(Object owner, CanvasModelListener l);
 

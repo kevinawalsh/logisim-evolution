@@ -36,14 +36,10 @@ import java.util.WeakHashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
@@ -195,7 +191,7 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
 
   }
 
-  private void paintBase(InstancePainter painter, Graphics g) {
+  private void paintBase(InstancePainter painter, Graphics2D g) {
     VhdlEntityAttributes attrs = (VhdlEntityAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
 
@@ -222,18 +218,18 @@ public class VhdlEntity extends InstanceFactory implements HdlModelListener {
   
   @Override
   public void paintGhost(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Color fg = g.getColor();
     int v = fg.getRed() + fg.getGreen() + fg.getBlue();
     Composite oldComposite = null;
     if (v > 50) {
-      oldComposite = ((Graphics2D) g).getComposite();
+      oldComposite = g.getComposite();
       Composite c = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
-      ((Graphics2D) g).setComposite(c);
+      g.setComposite(c);
     }
     paintBase(painter, g);
     if (oldComposite != null) {
-      ((Graphics2D) g).setComposite(oldComposite);
+      g.setComposite(oldComposite);
     }
   }
 

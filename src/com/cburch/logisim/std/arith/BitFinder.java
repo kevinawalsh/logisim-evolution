@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.arith;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -126,7 +126,7 @@ public class BitFinder extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     painter.drawBounds();
     painter.drawPorts();
 

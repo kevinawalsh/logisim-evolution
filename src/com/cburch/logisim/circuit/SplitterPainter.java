@@ -73,7 +73,7 @@ class SplitterPainter {
       }
     }
 
-    Graphics g = context.getGraphics().create();
+    Graphics2D g = (Graphics2D)context.getGraphics().create();
     Font font = g.getFont();
     g.setFont(font.deriveFont(7.0f));
 

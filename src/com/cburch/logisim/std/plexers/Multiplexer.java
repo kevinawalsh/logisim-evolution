@@ -32,7 +32,7 @@ package com.cburch.logisim.std.plexers;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
@@ -54,7 +54,7 @@ import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class Multiplexer extends InstanceFactory {
-  static void drawSelectCircle(Graphics g, Bounds bds, Location loc) {
+  static void drawSelectCircle(Graphics2D g, Bounds bds, Location loc) {
     if (Math.min(bds.getHeight(), bds.getWidth()) <= 20)
       return; // no dot for narrow mode
     int locDelta = Math.max(bds.getHeight(), bds.getWidth()) <= 50 ? 8 : 6;
@@ -184,7 +184,7 @@ public class Multiplexer extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     Object size = painter.getAttributeValue(Plexers.ATTR_SIZE);
     boolean wide = size == Plexers.SIZE_WIDE;

@@ -31,7 +31,6 @@ package com.cburch.logisim.std.io;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
@@ -218,12 +217,12 @@ public class DipSwitch extends InstanceFactory {
     } else if (facing == Direction.EAST) {
     } else if (facing == Direction.WEST) {
     }
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.translate(x, y);
     double rotate = 0.0;
     if (facing != Direction.NORTH && facing != Direction.SOUTH) {
       rotate = -facing.getRight().toRadians();
-      ((Graphics2D) g).rotate(rotate);
+      g.rotate(rotate);
     }
 
     Bounds bds = painter.getNominalBounds().expand(-1);
@@ -247,7 +246,7 @@ public class DipSwitch extends InstanceFactory {
     }
 
     if (rotate != 0.0) {
-      ((Graphics2D) g).rotate(-rotate);
+      g.rotate(-rotate);
     }
     g.translate(-x, -y);
 

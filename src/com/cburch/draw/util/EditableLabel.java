@@ -33,13 +33,13 @@ package com.cburch.draw.util;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 
 import javax.swing.JTextField;
 
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.util.GraphicsUtil;
 
 public class EditableLabel implements Cloneable {
 	public static final int LEFT = JTextField.LEFT;
@@ -83,11 +83,11 @@ public class EditableLabel implements Cloneable {
 		}
 	}
 
-	private void computeDimensions(Graphics g) {
-		TextMetrics tm = new TextMetrics(g, text);
-		width = tm.width;
-		ascent = tm.ascent;
-		descent = tm.descent;
+	private void computeDimensions(Graphics2D g) {
+		TextMetrics tm = new TextMetrics(g.getFontRenderContext(), g.getFont(), text);
+		width = tm.i_width;
+		ascent = tm.i_ascent;
+		descent = tm.i_descent;
 		dimsKnown = true;
 	}
 
@@ -108,10 +108,11 @@ public class EditableLabel implements Cloneable {
 		if (dimsKnown) {
 			w = width + 1 + 2 * border;
 		} else {
-			TextMetrics tm = new TextMetrics(field, font, text);
-			ascent = tm.ascent;
-			descent = tm.descent;
-			w = tm.width;
+			// TextMetrics tm = new TextMetrics(field, font, text);
+			TextMetrics tm = new TextMetrics(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT, font, text);
+			ascent = tm.i_ascent;
+			descent = tm.i_descent;
+			w = tm.i_width;
 		}
 
 		float x0 = x;
@@ -246,7 +247,7 @@ public class EditableLabel implements Cloneable {
 		return ret;
 	}
 
-	public void paint(Graphics g) {
+	public void paintLabel(Graphics2D g) {
 		g.setFont(font);
 		computeDimensions(g); // recompute, in case rotation has changed
 		float x0 = getLeftX();

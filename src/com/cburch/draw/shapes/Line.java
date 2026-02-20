@@ -32,7 +32,7 @@ package com.cburch.draw.shapes;
 import static com.cburch.draw.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Random;
 
@@ -203,7 +203,7 @@ public class Line extends AbstractCanvasObject {
 	}
 
 	@Override
-	public void paint(Graphics g, HandleGesture gesture) {
+	public void paint(Graphics2D g, HandleGesture gesture) {
 		if (setForStroke(g)) {
 			int x0 = this.x0;
 			int y0 = this.y0;

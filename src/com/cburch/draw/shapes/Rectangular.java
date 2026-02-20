@@ -30,7 +30,7 @@
 
 package com.cburch.draw.shapes;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 
 import com.cburch.draw.model.CanvasObject;
@@ -87,7 +87,7 @@ abstract class Rectangular extends FillableCanvasObject {
 		}
 	}
 
-	protected abstract void draw(Graphics g, int x, int y, int w, int h);
+	protected abstract void draw(Graphics2D g, int x, int y, int w, int h);
 
 	@Override
 	public Bounds getBounds() {
@@ -253,7 +253,7 @@ abstract class Rectangular extends FillableCanvasObject {
 	}
 
 	@Override
-	public void paint(Graphics g, HandleGesture gesture) {
+	public void paint(Graphics2D g, HandleGesture gesture) {
 		if (gesture == null) {
 			Bounds bds = bounds;
 			draw(g, bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());

@@ -32,6 +32,7 @@ package com.cburch.logisim.comp;
 
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -67,7 +68,7 @@ public class TextField {
     listeners.add(l);
   }
 
-  public void draw(Graphics g) {
+  public void draw(Graphics2D g) {
     GraphicsUtil.drawText(g, font, text, x, y, halign, valign);
   }
 
@@ -78,15 +79,17 @@ public class TextField {
   }
 
   public Bounds getBounds(Graphics g) {
-    return Bounds.create(GraphicsUtil.getTextBounds(g, font, text, x, y, halign, valign));
+    // return Bounds.create(GraphicsUtil.getTextBounds(g, font, text, x, y, halign, valign));
+    return Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
+          font, text, x, y, halign, valign));
   }
 
-  public TextFieldCaret getCaret(Canvas canvas, Graphics g, int pos) {
-    return new TextFieldCaret(canvas, this, g, pos);
+  public TextFieldCaret getCaret(Canvas canvas, int pos) {
+    return new TextFieldCaret(canvas, this, pos);
   }
 
-  public TextFieldCaret getCaret(Canvas canvas, Graphics g, int x, int y) {
-    return new TextFieldCaret(canvas, this, g, x, y);
+  public TextFieldCaret getCaret(Canvas canvas, int x, int y) {
+    return new TextFieldCaret(canvas, this, x, y);
   }
 
   public Font getFont() {

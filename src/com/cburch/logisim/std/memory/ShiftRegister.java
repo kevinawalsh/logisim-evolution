@@ -32,7 +32,7 @@ package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
@@ -157,7 +157,7 @@ public class ShiftRegister extends InstanceFactory {
   private void DrawControl(InstancePainter painter, int xpos, int ypos,
       int nr_of_stages, int nr_of_bits, boolean has_load,
       boolean active_low_clock) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     int blockwidth = SymbolWidth;
     g.drawLine(xpos + 10, ypos, xpos + blockwidth + 10, ypos);
@@ -232,7 +232,7 @@ public class ShiftRegister extends InstanceFactory {
     int height = (current_stage == 0) ? 30 : 20;
     boolean LastBlock = (current_stage == (nr_of_stages - 1));
     int blockwidth = SymbolWidth;
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(real_xpos, real_ypos, blockwidth, height);
     if (nr_of_bits > 1) {
@@ -453,7 +453,7 @@ public class ShiftRegister extends InstanceFactory {
           } else {
             y += 3 * bds.getHeight() / 4;
           }
-          Graphics g = painter.getGraphics();
+          Graphics2D g = painter.getGraphics();
           for (int i = 0; i < len; i++) {
             if (data != null && data.get(len - 1 - i) != null) {
               String s = data.get(len - 1 - i).toHexString();
@@ -467,7 +467,7 @@ public class ShiftRegister extends InstanceFactory {
         int x = bds.getX() + bds.getWidth() / 2;
         int y = bds.getY();
         int h = bds.getHeight();
-        Graphics g = painter.getGraphics();
+        Graphics2D g = painter.getGraphics();
         Object label = painter.getAttributeValue(StdAttr.LABEL);
         if (label == null || label.equals("")) {
           String a = S.get("shiftRegisterLabel1");

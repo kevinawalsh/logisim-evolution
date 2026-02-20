@@ -40,6 +40,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
@@ -114,6 +115,7 @@ public class ValueTable extends JPanel {
       return cell.tip;
     }
 
+    @Override
     public void paintComponent(Graphics g) {
       super.paintComponent(g);
 
@@ -126,7 +128,9 @@ public class ValueTable extends JPanel {
 
       if (columns == 0) {
         rowCount = 0;
-        GraphicsUtil.drawCenteredText(g,
+        // Note: this is a rare case of using GraphicsUtil.drawCenteredText() to draw on a
+        // swing surface instead of the main circuit or appearance canvas.
+        GraphicsUtil.drawCenteredText((Graphics2D)g,
             S.get("tableEmptyMessage"), sz.width / 2,
             sz.height / 2);
         return;

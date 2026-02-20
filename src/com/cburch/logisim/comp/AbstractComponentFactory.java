@@ -31,7 +31,7 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import javax.swing.Icon;
 
@@ -64,7 +64,7 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
 
   public void drawGhost(ComponentDrawContext context, Color color, int x,
       int y, AttributeSet attrs) {
-    Graphics g = context.getGraphics();
+    Graphics2D g = context.getGraphics();
     Bounds bds = getOffsetBounds(attrs); // Note: for Text this is wrong, but InstanceFactory
                                          // overrides and does not call this due to
                                          // Text.paintGhost implementation
@@ -105,7 +105,7 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
 
   public void paintIcon(ComponentDrawContext context, int x, int y,
       AttributeSet attrs) {
-    Graphics g = context.getGraphics();
+    Graphics2D g = context.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(context.getDestination(), g, x + 2, y + 2);
     } else {

@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.analyze.model.Expression;
@@ -118,7 +118,7 @@ class XorGate extends AbstractGate {
 
   @Override
   public void paintIconShaped(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.drawCenteredArc(g, 2, -5, 22, -90, 53);
     GraphicsUtil.drawCenteredArc(g, 2, 23, 22, 90, -53);
     GraphicsUtil.drawCenteredArc(g, -10, 9, 16, -30, 60);

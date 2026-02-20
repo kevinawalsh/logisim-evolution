@@ -32,7 +32,6 @@ package com.cburch.logisim.std.wiring;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.Icon;
@@ -124,7 +123,7 @@ public class PullResistor extends InstanceFactory {
       Color inColor, Color outColor) {
     boolean color = painter.shouldDrawColor();
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Color baseColor = g.getColor();
     GraphicsUtil.switchToWidth(g, 3);
     if (color && inColor != null)
@@ -191,7 +190,7 @@ public class PullResistor extends InstanceFactory {
     Location loc = painter.getLocation();
     int x = loc.getX();
     int y = loc.getY();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.translate(x, y);
     Value pull = getPullValue(painter.getAttributeSet());
     Value actual = painter.getPortValue(0);

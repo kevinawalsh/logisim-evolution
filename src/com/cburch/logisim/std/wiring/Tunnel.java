@@ -33,6 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
@@ -153,10 +154,11 @@ public class Tunnel extends InstanceFactory {
 
     Font font = attrs.getFont();
     String text = attrs.getLabel();
-    if (text == null || text.equals(""))
+    if (text == null)
       text = "";
     // Note: extra spaces provide font-size-aware padding on left and right
-    Rectangle r = GraphicsUtil.getTextBounds(g, font, " "+text+" ", 0, 0, 0, 0);
+    // Rectangle r = GraphicsUtil.getTextBounds(g, font, " "+text+" ", 0, 0, 0, 0);
+    Rectangle r = GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT, font, " "+text+" ", 0, 0, 0, 0);
 
     return getBoundsForTextbox(r.width, r.height, attrs.getFacing());
   }
@@ -190,7 +192,7 @@ public class Tunnel extends InstanceFactory {
   @Override
   public void paintGhost(InstancePainter painter) {
     
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     TunnelAttributes attrs = (TunnelAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
     String label = attrs.getLabel();
@@ -258,7 +260,7 @@ public class Tunnel extends InstanceFactory {
     Location loc = painter.getLocation();
     int x = loc.getX();
     int y = loc.getY();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.translate(x, y);
     g.setColor(Color.BLACK);
     paintGhost(painter);

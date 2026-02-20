@@ -30,7 +30,7 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.io.File;
 import java.util.WeakHashMap;
 
@@ -136,7 +136,7 @@ public abstract class Mem extends InstanceFactory {
 
   protected void DrawAddress(InstancePainter painter, int xpos, int ypos,
       int NrAddressBits) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     g.drawLine(xpos + 10, ypos + 10, xpos + 19, ypos + 10);
     g.drawLine(xpos + 5, ypos + 5, xpos + 10, ypos + 10);
@@ -216,8 +216,7 @@ public abstract class Mem extends InstanceFactory {
   }
 
   public void DrawMemClassic(InstancePainter painter) {
-    // FIXME
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
 
     // draw boundary and label
@@ -234,7 +233,7 @@ public abstract class Mem extends InstanceFactory {
     int dataLines = lineSize(painter.getAttributeSet());
     if (painter.getShowState()) {
       MemState state = getState(painter);
-      state.paint(painter.getGraphics(), bds.getX(), bds.getY(),
+      state.paint(g, bds.getX(), bds.getY(),
           15, 15, bds.getWidth() - 30, bds.getHeight() - 20, true, dataLines);
     } else {
       int addrBits = painter.getAttributeValue(ADDR_ATTR).getWidth();

@@ -31,7 +31,6 @@
 package com.cburch.logisim.std.gates;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.Icon;
@@ -430,7 +429,7 @@ abstract class AbstractGate extends InstanceFactory {
       width -= 10;
     }
 
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Color baseColor = g.getColor();
     if (shape == AppPreferences.SHAPE_SHAPED && paintInputLines) {
       PainterShaped.paintInputLines(painter, this);
@@ -491,7 +490,7 @@ abstract class AbstractGate extends InstanceFactory {
 
   @Override
   public final void paintIcon(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.setColor(Color.black);
     if (painter.getGateShape() == AppPreferences.SHAPE_RECTANGULAR) {
       Icon iconRect = getIconRectangular();
@@ -518,7 +517,7 @@ abstract class AbstractGate extends InstanceFactory {
   }
 
   protected void paintIconRectangular(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.drawRect(1, 2, 16, 16);
     if (negateOutput)
       g.drawOval(16, 8, 4, 4);

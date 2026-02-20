@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.Arrays;
 import java.util.List;
 
@@ -223,7 +223,7 @@ public class Constant extends InstanceFactory {
     String vStr = painter.getAttributeValue(ATTR_VALUE).toUnadornedString();
     Bounds bds = getOffsetBounds(painter.getAttributeSet());
 
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     g.fillOval(-2, -2, 4, 4);
     g.setFont(DEFAULT_FONT);
@@ -252,7 +252,7 @@ public class Constant extends InstanceFactory {
       piny = 16;
     }
 
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     if (w == 1) {
       int v = painter.getAttributeValue(ATTR_VALUE).value.toIntValue();
       Value val = v == 1 ? Value.TRUE : Value.FALSE;
@@ -271,7 +271,7 @@ public class Constant extends InstanceFactory {
     BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
     ValueWithRadix v = painter.getAttributeValue(ATTR_VALUE);
 
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     if (painter.shouldDrawColor()) {
       g.setColor(BACKGROUND_COLOR);
       g.fillRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());

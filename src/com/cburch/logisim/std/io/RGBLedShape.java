@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.io;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Color;
 
 import org.w3c.dom.Document;
@@ -48,7 +48,7 @@ public class RGBLedShape extends LedShape {
   }
 
   @Override
-  public void paintDynamic(Graphics g, CircuitState state) {
+  public void paintDynamic(Graphics2D g, CircuitState state) {
     int x = bounds.getX() + 1;
     int y = bounds.getY() + 1;
     int w = bounds.getWidth() - 2;

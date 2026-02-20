@@ -109,7 +109,7 @@ public class About {
       }
     }
 
-    private void drawAnd(Graphics g, int x0, int y0, int x, int y) {
+    private void drawAnd(Graphics2D g, int x0, int y0, int x, int y) {
       int[] xp = new int[4];
       int[] yp = new int[4];
       xp[0] = toX(x0, x - 25);
@@ -125,9 +125,8 @@ public class About {
       g.drawPolyline(xp, yp, 4);
     }
 
-    private void drawCircuit(Graphics g, int x0, int y0) {
-      Graphics2D g2 = (Graphics2D) g;
-      g2.setStroke(new BasicStroke(5.0f));
+    private void drawCircuit(Graphics2D g, int x0, int y0) {
+      g.setStroke(new BasicStroke(5.0f));
       drawWires(g, x0, y0);
       g.setColor(gateColor);
       drawNot(g, x0, y0, 70, 10);
@@ -137,7 +136,7 @@ public class About {
       drawOr(g, x0, y0, 220, 60);
     }
 
-    private void drawNot(Graphics g, int x0, int y0, int x, int y) {
+    private void drawNot(Graphics2D g, int x0, int y0, int x, int y) {
       int[] xp = new int[4];
       int[] yp = new int[4];
       xp[0] = toX(x0, x - 10);
@@ -153,7 +152,7 @@ public class About {
       g.drawOval(xp[0], yp[0] - diam / 2, diam, diam);
     }
 
-    private void drawOr(Graphics g, int x0, int y0, int x, int y) {
+    private void drawOr(Graphics2D g, int x0, int y0, int x, int y) {
       int cx = toX(x0, x - 50);
       int cd = toDim(62);
       GraphicsUtil.drawCenteredArc(g, cx, toY(y0, y - 37), cd, -90, 53);
@@ -162,16 +161,8 @@ public class About {
           toDim(50), -30, 60);
     }
 
-    private void drawText(Graphics g, int x, int y) {
+    private void drawText(Graphics2D g, int x, int y) {
       Graphics2D g2 = (Graphics2D)g;
-      // FIXME: Document why RenderingHints are applied here, and are not restored;
-      // Alternatively, do not apply hints, or restore them.
-      g2.setRenderingHint(
-          RenderingHints.KEY_TEXT_ANTIALIASING,
-          RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-      g2.setRenderingHint(
-          RenderingHints.KEY_ANTIALIASING,
-          RenderingHints.VALUE_ANTIALIAS_ON);
 
       FontMetrics fm;
       String str;
@@ -210,11 +201,11 @@ public class About {
     static final Color color0 = Value.FALSE.getColor();
     static final Color color1 = Value.TRUE.getColor();
 
-    private static void setColor(Graphics g, boolean b) {
+    private static void setColor(Graphics2D g, boolean b) {
       g.setColor(b ? color1 : color0);
     }
 
-    private void drawWires(Graphics g, int x0, int y0) {
+    private void drawWires(Graphics2D g, int x0, int y0) {
       boolean upperAnd = (!upper) && lower;
       boolean lowerAnd = (!lower) && upper;
       boolean out = upperAnd || lowerAnd;
@@ -266,14 +257,18 @@ public class About {
     @Override
     public void paintComponent(Graphics g) {
       super.paintComponent(g);
+      Graphics2D g2 = (Graphics2D)g;
+      Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
       try {
         int x = IMAGE_BORDER;
         int y = IMAGE_BORDER;
-        drawCircuit(g, x + 10, y + 55);
-        g.setColor(fadeColor);
-        g.fillRect(x, y, IMAGE_WIDTH, IMAGE_HEIGHT);
-        drawText(g, x, y);
+        drawCircuit(g2, x + 10, y + 55);
+        g2.setColor(fadeColor);
+        g2.fillRect(x, y, IMAGE_WIDTH, IMAGE_HEIGHT);
+        drawText(g2, x, y);
       } catch (Throwable t) {
+      } finally {
+        GraphicsUtil.restoreRenderingHints(g2, oldHints);
       }
     }
   }

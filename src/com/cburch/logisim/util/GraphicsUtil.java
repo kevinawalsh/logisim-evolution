@@ -46,9 +46,7 @@ import com.cburch.draw.util.TextMetrics;
 
 public class GraphicsUtil {
 
-  // FIXME: most of these methods should take a Graphics2D instead of a Graphics.
-
-  static public void drawArrow(Graphics g, int x0, int y0, int x1, int y1,
+  static public void drawArrow(Graphics2D g, int x0, int y0, int x1, int y1,
       int stemWidth, int headLength, int headAngle) {
     double offs = headAngle * Math.PI / 180.0;
     double angle = Math.atan2(y0 - y1, x0 - x1);
@@ -67,39 +65,39 @@ public class GraphicsUtil {
     g.fillPolygon(xs, ys, 7);
   }
 
-  static public void drawCenteredArc(Graphics g, int x, int y, int r,
+  static public void drawCenteredArc(Graphics2D g, int x, int y, int r,
       int start, int dist) {
     g.drawArc(x - r, y - r, 2 * r, 2 * r, start, dist);
   }
 
-  static public void drawCenteredText(Graphics g, String text, int x, int y) {
+  static public void drawCenteredText(Graphics2D g, String text, int x, int y) {
     drawText(g, text, x, y, H_CENTER, V_CENTER);
   }
 
-  static public void drawCenteredText(Graphics g, Font font, String text, int x, int y) {
+  static public void drawCenteredText(Graphics2D g, Font font, String text, int x, int y) {
     drawText(g, font, text, x, y, H_CENTER, V_CENTER);
   }
 
   // Returns a cursor box at specified character position.
-  static public Rectangle getTextCursor(Graphics g, Font font, String text,
+  static public Rectangle getTextCursor(FontRenderContext frc, Font font, String text,
       int x, int y, int pos, int halign, int valign) {
-    Rectangle r = getTextBounds(g, font, text, x, y, halign, valign);
+    // FIXME: this doesn't handle unicode (e.g. emoji, multi-byte accents) properly
+    Rectangle r = getTextBounds(frc, font, text, x, y, halign, valign);
     if (pos > 0)
-      r.x += new TextMetrics(g, font, text.substring(0, pos)).width;
+      r.x += new TextMetrics(frc, font, text.substring(0, pos)).i_width;
     r.width = 1;
     return r;
   }
 
-  static public int getTextPosition(Graphics g, Font font, String text,
+  // Performs hit testing, and returns character position given offset within rendered text.
+  static public int getTextPosition(FontRenderContext frc, Font font, String text,
       int x, int y, int halign, int valign) {
-    Rectangle r = getTextBounds(g, font, text, 0, 0, halign, valign);
+    // FIXME: this doesn't handle unicode (e.g. emoji, multi-byte accents) properly
+    Rectangle r = getTextBounds(frc, font, text, 0, 0, halign, valign);
     x -= (int)r.x;
     int last = 0;
-    if (font == null)
-      font = g.getFont();
-    FontRenderContext fr = ((Graphics2D)g).getFontRenderContext();
     for (int i = 0; i < text.length(); i++) {
-      int cur = (int)font.getStringBounds(text.substring(0, i + 1), fr).getWidth();
+      int cur = (int)font.getStringBounds(text.substring(0, i + 1), frc).getWidth();
       if (x <= (last + cur) / 2) {
         return i;
       }
@@ -108,7 +106,7 @@ public class GraphicsUtil {
     return text.length();
   }
 
-  static public void drawText(Graphics g, Font font, String text, int x,
+  static public void drawText(Graphics2D g, Font font, String text, int x,
       int y, int halign, int valign) {
     Font oldfont = g.getFont();
     if (font != null)
@@ -118,27 +116,24 @@ public class GraphicsUtil {
       g.setFont(oldfont);
   }
 
-  static public void drawText(Graphics g, String text, int x, int y,
+  static public void drawText(Graphics2D g, String text, int x, int y,
       int halign, int valign) {
     if (text.length() == 0)
       return;
-    Rectangle bd = getTextBounds(g, text, x, y, halign, valign);
-    TextMetrics tm = new TextMetrics(g, text);
-    g.drawString(text, bd.x, bd.y + tm.ascent);
+    FontRenderContext frc = g.getFontRenderContext();
+    Font font = g.getFont();
+    TextMetrics tm = new TextMetrics(frc, font, text);
+    Rectangle bd = transform(x, y, tm.i_width, tm.i_height, tm.i_ascent, tm.i_descent, halign, valign);
+    g.drawString(text, bd.x, bd.y + tm.i_ascent);
   }
 
-  static public Rectangle getTextBounds(Graphics g, String text, int x,
-      int y, int halign, int valign) {
-    return getTextBounds(g, null, text, x, y, halign, valign);
-  }
-
-  static public Rectangle getTextBounds(Graphics g, Font font, String text,
+  static public Rectangle getTextBounds(FontRenderContext frc, Font font, String text,
       int x, int y, int halign, int valign) {
-    TextMetrics tm = new TextMetrics(g, font, text);
-    return transform(x, y, tm.width, tm.height, tm.ascent, tm.descent, halign, valign);
+    TextMetrics tm = new TextMetrics(frc, font, text);
+    return transform(x, y, tm.i_width, tm.i_height, tm.i_ascent, tm.i_descent, halign, valign);
   }
 
-  static public void outlineText(Graphics g, String text, int x, int y, Color fg, Color bg) {
+  static public void outlineText(Graphics2D g, String text, int x, int y, Color fg, Color bg) {
     // g.setColor(bg);
     // for (int dx = -1; dx <= 1; dx++)
     //   for (int dy = -1; dy <= 1; dy++)
@@ -193,7 +188,7 @@ public class GraphicsUtil {
 
   static final String TAB = "    "; // TAB = four spaces
 
-  static private int tabStringWidth(Graphics g, Font font, String text) {
+  static private int tabStringWidth(Graphics2D g, Font font, String text) {
     String segments[] = text.split("\t", -1);
     if (segments.length == 0)
       return 0;
@@ -206,177 +201,27 @@ public class GraphicsUtil {
     return w;
   }
 
-  // Returns a cursor box at specified character position.
-  static public Rectangle getTextCursor(Graphics g, Font font, String text[],
-      int x, int y, int pos, int halign, int valign) {
-    TextMetrics tm = new TextMetrics(g, font, null);
-    if (font == null)
-      font = g.getFont();
-    Rectangle r = getTextBounds(g, font, text, x, y, halign, valign);
-    int width = (int)r.getWidth();
-    // "ab\nc\n" --> 0 a 1 b 2 \n 3 \n 4 c 5 \n 6
-    x = (int)r.getX();
-    y = (int)r.getY();
-    for (String line: text) {
-      if (pos > line.length()) {
-        pos -= line.length() + 1;
-        y += tm.height;
-        continue;
-      }
-      int linewidth = tabStringWidth(g, font, line);
-      switch (halign) {
-      case H_CENTER:
-        x += (width - linewidth)/2;
-        break;
-      case H_RIGHT:
-        x += (width - linewidth);
-        break;
-      }
-      if (pos > 0)
-        x += tabStringWidth(g, font, line.substring(0, pos));
-      return new Rectangle(x, y, 1, tm.ascent + tm.descent);
-    }
-    return null;
-  }
-
-  static public int getTextPosition(Graphics g, Font font, String text[],
-      int x, int y, int halign, int valign) {
-    Rectangle r = getTextBounds(g, font, text, 0, 0, halign, valign);
-    TextMetrics tm = new TextMetrics(g, font, null);
-    if (font == null)
-      font = g.getFont();
-    x -= (int)r.getX();
-    y -= (int)r.getY();
-    int pos = 0;
-    for (String line : text) {
-      if (y >= tm.height) {
-        y -= tm.height;
-        pos += line.length() + 1;
-        continue;
-      }
-      int linewidth = tabStringWidth(g, font, line);
-      switch (halign) {
-      case H_CENTER:
-        x -= (r.getWidth() - linewidth)/2;
-        break;
-      case H_RIGHT:
-        x -= (r.getWidth() - linewidth);
-        break;
-      }
-      int last = 0;
-      for (int i = 0; i < line.length(); i++) {
-        int cur = tabStringWidth(g, font, line.substring(0, i + 1));
-        if (x <= (last + cur) / 2) {
-          return pos + i;
-        }
-        last = cur;
-      }
-      return pos + line.length();
-    }
-    return pos - 1;
-  }
-
-  static public void drawText(Graphics g, Font font, String text[], int x,
-      int y, int halign, int valign) {
-    Font oldfont = g.getFont();
-    if (font != null)
-      g.setFont(font);
-    drawText(g, text, x, y, halign, valign);
-    if (font != null)
-      g.setFont(oldfont);
-  }
-
-  static public void drawText(Graphics g, String text[], int x, int y,
-      int halign, int valign) {
-    if (text.length == 0)
-      return;
-    Rectangle bds = getTextBounds(g, text, x, y, halign, valign);
-    FontRenderContext fr = ((Graphics2D)g).getFontRenderContext();
-    TextMetrics tm = new TextMetrics(g);
-    Font font = g.getFont();
-    y = bds.y + tm.ascent;
-    for (String line : text) {
-      int linewidth;
-      switch (halign) {
-      case H_CENTER:
-        linewidth = tabStringWidth(g, font, line);
-        x = bds.x + (bds.width - linewidth)/2;
-        break;
-      case H_RIGHT:
-        linewidth = tabStringWidth(g, font, line);
-        x = bds.x + (bds.width - linewidth);
-        break;
-      default:
-        x = bds.x;
-      }
-      int w = (int)font.getStringBounds(TAB, fr).getWidth();
-      for (String s : line.split("\t", -1)) {
-        g.drawString(s, x, y);
-        x +=(int)font.getStringBounds(s, fr).getWidth() + w;
-      }
-      y += tm.height;
-    }
-  }
-
-  static public Rectangle getTextBounds(Graphics g, String text[], int x,
-      int y, int halign, int valign) {
-    return getTextBounds(g, null, text, x, y, halign, valign);
-  }
-
-  static public Rectangle getTextBounds(Graphics g, Font font, String text[],
-      int x, int y, int halign, int valign) {
-    int n = text.length;
-    if (n == 0)
-      return getTextBounds(g, font, "", x, y, halign, valign);
-    TextMetrics tm = new TextMetrics(g, font, null);
-    if (font == null)
-      font = g.getFont();
-    int width = tabStringWidth(g, font, text[0]);
-    for (int i = 1; i < n; i++) {
-      int w = tabStringWidth(g, font, text[i]);
-      if (w > width)
-        width = w;
-    }
-    Rectangle ret = new Rectangle(x, y, width, n * tm.height);
-    switch (halign) {
-    case H_CENTER:
-      ret.translate(-(width / 2), 0);
-      break;
-    case H_RIGHT:
-      ret.translate(-width, 0);
-      break;
-    default:
-      ;
-    }
-    switch (valign) {
-    case V_TOP:
-      break;
-    case V_CENTER:
-      ret.translate(0, -(tm.height / 2));
-      break;
-    case V_CENTER_OVERALL:
-      ret.translate(0, -(n * tm.height / 2));
-      break;
-    case V_BASELINE:
-      ret.translate(0, -tm.ascent);
-      break;
-    case V_BOTTOM:
-      ret.translate(0, -tm.height);
-      break;
-    default:
-      ;
-    }
-    return ret;
-  }
+  static final BasicStroke COMMON_STROKES[] = {
+    new BasicStroke(0.5f),
+    new BasicStroke(1f), new BasicStroke(2f), new BasicStroke(3f), new BasicStroke(4f), new BasicStroke(5f) };
 
   static public void switchToWidth(Graphics g, int width) {
     Graphics2D g2 = (Graphics2D) g;
-    g2.setStroke(new BasicStroke((float) width));
+    if (1 <= width && width <= 5)
+      g2.setStroke(COMMON_STROKES[width]);
+    else
+      g2.setStroke(new BasicStroke((float) width));
   }
 
   static public void switchToWidth(Graphics g, float width) {
     Graphics2D g2 = (Graphics2D) g;
-    g2.setStroke(new BasicStroke(width));
+    if (width == 0.5f) g2.setStroke(COMMON_STROKES[0]);
+    else if (width == 1f) g2.setStroke(COMMON_STROKES[1]);
+    else if (width == 2f) g2.setStroke(COMMON_STROKES[2]);
+    else if (width == 3f) g2.setStroke(COMMON_STROKES[3]);
+    else if (width == 4f) g2.setStroke(COMMON_STROKES[4]);
+    else if (width == 5f) g2.setStroke(COMMON_STROKES[5]);
+    else g2.setStroke(new BasicStroke(width));
   }
 
   public static final int H_LEFT = -1;
@@ -533,6 +378,9 @@ public class GraphicsUtil {
         RenderingHints.VALUE_STROKE_DEFAULT);
     return old;
   }
+
+  public static final FontRenderContext CANVAS_FONT_RENDER_CONTEXT = new FontRenderContext(null /*xform*/, true /*text antialiasing*/, true /*fractional metrics*/);
+  public static final FontRenderContext NICE_TEXT_FONT_RENDER_CONTEXT = CANVAS_FONT_RENDER_CONTEXT;
 
   // Use this after calling either usePureStrokeRendering(g) or
   // useDefaultStrokeRendering(g), unless g will be destroyed anyway.

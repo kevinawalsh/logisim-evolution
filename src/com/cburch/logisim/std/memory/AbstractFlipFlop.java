@@ -32,7 +32,7 @@ package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
@@ -155,7 +155,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
       Location loc = painter.getLocation();
       int x = loc.getX();
       int y = loc.getY();
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       g.setColor(Color.RED); // red to indicate text capture
       g.drawOval(x - 27, y + 3, 15, 15);
       g.setColor(Color.BLACK);
@@ -304,7 +304,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
   }
 
   private void paintInstanceClassic(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     painter.drawBounds();
     painter.drawLabel();
     if (painter.getShowState()) {
@@ -343,7 +343,7 @@ abstract class AbstractFlipFlop extends InstanceFactory {
   }
 
   private void paintInstanceEvolution(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     painter.drawLabel();
     Location loc = painter.getLocation();
     int x = loc.getX();

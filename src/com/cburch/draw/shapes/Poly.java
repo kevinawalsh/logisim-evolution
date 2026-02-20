@@ -31,7 +31,7 @@
 package com.cburch.draw.shapes;
 import static com.cburch.draw.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.geom.GeneralPath;
 import java.util.List;
 import java.util.Random;
@@ -390,7 +390,7 @@ public class Poly extends FillableCanvasObject {
 	}
 
 	@Override
-	public void paint(Graphics g, HandleGesture gesture) {
+	public void paint(Graphics2D g, HandleGesture gesture) {
 		List<Handle> hs = getHandles(gesture);
 		int[] xs = new int[hs.size()];
 		int[] ys = new int[hs.size()];

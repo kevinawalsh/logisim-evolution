@@ -30,7 +30,7 @@
 
 package com.cburch.draw.canvas;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -89,7 +89,7 @@ public class Selection {
 		}
 	}
 
-	public void drawSuppressed(Graphics g, CanvasObject shape) {
+	public void drawSuppressed(Graphics2D g, CanvasObject shape) {
 		String state = suppressed.get(shape);
 		if (state == MOVING_HANDLE) {
 			shape.paint(g, curHandleGesture);

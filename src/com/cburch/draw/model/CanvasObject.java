@@ -30,7 +30,7 @@
 
 package com.cburch.draw.model;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 
 import com.cburch.logisim.circuit.appear.DynamicCondition;
@@ -71,7 +71,7 @@ public interface CanvasObject extends AttributeSet, Cloneable {
 
 	public abstract boolean overlaps(CanvasObject other);
 
-	public abstract void paint(Graphics g, HandleGesture gesture);
+	public abstract void paint(Graphics2D g, HandleGesture gesture);
 
 	public void translate(int dx, int dy);
 

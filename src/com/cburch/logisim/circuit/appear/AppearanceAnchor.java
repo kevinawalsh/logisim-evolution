@@ -32,7 +32,7 @@ package com.cburch.logisim.circuit.appear;
 import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 
 import org.w3c.dom.Document;
@@ -138,7 +138,7 @@ public class AppearanceAnchor extends AppearanceElement {
   }
 
   @Override
-  public void paint(Graphics g, HandleGesture gesture) {
+  public void paint(Graphics2D g, HandleGesture gesture) {
     Location location = getLocation();
     int x = location.getX();
     int y = location.getY();

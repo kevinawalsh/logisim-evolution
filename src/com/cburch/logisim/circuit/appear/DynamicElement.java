@@ -32,7 +32,7 @@ package com.cburch.logisim.circuit.appear;
 import static com.cburch.logisim.circuit.Strings.S;
 
 import java.util.List;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.Font;
 
@@ -266,7 +266,7 @@ public abstract class DynamicElement extends AbstractCanvasObject {
   }
 
   @Override
-  public void paint(Graphics g, HandleGesture gesture) {
+  public void paint(Graphics2D g, HandleGesture gesture) {
     paintDynamic(g, null);
   }
 
@@ -320,9 +320,9 @@ public abstract class DynamicElement extends AbstractCanvasObject {
     return ret;
   }
 
-  public abstract void paintDynamic(Graphics g, CircuitState state);
+  public abstract void paintDynamic(Graphics2D g, CircuitState state);
 
-  public void drawLabel(Graphics g) {
+  public void drawLabel(Graphics2D g) {
     if (labelLoc == LABEL_NONE)
       return;
     String label = path.leaf().getAttributeSet().getValue(StdAttr.LABEL);

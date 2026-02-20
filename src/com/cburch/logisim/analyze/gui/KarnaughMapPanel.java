@@ -398,12 +398,13 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
   }
 
   public void paintKmap(Graphics g) {
-    Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g);
-    paintKmapNice(g);
-    GraphicsUtil.restoreRenderingHints(g, oldHints);
+    Graphics2D g2 = (Graphics2D)g;
+    Object oldHints[] = GraphicsUtil.setRenderingHintsForNiceText(g2);
+    paintKmapNice(g2);
+    GraphicsUtil.restoreRenderingHints(g2, oldHints);
   }
 
-  private void paintKmapNice(Graphics g) {
+  private void paintKmapNice(Graphics2D g) {
     TruthTable table = model.getTruthTable();
     int inputCount = table.getInputColumnCount();
     Dimension sz = getSize();

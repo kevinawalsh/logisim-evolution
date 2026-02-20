@@ -32,7 +32,7 @@ package com.cburch.logisim.std.plexers;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
@@ -163,7 +163,7 @@ public class Decoder extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     Object selectLoc = painter.getAttributeValue(Plexers.ATTR_SELECT_LOC);

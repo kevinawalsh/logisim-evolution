@@ -128,7 +128,7 @@ public class PainterShaped {
   }
 
   static void paintAnd(InstancePainter painter, int width, int height) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     int[] xp = new int[] { -width / 2, -width + 1, -width + 1, -width / 2 };
     int[] yp = new int[] { -width / 2, -width / 2, width / 2, width / 2 };

@@ -31,7 +31,7 @@ package com.cburch.logisim.std.memory;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.hex.HexModel;
 import com.cburch.hex.HexModelListener;
@@ -92,7 +92,7 @@ class MemState implements ComponentData, HexModelListener {
       int[] oldValues) {
   }
 
-  private void CalculateDisplayParameters(Graphics g,
+  private void CalculateDisplayParameters(Graphics2D g,
       int offsetX, int offsetY,
       int DisplayWidth, int DisplayHeight) {
     RecalculateParameters = false;
@@ -227,7 +227,7 @@ class MemState implements ComponentData, HexModelListener {
 
   private boolean classicAppearance = true;
   private int displayWidth = 0, displayHeight = 0;
-  public void paint(Graphics g, int leftX, int topY,
+  public void paint(Graphics2D g, int leftX, int topY,
       int offsetX, int offsetY,
       int DisplayWidth, int DisplayHeight, boolean classic, int dataLines) {
     if (RecalculateParameters || classicAppearance != classic || displayWidth != DisplayWidth || DisplayHeight != displayHeight) {

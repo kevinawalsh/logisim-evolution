@@ -32,7 +32,7 @@ package com.cburch.logisim.std.audio;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -337,7 +337,7 @@ public class MidiIn extends InstanceFactory {
       painter.drawPort(i);
 
     Bounds bds = painter.getNominalBounds();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
 
     int x = bds.x + (bds.width-24)/2;
     int y = bds.y + (bds.height-24)/2 - 10;

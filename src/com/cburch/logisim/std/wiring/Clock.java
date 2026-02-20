@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
@@ -228,7 +228,7 @@ public class Clock extends InstanceFactory {
   //
   @Override
   public void paintIcon(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(painter.getDestination(), g, 2, 2);
     } else {
@@ -257,7 +257,7 @@ public class Clock extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    java.awt.Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getInstance().getNominalBounds(); // intentionally with no
     // graphics object - we don't want label included
     int x = bds.x;

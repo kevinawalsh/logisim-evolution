@@ -395,8 +395,191 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     paint(painter, true, altTextWidth);
   }
 
+  private void paintDemo(InstancePainter painter) {
+    TextAttributes attrs = (TextAttributes)painter.getAttributeSet();
+    Location loc = painter.getLocation();
+    Graphics2D g = painter.getGraphics();
+    Object oldHint = GraphicsUtil.usePureStrokeRendering(g);
+    Font font = attrs.getFont();
+    int halign = ALIGN.H_LEFT;
+    int valign = ALIGN.V_TOP;
+
+    int x = loc.x, y = loc.y;
+
+    GraphicsUtil.drawText(g, font, "Text measuring tests/demo", x, y, halign, valign);
+    y += 25;
+
+    String s = "ÄAy! t e s t 019%", ss;
+
+    java.awt.FontMetrics fm = g.getFontMetrics(font);
+    int a = fm.getAscent();
+    int d = fm.getDescent();
+    int l = fm.getLeading();
+    int h = fm.getHeight();
+    int w = fm.stringWidth(s);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Float(x, y-a, w, h));
+    ss = s + String.format("FM a=%d d=%d l=%d h=%d w=%d\n", a, d, l, h, w);
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 10;
+
+    Graphics2D g2 = (Graphics2D)g.create();
+
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_OFF);
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+    ss = s + String.format("FM a=%d d=%d w/ AA=off, FM=on", a, d);
+    g2.drawString(ss, x, y);
+    y += 10;
+
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+    ss = s + String.format("FM a=%d d=%d w/ AA=on, FM=off", a, d);
+    g2.drawString(ss, x, y);
+    y += 10;
+
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_OFF);
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+    g2.setRenderingHint(java.awt.RenderingHints.KEY_FRACTIONALMETRICS, java.awt.RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+    ss = s + String.format("FM a=%d d=%d w/ AA=off, FM=off", a, d);
+    g2.drawString(ss, x, y);
+    y += 10;
+
+    g2.dispose();
+
+    java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(1, 1, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    Graphics2D base = img.createGraphics();
+    fm = base.getFontMetrics(font);
+    a = fm.getAscent();
+    d = fm.getDescent();
+    l = fm.getLeading();
+    h = fm.getHeight();
+    w = fm.stringWidth(s);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Float(x, y-a, w, h));
+    ss = s + String.format("img/FM a=%d d=%d l=%d h=%d w=%d\n", a, d, l, h, w);
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+    GraphicsUtil.setRenderingHintsForCanvas(base);
+    fm = base.getFontMetrics(font);
+    a = fm.getAscent();
+    d = fm.getDescent();
+    l = fm.getLeading();
+    h = fm.getHeight();
+    w = fm.stringWidth(s);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Float(x, y-a, w, h));
+    ss = s + String.format("img+aa/FM a=%d d=%d l=%d h=%d w=%d\n", a, d, l, h, w);
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+    java.awt.Canvas rando = new java.awt.Canvas();
+    fm = rando.getFontMetrics(font);
+    a = fm.getAscent();
+    d = fm.getDescent();
+    l = fm.getLeading();
+    h = fm.getHeight();
+    w = fm.stringWidth(s);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Float(x, y-a, w, h));
+    ss = s + String.format("rnd/FM a=%d d=%d l=%d h=%d w=%d\n", a, d, l, h, w);
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+ 
+    java.awt.geom.AffineTransform xform = new java.awt.geom.AffineTransform();
+    java.awt.font.FontRenderContext frc;
+    frc = new java.awt.font.FontRenderContext(xform, true /*aa*/, true /*fm*/);
+    java.awt.font.LineMetrics lm = font.getLineMetrics(s, frc);
+    float ascent  = lm.getAscent();
+    float descent = lm.getDescent();
+    float leading = lm.getLeading();
+    float height  = lm.getHeight(); // typically ascent + descent + leading
+    java.awt.geom.Rectangle2D bounds = font.getStringBounds(s, frc);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Double(x+bounds.getX(), y+bounds.getY(), bounds.getWidth(), bounds.getHeight()));
+    ss = s + String.format("af/FRC a=%f d=%f l=%f h=%f bounds=%f,%f,%f,%f\n", ascent, descent, leading, height, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+    frc = new java.awt.font.FontRenderContext(xform, false /*aa*/, true /*fm*/);
+    lm = font.getLineMetrics(s, frc);
+    ascent  = lm.getAscent();
+    descent = lm.getDescent();
+    leading = lm.getLeading();
+    height  = lm.getHeight(); // typically ascent + descent + leading
+    bounds = font.getStringBounds(s, frc);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Double(x+bounds.getX(), y+bounds.getY(), bounds.getWidth(), bounds.getHeight()));
+    ss = s + String.format("-f/FRC a=%f d=%f l=%f h=%f bounds=%f,%f,%f,%f\n", ascent, descent, leading, height, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+    frc = new java.awt.font.FontRenderContext(xform, true /*aa*/, false /*fm*/);
+    lm = font.getLineMetrics(s, frc);
+    ascent  = lm.getAscent();
+    descent = lm.getDescent();
+    leading = lm.getLeading();
+    height  = lm.getHeight(); // typically ascent + descent + leading
+    bounds = font.getStringBounds(s, frc);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Double(x+bounds.getX(), y+bounds.getY(), bounds.getWidth(), bounds.getHeight()));
+    ss = s + String.format("a-/FRC a=%f d=%f l=%f h=%f bounds=%f,%f,%f,%f\n", ascent, descent, leading, height, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+    frc = new java.awt.font.FontRenderContext(xform, false /*aa*/, false /*fm*/);
+    lm = font.getLineMetrics(s, frc);
+    ascent  = lm.getAscent();
+    descent = lm.getDescent();
+    leading = lm.getLeading();
+    height  = lm.getHeight(); // typically ascent + descent + leading
+    bounds = font.getStringBounds(s, frc);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Double(x+bounds.getX(), y+bounds.getY(), bounds.getWidth(), bounds.getHeight()));
+    ss = s + String.format("--/FRC a=%f d=%f l=%f h=%f bounds=%f,%f,%f,%f\n", ascent, descent, leading, height, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+    frc = g.getFontRenderContext();
+    lm = font.getLineMetrics(s, frc);
+    ascent  = lm.getAscent();
+    descent = lm.getDescent();
+    leading = lm.getLeading();
+    height  = lm.getHeight(); // typically ascent + descent + leading
+    bounds = font.getStringBounds(s, frc);
+    g.setColor(Color.CYAN);
+    g.fill(new java.awt.geom.Rectangle2D.Double(x+bounds.getX(), y+bounds.getY(), bounds.getWidth(), bounds.getHeight()));
+    ss = s + String.format("g/FRC a=%f d=%f l=%f h=%f bounds=%f,%f,%f,%f\n", ascent, descent, leading, height, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    g.setFont(font);
+    g.setColor(Color.BLACK);
+    g.drawString(ss, x, y);
+    y += 15;
+
+
+    GraphicsUtil.restoreStrokeRendering(g, oldHint);
+  }
+
   public void paint(InstancePainter painter, boolean drawBoundingBox, Integer altTextWidth) {
     TextAttributes attrs = (TextAttributes)painter.getAttributeSet();
+    if (attrs.getText().equals("demo")) { paintDemo(painter); return; }
     Location loc = painter.getLocation();
     Graphics2D g = painter.getGraphics();
     int halign = attrs.getHorizontalAlign();

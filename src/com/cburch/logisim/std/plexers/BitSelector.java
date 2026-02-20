@@ -32,7 +32,7 @@ package com.cburch.logisim.std.plexers;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
@@ -106,7 +106,7 @@ public class BitSelector extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
 
     Plexers.drawTrapezoid(g, painter.getNominalBounds(), facing, 9);

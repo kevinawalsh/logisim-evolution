@@ -30,7 +30,7 @@
 
 package com.cburch.draw.model;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -172,10 +172,10 @@ public class Drawing implements CanvasModel {
 		}
 	}
 
-	public void paint(Graphics g, Selection selection) {
+	public void paint(Graphics2D g, Selection selection) {
 		Set<CanvasObject> suppressed = selection.getDrawsSuppressed();
 		for (CanvasObject shape : getObjectsFromBottom()) {
-			Graphics dup = g.create();
+			Graphics2D dup = (Graphics2D)g.create();
 			if (suppressed.contains(shape)) {
 				selection.drawSuppressed(dup, shape);
 			} else {

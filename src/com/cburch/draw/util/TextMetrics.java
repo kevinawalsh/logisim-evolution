@@ -31,54 +31,44 @@
 package com.cburch.draw.util;
 
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Canvas;
-import java.awt.Component;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineMetrics;
-import java.awt.FontMetrics;
 
 public class TextMetrics {
 
-	public int ascent;
-	public int descent;
-	public int leading;
-	public int height; // = ascent + height + leading
-	public int width; // valid only if constructor was given a string
+	public final int i_ascent;
+	public final int i_descent;
+	public final int i_leading;
+	public final int i_height; // = i_ascent + i_height + i_leading
+	public final int i_width; // valid only if constructor was given a string
+	
+  public final float f_ascent;
+	public final float f_descent;
+	public final float f_leading;
+	public final float f_height; // = f_ascent + f_height + f_leading
+	public final float f_width; // valid only if constructor was given a string
 
-	public TextMetrics(Graphics g) {
-		this(g, null, null);
-	}
-
-	public TextMetrics(Graphics g, String text) {
-		this(g, null, text);
-	}
-
-	public TextMetrics(Graphics g, Font font) {
-		this(g, font, null);
-	}
-
-	public TextMetrics(Graphics g, Font font, String text) {
-		if (g == null) {
-			throw new IllegalStateException("need g");
-		}
-		if (font == null)
-			font = g.getFont();
-		FontRenderContext fr = ((Graphics2D)g).getFontRenderContext();
-
+	public TextMetrics(FontRenderContext frc, Font font, String text) {
+    if (frc == null || font == null)
+			throw new IllegalStateException("need FontRenderContext and Font to measure text");
 		if (text == null) {
 			text = "ÄAy";
-			width = 0;
+			i_width = 0;
+      f_width = 0f;
 		} else {
-			width = (int)font.getStringBounds(text, fr).getWidth();
+      f_width = (float)font.getStringBounds(text, frc).getWidth();
+			i_width = (int)f_width; // ceil? round?
 		}
 
-		LineMetrics lm = font.getLineMetrics(text, fr);
-		ascent = (int)Math.ceil(lm.getAscent());
-		descent = (int)Math.ceil(lm.getDescent());
-		leading = (int)Math.ceil(lm.getLeading());
-		height = ascent + descent + leading; // (int)Math.ceil(lm.getHeight());
+		LineMetrics lm = font.getLineMetrics(text, frc);
+    f_ascent = lm.getAscent();
+		f_descent = lm.getDescent();
+		f_leading = lm.getLeading();
+    f_height = f_ascent + f_descent + f_leading; // lm.getHeight();
+		i_ascent = (int)Math.ceil(f_ascent);
+		i_descent = (int)Math.ceil(f_descent);
+		i_leading = (int)Math.ceil(f_leading);
+		i_height = i_ascent + i_descent + i_leading; // (int)Math.ceil(f_height);
 	
 		// sanity checks...
 		/*
@@ -90,27 +80,6 @@ public class TextMetrics {
 					"  a: " + ascent + " vs " + fa +
 					"  d: " + descent + " vs " + fd +
 					"  h: " + height + " vs " + fh);
-		*/
-	}
-
-	private static Canvas canvas = new Canvas();
-
-	public TextMetrics(Component c, Font font, String text) {
-		if (c == null)
-			c = canvas;
-		if (font == null)
-			font = c.getFont();
-		FontMetrics fm = c.getFontMetrics(font);
-		width = (text != null ? fm.stringWidth(text) : 0);
-		ascent = fm.getAscent();
-		descent = fm.getDescent();
-		leading = 0;
-		height = ascent + descent + leading;
-
-		// sanity checks...
-		/*
-		if (width <= 0 || ascent <= 0 || height <= 0)
-			System.out.println("  a: " + ascent + " d: " + descent + " h: " + height);
 		*/
 	}
 

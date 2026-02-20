@@ -31,7 +31,7 @@
 package com.cburch.draw.shapes;
 import static com.cburch.draw.Strings.S;
 
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Random;
 
@@ -54,7 +54,7 @@ public class Rectangle extends Rectangular {
 	}
 
 	@Override
-	public void draw(Graphics g, int x, int y, int w, int h) {
+	public void draw(Graphics2D g, int x, int y, int w, int h) {
 		if (setForFill(g))
 			g.fillRect(x, y, w, h);
 		if (setForStroke(g))

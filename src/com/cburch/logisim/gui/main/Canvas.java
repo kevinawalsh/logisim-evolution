@@ -494,10 +494,16 @@ public class Canvas extends JPanel
     @Override
     public void paintChildren(Graphics g) {
       super.paintChildren(g);
-      paintContents(g);
+      Graphics2D g2 = (Graphics2D)g;
+      Object oldHints[] = GraphicsUtil.setRenderingHintsForCanvas(g2);
+      try {
+        paintContents(g2);
+      } finally {
+        GraphicsUtil.restoreRenderingHints(g2, oldHints);
+      }
     }
 
-    void paintContents(Graphics g) {
+    private void paintContents(Graphics2D g) {
       int msgY = getHeight() - 23;
       StringGetter message = errorMessage;
       if (message != null) {

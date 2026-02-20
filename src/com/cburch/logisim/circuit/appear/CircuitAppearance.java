@@ -265,12 +265,12 @@ public class CircuitAppearance extends Drawing {
     return isDefault;
   }
 
-  public void paintSubcircuit(InstancePainter painter, Graphics g, Direction facing) {
+  public void paintSubcircuit(InstancePainter painter, Graphics2D g, Direction facing) {
     Direction defaultFacing = getFacing();
     double rotate = 0.0;
     if (facing != defaultFacing) {
       rotate = defaultFacing.toRadians() - facing.toRadians();
-      ((Graphics2D) g).rotate(rotate);
+      g.rotate(rotate);
     }
     Location offset = findAnchorLocation();
     g.translate(-offset.getX(), -offset.getY());
@@ -284,17 +284,20 @@ public class CircuitAppearance extends Drawing {
         DynamicCondition dyn = shape.getDynamicCondition();
         if (dyn != null && !dyn.evaluateCondition(state))
           continue;
-        Graphics dup = g.create();
-        if (shape instanceof DynamicElement)
-          ((DynamicElement)shape).paintDynamic(dup, state);
-        else
-          shape.paint(dup, null);
-        dup.dispose();
+        Graphics2D dup = (Graphics2D)g.create();
+        try {
+          if (shape instanceof DynamicElement)
+            ((DynamicElement)shape).paintDynamic(dup, state);
+          else
+            shape.paint(dup, null);
+        } finally {
+          dup.dispose();
+        }
       }
     }
     g.translate(offset.getX(), offset.getY());
     if (rotate != 0.0) {
-      ((Graphics2D) g).rotate(-rotate);
+      g.rotate(-rotate);
     }
   }
 

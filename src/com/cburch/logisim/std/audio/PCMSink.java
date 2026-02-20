@@ -32,7 +32,7 @@ package com.cburch.logisim.std.audio;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -162,7 +162,7 @@ public class PCMSink extends InstanceFactory {
   public void paintInstance(InstancePainter painter) {
     State data = (State) painter.getDataAsCustom();
     Bounds bds = painter.getNominalBounds();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     
     String err = (data != null ? data.err : null);
 

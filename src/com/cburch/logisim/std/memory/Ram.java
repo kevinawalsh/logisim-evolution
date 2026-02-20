@@ -31,7 +31,7 @@ package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.WeakHashMap;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
@@ -274,7 +274,7 @@ public class Ram extends Mem {
     return new RamAttributes();
   }
 
-  private void DrawConnections(Graphics g, int xpos, int ypos,
+  private void DrawConnections(Graphics2D g, int xpos, int ypos,
       boolean singleBit, boolean separate,
       boolean ByteEnabled, int bit) {
     Font font = g.getFont();
@@ -384,7 +384,7 @@ public class Ram extends Mem {
     boolean inverted = trigger.equals(StdAttr.TRIG_FALLING)
         || trigger.equals(StdAttr.TRIG_LOW);
     int enables = numWriteEnables(painter.getAttributeSet());
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     AttributeSet attrs = painter.getAttributeSet();
     g.drawLine(xpos + 20, ypos, xpos + 20 + SymbolWidth, ypos);
@@ -464,7 +464,7 @@ public class Ram extends Mem {
     int realxpos = xpos + 20;
     boolean FirstBlock = bit == 0;
     boolean LastBlock = bit == (NrOfBits - 1);
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     boolean byteEnables = numWriteEnables(painter.getAttributeSet()) > 0;
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(realxpos, realypos, SymbolWidth, 20);
@@ -696,7 +696,7 @@ public class Ram extends Mem {
     if (painter.getAttributeValue(StdAttr.APPEARANCE) == StdAttr.APPEAR_CLASSIC) {
       DrawRamClassic(painter);
     } else {
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       Bounds bds = painter.getNominalBounds();
       int NrOfBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
 

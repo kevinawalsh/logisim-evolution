@@ -36,12 +36,13 @@ import java.util.ArrayList;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
+import java.awt.font.FontRenderContext;
 
 import javax.swing.Icon;
 
@@ -201,22 +202,23 @@ public final class PokeTool extends Tool {
 
       // TODO: improve font hinting
 
-      Rectangle rv0 = GraphicsUtil.getTextBounds(g, FONT, vStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+      FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
+      Rectangle rv0 = GraphicsUtil.getTextBounds(frc, FONT, vStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
       if (rv0.height > FONT_HEIGHT_ADJUST)
         rv0.height -= FONT_HEIGHT_ADJUST;
       Rectangle rl0 = (lStr0 != null) ?
-          GraphicsUtil.getTextBounds(g, SMALL, lStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          GraphicsUtil.getTextBounds(frc, SMALL, lStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
           : new Rectangle(0, 0, 0, 0);
       if (rl0.height > SMALL_HEIGHT_ADJUST)
         rl0.height -= SMALL_HEIGHT_ADJUST;
 
       Rectangle rv1 = (vStr1 != null) ?
-          GraphicsUtil.getTextBounds(g, FONT, vStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          GraphicsUtil.getTextBounds(frc, FONT, vStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
           : new Rectangle(0, 0, 0, 0);
       if (rv1.height > FONT_HEIGHT_ADJUST)
         rv1.height -= FONT_HEIGHT_ADJUST;
       Rectangle rl1 = (lStr1 != null) ?
-          GraphicsUtil.getTextBounds(g, SMALL, lStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          GraphicsUtil.getTextBounds(frc, SMALL, lStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
           : new Rectangle(0, 0, 0, 0);
       if (rl1.height > SMALL_HEIGHT_ADJUST)
         rl1.height -= SMALL_HEIGHT_ADJUST;

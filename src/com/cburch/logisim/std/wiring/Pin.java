@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -509,7 +509,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       // if (width.getWidth() <= r)
       //   return;
       Bounds bds = painter.getNominalBounds();
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       g.setColor(Color.RED); // red to indicate text capture
       int x = bds.getX();
       int y = bds.getY();
@@ -742,7 +742,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     Bounds bds = painter.getNominalOffsetBounds();
     int x = loc.getX();
     int y = loc.getY();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     boolean output = attrs.isOutput();
     if (output) {
@@ -765,7 +765,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     paintIconBase(painter);
     BitWidth w = painter.getAttributeValue(StdAttr.WIDTH);
     if (!w.equals(BitWidth.ONE)) {
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       g.setColor(ICON_WIDTH_COLOR);
       g.setFont(ICON_WIDTH_FONT);
       GraphicsUtil.drawCenteredText(g, "" + w.getWidth(), 10, 9);
@@ -777,7 +777,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     PinAttributes attrs = (PinAttributes) painter.getAttributeSet();
     Direction dir = attrs.facing;
     boolean output = attrs.isOutput();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     if (output) {
       if (ICON_OUT != null) {
         Icons.paintRotated(g, 2, 2, dir, ICON_OUT,
@@ -820,7 +820,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
   @Override
   public void paintInstance(InstancePainter painter) {
     PinAttributes attrs = (PinAttributes) painter.getAttributeSet();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getInstance().getNominalBounds();
     int x = bds.getX();
     int y = bds.getY();

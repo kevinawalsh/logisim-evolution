@@ -33,7 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
@@ -169,7 +169,7 @@ public class Octave extends InstanceFactory {
   public void paintInstance(InstancePainter painter) {
     State data = (State) painter.getDataAsCustom();
     Bounds bds = painter.getNominalBounds();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     
     int x = bds.x;
     int y = bds.y;

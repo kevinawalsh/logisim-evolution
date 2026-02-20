@@ -32,7 +32,7 @@ package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 
@@ -250,7 +250,7 @@ public class Random extends InstanceFactory {
 
   private void DrawControl(InstancePainter painter, int xpos, int ypos,
       int NrOfBits) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     g.drawLine(xpos + 10, ypos, xpos + 70, ypos);
     g.drawLine(xpos + 10, ypos, xpos + 10, ypos + 60);
@@ -284,7 +284,7 @@ public class Random extends InstanceFactory {
 
   private void DrawData(InstancePainter painter, int xpos, int ypos,
       int NrOfBits, int Value) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(xpos, ypos, 80, 20);
     if (painter.getShowState()) {
@@ -309,7 +309,7 @@ public class Random extends InstanceFactory {
   }
 
   public void paintInstanceClassic(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Bounds bds = painter.getNominalBounds();
     StateData state = (StateData) painter.getDataAsCustom();
     BitWidth widthVal = painter.getAttributeValue(StdAttr.WIDTH);

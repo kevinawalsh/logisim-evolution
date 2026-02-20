@@ -32,7 +32,6 @@ package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 
 import javax.swing.Icon;
@@ -213,7 +212,7 @@ class NotGate extends InstanceFactory {
   }
 
   private void paintBase(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     Location loc = painter.getLocation();
     int x = loc.getX();
@@ -252,7 +251,7 @@ class NotGate extends InstanceFactory {
   //
   @Override
   public void paintIcon(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     g.setColor(Color.black);
     if (painter.getGateShape() == AppPreferences.SHAPE_RECTANGULAR) {
       if (toolIconRect != null) {
@@ -298,7 +297,7 @@ class NotGate extends InstanceFactory {
     painter.drawLabel();
   }
 
-  private void paintRectangularBase(Graphics g, InstancePainter painter) {
+  private void paintRectangularBase(Graphics2D g, InstancePainter painter) {
     GraphicsUtil.switchToWidth(g, 2);
     if (painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW) {
       g.drawRect(-20, -9, 14, 18);

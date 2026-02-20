@@ -31,7 +31,7 @@
 package com.cburch.draw.model;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Random;
 
@@ -140,9 +140,9 @@ public abstract class AbstractCanvasObject extends AbstractDrawingAttributeSet
 		}
 	}
 
-	public abstract void paint(Graphics g, HandleGesture gesture);
+	public abstract void paint(Graphics2D g, HandleGesture gesture);
 
-	protected boolean setForFill(Graphics g) {
+	protected boolean setForFill(Graphics2D g) {
 		if (containsAttribute(DrawAttr.PAINT_TYPE)) {
 			Object value = getValue(DrawAttr.PAINT_TYPE);
 			if (value == DrawAttr.PAINT_STROKE)
@@ -159,7 +159,7 @@ public abstract class AbstractCanvasObject extends AbstractDrawingAttributeSet
 		}
 	}
 
-	protected boolean setForStroke(Graphics g) {
+	protected boolean setForStroke(Graphics2D g) {
 		if (containsAttribute(DrawAttr.PAINT_TYPE)) {
 			Object value = getValue(DrawAttr.PAINT_TYPE);
 			if (value == DrawAttr.PAINT_FILL)
