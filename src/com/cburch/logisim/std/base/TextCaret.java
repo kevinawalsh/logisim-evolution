@@ -680,7 +680,7 @@ class TextCaret implements Caret, AttributeListener {
     BoxLayout box = computeLayout();
     BoxLayout.VisualLine vl = box.lineForY(e.getY() - loc.y);
     int p = vl.positionForX(e.getX() - loc.x);
-    boolean revBias = (p == vl.end);
+    boolean revBias = (p != vl.start && p == vl.end);
     if (selectByPara) {
       if (p < selectOrigin) {
         cursor = selectOrigin;
@@ -747,7 +747,7 @@ class TextCaret implements Caret, AttributeListener {
     BoxLayout box = computeLayout();
     BoxLayout.VisualLine vl = box.lineForY(e.getY() - loc.y);
     int p = vl.positionForX(e.getX() - loc.x);
-    boolean revBias = (p == vl.end);
+    boolean revBias = (p != vl.start && p == vl.end);
     boolean shift = ((e.getModifiersEx() & InputEvent.SHIFT_DOWN_MASK) != 0);
     if (shift)
       selectOrigin = (p <= (cursor+anchor)/2) ? Math.max(cursor, anchor) : Math.min(cursor, anchor);

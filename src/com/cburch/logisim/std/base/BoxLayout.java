@@ -221,7 +221,7 @@ public class BoxLayout implements Text.LayoutEngine {
   public Text.CaretPosition caretPositionForPoint(int px, int py) {
     BoxLayout.VisualLine vl = lineForY(py);
     int cursor = vl.positionForX(px);
-    boolean revBias = (cursor == vl.end);
+    boolean revBias = (cursor != vl.start && cursor == vl.end);
     return new Text.CaretPosition(bounds, cursor, revBias);
   }
 
