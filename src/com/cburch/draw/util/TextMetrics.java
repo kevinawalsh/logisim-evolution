@@ -57,7 +57,7 @@ public class TextMetrics {
       f_width = 0f;
 		} else {
       f_width = (float)font.getStringBounds(text, frc).getWidth();
-			i_width = (int)f_width; // ceil? round?
+			i_width = (int)Math.ceil(f_width);
 		}
 
 		LineMetrics lm = font.getLineMetrics(text, frc);

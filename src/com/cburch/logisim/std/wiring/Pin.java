@@ -844,7 +844,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       g.setColor(Color.BLACK);
       GraphicsUtil.drawCenteredText(g, "x" + attrs.width.getWidth(),
           bds.getX() + bds.getWidth() / 2,
-          bds.getY() + bds.getHeight() / 2);
+          bds.getY() + bds.getHeight() / 2 - 1);
     } else {
       PinState state = getState(painter);
       Value value = pull(attrs, state.intendedValue);
@@ -857,7 +857,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
           g.setColor(Color.WHITE);
           g.setFont(DEFAULT_FONT);
           GraphicsUtil.drawCenteredText(g,
-              value.toDisplayString(), x + 10, y + 9);
+              value.toDisplayString(), x + 10, y + 10);
         }
       } else {
         Probe.paintValue(painter, value);

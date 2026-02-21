@@ -41,6 +41,7 @@ import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 
 import com.cburch.draw.util.TextMetrics;
 
@@ -94,7 +95,7 @@ public class GraphicsUtil {
       int x, int y, int halign, int valign) {
     // FIXME: this doesn't handle unicode (e.g. emoji, multi-byte accents) properly
     Rectangle r = getTextBounds(frc, font, text, 0, 0, halign, valign);
-    x -= (int)r.x;
+    x -= r.x;
     int last = 0;
     for (int i = 0; i < text.length(); i++) {
       int cur = (int)font.getStringBounds(text.substring(0, i + 1), frc).getWidth();
@@ -123,8 +124,8 @@ public class GraphicsUtil {
     FontRenderContext frc = g.getFontRenderContext();
     Font font = g.getFont();
     TextMetrics tm = new TextMetrics(frc, font, text);
-    Rectangle bd = transform(x, y, tm.i_width, tm.i_height, tm.i_ascent, tm.i_descent, halign, valign);
-    g.drawString(text, bd.x, bd.y + tm.i_ascent);
+    Rectangle2D.Float bd = transform2D(x, y, tm.f_width, tm.f_height, tm.f_ascent, tm.f_descent, halign, valign);
+    g.drawString(text, bd.x, bd.y + tm.f_ascent);
   }
 
   static public Rectangle getTextBounds(FontRenderContext frc, Font font, String text,
@@ -180,6 +181,41 @@ public class GraphicsUtil {
     case V_BOTTOM_FIRST:
     case V_BOTTOM_OVERALL:
       ret.translate(0, -height);
+      break;
+    default:
+      ;
+    }
+    return ret;
+  }
+
+  private static Rectangle2D.Float transform2D(float x, float y, float width, float height,
+      float ascent, float descent, int halign, int valign) {
+    Rectangle2D.Float ret = new Rectangle2D.Float(x, y, width, height);
+    switch (halign) {
+    case H_CENTER:
+      ret.x += -(width / 2);
+      break;
+    case H_RIGHT:
+      ret.x += -width;
+      break;
+    default:
+      ;
+    }
+    switch (valign) {
+    case V_TOP:
+      break;
+    case V_CENTER_FIRST:
+      ret.y += -(ascent / 2f);
+      break;
+    case V_CENTER_OVERALL:
+      ret.y += -(height / 2f);
+      break;
+    case V_BASELINE:
+      ret.y += -ascent;
+      break;
+    case V_BOTTOM_FIRST:
+    case V_BOTTOM_OVERALL:
+      ret.y += -height;
       break;
     default:
       ;
