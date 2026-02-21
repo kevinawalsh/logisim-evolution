@@ -327,6 +327,14 @@ public final class TextTool extends Tool {
     if (caret == null) {
       if (hadCaret || loc.getX() < 0 || loc.getY() < 0)
         return;
+
+      if ((e.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+        Canvas.snapToGrid(e);
+        x = e.getX();
+        y = e.getY();
+        loc = Location.create(x, y);
+      }
+
       AttributeSet copy = (AttributeSet) attrs.clone();
       caretComponent = Text.FACTORY.createComponent(loc, copy);
       caretCreatingText = true;

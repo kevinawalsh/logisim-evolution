@@ -386,7 +386,7 @@ public class AddTool extends Tool {
   @Override
   public void mouseDragged(Canvas canvas, MouseEvent e) {
     if (state != SHOW_NONE) {
-      if (shouldSnap)
+      if (shouldSnap || (e.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != 0)
         Canvas.snapToGrid(e);
       moveTo(canvas, e.getX(), e.getY());
     }
@@ -417,7 +417,7 @@ public class AddTool extends Tool {
   @Override
   public void mouseMoved(Canvas canvas, MouseEvent e) {
     if (state != SHOW_NONE) {
-      if (shouldSnap)
+      if (shouldSnap || (e.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != 0)
         Canvas.snapToGrid(e);
       moveTo(canvas, e.getX(), e.getY());
     }
@@ -440,7 +440,7 @@ public class AddTool extends Tool {
       }
     }
 
-    if (shouldSnap)
+    if (shouldSnap || (e.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != 0)
       Canvas.snapToGrid(e);
     moveTo(canvas, e.getX(), e.getY());
     setState(canvas, SHOW_ADD);
@@ -455,7 +455,7 @@ public class AddTool extends Tool {
       Circuit circ = canvas.getCircuit();
       if (!file.contains(circ))
         return;
-      if (shouldSnap)
+      if (shouldSnap || (e.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != 0)
         Canvas.snapToGrid(e);
       moveTo(canvas, e.getX(), e.getY());
 
