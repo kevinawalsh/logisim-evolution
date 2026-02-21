@@ -129,11 +129,11 @@ public class Callout extends Text implements Reshapable {
     //      1---------2---------3  V_TOP
     //      |         |         |
     //      |         |         |
-    //      8---------o---------4  V_CENTER
+    //      8---------o---------4  V_CENTER_FIRST or V_CENTER_OVERALL
     //      |         |         |
     //      o---------X---------o  V_BASELINE
     //      |         |         |
-    //      7---------6---------5  V_BOTTOM
+    //      7---------6---------5  V_BOTTOM_FIRST or V_BOTTOM_OVERALL
     //   H_LEFT   H_CENTER   H_RIGHT
 
     int wid = tbds.getWidth();
@@ -154,11 +154,11 @@ public class Callout extends Text implements Reshapable {
     if (valign == ALIGN.V_TOP && halign == ALIGN.H_LEFT) p = p1;
     else if (valign == ALIGN.V_TOP && halign == ALIGN.H_CENTER) p = p2;
     else if (valign == ALIGN.V_TOP && halign == ALIGN.H_RIGHT) p = p3;
-    else if (valign == ALIGN.V_CENTER && halign == ALIGN.H_RIGHT) p = p4;
-    else if (valign == ALIGN.V_BOTTOM && halign == ALIGN.H_RIGHT) p = p5;
-    else if (valign == ALIGN.V_BOTTOM && halign == ALIGN.H_CENTER) p = p6;
-    else if (valign == ALIGN.V_BOTTOM && halign == ALIGN.H_LEFT) p = p7;
-    else if (valign == ALIGN.V_CENTER && halign == ALIGN.H_LEFT) p = p8;
+    else if ((valign == ALIGN.V_CENTER_FIRST || valign == ALIGN.V_CENTER_OVERALL) && halign == ALIGN.H_RIGHT) p = p4;
+    else if ((valign == ALIGN.V_BOTTOM_FIRST || valign == ALIGN.V_BOTTOM_OVERALL) && halign == ALIGN.H_RIGHT) p = p5;
+    else if ((valign == ALIGN.V_BOTTOM_FIRST || valign == ALIGN.V_BOTTOM_OVERALL) && halign == ALIGN.H_CENTER) p = p6;
+    else if ((valign == ALIGN.V_BOTTOM_FIRST || valign == ALIGN.V_BOTTOM_OVERALL) && halign == ALIGN.H_LEFT) p = p7;
+    else if ((valign == ALIGN.V_CENTER_FIRST || valign == ALIGN.V_CENTER_OVERALL) && halign == ALIGN.H_LEFT) p = p8;
     else if (valign == ALIGN.V_BASELINE && halign == ALIGN.H_LEFT) {
       // left bar, auto pivot
       if (focus.getX() < left && top - focus.getY() < left - focus.getX() && focus.getY() - bot < left - focus.getX())
@@ -189,7 +189,7 @@ public class Callout extends Text implements Reshapable {
 
     g.drawLine(p.getX(), p.getY(), focus.getX(), focus.getY());
     if (valign == ALIGN.V_TOP || p == p2) g.drawLine(left, top, right, top);
-    else if (valign == ALIGN.V_BOTTOM || p == p6) g.drawLine(left, bot, right, bot);
+    else if ((valign == ALIGN.V_BOTTOM_FIRST || valign == ALIGN.V_BOTTOM_OVERALL) || p == p6) g.drawLine(left, bot, right, bot);
     else if (halign == ALIGN.H_RIGHT || p == p4) g.drawLine(right, top, right, bot);
     else g.drawLine(left, top, left, bot);
   }

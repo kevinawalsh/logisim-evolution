@@ -202,22 +202,22 @@ public final class PokeTool extends Tool {
       // TODO: improve font hinting
 
       FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
-      Rectangle rv0 = GraphicsUtil.getTextBounds(frc, FONT, vStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+      Rectangle rv0 = GraphicsUtil.getTextBounds(frc, FONT, vStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM_FIRST);
       if (rv0.height > FONT_HEIGHT_ADJUST)
         rv0.height -= FONT_HEIGHT_ADJUST;
       Rectangle rl0 = (lStr0 != null) ?
-          GraphicsUtil.getTextBounds(frc, SMALL, lStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          GraphicsUtil.getTextBounds(frc, SMALL, lStr0, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM_FIRST)
           : new Rectangle(0, 0, 0, 0);
       if (rl0.height > SMALL_HEIGHT_ADJUST)
         rl0.height -= SMALL_HEIGHT_ADJUST;
 
       Rectangle rv1 = (vStr1 != null) ?
-          GraphicsUtil.getTextBounds(frc, FONT, vStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          GraphicsUtil.getTextBounds(frc, FONT, vStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM_FIRST)
           : new Rectangle(0, 0, 0, 0);
       if (rv1.height > FONT_HEIGHT_ADJUST)
         rv1.height -= FONT_HEIGHT_ADJUST;
       Rectangle rl1 = (lStr1 != null) ?
-          GraphicsUtil.getTextBounds(frc, SMALL, lStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM)
+          GraphicsUtil.getTextBounds(frc, SMALL, lStr1, 0, 0, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM_FIRST)
           : new Rectangle(0, 0, 0, 0);
       if (rl1.height > SMALL_HEIGHT_ADJUST)
         rl1.height -= SMALL_HEIGHT_ADJUST;
@@ -284,22 +284,22 @@ public final class PokeTool extends Tool {
         GraphicsUtil.drawText(g, FONT, vStr1, 
             xx + w - rmargin - pad - w1/2,
             yy - h + tmargin + rv0.height,
-            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
         GraphicsUtil.drawText(g, SMALL, lStr1, 
             xx + w - rmargin - pad - w1/2,
             yy - bmargin,
-            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
       }
 
       GraphicsUtil.drawText(g, FONT, vStr0, 
           xx + pad + lmargin + w0/2,
           yy - h + tmargin + rv0.height,
-          GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+          GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
       if (lStr0 != null) {
         GraphicsUtil.drawText(g, SMALL, lStr0, 
             xx + pad + lmargin + w0/2,
             yy - bmargin,
-            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+            GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
       }
     }
   }

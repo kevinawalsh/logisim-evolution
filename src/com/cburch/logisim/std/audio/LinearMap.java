@@ -78,9 +78,9 @@ public class LinearMap extends FitRange {
       g.setColor(c);
       GraphicsUtil.switchToWidth(g, 1);
       GraphicsUtil.drawText(g, FONT, ""+domain.hi, 1, 4, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
-      GraphicsUtil.drawText(g, FONT, ""+domain.lo, 1, 33, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+      GraphicsUtil.drawText(g, FONT, ""+domain.lo, 1, 33, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM_FIRST);
       GraphicsUtil.drawText(g, FONT, ""+range.hi, 29, 7, GraphicsUtil.H_RIGHT, GraphicsUtil.V_TOP);
-      GraphicsUtil.drawText(g, FONT, ""+range.lo, 29, 35, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+      GraphicsUtil.drawText(g, FONT, ""+range.lo, 29, 35, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM_FIRST);
     }
     g.translate(-bds.x, -bds.y);
     GraphicsUtil.switchToWidth(g, 1);

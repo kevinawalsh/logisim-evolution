@@ -206,9 +206,15 @@ public class BoxLayout implements Text.LayoutEngine {
         start = end + 1; // add one, for newline between paragraphs, or lineseparator between subparagraphs
       }
     }
+    
+    dy += styling.margin[2].px(font); // bottom
+    dx += textWidth + styling.margin[1].px(font); // right
 
-    int x = (int)Math.round(0 - halignAdjust(textWidth, halign));
-    int y = (int)Math.round(0 - valignAdjust(lines.get(0).layout, valign)); // valign relative to first line
+    float bodyWidth = dx;
+    float bodyHeight = dy;
+
+    int x = (int)Math.round(0 - halignAdjust(bodyWidth, halign));
+    int y = (int)Math.round(0 - valignAdjust(bodyHeight, lines.get(0).layout, valign));
 
     for (VisualLine line : lines) {
       float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
@@ -216,9 +222,7 @@ public class BoxLayout implements Text.LayoutEngine {
       line.baselineY += y;
     }
 
-    dy += styling.margin[2].px(font); // bottom
-    dx += textWidth + styling.margin[1].px(font); // right
-    bounds = Bounds.create(x, y, (int)Math.ceil(dx), (int)Math.ceil(dy));
+    bounds = Bounds.create(x, y, (int)Math.ceil(bodyWidth), (int)Math.ceil(bodyHeight));
   }
 
 
@@ -263,23 +267,27 @@ public class BoxLayout implements Text.LayoutEngine {
     return lines.get(lines.size() - 1);
   }
 
-  private static float valignAdjust(TextLayout layout, int valign) {
-    float h = layout.getAscent() + layout.getDescent() + layout.getLeading();
+  private static float valignAdjust(float bodyHeight, TextLayout layout, int valign) {
+    float firstlineHeight = layout.getAscent() + layout.getDescent() + layout.getLeading();
     if (valign == ALIGN.V_BASELINE)
       return layout.getAscent();
-    else if (valign == ALIGN.V_BOTTOM)
-      return h;
-    else if (valign == ALIGN.V_CENTER)
-      return h / 2f;
+    else if (valign == ALIGN.V_BOTTOM_FIRST)
+      return firstlineHeight;
+    else if (valign == ALIGN.V_CENTER_FIRST)
+      return firstlineHeight / 2f;
+    else if (valign == ALIGN.V_BOTTOM_OVERALL)
+      return bodyHeight;
+    else if (valign == ALIGN.V_CENTER_OVERALL)
+      return bodyHeight / 2f;
     else // V_TOP
       return 0;
   }
   
-  private static float halignAdjust(int textWidth, int halign) {
+  private static float halignAdjust(float bodyWidth, int halign) {
     if (halign == ALIGN.H_RIGHT)
-      return textWidth;
+      return bodyWidth;
     else if (halign == ALIGN.H_CENTER)
-      return textWidth / 2;
+      return bodyWidth / 2;
     else // H_LEFT
       return 0;
   }

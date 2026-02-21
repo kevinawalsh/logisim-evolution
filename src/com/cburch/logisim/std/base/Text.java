@@ -61,7 +61,6 @@ import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.TextEditable;
 import com.cburch.logisim.util.StringGetter;
-import com.cburch.logisim.util.StringUtil;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
@@ -145,10 +144,19 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
                 "center", S.getter("textHorzAlignCenterOpt")),
           });
 
-  // Note: For legacy reasons, all the vertical alignment options are relative
-  // to the first line of text. So V_BASELINE is the baseline of the first line
-  // of text, V_BOTTOM is the bottom of the first line, and V_CENTER is the center
-  // of the first line.
+  // Note: Prior to 5.0.6, for legacy reasons vertical alignment options were
+  // all relative to the first line of text. So V_BASELINE is the baseline of
+  // the first line of text, V_BOTTOM is the bottom of the first line (ignoring
+  // margins), and V_CENTER is the center of the first line (ignoring margins).
+  // V_TOP was also the top of the first line (ignoring margins).
+  //
+  // Starting in 5.0.6, V_TOP is the top of the multi-line box, including
+  // margins. Two new options are added, V_CENTER_OVERALL and V_BOTTOM_OVERALL,
+  // which, which align to the overall center and bottom including margins. The
+  // old options V_BASELINE, V_CENTER, and V_BOTTOM will be renamed within the
+  // UI, and perhaps V_CENTER and V_BOTTOM will someday be deprecated or
+  // removed, or converted automatically to V_CENTER_OVERALL and
+  // V_BOTTOM_OVERALL.
   public static Attribute<AttributeOption> ATTR_VALIGN = Attributes
       .forOption(
           "valign",
@@ -156,12 +164,16 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
           new AttributeOption[] {
             new AttributeOption(Integer.valueOf(ALIGN.V_TOP),
                 "top", S.getter("textVertAlignTopOpt")),
-            new AttributeOption(Integer.valueOf(ALIGN.V_BASELINE),
-                "base", S.getter("textVertAlignBaseOpt")),
-            new AttributeOption(Integer.valueOf(ALIGN.V_BOTTOM),
-                "bottom", S.getter("textVertAlignBottomOpt")),
-            new AttributeOption(Integer.valueOf(ALIGN.V_CENTER),
-                "center", S.getter("textVertAlignCenterOpt")),
+            new AttributeOption(Integer.valueOf(ALIGN.V_CENTER_OVERALL),
+                "center-overall", S.getter("textVertAlignOverallCenterOpt")),
+            new AttributeOption(Integer.valueOf(ALIGN.V_BOTTOM_OVERALL),
+                "bottom-overall", S.getter("textVertAlignOverallBottomOpt")),
+            new AttributeOption(Integer.valueOf(ALIGN.V_CENTER_FIRST), // todo: decprecate
+                "center", S.getter("textVertAlignFirstCenterOpt")),
+            new AttributeOption(Integer.valueOf(ALIGN.V_BASELINE), // todo: decprecate?
+                "base", S.getter("textVertAlignFirstBaseOpt")),
+            new AttributeOption(Integer.valueOf(ALIGN.V_BOTTOM_FIRST), // todo: decprecate
+                "bottom", S.getter("textVertAlignFirstBottomOpt")),
           });
 
   public static Attribute<String> ATTR_STYLE = Attributes.forString("style",
@@ -205,14 +217,8 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   @Override
   public void propagate(InstanceState state) { }
 
-  protected void configureLabel(Instance instance) {
-    TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
-    Location loc = instance.getLocation();
-  }
-
   @Override
   protected void configureNewInstance(Instance instance) {
-    configureLabel(instance);
     instance.addAttributeListener();
   }
 
@@ -287,23 +293,53 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrsBase) { // nominal
-    // This is an estimate. We can't properly compute without a graphics
-    // context. But this still gets called in some cases, e.g. while opening a
-    // file to check for overlap, and during some copy-paste operations.
+    // // This is an estimate. We can't properly compute without a graphics
+    // // context. But this still gets called in some cases, e.g. while opening a
+    // // file to check for overlap, and during some copy-paste operations.
     TextAttributes attrs = (TextAttributes)attrsBase;
-    // String text = attrs.getText();
-    // if (text == null || text.equals(""))
-    //   return Bounds.EMPTY_BOUNDS; // should never happen
+    // // String text = attrs.getText();
+    // // if (text == null || text.equals(""))
+    // //   return Bounds.EMPTY_BOUNDS; // should never happen
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
-    Font font = attrs.getFont();
+    // Font font = attrs.getFont();
 
-    // Note: don't expand by any margin. Better to underestimate than overestimate.
-    String text = "ABC"; // note: we use a fixed, short string, because the
-                         // estimate string width is often very wrong, leading
-                         // to UI annoyances, e.g. inability to move a string
-                         // near the canvas left edge.
-    return StringUtil.estimateAlignedBounds(text, font, halign, valign);
+    // // Note: don't expand by any margin. Better to underestimate than overestimate.
+    // String text = "ABC"; // note: we use a fixed, short string, because the
+    //                      // estimate string width is often very wrong, leading
+    //                      // to UI annoyances, e.g. inability to move a string
+    //                      // near the canvas left edge.
+    // return StringUtil.estimateAlignedBounds(text, font, halign, valign);
+
+    // return Bounds.create(0, 0, 0, 0); // xml reader removes these entirely?
+    // return Bounds.create(0, 0, 1, 1); // can't place left-aligned text side-by-side with right-aligned
+
+    // As of 5.0.6, we use a fixed 10x10 box for Text nominal bounds. The only
+    // practical use of these bounds are for overlap detection: logisim enforces
+    // a rule that two components can't be exactly overlapping (using nominal
+    // bounds for the check). This rule is meant to avoid common bugs where two
+    // gates are placed exactly on top of each other: this can cause a confusing
+    // conflict in the output values, since the overlap is essentially invisible
+    // in the UI, and is sometimes hard to correct even if noticed. 
+    //
+    // Downsides of using fixed nominal bounds for Text:
+    //  - two textboxes with same alignment can't share the same anchor point,
+    //    even if their visual sizes differ.
+    //  - two textboxes with close anchor points can conflict, depending on
+    //    their alignments, even if their visual sizes differ.
+    // Neither of these seems significant. And arguably, it would be even more
+    // confusing if modifying the text contents could suddenly cause a location
+    // conflict.
+    int w = 10, h = 10;
+    int x, y;
+    if (halign == ALIGN.H_LEFT) x = 0;
+    else if (halign == ALIGN.H_CENTER) x = -5;
+    else x = -10; // H_RIGHT
+    if (valign == ALIGN.V_TOP) y = 0;
+    else if (valign == ALIGN.V_CENTER_FIRST || valign == ALIGN.V_CENTER_OVERALL) y = -5;
+    else if (valign == ALIGN.V_BASELINE) y = -7;
+    else y = -10; // V_BOTTOM_FIRST, V_BOTTOM_OVERALL
+    return Bounds.create(x, y, w, h);
   }
   
   @Override
@@ -333,8 +369,6 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    if (attr == ATTR_HALIGN || attr == ATTR_VALIGN)
-      configureLabel(instance);
     instance.recomputeBounds(); // nominal
   }
 
@@ -368,6 +402,8 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       // ghost: draw full bounding box
       Bounds bds = getTextVisibleBounds(loc, attrs);
       bds.draw(g, Color.GRAY);
+      // Bounds bds2 = getOffsetBounds(attrs).translate(loc);
+      // bds2.draw(g, Color.MAGENTA); // for debugging
     } else {
       // normal: text-only background fill
       Bounds bds = getTextOnlyVisibleBounds(loc, attrs, null);

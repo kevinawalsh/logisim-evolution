@@ -564,7 +564,7 @@ public class BindingsDialog extends JDialog {
       if (b == null) {
         Rectangle t = GraphicsUtil.getTextBounds(g2.getFontRenderContext(), g2.getFont(),
             text, tx, ty,
-            GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+            GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
         b = new Rectangle(t.x-GAP, 2, t.width + GAP + 10 + 4 + GAP, height-4);
         buttonBounds.put(src, b); // cache for later, and for hitbox detection
       }
@@ -573,7 +573,7 @@ public class BindingsDialog extends JDialog {
       g2.setColor(Color.WHITE);
       g2.drawRoundRect(b.x, b.y, b.width, b.height, 10, 10);
       GraphicsUtil.drawText(g2, text, tx, ty,
-          GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
       int xx = tx + 4;
       int yy = ty - 2;
       g2.fillPolygon(new int[] { xx, xx+5, xx+10 }, new int[] { yy, yy+6, yy }, 3);

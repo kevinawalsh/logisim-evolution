@@ -55,8 +55,8 @@ class CalloutAttributes extends TextAttributes {
   private int dx, dy;
 
   public CalloutAttributes() {
+    super("left", "center-overall", 120);
     dx = dy = 40;
-    width = 100;
   }
 
   @Override

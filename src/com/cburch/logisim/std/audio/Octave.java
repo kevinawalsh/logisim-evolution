@@ -203,7 +203,7 @@ public class Octave extends InstanceFactory {
       g.setColor(Color.BLACK);
       g.drawRect(x, y0, 50, 17);
       GraphicsUtil.drawText(g, FONT, name, 
-          x+5, y0+8, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER) ;
+          x+5, y0+8, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST) ;
     }
     k = 0;
     for (int i = 0; i < 12; i++) {
@@ -219,7 +219,7 @@ public class Octave extends InstanceFactory {
       g.fillRect(x+20, y0-12/2, 30, 12);
       g.setColor(Color.WHITE);
       GraphicsUtil.drawText(g, FONT, name, 
-          x+25, y0-1, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER) ;
+          x+25, y0-1, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST) ;
     }
 
   }

@@ -35,8 +35,6 @@ import java.awt.FontMetrics;
 
 import com.cburch.logisim.data.Bounds;
 
-import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
-
 public class StringUtil {
   public static <T> StringGetter constantGetter(final T value) {
     return new StringGetter() {
@@ -84,68 +82,23 @@ public class StringUtil {
     return ret;
   }
 
-  public static Bounds estimateBounds(String text, Font font) {
-    return estimateAlignedBounds(text, font, ALIGN.H_LEFT, ALIGN.V_TOP);
-  }
-
-  // Note: For legacy reasons, vAlign is relative only to the first line of text.
-  // See: std.base.Text for details.
-  // Also, std.base.Text and std.wiring.Tunnel, the only callers outside this
-  // file, now always use the fixt text string "ABC".
-  public static Bounds estimateAlignedBounds(String text, Font font, int hAlign, int vAlign) {
-    // TODO - you can imagine being more clever here
-    if (text == null || text.length() == 0)
-      text = "X"; // return Bounds.EMPTY_BOUNDS;
-    int n = 0;
-    int c = 0;
-    int lines = 0;
-    for (int i = 0; i < text.length(); i++) {
-      if (text.charAt(i) == '\n') {
-        n = (c > n ? c : n);
-        c = 0;
-        lines++;
-      } else if (text.charAt(i) == '\t') {
-        c += 4;
-      } else {
-        c++;
-      }
-    }
-    if (text.charAt(text.length()-1) != '\n') {
-      n = (c > n ? c : n);
-      lines++;
-    }
+  public static Bounds estimateBounds(int numChars, Font font) {
+    // TODO - you can imagine being more clever here, but this is used only in a
+    // very few places.
+    if (numChars <= 0)
+      numChars = 1;
+    int lines = 1;
     float size = font.getSize2D();
     // A typical 12 pt height monospace font might be
     //   8.5 pt ascent (baseline to top of most chars)
     //   + 2.5 pt descent (baseline to bottom of most chars)
     //   + 1 pt leading (inter-line space)
     //   8 pt width (approx 2/3 aspect ratio)
-    float h = size * lines;
-    float w = size * n * 2.0f / 3.0f; // assume approx monospace 12x8 aspect ratio
-    float a  = size * 8.5f / 12.0f;
-    float x;
-    float y;
-    if (hAlign == ALIGN.H_LEFT) {
-      x = 0;
-    } else if (hAlign == ALIGN.H_RIGHT) {
-      x = -w;
-    } else {
-      x = -w / 2;
-    }
-    if (vAlign == ALIGN.V_TOP) {
-      y = 0;
-    } else if (vAlign == ALIGN.V_CENTER) {
-      y = -a / 2; // center of first line ascent
-    } else if (vAlign == ALIGN.V_CENTER_OVERALL) {
-      y = -h / 2; // center of all lines of text
-    } else if (vAlign == ALIGN.V_BASELINE) {
-      y = -a; // ascent of first line of text
-    } else { // ALIGN.V_BOTTOM
-      // y = -h; // bottom of all lines of text
-      y = -size; // bottom of first line of text
-    }
-    return Bounds.create((int)Math.round(x), (int)Math.round(y),
-        (int)Math.round(w), (int)Math.round(h));
+    // FIXME: this is probably way off, it seems like this is describing a font
+    // that is 12 px, not 12 pt.
+    float h = size;
+    float w = size * numChars * 2.0f / 3.0f; // assume approx monospace 12x8 aspect ratio
+    return Bounds.create(0, 0, (int)Math.round(w), (int)Math.round(h));
   }
 
 }

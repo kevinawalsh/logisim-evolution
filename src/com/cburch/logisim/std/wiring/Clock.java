@@ -287,22 +287,22 @@ public class Clock extends InstanceFactory {
         dir = dir.reverse();
       if (dir == Direction.NORTH) {
         GraphicsUtil.drawText(g, PARAM_FONT, txt1,
-            x+w/2, y-10, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+            x+w/2, y-10, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
         GraphicsUtil.drawText(g, PARAM_FONT, txt2,
             x+w/2, y-14, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
       } else if (dir == Direction.EAST) {
         GraphicsUtil.drawText(g, PARAM_FONT, txt1,
-            x+w+2, y+h/2+1, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM);
+            x+w+2, y+h/2+1, GraphicsUtil.H_LEFT, GraphicsUtil.V_BOTTOM_FIRST);
         GraphicsUtil.drawText(g, PARAM_FONT, txt2,
             x+w+2, y+h/2-1, GraphicsUtil.H_LEFT, GraphicsUtil.V_TOP);
       } else if (dir == Direction.SOUTH) {
         GraphicsUtil.drawText(g, PARAM_FONT, txt1,
-            x+w/2, y+h+14, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+            x+w/2, y+h+14, GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
         GraphicsUtil.drawText(g, PARAM_FONT, txt2,
             x+w/2, y+h+10, GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
       } else {
         GraphicsUtil.drawText(g, PARAM_FONT, txt1,
-            x-2, y+h/2+1, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+            x-2, y+h/2+1, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM_FIRST);
         GraphicsUtil.drawText(g, PARAM_FONT, txt2,
             x-2, y+h/2-1, GraphicsUtil.H_RIGHT, GraphicsUtil.V_TOP);
       }

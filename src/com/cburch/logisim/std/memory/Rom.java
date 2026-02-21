@@ -253,7 +253,7 @@ public class Rom extends Mem {
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(realxpos, realypos, SymbolWidth, 20);
     GraphicsUtil.drawText(g, "A", realxpos + SymbolWidth - 3,
-        realypos + 10, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+        realypos + 10, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(DATA);
     int lineSize = Mem.lineSize(painter.getAttributeSet());
     for (int i = 1; i < lineSize; i++)

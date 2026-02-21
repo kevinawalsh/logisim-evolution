@@ -200,23 +200,23 @@ public class ShiftRegister extends InstanceFactory {
     painter.drawPort(CK);
     String Cntrl = "1\u2192/C3";
     GraphicsUtil.drawText(g, Cntrl, xpos + 20, ypos + 50,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     /* draw shift input */
     g.drawLine(xpos, ypos + 40, xpos + 10, ypos + 40);
     GraphicsUtil.drawText(g, "M1 [shift]", xpos + 20, ypos + 40,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(SH);
     /* draw load input */
     if (has_load) {
       g.drawLine(xpos, ypos + 30, xpos + 10, ypos + 30);
       GraphicsUtil.drawText(g, "M2 [load]", xpos + 20, ypos + 30,
-          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
       painter.drawPort(LD);
     }
     /* draw reset */
     g.drawLine(xpos, ypos + 20, xpos + 10, ypos + 20);
     GraphicsUtil.drawText(g, "R", xpos + 20, ypos + 20,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(CLR);
     GraphicsUtil.switchToWidth(g, 1);
   }
@@ -269,17 +269,17 @@ public class ShiftRegister extends InstanceFactory {
       if (current_stage == 0) {
         painter.drawPort(IN);
         GraphicsUtil.drawText(g, "1,3D", real_xpos + 1, real_ypos + 10,
-            GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+            GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
         if (has_load) {
           g.drawLine(real_xpos - 10, real_ypos + 20, real_xpos - 1,
               real_ypos + 20);
           GraphicsUtil.drawText(g, "2,3D", real_xpos + 1,
               real_ypos + 20, GraphicsUtil.H_LEFT,
-              GraphicsUtil.V_CENTER);
+              GraphicsUtil.V_CENTER_FIRST);
         }
       } else {
         GraphicsUtil.drawText(g, "2,3D", real_xpos + 1, real_ypos + 10,
-            GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+            GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
       }
       GraphicsUtil.switchToWidth(g, 1);
     }
@@ -315,7 +315,7 @@ public class ShiftRegister extends InstanceFactory {
         g.setColor(Color.DARK_GRAY);
         String Value = StringUtil.toHexString(nr_of_bits, data_value.intValue());
         GraphicsUtil.drawText(g, MemState.FONT, Value, real_xpos + boxXpos + 1, real_ypos
-            + yoff + 10, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+            + yoff + 10, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
         g.setColor(Color.BLACK);
       }
     }

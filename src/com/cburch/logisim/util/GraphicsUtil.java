@@ -71,11 +71,11 @@ public class GraphicsUtil {
   }
 
   static public void drawCenteredText(Graphics2D g, String text, int x, int y) {
-    drawText(g, text, x, y, H_CENTER, V_CENTER);
+    drawText(g, text, x, y, H_CENTER, V_CENTER_OVERALL);
   }
 
   static public void drawCenteredText(Graphics2D g, Font font, String text, int x, int y) {
-    drawText(g, font, text, x, y, H_CENTER, V_CENTER);
+    drawText(g, font, text, x, y, H_CENTER, V_CENTER_OVERALL);
   }
 
   // Returns a cursor box at specified character position.
@@ -168,7 +168,7 @@ public class GraphicsUtil {
     switch (valign) {
     case V_TOP:
       break;
-    case V_CENTER:
+    case V_CENTER_FIRST:
       ret.translate(0, -(ascent / 2));
       break;
     case V_CENTER_OVERALL:
@@ -177,7 +177,8 @@ public class GraphicsUtil {
     case V_BASELINE:
       ret.translate(0, -ascent);
       break;
-    case V_BOTTOM:
+    case V_BOTTOM_FIRST:
+    case V_BOTTOM_OVERALL:
       ret.translate(0, -height);
       break;
     default:
@@ -229,11 +230,12 @@ public class GraphicsUtil {
   public static final int H_RIGHT = 1;
 
   public static final int V_TOP = -1;
-  public static final int V_CENTER = 0;
+  public static final int V_CENTER_FIRST = 0;
   public static final int V_BASELINE = 1;
-  public static final int V_BOTTOM = 2;
+  public static final int V_BOTTOM_FIRST = 2;
 
   public static final int V_CENTER_OVERALL = 3;
+  public static final int V_BOTTOM_OVERALL = 4;
 
   // Painting code using Graphics/Graphics2D seems to fall into three cases:
   //

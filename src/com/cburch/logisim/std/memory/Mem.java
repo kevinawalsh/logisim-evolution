@@ -125,7 +125,7 @@ public abstract class Mem extends InstanceFactory {
     int x = bds.getX() + bds.getWidth() / 2;
     int y = bds.getY() - 2;
     int halign = GraphicsUtil.H_CENTER;
-    int valign = GraphicsUtil.V_BOTTOM;
+    int valign = GraphicsUtil.V_BOTTOM_FIRST;
     instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign, valign);
   }
 
@@ -153,12 +153,12 @@ public abstract class Mem extends InstanceFactory {
     g.drawLine(xpos + 5, ypos + 5, xpos + 5, ypos + 25);
     GraphicsUtil.switchToWidth(g, 1);
     GraphicsUtil.drawText(g, "0", xpos + 22, ypos + 10,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     GraphicsUtil.drawText(g, Integer.toString(NrAddressBits - 1),
         xpos + 22, ypos + 30, GraphicsUtil.H_LEFT,
-        GraphicsUtil.V_CENTER);
+        GraphicsUtil.V_CENTER_FIRST);
     GraphicsUtil.drawText(g, "A", xpos + 50, ypos + 20,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     g.drawLine(xpos + 40, ypos + 5, xpos + 45, ypos + 10);
     g.drawLine(xpos + 45, ypos + 10, xpos + 45, ypos + 17);
     g.drawLine(xpos + 45, ypos + 17, xpos + 48, ypos + 20);
@@ -169,7 +169,7 @@ public abstract class Mem extends InstanceFactory {
     int StrSize = g.getFontMetrics(g.getFont()).stringWidth(size);
     g.drawLine(xpos + 60, ypos + 20, xpos + 60 + StrSize, ypos + 20);
     GraphicsUtil.drawText(g, "0", xpos + 60 + (StrSize / 2), ypos + 19,
-        GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM);
+        GraphicsUtil.H_CENTER, GraphicsUtil.V_BOTTOM_FIRST);
     GraphicsUtil.drawText(g, size, xpos + 60 + (StrSize / 2), ypos + 21,
         GraphicsUtil.H_CENTER, GraphicsUtil.V_TOP);
     painter.drawPort(ADDR);

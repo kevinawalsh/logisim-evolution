@@ -76,7 +76,7 @@ public class ProbeShape extends DynamicElement {
     label.setText(text);
     int x = bounds.getX();
     int y = bounds.getY();
-    bounds = StringUtil.estimateBounds(text, label.getFont()).translate(x, y);
+    bounds = StringUtil.estimateBounds(text.length(), label.getFont()).translate(x, y);
     label.setLocation(bounds.getCenterX(), bounds.getCenterY());
   }
 

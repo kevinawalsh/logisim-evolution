@@ -156,7 +156,7 @@ public class SubcircuitFactory extends InstanceFactory {
     int x = bds.getX() + bds.getWidth() / 2;
     int y = bds.getY() + bds.getHeight() / 2;
     int ha = GraphicsUtil.H_CENTER;
-    int va = GraphicsUtil.V_CENTER;
+    int va = GraphicsUtil.V_CENTER_FIRST; // CENTER_OVERALL may look nicer?
     if (loc == Direction.EAST) {
       x = bds.getX() + bds.getWidth() + 2;
       ha = GraphicsUtil.H_LEFT;
@@ -168,7 +168,7 @@ public class SubcircuitFactory extends InstanceFactory {
       va = GraphicsUtil.V_TOP;
     } else if (loc == StdAttr.LABEL_CENTER) {
       ha = GraphicsUtil.H_CENTER;
-      va = GraphicsUtil.V_CENTER;
+      va = GraphicsUtil.V_CENTER_FIRST; // CENTER_OVERALL may look nicer?
     } else {
       y = bds.getY() - 2;
       va = GraphicsUtil.V_BASELINE;

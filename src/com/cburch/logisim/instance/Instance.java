@@ -229,7 +229,7 @@ public final class Instance implements Location.At {
     int x = bds.getX() + bds.getWidth() / 2;
     int y = bds.getY() + bds.getHeight() / 2;
     int halign = ALIGN.H_CENTER;
-    int valign = ALIGN.V_CENTER;
+    int valign = ALIGN.V_CENTER_FIRST; // OVERALL may look nicer?
     if (labelLoc == StdAttr.LABEL_CENTER) {
       int offset = 0;
       if ((avoid & AVOID_CENTER) != 0)
@@ -238,7 +238,7 @@ public final class Instance implements Location.At {
       y = bds.getY() + (bds.getHeight() - offset) / 2;
     } else if (labelLoc == Direction.NORTH) {
       y = bds.getY() - 2;
-      valign = ALIGN.V_BOTTOM;
+      valign = ALIGN.V_BOTTOM_FIRST;
       if ((avoid & AVOID_TOP) != 0) {
         x += 2;
         halign = ALIGN.H_LEFT;
@@ -255,14 +255,14 @@ public final class Instance implements Location.At {
       halign = ALIGN.H_LEFT;
       if ((avoid & AVOID_RIGHT) != 0) {
         y -= 2;
-        valign = ALIGN.V_BOTTOM;
+        valign = ALIGN.V_BOTTOM_FIRST;
       }
     } else if (labelLoc == Direction.WEST) {
       x = bds.getX() - 2;
       halign = ALIGN.H_RIGHT;
       if ((avoid & AVOID_LEFT) != 0) {
         y -= 2;
-        valign = ALIGN.V_BOTTOM;
+        valign = ALIGN.V_BOTTOM_FIRST;
       }
     }
     setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, halign, valign);

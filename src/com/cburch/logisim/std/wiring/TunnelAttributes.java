@@ -80,7 +80,7 @@ class TunnelAttributes extends AbstractAttributeSet {
       x = 0;
       y = -margin;
       halign = ALIGN.H_CENTER;
-      valign = ALIGN.V_BOTTOM;
+      valign = ALIGN.V_BOTTOM_OVERALL;
     } else if (facing == Direction.EAST) {
       x = -margin;
       y = 0;

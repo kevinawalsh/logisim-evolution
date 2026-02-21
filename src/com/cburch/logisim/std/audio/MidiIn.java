@@ -355,7 +355,7 @@ public class MidiIn extends InstanceFactory {
       g.setColor(Color.BLUE);
     else
       g.setColor(Color.RED);
-    GraphicsUtil.drawText(g, ""+n, x+3, y+40, GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER);
+    GraphicsUtil.drawText(g, ""+n, x+3, y+40, GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_FIRST);
     g.drawLine(x+12, y+27, x+12, y+36);
     g.drawLine(x+12, y+36, x+24, y+36);
     g.drawLine(x+24, y+36, x+19, y+31);

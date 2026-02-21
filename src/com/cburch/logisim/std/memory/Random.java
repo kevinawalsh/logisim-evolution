@@ -261,14 +261,14 @@ public class Random extends InstanceFactory {
     g.drawLine(xpos + 60, ypos + 60, xpos + 60, ypos + 70);
     String Name = "RNG" + Integer.toString(NrOfBits);
     GraphicsUtil.drawText(g, Name, xpos + 40, ypos + 8,
-        GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_FIRST);
     g.drawLine(xpos, ypos + 30, xpos + 10, ypos + 30);
     GraphicsUtil.drawText(g, "R", xpos + 20, ypos + 30,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(RST);
     g.drawLine(xpos, ypos + 40, xpos + 10, ypos + 40);
     GraphicsUtil.drawText(g, "EN", xpos + 20, ypos + 40,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(NXT);
     painter.drawClockSymbol(xpos + 10, ypos + 50);
     GraphicsUtil.switchToWidth(g, 2);

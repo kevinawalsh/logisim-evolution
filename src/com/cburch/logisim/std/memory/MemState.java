@@ -99,13 +99,13 @@ class MemState implements ComponentData, HexModelListener {
     int addrBits = getAddrBits();
     int dataBits = contents.getWidth();
 
-    CharHeight = StringUtil.estimateBounds("0", FONT).getHeight();
-    SpaceSize = StringUtil.estimateBounds(" ", FONT).getWidth() * 3/4;
+    CharHeight = StringUtil.estimateBounds("0".length(), FONT).getHeight();
+    SpaceSize = StringUtil.estimateBounds(" ".length(), FONT).getWidth() * 3/4;
 
-    int estAddrWidth = StringUtil.estimateBounds(StringUtil.toHexString(addrBits, 0), FONT).getWidth();
+    int estAddrWidth = StringUtil.estimateBounds(StringUtil.toHexString(addrBits, 0).length(), FONT).getWidth();
     AddrBlockSize = ((estAddrWidth + 9) / 10) * 10;
 
-    DataSize = StringUtil.estimateBounds(StringUtil.toHexString(dataBits, 0), FONT).getWidth();
+    DataSize = StringUtil.estimateBounds(StringUtil.toHexString(dataBits, 0).length(), FONT).getWidth();
     DataSize += SpaceSize;
 
     NrDataSymbolsEachLine = (DisplayWidth - AddrBlockSize) / DataSize;
@@ -266,7 +266,7 @@ class MemState implements ComponentData, HexModelListener {
           StringUtil.toHexString(getAddrBits(), addr), leftX
           + xOffset + (AddrBlockSize / 2), firsty + i
           * (yinc), GraphicsUtil.H_CENTER,
-          GraphicsUtil.V_CENTER);
+          GraphicsUtil.V_CENTER_FIRST);
       /* Draw data */
       for (int j = 0; j < NrDataSymbolsEachLine; j++) {
         int value = contents.get(addr + j);
@@ -281,13 +281,13 @@ class MemState implements ComponentData, HexModelListener {
             GraphicsUtil.drawText(g, StringUtil.toHexString(
                   contents.getWidth(), value), firstx + j
                 * DataSize, firsty + i * yinc,
-                GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER);
+                GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_FIRST);
             g.setColor(Color.BLACK);
           } else {
             GraphicsUtil.drawText(g, StringUtil.toHexString(
                   contents.getWidth(), value), firstx + j
                 * DataSize, firsty + i * yinc,
-                GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER);
+                GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_FIRST);
           }
         }
       }

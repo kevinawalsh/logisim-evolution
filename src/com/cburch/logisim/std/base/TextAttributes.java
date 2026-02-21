@@ -76,15 +76,19 @@ class TextAttributes extends AbstractAttributeSet {
   private static final Color CLEAR = new Color(255, 255, 255, 0);
 
   public TextAttributes() {
+    this("left", "top", 200);
+  }
+
+  protected TextAttributes(String halignStr, String valignStr, int w) {
     text = "text";
     font = StdAttr.DEFAULT_LABEL_FONT;
-    halign = Text.ATTR_HALIGN.parse("center");
-    valign = Text.ATTR_VALIGN.parse("base");
+    halign = Text.ATTR_HALIGN.parse(halignStr);
+    valign = Text.ATTR_VALIGN.parse(valignStr);
     fg = Color.BLACK;
     bg = CLEAR;
     format = Text.TEXT_FORMAT_PLAIN;
-    width = 300;
-    computeLayout("");
+    width = w;
+    computeLayout("" /*no style*/);
   }
 
   protected void computeLayout(String style) {

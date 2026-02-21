@@ -217,11 +217,11 @@ class LayoutToolbarModel extends AbstractToolbarModel {
           Dimension dim = dest.getPreferredSize();
           if (dim.width >= dim.height) {
             GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
-                GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+                GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_OVERALL);
           } else {
             g_copy.rotate(Math.PI/2, 24/2, 24/2);
             GraphicsUtil.drawText(g_copy, FONT, label, 24 - 2, 24/2 - 2,
-                GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+                GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_OVERALL);
           }
         }
       } finally {

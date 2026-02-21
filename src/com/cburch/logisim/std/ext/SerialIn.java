@@ -111,12 +111,12 @@ public class SerialIn extends InstanceFactory {
         s = S.get("serialInputWait");
       }
       r = GraphicsUtil.getTextBounds(g.getFontRenderContext(), g.getFont(),
-          s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+          s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM_FIRST);
       g.setColor(Color.WHITE);
       g.fillRect(r.x-3, r.y+2, r.width + 6, r.height-2);
       g.setColor(Color.DARK_GRAY);
       g.drawRect(r.x-3, r.y+2, r.width + 6, r.height-2);
-      GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+      GraphicsUtil.drawText(g, s, x, y, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM_FIRST);
     }
 
   }
@@ -287,7 +287,7 @@ public class SerialIn extends InstanceFactory {
         if (t != 0) {
           String hhmmss = DateTimeFormatter.ofPattern("HH:mm:ss")
               .format(Instant.ofEpochMilli(t).atZone(ZoneId.systemDefault()));
-          GraphicsUtil.drawText(g, hhmmss, bds.x+bds.width-5, bds.y+bds.height-2, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+          GraphicsUtil.drawText(g, hhmmss, bds.x+bds.width-5, bds.y+bds.height-2, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM_FIRST);
         }
 
         }

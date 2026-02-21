@@ -74,7 +74,7 @@ public class RegisterShape extends DynamicElement {
     label.setText(zeros);
     int x = bounds.getX();
     int y = bounds.getY();
-    bounds = StringUtil.estimateBounds(zeros, label.getFont()).translate(x, y);
+    bounds = StringUtil.estimateBounds(zeros.length(), label.getFont()).translate(x, y);
     label.setLocation(bounds.getCenterX(), bounds.getCenterY());
   }
 

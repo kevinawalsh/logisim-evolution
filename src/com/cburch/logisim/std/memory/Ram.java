@@ -310,9 +310,9 @@ public class Ram extends Mem {
       String QLabel = "A";
       g.setFont(font.deriveFont(9.0f));
       GraphicsUtil.drawText(g, DLabel, xpos + 23, ypos + 10,
-          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
       GraphicsUtil.drawText(g, QLabel, xpos + 17 + SymbolWidth,
-          ypos + 10, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+          ypos + 10, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
       g.setFont(font);
     } else {
       g.drawLine(xpos + 24 + SymbolWidth, ypos + 2, xpos + 28
@@ -351,9 +351,9 @@ public class Ram extends Mem {
       String QLabel = "A,2" + "  ";
       g.setFont(font.deriveFont(9.0f));
       GraphicsUtil.drawText(g, DLabel, xpos + 17 + SymbolWidth,
-          ypos + 13, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+          ypos + 13, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
       GraphicsUtil.drawText(g, QLabel, xpos + 17 + SymbolWidth, ypos + 5,
-          GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
       g.setFont(font);
       GraphicsUtil.switchToWidth(g, 1);
       g.drawLine(xpos + 11 + SymbolWidth, ypos + 4, xpos + 19
@@ -409,12 +409,12 @@ public class Ram extends Mem {
         xpos + (SymbolWidth / 2) + 20, ypos + 5);
     g.drawLine(xpos, ypos + 50, xpos + 20, ypos + 50);
     GraphicsUtil.drawText(g, "M1 [Write Enable]", xpos + 33, ypos + 50,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(WE);
     g.drawLine(xpos, ypos + 60, xpos + 20, ypos + 60);
     if (!separate) {
       GraphicsUtil.drawText(g, "M2 [Output Enable]", xpos + 33, ypos + 60,
-          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
       painter.drawPort(OE);
     }
     int yoffset = 70 + enables * 10;
@@ -426,10 +426,10 @@ public class Ram extends Mem {
     }
     if (asynch) {
       GraphicsUtil.drawText(g, "E3", xpos + 33, ypos + yoffset,
-          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     } else {
       GraphicsUtil.drawText(g, "C3", xpos + 33, ypos + yoffset,
-          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
       painter.drawClockSymbol(xpos + 20, ypos + yoffset);
     }
     painter.drawPort(CLK);
@@ -440,7 +440,7 @@ public class Ram extends Mem {
       painter.drawPort(LE + i);
       String Label = "M" + (4+i) + " [LineEnable " + i + "]";
       GraphicsUtil.drawText(g, Label, xpos + 33, ypos + 70 + i * 10,
-          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     }
 
     GraphicsUtil.switchToWidth(g, 1);

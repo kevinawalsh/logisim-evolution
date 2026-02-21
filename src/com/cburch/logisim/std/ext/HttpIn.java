@@ -212,7 +212,7 @@ public class HttpIn extends InstanceFactory {
         if (t != 0) {
           String hhmmss = DateTimeFormatter.ofPattern("HH:mm:ss")
               .format(Instant.ofEpochMilli(t).atZone(ZoneId.systemDefault()));
-          GraphicsUtil.drawText(g, hhmmss, bds.x+bds.width-5, bds.y+bds.height-2, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM);
+          GraphicsUtil.drawText(g, hhmmss, bds.x+bds.width-5, bds.y+bds.height-2, GraphicsUtil.H_RIGHT, GraphicsUtil.V_BOTTOM_FIRST);
         }
       }
     }

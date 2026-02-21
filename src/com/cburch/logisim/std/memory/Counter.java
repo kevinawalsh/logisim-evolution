@@ -193,7 +193,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     /* Draw Reset Input */
     g.drawLine(xpos, ypos + 20, xpos + 20, ypos + 20);
     GraphicsUtil.drawText(g, "R", xpos + 30, ypos + 20,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(CLR);
     /* Draw Load Input */
     g.drawLine(xpos, ypos + 30, xpos + 20, ypos + 30);
@@ -203,9 +203,9 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     g.fillOval(xpos + 2, ypos + 27, 6, 6);
     painter.drawPort(LD);
     GraphicsUtil.drawText(g, "M2 [count]", xpos + 30, ypos + 40,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     GraphicsUtil.drawText(g, "M1 [load]", xpos + 30, ypos + 30,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     /* Draw UpDn input */
     g.drawLine(xpos, ypos + 50, xpos + 20, ypos + 50);
     g.drawLine(xpos + 5, ypos + 60, xpos + 12, ypos + 60);
@@ -213,14 +213,14 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     g.drawOval(xpos + 12, ypos + 56, 8, 8);
     g.fillOval(xpos + 2, ypos + 47, 6, 6);
     GraphicsUtil.drawText(g, "M3 [up]", xpos + 30, ypos + 50,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     GraphicsUtil.drawText(g, "M4 [down]", xpos + 30, ypos + 60,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(UD);
     /* Draw Enable Port */
     g.drawLine(xpos, ypos + 70, xpos + 20, ypos + 70);
     GraphicsUtil.drawText(g, "G5", xpos + 30, ypos + 70,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(EN);
     /* Draw Clock */
     boolean inverted = painter.getAttributeValue(StdAttr.EDGE_TRIGGER)
@@ -235,9 +235,9 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
       g.drawOval(xend, ypos + 86, 8, 8);
     }
     GraphicsUtil.drawText(g, "2,3,5+/C6", xpos + 30, ypos + 80,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     GraphicsUtil.drawText(g, "2,4,5-", xpos + 30, ypos + 90,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(CK);
     /* Draw Carry */
     g.drawLine(xpos + 20 + SymbolWidth(width), ypos + 50, xpos + 40
@@ -252,9 +252,9 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
             painter.getAttributeValue(ATTR_MAX).intValue())
         .toUpperCase();
     GraphicsUtil.drawText(g, MaxVal, xpos + 17 + SymbolWidth(width),
-        ypos + 50, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+        ypos + 50, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
     GraphicsUtil.drawText(g, "4CT=0", xpos + 17 + SymbolWidth(width),
-        ypos + 60, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER);
+        ypos + 60, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
     painter.drawPort(CARRY);
     GraphicsUtil.switchToWidth(g, 1);
     /* Draw counter Value */
@@ -268,7 +268,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
       g.fillRect(xpos + xcenter - len * 4, ypos + 22, len * 8, 16);
       g.setColor(Color.BLACK);
       GraphicsUtil.drawText(g, MemState.FONT, Value, xpos + xcenter - len * 4 + 1,
-          ypos + 30, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+          ypos + 30, GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     }
   }
 
@@ -309,7 +309,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     }
     g.setFont(font);
     GraphicsUtil.drawText(g, "1,6D", xpos + 21, RealYpos + 10,
-        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER);
+        GraphicsUtil.H_LEFT, GraphicsUtil.V_CENTER_FIRST);
     int LineWidth = (NrOfBits == 1) ? 2 : 5;
     GraphicsUtil.switchToWidth(g, LineWidth);
     if (first) {
@@ -346,7 +346,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
       g.setColor(Color.BLACK);
       GraphicsUtil.drawText(g, MemState.FONT, Integer.toString(value), xpos + xcenter
           + 20, RealYpos + 10, GraphicsUtil.H_CENTER,
-          GraphicsUtil.V_CENTER);
+          GraphicsUtil.V_CENTER_FIRST);
     }
   }
 

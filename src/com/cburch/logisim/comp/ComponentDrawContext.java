@@ -201,9 +201,9 @@ public final class ComponentDrawContext {
     g.fillOval(x - PIN_OFFS, y - PIN_OFFS, PIN_RAD, PIN_RAD);
     g.setColor(curColor);
     if (dir == Direction.EAST) {
-      GraphicsUtil.drawText(g, label, x + 3, y, ALIGN.H_LEFT, ALIGN.V_CENTER);
+      GraphicsUtil.drawText(g, label, x + 3, y, ALIGN.H_LEFT, ALIGN.V_CENTER_FIRST); // CENTER_OVERALL may look nicer?
     } else if (dir == Direction.WEST) {
-      GraphicsUtil.drawText(g, label, x - 3, y, ALIGN.H_RIGHT, ALIGN.V_CENTER);
+      GraphicsUtil.drawText(g, label, x - 3, y, ALIGN.H_RIGHT, ALIGN.V_CENTER_FIRST); // CENTER_OVERALL may look nicer?
     } else if (dir == Direction.SOUTH) {
       GraphicsUtil.drawText(g, label, x, y - 3, ALIGN.H_CENTER, ALIGN.V_BASELINE);
     } else if (dir == Direction.NORTH) {

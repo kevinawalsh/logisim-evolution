@@ -34,7 +34,6 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import com.cburch.logisim.comp.Component;
@@ -139,12 +138,7 @@ public class Tunnel extends InstanceFactory {
     // See same fix in std.base.Text  
     TunnelAttributes attrs = (TunnelAttributes) attrsBase;
 
-    // find text nominal width and height
-    Font font = attrs.getFont();
-    String text = "ABC";
-    Bounds t = StringUtil.estimateAlignedBounds(text, font, 0, 0);
-
-    return getBoundsForTextbox(t.width, t.height, attrs.getFacing());
+    return getBoundsForTextbox(10, 10, attrs.getFacing());
   }
 
   @Override
