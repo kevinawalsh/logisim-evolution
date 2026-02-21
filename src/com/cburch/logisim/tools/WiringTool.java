@@ -253,7 +253,9 @@ public final class WiringTool extends Tool {
       hintWorked();
       candidates.clear();
       extraWireFromSplitting = null;
-      if (anchor.x == cur.x || anchor.y == cur.y) {
+      if (anchor.equals(cur)) {
+        // ignore space if we haven't moved
+      } else if (anchor.x == cur.x || anchor.y == cur.y) {
         wires.addLast(Wire.create(anchor, cur));
         anchor = cur;
         direction = 2-direction;
