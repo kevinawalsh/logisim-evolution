@@ -56,6 +56,8 @@ class SlideshowAttributes extends AbstractAttributeSet {
 
   @Override
   public List<Attribute<?>> getAttributes() {
+    // WARNING: The static parts of this list must be first. The list of possible attributes depends
+    // on the count, so during xml file loading the count must be set before the dynamic ones.
     ArrayList<Attribute<?>> attrs = new ArrayList<>();
     attrs.add(Slideshow.ATTR_WIDTH);
     attrs.add(Slideshow.ATTR_COUNT);

@@ -261,6 +261,18 @@ public class XmlReader {
       // We need to process this in order, and we have to refetch the
       // attribute list each time because it may change as we iterate
       // (as it will for a splitter).
+      // WARNING: This is fragile and error-prone, likely leading to subtle bugs. The ordering of
+      // attributes must be carefully arranged to avoid bugs.
+      // - For a component where the list of attributes can change depending on some attribute A, we
+      //   must ensure that the prefix before A is constant, and any parts of the list that may
+      //   change come after A.
+      // - For a component where the value of one attribute A constrains the possible
+      //   values for another attribute B, then A must come before B in the list.
+      // - For a component where setting the value of an attribute A can alter the value of other
+      //   attributes, or where the effect of setting A depends on other attributes, then care must
+      //   be taken so that effects occur in the intended order.
+      // FIXME: Ideally we'd have some better way to initialize an attribute set "all at once", or
+      // to somehow determine a correct ordering automatically, or make it order-invariant.
       for (int i = 0; true; i++) {
         List<Attribute<?>> attrList = attrs.getAttributes();
         if (i >= attrList.size())

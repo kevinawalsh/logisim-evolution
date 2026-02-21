@@ -43,19 +43,23 @@ import com.cburch.logisim.instance.StdAttr;
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 class TextAttributes extends AbstractAttributeSet {
+
+  // WARNING: The prefix of these lists before FORMAT must be identical. The list of possible
+  // attributes depends on FORMAT, so during xml file loading FORMAT must be set before the
+  // remaining attributes.
   private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
-      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
-        Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
-        Text.ATTR_FORMAT, Text.TEXT_WIDTH });
+      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_FORMAT, 
+        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
+        Text.ATTR_STYLE, Text.TEXT_WIDTH });
 
   private static final List<Attribute<?>> ATTRIBUTES_MANUAL_WRAPPING =
-      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
-        Text.ATTR_HALIGN, Text.ATTR_VALIGN, Text.FG_COLOR, Text.BG_COLOR,
-        Text.ATTR_FORMAT });
+      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_FORMAT,
+        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_HALIGN, Text.ATTR_VALIGN, 
+        Text.ATTR_STYLE });
 
   private static final List<Attribute<?>> ATTRIBUTES_MARKDOWNISH =
-      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT,
-        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_FORMAT });
+      Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_FORMAT,
+        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_STYLE });
 
   private String text; // note: never contains CRLF or CR, only LF
   private Font font;
@@ -65,6 +69,7 @@ class TextAttributes extends AbstractAttributeSet {
   private Color bg;
   protected AttributeOption format;
   protected int width;
+  protected TextStyling styling;
 
   private Text.LayoutEngine layout;
 
@@ -79,16 +84,17 @@ class TextAttributes extends AbstractAttributeSet {
     bg = CLEAR;
     format = Text.TEXT_FORMAT_PLAIN;
     width = 300;
-    computeLayout();
+    computeLayout("");
   }
 
-  private void computeLayout() {
+  protected void computeLayout(String style) {
+    styling = new TextStyling(style, font, fg, bg, format);
     if (format == Text.TEXT_FORMAT_MARKDOWNISH)
-      layout = new StyledBoxLayout(text, width, font);
+      layout = new StyledBoxLayout(text, width, styling);
     else if (format == Text.TEXT_FORMAT_WRAPPED)
-      layout = new BoxLayout(text, width, font, getHorizontalAlign(), getVerticalAlign(), true);
+      layout = new BoxLayout(text, width, getHorizontalAlign(), getVerticalAlign(), true, styling);
     else
-      layout = new BoxLayout(text, -1, font, getHorizontalAlign(), getVerticalAlign(), false);
+      layout = new BoxLayout(text, -1, getHorizontalAlign(), getVerticalAlign(), false, styling);
   }
 
   @Override
@@ -106,13 +112,17 @@ class TextAttributes extends AbstractAttributeSet {
     return layout;
   }
 
+  TextStyling getStyling() {
+    return styling;
+  }
+
   Text.LayoutEngine getLayout(Integer altTextWidth) { // used during resizing
     if (altTextWidth == null || format == Text.TEXT_FORMAT_PLAIN || altTextWidth == width)
       return layout;
     else if (format == Text.TEXT_FORMAT_MARKDOWNISH)
-      return new StyledBoxLayout(text, altTextWidth, font);
+      return new StyledBoxLayout(text, altTextWidth, styling);
     else
-      return new BoxLayout(text, altTextWidth, font, getHorizontalAlign(), getVerticalAlign(), true);
+      return new BoxLayout(text, altTextWidth, getHorizontalAlign(), getVerticalAlign(), true, styling);
   }
 
   Font getFont() {
@@ -176,11 +186,14 @@ class TextAttributes extends AbstractAttributeSet {
       return (V) format;
     if (attr == Text.TEXT_WIDTH)
       return (V) (Integer)width;
+    if (attr == Text.ATTR_STYLE)
+      return (V) styling.str;
     return null;
   }
 
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
+    String style = styling.str;
     if (attr == Text.ATTR_TEXT) {
       String str = (String) value;
       if (str == null || str.isEmpty())
@@ -199,11 +212,14 @@ class TextAttributes extends AbstractAttributeSet {
       bg = (Color) value;
     } else if (attr == Text.ATTR_FORMAT) {
       format = (AttributeOption) value;
-      fireAttributeListChanged();
     } else if (attr == Text.TEXT_WIDTH) {
       width = (Integer) value;
+    } else if (attr == Text.ATTR_STYLE) {
+      style = (String) value;
     }
-    computeLayout();
+    computeLayout(style);
+    if (attr == Text.ATTR_FORMAT)
+      fireAttributeListChanged();
   }
 
   // public static normalize(String str) {

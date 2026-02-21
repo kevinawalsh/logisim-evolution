@@ -225,6 +225,8 @@ public class SplitterAttributes extends AbstractAttributeSet {
       .forIntegerRange("fanout", S.getter("splitterFanOutAttr"), 1,
           32);
 
+  // WARNING: The ordering of this list is critical, as several of these attributes affect others.
+  // So during xml file loading, the exact order of loading them must be just so.
   private static final List<Attribute<?>> INIT_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, ATTR_FANOUT,
         ATTR_WIDTH, ATTR_APPEARANCE, ATTR_SPACING, });
@@ -322,6 +324,8 @@ public class SplitterAttributes extends AbstractAttributeSet {
 
   @Override
   public List<Attribute<?>> getAttributes() {
+    // WARNING: The static parts of this list must be first. The list of possible attributes depends
+    // on the fanout, etc., so during xml file loading those must be set before other attributes.
     return attrs;
   }
 

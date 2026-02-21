@@ -130,6 +130,8 @@ public class DrawAttr {
 	= createAttributes(new Attribute[] { STROKE_WIDTH, STROKE_COLOR, DYNAMIC_CONDITION });
 
 	// attribute lists for rectangle, oval, polygon
+  // WARNING: PAINT_TYPE must be first. For some objects, the list of possible attributes depends on
+  // the paint type, so during xml file loading the paint type must be set before other attributes.
 	private static final List<Attribute<?>> ATTRS_FILL_STROKE = createAttributes(new Attribute[] {
 			PAINT_TYPE, STROKE_WIDTH, STROKE_COLOR, DYNAMIC_CONDITION });
 	private static final List<Attribute<?>> ATTRS_FILL_FILL = createAttributes(new Attribute[] {
@@ -138,6 +140,8 @@ public class DrawAttr {
 			PAINT_TYPE, STROKE_WIDTH, STROKE_COLOR, FILL_COLOR, DYNAMIC_CONDITION });
 
 	// attribute lists for rounded rectangle
+  // WARNING: PAINT_TYPE must be first. For some objects, the list of possible attributes depends on
+  // the paint type, so during xml file loading the paint type must be set before other attributes.
 	private static final List<Attribute<?>> ATTRS_RRECT_STROKE = createAttributes(new Attribute[] {
 			PAINT_TYPE, STROKE_WIDTH, STROKE_COLOR, CORNER_RADIUS, DYNAMIC_CONDITION });
 

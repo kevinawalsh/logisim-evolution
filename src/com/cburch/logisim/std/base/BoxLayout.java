@@ -51,18 +51,27 @@ import com.cburch.logisim.util.GraphicsUtil;
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // BoxLayout handles text rendering for Text and Callout, optionally providing auto-wrap.
+// Foreground and background colors, and body margin, must be applied by caller.
+// Styles applied here:
+//  - paragraph-margin [top/bottom for inter-paragraph spacing]
 public class BoxLayout implements Text.LayoutEngine {
   
-  static final float DEFAULT_INTER_PARAGRAPH_SPACE = 0.7f; // 0.7 x FontHeight, used with auto-wrap mode
+  static final TextStyling.Size DEFAULT_INTER_PARAGRAPH_SPACE = 
+    new TextStyling.Size(0.7f, TextStyling.SizeUnit.EMS); // used with auto-wrap mode
+  
+  static final TextStyling.Size ZERO_SPACE =
+    new TextStyling.Size(0f, TextStyling.SizeUnit.PIXELS);
 
   private final int halign, valign;
   private final Font font;
   private final boolean autoWrap;
   private final String text;
-  private final float interParaSpace;
+  private final TextStyling styling;
+  private final TextStyling.Size paraMargin[];
 
-  private int textWidth; // accurate, even for manual-wrap mode, once layout is complete
-  private Bounds bounds;  // accurate once layout is complete
+  private int textWidth; // accurate, even for manual-wrap mode, once layout is complete,
+                         // does not include body margins
+  private Bounds bounds;  // accurate once layout is complete, includes body margins
   ArrayList<VisualLine> lines;
 
   // visual lines are in in top-to-bottom draw order (wrapped, if needed),
@@ -72,12 +81,25 @@ public class BoxLayout implements Text.LayoutEngine {
   //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
   //   lines[n-1].end == len-1
 
-  public BoxLayout(String t, int tw, Font f, int h, int v, boolean spacing) {
+  public BoxLayout(String t, int tw, int h, int v, boolean spacing, TextStyling sty) {
     text = t;
     textWidth = tw;
     autoWrap = (tw > 0);
-    interParaSpace = (spacing ? DEFAULT_INTER_PARAGRAPH_SPACE : 0);
-    font = f;
+    styling = sty;
+    paraMargin = new TextStyling.Size[4];
+    for (int i = 0; i < 4; i++) {
+      // Use user-specified margin, if available
+      paraMargin[i] = styling.paragraph_margin[i];
+      if (paraMargin[i] == null) {
+        if (i == 1 || i == 3) // For left/right, default to 0
+          paraMargin[i] = ZERO_SPACE;
+        else if (!spacing) // For top/bottom, default to 0 if editing as plain unstyled text
+          paraMargin[i] = ZERO_SPACE;
+        else // for top/bottom, leave a gap by default for wrapped text
+          paraMargin[i] = DEFAULT_INTER_PARAGRAPH_SPACE;;
+      }
+    }
+    font = styling.font;
     halign = h;
     valign = v;
 
@@ -114,14 +136,16 @@ public class BoxLayout implements Text.LayoutEngine {
 
   private void append(TextLayout layout, int start, int end, boolean paraBreakAfter, boolean lineBreakAfter) {
 
-    // If auto-wrapping, and last layout had a paraBreak after, add inter-para space.
-    if (autoWrap && !lines.isEmpty()) {
+    // If last layout had a paraBreak after, add inter-para space.
+    if (!lines.isEmpty()) {
       VisualLine prev = lines.get(lines.size() - 1);
       if (prev.paraBreakAfter) {
-        float gap = prev.height() * interParaSpace;
-        dy += gap;
+        float gapBelowPrev = paraMargin[2].px(prev.textSize());
+        float gapAboveThis = paraMargin[0].px(layout.getAscent() + layout.getDescent() + layout.getLeading());
+        dy += Math.max(gapBelowPrev, gapAboveThis);
       }
     }
+    // TODO: paragraph left/right margins... but kind of pointless, for now.
 
     dy += layout.getAscent();
     lines.add(new VisualLine(lines.size(), text, start, end, paraBreakAfter, lineBreakAfter, layout, dx, dy));
@@ -135,6 +159,9 @@ public class BoxLayout implements Text.LayoutEngine {
 
   private void layoutMultiline() {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
+
+    dy += styling.margin[0].px(font); // top
+    dx += styling.margin[3].px(font); // left
     
     String[] paragraphs = text.split("\n", -1);
 
@@ -189,7 +216,9 @@ public class BoxLayout implements Text.LayoutEngine {
       line.baselineY += y;
     }
 
-    bounds = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
+    dy += styling.margin[2].px(font); // bottom
+    dx += textWidth + styling.margin[1].px(font); // right
+    bounds = Bounds.create(x, y, (int)Math.ceil(dx), (int)Math.ceil(dy));
   }
 
 
@@ -292,7 +321,8 @@ public class BoxLayout implements Text.LayoutEngine {
 
     float topY() { return baselineY - layout.getAscent(); }
     float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
-    float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
+    float textSize() { return layout.getAscent() + layout.getDescent(); }
+    // float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
 
     float caretXForPosition(int pos) {
       int local = clamp(pos - start, 0, end - start);

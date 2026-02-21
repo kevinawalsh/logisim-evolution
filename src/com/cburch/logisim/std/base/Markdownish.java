@@ -129,24 +129,22 @@ import java.util.ArrayList;
 
 public class Markdownish {
 
-  // Styling rules
-  static final float[] HEADER_FONT_SIZE = { 1.6f, 1.4f, 1.2f, 1.1f, 1.1f, 1.1f }; // relative to base font size
-  static final float HEADER_ABOVE_GAP = 0.6f; // relative to header font size
-  static final float HEADER_BELOW_GAP = 0.4f; // relative to header font size
-  static final float PARAGRAPH_ABOVE_GAP = 0.5f; // relative to base font size
-  static final float PARAGRAPH_BELOW_GAP = 0.5f; // relative to base font size
+  private final String src;
+  private final int EOF;
+  private final TextStyling styling;
+  private final Font baseFont, monoFont;
 
-  public final String src;
-  public final int EOF;
-  public final Font baseFont, monoFont;
   public final ArrayList<Block> blocks;
   public Block lastBlock;
 
-  public Markdownish(String src, Font baseFont, Font monoFont) {
+  public Markdownish(String src, TextStyling sty) {
     this.src = src;
     this.EOF = src.length();
-    this.baseFont = baseFont;
-    this.monoFont = monoFont;
+    this.styling = sty;
+
+    baseFont = styling.font;
+    monoFont = new Font("Monospaced", Font.PLAIN, baseFont.getSize()); // FIXME: allow styling
+
     blocks = new ArrayList<>();
     lastBlock = null;
     parseBlocks();
@@ -161,6 +159,7 @@ public class Markdownish {
   public final class Block {
     final BlockType type;
     final int blockno;
+    final Font font;
     final ArrayList<Span> spans; // not empty; otherwise, we can't map block to src text index
     final int headerLevel; // 1..N for headers, unused for other block types
     final boolean continuation; // this para or code continues previous one, after a hard-break
@@ -171,22 +170,20 @@ public class Markdownish {
       this.spans = spans;
       this.headerLevel = headerLevel;
       this.continuation = continuation;
+      if (type == BlockType.HEADER) {
+        float px = styling.header_style[headerLevel].font_size.px(baseFont);
+        float pt = px*3f/4f;
+        this.font = baseFont.deriveFont( baseFont.getStyle() | Font.BOLD, pt);
+      } else if (type == BlockType.FENCED_CODE) {
+        this.font = monoFont;
+      } else {
+        this.font = baseFont;
+      }
     }
 
     public AttributedString buildAttributedString() {
       StringBuilder sb = new StringBuilder();
       ArrayList<AttrRun> runs = new ArrayList<>();
-
-      Font font;
-      if (type == BlockType.HEADER) {
-        font = baseFont.deriveFont(
-            baseFont.getStyle() | Font.BOLD,
-            baseFont.getSize2D() * HEADER_FONT_SIZE[headerLevel]);
-      } else if (type == BlockType.FENCED_CODE) {
-        font = monoFont;
-      } else {
-        font = baseFont;
-      }
 
       AttrRun prevFont = null;
       AttrRun prevUnderline = null;
@@ -237,23 +234,32 @@ public class Markdownish {
     }
 
     private float gapAbove() {
-      float sz = baseFont.getSize2D();
       if (type == BlockType.PARAGRAPH || type == BlockType.FENCED_CODE)
-        return sz * PARAGRAPH_ABOVE_GAP;
+        return styling.paragraph_margin[0].px(font); // top
       else
-        return sz * HEADER_ABOVE_GAP;
+        return styling.header_style[headerLevel].margin[0].px(font); // top
     }
 
     private float gapBelow() {
-      float sz = baseFont.getSize2D();
       if (type == BlockType.PARAGRAPH || type == BlockType.FENCED_CODE)
-        return sz * PARAGRAPH_BELOW_GAP;
+        return styling.paragraph_margin[2].px(font); // bottom
       else
-        return sz * HEADER_BELOW_GAP;
+        return styling.header_style[headerLevel].margin[2].px(font); // bottom
     }
 
     public boolean wrapped() {
       return type != BlockType.FENCED_CODE;
+    }
+
+    public TextStyling.Accent getAccent() {
+      if (type == BlockType.HEADER)
+        return styling.header_style[headerLevel].accent;
+      else
+        return null;
+    }
+
+    public Font getFont() {
+      return font;
     }
   }
 

@@ -283,6 +283,34 @@ public class Attributes {
     }
   }
 
+  public static Color parseColor(String value) throws NumberFormatException {
+    if (value.startsWith("#") && value.length()-1 == 8) {
+      int r = Integer.parseInt(value.substring(1, 3), 16);
+      int g = Integer.parseInt(value.substring(3, 5), 16);
+      int b = Integer.parseInt(value.substring(5, 7), 16);
+      int a = Integer.parseInt(value.substring(7, 9), 16);
+      return new Color(r, g, b, a);
+    } else if (value.startsWith("#") && value.length()-1 == 6) {
+      int r = Integer.parseInt(value.substring(1, 3), 16);
+      int g = Integer.parseInt(value.substring(3, 5), 16);
+      int b = Integer.parseInt(value.substring(5, 7), 16);
+      return new Color(r, g, b);
+    } else if (value.startsWith("#") && value.length()-1 == 4) {
+      int r = Integer.parseInt(value.substring(1, 2), 16) * 0x11;
+      int g = Integer.parseInt(value.substring(2, 3), 16) * 0x11;
+      int b = Integer.parseInt(value.substring(3, 4), 16) * 0x11;
+      int a = Integer.parseInt(value.substring(4, 5), 16) * 0x11;
+      return new Color(r, g, b, a);
+    } else if (value.startsWith("#") && value.length()-1 == 3) {
+      int r = Integer.parseInt(value.substring(1, 2), 16) * 0x11;
+      int g = Integer.parseInt(value.substring(2, 3), 16) * 0x11;
+      int b = Integer.parseInt(value.substring(3, 4), 16) * 0x11;
+      return new Color(r, g, b);
+    } else {
+      return Color.decode(value);
+    }
+  }
+
   private static class ColorAttribute extends Attribute<Color> {
     public ColorAttribute(String name, StringGetter desc) {
       super(name, desc);
@@ -303,15 +331,7 @@ public class Attributes {
 
     @Override
     public Color parse(String value) {
-      if (value.length() == 9) {
-        int r = Integer.parseInt(value.substring(1, 3), 16);
-        int g = Integer.parseInt(value.substring(3, 5), 16);
-        int b = Integer.parseInt(value.substring(5, 7), 16);
-        int a = Integer.parseInt(value.substring(7, 9), 16);
-        return new Color(r, g, b, a);
-      } else {
-        return Color.decode(value);
-      }
+      return parseColor(value);
     }
 
     @Override

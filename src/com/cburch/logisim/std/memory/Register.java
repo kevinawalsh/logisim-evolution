@@ -348,6 +348,8 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
     return new RegisterShape(x, y, path);
   }
  
+  // WARNING: The ordering of this list matters, because changing WIDTH can affect INIT.
+  // So during xml file loading, WIDTH must come before INIT.
   private static final List<Attribute<?>> ATTRIBUTES = Arrays.asList(
       new Attribute<?>[] {
         StdAttr.WIDTH, ATTR_INIT, StdAttr.TRIGGER,

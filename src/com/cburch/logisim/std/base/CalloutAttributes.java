@@ -38,6 +38,9 @@ import com.cburch.logisim.data.AttributeOption;
 
 class CalloutAttributes extends TextAttributes {
 
+  // WARNING: The prefix of these lists before FORMAT must be identical. The list of possible
+  // attributes depends on FORMAT, so during xml file loading FORMAT must be set before the
+  // remaining attributes.
   private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
       Arrays.asList(new Attribute<?>[] {
         Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
@@ -85,6 +88,7 @@ class CalloutAttributes extends TextAttributes {
       dy = (Integer) value;
     } else if (attr == Callout.ATTR_FORMAT) {
       format = (AttributeOption) value;
+      computeLayout(styling.str);
       fireAttributeListChanged();
     } else {
       super.updateAttr(attr, value);

@@ -32,12 +32,12 @@ package com.cburch.logisim.std.base;
 
 import java.util.ArrayList;
 
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
 import java.awt.font.TextHitInfo;
 import java.awt.font.TextLayout;
+import java.awt.geom.Rectangle2D;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.text.BreakIterator;
@@ -47,24 +47,20 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.GraphicsUtil;
 
-import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
-
 // StyledBoxLayout handles text rendering for Markdownish.
 public class StyledBoxLayout implements Text.LayoutEngine {
 
-  final Font font;
-  final boolean autoWrap;
   final String text;
+  final TextStyling styling;
 
-  int textWidth;
-  Bounds bounds;  // accurate once layout is complete
+  int textWidth; // excludes margins
+  Bounds bounds;  // accurate once layout is complete, includes margin
   ArrayList<VisualLine> lines;
 
-  public StyledBoxLayout(String t, int tw, Font f) {
+  public StyledBoxLayout(String t, int tw, TextStyling sty) {
     text = t;
     textWidth = tw; // must be positive
-    autoWrap = true;
-    font = f;
+    styling = sty;
 
     lines = new ArrayList<>();
     bounds = null;
@@ -77,24 +73,40 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
 
   public void drawText(Graphics2D g, Location loc) {
-    g.setFont(font);
-    for (VisualLine line : lines)
-      line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
+    g.setFont(styling.font);
+    g.setColor(styling.color);
+    for (VisualLine line : lines) {
+      if (line.accent == null) {
+        line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
+      } else if (line.accent.type == TextStyling.AccentType.UNDERLINE) {
+        float px = line.accent.size.px(line.textSize());
+        g.setColor(line.accent.color);
+        g.fill(new Rectangle2D.Float(loc.x + line.x,
+              loc.y + line.baselineY + line.layout.getDescent(),
+              line.layout.getVisibleAdvance(), px));
+        g.setColor(styling.color);
+        line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
+      } else if (line.accent.type == TextStyling.AccentType.LEADERBLOCK) {
+        float px = line.accent.size.px(line.textSize());
+        g.setColor(line.accent.color);
+        g.fill(new Rectangle2D.Float(loc.x + line.x, loc.y + line.topY(),
+              px, line.textSize()));
+        g.setColor(styling.color);
+        line.layout.draw(g, loc.x + line.x + px, loc.y + line.baselineY);
+      }
+    }
   }
 
   private void layoutMarkdownish() {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
 
-    int x = 0;
-    int y = 0;
     float dy = 0f;
     float dx = 0f;
 
-    // FIXME: add a monospace font option?
-    Font baseFont = font; 
-    Font monoFont = new Font("Monospaced", Font.PLAIN, font.getSize());
-  
-    Markdownish md = new Markdownish(text, baseFont, monoFont);
+    dy += styling.margin[0].px(styling.font); // top
+    dx += styling.margin[3].px(styling.font); // left
+
+    Markdownish md = new Markdownish(text, styling);
     for (Markdownish.Block block : md.blocks) {
 
       dy += md.gapAbove(block);
@@ -102,37 +114,58 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       AttributedString astr = block.buildAttributedString();
       AttributedCharacterIterator it = astr.getIterator();
 
+      // underline accent is added to the last visual line of a header block
+      // blockleading accent is added to all visual lines of a header block
+      float availableWidth = textWidth;
+      float accentExtraY = 0f;
+      TextStyling.Accent accent = block.getAccent(), uAccent = null, bAccent = null;
+      if (accent != null && accent.type == TextStyling.AccentType.UNDERLINE) {
+        uAccent = accent;
+        accentExtraY = accent.size.px(block.getFont());
+      } else if (accent != null && accent.type == TextStyling.AccentType.LEADERBLOCK) {
+        bAccent = accent;
+        float px = accent.size.px(block.getFont());
+        // The accent leaderblock takes up some of the textWidth, leaving less
+        // room for text. We always reserve TEXT_MIN_WIDTH, overflowing if needed.
+        availableWidth = Math.max(textWidth - px, Text.TEXT_MIN_WIDTH);
+      }
+
       if (!block.wrapped()) {
         // e.g. FENCED_CODE block
         int left = it.getBeginIndex();
         int right = it.getEndIndex();
         TextLayout layout = new TextLayout(it, frc);
-        
+
         dy += layout.getAscent();
-        lines.add(new VisualLine(layout, astr, left, right, x + dx, y + dy));
-        dy += layout.getDescent() + layout.getLeading();
+        lines.add(new VisualLine(layout, astr, left, right, dx, dy, accent));
+        dy += layout.getDescent() + layout.getLeading() + accentExtraY;
+
         continue;
       }
 
       LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
       measurer.setPosition(it.getBeginIndex());
-          
+
       int left = measurer.getPosition();
       while (left < it.getEndIndex()) {
-        TextLayout layout = measurer.nextLayout(textWidth);
+        TextLayout layout = measurer.nextLayout(availableWidth);
         int right = measurer.getPosition();
         boolean last = (right >= it.getEndIndex());
         
         dy += layout.getAscent();
-        lines.add(new VisualLine(layout, astr, left, right, x + dx, y + dy));
-        dy += layout.getDescent() + layout.getLeading();
+        lines.add(new VisualLine(layout, astr, left, right, dx, dy,
+              bAccent != null ? bAccent : last ? uAccent : null));
+        dy += layout.getDescent() + layout.getLeading() + (last ? accentExtraY : 0f);
 
         left = right;
       }
 
     }
 
-    bounds = Bounds.create(x, y, textWidth, (int) Math.ceil(dy));
+    dy += styling.margin[2].px(styling.font); // bottom
+    dx += textWidth + styling.margin[1].px(styling.font); // right
+
+    bounds = Bounds.create(0, 0, (int)Math.ceil(dx), (int)Math.ceil(dy));
   }
 
   static class VisualLine {
@@ -141,19 +174,22 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     final int start, end; // index range within astr for this line
     final float x;     // draw origin x, where layout.draw() is called
     final float baselineY; // baseline y, where layout.draw() is called
+    final TextStyling.Accent accent;
 
-    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float baselineY) {
+    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float baselineY, TextStyling.Accent a) {
       this.layout = layout; // does not include newline
       this.astr = astr;
       this.start = s;
       this.end = e;
       this.x = x;
       this.baselineY = baselineY;
+      this.accent = a;
     }
 
     float topY() { return baselineY - layout.getAscent(); }
     float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
-    float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
+    float textSize() { return layout.getAscent() + layout.getDescent(); }
+    // float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
 
     public int sourcePositionForX(float px) { // snaps to some nearby grapheme boundary
       float relX = px - x, relY = 0; // 0 means baseline

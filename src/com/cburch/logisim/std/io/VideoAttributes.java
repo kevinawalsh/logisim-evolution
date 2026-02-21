@@ -39,6 +39,9 @@ import com.cburch.logisim.data.Attribute;
 class VideoAttributes extends AbstractAttributeSet {
   private final /*public*/ static VideoAttributes instance = new VideoAttributes(); // why?
 
+  // WARNING: The prefix of these lists before BLANK must be identical. The list of possible
+  // attributes depends on BLANK, so during xml file loading BLANK must be set before the
+  // remaining attributes.
   private static final List<Attribute<?>> BLANK_FIXED_ATTRIBUTES =
       Arrays.asList(new Attribute<?>[]
         { Video.BLINK_OPTION, Video.RESET_OPTION,

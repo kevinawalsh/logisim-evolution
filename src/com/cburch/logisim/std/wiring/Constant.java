@@ -139,6 +139,8 @@ public class Constant extends InstanceFactory {
 
   public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
 
+  // WARNING: The ordering of this list matters, because changing WIDTH can affect VALUE.
+  // So during xml file loading, WIDTH must come before VALUE.
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,
         StdAttr.WIDTH, ATTR_VALUE });

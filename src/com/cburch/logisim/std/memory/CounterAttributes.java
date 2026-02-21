@@ -40,6 +40,8 @@ import com.cburch.logisim.instance.StdAttr;
 class CounterAttributes extends AttributeSets.ArrayBacked {
 
   public CounterAttributes() {
+    // WARNING: WIDTH must come early, before INIT or MAX. The values of INIT and MAX are
+    // constrained by WIDTH, so during xml file loading WiDTH must be set before them.
     super(new Attribute<?>[] { StdAttr.WIDTH, Counter.ATTR_INIT, 
       Counter.ATTR_MAX, Counter.ATTR_ON_GOAL, StdAttr.EDGE_TRIGGER,
       StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_LOC, 

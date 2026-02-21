@@ -67,7 +67,7 @@ import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
-  static final int PAD = 4;
+  static final int HANDLE_PAD = 0; // Used when reshaping
 
   static class MultilineAttribute extends Attribute<String> {
     MultilineAttribute(String name, StringGetter disp) {
@@ -163,6 +163,9 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
             new AttributeOption(Integer.valueOf(ALIGN.V_CENTER),
                 "center", S.getter("textVertAlignCenterOpt")),
           });
+
+  public static Attribute<String> ATTR_STYLE = Attributes.forString("style",
+      S.getter("textStyleAttr"));
 
   static final Attribute<Color> FG_COLOR = Attributes.forColor(
       "foreground", S.getter("textForegroundColorAttr"));
@@ -270,7 +273,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       Location loc = getLocation();
       CaretPosition p = text.getTextCaretPosition(loc, attrs, event.getX(), event.getY());
       return new TextCaret(attrs, event.getCanvas(),
-          loc, p.cursor, p.revBias, p.bounds.translate(loc).expand(PAD));
+          loc, p.cursor, p.revBias, p.bounds.translate(loc));
     }
 
   }
@@ -295,7 +298,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     int valign = attrs.getVerticalAlign();
     Font font = attrs.getFont();
 
-    // Note: don't expand by 4 as done below. Better to underestimate than overestimate.
+    // Note: don't expand by any margin. Better to underestimate than overestimate.
     String text = "ABC"; // note: we use a fixed, short string, because the
                          // estimate string width is often very wrong, leading
                          // to UI annoyances, e.g. inability to move a string
@@ -390,27 +393,32 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     if (attrs.isWrapping() == false)
       return List.of(); // empty
     Location loc = comp.getLocation();
-    int tw = attrs.getTextWidth();
+    TextStyling sty = attrs.getStyling();
+    int margins = (int)Math.ceil(sty.margin[3].px(sty.font) + sty.margin[1].px(sty.font));
+    int width = attrs.getTextWidth() + margins;
     if (attrs.getHorizontalAlign() == ALIGN.H_LEFT)
-      return List.of(loc.translate(tw + PAD, 0));
+      return List.of(loc.translate(width + HANDLE_PAD, 0));
     else if (attrs.getHorizontalAlign() == ALIGN.H_RIGHT)
-      return List.of(loc.translate(-(tw + PAD), 0));
+      return List.of(loc.translate(-(width + HANDLE_PAD), 0));
     else // H_CENTER
       return List.of(
-          loc.translate(-(tw/2 + PAD), 0),
-          loc.translate(tw-tw/2 + PAD, 0));
+          loc.translate(-(width/2 + HANDLE_PAD), 0),
+          loc.translate(width-width/2 + HANDLE_PAD, 0));
   }
 
   protected int calculateNewTextWidth(Location loc, TextAttributes attrs, Location handle, int rdx, int rdy) {
-    int textWidth;
+    TextStyling sty = attrs.getStyling();
+    int margins = (int)Math.ceil(sty.margin[3].px(sty.font) + sty.margin[1].px(sty.font));
+    int width;
     if (attrs.getHorizontalAlign() == ALIGN.H_LEFT)
-      textWidth = (handle.getX() - PAD + rdx) - loc.getX();
+      width = (handle.getX() - HANDLE_PAD + rdx) - loc.getX();
     else if (attrs.getHorizontalAlign() == ALIGN.H_RIGHT)
-      textWidth = loc.getX() - (handle.getX() + PAD + rdx);
+      width = loc.getX() - (handle.getX() + HANDLE_PAD + rdx);
     else if (handle.getX() >= loc.getX()) // H_CENTER, adjusting right handle
-      textWidth = 2*((handle.getX() - PAD + rdx) - loc.getX());
+      width = 2*((handle.getX() - HANDLE_PAD + rdx) - loc.getX());
     else // H_CENTER, adjusting left handle
-      textWidth = 2*(loc.getX() - (handle.getX() + PAD + rdx));
+      width = 2*(loc.getX() - (handle.getX() + HANDLE_PAD + rdx));
+    int textWidth = width - margins;
     return clamp(textWidth, TEXT_MIN_WIDTH, TEXT_MAX_WIDTH);
   }
 

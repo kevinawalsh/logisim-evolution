@@ -136,8 +136,6 @@ class GateAttributes extends AbstractAttributeSet {
     if (attr == StdAttr.WIDTH) {
       width = (BitWidth) value;
       int bits = width.getWidth();
-      int mask = bits >= 32 ? -1 : ((1 << inputs) - 1);
-      negated &= mask;
     } else if (attr == StdAttr.FACING) {
       facing = (Direction) value;
     } else if (attr == StdAttr.LABEL) {
@@ -148,6 +146,8 @@ class GateAttributes extends AbstractAttributeSet {
       size = (AttributeOption) value;
     } else if (attr == ATTR_INPUTS) {
       inputs = ((Integer) value).intValue();
+      int mask = inputs >= 32 ? -1 : ((1 << inputs) - 1);
+      negated &= mask;
       fireAttributeListChanged();
     } else if (attr == ATTR_XOR) {
       xorBehave = (AttributeOption) value;

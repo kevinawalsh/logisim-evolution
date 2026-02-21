@@ -104,6 +104,8 @@ import com.cburch.logisim.util.UndoRedo;
 //     cursor positioning info
 
 class TextCaret implements Caret, AttributeListener {
+  
+  static final int MIN_PAD = 4; // Below this, cursor can be hard to see at the edges
     
   Font markdownEditFont = new Font("Monospaced", Font.PLAIN, 12);
 
@@ -196,10 +198,10 @@ class TextCaret implements Caret, AttributeListener {
     BoxLayout box = computeLayout();
 
     // fill initial bounds in translucent gray, to obscure the original text
-    initialBounds.fill(g, EDIT_MASK);
+    initialBounds.expand(MIN_PAD).fill(g, EDIT_MASK);
 
     // draw boundary
-    Bounds area = box.getBounds(loc).expand(Text.PAD);
+    Bounds area = box.getBounds(loc).expand(MIN_PAD);
     area.fill(g, EDIT_BACKGROUND);
     area.draw(g, EDIT_BORDER);
 
@@ -231,8 +233,8 @@ class TextCaret implements Caret, AttributeListener {
         if (selA <= lineB && selB > lineB && !vl.softBreakAfter) {
           // If selection spans a trailing newline, highlight that newline.
           float end = vl.isEmpty() ? 0 : vl.layout.getAdvance();
-          float newlineWidth = vl.height()*0.4f; // 40% aspect ratio for newline char seems reasonable
-          Rectangle2D r = new Rectangle2D.Float(loc.x + vl.x + end, loc.y + vl.topY(), newlineWidth, vl.height());
+          float newlineWidth = vl.textSize()*0.5f; // 50% aspect ratio for newline char seems reasonable
+          Rectangle2D r = new Rectangle2D.Float(loc.x + vl.x + end, loc.y + vl.topY(), newlineWidth, vl.textSize());
           g2.fill(r);
         }
       }
@@ -274,7 +276,7 @@ class TextCaret implements Caret, AttributeListener {
     if (attrs.isMarkdownish())
       font = markdownEditFont.deriveFont(font.getSize2D());
     boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();
-    BoxLayout box = new BoxLayout(curText, textWidth, font, halign, valign, spacing);
+    BoxLayout box = new BoxLayout(curText, textWidth, halign, valign, spacing, attrs.getStyling());
     if (SwingUtilities.isEventDispatchThread()) {
       cachedLayout = box;
     }
@@ -283,7 +285,7 @@ class TextCaret implements Caret, AttributeListener {
 
   @Override
   public Bounds getVisibleBounds() {
-    return computeLayout().getBounds(loc).expand(Text.PAD);
+    return computeLayout().getBounds(loc).expand(MIN_PAD);
   }
 
   @Override

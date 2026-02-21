@@ -85,6 +85,10 @@ class PLA extends InstanceFactory {
 
   private static final Color BACKGROUND_COLOR = new Color(230, 230, 230);
 
+  // WARNING: The ordering of this list maybe matters? Changing TABLE can also
+  // cause IN_WIDTH or OUT_WIDTH to change if they don't match the new TABLE.
+  // But (hopefully) all of three attributes are consistent at all times, so
+  // setting them in any order during xml file loading should (hopefully) work.
   private static final List<Attribute<?>> ATTRIBUTES = Arrays.asList(new Attribute<?>[] {
     StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TABLE,
         StdAttr.LABEL, StdAttr.LABEL_FONT

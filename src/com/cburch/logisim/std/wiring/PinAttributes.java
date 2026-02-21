@@ -43,6 +43,9 @@ import com.cburch.logisim.instance.StdAttr;
 class PinAttributes extends ProbeAttributes {
   public static PinAttributes instance = new PinAttributes();
 
+  // WARNING: The prefix of these lists before TYPE must be identical. The list of possible
+  // attributes depends on TYPE, so during xml file loading TYPE must be set before the
+  // remaining attributes.
   private static final List<Attribute<?>> INPIN_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
         StdAttr.WIDTH, Pin.ATTR_BEHAVIOR,
@@ -101,7 +104,7 @@ class PinAttributes extends ProbeAttributes {
     } else if (attr == Pin.ATTR_BEHAVIOR) {
       if (behavior != value) {
         behavior = (AttributeOption) value;
-        fireAttributeListChanged();
+        fireAttributeListChanged(); // not needed?
       }
     } else {
       super.updateAttr(attr, value);
