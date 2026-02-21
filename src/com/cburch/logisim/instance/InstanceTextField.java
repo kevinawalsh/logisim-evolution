@@ -33,7 +33,6 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;

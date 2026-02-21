@@ -59,7 +59,7 @@ class TextAttributes extends AbstractAttributeSet {
 
   private static final List<Attribute<?>> ATTRIBUTES_MARKDOWNISH =
       Arrays.asList(new Attribute<?>[] { Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_FORMAT,
-        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_STYLE });
+        Text.FG_COLOR, Text.BG_COLOR, Text.ATTR_STYLE, Text.TEXT_WIDTH });
 
   private String text; // note: never contains CRLF or CR, only LF
   private Font font;

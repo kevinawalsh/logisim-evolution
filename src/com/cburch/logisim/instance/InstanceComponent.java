@@ -31,7 +31,6 @@
 package com.cburch.logisim.instance;
 
 import java.awt.Font;
-import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;

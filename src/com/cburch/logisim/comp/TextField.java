@@ -31,7 +31,6 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -43,6 +42,10 @@ import com.cburch.logisim.util.GraphicsUtil;
 public class TextField {
 
   public static final GraphicsUtil ALIGN = GraphicsUtil.ALIGN;
+
+  // Very thin labels are positioned visually too close to components on the
+  // left and right sides, so we enforce a minimum width.
+  static final int MIN_WIDTH = 9;
 
   protected int x;
   protected int y;
@@ -69,7 +72,13 @@ public class TextField {
   }
 
   public void draw(Graphics2D g) {
-    GraphicsUtil.drawText(g, font, text, x, y, halign, valign);
+    Bounds b = Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
+          font, text, x, y, halign, valign));
+    int dx = 0;
+    int extra = Math.max(0, MIN_WIDTH - b.width);
+    if (halign == ALIGN.H_LEFT) dx = (extra+1)/2;
+    else if (halign == ALIGN.H_RIGHT) dx = -(extra+1)/2;
+    GraphicsUtil.drawText(g, font, text, x + dx, y, halign, valign);
   }
 
   public void fireTextChanged(TextFieldEvent e) {
@@ -79,9 +88,14 @@ public class TextField {
   }
 
   public Bounds getVisibleBounds() {
-    // return Bounds.create(GraphicsUtil.getTextBounds(g, font, text, x, y, halign, valign));
-    return Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
+    Bounds b = Bounds.create(GraphicsUtil.getTextBounds(GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT,
           font, text, x, y, halign, valign));
+    if (b.width >= MIN_WIDTH)
+      return b;
+    int extra = MIN_WIDTH - b.width;
+    if (halign == ALIGN.H_LEFT) return Bounds.create(b.x, b.y, MIN_WIDTH, b.height);
+    else if (halign == ALIGN.H_RIGHT) return Bounds.create(b.x - extra, b.y, MIN_WIDTH, b.height);
+    else /* H_CENTER */ return Bounds.create(b.x - extra/2, b.y, MIN_WIDTH, b.height);
   }
 
   public TextFieldCaret getCaret(Canvas canvas, int pos) {

@@ -229,7 +229,7 @@ public final class Instance implements Location.At {
     int x = bds.getX() + bds.getWidth() / 2;
     int y = bds.getY() + bds.getHeight() / 2;
     int halign = ALIGN.H_CENTER;
-    int valign = ALIGN.V_CENTER_FIRST; // OVERALL may look nicer?
+    int valign = ALIGN.V_CENTER_OVERALL;
     if (labelLoc == StdAttr.LABEL_CENTER) {
       int offset = 0;
       if ((avoid & AVOID_CENTER) != 0)
