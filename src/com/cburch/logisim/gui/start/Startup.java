@@ -410,6 +410,9 @@ public class Startup {
     System.err.println("   " + S.get("argTtyOption")); // OK
     System.err.println("   " + S.get("argCircuitOption")); // OK
     System.err.println("   " + S.get("argLoadOption")); // OK
+    System.err.println("   " + S.get("argDebugOption")); // OK
+    System.err.println("   " + S.get("argVerboseOption")); // OK
+    System.err.println("   " + S.get("argVVerboseOption")); // OK
     System.exit(0);
   }
 
