@@ -32,6 +32,7 @@ package com.cburch.logisim.std.base;
 
 import java.util.ArrayList;
 
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
@@ -73,13 +74,14 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
 
   public void drawText(Graphics2D g, Location loc) {
+    FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
     g.setFont(styling.font);
     g.setColor(styling.color);
     for (VisualLine line : lines) {
       if (line.accent == null) {
         line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
       } else if (line.accent.type == TextStyling.AccentType.UNDERLINE) {
-        float px = line.accent.size.px(line.textSize());
+        float px = line.accent.size.px(line.font);
         g.setColor(line.accent.color);
         g.fill(new Rectangle2D.Float(loc.x + line.x,
               loc.y + line.baselineY + line.layout.getDescent(),
@@ -87,12 +89,13 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         g.setColor(styling.color);
         line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
       } else if (line.accent.type == TextStyling.AccentType.LEADERBLOCK) {
-        float px = line.accent.size.px(line.textSize());
+        float px = line.accent.size.px(line.font);
+        float px2 = (float)line.font.getStringBounds(" ", frc).getWidth();
         g.setColor(line.accent.color);
         g.fill(new Rectangle2D.Float(loc.x + line.x, loc.y + line.topY(),
               px, line.textSize()));
         g.setColor(styling.color);
-        line.layout.draw(g, loc.x + line.x + px, loc.y + line.baselineY);
+        line.layout.draw(g, loc.x + line.x + px + px2, loc.y + line.baselineY);
       }
     }
   }
@@ -124,7 +127,8 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         accentExtraY = accent.size.px(block.getFont());
       } else if (accent != null && accent.type == TextStyling.AccentType.LEADERBLOCK) {
         bAccent = accent;
-        float px = accent.size.px(block.getFont());
+        float px = accent.size.px(block.getFont())
+            + (float)block.getFont().getStringBounds(" ", frc).getWidth();
         // The accent leaderblock takes up some of the textWidth, leaving less
         // room for text. We always reserve TEXT_MIN_WIDTH, overflowing if needed.
         availableWidth = Math.max(textWidth - px, Text.TEXT_MIN_WIDTH);
@@ -137,7 +141,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         TextLayout layout = new TextLayout(it, frc);
 
         dy += layout.getAscent();
-        lines.add(new VisualLine(layout, astr, left, right, dx, dy, accent));
+        lines.add(new VisualLine(layout, astr, left, right, dx, dy, accent, block.getFont()));
         dy += layout.getDescent() + layout.getLeading() + accentExtraY;
 
         continue;
@@ -154,7 +158,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         
         dy += layout.getAscent();
         lines.add(new VisualLine(layout, astr, left, right, dx, dy,
-              bAccent != null ? bAccent : last ? uAccent : null));
+              bAccent != null ? bAccent : last ? uAccent : null, block.getFont()));
         dy += layout.getDescent() + layout.getLeading() + (last ? accentExtraY : 0f);
 
         left = right;
@@ -175,8 +179,9 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     final float x;     // draw origin x, where layout.draw() is called
     final float baselineY; // baseline y, where layout.draw() is called
     final TextStyling.Accent accent;
+    final Font font; // only needed for computing accent sizing
 
-    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float baselineY, TextStyling.Accent a) {
+    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float baselineY, TextStyling.Accent a, Font f) {
       this.layout = layout; // does not include newline
       this.astr = astr;
       this.start = s;
@@ -184,6 +189,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       this.x = x;
       this.baselineY = baselineY;
       this.accent = a;
+      this.font = f;
     }
 
     float topY() { return baselineY - layout.getAscent(); }
