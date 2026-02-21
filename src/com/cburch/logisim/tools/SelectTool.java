@@ -59,8 +59,8 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
-import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.Selection.Event;
+import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Action;
@@ -71,6 +71,7 @@ import com.cburch.logisim.tools.key.KeyConfigurator;
 import com.cburch.logisim.tools.move.MoveGesture;
 import com.cburch.logisim.tools.move.MoveRequestListener;
 import com.cburch.logisim.tools.move.MoveResult;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
@@ -188,14 +189,31 @@ public final class SelectTool extends Tool {
     if (sel.shouldSnap()) {
       dx = Canvas.snapXToGrid(dx);
       dy = Canvas.snapYToGrid(dy);
-    // } else if (topleft != null && (e.getModifiersEx() & MouseEvent.ALT_DOWN_MASK) != 0) {
+    } else if ((e.getModifiersEx() & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+      // pick target component, and force align it to grid
+      Collection<Component> in_sel = sel.getComponentsContaining(start);
+      // all components within in_sel are non-snapping, so any one is okay to pick
+      Component target = highestPriority(start, in_sel, null);
+      if (target != null) {
+        Location loc = target.getLocation();
+        int snappedDestX = Canvas.snapXToGrid(loc.x + dx);
+        int snappedDestY = Canvas.snapYToGrid(loc.y + dy);
+        dx += snappedDestX - (loc.x + dx);
+        dy += snappedDestY - (loc.y + dy);
+        forceSnap = loc;
+      } else {
+        // not reached?
+        Debug.printf(1, "dragging non-snapping components with shift, but can't determine a highest priority target");
+      }
+    }
+    // else if (topleft != null && (e.getModifiersEx() & MouseEvent.ALT_DOWN_MASK) != 0) {
     //   // top left corner force align to grid
     //   int destx = Canvas.snapXToGrid(topleft.getX() + dx);
     //   int desty = Canvas.snapYToGrid(topleft.getY() + dy);
     //   dx += destx - (topleft.getX() + dx);
     //   dy += desty - (topleft.getY() + dy);
     //   forceSnap = topleft;
-    }
+    // }
     // after snapping, again ensure top left doesn't go off canvas
     if (topleft != null) {
       while (dx < -topleft.getX()) dx += 10;
@@ -498,6 +516,7 @@ public final class SelectTool extends Tool {
         proj.repaintCanvas();
         return;
       } else {
+        // FIXME: No need to compute target, it must exist but is not used here.
         Component target = highestPriority(start, in_sel, null);
         if (target != null) {
           // shift-click to a selected component might begin MOVING, or maybe DROP_ONE
@@ -505,10 +524,14 @@ public final class SelectTool extends Tool {
           proj.repaintCanvas();
           return;
         } else {
+          Debug.printf(1, "SelectTool: click on components within selection, without shift, but couldn't determine highest priority target?");
           // return; // never reached ?
         }
       }
     }
+    // FIXME: at this point, in_sel must be empty, right?
+    if (!in_sel.isEmpty())
+      Debug.printf(1, "SelectTool: in_sel should have been empty at this point.");
 
     // if the user clicks into a component outside selection, user
     // wants to add/reset selection
@@ -525,9 +548,13 @@ public final class SelectTool extends Tool {
       // Old behavior: click on stacked components will select all of them.
       // New behavior: sort by size, take only the smallest. A z-order would be
       // nicer, but we don't maintain that.
+      // FIXME: in_sel is empty at this point?
       Component target = highestPriority(start, clicked, in_sel);
       if (target != null) {
         sel.add(target);
+      } else {
+        Debug.printf(1, "SelectTool: click on non-selected components, without shift, but can't determine a highest priority target?");
+        // not reached ?
       }
       setState(proj, MOVING);
       proj.repaintCanvas();
@@ -549,8 +576,8 @@ public final class SelectTool extends Tool {
   public void mouseReleased(Canvas canvas, MouseEvent e) {
     Project proj = canvas.getProject();
     if (state == MOVING) {
-      setState(proj, IDLE);
       computeDxDy(proj, e);
+      setState(proj, IDLE);
       int dx = curDx;
       int dy = curDy;
       if (dx != 0 || dy != 0) {
