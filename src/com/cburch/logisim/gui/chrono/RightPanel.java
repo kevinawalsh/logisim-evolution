@@ -507,7 +507,7 @@ public class RightPanel extends JPanel {
         if (v.contains("E")) {
           fillColor = colors[3];
           lineColor = colors[4];
-        } else if (v.contains("x")) {
+        } else if (v.contains("x") || v.contains("z")) {
           fillColor = colors[5];
           lineColor = colors[6];
         } else if (v.equals(min)) {

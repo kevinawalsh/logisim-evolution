@@ -153,7 +153,7 @@ public final class Value {
       char c = t.charAt(i);
       int d;
 
-      if (c == 'x' && radix != 10)
+      if ((c == 'x' || c == 'z') && radix != 10)
         d = -1;
       else if ('0' <= c && c <= '9')
         d = c - '0';
@@ -553,7 +553,7 @@ public final class Value {
       if (error != 0)
         return "E";
       else if (unknown != 0)
-        return "x";
+        return "z";
       else if (value != 0)
         return "1";
       else
@@ -620,13 +620,13 @@ public final class Value {
     if (isErrorValue()) {
       String a = S.get("valueError");
       if (a.length() > strwidth)
-        a = S.get("valueErrorSymbol");
+        a = "E";
       return widenString(strwidth, a);
     }
     if (!isFullyDefined()) {
       String a = S.get("valueUnknown");
       if (a.length() > strwidth)
-        a = S.get("valueUnknownSymbol");
+        a = "z";
       return widenString(strwidth, a);
     }
 
@@ -651,9 +651,9 @@ public final class Value {
       return "-";
     case 1:
       if (error != 0)
-        return S.get("valueErrorSymbol");
+        return "E";
       else if (unknown != 0)
-        return S.get("valueUnknownSymbol");
+        return "z";
       else if (value != 0)
         return "1";
       else
@@ -706,7 +706,7 @@ public final class Value {
             break;
           }
           if (vals[j] == Value.UNKNOWN) {
-            c[i] = 'x';
+            c[i] = 'z';
             break;
           }
           v = 2 * v;
@@ -757,7 +757,7 @@ public final class Value {
             break;
           }
           if (vals[j] == Value.UNKNOWN) {
-            c[i] = 'x';
+            c[i] = 'z';
             break;
           }
           v = 2 * v;
@@ -780,7 +780,7 @@ public final class Value {
       if (error != 0)
         return "E";
       else if (unknown != 0)
-        return "x";
+        return "z";
       else if (value != 0)
         return "1";
       else

@@ -401,6 +401,34 @@ public class Attributes {
     }
   }
 
+  private static class DoubleRangeAttribute extends Attribute<Double> {
+    double start, initial, end;
+
+    private DoubleRangeAttribute(String name, StringGetter disp,
+        double start, double initial, double end) {
+      super(name, disp);
+      this.start = start;
+      this.initial = initial;
+      this.end = end;
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public java.awt.Component getCellEditor(Double value) {
+      return super.getCellEditor(value == null ? initial : value);
+    }
+
+    @Override
+    public Double parse(String value) {
+      double v = (double) Double.parseDouble(value);
+      if (v < start)
+        throw new NumberFormatException("value too small, must be at least " + start);
+      if (v > end)
+        throw new NumberFormatException("value too large, can't exceed " + end);
+      return Double.valueOf(v);
+    }
+  }
+
   private static class FontAttribute extends Attribute<Font> {
     private FontAttribute(String name, StringGetter disp) {
       super(name, disp);
@@ -686,6 +714,11 @@ public class Attributes {
 
   public static Attribute<Double> forDouble(String name, StringGetter disp) {
     return new DoubleAttribute(name, disp);
+  }
+
+  public static Attribute<Double> forDoubleRange(String name,
+      StringGetter disp, double start, double initial, double end) {
+    return new DoubleRangeAttribute(name, disp, start, initial, end);
   }
 
   public static Attribute<Font> forFont(String name) {

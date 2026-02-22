@@ -36,7 +36,7 @@ import java.util.List;
 public class JoinedAction extends Action {
   Action[] todo;
 
-  JoinedAction(Action... actions) {
+  public JoinedAction(Action... actions) {
     todo = actions;
   }
 

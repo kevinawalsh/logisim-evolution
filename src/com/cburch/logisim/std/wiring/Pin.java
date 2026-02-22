@@ -189,7 +189,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       if (isEditValid(s)) {
         s = s.trim();
         Value newVal;
-        if (s.matches("x+") || s.matches("\\?+")) {
+        if (s.matches("x+") || s.matches("z+") || s.matches("\\?+")) {
           newVal = Value.createUnknown(BitWidth.create(bitWidth));
         } else {
           try {
@@ -211,7 +211,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       s = s.trim();
       if (s.equals(""))
         return false;
-      if (tristate && (s.matches("x+") || s.matches("\\?+")))
+      if (tristate && (s.matches("x+") || s.matches("z+") || s.matches("\\?+")))
         return true;
       try {
         long n = Long.parseLong(s);
@@ -374,7 +374,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       PinAttributes attrs = (PinAttributes) state.getAttributeSet();
       boolean tristate = (attrs.behavior == TRISTATE);
       // if this was just converted from substate to root state, normalize val
-      if (tristate) { // convert E bits to x
+      if (tristate) { // convert E bits to z
         for (int b = 0; b < val.length; b++)
           if (val[b] != Value.TRUE && val[b] != Value.FALSE && val[b] != Value.UNKNOWN)
             val[b] = Value.UNKNOWN;
@@ -408,7 +408,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
             carry = s / 2;
           }
         }
-      } else if (tristate && (ch == 'x' || ch == 'X')) {
+      } else if (tristate && (ch == 'x' || ch == 'X' || ch == 'z' || ch == 'Z')) {
         for (int b = bit; b < bit + r; b++)
           val[b] = Value.UNKNOWN;
       } else {
