@@ -52,6 +52,7 @@ import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.base.Text;
+import com.cburch.logisim.std.base.TextCaret;
 import com.cburch.logisim.util.Icons;
 
 public final class TextTool extends Tool {
@@ -371,10 +372,12 @@ public final class TextTool extends Tool {
     if (caret != null) {
       if (caretNeedsSelectAll && caret instanceof TextFieldCaret) {
         ((TextFieldCaret)caret).selectAll();
-        caretNeedsSelectAll = false;
+      } else if (caretNeedsSelectAll && caret instanceof TextCaret) {
+        ((TextCaret)caret).selectAll();
       } else {
         caret.mouseReleased(e);
       }
+      caretNeedsSelectAll = false;
       proj.repaintCanvas();
     }
   }

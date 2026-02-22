@@ -103,7 +103,7 @@ import com.cburch.logisim.util.UndoRedo;
 //     canvas (again)
 //     cursor positioning info
 
-class TextCaret implements Caret, AttributeListener {
+public class TextCaret implements Caret, AttributeListener {
   
   static final int MIN_PAD = 4; // Below this, cursor can be hard to see at the edges
     
@@ -339,14 +339,12 @@ class TextCaret implements Caret, AttributeListener {
         && (c == '\n' || c == '\t' || !Character.isISOControl(c));
   }
 
-  // FIXME: select all when placing new text using TextTool
-  // @Override
-  // public void selectAll() {
-  //   cursor = 0;
-  //   anchor = curText.length();
-  //   cursorReverseBias = false;
-  //   editMenuHandler.computeEnabled();
-  // }
+  public void selectAll() {
+    cursor = 0;
+    anchor = curText.length();
+    cursorReverseBias = false;
+    editMenuHandler.computeEnabled();
+  }
 
   void doCopy() {
     if (anchor != cursor) {
@@ -1044,17 +1042,3 @@ class TextCaret implements Caret, AttributeListener {
   }
 
 }
-
-// FIXME / TODO
-// x In auto-wrap mode, allow trailing whitespace to overhang textWidth
-// x goto start/end line movements should stop at soft wraps
-// x triple-click to select entire line should stop at soft wrap? actually no.
-// x verify hit-test, esp with newline at end, or blank line (replaced by space)
-// x review all code
-// x don't render original component when caret is shown
-// x when placing new "text", select all initially
-// x Backspace/delete full glyph at a time
-// - Markdown-like styling (header, bullets)
-// - tab stops
-// - caching (layout is computed repeatedly even within same action)
-// - when placing text initially, sizing, or moving, snap to grid unless alt is held?
