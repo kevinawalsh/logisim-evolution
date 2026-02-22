@@ -215,8 +215,27 @@ public class TextStyling {
       for (int i = 0; i < 6; i++)
         if (header_style[i].font_size == null)
           header_style[i].font_size = new Size(defHdrSz[i], SizeUnit.EMS);
+    } else if (format == Text.TEXT_FORMAT_WRAPPED) {
+      // Set default paragraph margin
+      float defParaMargin[] = { 0.6f, 0f, 0.6f, 0f };
+      for (int p = 0; p < 4; p++)
+        if (paragraph_margin[p] == null)
+          paragraph_margin[p] = new Size(defParaMargin[p], SizeUnit.EMS);
+    } else { // TEXT_FORMAT_PLAIN
+      // Set default paragraph margin
+      for (int p = 0; p < 4; p++)
+        if (paragraph_margin[p] == null)
+          paragraph_margin[p] = new Size(0, SizeUnit.PIXELS);
     }
+  }
 
+  // Used when editing markdownish-rendered Text, this replaces the font
+  // with an editing-specific font, and eliminates paragraph margins.
+  public TextStyling withReplacedFontAndSpacing(Font altFont) {
+    TextStyling repl = new TextStyling(str, altFont, color, background_color, format);
+    for (int p = 0; p < 4; p++)
+      repl.paragraph_margin[p] = new Size(0, SizeUnit.PIXELS);
+    return repl;
   }
 
   /**

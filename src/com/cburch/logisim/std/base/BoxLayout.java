@@ -56,18 +56,11 @@ import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 //  - paragraph-margin [top/bottom for inter-paragraph spacing]
 public class BoxLayout implements Text.LayoutEngine {
   
-  static final TextStyling.Size DEFAULT_INTER_PARAGRAPH_SPACE = 
-    new TextStyling.Size(0.7f, TextStyling.SizeUnit.EMS); // used with auto-wrap mode
-  
-  static final TextStyling.Size ZERO_SPACE =
-    new TextStyling.Size(0f, TextStyling.SizeUnit.PIXELS);
-
   private final int halign, valign;
   private final Font font;
   private final boolean autoWrap;
   private final String text;
   private final TextStyling styling;
-  private final TextStyling.Size paraMargin[];
 
   private int textWidth; // accurate, even for manual-wrap mode, once layout is complete,
                          // does not include body margins
@@ -81,24 +74,11 @@ public class BoxLayout implements Text.LayoutEngine {
   //   lines[i].end+1 == lines[i+1].start (if line[i] has a hard break after)
   //   lines[n-1].end == len-1
 
-  public BoxLayout(String t, int tw, int h, int v, boolean spacing, TextStyling sty) {
+  public BoxLayout(String t, int tw, int h, int v, TextStyling sty) {
     text = t;
     textWidth = tw;
     autoWrap = (tw > 0);
     styling = sty;
-    paraMargin = new TextStyling.Size[4];
-    for (int i = 0; i < 4; i++) {
-      // Use user-specified margin, if available
-      paraMargin[i] = styling.paragraph_margin[i];
-      if (paraMargin[i] == null) {
-        if (i == 1 || i == 3) // For left/right, default to 0
-          paraMargin[i] = ZERO_SPACE;
-        else if (!spacing) // For top/bottom, default to 0 if editing as plain unstyled text
-          paraMargin[i] = ZERO_SPACE;
-        else // for top/bottom, leave a gap by default for wrapped text
-          paraMargin[i] = DEFAULT_INTER_PARAGRAPH_SPACE;;
-      }
-    }
     font = styling.font;
     halign = h;
     valign = v;
@@ -107,17 +87,6 @@ public class BoxLayout implements Text.LayoutEngine {
     bounds = null;
 
     layoutMultiline();
-    // System.out.println("BoxLayout #" + (seqno++) +" created by " + Thread.currentThread().getName() + "'s " + getCaller());
-  }
-  static int seqno = 0;
-  static String getCaller() {
-    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-    if (stack.length > 3) {
-        StackTraceElement caller = stack[3];
-        return caller.getClassName() + "." + caller.getMethodName();
-    } else {
-      return "???";
-    }
   }
 
   public Bounds getBounds(Location loc) {
@@ -140,8 +109,8 @@ public class BoxLayout implements Text.LayoutEngine {
     if (!lines.isEmpty()) {
       VisualLine prev = lines.get(lines.size() - 1);
       if (prev.paraBreakAfter) {
-        float gapBelowPrev = paraMargin[2].px(prev.textSize());
-        float gapAboveThis = paraMargin[0].px(layout.getAscent() + layout.getDescent() + layout.getLeading());
+        float gapBelowPrev = styling.paragraph_margin[2].px(prev.textSize());
+        float gapAboveThis = styling.paragraph_margin[0].px(layout.getAscent() + layout.getDescent() + layout.getLeading());
         dy += Math.max(gapBelowPrev, gapAboveThis);
       }
     }

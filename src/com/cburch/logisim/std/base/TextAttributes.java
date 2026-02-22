@@ -96,9 +96,9 @@ class TextAttributes extends AbstractAttributeSet {
     if (format == Text.TEXT_FORMAT_MARKDOWNISH)
       layout = new StyledBoxLayout(text, width, styling);
     else if (format == Text.TEXT_FORMAT_WRAPPED)
-      layout = new BoxLayout(text, width, getHorizontalAlign(), getVerticalAlign(), true, styling);
+      layout = new BoxLayout(text, width, getHorizontalAlign(), getVerticalAlign(), styling);
     else
-      layout = new BoxLayout(text, -1, getHorizontalAlign(), getVerticalAlign(), false, styling);
+      layout = new BoxLayout(text, -1, getHorizontalAlign(), getVerticalAlign(), styling);
   }
 
   @Override
@@ -126,7 +126,7 @@ class TextAttributes extends AbstractAttributeSet {
     else if (format == Text.TEXT_FORMAT_MARKDOWNISH)
       return new StyledBoxLayout(text, altTextWidth, styling);
     else
-      return new BoxLayout(text, altTextWidth, getHorizontalAlign(), getVerticalAlign(), true, styling);
+      return new BoxLayout(text, altTextWidth, getHorizontalAlign(), getVerticalAlign(), styling);
   }
 
   Font getFont() {

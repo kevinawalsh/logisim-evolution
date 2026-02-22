@@ -272,11 +272,14 @@ class TextCaret implements Caret, AttributeListener {
     int halign = attrs.getHorizontalAlign();
     int valign = attrs.getVerticalAlign();
     int textWidth = attrs.isWrapping() ? attrs.getTextWidth() : -1;
-    Font font = attrs.getFont();
-    if (attrs.isMarkdownish())
+    TextStyling sty = attrs.getStyling();
+    if (attrs.isMarkdownish()) {
+      Font font = attrs.getFont();
       font = markdownEditFont.deriveFont(font.getSize2D());
-    boolean spacing = attrs.isWrapping() && !attrs.isMarkdownish();
-    BoxLayout box = new BoxLayout(curText, textWidth, halign, valign, spacing, attrs.getStyling());
+      sty = sty.withReplacedFontAndSpacing(font);
+      // textWidth = -1; // edit markdown as unlimited width / manual wrapping?
+    }
+    BoxLayout box = new BoxLayout(curText, textWidth, halign, valign, sty);
     if (SwingUtilities.isEventDispatchThread()) {
       cachedLayout = box;
     }
