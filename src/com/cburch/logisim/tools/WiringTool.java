@@ -516,7 +516,7 @@ public final class WiringTool extends Tool {
       updateDirection();
     }
 
-    if (direction == AIMLESS) {
+    if (direction == AIMLESS || cur.equals(anchor)) {
       // no new wire 
     } else if (cur.x == anchor.x || cur.y == anchor.y) {
       Wire w = Wire.create(cur, anchor);
