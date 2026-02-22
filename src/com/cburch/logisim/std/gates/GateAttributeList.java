@@ -55,7 +55,7 @@ class GateAttributeList extends AbstractList<Attribute<?>> {
       return BASE_ATTRIBUTES[index];
     }
     index -= len;
-    if (attrs.xorBehave != null) {
+    if (attrs.inputs > 2 && attrs.xorBehave != null) {
       index--;
       if (index < 0)
         return GateAttributes.ATTR_XOR;
@@ -83,7 +83,7 @@ class GateAttributeList extends AbstractList<Attribute<?>> {
   @Override
   public int size() {
     int ret = BASE_ATTRIBUTES.length;
-    if (attrs.xorBehave != null)
+    if (attrs.inputs > 2 && attrs.xorBehave != null)
       ret++;
     ret += attrs.inputs;
     return ret;

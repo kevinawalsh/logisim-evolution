@@ -68,7 +68,7 @@ class GateAttributes extends AbstractAttributeSet {
       S.getter("xorBehaviorOdd"));
   public static final Attribute<AttributeOption> ATTR_XOR = Attributes
       .forOption("xor", S.getter("xorBehaviorAttr"),
-          new AttributeOption[] { XOR_ONE, XOR_ODD });
+          new AttributeOption[] { XOR_ODD, XOR_ONE });
 
   static final AttributeOption OUTPUT_01 = new AttributeOption("01",
       S.getter("gateOutput01"));
@@ -91,7 +91,7 @@ class GateAttributes extends AbstractAttributeSet {
   Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
 
   GateAttributes(boolean isXor) {
-    xorBehave = isXor ? XOR_ONE : null;
+    xorBehave = isXor ? XOR_ODD : null;
   }
 
   @Override

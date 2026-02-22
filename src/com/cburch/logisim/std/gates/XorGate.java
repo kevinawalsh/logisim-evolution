@@ -74,8 +74,10 @@ class XorGate extends AbstractGate {
   @Override
   protected Value computeOutput(Value[] inputs, int numInputs,
       InstanceState state) {
-    Object behavior = state.getAttributeValue(GateAttributes.ATTR_XOR);
-    if (behavior == GateAttributes.XOR_ODD) {
+    // when n=2, behavior is identical either way
+    Object behavior = numInputs == 2 ? GateAttributes.XOR_ODD :
+      state.getAttributeValue(GateAttributes.ATTR_XOR);
+    if (behavior == null || behavior == GateAttributes.XOR_ODD) {
       return GateFunctions.computeOddParity(inputs, numInputs);
     } else {
       return GateFunctions.computeExactlyOne(inputs, numInputs);
@@ -91,14 +93,10 @@ class XorGate extends AbstractGate {
   public String getRectangularLabel(AttributeSet attrs) {
     if (attrs == null)
       return "";
-    boolean isOdd = false;
-    Object behavior = attrs.getValue(GateAttributes.ATTR_XOR);
-    if (behavior == GateAttributes.XOR_ODD) {
-      Object inputs = attrs.getValue(GateAttributes.ATTR_INPUTS);
-      if (inputs == null || ((Integer) inputs).intValue() != 2) {
-        isOdd = true;
-      }
-    }
+    Integer inputs = (Integer)attrs.getValue(GateAttributes.ATTR_INPUTS);
+    int numInputs = (inputs == null) ? 2 : (int)inputs;
+    boolean isOdd = (numInputs == 2) ||
+      (attrs.getValue(GateAttributes.ATTR_XOR) == GateAttributes.XOR_ODD);
     return isOdd ? "2k+1" : "=1";
   }
 
