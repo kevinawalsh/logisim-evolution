@@ -200,10 +200,6 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
     }
   }
 
-  public KeyConfigurator getKeyConfigurator() {
-    return keyConfigurator;
-  }
-
   @Override
   public String getName() {
     return name;
