@@ -32,9 +32,11 @@ package com.cburch.logisim.std.base;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Window;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,13 +45,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.Base64;
-
-import java.awt.image.ImageObserver;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 
+import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -64,15 +67,18 @@ import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
+import com.cburch.logisim.proj.JoinedAction;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Reshapable;
+import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JInputDialog;
 import com.cburch.logisim.util.StringGetter;
 
-public class Image extends InstanceFactory {
+public class Image extends InstanceFactory implements Reshapable {
 
   // Image just displays an image, which can be embedded in the project or
   // linked to an external file. Like Text, this component has no behavior,
@@ -144,6 +150,13 @@ public class Image extends InstanceFactory {
 
   public static final ImageContentAttribute ATTR_IMAGE_CONTENT =
     new ImageContentAttribute("image", S.getter("stdImageContents"));
+
+  public static final double MIN_SCALE = 0.1;
+  public static final double MAX_SCALE = 10.0;
+  public static final Attribute<Double> ATTR_IMAGE_XSCALE =
+    Attributes.forDoubleRange("xscale", S.getter("stdImageXScaleAttr"), MIN_SCALE, 1.0, MAX_SCALE);
+  public static final Attribute<Double> ATTR_IMAGE_YSCALE =
+    Attributes.forDoubleRange("yscale", S.getter("stdImageYScaleAttr"), MIN_SCALE, 1.0, MAX_SCALE);
 
   public static class ImageContentAttribute extends Attribute<ImageContent> {
 
@@ -298,9 +311,9 @@ public class Image extends InstanceFactory {
     setShouldSnap(false);
     setAttributes(
         new Attribute[] { ATTR_IMAGE_CONTENT,
-          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
+          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_IMAGE_XSCALE, ATTR_IMAGE_YSCALE },
         new Object[] { null,
-            "", Direction.SOUTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
+            "", Direction.SOUTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK, 1.0, 1.0});
   }
   
   @Override
@@ -311,11 +324,19 @@ public class Image extends InstanceFactory {
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
+    Point2D.Double scaling = getScaling(attrs);
     Image.ImageContent content = attrs.getValue(ATTR_IMAGE_CONTENT);
     BufferedImage img = content == null ? null : content.getImage();
-    if (img == null)
-      return Bounds.create(0, 0, 20, 20);
-    return Bounds.create(0, 0, img.getWidth(), img.getHeight());
+    return getOffsetBounds(img, scaling);
+  }
+
+  private Bounds getOffsetBounds(BufferedImage img, Point2D.Double scaling) {
+    int w = 20, h = 20;
+    if (img != null) {
+      w = img.getWidth();
+      h = img.getHeight();
+    }
+    return Bounds.create(0, 0, (int)Math.ceil(w*scaling.x), (int)Math.ceil(h*scaling.y));
   }
 
   @Override
@@ -333,29 +354,33 @@ public class Image extends InstanceFactory {
 
   @Override
   public void paintGhost(InstancePainter painter) {
-    paint(painter, true);
+    paint(painter, true, null);
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    paint(painter, false);
+    paint(painter, false, null);
   }
 
-  private void paint(InstancePainter painter, boolean border) {
+  private void paint(InstancePainter painter, boolean border, Point2D.Double altScaling) {
     Image.ImageContent content = painter.getAttributeValue(ATTR_IMAGE_CONTENT);
     BufferedImage img = content == null ? null : content.getImage();
-    Bounds bds = painter.getNominalBounds();
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
+    Point2D.Double scaling = altScaling != null ? altScaling : getScaling(painter.getAttributeSet());
+    Location loc = painter.getLocation();
+    Bounds bds = getOffsetBounds(img, scaling).translate(loc);
 
     int x = bds.getX();
     int y = bds.getY();
     if (img != null) {
-      int w = img.getWidth();
-      int h = img.getHeight();
-      g.drawImage(img,
-          x, y, x+w, y+h,
-          0, 0, w, h,
-          null);
+      Graphics2D g2 = (Graphics2D) g.create();
+      try {
+          g2.translate(x, y);
+          g2.scale(scaling.x, scaling.y);
+          g2.drawImage(img, 0, 0, null);
+      } finally {
+          g2.dispose();
+      }
     } else {
       int w = bds.getWidth();
       int h = bds.getHeight();
@@ -366,11 +391,11 @@ public class Image extends InstanceFactory {
       g.drawLine(x, y+w-1, x+w-1, y);
     }
 
-    painter.drawLabel();
-    
     if (border) {
       g.setColor(Color.GRAY);
       g.drawRect(x, y, bds.getWidth(), bds.getHeight());
+    } else {
+      painter.drawLabel();
     }
   }
 
@@ -411,7 +436,7 @@ public class Image extends InstanceFactory {
         sizeReady.awaitUninterruptibly();
       }
       img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-      Graphics g = img.createGraphics();
+      Graphics2D g = img.createGraphics();
       try {
         // g.setBackground(new Color(0, true));
         // g.clearRect(0, 0, width, height);
@@ -475,6 +500,81 @@ public class Image extends InstanceFactory {
   public static java.awt.Image getImage(Component comp) {
     ImageContent content = comp.getAttributeSet().getValue(ATTR_IMAGE_CONTENT);
     return content.getImage();
+  }
+  
+  @Override
+  public Object getInstanceFeature(Instance instance, Object key) {
+    if (key == Reshapable.class)
+      return this;
+    else
+      return super.getInstanceFeature(instance, key);
+  }
+
+  @Override
+  public Collection<Location> getReshapeHandles(Component comp) {
+    AttributeSet attrs = comp.getAttributeSet();
+    Bounds bds = getOffsetBounds(attrs).translate(comp.getLocation());
+    Location corner = Location.create(bds.x + bds.width, bds.y + bds.height);
+    return List.of(corner);
+  }
+
+  private Point2D.Double getScaling(AttributeSet attrs) {
+    Double xscale = attrs.getValue(ATTR_IMAGE_XSCALE);
+    Double yscale = attrs.getValue(ATTR_IMAGE_YSCALE);
+    if (xscale == null) xscale = 1.0;
+    if (yscale == null) yscale = 1.0;
+    return new Point2D.Double(xscale, yscale);
+  }
+
+  private Point2D.Double calculateScaling(AttributeSet attrs, Location loc, int rdx, int rdy) {
+    Bounds bds = getOffsetBounds(attrs).translate(loc);
+    Location corner = Location.create(bds.x + bds.width, bds.y + bds.height);
+    corner = corner.translate(rdx, rdy);
+
+    Image.ImageContent content = attrs.getValue(ATTR_IMAGE_CONTENT);
+    BufferedImage img = content == null ? null : content.getImage();
+    int w = 20, h = 20;
+    if (img != null) {
+      w = img.getWidth();
+      h = img.getHeight();
+    }
+
+    double xs = clamp((corner.x - loc.x) * 1.0 / w, MIN_SCALE, MAX_SCALE);
+    double ys = clamp((corner.y - loc.y) * 1.0 / h, MIN_SCALE, MAX_SCALE);
+    return new Point2D.Double(xs, ys);
+  }
+
+  public double clamp(double val, double min, double max) {
+    return Math.min(Math.max(val, min), max);
+  }
+
+  @Override
+  public void doReshapeAction(Project proj, Circuit circ, Component comp,
+      Location handle, int rdx, int rdy) {
+    AttributeSet attrs = comp.getAttributeSet();
+    Location loc = comp.getLocation();
+
+    Point2D.Double oldScale = getScaling(attrs);
+    Point2D.Double newScale = calculateScaling(attrs, loc, rdx, rdy);
+
+    if (oldScale.x == newScale.x && oldScale.y == newScale.y)
+      return;
+
+    SetAttributeAction xAct = new SetAttributeAction(circ, S.getter("imageRescale"));
+    xAct.set(comp, ATTR_IMAGE_XSCALE, newScale.x);
+    SetAttributeAction yAct = new SetAttributeAction(circ, S.getter("imageRescale"));
+    xAct.set(comp, ATTR_IMAGE_YSCALE, newScale.y);
+    JoinedAction act = new JoinedAction(xAct, yAct);
+    proj.doAction(act);
+  }
+
+  @Override
+  public void drawReshaping(InstancePainter painter, Location handle, int rdx, int rdy) {
+    AttributeSet attrs = painter.getAttributeSet();
+    Location loc = painter.getLocation();
+    Point2D.Double newScale = calculateScaling(attrs, loc, rdx, rdy);
+    System.out.printf("%d %d --> %s\n", rdx, rdy, newScale);
+    paint(painter, true, newScale);
   }
 
 }
