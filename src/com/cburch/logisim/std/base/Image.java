@@ -573,7 +573,6 @@ public class Image extends InstanceFactory implements Reshapable {
     AttributeSet attrs = painter.getAttributeSet();
     Location loc = painter.getLocation();
     Point2D.Double newScale = calculateScaling(attrs, loc, rdx, rdy);
-    System.out.printf("%d %d --> %s\n", rdx, rdy, newScale);
     paint(painter, true, newScale);
   }
 
