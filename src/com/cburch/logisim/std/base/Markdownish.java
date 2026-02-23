@@ -87,6 +87,7 @@ import java.util.ArrayList;
 //  - Nesting is fine, but not partial matches. For example, "***" must match with "***" exactly, it
 //    can't match with a "*" to get italics, then later with "**" to get bold.
 //
+// (Coming soon)
 // [link text](http://whatever) - Basic links
 // Notes:
 //  - No titles, just the link text and url, unlike GFM.
@@ -99,6 +100,13 @@ import java.util.ArrayList;
 //  - The url can't have newlines, spaces, or tabs. Use %20 and other url escapes instead.
 //  - Spaces around the url are discarded.
 //
+// 1. List item
+// 2. Another item
+// Notes:
+//  - Only single-level deep lists, for now.
+//  - Nested blocks within list items may or may not work. I guess.
+//
+// (Coming soon)
 // | table | with | headers |
 // | :---- | :--: | ------: |
 // | or    | without | them |
@@ -135,7 +143,6 @@ public class Markdownish {
   private final Font baseFont, monoFont;
 
   public final ArrayList<Block> blocks;
-  public Block lastBlock;
 
   public Markdownish(String src, TextStyling sty) {
     this.src = src;
@@ -146,7 +153,6 @@ public class Markdownish {
     monoFont = new Font("Monospaced", Font.PLAIN, baseFont.getSize()); // FIXME: allow styling
 
     blocks = new ArrayList<>();
-    lastBlock = null;
     parseBlocks();
   }
 
@@ -154,31 +160,98 @@ public class Markdownish {
     new AttributedCharacterIterator.Attribute("logisim.markdown.span") {
       private static final long serialVersionUID = 1L;
     };
+ 
+  enum BlockType  {
+    HEADER,        // one phrase; headerLevel is defined
+    PARAGRAPH,     // 1+ phrases are hardbreak-separated pieces of paragraph
+    FENCED_CODE,   // 1+ phrases are lines of a code block
+    BULLETED_LIST, // 1+ blocks; bullet is '+', '-', or '*', indent is defined
+    NUMBERED_LIST, // 1+ blocks; bullet is '.' or ')', indent and startnum are defined
+  }
 
-  enum BlockType { HEADER, PARAGRAPH, FENCED_CODE }
   public final class Block {
-    final BlockType type;
-    final int blockno;
+    /*final*/ int blockno;             // all blocks
+    final BlockType type;              // all blocks
+    final TextStyling.Size margin[];   // all blocks
+    final Font font;                   // all blocks
+    final ArrayList<Phrase> phrases;   // for non-lists; not empty
+    final ArrayList<Block> blocks;     // for lists; not empty
+    final int headerLevel;             // for headers
+    final String bullet;               // for lists
+    final int indent;                  // for lists
+    final int startnum;                // for numbered lists
+    /*final*/ boolean loose;           // for lists
+    
+    private Block(int headerLevel, ArrayList<Span> spans) { // HEADER
+      this.blockno = -1;
+      this.type = BlockType.HEADER;
+      this.phrases = new ArrayList<>();
+      this.headerLevel = headerLevel;
+      float px = styling.header_style[headerLevel].font_size.px(baseFont);
+      float pt = px*3f/4f;
+      this.font = baseFont.deriveFont( baseFont.getStyle() | Font.BOLD, pt);
+      this.margin = styling.header_style[headerLevel].margin;
+      addPhrase(spans);
+    }
+
+    private Block(BlockType type) { // PARAGRAPH, FENCED_CODE
+      this.blockno = -1;
+      this.type = type;
+      this.phrases = new ArrayList<>();
+      this.font = (type == BlockType.FENCED_CODE) ? monoFont : baseFont;
+      this.margin = (type == BlockType.FENCED_CODE)
+        ? /* FIXME styling.code_margin */ styling.paragraph_margin;
+        : styling.paragraph_margin;
+    }
+
+    private Block(String bullet, int indent, int startnum) { // NUMBERED_LIST, BULLETED_LIST
+      this.blockno = -1;
+      this.type = isBulletListMarker(bullet.charAt(0)) ? BULLETED_LIST : NUMBERED_LIST;
+      this.blocks = new ArrayList<>();
+      this.bullet = bullet;
+      this.indent = indent;
+      this.startnum = startnum;
+      this.loose = false;
+      this.font = baseFont;
+      this.margin = /* FIXME styling.list_margin */ styling.paragraph_margin;
+    }
+
+    private Block addPhrase(ArrayList<Span> spans) {
+      Phrase phrase = new Phrase(phrases.size(), font, spans);
+      phrases.add(phrase);
+      return this;
+    }
+
+    public boolean isLeaf() {
+      return phrases != null;
+    }
+
+    public boolean wrapped() {
+      return type != BlockType.FENCED_CODE;
+    }
+
+    public TextStyling.Accent getAccent() {
+      if (type == BlockType.HEADER)
+        return styling.header_style[headerLevel].accent;
+      else
+        return null;
+    }
+
+    public Font getFont() {
+      return font;
+    }
+ 
+  }
+
+  public final class Phrase {
+    final int phraseno;
     final Font font;
     final ArrayList<Span> spans; // not empty; otherwise, we can't map block to src text index
-    final int headerLevel; // 1..N for headers, unused for other block types
-    final boolean continuation; // this para or code continues previous one, after a hard-break
 
-    private Block(BlockType type, ArrayList<Span> spans, int headerLevel, boolean continuation) {
-      this.type = type;
-      this.blockno = blocks.size();
+    private Phrase(int phraseno, Font font, ArrayList<Span> spans) {
+      this.phraseno = phraseno;
+      this.font = font;
       this.spans = spans;
-      this.headerLevel = headerLevel;
-      this.continuation = continuation;
-      if (type == BlockType.HEADER) {
-        float px = styling.header_style[headerLevel].font_size.px(baseFont);
-        float pt = px*3f/4f;
-        this.font = baseFont.deriveFont( baseFont.getStyle() | Font.BOLD, pt);
-      } else if (type == BlockType.FENCED_CODE) {
-        this.font = monoFont;
-      } else {
-        this.font = baseFont;
-      }
     }
 
     public AttributedString buildAttributedString() {
@@ -233,39 +306,11 @@ public class Markdownish {
       return as;
     }
 
-    private float gapAbove() {
-      if (type == BlockType.PARAGRAPH || type == BlockType.FENCED_CODE)
-        return styling.paragraph_margin[0].px(font); // top
-      else
-        return styling.header_style[headerLevel].margin[0].px(font); // top
-    }
-
-    private float gapBelow() {
-      if (type == BlockType.PARAGRAPH || type == BlockType.FENCED_CODE)
-        return styling.paragraph_margin[2].px(font); // bottom
-      else
-        return styling.header_style[headerLevel].margin[2].px(font); // bottom
-    }
-
-    public boolean wrapped() {
-      return type != BlockType.FENCED_CODE;
-    }
-
-    public TextStyling.Accent getAccent() {
-      if (type == BlockType.HEADER)
-        return styling.header_style[headerLevel].accent;
-      else
-        return null;
-    }
-
-    public Font getFont() {
-      return font;
-    }
   }
 
   private void emit(Block nextBlock) {
+    nextBlock.blockno = blocks.size();
     blocks.add(nextBlock);
-    lastBlock = nextBlock;
   }
 
   public float gapAbove(Block next) {
@@ -425,6 +470,12 @@ public class Markdownish {
       else if (isOpeningCodeFence(ls, le)) {
         ls = parseFencedCode(ls, le);
       }
+
+      // FIXME
+      // // parse list
+      // else if (isListLine(ls, le, false)) {
+      //   ls = parseList(ls);
+      // }
 
       // anything else must be a paragraph
       else {
@@ -780,6 +831,22 @@ public class Markdownish {
     return ch == ' ' || ch == '\t';
   }
 
+  // plain ascii digits
+  private boolean isAsciiDigit(char ch) {
+    return '0' <= ch && ch <= '9';
+  }
+  
+  private boolean countLineIndent(int ls, int le) {
+    int n = 0;
+    for (int i = ls; i < le; i++) {
+      char ch = src.charAt(i);
+      if (ch == ' ') n++;
+      else if (ch == '\t') n += 4;
+      else break;
+    }
+    return n;
+  }
+
   private boolean isSpaceOrTabOrNewline(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\n';
   }
@@ -843,7 +910,7 @@ public class Markdownish {
       // special case: empty fenced code black at end of file
       ArrayList<Span> spans = new ArrayList<>();
       spans.add(Span_space(le-1, le));
-      emit(new Block(BlockType.FENCED_CODE, spans, 0, false));
+      emit(new Block(BlockType.FENCED_CODE).addPhrase(spans));
       return le; 
     }
     int s = ignore3LeadingSpaces(ls);
@@ -854,7 +921,7 @@ public class Markdownish {
       delimLen++;
     // rest of initial line is the "info text", ignore it
     ls = le + 1;
-    boolean continuation = false;
+    Block block = null;
     while (ls < EOF && !isClosingCodeFence(ls, delim, delimLen)) {
       le = lineEnd(ls);
       // line is [ls, le)
@@ -866,11 +933,14 @@ public class Markdownish {
         spans.add(Span_space(le-1, le));
       else
         spans.add(Span_text(s, le));
-      emit(new Block(BlockType.FENCED_CODE, spans, 0, continuation));
-      continuation = true;
+      if (block == null)
+        block = new Block(BlockType.FENCED_CODE).addPhrase(spans);
+      else
+        block.addPhrase(spans);
       ls = le + 1;
     }
-    return lineEnd(ls);
+    emit(block);
+    return lineEnd(ls); // swallow closing fence
   }
 
   private boolean isHeaderLine(int ls, int le) {
@@ -904,7 +974,7 @@ public class Markdownish {
     }
     ArrayList<Span> spans = parseInlineSpans(s, e);
     applyInlineStyles(spans);
-    emit(new Block(BlockType.HEADER, spans, lvl, false));
+    emit(new Block(lvl).addInline(spans));
   }
 
   // GFM/CommonMark: any ASCII punctuation can be backslash-escaped.
@@ -924,7 +994,7 @@ public class Markdownish {
       int ls = paraEnd + 1;
       int le = lineEnd(ls); // next line is [ls, le), and le is EOL or EOF
 
-      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le))
+      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, true))
         break;
       paraEnd = le;
     }
@@ -937,11 +1007,16 @@ public class Markdownish {
   private void emitParagraphs(ArrayList<Span> spans) {
     // split by hardbreaks, emit each one as a paragraph
     ArrayList<Span> section = new ArrayList<>();
-    boolean cont = false;
+    Block block = null;
     for (Span span : spans) {
       if (span.type == SpanType.HARDBREAK) {
         // Emit current section (skips if empty)
-        emitParagraph(section, cont);
+        if (!section.isEmpty()) {
+          if (block == null)
+            block = new Block(BlockType.PARAGRAPH).addPhrase(section);
+          else
+            block.addPhrase(section);
+        }
         section = new ArrayList<>();
         cont = true;
       } else {
@@ -949,14 +1024,119 @@ public class Markdownish {
       }
     }
     // Emit last section (skips if empty)
-    emitParagraph(section, cont);
+    if (!section.isEmpty()) {
+      if (block == null)
+        block = new Block(BlockType.PARAGRAPH).addPhrase(section);
+      else
+        block.addPhrase(section);
+    }
+    emit(block);
   }
 
-  private void emitParagraph(ArrayList<Span> spans, boolean continuation) {
-    if (spans.isEmpty())
-      return;
-    emit(new Block(BlockType.PARAGRAPH, spans, 0, continuation));
+  private boolean isBulletListMarker(char ch) {
+    return (ch == '-' || ch == '*' || ch == '+');
   }
+
+  private boolean isListLine(int ls, int le, boolean interruptingPara) {
+    int s = ignore3LeadingSpaces(ls);
+    // "* A..." etc.
+    if (s+2 < le && isBulletListMarker(src.charAt(s)) && isSpaceOrTab(src.charAt(s+1)))
+      return true;
+    // "1) A..." etc.
+    if (s+3 < le && src.charAt(s) == '1' && (src.charAt(s+1) == ')' || src.charAt(s+1) == '.') && isSpaceOrTab(src.charAt(s+2)))
+      return true;
+    if (interruptingPara || !(s+3 < le))
+      return false;
+    int n;
+    for (n = 0; n < 9 && s < le && isAsciiDigit(src.charAt(s)); s++)
+      n++;
+    if ((1 <= n && n <= 9) && s+2 < le && (src.charAt(s) == ')' || src.charAt(s) == '.') && isSpaceOrTab(src.charAt(s+1)))
+      return true;
+    return false;
+  }
+
+  // Rule 1a:
+  //   If we aren't within a potential paragraph-continuation setting, or
+  //   already within a list, and we encounter a line that looks like the start
+  //   of a list item, that's the start of a list.
+  // Rule 1b:
+  //   If we are within a potential paragraph-continuation setting, 1a also
+  //   applies, except that numbered items other than "1." or "1)" don't count.
+  // Rule 2:
+  //   Once within a list item, we keep taking lines so long as:
+  //   (a) the line is blank
+  //   (b) the line is indented sufficiently (here we strip W+N leading spaces/tabs)
+  //   (c) the line is non-blank and insufficiently indented, but doesn't follow
+  //       a blank line and doesn't look like something else (a header, start of
+  //       a list item, fenced code block, etc.)
+  // Rule 3a:
+  //   If the line following a list item looks like the start of a list item,
+  //   and it has the same bullet type, then it is the next item in this same
+  //   list.
+  // Rule 3a:
+  //   But if it has a different bullet type, it is the first item in a new
+  //   list.
+
+  // FIXME
+  // private int parseList(int listStart) {
+  //   int s = ignore3LeadingSpaces(listStart);
+  //   if (isBulletListMarker(src.charAt(s)))
+  //     return parseBulletList(listStart);
+  //   else
+  //     return parseNumberedList(listStart);
+  // }
+
+  // private int parseBulletList(int listStart) {
+  //   int itemStart = listStart;
+  //   int le = lineEnd(itemStart);
+  //   
+  //   // determine bullet and prefix width
+  //   int s = ignore3LeadingSpaces(itemStart);
+  //   String bullet = "" + src.charAt(s);
+  //   s++;
+  //   int W = s - itemStart; // we include spaces before bullet
+  //   int N = 0;
+  //   while (s < le) {
+  //     if (src.charAt(s) == ' ') { N++; s++; }
+  //     else if (src.charAt(s) == '\t') { N += 4; s++; }
+  //     else { break; }
+  //   }
+
+  //   // find item end
+  //   int itemEnd = le;
+  //   boolean prevWasBlank = false;
+  //   while (itemEnd + 1 < EOF) {
+  //     int ls = paraEnd + 1;
+  //     int le = lineEnd(ls); // next line is [ls, le), and le is EOL or EOF
+  //     boolean thisIsBlank = isBlankLine(ls, le); 
+  //     if (!thisIsBlank
+  //         && countLineIndent(ls, le) < W+N
+  //         && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false)))
+  //       break;
+  //     listEnd = le;
+  //     prevWasBlank = thisIsBlank;
+  //   }
+
+  //   ArrayList<Span> spans = parseInlineSpans(paraStart, paraEnd);
+  //   applyInlineStyles(spans);
+  //   emitParagraphs(spans);
+  //   return paraEnd + 1;
+
+  //   while (itemEnd < P
+
+  //   while (itemEnd + 1 < EOF) {
+  //     int ls = itemEnd + 1;
+  //     int le = lineEnd(ls); // next line is [ls, le), and le is EOL or EOF
+
+  //     if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListStartLine(ls, le))
+  //       break;
+  //     paraEnd = le;
+  //   }
+  //   ArrayList<Span> spans = parseInlineSpans(paraStart, paraEnd);
+  //   applyInlineStyles(spans);
+  //   emitParagraphs(spans);
+  //   return paraEnd + 1;
+  // }
 
 }
 
