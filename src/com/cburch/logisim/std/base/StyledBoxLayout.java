@@ -64,7 +64,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     styling = sty;
 
     lines = new ArrayList<>();
-
+    Markdownish md = new Markdownish(text, styling);
     bounds = layoutMarkdown(md);
   }
 
@@ -91,7 +91,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         float px = line.accent.size.px(line.font);
         float px2 = (float)line.font.getStringBounds(" ", frc).getWidth();
         g.setColor(line.accent.color);
-        g.fill(new Rectangle2D.Float(loc.x + line.x, loc.y + line.topY(),
+        g.fill(new Rectangle2D.Float(loc.x + line.x, loc.y + line.y,
               px, line.textSize()));
         g.setColor(styling.color);
         line.layout.draw(g, loc.x + line.x + px + px2, loc.y + line.baselineY);
@@ -100,76 +100,84 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
   
   private Bounds layoutMarkdown(Markdownish md) {
-    float mt = styling.margin[0].px(styling.font); // body margin top
-    float mr = styling.margin[1].px(styling.font); // body margin right
-    float mb = styling.margin[2].px(styling.font); // body margin bottom
-    float ml = styling.margin[3].px(styling.font); // body margin left
-
-    float by = mt;
-    float bx = ml;
-    Box box = layoutBody(md, bx, by, mt, textWidth - ml - mr);
-
-    float w = ml + box.width + mr; // includes possible overflow
-    float h = mr + box.height + Math.max(0, mb - box.bottomClear);
+    Box box = layoutBody(md, 0, 0, 0, textWidth);
+    float w = box.width; // includes possible overflow
+    float h = box.height;
     return Bounds.create(0, 0, (int)Math.ceil(w), (int)Math.ceil(h));
   }
 
   // Place blocks (including their margins) starting at y, but topmost block's
-  // margin can collapse with topClear above us. The margins around the body are
-  // handled by caller.
-  private Box layoutBody(Markdownish md, float x, float y, float topClear, float bodyWidth) {
+  // margin can collapse with recentClear space above us. The margins around the
+  // body are handled by caller.
+  private Box layoutBody(Markdownish md, float x, float y, float recentClear, float bodyWidth) {
+    
+    float mt = styling.margin[0].px(styling.font); // body margin top
+    float mr = styling.margin[1].px(styling.font); // body margin right
+    float mb = styling.margin[2].px(styling.font); // body margin bottom
+    float ml = styling.margin[3].px(styling.font); // body margin left
+    
+    mt = Math.max(0, mt - recentClear); // collapse body margin top
+    recentClear += mt;
 
     if (md.blocks.isEmpty()) {
-      // Likely never happens: no blocks, so no height, no margins
-      return Box(x, y, bodyWidth, 0, 0, 0);
+      // Likely never happens: no blocks, so just body margins
+      return new Box(x, y, bodyWidth, mt + 0 + mb, mb);
     }
 
-    float actualWidth = bodyWidth;
-    float dy = 0;
-    float clearedAbove = topClear;
+    float h = mt; // content height so far
+    float w = bodyWidth;
 
-    Markdownish.Block first = md.blocks.get(0);
-    Markdownish.Block last = md.blocks.get(md.blocks.size() - 1);
     for (Markdownish.Block block : md.blocks) {
-      Font font = block.getFont();
-      float mt = Math.max(0, block.margin[0].px(font) - clearedAbove);
-      float mr = block.margin[1].px(font);
-      float mb = block.margin[2].px(font);
-      float ml = block.margin[3].px(font);
-
-      clearedAbove += mt;
       float bx = x + ml;
-      float by = y + dy + mt;
+      float by = y + h;
       float bw = bodyWidth - ml - mr;
 
       if (block.isLeaf()) {
-        Box box = layoutLeafBlock(block, bx, by, clearedAbove, bw);
-        actualWidth = Math.max(actualWidth, ml + box.width + mr);
-        clearedAbove = box.bottomClear;
-        dy += mt + box.height;
+        Box box = layoutLeafBlock(block, bx, by, recentClear, bw);
+        w = Math.max(w, ml + box.width + mr);
+        recentClear = box.bottomClear;
+        h += box.height;
       } else {
         // todo
       }
-
     }
 
-    return Bounds.create(0, 0, (int)Math.ceil(dx), (int)Math.ceil(dy));
+    mb = Math.max(0, mb - recentClear); // collapse body margin bottom
+    recentClear += mb;
+
+    h += mb;
+    return new Box(x, y, w, h, recentClear);
   }
 
   // HEADER, PARAGRAPH, FENCED_CODE ... these have a 1+ phrases
-  private Rectangle2D.Float layoutLeafBlock(Markdownish.Block block, float x, float y, float blockWidth) {
+  private Box layoutLeafBlock(Markdownish.Block block, float x, float y, float recentClear, float blockWidth) {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
-    float dx = 0, dy = 0;
+
+    float mt = block.margin[0].px(block.font);
+    float mr = block.margin[1].px(block.font);
+    float mb = block.margin[2].px(block.font);
+    float ml = block.margin[3].px(block.font);
+    
+    mt = Math.max(0, mt - recentClear); // collapse block margin top
+
+    if (block.phrases.isEmpty()) {
+      // Likely never happens: no phrases, so just block margins
+      return new Box(x, y, blockWidth, mt + 0 + mb, mb);
+    }
+
+    float h = mt;
+    float w = blockWidth;
 
     for (Markdownish.Phrase phrase : block.phrases) {
 
+      float pw = blockWidth - ml - mr;
+
       AttributedString astr = phrase.buildAttributedString();
       AttributedCharacterIterator it = astr.getIterator();
-      Font font = phrase.getFont();
+      Font font = phrase.font;
 
       // underline accent is added to the last visual line of a header block
       // blockleading accent is added to all visual lines of a header block
-      float availableWidth = blockWidth;
       float accentExtraY = 0f;
       TextStyling.Accent accent = block.getAccent(), uAccent = null, bAccent = null;
       if (accent != null && accent.type == TextStyling.AccentType.UNDERLINE) {
@@ -177,10 +185,9 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         accentExtraY = accent.size.px(font);
       } else if (accent != null && accent.type == TextStyling.AccentType.LEADERBLOCK) {
         bAccent = accent;
-        float px = accent.size.px(font) + (float)font.getStringBounds(" ", frc).getWidth();
-        // The accent leaderblock takes up some of the blockWidth, leaving less
-        // room for text. We always reserve TEXT_MIN_WIDTH, overflowing if needed.
-        availableWidth = Math.max(blockWidth - px, Text.TEXT_MIN_WIDTH);
+        float aw = accent.size.px(font) + (float)font.getStringBounds(" ", frc).getWidth();
+        // The accent leaderblock takes up some of the blockWidth.
+        pw -=  aw;
       }
 
       if (!block.wrapped()) {
@@ -189,9 +196,9 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         int right = it.getEndIndex();
         TextLayout layout = new TextLayout(it, frc);
 
-        dy += layout.getAscent();
-        lines.add(new VisualLine(layout, astr, left, right, x+dx, y+dy, accent, font));
-        dy += layout.getDescent() + layout.getLeading() + accentExtraY;
+        lines.add(new VisualLine(layout, astr, left, right, x + ml, y + h, accent, font));
+        h += layout.getAscent() + layout.getDescent() + layout.getLeading()
+          + accentExtraY;
 
         continue;
       }
@@ -201,48 +208,48 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
       int left = measurer.getPosition();
       while (left < it.getEndIndex()) {
-        TextLayout layout = measurer.nextLayout(availableWidth);
+        TextLayout layout = measurer.nextLayout(Math.max(pw, Text.TEXT_MIN_WIDTH));
         int right = measurer.getPosition();
         boolean last = (right >= it.getEndIndex());
         
-        dy += layout.getAscent();
-        lines.add(new VisualLine(layout, astr, left, right, x+dx, y+dy,
+        lines.add(new VisualLine(layout, astr, left, right, x + ml, y + h,
               bAccent != null ? bAccent : last ? uAccent : null, font));
-        dy += layout.getDescent() + layout.getLeading() + (last ? accentExtraY : 0f);
+        h += layout.getAscent() + layout.getDescent() + layout.getLeading()
+          + (last ? accentExtraY : 0f);
 
         left = right;
       }
 
     }
 
-    dx += blockWidth;
-    return new Rectangle2D.Float(x, y, dx, dy);
+    h += mb;
+    recentClear = mb;
+    return new Box(x, y, w, h, recentClear);
   }
 
   static class VisualLine {
     final TextLayout layout;
     final AttributedString astr;
-    final int start, end; // index range within astr for this line
-    final float x;     // draw origin x, where layout.draw() is called
-    final float baselineY; // baseline y, where layout.draw() is called
+    final int start, end;  // index range within astr for this line
+    final float x, y;      // top left corner
+    final float baselineY; // y+ascent, where layout.draw is called
     final TextStyling.Accent accent;
     final Font font; // only needed for computing accent sizing
 
-    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float baselineY, TextStyling.Accent a, Font f) {
+    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float y, TextStyling.Accent a, Font f) {
       this.layout = layout; // does not include newline
       this.astr = astr;
       this.start = s;
       this.end = e;
       this.x = x;
-      this.baselineY = baselineY;
+      this.y = y;
       this.accent = a;
       this.font = f;
+      this.baselineY = y + layout.getAscent();
     }
 
-    float topY() { return baselineY - layout.getAscent(); }
     float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
     float textSize() { return layout.getAscent() + layout.getDescent(); }
-    // float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
 
     public int sourcePositionForX(float px) { // snaps to some nearby grapheme boundary
       float relX = px - x, relY = 0; // 0 means baseline
@@ -307,10 +314,10 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
 
   static final class Box {
-    float x, y, w, h; // includes all internal margins and content
-    float topClear, bottomClear; // space eligible for margin collapse
-    Box(float xx, float yy, float ww, float hh, float t, float b) {
-      x = xx; y = yy; w = ww; h = hh; topClear = t; bottomClear = b;
+    float x, y, width, height; // includes all internal margins and content
+    float bottomClear; // internal space at bottom of box eligible for margin collapse
+    Box(float xx, float yy, float ww, float hh, float bc) {
+      x = xx; y = yy; width = ww; height = hh; bottomClear = bc;
     }
   }
-
+}

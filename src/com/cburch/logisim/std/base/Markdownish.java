@@ -182,7 +182,7 @@ public class Markdownish {
     final int startnum;                // for numbered lists
     /*final*/ boolean loose;           // for lists
     
-    private Block(int headerLevel, ArrayList<Span> spans) { // HEADER
+    private Block(int headerLevel) { // HEADER
       this.blockno = -1;
       this.type = BlockType.HEADER;
       this.phrases = new ArrayList<>();
@@ -191,7 +191,11 @@ public class Markdownish {
       float pt = px*3f/4f;
       this.font = baseFont.deriveFont( baseFont.getStyle() | Font.BOLD, pt);
       this.margin = styling.header_style[headerLevel].margin;
-      addPhrase(spans);
+
+      this.blocks = null;
+      this.bullet = null;
+      this.indent = this.startnum = 0;
+      this.loose = false;
     }
 
     private Block(BlockType type) { // PARAGRAPH, FENCED_CODE
@@ -200,13 +204,20 @@ public class Markdownish {
       this.phrases = new ArrayList<>();
       this.font = (type == BlockType.FENCED_CODE) ? monoFont : baseFont;
       this.margin = (type == BlockType.FENCED_CODE)
-        ? /* FIXME styling.code_margin */ styling.paragraph_margin;
+        ? /* FIXME styling.code_margin */ styling.paragraph_margin
         : styling.paragraph_margin;
+
+      this.blocks = null;
+      this.bullet = null;
+      this.indent = this.startnum = 0;
+      this.loose = false;
+      this.headerLevel = 0;
     }
 
     private Block(String bullet, int indent, int startnum) { // NUMBERED_LIST, BULLETED_LIST
       this.blockno = -1;
-      this.type = isBulletListMarker(bullet.charAt(0)) ? BULLETED_LIST : NUMBERED_LIST;
+      this.type = isBulletListMarker(bullet.charAt(0)) ?
+        BlockType.BULLETED_LIST : BlockType.NUMBERED_LIST;
       this.blocks = new ArrayList<>();
       this.bullet = bullet;
       this.indent = indent;
@@ -214,6 +225,9 @@ public class Markdownish {
       this.loose = false;
       this.font = baseFont;
       this.margin = /* FIXME styling.list_margin */ styling.paragraph_margin;
+
+      this.phrases = null;
+      this.headerLevel = 0;
     }
 
     private Block addPhrase(ArrayList<Span> spans) {
@@ -235,10 +249,6 @@ public class Markdownish {
         return styling.header_style[headerLevel].accent;
       else
         return null;
-    }
-
-    public Font getFont() {
-      return font;
     }
  
   }
@@ -311,15 +321,6 @@ public class Markdownish {
   private void emit(Block nextBlock) {
     nextBlock.blockno = blocks.size();
     blocks.add(nextBlock);
-  }
-
-  public float gapAbove(Block next) {
-    if (next.blockno == 0)
-      return 0f;
-    Block prev = blocks.get(next.blockno - 1);
-    if (prev.type == next.type && next.continuation)
-      return 0f;
-    return Math.max(prev.gapBelow(), next.gapAbove());
   }
 
   static final int PLAIN = 0;
@@ -836,7 +837,7 @@ public class Markdownish {
     return '0' <= ch && ch <= '9';
   }
   
-  private boolean countLineIndent(int ls, int le) {
+  private int countLineIndent(int ls, int le) {
     int n = 0;
     for (int i = ls; i < le; i++) {
       char ch = src.charAt(i);
@@ -974,7 +975,7 @@ public class Markdownish {
     }
     ArrayList<Span> spans = parseInlineSpans(s, e);
     applyInlineStyles(spans);
-    emit(new Block(lvl).addInline(spans));
+    emit(new Block(lvl).addPhrase(spans));
   }
 
   // GFM/CommonMark: any ASCII punctuation can be backslash-escaped.
@@ -1018,7 +1019,6 @@ public class Markdownish {
             block.addPhrase(section);
         }
         section = new ArrayList<>();
-        cont = true;
       } else {
         section.add(span);
       }

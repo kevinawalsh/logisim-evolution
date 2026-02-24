@@ -429,9 +429,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     if (attrs.isWrapping() == false)
       return List.of(); // empty
     Location loc = comp.getLocation();
-    TextStyling sty = attrs.getStyling();
-    int margins = (int)Math.ceil(sty.margin[3].px(sty.font) + sty.margin[1].px(sty.font));
-    int width = attrs.getTextWidth() + margins;
+    int width = attrs.getTextWidth();
     if (attrs.getHorizontalAlign() == ALIGN.H_LEFT)
       return List.of(loc.translate(width + HANDLE_PAD, 0));
     else if (attrs.getHorizontalAlign() == ALIGN.H_RIGHT)
@@ -443,8 +441,6 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   }
 
   protected int calculateNewTextWidth(Location loc, TextAttributes attrs, Location handle, int rdx, int rdy) {
-    TextStyling sty = attrs.getStyling();
-    int margins = (int)Math.ceil(sty.margin[3].px(sty.font) + sty.margin[1].px(sty.font));
     int width;
     if (attrs.getHorizontalAlign() == ALIGN.H_LEFT)
       width = (handle.getX() - HANDLE_PAD + rdx) - loc.getX();
@@ -454,8 +450,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       width = 2*((handle.getX() - HANDLE_PAD + rdx) - loc.getX());
     else // H_CENTER, adjusting left handle
       width = 2*(loc.getX() - (handle.getX() + HANDLE_PAD + rdx));
-    int textWidth = width - margins;
-    return clamp(textWidth, TEXT_MIN_WIDTH, TEXT_MAX_WIDTH);
+    return clamp(width, TEXT_MIN_WIDTH, TEXT_MAX_WIDTH);
   }
 
   @Override

@@ -56,7 +56,7 @@ import com.cburch.logisim.data.Attributes;
 //   }
 public class TextStyling {
   
-  private static final int DEFAULT_BODY_MARGIN = 4;
+  private static final int DEFAULT_BODY_MARGIN = 4; // only if there is a background
 
   public final String str; // original user-specified string
   public final AttributeOption format;
@@ -67,7 +67,7 @@ public class TextStyling {
   public final Color background_color;
   public final Size margin[];
 
-  public final Size paragraph_margin[]; // each margin null if not specified
+  public final Size paragraph_margin[];
   
   public final HeaderStyle header_style[];
 
@@ -100,8 +100,8 @@ public class TextStyling {
   public enum AccentType { UNDERLINE, LEADERBLOCK }
   public static final class Accent {
     public final AccentType type;
-    public final Color color; // something, even if not specified
-    public final Size size; // something, even if not specified
+    public final Color color;
+    public final Size size;
     public Accent(AccentType t, Color c, Size sz) {
       type = t;
       color = c == null ? Color.MAGENTA : c;
@@ -115,11 +115,11 @@ public class TextStyling {
   }
 
   public static final class HeaderStyle {
-    public final Size margin[]; // each margin null if not specified
-    public /*final*/ Size font_size; // null if not specified
-    public final Color color; // null if not specified
-    public final Color background_color; // null if not specified
-    public final Accent accent; // null if not specified
+    public final Size margin[];
+    public /*final*/ Size font_size;
+    public final Color color;
+    public final Color background_color;
+    public final Accent accent;
 
     public HeaderStyle(Size m[], Size fs, Color fg, Color bg, Accent a) {
       margin = m;
@@ -192,11 +192,6 @@ public class TextStyling {
 
     margin = parseMargin(map.get("margin"));
     
-    // Set default body margin
-    for (int i = 0; i < 4; i++) {
-      if (margin[i] == null)
-        margin[i] = new Size(DEFAULT_BODY_MARGIN, SizeUnit.PIXELS);
-    }
 
     if (format == Text.TEXT_FORMAT_MARKDOWNISH) {
       // Set default paragraph margin
@@ -227,6 +222,13 @@ public class TextStyling {
         if (paragraph_margin[p] == null)
           paragraph_margin[p] = new Size(0, SizeUnit.PIXELS);
     }
+
+    // Set default body margin: 4px if background, 0 if no background
+    // TODO: maybe negative margin sometimes? e.g. TEXT_FORMAT_WRAPPED with no background
+    float defBodyMargin = bgColor != null && bgColor.getAlpha() != 0 ? DEFAULT_BODY_MARGIN : 0;
+    for (int i = 0; i < 4; i++)
+      if (margin[i] == null)
+        margin[i] = new Size(defBodyMargin, SizeUnit.PIXELS);
   }
 
   // Used when editing markdownish-rendered Text, this replaces the font

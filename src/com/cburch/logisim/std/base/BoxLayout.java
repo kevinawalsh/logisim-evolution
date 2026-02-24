@@ -51,9 +51,10 @@ import com.cburch.logisim.util.GraphicsUtil;
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
 // BoxLayout handles text rendering for Text and Callout, optionally providing auto-wrap.
-// Foreground and background colors, and body margin, must be applied by caller.
+// Foreground and background colors must be applied by caller.
 // Styles applied here:
-//  - paragraph-margin [top/bottom for inter-paragraph spacing]
+//  - margin [for overall outer margins]
+//  - paragraph-margin [e.g. top/bottom for inter-paragraph spacing]
 public class BoxLayout implements Text.LayoutEngine {
   
   private final int halign, valign;
@@ -62,9 +63,8 @@ public class BoxLayout implements Text.LayoutEngine {
   private final String text;
   private final TextStyling styling;
 
-  private int textWidth; // accurate, even for manual-wrap mode, once layout is complete,
-                         // does not include body margins
-  private Bounds bounds;  // accurate once layout is complete, includes body margins
+  private final int textWidth; // only valid if autowrap; includes margins
+  private Bounds bounds;  // accurate once layout is complete, includes body and para margins
   ArrayList<VisualLine> lines;
 
   // visual lines are in in top-to-bottom draw order (wrapped, if needed),
@@ -99,38 +99,49 @@ public class BoxLayout implements Text.LayoutEngine {
       line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
   }
 
-  // used during layout
-  float dy = 0f;
-  float dx = 0f;
-
+  float dy = 0f; // cumulative height so far
+  float dx = 0f; // left margin
+  float mlw = 0f; // max line width so far
+  
   private void append(TextLayout layout, int start, int end, boolean paraBreakAfter, boolean lineBreakAfter) {
 
-    // If last layout had a paraBreak after, add inter-para space.
+    // If last layout had a paraBreak after, apply para margin top and bottom, collapsed
     if (!lines.isEmpty()) {
       VisualLine prev = lines.get(lines.size() - 1);
       if (prev.paraBreakAfter) {
-        float gapBelowPrev = styling.paragraph_margin[2].px(prev.textSize());
-        float gapAboveThis = styling.paragraph_margin[0].px(layout.getAscent() + layout.getDescent() + layout.getLeading());
+        float gapBelowPrev = styling.paragraph_margin[2].px(font);
+        float gapAboveThis = styling.paragraph_margin[0].px(font);
         dy += Math.max(gapBelowPrev, gapAboveThis);
       }
     }
-    // TODO: paragraph left/right margins... but kind of pointless, for now.
 
     dy += layout.getAscent();
-    lines.add(new VisualLine(lines.size(), text, start, end, paraBreakAfter, lineBreakAfter, layout, dx, dy));
+    lines.add(new VisualLine(lines.size(), text, start, end, paraBreakAfter, lineBreakAfter,
+          layout, dx, dy));
     dy += layout.getDescent() + layout.getLeading();
-    if (!autoWrap) {
-      // note: with manual-wrap, trailing spaces make the bounds wider
-      textWidth = Math.max(textWidth, (int)Math.ceil(layout.getAdvance()));
-    }
-
+    float lineWidth = autoWrap ? layout.getVisibleAdvance() : layout.getAdvance();
+    mlw = Math.max(mlw, lineWidth);
   }
 
   private void layoutMultiline() {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
+    
+    float bml = styling.margin[3].px(font); // body left margin
+    float pml = styling.paragraph_margin[3].px(font); // para left margin
+    float ml = bml + pml; // total left margin
+    float bmr = styling.margin[1].px(font); // body right margin
+    float pmr = styling.paragraph_margin[1].px(font); // para right margin
+    float mr = bmr + pmr; // total right margin
+    
+    // collapse top margin into first paragraph
+    float bmt = styling.margin[0].px(font); // body margin top
+    float pmt = styling.paragraph_margin[0].px(font); // para margin top
+    float mt = Math.max(bmt, pmt);
 
-    dy += styling.margin[0].px(font); // top
-    dx += styling.margin[3].px(font); // left
+    dy = mt; // overall top margins applied here
+    dx = ml; // all left margin applied here
+    float paraWidth = Math.max(Text.TEXT_MIN_WIDTH, autoWrap ? textWidth - ml - mr : 0);
+    mlw = paraWidth; // max line width so far
     
     String[] paragraphs = text.split("\n", -1);
 
@@ -154,7 +165,6 @@ public class BoxLayout implements Text.LayoutEngine {
           append(layout, start, end, paraBreakAfter, lineBreakAfter);
 
         } else { // Auto-wrap: LineBreakMeasurer produces multiple visual lines per paragraph
-          
           AttributedString astr = new AttributedString(para);
           astr.addAttribute(TextAttribute.FONT, font);
           AttributedCharacterIterator it = astr.getIterator();
@@ -163,31 +173,38 @@ public class BoxLayout implements Text.LayoutEngine {
           
           int left = measurer.getPosition();
           while (left < it.getEndIndex()) {
-            TextLayout layout = measurer.nextLayout(textWidth);
+            TextLayout layout = measurer.nextLayout(paraWidth);
             int right = measurer.getPosition();
             boolean last = (right == para.length());
             append(layout, start + left, start + right, paraBreakAfter && last, lineBreakAfter && last);
             left = right;
           }
-
         }
 
         start = end + 1; // add one, for newline between paragraphs, or lineseparator between subparagraphs
       }
-    }
-    
-    dy += styling.margin[2].px(font); // bottom
-    dx += textWidth + styling.margin[1].px(font); // right
 
-    float bodyWidth = dx;
+    }
+
+    // apply last para margin bottom and body margin bottom, collapsed
+    float bmb = styling.margin[2].px(font); // body margin bottom
+    float pmb = styling.paragraph_margin[2].px(font); // para margin bottom
+    float mb = Math.max(bmb, pmb);
+    dy += mb;
+
+    float bodyWidth = ml + mlw + mr;
     float bodyHeight = dy;
 
+    // so far: all content, with margins, is bounded by (0, 0, bodyWidth, bodyHeight)
+
+    // pick a new origin
     int x = (int)Math.round(0 - halignAdjust(bodyWidth, halign));
     int y = (int)Math.round(0 - valignAdjust(bodyHeight, lines.get(0).layout, valign));
 
+    // translate all lines, and apply horizontal justification
     for (VisualLine line : lines) {
       float lineWidth = autoWrap ? line.layout.getVisibleAdvance() : line.layout.getAdvance();
-      line.x += x + halignAdjustLine(textWidth, lineWidth, halign);
+      line.x += x + halignAdjustLine(mlw, lineWidth, halign);
       line.baselineY += y;
     }
 
@@ -261,7 +278,7 @@ public class BoxLayout implements Text.LayoutEngine {
       return 0;
   }
 
-  private static float halignAdjustLine(int textWidth, float lineWidth, int halign) {
+  private static float halignAdjustLine(float textWidth, float lineWidth, int halign) {
     if (halign == ALIGN.H_RIGHT)
       return (textWidth - lineWidth);
     else if (halign == ALIGN.H_CENTER)
@@ -299,7 +316,6 @@ public class BoxLayout implements Text.LayoutEngine {
     float topY() { return baselineY - layout.getAscent(); }
     float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
     float textSize() { return layout.getAscent() + layout.getDescent(); }
-    // float height() { return layout.getAscent() + layout.getDescent() + layout.getLeading(); }
 
     float caretXForPosition(int pos) {
       int local = clamp(pos - start, 0, end - start);
