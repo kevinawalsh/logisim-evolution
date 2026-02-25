@@ -36,8 +36,11 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineBreakMeasurer;
+import java.awt.font.LineMetrics;
 import java.awt.font.TextHitInfo;
 import java.awt.font.TextLayout;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
@@ -77,7 +80,10 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     g.setFont(styling.font);
     g.setColor(styling.color);
     for (VisualLine line : lines) {
-      if (line.accent == null) {
+      if (line.marker != null) {
+        // no layout, only a marker
+        line.marker.draw(g, loc.x + line.x, loc.y + line.baselineY);
+      } else if (line.accent == null) {
         line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
       } else if (line.accent.type == TextStyling.AccentType.UNDERLINE) {
         float px = line.accent.size.px(line.font);
@@ -100,7 +106,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
   
   private Bounds layoutMarkdown(Markdownish md) {
-    Box box = layoutBody(md, 0, 0, 0, textWidth);
+    Box box = layoutBody(md.body, 0, 0, 0, textWidth);
     float w = box.width; // includes possible overflow
     float h = box.height;
     return Bounds.create(0, 0, (int)Math.ceil(w), (int)Math.ceil(h));
@@ -109,17 +115,17 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   // Place blocks (including their margins) starting at y, but topmost block's
   // margin can collapse with recentClear space above us. The margins around the
   // body are handled by caller.
-  private Box layoutBody(Markdownish md, float x, float y, float recentClear, float bodyWidth) {
+  private Box layoutBody(Markdownish.Block body, float x, float y, float recentClear, float bodyWidth) {
     
-    float mt = styling.margin[0].px(styling.font); // body margin top
-    float mr = styling.margin[1].px(styling.font); // body margin right
-    float mb = styling.margin[2].px(styling.font); // body margin bottom
-    float ml = styling.margin[3].px(styling.font); // body margin left
+    float mt = body.margin[0].px(body.font); // body margin top
+    float mr = body.margin[1].px(body.font); // body margin right
+    float mb = body.margin[2].px(body.font); // body margin bottom
+    float ml = body.margin[3].px(body.font); // body margin left
     
     mt = Math.max(0, mt - recentClear); // collapse body margin top
     recentClear += mt;
 
-    if (md.blocks.isEmpty()) {
+    if (body.blocks.isEmpty()) {
       // Likely never happens: no blocks, so just body margins
       return new Box(x, y, bodyWidth, mt + 0 + mb, mb);
     }
@@ -127,19 +133,77 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     float h = mt; // content height so far
     float w = bodyWidth;
 
-    for (Markdownish.Block block : md.blocks) {
+    for (Markdownish.Block block : body.blocks) {
       float bx = x + ml;
       float by = y + h;
       float bw = bodyWidth - ml - mr;
-
+      Box box;
       if (block.isLeaf()) {
-        Box box = layoutLeafBlock(block, bx, by, recentClear, bw);
-        w = Math.max(w, ml + box.width + mr);
-        recentClear = box.bottomClear;
-        h += box.height;
+        box = layoutLeafBlock(block, bx, by, recentClear, bw);
+      } else if (block.type == Markdownish.BlockType.BULLETED_LIST) {
+        box = layoutBulletedList(block, bx, by, recentClear, bw); // todo
+      } else if (block.type == Markdownish.BlockType.NUMBERED_LIST) {
+        continue; // todo
+      } else if (block.type == Markdownish.BlockType.BODY) {
+        box = layoutBody(block, bx, by, recentClear, bw);
       } else {
-        // todo
+        continue; // todo
       }
+      w = Math.max(w, ml + box.width + mr);
+      recentClear = box.bottomClear;
+      h += box.height;
+    }
+
+    mb = Math.max(0, mb - recentClear); // collapse body margin bottom
+    recentClear += mb;
+
+    h += mb;
+    return new Box(x, y, w, h, recentClear);
+  }
+
+  private Box layoutBulletedList(Markdownish.Block list, float x, float y, float recentClear, float listWidth) {
+    
+    float mt = list.margin[0].px(list.font);
+    float mr = list.margin[1].px(list.font);
+    float mb = list.margin[2].px(list.font);
+    float ml = list.margin[3].px(list.font);
+    
+    mt = Math.max(0, mt - recentClear); // collapse margin top
+    recentClear += mt;
+
+    if (list.blocks.isEmpty()) {
+      // Likely never happens: no blocks, so just list margins
+      return new Box(x, y, listWidth, mt + 0 + mb, mb);
+    }
+
+    // Determine item marker
+    Bullet bullet = new Bullet(list.bullet, list.font);
+    float indent = bullet.width();
+
+    float h = mt; // content height so far
+    float w = listWidth;
+
+    for (Markdownish.Block block : list.blocks) {
+      float bx = x + ml;
+      float by = y + h;
+      lines.add(new VisualLine(bullet, bx, by)); // occupies no vertical space
+      bx += indent;
+      float bw = listWidth - ml - mr - indent;
+      Box box;
+      if (block.isLeaf()) {
+        box = layoutLeafBlock(block, bx, by, recentClear, bw);
+      } else if (block.type == Markdownish.BlockType.BULLETED_LIST) {
+        box = layoutBulletedList(block, bx, by, recentClear, bw); // todo
+      } else if (block.type == Markdownish.BlockType.NUMBERED_LIST) {
+        continue; // todo
+      } else if (block.type == Markdownish.BlockType.BODY) {
+        box = layoutBody(block, bx, by, recentClear, bw);
+      } else {
+        continue; // todo
+      }
+      w = Math.max(w, ml + box.width + mr);
+      recentClear = box.bottomClear;
+      h += box.height;
     }
 
     mb = Math.max(0, mb - recentClear); // collapse body margin bottom
@@ -227,14 +291,75 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return new Box(x, y, w, h, recentClear);
   }
 
+  abstract class ItemMarker {
+    abstract void draw(Graphics2D g, float x, float y);
+    abstract float width();
+    abstract float height();
+  }
+  class Bullet extends ItemMarker {
+    final String bullet;
+    final float w, h;
+
+    Bullet(String b, Font font) {
+      FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
+      LineMetrics lm = font.getLineMetrics("Ag", frc);
+      float ascent  = lm.getAscent();
+      float descent = lm.getDescent();
+      w = 2*(ascent+descent);
+      h = ascent+descent;
+      bullet = b;
+    }
+
+    float width() { return w; }
+    float height() { return h; }
+
+    void draw(Graphics2D g, float x, float y) {
+      g.setColor(styling.color); // FIXME: allow styling?
+      x += w*0.5f;
+      y += h*0.6f;
+      if (bullet.equals("*")) {
+        float d = h*0.45f;
+        float r = d/2f;
+        g.fill(new Ellipse2D.Float(x-r, y-r, d, d));
+      } else if (bullet.equals("-")) {
+        float ww = h*0.40f;
+        float hh = h*0.18f;
+        g.fill(new Rectangle2D.Float(x-ww/2, y-hh/2, ww, hh));
+      } else { // "+"
+        float d = h*0.6f;
+        float r = d/2f;
+        Path2D.Float p = new Path2D.Float();
+        p.moveTo(x,     y - r); // top
+        p.lineTo(x + r, y    ); // right
+        p.lineTo(x,     y + r); // bottom
+        p.lineTo(x - r, y    ); // left
+        p.closePath();
+        g.fill(p);
+      }
+    }
+  }
+
   static class VisualLine {
     final TextLayout layout;
     final AttributedString astr;
-    final int start, end;  // index range within astr for this line
-    final float x, y;      // top left corner
-    final float baselineY; // y+ascent, where layout.draw is called
+    final int start, end;     // index range within astr for this line
+    final float x, y;         // top left corner
+    final float baselineY;    // y+ascent, where layout.draw is called
+    final ItemMarker marker;  // for list items
     final TextStyling.Accent accent;
-    final Font font; // only needed for computing accent sizing
+    final Font font;          // only needed for computing accent sizing
+
+    VisualLine(ItemMarker marker, float x, float y) {
+      layout = null;
+      astr = null;
+      start = end = 0;
+      this.x = x;
+      this.y = y;
+      baselineY = y;
+      this.marker = marker;
+      accent = null;
+      font = null;
+    }
 
     VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float y, TextStyling.Accent a, Font f) {
       this.layout = layout; // does not include newline
@@ -245,6 +370,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       this.y = y;
       this.accent = a;
       this.font = f;
+      marker = null;
       this.baselineY = y + layout.getAscent();
     }
 
@@ -293,7 +419,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
   public VisualLine lineForY(int py) {
     for (VisualLine vl : lines) {
-      if (py < vl.bottomY()) {
+      if (vl.layout != null && py < vl.bottomY()) {
         return vl;
       }
     }
