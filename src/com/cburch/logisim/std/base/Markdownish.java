@@ -181,10 +181,8 @@ public class Markdownish {
   private Block new_BulletedList(String bullet) {
     return new Block(BlockType.BULLETED_LIST, bullet, 0);
   }
-  private Block new_ListItem(Block block/*s*/) {
-    // FIXME: loose vs tight
-    Block b = new Block(BlockType.BODY, styling.paragraph_margin); // FIXME: styling.li_margin?
-    return b.addSubBlock(block); 
+  private Block new_ListItem() {
+    return new Block(BlockType.BODY, styling.paragraph_margin); // FIXME: styling.li_margin?
   }
   public final class Block {
     final BlockType type;              // all blocks
@@ -1208,14 +1206,11 @@ public class Markdownish {
     Block list = new_BulletedList(bullet);
 
     int itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
-    // FIXME this should be parse blocks
-    pushOpen(list, bi.W + bi.N);
-    ArrayList<Span> spans = parseInlineSpans(itemStart + bi.W, itemEnd); // FIXME also pass W+N
-    applyInlineStyles(spans); // unilaterally eats spaces for now, no special W+N stripping needed
-    Block para = buildParagraph(spans);
-    // TODO: loose vs tight
-    list.blocks.add(new_ListItem(para));
+    Block item = new_ListItem();
+    pushOpen(item, bi.W + bi.N);
+    parseBlocks(itemStart + bi.W, itemEnd);
     popClose();
+    list.addSubBlock(item);
 
     // consume additional items
     while (itemEnd + 1 < eof) {
@@ -1229,16 +1224,14 @@ public class Markdownish {
       if (!bi.bullet.equals(bullet))
         break;
       itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
-      // FIXME this should be parse blocks
-      pushOpen(list, bi.W + bi.N);
-      spans = parseInlineSpans(itemStart + bi.W, itemEnd); // FIXME also pass W+N
-      applyInlineStyles(spans); // unilaterally eats spaces for now, no special W+N stripping needed
-      para = buildParagraph(spans);
-      // TODO: loose vs tight
-      list.blocks.add(new_ListItem(para));
+      item = new_ListItem();
+      pushOpen(item, bi.W + bi.N);
+      parseBlocks(itemStart + bi.W, itemEnd);
       popClose();
+      list.addSubBlock(item);
     }
 
+    // TODO: loose vs tight
     emit(list);
 
     return itemEnd + 1;
