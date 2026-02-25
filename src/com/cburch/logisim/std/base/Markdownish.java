@@ -163,8 +163,8 @@ public class Markdownish {
     HEADER,        // one phrase; headerLevel is defined
     PARAGRAPH,     // 1+ phrases are hardbreak-separated pieces of paragraph
     FENCED_CODE,   // 1+ phrases are lines of a code block
-    BULLETED_LIST, // 1+ BODY blocks; bullet is '+', '-', or '*', indent is defined
-    NUMBERED_LIST, // 1+ BODY blocks; bullet is '.' or ')', indent and startnum are defined
+    LIST,          // 1+ BODY blocks; bullet is '+', '-', or '*', indent is defined, or
+                   // 1+ BODY blocks; bullet is '.' or ')', indent and startnum are defined
     BODY,          // 1+ blocks, e.g. paragraphs, headers, fenced_code, etc. 
   }
 
@@ -175,11 +175,8 @@ public class Markdownish {
   private Block new_FencedCode() {
     return new Block(BlockType.FENCED_CODE, monoFont, styling.paragraph_margin); // FIXME: styling.ul_margin?
   }
-  private Block new_NumberedList(String bullet, int startnum) {
-    return new Block(BlockType.NUMBERED_LIST, bullet, startnum);
-  }
-  private Block new_BulletedList(String bullet) {
-    return new Block(BlockType.BULLETED_LIST, bullet, 0);
+  private Block new_List(String bullet, int startnum) {
+    return new Block(BlockType.LIST, bullet, startnum);
   }
   private Block new_ListItem() {
     return new Block(BlockType.BODY, styling.paragraph_margin); // FIXME: styling.li_margin?
@@ -235,7 +232,7 @@ public class Markdownish {
       this.headerLevel = 0;
     }
 
-    // NUMBERED_LIST, BULLETED_LIST
+    // LIST
     private Block(BlockType type, String bullet, int startnum) {
       this.type = type;
       this.blocks = new ArrayList<>();
@@ -1095,11 +1092,13 @@ public class Markdownish {
   }
 
   private class BulletInfo {
+    boolean bulleted;
     final String bullet;
     final int number;
     final int W, N;
     final int end; // index in string after the W+N prefix
     BulletInfo(char b, int num, int w, int pos, int le) {
+      bulleted = isBulletListMarker(b);
       bullet = ""+b;
       number = num;
       W = w;
@@ -1168,33 +1167,6 @@ public class Markdownish {
   //   list.
 
   private int parseList(int listStart, int eof) {
-    int s = ignore3LeadingSpaces(listStart, eof);
-    // FIXME
-    // if (isBulletListMarker(src.charAt(s)))
-      return parseBulletList(listStart, eof);
-    // else
-    //   return parseNumberedList(listStart);
-  }
-
-  int listItemEnd(int pos, int eof, int WplusN) {
-    int itemEnd = pos;
-    boolean prevWasBlank = false;
-    while (itemEnd + 1 < eof) {
-      int ls = itemEnd + 1;
-      ls = skipWplusN(ls, eof);
-      int le = lineEnd(ls, eof); // next line is [ls, le), and le is EOL or eof
-      boolean thisIsBlank = isBlankLine(ls, le); 
-      if (!thisIsBlank
-          && countLineIndent(ls, le) < WplusN
-          && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false)))
-        break;
-      itemEnd = le;
-      prevWasBlank = thisIsBlank;
-    }
-    return itemEnd;
-  }
-
-  private int parseBulletList(int listStart, int eof) {
 
     int itemStart = listStart;
     int le = lineEnd(itemStart, eof);
@@ -1203,7 +1175,7 @@ public class Markdownish {
     BulletInfo bi = getBulletInfo(itemStart, le, false);
     String bullet = bi.bullet;
 
-    Block list = new_BulletedList(bullet);
+    Block list = new_List(bullet, bi.number);
 
     int itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
     Block item = new_ListItem();
@@ -1236,6 +1208,25 @@ public class Markdownish {
 
     return itemEnd + 1;
   }
+
+  int listItemEnd(int pos, int eof, int WplusN) {
+    int itemEnd = pos;
+    boolean prevWasBlank = false;
+    while (itemEnd + 1 < eof) {
+      int ls = itemEnd + 1;
+      ls = skipWplusN(ls, eof);
+      int le = lineEnd(ls, eof); // next line is [ls, le), and le is EOL or eof
+      boolean thisIsBlank = isBlankLine(ls, le); 
+      if (!thisIsBlank
+          && countLineIndent(ls, le) < WplusN
+          && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false)))
+        break;
+      itemEnd = le;
+      prevWasBlank = thisIsBlank;
+    }
+    return itemEnd;
+  }
+
 
 }
 

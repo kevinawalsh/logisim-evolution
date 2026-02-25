@@ -138,16 +138,14 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       float by = y + h;
       float bw = bodyWidth - ml - mr;
       Box box;
-      if (block.isLeaf()) {
+      if (block.isLeaf()) { // PARAGRAPH HEADER, FENCED_CODE
         box = layoutLeafBlock(block, bx, by, recentClear, bw);
-      } else if (block.type == Markdownish.BlockType.BULLETED_LIST) {
-        box = layoutBulletedList(block, bx, by, recentClear, bw); // todo
-      } else if (block.type == Markdownish.BlockType.NUMBERED_LIST) {
-        continue; // todo
+      } else if (block.type == Markdownish.BlockType.LIST) {
+        box = layoutList(block, bx, by, recentClear, bw);
       } else if (block.type == Markdownish.BlockType.BODY) {
         box = layoutBody(block, bx, by, recentClear, bw);
       } else {
-        continue; // todo
+        continue;
       }
       w = Math.max(w, ml + box.width + mr);
       recentClear = box.bottomClear;
@@ -161,7 +159,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return new Box(x, y, w, h, recentClear);
   }
 
-  private Box layoutBulletedList(Markdownish.Block list, float x, float y, float recentClear, float listWidth) {
+  private Box layoutList(Markdownish.Block list, float x, float y, float recentClear, float listWidth) {
     
     float mt = list.margin[0].px(list.font);
     float mr = list.margin[1].px(list.font);
@@ -170,36 +168,48 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     
     mt = Math.max(0, mt - recentClear); // collapse margin top
     recentClear += mt;
+    
+    int n = list.blocks.size();
 
-    if (list.blocks.isEmpty()) {
+    if (n == 0) {
       // Likely never happens: no blocks, so just list margins
       return new Box(x, y, listWidth, mt + 0 + mb, mb);
     }
 
-    // Determine item marker
-    Bullet bullet = new Bullet(list.bullet, list.font);
-    float indent = bullet.width();
+    // Determine item markers
+    ItemMarker marker[] = new ItemMarker[n];
+    float indent = 0;
+    if (list.bullet.equals(")") || list.bullet.equals(".")) {
+      for (int i = 0; i < n; i++) {
+        marker[i] = new Num(list.startnum + i, list.bullet, list.font);
+        indent = Math.max(indent, marker[i].width());
+      }
+    } else {
+      Bullet b = new Bullet(list.bullet, list.font);
+      for (int i = 0; i < n; i++)
+        marker[i] = b;
+      indent = b.width();
+    }
 
     float h = mt; // content height so far
     float w = listWidth;
 
-    for (Markdownish.Block block : list.blocks) {
-      float bx = x + ml;
+    for (int i = 0; i < n; i++) {
+      Markdownish.Block block = list.blocks.get(i);
+
+      float bx = x + ml + indent;
       float by = y + h;
-      lines.add(new VisualLine(bullet, bx, by)); // occupies no vertical space
-      bx += indent;
+      lines.add(new VisualLine(marker[i], bx - marker[i].width(), by)); // occupies no vertical space
       float bw = listWidth - ml - mr - indent;
       Box box;
       if (block.isLeaf()) {
         box = layoutLeafBlock(block, bx, by, recentClear, bw);
-      } else if (block.type == Markdownish.BlockType.BULLETED_LIST) {
-        box = layoutBulletedList(block, bx, by, recentClear, bw); // todo
-      } else if (block.type == Markdownish.BlockType.NUMBERED_LIST) {
-        continue; // todo
+      } else if (block.type == Markdownish.BlockType.LIST) {
+        box = layoutList(block, bx, by, recentClear, bw);
       } else if (block.type == Markdownish.BlockType.BODY) {
         box = layoutBody(block, bx, by, recentClear, bw);
       } else {
-        continue; // todo
+        continue;
       }
       w = Math.max(w, ml + box.width + mr);
       recentClear = box.bottomClear;
@@ -295,6 +305,31 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     abstract void draw(Graphics2D g, float x, float y);
     abstract float width();
     abstract float height();
+  }
+  class Num extends ItemMarker {
+    final Font font;
+    final String txt; // e.g. "  42) "
+    final float w, h, ascent;
+
+    Num(int number, String bullet, Font font) {
+      this.font = font;
+      this.txt = "  " + number + bullet + " ";
+      FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
+      Rectangle2D rect = font.getStringBounds(txt, frc);
+      w = (float)rect.getWidth();
+      h = (float)rect.getHeight();
+      LineMetrics lm = font.getLineMetrics(txt, frc);
+      ascent = lm.getAscent();
+    }
+
+    float width() { return w; }
+    float height() { return h; }
+
+    void draw(Graphics2D g, float x, float y) {
+      g.setColor(styling.color); // FIXME: allow styling?
+      g.setFont(font);
+      g.drawString(txt, x, y + ascent);
+    }
   }
   class Bullet extends ItemMarker {
     final String bullet;
