@@ -106,7 +106,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
   
   private Bounds layoutMarkdown(Markdownish md) {
-    Box box = layoutBody(md.body, 0, 0, 0, textWidth);
+    Box box = layoutBody(md.body, 0, 0, 0, textWidth, null);
     float w = box.width; // includes possible overflow
     float h = box.height;
     return Bounds.create(0, 0, (int)Math.ceil(w), (int)Math.ceil(h));
@@ -115,7 +115,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   // Place blocks (including their margins) starting at y, but topmost block's
   // margin can collapse with recentClear space above us. The margins around the
   // body are handled by caller.
-  private Box layoutBody(Markdownish.Block body, float x, float y, float recentClear, float bodyWidth) {
+  private Box layoutBody(Markdownish.Block body, float x, float y, float recentClear, float bodyWidth, ItemMarker outerMarker) {
     
     float mt = body.margin[0].px(body.font); // body margin top
     float mr = body.margin[1].px(body.font); // body margin right
@@ -127,6 +127,8 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
     if (body.blocks.isEmpty()) {
       // Likely never happens: no blocks, so just body margins
+      // TODO: if this does ever happen, should probably place the outer marker,
+      // if present, on a line by itself with no content.
       return new Box(x, y, bodyWidth, mt + 0 + mb, mb);
     }
 
@@ -138,15 +140,14 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       float by = y + h;
       float bw = bodyWidth - ml - mr;
       Box box;
-      if (block.isLeaf()) { // PARAGRAPH HEADER, FENCED_CODE
-        box = layoutLeafBlock(block, bx, by, recentClear, bw);
-      } else if (block.type == Markdownish.BlockType.LIST) {
-        box = layoutList(block, bx, by, recentClear, bw);
+      if (block.type == Markdownish.BlockType.LIST) {
+        box = layoutList(block, bx, by, recentClear, bw, outerMarker);
       } else if (block.type == Markdownish.BlockType.BODY) {
-        box = layoutBody(block, bx, by, recentClear, bw);
-      } else {
-        continue;
+        box = layoutBody(block, bx, by, recentClear, bw, outerMarker);
+      } else { // PARAGRAPH, HEADER, FENCED_CODE
+        box = layoutLeafBlock(block, bx, by, recentClear, bw, outerMarker);
       }
+      outerMarker = null;
       w = Math.max(w, ml + box.width + mr);
       recentClear = box.bottomClear;
       h += box.height;
@@ -159,7 +160,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return new Box(x, y, w, h, recentClear);
   }
 
-  private Box layoutList(Markdownish.Block list, float x, float y, float recentClear, float listWidth) {
+  private Box layoutList(Markdownish.Block list, float x, float y, float recentClear, float listWidth, ItemMarker outerMarker) {
     
     float mt = list.margin[0].px(list.font);
     float mr = list.margin[1].px(list.font);
@@ -173,6 +174,8 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
     if (n == 0) {
       // Likely never happens: no blocks, so just list margins
+      // TODO: if this does ever happen, should probably place the outer
+      // outerMarker, if present, on a line by itself with no content.
       return new Box(x, y, listWidth, mt + 0 + mb, mb);
     }
 
@@ -194,20 +197,24 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     float h = mt; // content height so far
     float w = listWidth;
 
+    if (outerMarker != null) {
+      lines.add(new VisualLine(outerMarker, x - outerMarker.width(), y));
+      h += outerMarker.height(); // occupies vertical space
+    }
+
     for (int i = 0; i < n; i++) {
       Markdownish.Block block = list.blocks.get(i);
 
       float bx = x + ml + indent;
       float by = y + h;
-      lines.add(new VisualLine(marker[i], bx - marker[i].width(), by)); // occupies no vertical space
       float bw = listWidth - ml - mr - indent;
       Box box;
       if (block.isLeaf()) {
-        box = layoutLeafBlock(block, bx, by, recentClear, bw);
+        box = layoutLeafBlock(block, bx, by, recentClear, bw, marker[i]);
       } else if (block.type == Markdownish.BlockType.LIST) {
-        box = layoutList(block, bx, by, recentClear, bw);
+        box = layoutList(block, bx, by, recentClear, bw, marker[i]);
       } else if (block.type == Markdownish.BlockType.BODY) {
-        box = layoutBody(block, bx, by, recentClear, bw);
+        box = layoutBody(block, bx, by, recentClear, bw, marker[i]);
       } else {
         continue;
       }
@@ -224,7 +231,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
 
   // HEADER, PARAGRAPH, FENCED_CODE ... these have a 1+ phrases
-  private Box layoutLeafBlock(Markdownish.Block block, float x, float y, float recentClear, float blockWidth) {
+  private Box layoutLeafBlock(Markdownish.Block block, float x, float y, float recentClear, float blockWidth, ItemMarker outerMarker) {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
 
     float mt = block.margin[0].px(block.font);
@@ -236,6 +243,8 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
     if (block.phrases.isEmpty()) {
       // Likely never happens: no phrases, so just block margins
+      // TODO: if this does ever happen, should probably place the outer marker,
+      // if present, on a line by itself with no content.
       return new Box(x, y, blockWidth, mt + 0 + mb, mb);
     }
 
@@ -270,6 +279,14 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         int right = it.getEndIndex();
         TextLayout layout = new TextLayout(it, frc);
 
+        if (outerMarker != null) {
+          float dx = -outerMarker.width();
+          float dy = layout.getAscent() - outerMarker.ascent();
+          lines.add(new VisualLine(outerMarker, x + dx, y + h + dy));
+          // occupies no space
+          outerMarker = null;
+        }
+
         lines.add(new VisualLine(layout, astr, left, right, x + ml, y + h, accent, font));
         h += layout.getAscent() + layout.getDescent() + layout.getLeading()
           + accentExtraY;
@@ -285,6 +302,14 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         TextLayout layout = measurer.nextLayout(Math.max(pw, Text.TEXT_MIN_WIDTH));
         int right = measurer.getPosition();
         boolean last = (right >= it.getEndIndex());
+        
+        if (outerMarker != null) {
+          float dx = -outerMarker.width();
+          float dy = layout.getAscent() - outerMarker.ascent();
+          lines.add(new VisualLine(outerMarker, x + dx, y + h + dy));
+          // occupies no space
+          outerMarker = null;
+        }
         
         lines.add(new VisualLine(layout, astr, left, right, x + ml, y + h,
               bAccent != null ? bAccent : last ? uAccent : null, font));
@@ -305,6 +330,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     abstract void draw(Graphics2D g, float x, float y);
     abstract float width();
     abstract float height();
+    abstract float ascent();
   }
   class Num extends ItemMarker {
     final Font font;
@@ -316,7 +342,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       this.txt = "  " + number + bullet + " ";
       FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
       Rectangle2D rect = font.getStringBounds(txt, frc);
-      w = (float)rect.getWidth();
+      w = (float)rect.getWidth(); // FIXME: allow styling?
       h = (float)rect.getHeight();
       LineMetrics lm = font.getLineMetrics(txt, frc);
       ascent = lm.getAscent();
@@ -324,8 +350,11 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
     float width() { return w; }
     float height() { return h; }
+    float ascent() { return ascent; }
 
     void draw(Graphics2D g, float x, float y) {
+      // g.setColor(java.awt.Color.CYAN);
+      // g.draw(new Rectangle2D.Float(x, y, w, h));
       g.setColor(styling.color); // FIXME: allow styling?
       g.setFont(font);
       g.drawString(txt, x, y + ascent);
@@ -333,22 +362,24 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
   class Bullet extends ItemMarker {
     final String bullet;
-    final float w, h;
+    final float w, h, ascent;
 
     Bullet(String b, Font font) {
       FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
       LineMetrics lm = font.getLineMetrics("Ag", frc);
-      float ascent  = lm.getAscent();
-      float descent = lm.getDescent();
-      w = 2*(ascent+descent);
-      h = ascent+descent;
+      ascent = lm.getAscent();
+      h = lm.getHeight();
+      w = h*2f; // FIXME: allow styling?
       bullet = b;
     }
 
     float width() { return w; }
     float height() { return h; }
+    float ascent() { return ascent; }
 
     void draw(Graphics2D g, float x, float y) {
+      // g.setColor(java.awt.Color.CYAN);
+      // g.draw(new Rectangle2D.Float(x, y, w, h));
       g.setColor(styling.color); // FIXME: allow styling?
       x += w*0.5f;
       y += h*0.6f;

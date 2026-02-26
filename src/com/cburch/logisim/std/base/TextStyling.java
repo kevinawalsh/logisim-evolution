@@ -55,7 +55,7 @@ import com.cburch.logisim.data.Attributes;
 //     accent: block 8 #000;     // set 8 pixel block accent in black
 //   }
 public class TextStyling {
-  
+
   private static final int DEFAULT_BODY_MARGIN = 4; // only if there is a background
 
   public final String str; // original user-specified string
@@ -96,6 +96,9 @@ public class TextStyling {
       return (int)Math.round(px(fontsize));
     }
   }
+
+  public static final Size ZERO_PX = new Size(0, SizeUnit.PIXELS);
+  public static final Size ZERO_MARGIN[] = new Size[] { ZERO_PX, ZERO_PX, ZERO_PX, ZERO_PX };
 
   public enum AccentType { UNDERLINE, LEADERBLOCK }
   public static final class Accent {
@@ -220,7 +223,7 @@ public class TextStyling {
       // Set default paragraph margin
       for (int p = 0; p < 4; p++)
         if (paragraph_margin[p] == null)
-          paragraph_margin[p] = new Size(0, SizeUnit.PIXELS);
+          paragraph_margin[p] = ZERO_PX;
     }
 
     // Set default body margin: 4px if background, 0 if no background
@@ -236,7 +239,7 @@ public class TextStyling {
   public TextStyling withReplacedFontAndSpacing(Font altFont) {
     TextStyling repl = new TextStyling(str, altFont, color, background_color, format);
     for (int p = 0; p < 4; p++)
-      repl.paragraph_margin[p] = new Size(0, SizeUnit.PIXELS);
+      repl.paragraph_margin[p] = ZERO_PX;
     return repl;
   }
 

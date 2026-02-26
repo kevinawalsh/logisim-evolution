@@ -179,17 +179,17 @@ public class Markdownish {
     return new Block(BlockType.LIST, bullet, startnum);
   }
   private Block new_ListItem() {
-    return new Block(BlockType.BODY, styling.paragraph_margin); // FIXME: styling.li_margin?
+    return new Block(BlockType.BODY, TextStyling.ZERO_MARGIN); // FIXME: styling.li_margin?
   }
   public final class Block {
-    final BlockType type;              // all blocks
-    final TextStyling.Size margin[];   // all blocks
-    final Font font;                   // all blocks
-    final ArrayList<Phrase> phrases;   // for non-lists; not empty
-    final ArrayList<Block> blocks;     // for lists and body; not empty
-    final int headerLevel;             // for headers
-    final String bullet;               // for lists
-    final int startnum;                // for numbered lists
+    final BlockType type;                // all blocks
+    /*final*/ TextStyling.Size margin[]; // all blocks
+    final Font font;                     // all blocks
+    final ArrayList<Phrase> phrases;     // for non-lists; not empty
+    final ArrayList<Block> blocks;       // for lists and body; not empty
+    final int headerLevel;               // for headers
+    final String bullet;                 // for lists
+    final int startnum;                  // for numbered lists
   
     // HEADER
     private Block(int headerLevel) {
@@ -239,7 +239,10 @@ public class Markdownish {
       this.bullet = bullet;
       this.startnum = startnum;
       this.font = baseFont;
-      this.margin = /* FIXME styling.list_margin */ styling.paragraph_margin;
+      this.margin = new TextStyling.Size[] { // FIXME styling.list_margin?
+        TextStyling.ZERO_PX, styling.paragraph_margin[1],
+        TextStyling.ZERO_PX, styling.paragraph_margin[3]
+      };
 
       this.phrases = null;
       this.headerLevel = 0;
@@ -906,6 +909,17 @@ public class Markdownish {
     return true;
   }
 
+  private boolean containsBlankLine(int pos, int end) {
+    while (pos < end) {
+      int ls = pos;
+      int le = lineEnd(ls, end);
+      if (isBlankLine(ls, le))
+        return true;
+      pos = le + 1;
+    }
+    return false;
+  }
+
   private int ignore3LeadingSpaces(int ls, int eof) {
     int s = ls;
     if (s < eof && src.charAt(s) == ' ') s++;
@@ -1176,13 +1190,17 @@ public class Markdownish {
     String bullet = bi.bullet;
 
     Block list = new_List(bullet, bi.number);
+    boolean loose = false;
 
     int itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
-    Block item = new_ListItem();
-    pushOpen(item, bi.W + bi.N);
-    parseBlocks(itemStart + bi.W, itemEnd);
-    popClose();
-    list.addSubBlock(item);
+    {
+      Block item = new_ListItem();
+      pushOpen(item, bi.W + bi.N);
+      parseBlocks(itemStart + bi.W, itemEnd);
+      popClose();
+      list.addSubBlock(item);
+      loose |= item.blocks.size() != 1 || containsBlankLine(itemStart, itemEnd);
+    }
 
     // consume additional items
     while (itemEnd + 1 < eof) {
@@ -1196,14 +1214,27 @@ public class Markdownish {
       if (!bi.bullet.equals(bullet))
         break;
       itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
-      item = new_ListItem();
+      Block item = new_ListItem();
       pushOpen(item, bi.W + bi.N);
       parseBlocks(itemStart + bi.W, itemEnd);
       popClose();
       list.addSubBlock(item);
+      loose |= item.blocks.size() != 1 || containsBlankLine(itemStart, itemEnd);
     }
 
-    // TODO: loose vs tight
+    if (!loose) {
+      // remove margins from list item blocks
+      for (Block item : list.blocks) {
+        // item is a BODY, and should be exactly one block within it
+        Block itemContents = item.blocks.get(0);
+        TextStyling.Size[] oldMargin = itemContents.margin;
+        itemContents.margin = new TextStyling.Size[] {
+          TextStyling.ZERO_PX, oldMargin[1],
+          TextStyling.ZERO_PX, oldMargin[3]
+        };
+      }
+    }
+
     emit(list);
 
     return itemEnd + 1;
