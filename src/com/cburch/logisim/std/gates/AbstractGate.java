@@ -400,11 +400,13 @@ abstract class AbstractGate extends InstanceFactory {
       instance.recomputeBounds();
       computePorts(instance);
       computeLabel(instance);
+      instance.fireInvalidated();
     } else if (attr == GateAttributes.ATTR_INPUTS
         || attr instanceof NegateAttribute) {
       instance.recomputeBounds();
       computePorts(instance);
-    } else if (attr == GateAttributes.ATTR_XOR) {
+      instance.fireInvalidated();
+    } else if (attr == GateAttributes.ATTR_XOR || attr == GateAttributes.ATTR_OUTPUT) {
       instance.fireInvalidated();
     }
   }
