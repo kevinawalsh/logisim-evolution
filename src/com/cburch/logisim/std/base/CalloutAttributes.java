@@ -44,12 +44,13 @@ class CalloutAttributes extends TextAttributes {
   private static final List<Attribute<?>> ATTRIBUTES_AUTO_WRAPPING =
       Arrays.asList(new Attribute<?>[] {
         Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
-        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_FORMAT, Text.TEXT_WIDTH,
-        Callout.ATTR_DX, Callout.ATTR_DY });
+        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_FORMAT, Text.ATTR_STYLE, 
+        Text.TEXT_WIDTH, Callout.ATTR_DX, Callout.ATTR_DY });
+
   private static final List<Attribute<?>> ATTRIBUTES_MANUAL_WRAPPING =
       Arrays.asList(new Attribute<?>[] {
         Text.ATTR_TEXT, Text.ATTR_FONT, Text.ATTR_HALIGN, Text.ATTR_VALIGN,
-        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_FORMAT,
+        Text.FG_COLOR, Text.BG_COLOR, Callout.ATTR_FORMAT, Text.ATTR_STYLE, 
         Callout.ATTR_DX, Callout.ATTR_DY });
 
   private int dx, dy;
