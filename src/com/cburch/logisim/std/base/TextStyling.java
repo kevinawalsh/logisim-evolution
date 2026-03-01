@@ -185,15 +185,15 @@ public class TextStyling {
       }
       Accent a = (at == null) ? null : new Accent(at, ac, as);
 
-      Size[] m = parseMargin(map.get("h"+i+"-margin"));
+      Size[] m = getAndParseMargin("h"+i+"-margin");
       Size fs = parseSize(map.get("h"+i+"-font-size"));
 
       header_style[i] = new HeaderStyle(m, fs, fg, bg, a);
     }
     
-    paragraph_margin = parseMargin(map.get("p-margin"));
+    paragraph_margin = getAndParseMargin("p-margin");
 
-    margin = parseMargin(map.get("margin"));
+    margin = getAndParseMargin("margin");
     
 
     if (format == Text.TEXT_FORMAT_MARKDOWNISH) {
@@ -241,6 +241,50 @@ public class TextStyling {
     for (int p = 0; p < 4; p++)
       repl.paragraph_margin[p] = ZERO_PX;
     return repl;
+  }
+
+  // Tries, for example, in order:
+  //   ul[bullet='*']-margin
+  //   ul-margin
+  //   {0, left, 0, right} where left/right are taken from paragraph margin
+  public Size[] getListMargin(String bullet) {
+    String type = (bullet.equals(".") || bullet.equals(")")) ? "ol" : "ul";
+    Size[] m = getAndParseMargin(type+"['"+bullet+"']-margin");
+    if (m[0] == null)
+      m = getAndParseMargin(type+"-margin");
+    if (m[0] == null)
+      m = new Size[] {
+        ZERO_PX, paragraph_margin[1],
+        ZERO_PX, paragraph_margin[3]
+      };
+    return m;
+  }
+
+  // Tries, for example, in order:
+  //   ul[bullet='*']-li-margin
+  //   ul-li-margin
+  //   li-margin
+  //   {0, 0, 0, 0}
+  public Size[] getListItemMargin(String bullet) {
+    String type = (bullet.equals(".") || bullet.equals(")")) ? "ol" : "ul";
+    Size[] m = getAndParseMargin(type+"['"+bullet+"']-li-margin");
+    if (m[0] == null)
+      m = getAndParseMargin(type+"-li-margin");
+    if (m[0] == null)
+      m = getAndParseMargin("li-margin");
+    if (m[0] == null)
+      m = ZERO_MARGIN;
+    return m;
+  }
+
+  // Tries, in order:
+  //   code-margin
+  //   paragraph margin
+  public Size[] getCodeMargin() {
+    Size[] m = getAndParseMargin("code-margin");
+    if (m[0] == null)
+      m = paragraph_margin;
+    return m;
   }
 
   /**
@@ -418,12 +462,15 @@ public class TextStyling {
     private char peek() { return s.charAt(i); }
   }
 
-  private static Size[] parseMargin(String value) {
+  private Size[] getAndParseMargin(String key) {
     Size[] result = new Size[4];
-
+    String value = map.get(key);
     if (value == null || value.isBlank()) {
       return result;
     }
+    value = value.replaceAll("(?i)\\s*pt", "pt");
+    value = value.replaceAll("(?i)\\s*em", "em");
+    value = value.replaceAll("(?i)\\s*px", "px");
 
     String[] parts = value.split("\\s+");
     int n = Math.min(4, parts.length);

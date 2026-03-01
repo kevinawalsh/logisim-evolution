@@ -170,16 +170,16 @@ public class Markdownish {
 
   private Block new_Header(int headerLevel) { return new Block(headerLevel); }
   private Block new_Paragraph() {
-    return new Block(BlockType.PARAGRAPH, baseFont, styling.paragraph_margin); // FIXME: styling.ul_margin?
+    return new Block(BlockType.PARAGRAPH, baseFont, styling.paragraph_margin);
   }
   private Block new_FencedCode() {
-    return new Block(BlockType.FENCED_CODE, monoFont, styling.paragraph_margin); // FIXME: styling.ul_margin?
+    return new Block(BlockType.FENCED_CODE, monoFont, styling.getCodeMargin());
   }
   private Block new_List(String bullet, int startnum) {
     return new Block(BlockType.LIST, bullet, startnum);
   }
-  private Block new_ListItem() {
-    return new Block(BlockType.BODY, TextStyling.ZERO_MARGIN); // FIXME: styling.li_margin?
+  private Block new_ListItem(String bullet) {
+    return new Block(BlockType.BODY, styling.getListItemMargin(bullet));
   }
   public final class Block {
     final BlockType type;                // all blocks
@@ -239,10 +239,7 @@ public class Markdownish {
       this.bullet = bullet;
       this.startnum = startnum;
       this.font = baseFont;
-      this.margin = new TextStyling.Size[] { // FIXME styling.list_margin?
-        TextStyling.ZERO_PX, styling.paragraph_margin[1],
-        TextStyling.ZERO_PX, styling.paragraph_margin[3]
-      };
+      this.margin = styling.getListMargin(bullet);
 
       this.phrases = null;
       this.headerLevel = 0;
@@ -1194,7 +1191,7 @@ public class Markdownish {
 
     int itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
     {
-      Block item = new_ListItem();
+      Block item = new_ListItem(bullet);
       pushOpen(item, bi.W + bi.N);
       parseBlocks(itemStart + bi.W, itemEnd);
       popClose();
@@ -1214,7 +1211,7 @@ public class Markdownish {
       if (!bi.bullet.equals(bullet))
         break;
       itemEnd = listItemEnd(bi.end+1, eof, bi.W+bi.N);
-      Block item = new_ListItem();
+      Block item = new_ListItem(bullet);
       pushOpen(item, bi.W + bi.N);
       parseBlocks(itemStart + bi.W, itemEnd);
       popClose();
@@ -1263,6 +1260,5 @@ public class Markdownish {
 
 // TODO:
 //  ~ links (web, eventually to built-in help pages)
-//  - bullets
 //  - tables (for properties)
 //  - truthtables
