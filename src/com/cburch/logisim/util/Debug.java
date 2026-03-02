@@ -160,32 +160,67 @@ public class Debug {
     writeCanary();
   }
 
+  private static Path canaryLive()   { return PERSIST_DIR.resolve("current-run-timestamp.txt"); }
+  private static Path canaryParked() { return PERSIST_DIR.resolve("current-run-timestamp.parked"); }
+
   private static void removeCanary() {
+    if (PERSIST_DIR == null) return;
     try {
-      Path canary = PERSIST_DIR.resolve("current-run-timestamp.txt");
-      Files.deleteIfExists(canary);
+      Files.deleteIfExists(canaryLive());
+      Files.deleteIfExists(canaryParked());
     } catch (Exception e) { }
   }
 
   private static void writeCanary() {
-    if (PERSIST_DIR == null)
-      return;
+    if (PERSIST_DIR == null) return;
     try {
-      Path canary = PERSIST_DIR.resolve("current-run-timestamp.txt");
       String ts = Instant.now().toString() + "\n";
-      Files.writeString(canary, ts, StandardCharsets.UTF_8,
+      Files.writeString(canaryLive(), ts, StandardCharsets.UTF_8,
           StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+      Files.deleteIfExists(canaryParked());
     } catch (Exception e) { }
   }
 
   private static String readCanary() {
-    if (PERSIST_DIR == null)
-      return null;
+    if (PERSIST_DIR == null) return null;
     try {
-      Path canary = PERSIST_DIR.resolve("current-run-timestamp.txt");
-      return Files.readString(canary, StandardCharsets.UTF_8).trim();
+      return Files.readString(canaryLive(), StandardCharsets.UTF_8).trim();
     } catch (Exception e) {
       return null;
+    }
+  }
+
+  public static void parkCanary() {
+    if (PERSIST_DIR == null) return;
+    synchronized(lock) {
+      if (numLoggedErrors > numSurfacedErrors) {
+        return; // do not park if the log contains unsurfaced errors
+      }
+    }
+    try {
+      if (Files.exists(canaryLive()))
+        Files.move(canaryLive(), canaryParked(),
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING);
+    } catch (Exception e) {
+    }
+  }
+
+  public static void unparkCanary() {
+    if (PERSIST_DIR == null) return;
+    try {
+      if (Files.exists(canaryLive())) {
+        return;
+      }
+      else if (Files.exists(canaryParked())) {
+        Files.move(canaryParked(), canaryLive(),
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING);
+      }
+      else {
+        writeCanary();
+      }
+    } catch (Exception e) {
     }
   }
 

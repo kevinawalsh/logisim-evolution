@@ -115,6 +115,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     private void enableSave() {
       boolean ok = getProject().isFileDirty();
       getRootPane().putClientProperty("windowModified", ok);
+      getRootPane().putClientProperty("Window.documentModified", ok); // MacOS window decoration hint
     }
 
     @Override

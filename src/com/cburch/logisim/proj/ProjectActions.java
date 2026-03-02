@@ -465,10 +465,7 @@ public class ProjectActions {
   }
 
   public static boolean doQuit() {
-    Frame top = Projects.getTopFrame();
-    if (top != null)
-      top.savePreferences();
-
+    Projects.saveTopFramePreferences();
     for (Project proj : new ArrayList<Project>(Projects.getOpenProjects())) {
       if (!proj.confirmClose(S.get("confirmQuitTitle")))
         return false;

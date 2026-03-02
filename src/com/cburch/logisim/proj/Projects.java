@@ -104,9 +104,7 @@ public class Projects {
         if (!DesktopIntegration.HasWindowlessMenubar) {
           ProjectActions.doQuit();
         } else {
-          Frame top = getTopFrame();
-          if (top != null)
-            top.savePreferences();
+          saveTopFramePreferences();
           DesktopIntegration.setSuddenTerminationAllowed(true);
         }
       }
@@ -148,10 +146,11 @@ public class Projects {
   }
 
   public static Point getCenteredLoc(int width, int height) {
+    Frame top = getTopFrame();
     int x, y;
-    x = getTopFrame().getX() + getTopFrame().getWidth() / 2;
+    x = top.getX() + top.getWidth() / 2;
     x -= width / 2;
-    y = getTopFrame().getY() + getTopFrame().getHeight() / 2;
+    y = top.getY() + top.getHeight() / 2;
     y -= height / 2;
     return new Point(x, y);
   }
@@ -186,6 +185,12 @@ public class Projects {
     return ret;
   }
 
+  public static void saveTopFramePreferences() {
+    Frame top = getTopFrame();
+    if (top != null)
+      top.savePreferences();
+  }
+
   private static void projectRemoved(Project proj, Frame frame, MyListener listener) {
     frame.removeWindowListener(listener);
     openProjects.remove(proj);
@@ -205,9 +210,7 @@ public class Projects {
         return;
       }
     }
-    Frame top = getTopFrame();
-    if (top != null)
-      top.savePreferences();
+    saveTopFramePreferences();
     DesktopIntegration.setSuddenTerminationAllowed(true);
   }
 

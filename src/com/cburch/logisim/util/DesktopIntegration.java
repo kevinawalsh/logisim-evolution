@@ -122,6 +122,9 @@ public class DesktopIntegration {
       } else return false;
     }, "Note [1]: no support to prevent sudden termination");
 
+    if (SupportsSuddenTerminationHandling)
+        Debug.parkCanary();
+
     tryOrPrint(() -> {
       if (desktop.isSupported(Desktop.Action.APP_QUIT_STRATEGY)
           && desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
@@ -216,14 +219,17 @@ public class DesktopIntegration {
         return true;
       try {
         Desktop desktop = Desktop.getDesktop();
-        if (allow && desktop != null)
+        if (allow && desktop != null) {
+          Debug.parkCanary();
           desktop.enableSuddenTermination();
-        else if (desktop != null)
+        } else if (desktop != null) {
           desktop.disableSuddenTermination();
+          Debug.unparkCanary();
+        }
         TerminationAllowed = allow;
         return true;
       } catch (Exception ex) {
-      ex.printStackTrace();
+        ex.printStackTrace();
         return false;
       }
     }
