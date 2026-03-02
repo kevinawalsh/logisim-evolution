@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.gates;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.HashMap;
 
 import com.cburch.logisim.data.Location;
@@ -42,7 +42,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 class PainterDin {
   private static void paint(InstancePainter painter, int width, int height,
       boolean drawBubble, int dinType) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     int xMid = -width;
     int y0 = -height / 2;
     if (drawBubble) {
@@ -92,6 +92,8 @@ class PainterDin {
       g.fillOval(x0 + diam - 4, -4, 8, 8);
       xMid += 4;
     }
+
+    PainterShaped.paintDriverSymbol(painter, width - 15, height, xMid + diam/2 + width/5, -width/10-4);
   }
 
   static void paintAnd(InstancePainter painter, int width, int height,
@@ -113,7 +115,7 @@ class PainterDin {
     attrs.inputs = inputs;
     attrs.size = baseAttrs.size;
 
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     // draw state if appropriate
     // ignore lines for unconnected inputs if in print view
     int r = Math.min(height / 2, width);

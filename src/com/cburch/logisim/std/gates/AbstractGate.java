@@ -33,6 +33,7 @@ package com.cburch.logisim.std.gates;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
+import java.awt.Font;
 import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
@@ -452,8 +453,7 @@ abstract class AbstractGate extends InstanceFactory {
     double rotate = 0.0;
     if (facing != Direction.EAST) {
       rotate = -facing.toRadians();
-      Graphics2D g2 = (Graphics2D) g;
-      g2.rotate(rotate);
+      g.rotate(rotate);
     }
 
     if (shape == AppPreferences.SHAPE_RECTANGULAR) {
@@ -472,7 +472,7 @@ abstract class AbstractGate extends InstanceFactory {
     }
 
     if (rotate != 0.0) {
-      ((Graphics2D) g).rotate(-rotate);
+      g.rotate(-rotate);
     }
     g.translate(-loc.getX(), -loc.getY());
 
@@ -542,11 +542,21 @@ abstract class AbstractGate extends InstanceFactory {
       int height) {
     int don = negateOutput ? 10 : 0;
     AttributeSet attrs = painter.getAttributeSet();
+    Object size = painter.getAttributeValue(GateAttributes.ATTR_SIZE);
+    // Object driver = painter.getAttributeValue(GateAttributes.ATTR_OUTPUT);
+    Font font = null;
+    if (size == GateAttributes.SIZE_NARROW) {
+      font = painter.getGraphics().getFont();
+      painter.getGraphics().setFont(font.deriveFont(9.0f));
+    }
     painter.drawRectangle(-width, -height / 2, width - don, height,
         getRectangularLabel(attrs));
     if (negateOutput) {
       painter.drawDongle(-5, 0);
     }
+    PainterShaped.paintDriverSymbol(painter, width - don - 10, height, -(width-don)/8 - don - 5, font == null ? 0 : 2);
+    if (font != null)
+      painter.getGraphics().setFont(font);
   }
 
   protected abstract void paintShape(InstancePainter painter, int width,

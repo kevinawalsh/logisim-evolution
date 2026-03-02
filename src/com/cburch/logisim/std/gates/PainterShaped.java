@@ -29,10 +29,9 @@
  */
 
 package com.cburch.logisim.std.gates;
-import static com.cburch.logisim.std.Strings.S;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
@@ -42,6 +41,7 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.InstancePainter;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class PainterShaped {
@@ -138,6 +138,30 @@ public class PainterShaped {
     if (height > width) {
       g.drawLine(-width + 1, -height / 2, -width + 1, height / 2);
     }
+
+    paintDriverSymbol(painter, width, height, -width/8 - 5, 0);
+  }
+
+  static void paintDriverSymbol(InstancePainter painter, int width, int height, int dx, int dy) {
+    Graphics2D g = painter.getGraphics();
+    if (dx != 0 || dy != 0)
+      g.translate(dx, dy);
+    Object driver = painter.getAttributeValue(GateAttributes.ATTR_OUTPUT);
+    Direction facing = painter.getAttributeValue(StdAttr.FACING);
+    g.rotate(facing.toRadians());
+    GeneralPath path = null;
+    if (driver == GateAttributes.OUTPUT_0Z)
+      path = PULLDOWNONLY_SYMBOLS[width < 30 ? 0 : width < 40 ? 1 : width < 60 ? 2 : 3];
+    else if (driver == GateAttributes.OUTPUT_Z1)
+      path = PULLUPONLY_SYMBOLS[width < 30 ? 0 : width < 40 ? 1 : width < 60 ? 2 : 3];
+    if (path != null) {
+      g.setStroke(PULL_STROKE);
+      g.draw(path);
+      GraphicsUtil.switchToWidth(g, 1);
+    }
+    g.rotate(-facing.toRadians());
+    if (dx != 0 || dy != 0)
+      g.translate(-dx, -dy);
   }
 
   static void paintInputLines(InstancePainter painter, AbstractGate factory) {
@@ -160,7 +184,7 @@ public class PainterShaped {
         }
       }
     } else {
-      Graphics g = painter.getGraphics();
+      Graphics2D g = painter.getGraphics();
       Color baseColor = g.getColor();
       GraphicsUtil.switchToWidth(g, 3);
       for (int i = 0; i < inputs; i++) {
@@ -188,7 +212,7 @@ public class PainterShaped {
   }
 
   static void paintNot(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
     if (painter.getAttributeValue(NotGate.ATTR_SIZE) == NotGate.SIZE_NARROW) {
       GraphicsUtil.switchToWidth(g, 2);
@@ -221,91 +245,76 @@ public class PainterShaped {
   }
 
   static void paintOr(InstancePainter painter, int width, int height) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     GraphicsUtil.switchToWidth(g, 2);
-    /*
-     * The following, used previous to version 2.5.1, didn't use GeneralPath
-     * g.setColor(Color.LIGHT_GRAY); if (width < 40) {
-     * GraphicsUtil.drawCenteredArc(g, -30, -21, 36, -90, 53);
-     * GraphicsUtil.drawCenteredArc(g, -30, 21, 36, 90, -53); } else if
-     * (width < 60) { GraphicsUtil.drawCenteredArc(g, -50, -37, 62, -90,
-     * 53); GraphicsUtil.drawCenteredArc(g, -50, 37, 62, 90, -53); } else {
-     * GraphicsUtil.drawCenteredArc(g, -70, -50, 85, -90, 53);
-     * GraphicsUtil.drawCenteredArc(g, -70, 50, 85, 90, -53); }
-     * paintShield(g, -width, 0, width, height);
-     */
 
     GeneralPath path;
+    int dx;
     if (width < 40) {
-      path = PATH_NARROW;
+      path = OR_PATH_NARROW;
+      dx = -11;
     } else if (width < 60) {
-      path = PATH_MEDIUM;
+      path = OR_PATH_MEDIUM;
+      dx = -13;
     } else {
-      path = PATH_WIDE;
+      path = OR_PATH_WIDE;
+      dx = -15;
     }
-    ((Graphics2D) g).draw(path);
+    g.draw(path);
     if (height > width) {
       paintShield(g, 0, width, height);
     }
+
+    paintDriverSymbol(painter, width, height, dx, 0);
   }
 
-  private static void paintShield(Graphics g, int xlate, int width, int height) {
+  private static void paintShield(Graphics2D g, int xlate, int width, int height) {
     GraphicsUtil.switchToWidth(g, 2);
     g.translate(xlate, 0);
-    ((Graphics2D) g).draw(computeShield(width, height));
+    g.draw(computeShield(width, height));
     g.translate(-xlate, 0);
-
-    /*
-     * The following, used previous to version 2.5.1, didn't use GeneralPath
-     * if (width < 40) { GraphicsUtil.drawCenteredArc(g, x - 26, y, 30, -30,
-     * 60); } else if (width < 60) { GraphicsUtil.drawCenteredArc(g, x - 43,
-     * y, 50, -30, 60); } else { GraphicsUtil.drawCenteredArc(g, x - 60, y,
-     * 70, -30, 60); } if (height > width) { // we need to draw the shield
-     * GraphicsUtil.drawCenteredArc(g, x - dx, y - (width + extra) / 2,
-     * extra, -30, 60); GraphicsUtil.drawCenteredArc(g, x - dx, y + (width +
-     * extra) / 2, extra, -30, 60); }
-     */
   }
 
   static void paintXor(InstancePainter painter, int width, int height) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     paintOr(painter, width - 10, width - 10);
     paintShield(g, -10, width - 10, height);
   }
 
-  private static final GeneralPath PATH_NARROW;
-
-  private static final GeneralPath PATH_MEDIUM;
-
-  private static final GeneralPath PATH_WIDE;
+  private static final GeneralPath OR_PATH_NARROW;
+  private static final GeneralPath OR_PATH_MEDIUM;
+  private static final GeneralPath OR_PATH_WIDE;
 
   private static final GeneralPath SHIELD_NARROW;
-
   private static final GeneralPath SHIELD_MEDIUM;
-
   private static final GeneralPath SHIELD_WIDE;
 
+  private static final GeneralPath PULLDOWNONLY_SYMBOLS[];
+  private static final GeneralPath PULLUPONLY_SYMBOLS[];
+  private static final BasicStroke PULL_STROKE
+    = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL);
+
   static {
-    PATH_NARROW = new GeneralPath();
-    PATH_NARROW.moveTo(0, 0);
-    PATH_NARROW.quadTo(-10, -15, -30, -15);
-    PATH_NARROW.quadTo(-22, 0, -30, 15);
-    PATH_NARROW.quadTo(-10, 15, 0, 0);
-    PATH_NARROW.closePath();
+    OR_PATH_NARROW = new GeneralPath();
+    OR_PATH_NARROW.moveTo(0, 0);
+    OR_PATH_NARROW.quadTo(-10, -15, -30, -15);
+    OR_PATH_NARROW.quadTo(-22, 0, -30, 15);
+    OR_PATH_NARROW.quadTo(-10, 15, 0, 0);
+    OR_PATH_NARROW.closePath();
 
-    PATH_MEDIUM = new GeneralPath();
-    PATH_MEDIUM.moveTo(0, 0);
-    PATH_MEDIUM.quadTo(-20, -25, -50, -25);
-    PATH_MEDIUM.quadTo(-37, 0, -50, 25);
-    PATH_MEDIUM.quadTo(-20, 25, 0, 0);
-    PATH_MEDIUM.closePath();
+    OR_PATH_MEDIUM = new GeneralPath();
+    OR_PATH_MEDIUM.moveTo(0, 0);
+    OR_PATH_MEDIUM.quadTo(-20, -25, -50, -25);
+    OR_PATH_MEDIUM.quadTo(-37, 0, -50, 25);
+    OR_PATH_MEDIUM.quadTo(-20, 25, 0, 0);
+    OR_PATH_MEDIUM.closePath();
 
-    PATH_WIDE = new GeneralPath();
-    PATH_WIDE.moveTo(0, 0);
-    PATH_WIDE.quadTo(-25, -35, -70, -35);
-    PATH_WIDE.quadTo(-50, 0, -70, 35);
-    PATH_WIDE.quadTo(-25, 35, 0, 0);
-    PATH_WIDE.closePath();
+    OR_PATH_WIDE = new GeneralPath();
+    OR_PATH_WIDE.moveTo(0, 0);
+    OR_PATH_WIDE.quadTo(-25, -35, -70, -35);
+    OR_PATH_WIDE.quadTo(-50, 0, -70, 35);
+    OR_PATH_WIDE.quadTo(-25, 35, 0, 0);
+    OR_PATH_WIDE.closePath();
 
     SHIELD_NARROW = new GeneralPath();
     SHIELD_NARROW.moveTo(-30, -15);
@@ -318,6 +327,33 @@ public class PainterShaped {
     SHIELD_WIDE = new GeneralPath();
     SHIELD_WIDE.moveTo(-70, -35);
     SHIELD_WIDE.quadTo(-50, 0, -70, 35);
+
+    PULLDOWNONLY_SYMBOLS = new GeneralPath[] {
+      driver_symbol(4, false), // extra small
+      driver_symbol(5, false), // NARROW
+      driver_symbol(7, false), // MEDIUM
+      driver_symbol(9, false), // WIDE
+    };
+
+    PULLUPONLY_SYMBOLS = new GeneralPath[] {
+      driver_symbol(4, true), // extra small
+      driver_symbol(5, true), // NARROW
+      driver_symbol(7, true), // MEDIUM
+      driver_symbol(9, true), // WIDE
+    };
+
+  }
+
+  private static GeneralPath driver_symbol(int r, boolean high) {
+    GeneralPath path = new GeneralPath();
+    path.moveTo(-r, 0);
+    path.lineTo(0, r);
+    path.lineTo(r, 0);
+    path.lineTo(0, -r);
+    path.closePath();
+    path.moveTo(-r, high ? -r : r);
+    path.lineTo(r, high ? -r : r);
+    return path;
   }
 
   private static HashMap<Integer, int[]> INPUT_LENGTHS = new HashMap<Integer, int[]>();
