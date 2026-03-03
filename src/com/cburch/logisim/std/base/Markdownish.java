@@ -186,7 +186,7 @@ public class Markdownish {
     return new Block(BlockType.TABLE, baseFont, styling.getTableMargin());
   }
   private Block new_TableRow() {
-    return new Block(BlockType.ROW, baseFont, styling.getTableRowMargin());
+    return new Block(BlockType.ROW, baseFont, styling.getTableCellPadding());
   }
   public final class Block {
     final BlockType type;                // all blocks

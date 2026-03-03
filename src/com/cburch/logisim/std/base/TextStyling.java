@@ -287,7 +287,7 @@ public class TextStyling {
     return m;
   }
 
-  // Tries, in order:
+  // For space around outside of table, tries, in order:
   //   table-margin
   //   paragraph margin
   public Size[] getTableMargin() {
@@ -297,16 +297,19 @@ public class TextStyling {
     return m;
   }
 
-  // Tries, in order:
-  //   table-tr-margin
-  //   tr-margin
-  //   paragraph margin
-  public Size[] getTableRowMargin() {
-    Size[] m = getAndParseMargin("table-tr-margin");
+  // For padding between cell border and cell contents, tries, in order:
+  //   table-tr-td-padding
+  //   table-td-padding
+  //   td-padding
+  //   0.15em 0.3em;
+  public Size[] getTableCellPadding() {
+    Size[] m = getAndParseMargin("table-tr-td-padding");
     if (m[0] == null)
-      m = getAndParseMargin("tr-margin");
+      m = getAndParseMargin("table-td-padding");
     if (m[0] == null)
-      m = paragraph_margin;
+      m = getAndParseMargin("td-padding");
+    if (m[0] == null)
+      m = parseMargin("0.15em 0.3em");
     return m;
   }
 
@@ -486,8 +489,11 @@ public class TextStyling {
   }
 
   private Size[] getAndParseMargin(String key) {
+    return parseMargin(map.get(key));
+  }
+
+  private Size[] parseMargin(String value) {
     Size[] result = new Size[4];
-    String value = map.get(key);
     if (value == null || value.isBlank()) {
       return result;
     }

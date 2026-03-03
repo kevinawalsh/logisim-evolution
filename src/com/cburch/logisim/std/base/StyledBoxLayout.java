@@ -51,6 +51,8 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.util.GraphicsUtil;
 
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
+
 // StyledBoxLayout handles text rendering for Markdownish.
 public class StyledBoxLayout implements Text.LayoutEngine {
 
@@ -235,6 +237,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
   // TABLE, these have 1+ ROW blocks
   private Box layoutTable(Markdownish.Block table, float x, float y, float recentClear, float tableWidth, ItemMarker outerMarker) {
+    FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
     
     float mt = table.margin[0].px(table.font); // table margin top
     float mr = table.margin[1].px(table.font); // table margin right
@@ -256,26 +259,44 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       // occupies no space
       outerMarker = null;
     }
-
+    
     // Determine column widths, for now let's just use width/N
     Markdownish.Block hdr = table.blocks.get(0); // ROW of cell phrases
     int numCols = hdr.phrases.size();
     float colWidths[] = new float[numCols];
-    // FIXME: try to fit contents, else use weights
-    // FIXME: account for left/right margins on cells (or rows?)
-    for (int i = 0; i < numCols; i++)
-      colWidths[i] = tableWidth / numCols;
+    int colWeights[] = new int[numCols];
+    float totalWidth = 0;
+    for (int i = 0; i < numCols; i++) {
+      colWeights[i] = Math.max(1, hdr.phrases.get(i).cellWidth);
+      for (Markdownish.Block row : table.blocks) {
+        if (row.type != Markdownish.BlockType.ROW)
+          continue;
+        if (row.phrases.size() <= i)
+          continue;
+        Markdownish.Phrase phrase = row.phrases.get(i);
+        float rPad = row.margin[1].px(row.font);
+        float lPad = row.margin[3].px(row.font);
+        AttributedCharacterIterator it = phrase.buildAttributedString().getIterator();
+        TextLayout layout = new TextLayout(it, frc);
+        colWidths[i] = Math.max(colWidths[i], lPad + layout.getAdvance() + rPad);
+      }
+      totalWidth += colWidths[i];
+    }
+    float availWidth = tableWidth - ml - mr;
+    if (totalWidth > availWidth) {
+      colWidths = calcColumnWidths(availWidth, colWidths, colWeights);
+    }
 
     float h = mt; // content height so far
     float w = tableWidth;
 
-    for (Markdownish.Block block : table.blocks) {
-      if (block.type != Markdownish.BlockType.ROW)
+    for (Markdownish.Block row : table.blocks) {
+      if (row.type != Markdownish.BlockType.ROW)
         continue;
       float bx = x + ml;
       float by = y + h;
       float bw = tableWidth - ml - mr;
-      Box box = layoutTableRow(block, bx, by, bw, colWidths);
+      Box box = layoutTableRow(row, bx, by, bw, colWidths);
       w = Math.max(w, ml + box.width + mr);
       h += box.height;
     }
@@ -293,12 +314,30 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       return new Box(x, y, rowWidth, 0, 0);
     }
 
+    float tPad = row.margin[0].px(row.font);
+    float rPad = row.margin[1].px(row.font);
+    float bPad = row.margin[2].px(row.font);
+    float lPad = row.margin[3].px(row.font);
+
     VisualLine vl = new VisualLine(x, y);
     int i = 0;
     for (Markdownish.Phrase phrase : row.phrases) {
-      float bw = colWidths[i++];
-      VisualCell vc = layoutPhrase(phrase, x + vl.w, y, bw, true, null, null);
+      float cellWidth = colWidths[i++] - lPad - rPad;
+      VisualCell vc = layoutPhrase(phrase, x + vl.w + lPad, y + tPad, cellWidth, true, null, null);
       vc.border = true;
+      vc.x -= lPad;
+      vc.w += lPad + rPad;
+      vc.y -= tPad;
+      vc.h += tPad + bPad;
+      if (phrase.cellAlign != ALIGN.H_LEFT) {
+        for (VisualBox vb : vc.boxes) {
+          float textWidth = vb.layout.getVisibleAdvance();
+          if (phrase.cellAlign == ALIGN.H_RIGHT)
+            vb.x += (cellWidth - textWidth);
+          else // ALIGN.H_CENTER
+            vb.x += (cellWidth - textWidth)/2;
+        }
+      }
       vl.add(vc);
     }
 
@@ -564,7 +603,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     final TextLayout layout;
     final AttributedString astr;
     final int start, end;     // index range within astr for this line
-    final float x, y;         // top left corner
+    /*final*/ float x, y;         // top left corner
     final float width; 
     final float baselineY;    // y+ascent, where layout.draw is called
     final ItemMarker marker;  // for list items
@@ -690,5 +729,42 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     Box(float xx, float yy, float ww, float hh, float bc) {
       x = xx; y = yy; width = ww; height = hh; bottomClear = bc;
     }
+  }
+
+  static float[] calcColumnWidths(float availWidth, float[] colWidth, int[] colWeight) {
+    int numCols = colWidth.length;
+    float[] result = new float[numCols];
+    boolean[] fixed = new boolean[numCols];
+    float remainingWidth = availWidth;
+    float remainingWeight = 0;
+    for (int w : colWeight)
+      remainingWeight += w;
+
+    // Iteratively fix columns that don't need their full weighted share.
+    // A column is ok if its natural width doesn't exceed its proportional share.
+    // Repeat, since fixing one column increases the share for others.
+    boolean changed = true;
+    while (changed) {
+      changed = false;
+      for (int i = 0; i < numCols; i++) {
+        if (fixed[i]) continue;
+        float share = remainingWidth * colWeight[i] / remainingWeight;
+        if (colWidth[i] <= share) {
+          result[i] = colWidth[i];
+          fixed[i] = true;
+          remainingWidth -= colWidth[i];
+          remainingWeight -= colWeight[i];
+          changed = true;
+        }
+      }
+    }
+
+    // Remaining unfixed columns need wrapping, give each its share.
+    for (int i = 0; i < numCols; i++) {
+      if (!fixed[i])
+        result[i] = remainingWidth * colWeight[i] / remainingWeight;
+    }
+
+    return result;
   }
 }
