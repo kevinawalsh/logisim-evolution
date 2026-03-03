@@ -37,6 +37,8 @@ import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.util.ArrayList;
 
+import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
+
 // Markdownish can render something approaching a small subset of commonmark or github-flavored
 // markdown, with a few logisim-specific variations.
 //
@@ -103,21 +105,18 @@ import java.util.ArrayList;
 // 1. List item
 // 2. Another item
 // Notes:
-//  - Only single-level deep lists, for now.
-//  - Nested blocks within list items may or may not work. I guess.
+//  - Multi-level lists, and bulleted lists, should mostly work.
+//  - Nested blocks within list items should work, at least in basic cases.
 //
 // (Coming soon)
-// | table | with | headers |
-// | :---- | :--: | ------: |
-// | or    | without | them |
+// | table | with | headers   |
+// | :---- | :--: | --------: |
+// | and   | row  | alignment |
 // Notes:
-// - at most 3 spaces, then starts with unescaped pipe, ends with unescaped pipe
-// - row with only dashes (and spaces) makes a horizontal separator between rows
-// - row with only 
+// - at most 3 spaces, then header row
 // - inline formatting within cells is fine
 // - if table width doesn't fit within text width, columns are allocated space proportionally to how
-// many dashes they have in the 
-//
+//   many dashes they have in the delimiter row
 //
 // Other Notes:
 // - Header, paragraph, and fenced code blocks are each rendered with some space below (and above)
@@ -163,6 +162,8 @@ public class Markdownish {
     HEADER,        // one phrase; headerLevel is defined
     PARAGRAPH,     // 1+ phrases are hardbreak-separated pieces of paragraph
     FENCED_CODE,   // 1+ phrases are lines of a code block
+    TABLE,         // 1+ ROW blocks; first is header, rest are body
+    ROW,           // 1+ phrases are the cells
     LIST,          // 1+ BODY blocks; bullet is '+', '-', or '*', indent is defined, or
                    // 1+ BODY blocks; bullet is '.' or ')', indent and startnum are defined
     BODY,          // 1+ blocks, e.g. paragraphs, headers, fenced_code, etc. 
@@ -180,6 +181,12 @@ public class Markdownish {
   }
   private Block new_ListItem(String bullet) {
     return new Block(BlockType.BODY, styling.getListItemMargin(bullet));
+  }
+  private Block new_Table() {
+    return new Block(BlockType.TABLE, baseFont, styling.getTableMargin());
+  }
+  private Block new_TableRow() {
+    return new Block(BlockType.ROW, baseFont, styling.getTableRowMargin());
   }
   public final class Block {
     final BlockType type;                // all blocks
@@ -206,14 +213,14 @@ public class Markdownish {
       this.startnum = 0;
     }
 
-    // PARAGRAPH, FENCED_CODE
+    // PARAGRAPH, FENCED_CODE, TABLE, ROW
     private Block(BlockType type, Font font, TextStyling.Size margin[]) {
       this.type = type;
-      this.phrases = new ArrayList<>();
+      this.phrases = (type == BlockType.TABLE ? null : new ArrayList<>());
+      this.blocks = (type == BlockType.TABLE ? new ArrayList<>() : null);
       this.font = font;
       this.margin = margin;
 
-      this.blocks = null;
       this.bullet = null;
       this.startnum = 0;
       this.headerLevel = 0;
@@ -246,8 +253,13 @@ public class Markdownish {
     }
 
     private Block addPhrase(ArrayList<Span> spans) {
-      Phrase phrase = new Phrase(phrases.size(), font, spans);
+      Phrase phrase = new Phrase(font, spans, 0, 0);
       phrases.add(phrase);
+      return this;
+    }
+
+    private Block addTableCell(Phrase cell) {
+      phrases.add(cell);
       return this;
     }
 
@@ -274,14 +286,16 @@ public class Markdownish {
   }
 
   public final class Phrase {
-    final int phraseno;
     final Font font;
     final ArrayList<Span> spans; // not empty; otherwise, we can't map block to src text index
+    final int cellAlign; // for table cells
+    final int cellWidth; // for table cells
 
-    private Phrase(int phraseno, Font font, ArrayList<Span> spans) {
-      this.phraseno = phraseno;
+    private Phrase(Font font, ArrayList<Span> spans, int align, int width) {
       this.font = font;
       this.spans = spans;
+      this.cellAlign = align;
+      this.cellWidth = width;
     }
 
     public AttributedString buildAttributedString() {
@@ -517,6 +531,11 @@ public class Markdownish {
       // parse list
       else if (isListLine(ls, le, false)) {
         ls = parseList(ls, end);
+      }
+
+      // parse truthtable
+      else if (isOpeningTruthtable(ls, le, end)) {
+        ls = parseTruthtable(ls, le, end);
       }
 
       // anything else must be a paragraph
@@ -1068,7 +1087,7 @@ public class Markdownish {
       ls = skipWplusN(ls, eof);
       int le = lineEnd(ls, eof); // next line is [ls, le), and le is EOL or eof
 
-      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, true))
+      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, true) || isOpeningTruthtable(ls, le, eof))
         break;
       paraEnd = le;
     }
@@ -1247,7 +1266,7 @@ public class Markdownish {
       boolean thisIsBlank = isBlankLine(ls, le); 
       if (!thisIsBlank
           && countLineIndent(ls, le) < WplusN
-          && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false)))
+          && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false) || isOpeningTruthtable(ls, le, eof)))
         break;
       itemEnd = le;
       prevWasBlank = thisIsBlank;
@@ -1255,6 +1274,158 @@ public class Markdownish {
     return itemEnd;
   }
 
+  // if strict, there must be pipes...
+  //   " |foo|" or even " | foo " is a cell,
+  //   but " foo " alone isn't a cell
+  // if not strict, then any non-blank not-too-indented line has cells
+  //   unless it has just a single pipe
+  private ArrayList<String> splitTableCells(int ls, int le, boolean strict, Phrase cells[], int cellAlign[], int cellWidth[]) {
+    int s = skipWplusN(ls, le);
+    s = ignore3LeadingSpaces(s, le);
+    if (s == le || isSpaceOrTab(src.charAt(s)))
+      return null; // blank, or too indented
+    // strip leading pipe
+    boolean leadingPipe = (src.charAt(s) == '|');
+    if (leadingPipe) s++;
+    if (s == le) return null;
+    // strip trailing whitespace and pipe
+    int e = le;
+    while (s < e && isSpaceOrTab(src.charAt(e-1))) e--;
+    boolean trailingPipe = (s < e && src.charAt(e-1) == '|');
+    if (trailingPipe) e--;
+    int numCells;
+    ArrayList<String> ret = new ArrayList<>();
+    if (s == e && leadingPipe && trailingPipe) {
+      // "   ||   "      -- one empty header cell
+      ret.add("");
+    } else if (s == e) {
+      // "   |    "      -- a lone pipe, or entirely blank, no cells
+      // note: GFM treats a lone pipe as no cells even for non-strict (body) rows
+      return null;
+    } else {
+      // count remaining un-escaped pipes
+      int cellStart = s;
+      for (int pos = s; pos < e; pos++) {
+        char ch = src.charAt(pos);
+        if (ch == '\\' && pos + 1 < e && isAsciiPunct(src.charAt(pos+1))) {
+          pos++;
+        } else if (ch == '|') {
+          int i = ret.size();
+          ret.add(src.substring(cellStart, pos).trim());
+          if (cells != null && i < cells.length) {
+            ArrayList<Span> spans = parseInlineSpans(cellStart, pos);
+            applyInlineStyles(spans);
+            cells[i] = new Phrase(baseFont, spans, cellAlign[i], cellWidth[i]);
+          }
+          cellStart = pos+1;
+        }
+      }
+      if (ret.size() == 0 && strict && !leadingPipe && !trailingPipe)
+        return null;
+      int i = ret.size();
+      ret.add(src.substring(cellStart, e).trim());
+      if (cells != null && i < cells.length) {
+        ArrayList<Span> spans = parseInlineSpans(cellStart, e);
+        applyInlineStyles(spans);
+        cells[i] = new Phrase(baseFont, spans, cellAlign[i], cellWidth[i]);
+      }
+    }
+    if (cells != null) {
+      for (int i = 0; i < cells.length; i++) {
+        if (cells[i] == null) {
+          ArrayList<Span> spans = new ArrayList<>();
+          spans.add(Span_space(e-1, e));
+          cells[i] = new Phrase(baseFont, spans, cellAlign[i], cellWidth[i]);
+        }
+      }
+    }
+    return ret;
+  }
+
+  private boolean isOpeningTruthtable(int ls, int le, int end) {
+    ArrayList<String> hdr = splitTableCells(ls, le, true, null, null, null);
+    if (hdr == null)
+      return false;
+
+    ls = le + 1;
+    le = lineEnd(ls, end);
+    if (ls == le) return false;
+
+    ArrayList<String> dlm = splitTableCells(ls, le, true, null, null, null); // in GFM, this is non-strict (sort of)
+    if (dlm == null || dlm.size() != hdr.size())
+      return false;
+
+    for (String d: dlm) {
+      // if d contains anything other than chars from "-:~", then it's not a delim row
+      for (int i = 0; i < d.length(); i++) {
+        char ch = d.charAt(i);
+        if (ch != '-' && ch != ':' && ch != '~')
+          return false;
+      }
+    }
+    return true;
+  }
+
+  private int parseTruthtable(int ls, int le, int end) {
+    int tableStart = ls;
+    int headerEnd = le;
+
+    // get delimiter row
+    ls = le + 1;
+    le = lineEnd(ls, end);
+    ArrayList<String> dlm = splitTableCells(ls, le, true, null, null, null);
+    int cols = dlm.size();
+
+    // get cell alignments and widths
+    int[] alignments = new int[cols];
+    int[] widths = new int[cols];
+    for (int i = 0; i < cols; i++) {
+      String d = dlm.get(i);
+      if (d.startsWith(":") && d.endsWith(":")) {
+        alignments[i] = ALIGN.H_CENTER;
+      } else if (d.startsWith(":")) {
+        alignments[i] = ALIGN.H_LEFT;
+      } else if (d.endsWith(":")) {
+        alignments[i] = ALIGN.H_RIGHT;
+      } else {
+        alignments[i] = ALIGN.H_CENTER;
+      }
+      widths[i] = 0;
+      for (int j = 0; j < d.length(); j++) {
+        char ch = d.charAt(j);
+        if (ch == '-' || ch == '~') widths[i]++;
+      }
+    }
+
+    Phrase hdrcells[] = new Phrase[cols];
+    splitTableCells(tableStart, headerEnd, true, hdrcells, alignments, widths);
+    
+    Block table = new_Table();
+    Block headerRow = new_TableRow();
+    for (Phrase cell : hdrcells)
+      headerRow.addTableCell(cell);
+    table.addSubBlock(headerRow);
+
+    ArrayList<ArrayList<String>> rows = new ArrayList<>();
+    int tableEnd = le;
+    while (tableEnd + 1 < end) {
+      ls = tableEnd + 1;
+      le = lineEnd(ls, end);
+      Phrase rowcells[] = new Phrase[cols];
+      ArrayList<String> row = splitTableCells(ls, le, false, rowcells, alignments, widths);
+      if (row == null)
+        break;
+      Block bodyRow = new_TableRow();
+      for (Phrase cell : rowcells)
+        bodyRow.addTableCell(cell);
+      table.addSubBlock(bodyRow);
+      tableEnd = le;
+    }
+
+    emit(table);
+
+    return tableEnd;
+  }
 
 }
 

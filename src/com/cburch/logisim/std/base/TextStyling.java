@@ -287,6 +287,29 @@ public class TextStyling {
     return m;
   }
 
+  // Tries, in order:
+  //   table-margin
+  //   paragraph margin
+  public Size[] getTableMargin() {
+    Size[] m = getAndParseMargin("table-margin");
+    if (m[0] == null)
+      m = paragraph_margin;
+    return m;
+  }
+
+  // Tries, in order:
+  //   table-tr-margin
+  //   tr-margin
+  //   paragraph margin
+  public Size[] getTableRowMargin() {
+    Size[] m = getAndParseMargin("table-tr-margin");
+    if (m[0] == null)
+      m = getAndParseMargin("tr-margin");
+    if (m[0] == null)
+      m = paragraph_margin;
+    return m;
+  }
+
   /**
    * Parse a simplified CSS-like style string into flattened key/value pairs.
    *

@@ -80,27 +80,35 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     g.setFont(styling.font);
     g.setColor(styling.color);
     for (VisualLine line : lines) {
-      if (line.marker != null) {
-        // no layout, only a marker
-        line.marker.draw(g, loc.x + line.x, loc.y + line.baselineY);
-      } else if (line.accent == null) {
-        line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
-      } else if (line.accent.type == TextStyling.AccentType.UNDERLINE) {
-        float px = line.accent.size.px(line.font);
-        g.setColor(line.accent.color);
-        g.fill(new Rectangle2D.Float(loc.x + line.x,
-              loc.y + line.baselineY + line.layout.getDescent(),
-              line.layout.getVisibleAdvance(), px));
-        g.setColor(styling.color);
-        line.layout.draw(g, loc.x + line.x, loc.y + line.baselineY);
-      } else if (line.accent.type == TextStyling.AccentType.LEADERBLOCK) {
-        float px = line.accent.size.px(line.font);
-        float px2 = (float)line.font.getStringBounds(" ", frc).getWidth();
-        g.setColor(line.accent.color);
-        g.fill(new Rectangle2D.Float(loc.x + line.x, loc.y + line.y,
-              px, line.textSize()));
-        g.setColor(styling.color);
-        line.layout.draw(g, loc.x + line.x + px + px2, loc.y + line.baselineY);
+      for (VisualCell cell : line.cells) {
+        if (cell.border) {
+          g.setColor(styling.color);
+          g.draw(new Rectangle2D.Float(loc.x + cell.x, loc.y + cell.y, cell.w, cell.h));
+        }
+        for (VisualBox box : cell.boxes) {
+          if (box.marker != null) {
+            // no layout, only a marker
+            box.marker.draw(g, loc.x + box.x, loc.y + box.baselineY);
+          } else if (box.accent == null) {
+            box.layout.draw(g, loc.x + box.x, loc.y + box.baselineY);
+          } else if (box.accent.type == TextStyling.AccentType.UNDERLINE) {
+            float px = box.accent.size.px(box.font);
+            g.setColor(box.accent.color);
+            g.fill(new Rectangle2D.Float(loc.x + box.x,
+                  loc.y + box.baselineY + box.layout.getDescent(),
+                  box.layout.getVisibleAdvance(), px));
+            g.setColor(styling.color);
+            box.layout.draw(g, loc.x + box.x, loc.y + box.baselineY);
+          } else if (box.accent.type == TextStyling.AccentType.LEADERBLOCK) {
+            float px = box.accent.size.px(box.font);
+            float px2 = (float)box.font.getStringBounds(" ", frc).getWidth();
+            g.setColor(box.accent.color);
+            g.fill(new Rectangle2D.Float(loc.x + box.x, loc.y + box.y,
+                  px, box.textSize()));
+            g.setColor(styling.color);
+            box.layout.draw(g, loc.x + box.x + px + px2, loc.y + box.baselineY);
+          }
+        }
       }
     }
   }
@@ -112,9 +120,9 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return Bounds.create(0, 0, (int)Math.ceil(w), (int)Math.ceil(h));
   }
 
+  // BODY block, these have 1+ blocks of various types
   // Place blocks (including their margins) starting at y, but topmost block's
-  // margin can collapse with recentClear space above us. The margins around the
-  // body are handled by caller.
+  // margin can collapse with recentClear space above us.
   private Box layoutBody(Markdownish.Block body, float x, float y, float recentClear, float bodyWidth, ItemMarker outerMarker) {
     
     float mt = body.margin[0].px(body.font); // body margin top
@@ -142,6 +150,8 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       Box box;
       if (block.type == Markdownish.BlockType.LIST) {
         box = layoutList(block, bx, by, recentClear, bw, outerMarker);
+      } else if (block.type == Markdownish.BlockType.TABLE) {
+        box = layoutTable(block, bx, by, recentClear, bw, outerMarker);
       } else if (block.type == Markdownish.BlockType.BODY) {
         box = layoutBody(block, bx, by, recentClear, bw, outerMarker);
       } else { // PARAGRAPH, HEADER, FENCED_CODE
@@ -160,6 +170,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return new Box(x, y, w, h, recentClear);
   }
 
+  // LIST, these have 1+ BODY blocks
   private Box layoutList(Markdownish.Block list, float x, float y, float recentClear, float listWidth, ItemMarker outerMarker) {
     
     float mt = list.margin[0].px(list.font);
@@ -198,8 +209,9 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     float w = listWidth;
 
     if (outerMarker != null) {
-      lines.add(new VisualLine(outerMarker, x - outerMarker.width(), y));
+      lines.add(new VisualLine(new VisualCell(new VisualBox(outerMarker, x - outerMarker.width(), y + h))));
       h += outerMarker.height(); // occupies vertical space
+      outerMarker = null;
     }
 
     for (int i = 0; i < n; i++) {
@@ -208,16 +220,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       float bx = x + ml + indent;
       float by = y + h;
       float bw = listWidth - ml - mr - indent;
-      Box box;
-      if (block.isLeaf()) {
-        box = layoutLeafBlock(block, bx, by, recentClear, bw, marker[i]);
-      } else if (block.type == Markdownish.BlockType.LIST) {
-        box = layoutList(block, bx, by, recentClear, bw, marker[i]);
-      } else if (block.type == Markdownish.BlockType.BODY) {
-        box = layoutBody(block, bx, by, recentClear, bw, marker[i]);
-      } else {
-        continue;
-      }
+      Box box = layoutBody(block, bx, by, recentClear, bw, marker[i]);
       w = Math.max(w, ml + box.width + mr);
       recentClear = box.bottomClear;
       h += box.height;
@@ -228,6 +231,81 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
     h += mb;
     return new Box(x, y, w, h, recentClear);
+  }
+
+  // TABLE, these have 1+ ROW blocks
+  private Box layoutTable(Markdownish.Block table, float x, float y, float recentClear, float tableWidth, ItemMarker outerMarker) {
+    
+    float mt = table.margin[0].px(table.font); // table margin top
+    float mr = table.margin[1].px(table.font); // table margin right
+    float mb = table.margin[2].px(table.font); // table margin bottom
+    float ml = table.margin[3].px(table.font); // table margin left
+    
+    mt = Math.max(0, mt - recentClear); // collapse table margin top
+    recentClear += mt;
+
+    if (table.blocks.isEmpty() || table.blocks.get(0).type != Markdownish.BlockType.ROW) {
+      // Likely never happens: no blocks, so just table margins
+      // TODO: if this does ever happen, should probably place the outer marker,
+      // if present, on a line by itself with no content.
+      return new Box(x, y, tableWidth, mt + 0 + mb, mb);
+    }
+
+    if (outerMarker != null) {
+      lines.add(new VisualLine(new VisualCell(new VisualBox(outerMarker, x - outerMarker.width(), y + mt))));
+      // occupies no space
+      outerMarker = null;
+    }
+
+    // Determine column widths, for now let's just use width/N
+    Markdownish.Block hdr = table.blocks.get(0); // ROW of cell phrases
+    int numCols = hdr.phrases.size();
+    float colWidths[] = new float[numCols];
+    // FIXME: try to fit contents, else use weights
+    // FIXME: account for left/right margins on cells (or rows?)
+    for (int i = 0; i < numCols; i++)
+      colWidths[i] = tableWidth / numCols;
+
+    float h = mt; // content height so far
+    float w = tableWidth;
+
+    for (Markdownish.Block block : table.blocks) {
+      if (block.type != Markdownish.BlockType.ROW)
+        continue;
+      float bx = x + ml;
+      float by = y + h;
+      float bw = tableWidth - ml - mr;
+      Box box = layoutTableRow(block, bx, by, bw, colWidths);
+      w = Math.max(w, ml + box.width + mr);
+      h += box.height;
+    }
+
+    recentClear = mb;
+    h += mb;
+    return new Box(x, y, w, h, recentClear);
+  }
+
+  // ROW ... these have a 1+ phrases
+  private Box layoutTableRow(Markdownish.Block row, float x, float y, float rowWidth, float colWidths[]) {
+    
+    if (row.phrases.isEmpty()) {
+      // Likely never happens: no cells, so just an empty row
+      return new Box(x, y, rowWidth, 0, 0);
+    }
+
+    VisualLine vl = new VisualLine(x, y);
+    int i = 0;
+    for (Markdownish.Phrase phrase : row.phrases) {
+      float bw = colWidths[i++];
+      VisualCell vc = layoutPhrase(phrase, x + vl.w, y, bw, true, null, null);
+      vc.border = true;
+      vl.add(vc);
+    }
+
+    lines.add(vl);
+
+    int recentClear = 0;
+    return new Box(x, y, vl.w, vl.h, recentClear);
   }
 
   // HEADER, PARAGRAPH, FENCED_CODE ... these have a 1+ phrases
@@ -247,53 +325,71 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       // if present, on a line by itself with no content.
       return new Box(x, y, blockWidth, mt + 0 + mb, mb);
     }
+    
+    TextStyling.Accent accent = block.getAccent();
 
     float h = mt;
     float w = blockWidth;
+    float pw = blockWidth - ml - mr;
 
     for (Markdownish.Phrase phrase : block.phrases) {
+      VisualCell vc = layoutPhrase(phrase, x + ml, y + h, pw,
+          block.wrapped(), block.getAccent(), outerMarker);
+      lines.add(new VisualLine(vc));
+      outerMarker = null;
+      accent = null;
+      h += vc.h;
+    }
 
-      float pw = blockWidth - ml - mr;
+    h += mb;
+    recentClear = mb;
+    return new Box(x, y, w, h, recentClear);
+  }
 
-      AttributedString astr = phrase.buildAttributedString();
-      AttributedCharacterIterator it = astr.getIterator();
-      Font font = phrase.font;
+  private VisualCell layoutPhrase(Markdownish.Phrase phrase, float x, float y, float phraseWidth, boolean wrapped, TextStyling.Accent accent, ItemMarker outerMarker) {
+    FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
 
-      // underline accent is added to the last visual line of a header block
-      // blockleading accent is added to all visual lines of a header block
-      float accentExtraY = 0f;
-      TextStyling.Accent accent = block.getAccent(), uAccent = null, bAccent = null;
-      if (accent != null && accent.type == TextStyling.AccentType.UNDERLINE) {
-        uAccent = accent;
-        accentExtraY = accent.size.px(font);
-      } else if (accent != null && accent.type == TextStyling.AccentType.LEADERBLOCK) {
-        bAccent = accent;
-        float aw = accent.size.px(font) + (float)font.getStringBounds(" ", frc).getWidth();
-        // The accent leaderblock takes up some of the blockWidth.
-        pw -=  aw;
+    float h = 0;
+    float pw = phraseWidth;
+
+    AttributedString astr = phrase.buildAttributedString();
+    AttributedCharacterIterator it = astr.getIterator();
+    Font font = phrase.font;
+
+    // underline accent is added to the last visual line of a phrase
+    // blockleading accent is added to all visual lines of a phrase (maybe only first is better?)
+    float accentExtraY = 0f;
+    TextStyling.Accent uAccent = null, bAccent = null;
+    if (accent != null && accent.type == TextStyling.AccentType.UNDERLINE) {
+      uAccent = accent;
+      accentExtraY = accent.size.px(font);
+    } else if (accent != null && accent.type == TextStyling.AccentType.LEADERBLOCK) {
+      bAccent = accent;
+      float aw = accent.size.px(font) + (float)font.getStringBounds(" ", frc).getWidth();
+      // The accent leaderblock takes up some of the phraseWidth.
+      pw -=  aw;
+    }
+
+    VisualCell vc = new VisualCell(x, y);
+
+    if (!wrapped) {
+      // e.g. phrase within a FENCED_CODE block does not wrap
+      int left = it.getBeginIndex();
+      int right = it.getEndIndex();
+      TextLayout layout = new TextLayout(it, frc);
+
+      if (outerMarker != null) {
+        float dx = -outerMarker.width();
+        float dy = layout.getAscent() - outerMarker.ascent();
+        vc.add(new VisualBox(outerMarker, x + dx, y + dy));
+        // occupies no space
+        outerMarker = null;
       }
 
-      if (!block.wrapped()) {
-        // e.g. phrase within a FENCED_CODE block
-        int left = it.getBeginIndex();
-        int right = it.getEndIndex();
-        TextLayout layout = new TextLayout(it, frc);
-
-        if (outerMarker != null) {
-          float dx = -outerMarker.width();
-          float dy = layout.getAscent() - outerMarker.ascent();
-          lines.add(new VisualLine(outerMarker, x + dx, y + h + dy));
-          // occupies no space
-          outerMarker = null;
-        }
-
-        lines.add(new VisualLine(layout, astr, left, right, x + ml, y + h, accent, font));
-        h += layout.getAscent() + layout.getDescent() + layout.getLeading()
-          + accentExtraY;
-
-        continue;
-      }
-
+      VisualBox vb = new VisualBox(layout, astr, left, right, x, y, phraseWidth, accent, font);
+      vc.add(vb);
+    } else {
+      // e.g. phrase within a PARAGRAPH should auto-wraps
       LineBreakMeasurer measurer = new LineBreakMeasurer(it, frc);
       measurer.setPosition(it.getBeginIndex());
 
@@ -302,29 +398,29 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         TextLayout layout = measurer.nextLayout(Math.max(pw, Text.TEXT_MIN_WIDTH));
         int right = measurer.getPosition();
         boolean last = (right >= it.getEndIndex());
-        
+
         if (outerMarker != null) {
           float dx = -outerMarker.width();
           float dy = layout.getAscent() - outerMarker.ascent();
-          lines.add(new VisualLine(outerMarker, x + dx, y + h + dy));
+          lines.add(new VisualLine(new VisualCell(new VisualBox(outerMarker, x + dx, y + h + dy))));
           // occupies no space
           outerMarker = null;
         }
-        
-        lines.add(new VisualLine(layout, astr, left, right, x + ml, y + h,
-              bAccent != null ? bAccent : last ? uAccent : null, font));
-        h += layout.getAscent() + layout.getDescent() + layout.getLeading()
-          + (last ? accentExtraY : 0f);
+
+        VisualBox vb = new VisualBox(layout, astr, left, right, x, y + vc.h,
+          phraseWidth, bAccent != null ? bAccent : last ? uAccent : null, font);
+        vc.add(vb);
 
         left = right;
       }
-
     }
 
-    h += mb;
-    recentClear = mb;
-    return new Box(x, y, w, h, recentClear);
+    vc.h += accentExtraY;
+    return vc;
   }
+
+
+
 
   abstract class ItemMarker {
     abstract void draw(Graphics2D g, float x, float y);
@@ -405,43 +501,106 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     }
   }
 
+  // A horizontal row of cells, all taking up same height
   static class VisualLine {
+    ArrayList<VisualCell> cells;
+    float x, y; // top left corner for entire row of cells
+    float w; // total width = sum of cell widths
+    float h; // total height = max of cell heights
+    VisualLine(float x, float y) {
+      this.cells = new ArrayList<>();
+      this.x = x;
+      this.y = y;
+      this.w = this.h = 0;
+    }
+    VisualLine(VisualCell vc) {
+      cells = new ArrayList<>();
+      cells.add(vc);
+      x = vc.x;
+      y = vc.y;
+      w = vc.w;
+      h = vc.h;
+    }
+    void add(VisualCell cell) {
+      cells.add(cell);
+      w += cell.w;
+      h = Math.max(h, cell.h);
+    }
+  }
+
+  // a vertical stack of boxes, all taking up same width
+  static class VisualCell {
+    ArrayList<VisualBox> boxes;
+    float x, y; // top left corner for entire stack of boxes
+    float w; // total width = max of box widths
+    float h; // total height = sum of box heights
+    boolean border;
+    VisualCell(VisualBox vb) {
+      boxes = new ArrayList<>();
+      boxes.add(vb);
+      x = vb.x;
+      y = vb.y;
+      w = vb.width;
+      h = vb.height();
+      border = false;
+    }
+    VisualCell(float xx, float yy) {
+      boxes = new ArrayList<>();
+      x = xx;
+      y = yy;
+      w = 0;
+      h = 0;
+      border = false;
+    }
+    void add(VisualBox vb) {
+      boxes.add(vb);
+      w = Math.max(w, vb.width);
+      h += vb.height();
+    }
+  }
+
+  // horizontal layout for one line of text
+  static class VisualBox {
     final TextLayout layout;
     final AttributedString astr;
     final int start, end;     // index range within astr for this line
     final float x, y;         // top left corner
+    final float width; 
     final float baselineY;    // y+ascent, where layout.draw is called
     final ItemMarker marker;  // for list items
     final TextStyling.Accent accent;
     final Font font;          // only needed for computing accent sizing
 
-    VisualLine(ItemMarker marker, float x, float y) {
+    VisualBox(ItemMarker marker, float x, float y) {
       layout = null;
       astr = null;
       start = end = 0;
       this.x = x;
       this.y = y;
+      width = 0;
       baselineY = y;
       this.marker = marker;
       accent = null;
       font = null;
     }
 
-    VisualLine(TextLayout layout, AttributedString astr, int s, int e, float x, float y, TextStyling.Accent a, Font f) {
+    VisualBox(TextLayout layout, AttributedString astr, int s, int e, float x, float y, float w, TextStyling.Accent a, Font f) {
       this.layout = layout; // does not include newline
       this.astr = astr;
       this.start = s;
       this.end = e;
       this.x = x;
       this.y = y;
+      this.width = w;
       this.accent = a;
       this.font = f;
       marker = null;
       this.baselineY = y + layout.getAscent();
     }
 
-    float bottomY() { return baselineY + layout.getDescent() + layout.getLeading(); }
-    float textSize() { return layout.getAscent() + layout.getDescent(); }
+    float bottomY() { return layout == null ? baselineY : baselineY + layout.getDescent() + layout.getLeading(); }
+    float textSize() { return layout == null ? 0 : layout.getAscent() + layout.getDescent(); }
+    float height() { return layout == null ? 0 : textSize() + layout.getLeading(); }
 
     public int sourcePositionForX(float px) { // snaps to some nearby grapheme boundary
       float relX = px - x, relY = 0; // 0 means baseline
@@ -477,19 +636,39 @@ public class StyledBoxLayout implements Text.LayoutEngine {
   }
 
   public Text.CaretPosition caretPositionForPoint(int px, int py) {
-    StyledBoxLayout.VisualLine vl = lineForY(py);
-    int cursor = snapToGraphemeBoundary(vl.sourcePositionForX(px));
-    boolean revBias = vl.getBiasForX(px);
+    VisualLine vl = lineForY(py);
+    VisualCell vc = cellForX(vl, px);
+    VisualBox vb = boxForY(vc, py);
+    int cursor = snapToGraphemeBoundary(vb.sourcePositionForX(px));
+    boolean revBias = vb.getBiasForX(px);
     return new Text.CaretPosition(bounds, cursor, revBias);
   }
 
   public VisualLine lineForY(int py) {
     for (VisualLine vl : lines) {
-      if (vl.layout != null && py < vl.bottomY()) {
+      if (vl.h != 0 && py < vl.y + vl.h) {
         return vl;
       }
     }
     return lines.get(lines.size() - 1);
+  }
+
+  public VisualCell cellForX(VisualLine vl, int px) {
+    for (VisualCell vc : vl.cells) {
+      if (px < vc.x + vc.w) {
+        return vc;
+      }
+    }
+    return vl.cells.get(vl.cells.size() - 1);
+  }
+
+  public VisualBox boxForY(VisualCell vc, int py) {
+    for (VisualBox vb : vc.boxes) {
+      if (vb.layout != null && py < vb.bottomY()) {
+        return vb;
+      }
+    }
+    return vc.boxes.get(vc.boxes.size() - 1);
   }
   
   public int snapToGraphemeBoundary(int pos) {
