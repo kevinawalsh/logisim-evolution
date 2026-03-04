@@ -274,6 +274,19 @@ public class Markdownish {
       return this;
     }
 
+    private void mergeIntoParagraph(ArrayList<Phrase> morePhrases) {
+      if (morePhrases.isEmpty()) {
+        return;
+      }
+      if (phrases.isEmpty()) {
+        phrases.addAll(morePhrases);
+        return;
+      }
+      phrases.get(phrases.size()-1).merge(morePhrases.get(0));
+      for (int i = 1; i < morePhrases.size(); i++)
+        phrases.add(morePhrases.get(i));
+    }
+
     public boolean isLeaf() {
       return phrases != null;
     }
@@ -352,6 +365,43 @@ public class Markdownish {
       return as;
     }
 
+    private void trimPlus() {
+      Span plus = spans.get(0);
+      if (plus.type != SpanType.TEXT) {
+        System.out.println("huh?");
+        return;
+      }
+      if (plus.end - plus.start > 1) {
+        spans.remove(0);
+        spans.add(Span_text(plus.start+1, plus.end));
+        return;
+      }
+      spans.remove(0);
+      if (spans.isEmpty()) {
+        spans.add(Span_space(plus.start, plus.end));
+      } else if (spans.size() > 1 && spans.get(0).type == SpanType.SPACE) {
+        spans.remove(0);
+      }
+    }
+
+    private void merge(Phrase other) {
+      int n = this.spans.size();
+      int m = other.spans.size();
+      Span last = this.spans.get(n-1);
+      Span first = other.spans.get(0);
+      if (last.type == SpanType.SPACE && first.type == SpanType.SPACE) {
+        this.spans.addAll(other.spans.subList(1, m));
+      } else if (n == 1 && last.type == SpanType.SPACE) {
+        this.spans.clear();
+        this.spans.addAll(other.spans);
+      } else if (last.type != SpanType.SPACE && first.type != SpanType.SPACE) {
+        this.spans.add(Span_space(last.end, last.end+1));
+        this.spans.addAll(other.spans);
+      } else {
+        this.spans.addAll(other.spans);
+      }
+      applyInlineStyles(this.spans); // try to pair previously unpaired delimiters
+    }
   }
 
   private class OpenBlock {
@@ -1415,8 +1465,8 @@ public class Markdownish {
       headerRow.addSubBlock(cell);
     table.addSubBlock(headerRow);
 
-    ArrayList<ArrayList<String>> rows = new ArrayList<>();
     int tableEnd = le;
+    Block prevcells[] = null;
     while (tableEnd + 1 < end) {
       ls = tableEnd + 1;
       le = lineEnd(ls, end);
@@ -1424,11 +1474,21 @@ public class Markdownish {
       ArrayList<String> row = splitTableCells(ls, le, false, rowcells, alignments, widths, baseFont);
       if (row == null)
         break;
-      Block bodyRow = new_TableRow();
-      for (Block cell : rowcells)
-        bodyRow.addSubBlock(cell);
-      table.addSubBlock(bodyRow);
+      if (prevcells != null && !row.isEmpty() && row.get(0).trim().startsWith("+")) {
+        // Merge cells in this row with cells in previous row, discard "+" and leading spaces
+        rowcells[0].phrases.get(0).trimPlus();
+        for (int i = 0; i < cols; i++) {
+          prevcells[i].mergeIntoParagraph(rowcells[i].phrases);
+        }
+      } else {
+        Block bodyRow = new_TableRow();
+        for (Block cell : rowcells)
+          bodyRow.addSubBlock(cell);
+        table.addSubBlock(bodyRow);
+        prevcells = rowcells;
+      }
       tableEnd = le;
+
     }
 
     emit(table);
