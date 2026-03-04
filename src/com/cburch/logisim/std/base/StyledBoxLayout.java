@@ -262,26 +262,30 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     
     // Determine column widths, for now let's just use width/N
     Markdownish.Block hdr = table.blocks.get(0); // ROW of cell phrases
-    int numCols = hdr.phrases.size();
+    int numCols = hdr.blocks.size();
     float colWidths[] = new float[numCols];
     int colWeights[] = new int[numCols];
     float totalWidth = 0;
     for (int i = 0; i < numCols; i++) {
-      colWeights[i] = Math.max(1, hdr.phrases.get(i).cellWidth);
+      colWeights[i] = Math.max(1, hdr.blocks.get(i).cellWidth);
       for (Markdownish.Block row : table.blocks) {
         if (row.type != Markdownish.BlockType.ROW)
           continue;
-        if (row.phrases.size() <= i)
+        if (row.blocks.size() <= i)
           continue;
-        Markdownish.Phrase phrase = row.phrases.get(i);
-        float rPad = row.margin[1].px(row.font);
-        float lPad = row.margin[3].px(row.font);
-        AttributedCharacterIterator it = phrase.buildAttributedString().getIterator();
-        TextLayout layout = new TextLayout(it, frc);
-        float cellWidth = layout.getVisibleAdvance();
-        if (cellWidth < 1f) cellWidth = 0; // empty column, collapse to narrow bar
-        else cellWidth += lPad + rPad;
-        colWidths[i] = Math.max(colWidths[i], cellWidth);
+        Markdownish.Block cell = row.blocks.get(i);
+        if (cell.type != Markdownish.BlockType.PARAGRAPH)
+          continue;
+        for (Markdownish.Phrase phrase : cell.phrases) {
+          float rPad = row.margin[1].px(row.font);
+          float lPad = row.margin[3].px(row.font);
+          AttributedCharacterIterator it = phrase.buildAttributedString().getIterator();
+          TextLayout layout = new TextLayout(it, frc);
+          float cellWidth = layout.getVisibleAdvance();
+          if (cellWidth < 1f) cellWidth = 0; // empty column, collapse to narrow bar
+          else cellWidth += lPad + rPad;
+          colWidths[i] = Math.max(colWidths[i], cellWidth);
+        }
       }
       totalWidth += colWidths[i];
     }
@@ -309,10 +313,10 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return new Box(x, y, w, h, recentClear);
   }
 
-  // ROW ... these have a 1+ phrases
+  // ROW ... these have a 1+ PARAGRAPH blocks, each with 1+ phrases
   private Box layoutTableRow(Markdownish.Block row, float x, float y, float rowWidth, float colWidths[]) {
     
-    if (row.phrases.isEmpty()) {
+    if (row.blocks.isEmpty()) {
       // Likely never happens: no cells, so just an empty row
       return new Box(x, y, rowWidth, 0, 0);
     }
@@ -324,21 +328,23 @@ public class StyledBoxLayout implements Text.LayoutEngine {
 
     VisualLine vl = new VisualLine(x, y);
     int i = 0;
-    for (Markdownish.Phrase phrase : row.phrases) {
+    for (Markdownish.Block cell : row.blocks) {
       float colWidth = colWidths[i++];
       float lPadCell = colWidth > 0 ? lPad : 1.5f;
       float rPadCell = colWidth > 0 ? rPad : 1.5f;
       float cellWidth = colWidth - lPadCell - rPadCell;
-      VisualCell vc = layoutPhrase(phrase, x + vl.w + lPadCell, y + tPad, cellWidth, true, null, null);
+      if (cell.type != Markdownish.BlockType.PARAGRAPH)
+        continue;
+      VisualCell vc = layoutPhrases(cell.phrases, x + vl.w + lPadCell, y + tPad, cellWidth, true, null, null);
       vc.border = true;
       vc.x -= lPadCell;
       vc.w += lPadCell + rPadCell;
       vc.y -= tPad;
       vc.h += tPad + bPad;
-      if (phrase.cellAlign != ALIGN.H_LEFT) {
-        for (VisualBox vb : vc.boxes) {
+      if (cell.cellAlign != ALIGN.H_LEFT) {
+        for (VisualBox vb: vc.boxes) {
           float textWidth = vb.layout.getVisibleAdvance();
-          if (phrase.cellAlign == ALIGN.H_RIGHT)
+          if (cell.cellAlign == ALIGN.H_RIGHT)
             vb.x += (cellWidth - textWidth);
           else // ALIGN.H_CENTER
             vb.x += (cellWidth - textWidth)/2;
@@ -346,6 +352,9 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       }
       vl.add(vc);
     }
+    // Ensure all cells have same height, so borders lines work
+    for (VisualCell vc: vl.cells)
+      vc.h = vl.h;
 
     lines.add(vl);
 
@@ -373,36 +382,37 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     
     TextStyling.Accent accent = block.getAccent();
 
-    float h = mt;
-    float w = blockWidth;
     float pw = blockWidth - ml - mr;
 
-    for (Markdownish.Phrase phrase : block.phrases) {
-      VisualCell vc = layoutPhrase(phrase, x + ml, y + h, pw,
+    VisualCell vc = layoutPhrases(block.phrases, x + ml, y + mt, pw,
           block.wrapped(), block.getAccent(), outerMarker);
-      lines.add(new VisualLine(vc));
-      outerMarker = null;
-      accent = null;
-      h += vc.h;
-    }
+    lines.add(new VisualLine(vc));
 
-    h += mb;
     recentClear = mb;
-    return new Box(x, y, w, h, recentClear);
+    return new Box(x, y, blockWidth, mt + vc.h + mb, recentClear);
   }
 
-  private VisualCell layoutPhrase(Markdownish.Phrase phrase, float x, float y, float phraseWidth, boolean wrapped, TextStyling.Accent accent, ItemMarker outerMarker) {
+  private VisualCell layoutPhrases(ArrayList<Markdownish.Phrase> phrases, float x, float y, float phraseWidth, boolean wrapped, TextStyling.Accent accent, ItemMarker outerMarker) {
+    VisualCell vc = new VisualCell(x, y);
+    for (Markdownish.Phrase phrase: phrases) {
+      layoutPhrase(vc, phrase, phraseWidth, wrapped, accent, outerMarker);
+      accent = null;
+      outerMarker = null;
+    }
+    return vc;
+  }
+
+  private void layoutPhrase(VisualCell vc, Markdownish.Phrase phrase, float phraseWidth, boolean wrapped, TextStyling.Accent accent, ItemMarker outerMarker) {
     FontRenderContext frc = GraphicsUtil.CANVAS_FONT_RENDER_CONTEXT;
 
-    float h = 0;
     float pw = phraseWidth;
 
     AttributedString astr = phrase.buildAttributedString();
     AttributedCharacterIterator it = astr.getIterator();
     Font font = phrase.font;
 
-    // underline accent is added to the last visual line of a phrase
-    // blockleading accent is added to all visual lines of a phrase (maybe only first is better?)
+    // underline accent is added to the last visual line of the first phrase
+    // blockleading accent is added to all visual lines of the first phrase (maybe only first is better?)
     float accentExtraY = 0f;
     TextStyling.Accent uAccent = null, bAccent = null;
     if (accent != null && accent.type == TextStyling.AccentType.UNDERLINE) {
@@ -415,8 +425,6 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       pw -=  aw;
     }
 
-    VisualCell vc = new VisualCell(x, y);
-
     if (!wrapped) {
       // e.g. phrase within a FENCED_CODE block does not wrap
       int left = it.getBeginIndex();
@@ -426,12 +434,12 @@ public class StyledBoxLayout implements Text.LayoutEngine {
       if (outerMarker != null) {
         float dx = -outerMarker.width();
         float dy = layout.getAscent() - outerMarker.ascent();
-        vc.add(new VisualBox(outerMarker, x + dx, y + dy));
+        vc.add(new VisualBox(outerMarker, vc.x + dx, vc.y + vc.h + dy));
         // occupies no space
         outerMarker = null;
       }
 
-      VisualBox vb = new VisualBox(layout, astr, left, right, x, y, phraseWidth, accent, font);
+      VisualBox vb = new VisualBox(layout, astr, left, right, vc.x, vc.y + vc.h, phraseWidth, accent, font);
       vc.add(vb);
     } else {
       // e.g. phrase within a PARAGRAPH should auto-wraps
@@ -447,13 +455,13 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         if (outerMarker != null) {
           float dx = -outerMarker.width();
           float dy = layout.getAscent() - outerMarker.ascent();
-          lines.add(new VisualLine(new VisualCell(new VisualBox(outerMarker, x + dx, y + h + dy))));
+          lines.add(new VisualLine(new VisualCell(new VisualBox(outerMarker, vc.x + dx, vc.y + vc.h + dy))));
           // occupies no space
           outerMarker = null;
         }
 
-        VisualBox vb = new VisualBox(layout, astr, left, right, x, y + vc.h,
-          phraseWidth, bAccent != null ? bAccent : last ? uAccent : null, font);
+        VisualBox vb = new VisualBox(layout, astr, left, right, vc.x, vc.y + vc.h,
+            phraseWidth, bAccent != null ? bAccent : last ? uAccent : null, font);
         vc.add(vb);
 
         left = right;
@@ -461,11 +469,7 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     }
 
     vc.h += accentExtraY;
-    return vc;
   }
-
-
-
 
   abstract class ItemMarker {
     abstract void draw(Graphics2D g, float x, float y);
@@ -599,8 +603,8 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     }
     void add(VisualBox vb) {
       boxes.add(vb);
-      w = Math.max(w, vb.width);
-      h += vb.height();
+      w = Math.max(w, vb.width); // assumes all boxes are alligned left
+      h += vb.height(); // assumes all boxes are in a contiguous vertical layout
     }
   }
 

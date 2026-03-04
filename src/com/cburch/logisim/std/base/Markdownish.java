@@ -160,21 +160,21 @@ public class Markdownish {
  
   enum BlockType  {
     HEADER,        // one phrase; headerLevel is defined
-    PARAGRAPH,     // 1+ phrases are hardbreak-separated pieces of paragraph
+    PARAGRAPH,     // 1+ phrases are hardbreak-separated pieces of paragraph or table cell
     FENCED_CODE,   // 1+ phrases are lines of a code block
     TABLE,         // 1+ ROW blocks; first is header, rest are body
-    ROW,           // 1+ phrases are the cells
+    ROW,           // 1+ PARAGRAPH blocks are the cells
     LIST,          // 1+ BODY blocks; bullet is '+', '-', or '*', indent is defined, or
                    // 1+ BODY blocks; bullet is '.' or ')', indent and startnum are defined
     BODY,          // 1+ blocks, e.g. paragraphs, headers, fenced_code, etc. 
   }
 
   private Block new_Header(int headerLevel) { return new Block(headerLevel); }
-  private Block new_Paragraph() {
-    return new Block(BlockType.PARAGRAPH, baseFont, styling.paragraph_margin);
+  private Block new_Paragraph(Font font, int cellAlign, int cellWidth) {
+    return new Block(BlockType.PARAGRAPH, font, styling.paragraph_margin, cellAlign, cellWidth);
   }
   private Block new_FencedCode() {
-    return new Block(BlockType.FENCED_CODE, monoFont, styling.getCodeMargin());
+    return new Block(BlockType.FENCED_CODE, monoFont, styling.getCodeMargin(), 0, 0);
   }
   private Block new_List(String bullet, int startnum) {
     return new Block(BlockType.LIST, bullet, startnum);
@@ -183,10 +183,10 @@ public class Markdownish {
     return new Block(BlockType.BODY, styling.getListItemMargin(bullet));
   }
   private Block new_Table() {
-    return new Block(BlockType.TABLE, baseFont, styling.getTableMargin());
+    return new Block(BlockType.TABLE, baseFont, styling.getTableMargin(), 0, 0);
   }
   private Block new_TableRow() {
-    return new Block(BlockType.ROW, baseFont, styling.getTableCellPadding());
+    return new Block(BlockType.ROW, baseFont, styling.getTableCellPadding(), 0, 0);
   }
   public final class Block {
     final BlockType type;                // all blocks
@@ -197,6 +197,8 @@ public class Markdownish {
     final int headerLevel;               // for headers
     final String bullet;                 // for lists
     final int startnum;                  // for numbered lists
+    final int cellAlign;                 // for table cells
+    final int cellWidth;                 // for table cells
   
     // HEADER
     private Block(int headerLevel) {
@@ -211,15 +213,23 @@ public class Markdownish {
       this.blocks = null;
       this.bullet = null;
       this.startnum = 0;
+      this.cellAlign = this.cellWidth = 0;
     }
 
     // PARAGRAPH, FENCED_CODE, TABLE, ROW
-    private Block(BlockType type, Font font, TextStyling.Size margin[]) {
+    private Block(BlockType type, Font font, TextStyling.Size margin[], int cellAlign, int cellWidth) {
       this.type = type;
-      this.phrases = (type == BlockType.TABLE ? null : new ArrayList<>());
-      this.blocks = (type == BlockType.TABLE ? new ArrayList<>() : null);
+      if (type == BlockType.TABLE || type == BlockType.ROW) {
+        this.phrases = null;
+        this.blocks = new ArrayList<>();
+      } else {
+        this.phrases = new ArrayList<>();
+        this.blocks = null;
+      }
       this.font = font;
       this.margin = margin;
+      this.cellAlign = cellAlign;
+      this.cellWidth = cellWidth;
 
       this.bullet = null;
       this.startnum = 0;
@@ -237,6 +247,7 @@ public class Markdownish {
       this.bullet = null;
       this.startnum = 0;
       this.headerLevel = 0;
+      this.cellAlign = this.cellWidth = 0;
     }
 
     // LIST
@@ -250,16 +261,11 @@ public class Markdownish {
 
       this.phrases = null;
       this.headerLevel = 0;
+      this.cellAlign = this.cellWidth = 0;
     }
 
     private Block addPhrase(ArrayList<Span> spans) {
-      Phrase phrase = new Phrase(font, spans, 0, 0);
-      phrases.add(phrase);
-      return this;
-    }
-
-    private Block addTableCell(Phrase cell) {
-      phrases.add(cell);
+      phrases.add(new Phrase(font, spans));
       return this;
     }
 
@@ -288,14 +294,10 @@ public class Markdownish {
   public final class Phrase {
     final Font font;
     final ArrayList<Span> spans; // not empty; otherwise, we can't map block to src text index
-    final int cellAlign; // for table cells
-    final int cellWidth; // for table cells
 
-    private Phrase(Font font, ArrayList<Span> spans, int align, int width) {
+    private Phrase(Font font, ArrayList<Span> spans) {
       this.font = font;
       this.spans = spans;
-      this.cellAlign = align;
-      this.cellWidth = width;
     }
 
     public AttributedString buildAttributedString() {
@@ -597,6 +599,11 @@ public class Markdownish {
           parseInlineCode();
         } else if (ch == '[' && parseLink()) {
           //  (11) [inline](url) --> LINK_BEGIN, ..., LINK_END
+        } else if (ch == '<' && pos + 3 < end && src.substring(pos, pos+4).equalsIgnoreCase("<br>")) {
+          markAsOther();
+          addSpaceIfEmptySection(); // ensure no hardbreak at start, no consecutive hardbreak
+          spans.add(Span_hardbreak(pos, pos+3));
+          pos += 3;
         } else if (ch == '\\' && (pos + 1 == end || src.charAt(pos+1) == '\n')) {
           // (5) unescaped backslash before newline or end --> HARDBREAK
           markAsOther();
@@ -1093,14 +1100,14 @@ public class Markdownish {
     }
     ArrayList<Span> spans = parseInlineSpans(paraStart, paraEnd);
     applyInlineStyles(spans);
-    emit(buildParagraph(spans));
+    emit(buildParagraph(baseFont, spans, 0, 0));
     return paraEnd + 1;
   }
 
-  private Block buildParagraph(ArrayList<Span> spans) {
-    // split by hardbreaks, emit each one as a paragraph
+  private Block buildParagraph(Font font, ArrayList<Span> spans, int cellAlign, int cellWidth) {
+    // split by hardbreaks, make a Phrase for each, package into a PARAGRAPH
     ArrayList<Span> section = new ArrayList<>();
-    Block block = new_Paragraph();
+    Block block = new_Paragraph(font, cellAlign, cellWidth);
     for (Span span : spans) {
       if (span.type == SpanType.HARDBREAK) {
         // Emit current section (skips if empty)
@@ -1279,10 +1286,10 @@ public class Markdownish {
   //   but " foo " alone isn't a cell
   // if not strict, then any non-blank not-too-indented line has cells
   //   unless it has just a single pipe
-  private ArrayList<String> splitTableCells(int ls, int le, boolean strict, Phrase cells[], int cellAlign[], int cellWidth[], Font font) {
+  private ArrayList<String> splitTableCells(int ls, int le, boolean strict, Block cells[], int cellAlign[], int cellWidth[], Font font) {
     int s = skipWplusN(ls, le);
     s = ignore3LeadingSpaces(s, le);
-    if (s == le || isSpaceOrTab(src.charAt(s)))
+    if (s == le || (strict && isSpaceOrTab(src.charAt(s))))
       return null; // blank, or too indented
     // strip leading pipe
     boolean leadingPipe = (src.charAt(s) == '|');
@@ -1315,7 +1322,7 @@ public class Markdownish {
           if (cells != null && i < cells.length) {
             ArrayList<Span> spans = parseInlineSpans(cellStart, pos);
             applyInlineStyles(spans);
-            cells[i] = new Phrase(font, spans, cellAlign[i], cellWidth[i]);
+            cells[i] = buildParagraph(font, spans, cellAlign[i], cellWidth[i]);
           }
           cellStart = pos+1;
         }
@@ -1327,7 +1334,7 @@ public class Markdownish {
       if (cells != null && i < cells.length) {
         ArrayList<Span> spans = parseInlineSpans(cellStart, e);
         applyInlineStyles(spans);
-        cells[i] = new Phrase(font, spans, cellAlign[i], cellWidth[i]);
+        cells[i] = buildParagraph(font, spans, cellAlign[i], cellWidth[i]);
       }
     }
     if (cells != null) {
@@ -1335,7 +1342,7 @@ public class Markdownish {
         if (cells[i] == null) {
           ArrayList<Span> spans = new ArrayList<>();
           spans.add(Span_space(e-1, e));
-          cells[i] = new Phrase(font, spans, cellAlign[i], cellWidth[i]);
+          cells[i] = buildParagraph(font, spans, cellAlign[i], cellWidth[i]);
         }
       }
     }
@@ -1399,13 +1406,13 @@ public class Markdownish {
       }
     }
 
-    Phrase hdrcells[] = new Phrase[cols];
+    Block hdrcells[] = new Block[cols];
     splitTableCells(tableStart, headerEnd, true, hdrcells, alignments, widths, hdrFont);
     
     Block table = new_Table();
     Block headerRow = new_TableRow();
-    for (Phrase cell : hdrcells)
-      headerRow.addTableCell(cell);
+    for (Block cell : hdrcells)
+      headerRow.addSubBlock(cell);
     table.addSubBlock(headerRow);
 
     ArrayList<ArrayList<String>> rows = new ArrayList<>();
@@ -1413,13 +1420,13 @@ public class Markdownish {
     while (tableEnd + 1 < end) {
       ls = tableEnd + 1;
       le = lineEnd(ls, end);
-      Phrase rowcells[] = new Phrase[cols];
+      Block rowcells[] = new Block[cols];
       ArrayList<String> row = splitTableCells(ls, le, false, rowcells, alignments, widths, baseFont);
       if (row == null)
         break;
       Block bodyRow = new_TableRow();
-      for (Phrase cell : rowcells)
-        bodyRow.addTableCell(cell);
+      for (Block cell : rowcells)
+        bodyRow.addSubBlock(cell);
       table.addSubBlock(bodyRow);
       tableEnd = le;
     }
@@ -1430,8 +1437,3 @@ public class Markdownish {
   }
 
 }
-
-// TODO:
-//  ~ links (web, eventually to built-in help pages)
-//  - tables (for properties)
-//  - truthtables
