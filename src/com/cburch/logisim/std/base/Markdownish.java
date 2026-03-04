@@ -534,8 +534,8 @@ public class Markdownish {
       }
 
       // parse truthtable
-      else if (isOpeningTruthtable(ls, le, end)) {
-        ls = parseTruthtable(ls, le, end);
+      else if (isOpeningTable(ls, le, end)) {
+        ls = parseTable(ls, le, end);
       }
 
       // anything else must be a paragraph
@@ -1087,7 +1087,7 @@ public class Markdownish {
       ls = skipWplusN(ls, eof);
       int le = lineEnd(ls, eof); // next line is [ls, le), and le is EOL or eof
 
-      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, true) || isOpeningTruthtable(ls, le, eof))
+      if (isBlankLine(ls, le) || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, true) || isOpeningTable(ls, le, eof))
         break;
       paraEnd = le;
     }
@@ -1266,7 +1266,7 @@ public class Markdownish {
       boolean thisIsBlank = isBlankLine(ls, le); 
       if (!thisIsBlank
           && countLineIndent(ls, le) < WplusN
-          && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false) || isOpeningTruthtable(ls, le, eof)))
+          && (prevWasBlank || isHeaderLine(ls, le) || isOpeningCodeFence(ls, le) || isListLine(ls, le, false) || isOpeningTable(ls, le, eof)))
         break;
       itemEnd = le;
       prevWasBlank = thisIsBlank;
@@ -1279,7 +1279,7 @@ public class Markdownish {
   //   but " foo " alone isn't a cell
   // if not strict, then any non-blank not-too-indented line has cells
   //   unless it has just a single pipe
-  private ArrayList<String> splitTableCells(int ls, int le, boolean strict, Phrase cells[], int cellAlign[], int cellWidth[]) {
+  private ArrayList<String> splitTableCells(int ls, int le, boolean strict, Phrase cells[], int cellAlign[], int cellWidth[], Font font) {
     int s = skipWplusN(ls, le);
     s = ignore3LeadingSpaces(s, le);
     if (s == le || isSpaceOrTab(src.charAt(s)))
@@ -1315,7 +1315,7 @@ public class Markdownish {
           if (cells != null && i < cells.length) {
             ArrayList<Span> spans = parseInlineSpans(cellStart, pos);
             applyInlineStyles(spans);
-            cells[i] = new Phrase(baseFont, spans, cellAlign[i], cellWidth[i]);
+            cells[i] = new Phrase(font, spans, cellAlign[i], cellWidth[i]);
           }
           cellStart = pos+1;
         }
@@ -1327,7 +1327,7 @@ public class Markdownish {
       if (cells != null && i < cells.length) {
         ArrayList<Span> spans = parseInlineSpans(cellStart, e);
         applyInlineStyles(spans);
-        cells[i] = new Phrase(baseFont, spans, cellAlign[i], cellWidth[i]);
+        cells[i] = new Phrase(font, spans, cellAlign[i], cellWidth[i]);
       }
     }
     if (cells != null) {
@@ -1335,15 +1335,15 @@ public class Markdownish {
         if (cells[i] == null) {
           ArrayList<Span> spans = new ArrayList<>();
           spans.add(Span_space(e-1, e));
-          cells[i] = new Phrase(baseFont, spans, cellAlign[i], cellWidth[i]);
+          cells[i] = new Phrase(font, spans, cellAlign[i], cellWidth[i]);
         }
       }
     }
     return ret;
   }
 
-  private boolean isOpeningTruthtable(int ls, int le, int end) {
-    ArrayList<String> hdr = splitTableCells(ls, le, true, null, null, null);
+  private boolean isOpeningTable(int ls, int le, int end) {
+    ArrayList<String> hdr = splitTableCells(ls, le, true, null, null, null, null);
     if (hdr == null)
       return false;
 
@@ -1351,7 +1351,7 @@ public class Markdownish {
     le = lineEnd(ls, end);
     if (ls == le) return false;
 
-    ArrayList<String> dlm = splitTableCells(ls, le, true, null, null, null); // in GFM, this is non-strict (sort of)
+    ArrayList<String> dlm = splitTableCells(ls, le, true, null, null, null, null); // in GFM, this is non-strict (sort of)
     if (dlm == null || dlm.size() != hdr.size())
       return false;
 
@@ -1366,14 +1366,16 @@ public class Markdownish {
     return true;
   }
 
-  private int parseTruthtable(int ls, int le, int end) {
+  private int parseTable(int ls, int le, int end) {
     int tableStart = ls;
     int headerEnd = le;
+
+    Font hdrFont = baseFont.deriveFont(baseFont.getStyle() | Font.BOLD);
 
     // get delimiter row
     ls = le + 1;
     le = lineEnd(ls, end);
-    ArrayList<String> dlm = splitTableCells(ls, le, true, null, null, null);
+    ArrayList<String> dlm = splitTableCells(ls, le, true, null, null, null, null);
     int cols = dlm.size();
 
     // get cell alignments and widths
@@ -1398,7 +1400,7 @@ public class Markdownish {
     }
 
     Phrase hdrcells[] = new Phrase[cols];
-    splitTableCells(tableStart, headerEnd, true, hdrcells, alignments, widths);
+    splitTableCells(tableStart, headerEnd, true, hdrcells, alignments, widths, hdrFont);
     
     Block table = new_Table();
     Block headerRow = new_TableRow();
@@ -1412,7 +1414,7 @@ public class Markdownish {
       ls = tableEnd + 1;
       le = lineEnd(ls, end);
       Phrase rowcells[] = new Phrase[cols];
-      ArrayList<String> row = splitTableCells(ls, le, false, rowcells, alignments, widths);
+      ArrayList<String> row = splitTableCells(ls, le, false, rowcells, alignments, widths, baseFont);
       if (row == null)
         break;
       Block bodyRow = new_TableRow();

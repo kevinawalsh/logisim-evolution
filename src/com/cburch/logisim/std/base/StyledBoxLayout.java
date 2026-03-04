@@ -278,7 +278,10 @@ public class StyledBoxLayout implements Text.LayoutEngine {
         float lPad = row.margin[3].px(row.font);
         AttributedCharacterIterator it = phrase.buildAttributedString().getIterator();
         TextLayout layout = new TextLayout(it, frc);
-        colWidths[i] = Math.max(colWidths[i], lPad + layout.getAdvance() + rPad);
+        float cellWidth = layout.getVisibleAdvance();
+        if (cellWidth < 1f) cellWidth = 0; // empty column, collapse to narrow bar
+        else cellWidth += lPad + rPad;
+        colWidths[i] = Math.max(colWidths[i], cellWidth);
       }
       totalWidth += colWidths[i];
     }
@@ -322,11 +325,14 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     VisualLine vl = new VisualLine(x, y);
     int i = 0;
     for (Markdownish.Phrase phrase : row.phrases) {
-      float cellWidth = colWidths[i++] - lPad - rPad;
-      VisualCell vc = layoutPhrase(phrase, x + vl.w + lPad, y + tPad, cellWidth, true, null, null);
+      float colWidth = colWidths[i++];
+      float lPadCell = colWidth > 0 ? lPad : 1.5f;
+      float rPadCell = colWidth > 0 ? rPad : 1.5f;
+      float cellWidth = colWidth - lPadCell - rPadCell;
+      VisualCell vc = layoutPhrase(phrase, x + vl.w + lPadCell, y + tPad, cellWidth, true, null, null);
       vc.border = true;
-      vc.x -= lPad;
-      vc.w += lPad + rPad;
+      vc.x -= lPadCell;
+      vc.w += lPadCell + rPadCell;
       vc.y -= tPad;
       vc.h += tPad + bPad;
       if (phrase.cellAlign != ALIGN.H_LEFT) {
