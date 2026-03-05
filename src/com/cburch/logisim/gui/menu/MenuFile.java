@@ -35,8 +35,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.LinkedHashMap;
 import java.util.List;
 
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
@@ -50,7 +52,124 @@ import com.cburch.logisim.util.DesktopIntegration;
 
 class MenuFile extends Menu implements ActionListener {
   private static final long serialVersionUID = 1L;
+
+  // Hardcoded list of example circuits. Format for each entry is a
+  // colon-separated triplet:
+  //   "Category > Subcategory > Item Name : path/to/file.circ : Circuit Name"
+  // The path before the first ":" uses " > " to define nesting. The last
+  // segment is the menu item label. If there are no ">" the item goes directly
+  // in the top-level Examples menu. Circuit Name (third part) is optional.
+  // Example:
+  //   "Audio > PCM Demos > PCM Wave : audio/pcm-demo.circ : wave gen"
+  private static final String[] EXAMPLES = {
+
+    "audio > demos > wave generators             : audio-demo.circ : demo-wave-generators",
+    "audio > demos > wacky techno-synth          : audio-demo.circ : demo-wacky-technosynth",
+    "audio > demos > chaos synth                 : audio-demo.circ : demo-chaos-synth",
+    "audio > demos > signal mixing               : audio-demo.circ : demo-mixing",
+    "audio > demos > digital resonator           : audio-demo.circ : demo-digital-resonator",
+    "audio > demos > low-pass filtering          : audio-demo.circ : demo-lowpass-filter",
+    "audio > demos > high-pass filtering         : audio-demo.circ : demo-highpass-filter",
+    "audio > demos > bandpass filtered noise     : audio-demo.circ : demo-seascape-bandpass-filtered-noise",
+    "audio > demos > adjustable filtering        : audio-demo.circ : demo-adjustable-filter-ord1",
+    "audio > demos > FIR filtering               : audio-demo.circ : demo-FIR-filter-ord1",
+    "audio > demos > pre-recorded audio playback : audio-demo.circ : demo-recorded-audio",
+    "audio > demos > pre-recorded audio + SVF    : audio-demo.circ : demo-recorded-audio-svf",
+    "audio > demos > tone + reverb               : audio-demo.circ : demo-reverb-tone",
+    "audio > demos > voice + reverb              : audio-demo.circ : demo-reverb-voice",
+    "audio > arduino usb > accelerometer +tones  : audio-demo.circ : demo-usb-arduino",
+    "audio > arduino usb > boops!                : audio-demo.circ : demo-arduino-trigger-boops",
+    "audio > arduino usb > multi-trigger         : audio-demo.circ : demo-arduino-multitrigger",
+    "audio > arduino usb > noisy drumkit         : audio-demo.circ : demo-arduino-noisy-drumkit",
+    "audio > birdbrain finch > multi-trigger     : audio-demo.circ : demo-finch-multitrigger",
+
+    "audio > waves > sawtooth (80 hz)            : audio-demo.circ : sawtooth-80hz",
+    "audio > waves > sawtooth (80 hz, alt)       : audio-demo.circ : sawtooth-80hz-alternate",
+    "audio > waves > sawtooth (variable)         : audio-demo.circ : sawtooth",
+    "audio > waves > triangle (120 hz)           : audio-demo.circ : triangle-120hz",
+    "audio > waves > triangle (62.5 hz)          : audio-demo.circ : triangle-62.5hz",
+    "audio > waves > triangle (variable)         : audio-demo.circ : triangle",
+    "audio > waves > square                      : audio-demo.circ : squarewave",
+    "audio > waves > sin                         : audio-demo.circ : sinwave",
+    "audio > waves > white noise                 : audio-demo.circ : white-noise",
+    "audio > ramps & filters > sweep             : audio-demo.circ : sweep-0-to-65535",
+    "audio > ramps & filters > sweep signed      : audio-demo.circ : sweep-(-32768)-to-(+32767)",
+    "audio > ramps & filters > sweep slow        : audio-demo.circ : sweep-(-32768)-to-(+32767)-slowly",
+    "audio > ramps & filters > low-pass          : audio-demo.circ : lowpass-filter-onepole",
+    "audio > ramps & filters > high-pass         : audio-demo.circ : highpass-filter-onepole",
+    "audio > ramps & filters > high-pass (alt)   : audio-demo.circ : highpass-filter-onepole-alternate",
+    "audio > ramps & filters > SVF               : audio-demo.circ : SVF-filter",
+    "audio > ramps & filters > click track       : audio-demo.circ : click-track",
+    "audio > ramps & filters > pulse generator   : audio-demo.circ : pulse-generator",
+
+    "audio > diy & practice > wave generators    : audio-demo.circ : diy-wave-generator",
+    "audio > diy & practice > more waves         : audio-demo.circ : diy-waves",
+    "audio > diy & practice > stored waveforms   : audio-demo.circ : diy-create-a-wave",
+    "audio > diy & practice > envelopes          : audio-demo.circ : diy-envelope",
+    "audio > diy & practice > delayline & reverb : audio-demo.circ : diy-delayline-reverb",
+
+    "audio > midi > midi demo                    : audio-midi.circ : main",
+    "audio > midi > midi output                  : audio-midi.circ : midi-out",
+    "audio > midi > midi input                   : audio-midi.circ : midi-in",
+
+    "MIPS > full 32-bit MIPS computer            : mips-test.circ : main",
+    "MIPS > 32-bit ALU                           : mips-test.circ : ALU",
+    "MIPS > 32x32 register file                  : mips-test.circ : regfile",
+
+    "logisim features > dynamic conditions       : DynamicConditions.circ : main",
+    "logisim features > in-circuit slideshow     : FilesAndImages.circ : main",
+    "logisim features > in-circuit file viewer   : FilesAndImages.circ : main",
+    "logisim features > joystick + vga video     : vga-joystick.circ : main",
+
+    "miscellaneous > ideal relay                 : IdealRelay.circ : main",
+
+  };
+
+  // Build the Examples JMenu from EXAMPLES. Submenus are created on demand,
+  // ordered by first appearance.
+  private static JMenu buildExamples() {
+    JMenu top = new JMenu("Examples");
+    LinkedHashMap<String, JMenu> submenus = new LinkedHashMap<>();
+    for (String entry : EXAMPLES) {
+      String[] parts = entry.split(":", 3);
+      if (parts.length < 2) continue;
+      String path = parts[0].trim();
+      String filename = parts[1].trim();
+      String circuitName = parts.length >= 3 ? parts[2].trim() : null;
+      if (circuitName != null && circuitName.isEmpty()) circuitName = null;
+      if (filename.isEmpty()) continue;
+
+      String[] segments = path.split(">");
+      for (int i = 0; i < segments.length; i++)
+        segments[i] = segments[i].trim();
+
+      // All but the last segment are submenu names; last is the item label.
+      JMenu parent = top;
+      StringBuilder keyBuf = new StringBuilder();
+      for (int i = 0; i < segments.length - 1; i++) {
+        if (keyBuf.length() > 0) keyBuf.append('>');
+        keyBuf.append(segments[i]);
+        String key = keyBuf.toString();
+        JMenu sub = submenus.get(key);
+        if (sub == null) {
+          sub = new JMenu(segments[i]);
+          parent.add(sub);
+          submenus.put(key, sub);
+        }
+        parent = sub;
+      }
+
+      final String fname = filename;
+      final String cname = circuitName;
+      JMenuItem item = new JMenuItem(segments[segments.length - 1]);
+      item.addActionListener(e -> HelpBroker.openLive(fname, cname));
+      parent.add(item);
+    }
+    return top;
+  }
+
   private LogisimMenuBar menubar;
+  private JMenu examples = buildExamples();
   private JMenuItem newi = new JMenuItem();
   private JMenuItem open = new JMenuItem();
   private OpenRecent openRecent;
@@ -83,6 +202,7 @@ class MenuFile extends Menu implements ActionListener {
     add(newi);
     add(open);
     add(openRecent);
+    add(examples);
     addSeparator();
     add(close);
     add(save);
@@ -186,6 +306,7 @@ class MenuFile extends Menu implements ActionListener {
     newi.setText(S.get("fileNewItem"));
     open.setText(S.get("fileOpenItem"));
     openRecent.localeChanged();
+    examples.setText(S.get("fileExamples"));
     close.setText(S.get("fileCloseItem"));
     save.setText(S.get("fileSaveItem"));
     saveAs.setText(S.get("fileSaveAsItem"));

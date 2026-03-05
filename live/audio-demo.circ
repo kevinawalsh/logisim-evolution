@@ -7,7 +7,9 @@
       <a name="background" val="#ffffff00"/>
       <a name="font" val="SansSerif plain 12"/>
       <a name="foreground" val="#000000"/>
+      <a name="format" val="plain"/>
       <a name="halign" val="center"/>
+      <a name="style" val=""/>
       <a name="text" val="text"/>
       <a name="valign" val="base"/>
     </tool>
@@ -110,7 +112,9 @@
       <a name="background" val="#ffffff00"/>
       <a name="font" val="SansSerif plain 12"/>
       <a name="foreground" val="#000000"/>
+      <a name="format" val="plain"/>
       <a name="halign" val="left"/>
+      <a name="style" val=""/>
       <a name="text" val="text"/>
       <a name="valign" val="base"/>
     </tool>
@@ -155,7 +159,6 @@
   <circuit name="notes">
     <comp lib="0" loc="(19,40)" name="Text">
       <a name="background" val="#8bf0d0"/>
-      <a name="halign" val="left"/>
       <a name="text">Some notes on these audio circuits....
 
 We use 16kHz signed 16-bit PCM audio output, but try to avoid sounds that are very loud. 
@@ -198,7 +201,6 @@ the values smaller
 (and the sound quieter)</a>
     </comp>
     <comp lib="0" loc="(46,26)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="A demonstration of a few different wave generators."/>
     </comp>
     <comp lib="0" loc="(491,113)" name="Callout">
@@ -294,7 +296,7 @@ the auto tick speed to the max.</a>
     <comp loc="(240,340)" name="sawtooth"/>
     <comp loc="(240,440)" name="sweep-(-32768)-to-(+32767)"/>
     <comp loc="(290,100)" name="sawtooth-80hz"/>
-    <comp loc="(290,170)" name="triangle-160hz"/>
+    <comp loc="(290,170)" name="triangle-120hz"/>
     <comp loc="(290,240)" name="squarewave"/>
     <wire from="(110,250)" to="(110,270)"/>
     <wire from="(110,270)" to="(230,270)"/>
@@ -365,7 +367,6 @@ to zero, this produces
 "low frequency oscillator" effect!</a>
     </comp>
     <comp lib="0" loc="(40,37)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Buttons allow you to selectively enable or pause either of two
 generators: a triangle generator, or a sawtooth generator.
 
@@ -468,7 +469,6 @@ to pick random frequencies.</a>
     </comp>
     <comp lib="0" loc="(16,27)" name="Text">
       <a name="foreground" val="#e6000b"/>
-      <a name="halign" val="left"/>
       <a name="text" val="Try typing A, or B, or both, then also press C at the same time!"/>
     </comp>
     <comp lib="0" loc="(208,67)" name="Callout">
@@ -622,7 +622,6 @@ two signals, a simple mix.</a>
   <circuit name="demo-mixing">
     <a name="appearance" val="classic"/>
     <comp lib="0" loc="(19,31)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Demo of some different mixing options.
 </a>
     </comp>
@@ -829,7 +828,6 @@ source frequency</a>
     <comp lib="0" loc="(37,344)" name="Text">
       <a name="background" val="#2dffec76"/>
       <a name="foreground" val="#1f16f2"/>
-      <a name="halign" val="left"/>
       <a name="text">Try setting "beta" to be about 33% (part way down towards the bottom).
 Then vary the source frequency.  What do you notice?
 Which source frquencies seem to get smaller (or "attenuated") as they go through the filter?
@@ -938,7 +936,6 @@ source frequency</a>
     <comp lib="0" loc="(35,374)" name="Text">
       <a name="background" val="#2dffec76"/>
       <a name="foreground" val="#1f16f2"/>
-      <a name="halign" val="left"/>
       <a name="text">Try setting "alpha" to be about 50% (near the middle).
 Then vary the source frequency.  What do you notice?
 Which source frquencies seem to get smaller (or "attenuated") as they go through the filter?
@@ -4390,7 +4387,6 @@ ks2sL8t6bf79f3uHJouSAfk15jyZYRe14vHCQbySlC/37m0l/3hY9eNfZd7fh9Hr5BtTjUI79GdK
       <a name="dx" val="-33"/>
       <a name="dy" val="-10"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">Arduino's x-axis accelerometer is
 used to control sawtooth frequency.</a>
     </comp>
@@ -4399,7 +4395,6 @@ used to control sawtooth frequency.</a>
       <a name="dx" val="57"/>
       <a name="dy" val="113"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">Connect arduino
 to usb, then poke
 to connect.</a>
@@ -4517,7 +4512,6 @@ to connect.</a>
   <circuit name="demo-arduino-trigger-boops">
     <a name="appearance" val="classic"/>
     <comp lib="0" loc="(168,223)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">These values control the "envelope" shape,
 attack-sustain-delay style... each value
 here is in range [0, 255], which we scale
@@ -4528,7 +4522,6 @@ up to [0, 32767] before multiplying.</a>
       <a name="dx" val="57"/>
       <a name="dy" val="113"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">Connect arduino
 to usb, then poke
 to connect.</a>
@@ -4538,7 +4531,6 @@ to connect.</a>
       <a name="dx" val="35"/>
       <a name="dy" val="75"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">Each click resets this counter.
 It then goes from 0 to some
 big number, taking a while,
@@ -4549,7 +4541,6 @@ and we scale that down to [0, 7]</a>
       <a name="dx" val="-56"/>
       <a name="dy" val="45"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">x-accel controls click tempo.
 z-accel controls tone frequency.</a>
     </comp>
@@ -5603,7 +5594,6 @@ ff a0 80 80 30 20 10
 to signed [-2048, 2047] scale.</a>
     </comp>
     <comp lib="0" loc="(17,22)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Demonstration of the audio "Scaled Math" feature. Click one of the buttons in the mux to choose
 which function you want to plot, then click bang.
 
@@ -5753,7 +5743,6 @@ when bang is pressed.</a>
       <a name="text" val="Actual date &amp; time"/>
     </comp>
     <comp lib="0" loc="(17,22)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Demonstration of the external "real time clock". These give you access to the current date
 and time (i.e. the number of seconds since the computer epoch began, midnight jan 1, 1970).
 Or you can access the "uptime", the amout of time since the simulation began or was reset.
@@ -5857,7 +5846,6 @@ signal(s), and also
 be sure to enable them.</a>
     </comp>
     <comp lib="0" loc="(289,104)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Original Signal"/>
     </comp>
     <comp lib="0" loc="(475,417)" name="Callout">
@@ -5870,7 +5858,6 @@ samples, and mixes them together
 in some combination.</a>
     </comp>
     <comp lib="0" loc="(815,182)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Final Signal"/>
     </comp>
     <comp lib="1" loc="(120,320)" name="Pin"/>
@@ -5998,7 +5985,6 @@ signal(s), and also
 be sure to enable them.</a>
     </comp>
     <comp lib="0" loc="(289,104)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Original Signal"/>
     </comp>
     <comp lib="0" loc="(475,417)" name="Callout">
@@ -6011,7 +5997,6 @@ samples, and mixes them together
 in some combination.</a>
     </comp>
     <comp lib="0" loc="(925,182)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Final Signal"/>
     </comp>
     <comp lib="1" loc="(120,320)" name="Pin"/>
@@ -6156,7 +6141,6 @@ signal(s), and also
 be sure to enable them.</a>
     </comp>
     <comp lib="0" loc="(289,104)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Original Signal"/>
     </comp>
     <comp lib="0" loc="(315,379)" name="Callout">
@@ -6169,7 +6153,6 @@ signal, making
 it smaller.</a>
     </comp>
     <comp lib="0" loc="(429,103)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Attenuated Signal"/>
     </comp>
     <comp lib="0" loc="(593,434)" name="Callout">
@@ -6181,7 +6164,6 @@ back in a feedback loop. Adjust all the
 coefficients (b_0, a_1, a_2) to achieve diferent effects.</a>
     </comp>
     <comp lib="0" loc="(885,112)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Final Signal"/>
     </comp>
     <comp lib="1" loc="(120,320)" name="Pin"/>
@@ -6365,7 +6347,6 @@ and start over again.
 </a>
     </comp>
     <comp lib="0" loc="(30,33)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a 80 Hz sawtooth wave generator - When enabled, counts from -10000 to +10000, then
 resets to 0 and counts up again, forever. It counts by 100 per step, so at 16 kHz simulation speed,
 this produces an approx 80 Hz tone (because it has 201 steps, and 16000/201 = 79.6).</a>
@@ -6380,7 +6361,6 @@ to take values between [0, 200] and adjust
 them so they fall within [-10000, +1000]</a>
     </comp>
     <comp lib="0" loc="(43,424)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Q: Can we instead make the counter start at 0 and count to 100, then go to -100?
 A: Sadly, Logisim "counter" components can't do that directly. They always reset to 0. 
 This is what the "subtract 100" is for. (Except, see sawtooth-80hz-alternate for a slightly
@@ -6479,12 +6459,10 @@ it loads "D" = -100
 and resumes counting up.</a>
     </comp>
     <comp lib="0" loc="(30,33)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">another 80 Hz sawtooth wave generator - This one produces the same results as the
 sawtooth-80hz circuit, but it is implemented in a different way.</a>
     </comp>
     <comp lib="0" loc="(42,431)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Q: Why not configure the counter to just count by 100 at a time?
 A: Because Logisim "counter" commponents always count by 1.
 This is what the "multiply by 100" is for. The trick is that "count-by-one-then-multiply-by-100"
@@ -6590,7 +6568,7 @@ counter to load "D" = -100.</a>
     <wire from="(350,200)" to="(360,200)"/>
     <wire from="(380,260)" to="(430,260)"/>
   </circuit>
-  <circuit name="triangle-160hz">
+  <circuit name="triangle-120hz">
     <a name="appearance" val="custom"/>
     <appear>
       <rect fill="none" height="55" stroke="#000000" stroke-width="2" width="80" x="50" y="55"/>
@@ -6617,7 +6595,6 @@ counter to load "D" = -100.</a>
 start at 0.</a>
     </comp>
     <comp lib="0" loc="(20,27)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a clumsy 120 hz triangle wave generator - When enabled, it counts up to 10000, then counts
 down to -10000, then back up again to 10000, etc., forever.  It counts by 400 at a time, so
 at 16kHz simulation speed, this produces a 120 Hz triangle wave (since it goes through 50 steps
@@ -6822,7 +6799,6 @@ It counts from 0 to 255,
 then resets to 0 again. </a>
     </comp>
     <comp lib="0" loc="(30,28)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a somewhat clumsy 62.5 hz triangle wave generator - When enabled, it counts up to around 10000, then counts back
 down to around -10000, then back up again, forever. This counts through exactly 256 steps, counting by 80 each step.
 At 16kHz simulation speed, this produces a 62.5 Hz triangle wave (since it goes through 256 steps, and 16000/512 = 62.5).</a>
@@ -6847,7 +6823,6 @@ etc etc etc
       <a name="dx" val="-55"/>
       <a name="dy" val="82"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">(1) The trick here is cute...
 First we count from x=0 to x=127. For those values, 
 we subtract 64, to get a result between -64 and 63.
@@ -6858,7 +6833,6 @@ in the range [-9600, +9450].</a>
       <a name="dx" val="-72"/>
       <a name="dy" val="18"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">(3) Last piece... this comparison, and the MUX, 
 is deciding whether to use  "x-64" or "192-x"
 before the multiply-by-150. The decision is
@@ -6990,13 +6964,11 @@ based on a comparison:
 adding "step" during each clock tick.</a>
     </comp>
     <comp lib="0" loc="(18,39)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a flexible sawtooth generator - When enabled, counts up to about 10000 then
 resets to -10000 and counts up again, forever. But it counts upwards at a speed
 determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.</a>
     </comp>
     <comp lib="0" loc="(297,448)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">The counter up above is 32-bits, going from about -2billion to 2 billion,
 before wrapping around to -2billion again. Each simulated clock tick we
 add some "step" to the counter, so if the simulation is running
@@ -7011,7 +6983,6 @@ we can calculate the needed stepsize to get it:
     </comp>
     <comp lib="0" loc="(40,636)" name="Text">
       <a name="foreground" val="#002bed"/>
-      <a name="halign" val="left"/>
       <a name="text">Q: Why is this using a 32-bit counter instead of 16 bits?
 A: Because it lets us adjust the step size more finely,
 more precisly controlling exactly how long it takes to
@@ -7032,7 +7003,6 @@ and adjusts them to fall within [-10000, +10000]</a>
     </comp>
     <comp lib="0" loc="(527,95)" name="Text">
       <a name="foreground" val="#8a3bd4"/>
-      <a name="halign" val="left"/>
       <a name="text">Q: Why is the frequency limited a 4095hz? Can we go higher?
 A: The "Freq" input is a 12 bit number, which maxes out at 4095.
 It would be simple to allow higher numbers, by using more bits
@@ -7165,7 +7135,6 @@ anyway.</a>
       <a name="dx" val="-55"/>
       <a name="dy" val="3"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">The trick I'm using here is to use a sawtooth to
 sweep through numbers 0 to 65535 at the desired
 frequency. I then take that result and
@@ -7181,7 +7150,6 @@ Using DutyCycle=0 results in a signal that's always
 results in a signal that's always (or very nearly) +10000.</a>
     </comp>
     <comp lib="0" loc="(38,38)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">flexible square wave generator - When enabled, alternates between -10000 and +10000 (with
 no values between them), forever.
 You can choose any frequency from 1Hz to 4096Hz. And another input determines
@@ -7272,7 +7240,6 @@ the "duty cycle" (from 0 to 65535), controlling how long the "up" part of the sq
       <a name="dx" val="-42"/>
       <a name="dy" val="-49"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">The trick I'm using here is to sweep through
 the numbers -32768 to +32767 at the desired
 frequency. I then take that result and run it 
@@ -7283,7 +7250,6 @@ are closer to 10000 maximum, instead of
 32767 maximum.</a>
     </comp>
     <comp lib="0" loc="(38,40)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">flexible triangle-wave generator - When enabled, produces a triangle shaped
 audio signal, varying from around -11000 up to about +11000.
 The frequency is determined by one of the inputs.</a>
@@ -7359,7 +7325,6 @@ The frequency is determined by one of the inputs.</a>
       <a name="dx" val="-42"/>
       <a name="dy" val="-49"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">The trick I'm using here is to sweep through
 the numbers -32768 to +32767 at the desired
 frequency. I then take that result and run it 
@@ -7370,7 +7335,6 @@ are closer to 10000 maximum, instead of
 32767 maximum.</a>
     </comp>
     <comp lib="0" loc="(38,40)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">flexible sine-wave generator - When enabled, produces a sine-wave shaped
 audio signal, varying from around -11000 up to about +11000.
 The frequency is determined by one of the inputs.</a>
@@ -7436,7 +7400,6 @@ The frequency is determined by one of the inputs.</a>
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(38,40)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">white noise generator - outputs random values in the range approx [-11000, +11000]
 whenever it is enabled.</a>
     </comp>
@@ -7508,14 +7471,12 @@ whenever it is enabled.</a>
 adding "step" during each clock tick.</a>
     </comp>
     <comp lib="0" loc="(13,46)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a flexible but LOUD and UNSIGNED sawtooth-like generator - When enabled, counts from 0
 up to 65535, then resets to 0, and counts up again, forever. It counts upwards at a speed
 determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.
 This also outputs click=1 each time it wraps around.</a>
     </comp>
     <comp lib="0" loc="(297,448)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">The counter up above is 32-bits, going from about -2billion to 2 billion,
 before wrapping around to -2billion again. Each simulated clock tick we
 add some "step" to the counter, so if the simulation is running
@@ -7530,7 +7491,6 @@ we can calculate the needed stepsize to get it:
     </comp>
     <comp lib="0" loc="(40,636)" name="Text">
       <a name="foreground" val="#002bed"/>
-      <a name="halign" val="left"/>
       <a name="text">Q: Why is this using a 32-bit counter instead of 16 bits?
 A: Because it lets us adjust the step size more finely,
 more precisly controlling exactly how long it takes to
@@ -7552,7 +7512,6 @@ but exactly fill the output range [0, 65535]</a>
     </comp>
     <comp lib="0" loc="(466,133)" name="Text">
       <a name="foreground" val="#8a3bd4"/>
-      <a name="halign" val="left"/>
       <a name="text">Q: Why is the frequency limited a 4095hz? Can we go higher?
 A: The "Freq" input is a 12 bit number, which maxes out at 4095.
 It would be simple to allow higher numbers, by using more bits
@@ -7687,7 +7646,6 @@ anyway.</a>
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(18,39)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a flexible but LOUD and SIGNED sawtooth generator - When enabled, counts from -32768
 up to +32767, then resets to -32768, and counts up again, forever. It counts upwards at a speed
 determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.</a>
@@ -7779,7 +7737,6 @@ instead of unsigned (0 to 65535).</a>
 adding "step" during each clock tick.</a>
     </comp>
     <comp lib="0" loc="(18,39)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a flexible but LOUD and UNSIGNED sawtooth generator - When enabled, counts from 0
 up to 65535, then resets to 0, and counts up again, forever. It counts upwards at a speed
 determined by one of the inputs, you can choose any period from 0.01 seconds to about 41 seconds.
@@ -7787,7 +7744,6 @@ The period is specified in hundredths-of-a-second as a 12-bit number between 0 a
 This also outputs click=1 each time it wraps around. </a>
     </comp>
     <comp lib="0" loc="(297,448)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">The counter up above is 32-bits, going from about -2billion to 2 billion,
 before wrapping around to -2billion again. Each simulated clock tick we
 add some "step" to the counter, so if the simulation is running
@@ -7804,7 +7760,6 @@ we can calculate the needed stepsize to get it:
     </comp>
     <comp lib="0" loc="(40,636)" name="Text">
       <a name="foreground" val="#002bed"/>
-      <a name="halign" val="left"/>
       <a name="text">Q: Why is this using a 32-bit counter instead of 16 bits?
 A: Because it lets us adjust the step size more finely,
 more precisly controlling exactly how long it takes to
@@ -7948,7 +7903,6 @@ but exactly fill the output range [0, 65535]</a>
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(18,39)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">a flexible but LOUD and SIGNED sawtooth generator - When enabled, counts from -32768
 up to +32767, then resets to -32768, and counts up again, forever. It counts upwards at a speed
 determined by one of the inputs, you can choose any frequency from 1Hz to 4095Hz.</a>
@@ -8021,7 +7975,6 @@ instead of unsigned (0 to 65535).</a>
       <circ-anchor facing="east" height="6" width="6" x="117" y="77"/>
     </appear>
     <comp lib="0" loc="(15,25)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">This is a low-pass filter, with a parameter beta to control where the dropoff is.
 The parameter beta is a 16-bit unsigned number, from 0 to 65535, but we
 treat it mathematically as if it were a percentage from 0% (0) to 100% (65535). 
@@ -8051,7 +8004,6 @@ be within the range [0, 2billion].</a>
       <a name="dx" val="-22"/>
       <a name="dy" val="70"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">This multiplication is configured as
 "scale to range" meaning you can
 think of one of the inputs as being
@@ -8063,7 +8015,6 @@ a percentage. That is, alpha is 0-100%.</a>
     <comp lib="0" loc="(70,600)" name="Text">
       <a name="background" val="#e2ff3d76"/>
       <a name="foreground" val="#f241c4"/>
-      <a name="halign" val="left"/>
       <a name="text">This circuit uses some tricks:
  * the full range for the input signal is [-32768, +32767], same for the output.
  * but internally, we use 32-bit numbers to hold these values and do arithmetic. Those
@@ -8172,7 +8123,6 @@ that probably won't happen unless the arithmetic goes haywire.)
       <circ-anchor facing="east" height="6" width="6" x="117" y="77"/>
     </appear>
     <comp lib="0" loc="(22,25)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">This is a high-pass filter, with a parameter beta to control where the dropoff is.
 The parameter beta is a 16-bit unsigned number, from 0 to 65535, but we
 treat it mathematically as if it were a percentage from 0% (0) to 100% (65535). 
@@ -8189,7 +8139,6 @@ where lambda = (1+a)/(2a). To simplify the circuit, we rearrange this to:
       <a name="dx" val="-38"/>
       <a name="dy" val="-23"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">This part is calculating (100%+alpha)/2
 where 100% is represented as 2billion.</a>
     </comp>
@@ -8322,7 +8271,6 @@ where 100% is represented as 2billion.</a>
       <circ-anchor facing="east" height="6" width="6" x="117" y="77"/>
     </appear>
     <comp lib="0" loc="(34,46)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">This is a high-pass filter, with a parameter beta to control where the dropoff is.
 The parameter beta is a 16-bit unsigned number, from 0 to 65535, but we
 treat it mathematically as if it were a percentage from 0% (0) to 100% (65535). 
@@ -8393,7 +8341,6 @@ there is a trick allowing us to make a high-pass filter using our existing low-p
       <circ-anchor facing="east" height="6" width="6" x="117" y="57"/>
     </appear>
     <comp lib="0" loc="(20,31)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Resonant State-Variable Filter (SVF), with outputs for LP, BP, and HP.
 Params:
   f = 2 * sin(something) = between 0 and +2. We will use 16 bit unsigned, and map that full range to [0, +2]
@@ -8671,7 +8618,6 @@ Formulas:
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(56,44)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">click-track generator - This outputs a "0" normally, with regularly spaced short "1" pulses.
 The period (the amount of time between clicks, in hundredths of a second) is controlled by an input.</a>
     </comp>
@@ -8755,7 +8701,6 @@ The period (the amount of time between clicks, in hundredths of a second) is con
       <a name="dx" val="-50"/>
       <a name="dy" val="-93"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">This counter keeps track of how
 long the pulse has lasted so far.
 We compare to how long the user
@@ -8763,7 +8708,6 @@ wants the pulse to last, to see if
 the pulse is still active, or has expired.</a>
     </comp>
     <comp lib="0" loc="(56,43)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">pulse generator - This outputs a "0" normally, with regularly spaced bursts of "1" ouputs.
 The period (the amount of time between clicks, in hundredths of a second) is controlled by an
 input, and the duration of the pulse is controlled by a second input. The duration
@@ -8964,7 +8908,6 @@ This also outputs the "sweep" number, counting from 0 up to Duty, during each pu
       <circ-anchor facing="east" height="6" width="6" x="127" y="87"/>
     </appear>
     <comp lib="0" loc="(38,38)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">flexible square wave generator - When enabled, alternates between -10000 and +10000 (with
 no values between them), forever.
 You can choose any frequency from 1Hz to 4096Hz. And another input determines
@@ -8975,7 +8918,6 @@ the "duty cycle" (from 0 to 127), controlling how long the "up" part of the squa
       <a name="dx" val="-55"/>
       <a name="dy" val="3"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">The trick I'm using here is to use a sawtooth to
 sweep through numbers -10000 to +10000 at the desired
 frequency. I then take that result and
@@ -8993,7 +8935,6 @@ using a duty of 128 gives a threshold of +10000</a>
       <a name="dx" val="131"/>
       <a name="dy" val="-66"/>
       <a name="foreground" val="#cc45bf"/>
-      <a name="halign" val="left"/>
       <a name="text">This part of the circuit converts a number in
 the range [0, 127] first to a 16 bit number, then
 subtracts 64, then multiplies by 158, to get
@@ -9132,7 +9073,6 @@ a value in the range approx [-10000, +10000]</a>
       <circ-anchor facing="east" height="6" width="6" x="197" y="57"/>
     </appear>
     <comp lib="0" loc="(239,206)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="(&quot;Not&quot; in ascii)"/>
     </comp>
     <comp lib="1" loc="(190,320)" name="Tunnel">
@@ -9389,7 +9329,6 @@ a value in the range approx [-10000, +10000]</a>
       <circ-anchor facing="east" height="6" width="6" x="87" y="77"/>
     </appear>
     <comp lib="0" loc="(54,25)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">The "BlueBird Connector" program used to communicate with the Finch robots
 has an unfortunate output format for the HTTP API. For accerlations, it
 outputs a signed floating point number, with 1 or more decimal places.
@@ -9485,7 +9424,6 @@ Note: if the integer part is negative, we need to negate the decimal part too!</
       <circ-anchor facing="east" height="6" width="6" x="87" y="77"/>
     </appear>
     <comp lib="0" loc="(54,41)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">The "BlueBird Connector" program used to communicate with the Finch robots
 has an unfortunate output format for the HTTP API. For booleans, it
 outputs "true" or "false". We just check for the presence of "t" as the
@@ -9529,7 +9467,6 @@ were chosen by trial-and-error
 to get a good range of boosting and damping.</a>
     </comp>
     <comp lib="0" loc="(46,31)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">This circuit takes a 16-bit signed audio signal, and either 
 boosts the volume (up to about 5x louder) or limits the volume (up to 30x quieter).
 The amount is controlled by a signed 8-bit input in the range [-128, 127].</a>
@@ -9622,7 +9559,6 @@ The amount is controlled by a signed 8-bit input in the range [-128, 127].</a>
       <circ-anchor facing="east" height="6" width="6" x="77" y="77"/>
     </appear>
     <comp lib="0" loc="(23,36)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">This circuit takes two 16-bit signed audio signals, and mixes them into one
 by taking some of one, and some of the other. The "balance" is controlled
 by a user input, a signed 8-bit input in the range [-128, 127]. 
@@ -9721,7 +9657,6 @@ by a user input, a signed 8-bit input in the range [-128, 127].
       <circ-anchor facing="east" height="6" width="6" x="147" y="57"/>
     </appear>
     <comp lib="0" loc="(27,40)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">This circuit is useful for creating a variety of filters.
 It takes as inputs:
  * X, an audio sample, a signed 16-bit value typically in the range [-10000, +10000] or so.
@@ -9790,7 +9725,6 @@ It outputs:
       <circ-anchor facing="east" height="6" width="6" x="147" y="67"/>
     </appear>
     <comp lib="0" loc="(37,33)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">A pre-recorded message, stored in a ROM (read-only-memory).
 The counter starts at 0, counting upwards, reading out 
 the values from the rom one byte at a time. Each byte
@@ -11303,7 +11237,6 @@ ks2sL8t6bf79f3uHJouSAfk15jyZYRe14vHCQbySlC/37m0l/3hY9eNfZd7fh9Hr5BtTjUI79GdK
       <circ-anchor facing="east" height="6" width="6" x="147" y="67"/>
     </appear>
     <comp lib="0" loc="(37,33)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">A pre-recorded message, stored in a ROM (read-only-memory).
 The counter starts at 0, counting upwards, reading out 
 the values from the rom 16-bits at a time. The recording
@@ -33431,7 +33364,6 @@ sEcXc/8aZf+bEoUoG8MId328xiXJuIxkyDwYMPBZ9gQUKjRtQA8nIa+hfxbeW3d0OKKPs4QchJer
     </comp>
     <comp lib="0" loc="(221,204)" name="Text">
       <a name="background" val="#f7a2da6e"/>
-      <a name="halign" val="left"/>
       <a name="text">(1) Put a register
 in the middle, to
 keep track of 
@@ -33441,7 +33373,6 @@ registers, each
 serving as a variable. </a>
     </comp>
     <comp lib="0" loc="(30,24)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Your circuit goes here...
 
 Do some arithmetic and feedback loops with 32 bit numbers.
@@ -33454,7 +33385,6 @@ The clock will tick 16000 times per second.</a>
     </comp>
     <comp lib="0" loc="(36,205)" name="Text">
       <a name="background" val="#7ff7576e"/>
-      <a name="halign" val="left"/>
       <a name="text">(2) Generate new
 values, by feeding
 the old values into
@@ -33466,7 +33396,6 @@ as part of the equation.</a>
     </comp>
     <comp lib="0" loc="(397,214)" name="Text">
       <a name="background" val="#78b9f76e"/>
-      <a name="halign" val="left"/>
       <a name="text">(3) Send one
 of the values
 to the audio output.
@@ -33490,7 +33419,6 @@ as a 32-bit number.</a>
     </comp>
     <comp lib="0" loc="(80,439)" name="Text">
       <a name="background" val="#f7b1216e"/>
-      <a name="halign" val="left"/>
       <a name="text">(optional) Use some user
 input (dial, slider, input)
 to affect the calculation
@@ -33699,14 +33627,12 @@ once each second.</a>
     </comp>
     <comp lib="0" loc="(199,208)" name="Text">
       <a name="background" val="#f7a2da6e"/>
-      <a name="halign" val="left"/>
       <a name="text">(2) Generate
 a waveform at
 that frequency.</a>
     </comp>
     <comp lib="0" loc="(200,329)" name="Text">
       <a name="background" val="#f7b1216e"/>
-      <a name="halign" val="left"/>
       <a name="text">(optional) Selectively
 enable/disable the
 waveform using
@@ -33717,14 +33643,12 @@ varying true/false value.</a>
     </comp>
     <comp lib="0" loc="(225,922)" name="Text">
       <a name="foreground" val="#ff05ba"/>
-      <a name="halign" val="left"/>
       <a name="text">Period=150
 here means one click
 every 1.50 seconds</a>
     </comp>
     <comp lib="0" loc="(355,213)" name="Text">
       <a name="background" val="#78b9f76e"/>
-      <a name="halign" val="left"/>
       <a name="text">(3) Modify the
 resulting sound
 in some way</a>
@@ -33744,7 +33668,6 @@ in some way</a>
     </comp>
     <comp lib="0" loc="(46,170)" name="Text">
       <a name="background" val="#7ff7576e"/>
-      <a name="halign" val="left"/>
       <a name="text">(1) Pick a number
 for the frequency
 (can be constant,
@@ -33754,12 +33677,10 @@ even varying over
 time)</a>
     </comp>
     <comp lib="0" loc="(46,26)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="Vary and modify a waveform generators"/>
     </comp>
     <comp lib="0" loc="(610,926)" name="Text">
       <a name="foreground" val="#ff05ba"/>
-      <a name="halign" val="left"/>
       <a name="text">Period=150
 here means one pulse
 every 1.50 seconds,
@@ -33944,7 +33865,7 @@ or a slider, dial, or number input.</a>
       <a name="width" val="16"/>
     </comp>
     <comp loc="(140,600)" name="sawtooth-80hz"/>
-    <comp loc="(140,680)" name="triangle-160hz"/>
+    <comp loc="(140,680)" name="triangle-120hz"/>
     <comp loc="(290,600)" name="sinwave"/>
     <comp loc="(290,680)" name="sawtooth"/>
     <comp loc="(330,870)" name="click-track"/>
@@ -34134,7 +34055,6 @@ e 6 7 7 5 1 d 5
 works well</a>
     </comp>
     <comp lib="0" loc="(23,43)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">Goal: generate an audio wave by simulating a "mass and spring" system. Just picture a
 baseball, suspended from the ceiling by a spring. When perfectly balanced, the ball will
 be at rest, not bouncing at all. Call that position X=0. If we give it a push to displace it
@@ -34153,7 +34073,6 @@ The overall frequency of oscillation will be sqrt(k/m), in units of oscillations
 If we are running at 16kHz clock rate, then freq = 16000*sqrt(k/m) Hz.</a>
     </comp>
     <comp lib="0" loc="(258,650)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="k"/>
     </comp>
     <comp lib="0" loc="(302,420)" name="Callout">
@@ -34164,7 +34083,6 @@ If we are running at 16kHz clock rate, then freq = 16000*sqrt(k/m) Hz.</a>
 divided by m</a>
     </comp>
     <comp lib="0" loc="(336,652)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text" val="m"/>
     </comp>
     <comp lib="1" loc="(140,420)" name="Clock">
@@ -34469,7 +34387,6 @@ if you change the address bit-width,
 and the counter-bit width.</a>
     </comp>
     <comp lib="0" loc="(56,38)" name="Text">
-      <a name="halign" val="left"/>
       <a name="text">(1) Send something into the RAM. 
 - Maybe just the original audio?
 - Or, mix the original audio together with feedback from the RAM output!
