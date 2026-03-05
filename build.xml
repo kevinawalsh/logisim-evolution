@@ -119,7 +119,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     <target name="jar" depends="compile,version,contact">
         <jar destfile="logisim-evolution.jar" duplicate="fail">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ resources/" />
+            <fileset dir="." includes="doc/ resources/ live/" />
 
             <!-- fat jar: add all libs except jSerialComm -->
             <zipgroupfileset dir="libs" includes="*.jar" excludes="jSerialComm-*.jar"/>
@@ -144,7 +144,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     <target name="jarsrc" depends="jar">
         <jar destfile="logisim-evolution-src.jar" duplicate="fail">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ src/ build.xml" />
+            <fileset dir="." includes="doc/ resources/ live/ src/ build.xml" />
 
             <!-- fat jar: add all libs except jSerialComm -->
             <zipgroupfileset dir="libs" includes="*.jar" excludes="jSerialComm-*.jar"/>

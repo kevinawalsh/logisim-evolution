@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project source="4.0.4-HC" version="1.0">
+  This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
+
+  <lib desc="#Base" name="0">
+    <tool name="Text Tool">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val=""/>
+      <a name="valign" val="base"/>
+    </tool>
+  </lib>
+  <lib desc="#Wiring" name="1">
+    <tool name="Splitter">
+      <a name="bit1" val="0"/>
+      <a name="bit10" val="1"/>
+      <a name="bit11" val="1"/>
+      <a name="bit12" val="1"/>
+      <a name="bit13" val="1"/>
+      <a name="bit14" val="1"/>
+      <a name="bit15" val="1"/>
+      <a name="bit2" val="0"/>
+      <a name="bit3" val="0"/>
+      <a name="bit4" val="0"/>
+      <a name="bit5" val="0"/>
+      <a name="bit6" val="0"/>
+      <a name="bit7" val="0"/>
+      <a name="bit8" val="1"/>
+      <a name="bit9" val="1"/>
+      <a name="incoming" val="16"/>
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="2">
+    <tool name="PLA">
+      <a name="table" val=""/>
+    </tool>
+  </lib>
+  <lib desc="#Plexers" name="3">
+    <tool name="Multiplexer">
+      <a name="enable" val="false"/>
+    </tool>
+    <tool name="Demultiplexer">
+      <a name="enable" val="false"/>
+    </tool>
+  </lib>
+  <lib desc="#Arithmetic" name="4"/>
+  <lib desc="#Memory" name="5">
+    <tool name="ROM">
+      <a name="contents">addr/data: 8 8
+0
+</a>
+    </tool>
+  </lib>
+  <lib desc="#I/O" name="6"/>
+  <lib desc="#Analog" name="7"/>
+  <lib desc="#BFH-Praktika" name="8"/>
+  <main name="main"/>
+  <options>
+    <a name="gateUndefined" val="ignore"/>
+    <a name="simlimit" val="1000"/>
+    <a name="simrand" val="0"/>
+    <a name="simsmooth" val="50"/>
+  </options>
+  <mappings>
+    <tool lib="0" map="Button2" name="Menu Tool"/>
+    <tool lib="0" map="Button3" name="Menu Tool"/>
+    <tool lib="0" map="Ctrl Button1" name="Menu Tool"/>
+  </mappings>
+  <toolbar>
+    <tool lib="0" name="Poke Tool"/>
+    <tool lib="0" name="Edit Tool"/>
+    <tool lib="0" name="Wiring Tool"/>
+    <tool lib="0" name="Cutter Tool"/>
+    <tool lib="0" name="Text Tool">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val=""/>
+      <a name="valign" val="base"/>
+    </tool>
+    <sep/>
+    <tool lib="1" name="Pin"/>
+    <tool lib="1" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </tool>
+    <tool lib="2" name="NOT Gate"/>
+    <tool lib="2" name="AND Gate"/>
+    <tool lib="2" name="OR Gate"/>
+    <tool lib="2" name="XOR Gate"/>
+    <tool lib="2" name="NAND Gate"/>
+    <tool lib="2" name="NOR Gate"/>
+    <sep/>
+    <tool lib="1" name="Constant"/>
+    <tool lib="6" name="Button"/>
+  </toolbar>
+  <circuit name="main">
+    <a name="appearance" val="classic"/>
+    <comp lib="1" loc="(140,120)" name="Constant"/>
+    <comp lib="1" loc="(140,140)" name="Constant">
+      <a name="value" val="0x0"/>
+    </comp>
+    <comp lib="1" loc="(290,130)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(80,70)" name="Pin"/>
+    <comp loc="(220,130)" name="1G3157"/>
+    <wire from="(140,120)" to="(180,120)"/>
+    <wire from="(140,140)" to="(180,140)"/>
+    <wire from="(200,70)" to="(200,110)"/>
+    <wire from="(220,130)" to="(290,130)"/>
+    <wire from="(80,70)" to="(200,70)"/>
+  </circuit>
+  <circuit name="1G3157">
+    <a name="appearance" val="custom"/>
+    <appear>
+      <rect fill="#f2f2f2" fill-opacity="0.000" height="40" stroke="#000000" stroke-width="2" width="40" x="50" y="60"/>
+      <ellipse cx="80.0" cy="80.0" fill="none" rx="2.0" ry="2.0" stroke="#000000"/>
+      <polyline fill="none" points="50,70 60,70" stroke="#000000"/>
+      <polyline fill="none" points="50,90 60,90" stroke="#000000"/>
+      <polyline fill="none" points="70,58 70,62" stroke="#808080"/>
+      <polyline fill="none" points="70,68 70,72" stroke="#808080"/>
+      <polyline fill="none" points="70,78 70,82" stroke="#808080"/>
+      <polyline fill="none" points="70,88 70,92" stroke="#808080"/>
+      <polyline fill="none" points="78,79 60,72" stroke="#000000" stroke-width="2" visibility="/Pin(270,250) != 0x0"/>
+      <polyline fill="none" points="78,81 60,88" stroke="#000000" stroke-width="2" visibility="/Pin(270,250) == 0x0"/>
+      <polyline fill="none" points="89,80 80,80" stroke="#000000"/>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="8" text-anchor="middle" x="61" y="66">NO</text>
+      <text dominant-baseline="central" font-family="SansSerif" font-size="8" text-anchor="middle" x="61" y="94">NC</text>
+      <circ-port height="10" pin="380,440" width="10" x="85" y="75"/>
+      <circ-port height="8" pin="200,430" width="8" x="46" y="86"/>
+      <circ-port height="8" pin="200,450" width="8" x="46" y="66"/>
+      <circ-port height="8" pin="200,280" width="8" x="66" y="56"/>
+      <circ-port height="10" pin="270,250" width="10" x="65" y="95"/>
+      <circ-anchor facing="east" height="6" width="6" x="87" y="77"/>
+    </appear>
+    <comp lib="1" loc="(200,280)" name="Pin">
+      <a name="behavior" val="tristate"/>
+      <a name="label" val="S"/>
+    </comp>
+    <comp lib="1" loc="(200,430)" name="Pin">
+      <a name="behavior" val="tristate"/>
+      <a name="label" val="Y0"/>
+    </comp>
+    <comp lib="1" loc="(200,450)" name="Pin">
+      <a name="behavior" val="tristate"/>
+      <a name="label" val="Y1"/>
+    </comp>
+    <comp lib="1" loc="(270,250)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="Sout"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(380,440)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="O"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="3" loc="(280,440)" name="Multiplexer">
+      <a name="disabled" val="Z"/>
+      <a name="enable" val="false"/>
+      <a name="selloc" val="tr"/>
+      <a name="size" val="20"/>
+    </comp>
+    <comp lib="7" loc="(230,280)" name="Pull Resistor">
+      <a name="facing" val="north"/>
+    </comp>
+    <wire from="(200,280)" to="(230,280)"/>
+    <wire from="(200,430)" to="(260,430)"/>
+    <wire from="(200,450)" to="(260,450)"/>
+    <wire from="(230,250)" to="(230,280)"/>
+    <wire from="(230,250)" to="(270,250)"/>
+    <wire from="(230,280)" to="(270,280)"/>
+    <wire from="(270,280)" to="(270,420)"/>
+    <wire from="(280,440)" to="(380,440)"/>
+  </circuit>
+</project>

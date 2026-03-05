@@ -35,6 +35,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.function.BooleanSupplier;
 
 import java.awt.AWTEvent;
@@ -88,8 +89,14 @@ public class DesktopIntegration {
   public static boolean QuitMenuAutomaticallyPresent = false;
   public static boolean AlwaysUseScrollbars = false;
   public static boolean HasWindowlessMenubar = false;
+  public static boolean CanRequestForeground = false;
 
   private static Desktop desktop;
+
+  // Tracks browser popups that are pending (within delay window) or shown,
+  // keyed by the URL/URI string, so browserWasOpened() can cancel them.
+  private static final HashMap<String, FallbackPopup> activeBrowserPopups = new HashMap<>();
+  private static final int BROWSER_OPEN_DELAY_MS = 3000;
 
   // Called once, during startup, before splash screen.
   public static void init(Startup startup) {
@@ -176,6 +183,13 @@ public class DesktopIntegration {
         return true;
       } else return false;
     }, "Note [6]: no support for desktop about screen");
+
+    tryOrPrint(() -> {
+      if (desktop.isSupported(Desktop.Action.APP_REQUEST_FOREGROUND)) {
+        CanRequestForeground = true;
+        return true;
+      } else return false;
+    }, "Note [7]: no support for requesting foreground focus");
 
   }
   
@@ -271,11 +285,45 @@ public class DesktopIntegration {
     }
   }
 
+  public static void browserWasOpened(URI uri) {
+    cancelBrowserPopup(uri.toString());
+  }
+
+  public static void browserWasOpened(URL url) {
+    cancelBrowserPopup(url.toString());
+  }
+
+  // Strips "http://host:port" or "https://host:port" prefix from a URL string,
+  // leaving just the path (and query/fragment). Returns the original string if
+  // no such prefix is present.
+  private static String stripUrlPrefix(String key) {
+    if (key == null) return key;
+    int slashSlash = key.indexOf("://");
+    if (slashSlash < 0) return key;
+    int pathStart = key.indexOf('/', slashSlash + 3);
+    if (pathStart < 0) return key;
+    return key.substring(pathStart);
+  }
+
+  // Cancels a pending or shown browser fallback popup for the given URL key.
+  // Safe to call from any thread.
+  private static void cancelBrowserPopup(String key) {
+    final String normKey = stripUrlPrefix(key);
+    Runnable task = () -> {
+      FallbackPopup popup = activeBrowserPopups.remove(normKey);
+      if (popup != null) popup.cancel();
+    };
+    if (SwingUtilities.isEventDispatchThread())
+      task.run();
+    else
+      SwingUtilities.invokeLater(task);
+  }
+
   public static void openBrowser(URI uri) {
     if (uri == null)
       return;
     boolean ok = tryOpenBrowser(uri);
-    showFallback(ok, 
+    showBrowserFallback(ok, uri.toString(),
         S.get("desktopFallbackOpenBrowserTitle"),
         S.get("desktopFallbackOpenBrowserMessage"),
         S.get("desktopFallbackOpenBrowserFailed"),
@@ -286,7 +334,7 @@ public class DesktopIntegration {
     if (url == null)
       return;
     boolean ok = tryOpenBrowser(url);
-    showFallback(ok, 
+    showBrowserFallback(ok, url.toString(),
         S.get("desktopFallbackOpenBrowserTitle"),
         S.get("desktopFallbackOpenBrowserMessage"),
         S.get("desktopFallbackOpenBrowserFailed"),
@@ -297,7 +345,7 @@ public class DesktopIntegration {
     if (link == null || link.isBlank())
       return;
     boolean ok = tryOpenBrowser(link);
-    showFallback(ok, 
+    showBrowserFallback(ok, link,
         S.get("desktopFallbackOpenBrowserTitle"),
         S.get("desktopFallbackOpenBrowserMessage"),
         S.get("desktopFallbackOpenBrowserFailed"),
@@ -416,6 +464,37 @@ public class DesktopIntegration {
         path.toString());
   }
 
+  // Like showFallback, but when ok=true the popup is delayed by BROWSER_OPEN_DELAY_MS.
+  // During that window (and while the popup is visible), a browserWasOpened() callback
+  // can cancel/close it via the activeBrowserPopups map.
+  private static void showBrowserFallback(boolean ok, String key, String title,
+      String okText, String failText, String payload) {
+    final String normKey = stripUrlPrefix(key);
+    Runnable task = () -> {
+      if (ok) {
+        FallbackPopup popup = new FallbackPopup(title, okText, payload);
+        activeBrowserPopups.put(normKey, popup);
+        popup.addWindowListener(new WindowAdapter() {
+          @Override public void windowClosed(WindowEvent e) {
+            activeBrowserPopups.remove(normKey, popup);
+          }
+        });
+        Timer delay = new Timer(BROWSER_OPEN_DELAY_MS, e -> popup.showBriefly());
+        delay.setRepeats(false);
+        delay.start();
+      } else {
+        FallbackPopup popup = new FallbackPopup(title, failText, payload);
+        popup.showForever();
+      }
+    };
+    if (SwingUtilities.isEventDispatchThread()) {
+      try { SwingUtilities.invokeLater(task); }
+      catch (Exception ignored) { }
+    } else {
+      task.run();
+    }
+  }
+
   private static void showFallback(boolean ok, String title,
       String okText, String failText, String payload) {
     Runnable task = () -> {
@@ -440,6 +519,12 @@ public class DesktopIntegration {
     int timeout;
     JButton dismiss;
     Window parent;
+    boolean cancelled = false;
+
+    void cancel() {
+      cancelled = true;
+      dispose();
+    }
 
     // title is like "Opening Browser..." or "Opening Mail..."
     // text is like "If your browser doesn't open, please use this link instead:"
@@ -497,6 +582,7 @@ public class DesktopIntegration {
     }
 
     void showForever() {
+      if (cancelled) return;
       timeout = -1; // not used
       pack();
       setVisible(true);
@@ -504,6 +590,7 @@ public class DesktopIntegration {
 
     AWTEventListener guard;
     void showBriefly() {
+      if (cancelled) return;
       timeout = 10;
 
       final String base = S.get("desktopFallbackDismiss");
@@ -591,6 +678,11 @@ public class DesktopIntegration {
         }
       });
       */
+  }
+
+  public static void requestForeground(int count) {
+    if (CanRequestForeground)
+      desktop.requestForeground(count > 1); // false = bounce once, true = bounce until clicked
   }
 
 }

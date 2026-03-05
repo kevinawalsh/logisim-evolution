@@ -51,6 +51,7 @@ import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Print;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.gui.menu.WindowManagers;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
@@ -631,6 +632,9 @@ public class Startup {
 
     if (exitAfterStartup)
       System.exit(0);
+
+    // preload help broker in case old web pages are still open in browser
+    HelpBroker.start();
   }
 
   private static void fail(String msg) {

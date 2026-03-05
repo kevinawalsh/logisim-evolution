@@ -48,6 +48,13 @@ body {
     color: #3131f1;
 }
 
+.sidebar .sidebar-current {
+    color: #212151;
+    background-color: rgba(100, 130, 255, 0.25);
+    border-radius: 3px;
+    padding: 1px 5px;
+}
+
 .sidebar .btn {
     position: absolute;
     top: 0;

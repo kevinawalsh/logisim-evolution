@@ -221,10 +221,47 @@ window.onload = function() {
         let top = localStorage.getItem("sidebar-scroll");
         if (top)
             sidebar.scrollTop = parseInt(top, 10);
+        highlightCurrentPage();
 
         window.addEventListener("beforeunload", () => {
           localStorage.setItem("sidebar-scroll", sidebar.scrollTop);
         });
+
+    }
+
+    function highlightCurrentPage() {
+        const currentPath = normalizePath(window.location.pathname);
+        const sidebar = document.getElementById("mySidebar");
+        if (!sidebar) return;
+
+        // Find the anchor whose href path matches the current page
+        const links = sidebar.querySelectorAll("a");
+        let active = null;
+        for (const link of links) {
+            const url = new URL(link.href);
+            if (normalizePath(url.pathname) === currentPath) {
+                active = link;
+                break;
+            }
+        }
+        if (!active) return;
+
+        // Highlight it
+        active.classList.add("sidebar-current");
+
+        // Scroll the sidebar so the link is visible, roughly centered
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const linkRect = active.getBoundingClientRect();
+        const offset = linkRect.top - sidebarRect.top - (sidebar.clientHeight / 2);
+        sidebar.scrollTop = sidebar.scrollTop + offset;
+    }
+
+    function normalizePath(path) {
+        if (path.endsWith("/index.html"))
+            return path.slice(0, -"index.html".length); // "somedir/index.html" -> "somedir/"
+        if (!path.endsWith("/") && !path.includes("."))
+            return path + "/";                           // "somedir" -> "somedir/"
+        return path;                                     // "somedir/" or "tutor-gates.html" unchanged
     }
 
     function restoreSearchState() {

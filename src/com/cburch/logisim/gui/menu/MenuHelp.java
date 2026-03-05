@@ -33,19 +33,8 @@ import static com.cburch.logisim.gui.menu.Strings.S;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.SwingUtilities;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.gui.start.About;
@@ -124,22 +113,6 @@ public class MenuHelp extends JMenu implements ActionListener {
     library.setEnabled(false);
   }
 
-  private boolean running;
-  private HttpServer srv;
-  private void loadBroker() {
-    if (running)
-      return;
-    try {
-      srv = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 10);
-      srv.createContext("/", (req) -> handle(req));
-      srv.start();
-      running = true;
-    } catch (IOException e) {
-      disableHelp();
-      Errors.title(S.get("helpNotFoundTitle")).show(S.get("helpNotFoundError"), e);
-    }
-  }
-
   public void localeChanged() {
     this.setText(S.get("helpMenu"));
     tutorial.setText(S.get("helpTutorialItem"));
@@ -152,82 +125,11 @@ public class MenuHelp extends JMenu implements ActionListener {
     about.setText(S.get("helpAboutItem"));
   }
   
-  static void send_err(HttpExchange req, int rcode, String msg) {
-    try {
-      byte[] body = msg.getBytes(StandardCharsets.UTF_8);
-      req.sendResponseHeaders(rcode, body.length);
-      OutputStream out = req.getResponseBody();
-      out.write(body, 0, body.length);
-      out.close();
-    } catch (Exception e) {
-      internal_err(req, e);
-    }
-  }
-
-  static void handle(HttpExchange req) {
-    // The req path will look like "/en/html/guide/about/index.html"
-    // This maps to jar resource "/doc/en/html/guide/about/index.html"
-    
-    if (!req.getRequestMethod().equals("GET")) {
-      send_err(req, 405, "Sorry, that method is not allowed.");
-      return;
-    }
-    URI uri = req.getRequestURI();
-
-    String urlpath = uri.getPath();
-    if (!urlpath.startsWith("/")) {
-      send_err(req, 404, "Missing leading slash");
-      return;
-    }
-    String rsrc = "/doc" + urlpath;
-    // If path ends in "/", add "index.html"
-    // Otherwise, try adding "/index.html" but fall back on failure.
-    InputStream is;
-    if (rsrc.endsWith("/")) {
-      is = MenuHelp.class.getResourceAsStream(rsrc + "index.html");
-    } else {
-      is = MenuHelp.class.getResourceAsStream(rsrc + "/index.html");
-      if (is == null)
-        is = MenuHelp.class.getResourceAsStream(rsrc);
-    }
-    if (is == null) {
-      send_err(req, 404, "Not found");
-      return;
-    }
-
-    byte[] body;
-    try {
-      body = is.readAllBytes();
-    } catch (IOException e) {
-      send_err(req, 500, "Failed to read help resource");
-      return;
-    }
-
-    try {
-      req.sendResponseHeaders(200, body.length);
-      OutputStream out = req.getResponseBody();
-      out.write(body, 0, body.length);
-      out.close();
-    } catch (Exception e) {
-      internal_err(req, e);
-    }
-  }
-
-  static boolean warned = false;
-  static void internal_err(HttpExchange req, Exception e) {
-    if (warned)
-      return;
-    warned = true;
-    SwingUtilities.invokeLater(() ->
-        Errors.title(S.get("helpNotFoundTitle")).show(S.get("helpNotFoundError"), e));
-  }
-
   private void showHelp(String target) {
-    loadBroker();
-    String lang = Locale.getDefault().getLanguage();
-    if (MenuHelp.class.getResource("/doc/"+lang+"/html/guide/index.html") == null)
-      lang = "en";
-    String url = "http://" + srv.getAddress() + "/" + lang + "/html/" + target;
-    DesktopIntegration.openBrowser(url);
+    IOException e = HelpBroker.showHelp(target);
+    if (e != null) {
+      disableHelp();
+      Errors.title(S.get("helpNotFoundTitle")).show(S.get("helpNotFoundError"), e);
+    }
   }
 }

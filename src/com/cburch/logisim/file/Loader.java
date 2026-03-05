@@ -382,6 +382,7 @@ public class Loader implements LibraryLoader {
     } finally {
       filesOpening.pop();
     }
+    System.out.println("loaded file: projname="+LogisimFile.toProjectName(actual));
     if (ret != null)
       ret.file.setName(LogisimFile.toProjectName(actual));
     return ret;
@@ -422,6 +423,8 @@ public class Loader implements LibraryLoader {
   public LogisimFile.FileWithSimulations openLogisimFile(File srcFile, InputStream reader)
       throws /* LoadFailedException, */ IOException, LoadCanceledByUser {
     LogisimFile.FileWithSimulations ret = LogisimFile.load(srcFile, reader, this);
+    if (srcFile != null)
+      ret.file.setName(LogisimFile.toProjectName(srcFile));
     showMessages(ret.file);
     return ret;
   }

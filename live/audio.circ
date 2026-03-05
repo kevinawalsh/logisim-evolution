@@ -1,0 +1,1027 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project source="4.0.4-HC" version="1.0">
+  This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
+
+  <lib desc="#Base" name="0">
+    <tool name="Text Tool">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val=""/>
+      <a name="valign" val="base"/>
+    </tool>
+  </lib>
+  <lib desc="#Wiring" name="1"/>
+  <lib desc="#Gates" name="2">
+    <tool name="PLA">
+      <a name="table" val=""/>
+    </tool>
+  </lib>
+  <lib desc="#Plexers" name="3">
+    <tool name="Multiplexer">
+      <a name="enable" val="false"/>
+    </tool>
+    <tool name="Demultiplexer">
+      <a name="enable" val="false"/>
+    </tool>
+  </lib>
+  <lib desc="#Arithmetic" name="4"/>
+  <lib desc="#Memory" name="5">
+    <tool name="ROM">
+      <a name="contents">addr/data: 8 8
+0
+</a>
+    </tool>
+  </lib>
+  <lib desc="#I/O" name="6">
+    <tool name="RGB Video">
+      <a name="fixed" val="0#888 RGB (24 bit)"/>
+    </tool>
+  </lib>
+  <lib desc="#BFH-Praktika" name="7"/>
+  <lib desc="#Analog" name="8"/>
+  <lib desc="#Audio" name="9"/>
+  <main name="midi-in"/>
+  <options>
+    <a name="gateUndefined" val="ignore"/>
+    <a name="simlimit" val="1000"/>
+    <a name="simrand" val="0"/>
+    <a name="simsmooth" val="50"/>
+  </options>
+  <mappings>
+    <tool lib="0" map="Button2" name="Menu Tool"/>
+    <tool lib="0" map="Button3" name="Menu Tool"/>
+    <tool lib="0" map="Ctrl Button1" name="Menu Tool"/>
+  </mappings>
+  <toolbar>
+    <tool lib="0" name="Poke Tool"/>
+    <tool lib="0" name="Edit Tool"/>
+    <tool lib="0" name="Wiring Tool"/>
+    <tool lib="0" name="Text Tool">
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val=""/>
+      <a name="valign" val="base"/>
+    </tool>
+    <sep/>
+    <tool lib="1" name="Pin"/>
+    <tool lib="1" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </tool>
+    <tool lib="2" name="NOT Gate"/>
+    <tool lib="2" name="AND Gate"/>
+    <tool lib="2" name="OR Gate"/>
+    <tool lib="2" name="XOR Gate"/>
+    <tool lib="2" name="NAND Gate"/>
+    <tool lib="2" name="NOR Gate"/>
+  </toolbar>
+  <circuit name="main">
+    <a name="appearance" val="classic"/>
+    <comp lib="0" loc="(23,29)" name="Text">
+      <a name="halign" val="left"/>
+      <a name="text">Demo of kahdeg's MIDI sound emitter.
+Set the clock frequency to 1kHz (or higher), reset the simulation, then enable the clock.  The left-hand and right-hand ROMs 
+contain MIDI data for each of the two tracks that make up the song, with each word containing: 
+   16 bit timestamp, 1 bit on/off damper, 7 bit velocity, 8 bit note. 
+The original data was meant for 16kHz playback, but I divided the timestamps by 16 so that most of the song would
+would with fit before the 16 bit timestamps overflows and so the Logisim simulation clock could run slower.
+For each ROM, at the appointed time the note is put into a register that feeds one of the two MIDI sound emitters.</a>
+    </comp>
+    <comp lib="1" loc="(160,220)" name="Tunnel">
+      <a name="facing" val="south"/>
+      <a name="label" val="playL"/>
+    </comp>
+    <comp lib="1" loc="(160,450)" name="Tunnel">
+      <a name="facing" val="south"/>
+      <a name="label" val="playR"/>
+    </comp>
+    <comp lib="1" loc="(200,260)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(200,490)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(210,180)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="NextTimestampLeft"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="16"/>
+    </comp>
+    <comp lib="1" loc="(210,410)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="NextTimestampRight"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="16"/>
+    </comp>
+    <comp lib="1" loc="(30,350)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(480,280)" name="Splitter">
+      <a name="bit0" val="2"/>
+      <a name="bit1" val="2"/>
+      <a name="bit10" val="3"/>
+      <a name="bit11" val="3"/>
+      <a name="bit12" val="3"/>
+      <a name="bit13" val="3"/>
+      <a name="bit14" val="3"/>
+      <a name="bit15" val="1"/>
+      <a name="bit16" val="0"/>
+      <a name="bit17" val="0"/>
+      <a name="bit18" val="0"/>
+      <a name="bit19" val="0"/>
+      <a name="bit20" val="0"/>
+      <a name="bit21" val="0"/>
+      <a name="bit22" val="0"/>
+      <a name="bit23" val="0"/>
+      <a name="bit24" val="0"/>
+      <a name="bit25" val="0"/>
+      <a name="bit26" val="0"/>
+      <a name="bit27" val="0"/>
+      <a name="bit28" val="0"/>
+      <a name="bit29" val="0"/>
+      <a name="bit3" val="2"/>
+      <a name="bit30" val="0"/>
+      <a name="bit31" val="0"/>
+      <a name="bit4" val="2"/>
+      <a name="bit5" val="2"/>
+      <a name="bit6" val="2"/>
+      <a name="bit7" val="2"/>
+      <a name="bit8" val="3"/>
+      <a name="bit9" val="3"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="32"/>
+    </comp>
+    <comp lib="1" loc="(480,510)" name="Splitter">
+      <a name="bit0" val="2"/>
+      <a name="bit1" val="2"/>
+      <a name="bit10" val="3"/>
+      <a name="bit11" val="3"/>
+      <a name="bit12" val="3"/>
+      <a name="bit13" val="3"/>
+      <a name="bit14" val="3"/>
+      <a name="bit15" val="1"/>
+      <a name="bit16" val="0"/>
+      <a name="bit17" val="0"/>
+      <a name="bit18" val="0"/>
+      <a name="bit19" val="0"/>
+      <a name="bit20" val="0"/>
+      <a name="bit21" val="0"/>
+      <a name="bit22" val="0"/>
+      <a name="bit23" val="0"/>
+      <a name="bit24" val="0"/>
+      <a name="bit25" val="0"/>
+      <a name="bit26" val="0"/>
+      <a name="bit27" val="0"/>
+      <a name="bit28" val="0"/>
+      <a name="bit29" val="0"/>
+      <a name="bit3" val="2"/>
+      <a name="bit30" val="0"/>
+      <a name="bit31" val="0"/>
+      <a name="bit4" val="2"/>
+      <a name="bit5" val="2"/>
+      <a name="bit6" val="2"/>
+      <a name="bit7" val="2"/>
+      <a name="bit8" val="3"/>
+      <a name="bit9" val="3"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="32"/>
+    </comp>
+    <comp lib="1" loc="(560,280)" name="Splitter">
+      <a name="bit0" val="2"/>
+      <a name="bit1" val="2"/>
+      <a name="bit10" val="3"/>
+      <a name="bit11" val="3"/>
+      <a name="bit12" val="3"/>
+      <a name="bit13" val="3"/>
+      <a name="bit14" val="3"/>
+      <a name="bit15" val="1"/>
+      <a name="bit16" val="0"/>
+      <a name="bit17" val="0"/>
+      <a name="bit18" val="0"/>
+      <a name="bit19" val="0"/>
+      <a name="bit20" val="0"/>
+      <a name="bit21" val="0"/>
+      <a name="bit22" val="0"/>
+      <a name="bit23" val="0"/>
+      <a name="bit24" val="0"/>
+      <a name="bit25" val="0"/>
+      <a name="bit26" val="0"/>
+      <a name="bit27" val="0"/>
+      <a name="bit28" val="0"/>
+      <a name="bit29" val="0"/>
+      <a name="bit3" val="2"/>
+      <a name="bit30" val="0"/>
+      <a name="bit31" val="0"/>
+      <a name="bit4" val="2"/>
+      <a name="bit5" val="2"/>
+      <a name="bit6" val="2"/>
+      <a name="bit7" val="2"/>
+      <a name="bit8" val="3"/>
+      <a name="bit9" val="3"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="32"/>
+    </comp>
+    <comp lib="1" loc="(560,510)" name="Splitter">
+      <a name="bit0" val="2"/>
+      <a name="bit1" val="2"/>
+      <a name="bit10" val="3"/>
+      <a name="bit11" val="3"/>
+      <a name="bit12" val="3"/>
+      <a name="bit13" val="3"/>
+      <a name="bit14" val="3"/>
+      <a name="bit15" val="1"/>
+      <a name="bit16" val="0"/>
+      <a name="bit17" val="0"/>
+      <a name="bit18" val="0"/>
+      <a name="bit19" val="0"/>
+      <a name="bit20" val="0"/>
+      <a name="bit21" val="0"/>
+      <a name="bit22" val="0"/>
+      <a name="bit23" val="0"/>
+      <a name="bit24" val="0"/>
+      <a name="bit25" val="0"/>
+      <a name="bit26" val="0"/>
+      <a name="bit27" val="0"/>
+      <a name="bit28" val="0"/>
+      <a name="bit29" val="0"/>
+      <a name="bit3" val="2"/>
+      <a name="bit30" val="0"/>
+      <a name="bit31" val="0"/>
+      <a name="bit4" val="2"/>
+      <a name="bit5" val="2"/>
+      <a name="bit6" val="2"/>
+      <a name="bit7" val="2"/>
+      <a name="bit8" val="3"/>
+      <a name="bit9" val="3"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="32"/>
+    </comp>
+    <comp lib="1" loc="(590,230)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="OnOffL"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(590,460)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="OnOffR"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(640,230)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="NoteL"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(640,460)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="NoteR"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(690,230)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="VelocityL"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(690,460)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="VelocityR"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(720,290)" name="Constant">
+      <a name="value" val="0x3"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(720,320)" name="Tunnel">
+      <a name="facing" val="north"/>
+      <a name="label" val="playL"/>
+    </comp>
+    <comp lib="1" loc="(720,520)" name="Constant">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(720,560)" name="Tunnel">
+      <a name="facing" val="north"/>
+      <a name="label" val="playR"/>
+    </comp>
+    <comp lib="1" loc="(730,230)" name="Constant">
+      <a name="facing" val="south"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(730,460)" name="Constant">
+      <a name="facing" val="south"/>
+      <a name="value" val="0x2"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(760,320)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(760,560)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="4" loc="(140,230)" name="Comparator">
+      <a name="mode" val="unsigned"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="4" loc="(140,460)" name="Comparator">
+      <a name="mode" val="unsigned"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="5" loc="(220,230)" name="Counter">
+      <a name="max" val="0xfff"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="5" loc="(220,460)" name="Counter">
+      <a name="max" val="0xfff"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="5" loc="(230,220)" name="ROM">
+      <a name="addrWidth" val="12"/>
+      <a name="contents">addr/data: 12 32
+compressed
+eJxFnNuh4yoMAP+pIiXEhIcoR4Dov4TFoDn7ZcVJHBu0c8Sge/tM8TNqGp/0fL87Pof3VZfzasT9
+Su575zDC+J73xneU/d5a571zGJ/Hv7iP+135PP7Ve5Swj/d9ec63n/G975/j+MTvt8/082N9j6On
+9Ynnvn7hHqu/Xp/ffj/vz//u+590vvd9j/t78knn/NePEtJ787/9fOfu9+ff+35fn/v/ffJ7f7/6
+Hvf7309+7+t9fe7vG8r7fPvz5Txf/pT3ud7X5/n263N9e4/7/fop5/p2j6mGer4/P/V8v3zq+f68
+x/v6XL/KvX49vz/uMeUg7/Pt13Ke7/eROM775/i+zmWP7zme8RW54yI+d6Jjv18/+7jfXx+Z+Yzn
+Pa5PO+Mn73H0/HzaHbd7zE9oZ/7yp537m59278uP5/W5fjvPv693n9uPK2i639d051993O5xvz7f
+/77Hkz96vvf1o4R+7u/59PP8+unn/h4/ntdn/Pu5fv30M752j3v8h+fH8PwYnh/Dn3N4fgzPj+H5
+MW5+hOn5MT0/pufHvPnxMc8P8/wwzw+7zxnM88M8P8zzw3yclufH8vxYnh/r5kdYnh/L82N5fiyf
+h/2pmyBvcDLk+XqK3GA/w/P1JHmD+6/w62niwXvGE+UNzkw+X08VD1Z4Hk+WNzjZ8jw+jDc4Zzxh
+nscz5nm41RvM8Ab3tx7Pmufx4fBgn4meOG9w7zl66ngwwhM9ed7g0id6+niwz/w8gd7gZNDz8xTy
+QMMbnEl6gzNLz8/T6AbvmXSea5zg3nNyhHmwx+fAJvVzZn9mf/1iphPsM/ncj55g388en+yp7MEe
+n3yevZ4z+zr765nbuMF75vyWnOCOT+aRb7DH58DrHY1Lr7QDuenvwT2zP/Oc4GTYU87jPAQ5PAdy
+b7YUxrk4Pj3YZ6r/Q3iq/0t4qv9TuMF7nQO799cv7d5v+T8jD+6Zez/1/NYelnp+4iHY8yXMhTAX
+wlzc4J65cyHMhTAXN7DwNOaiMReNubjBPXPnojEXjbm4Qd/XYS4ac9EYlsbfyQvCSbBOMEreU3BZ
+uOf9BsvPnLfOlSfBOsGI561z5UmwPMgpPBea+60brBPsf7D7W53n6v4H9QbvW4NRHXdUwzMY1cGo
+DkZ1MKqDUR1k+GRU5x3V8ExGdfLrk1GdjOpkVCcZPhnVeUd1X4dRnYyqkeFGhhsZbmS4keF2Mzw8
+RoYbaDIy3MhwI8ONH11k+GX1vs4iwxdoWmT4IsMXGb7I8EWGr5vh+zpk+A10V0HnOukEZ3zi93w9
+Eewzt/R6TnCuE2/R9Z6RO+Ax+p+/GP3vX4z+B9CDfQayRSfbrrkozpxsJzjzHiFbhGwRskXIFp1s
+IUI2D+YJzrxHyBYhW4RsEbJFJ9u+jk+BB/vGIFuEbBGyRcgWIVt0soUI2TzIJzjzHiFbhGwRskXI
+Fp1sIUK26GQ7wb0fyBYhW4RsEbJFJ9u+js+7B3ugIFuEbBGyRcgWIVt0soUI2TzYcwHZImSLkC1C
+tgjZopMtRMjmwb4gZIuQLUK2CNkiZPNg5w9ki042guXBecvJFiFbhGzRyRYiZItOtk+EbBGyRcgW
+IVuEbNHJFiJki4NRhWwRskXIFiFbhGwe7HGGbHEyqpAtQrYI2SJki5DNgz3OkC1ORhWyRcgWIVuE
+bBGyebCfC7JFJ9sOyHDIFiFbhGwRsnkgIUK26GTbARkO2SJki5AtQjYP3uuQ4U62HZDhkO0H2X6Q
+7QfZPOjhB9l+TrYdONl+kO0H2X6Q7QfZPJDwu4vDfeV3dVjfz9xlYSK4Z+79pLP2fc8InxGuc57r
+PfOm6PnMeZxEsM9krpN9JfzLXCdznbPY3EX+764291PcZWYh2GeKL4jfYD/X2IEvdT0Y4Qf9foXf
+gn4evGe8Nv5dsuUdeG3sQQ6/6muHNzhrh19Nd95v8J4RxlAYZ2EMhXEWnl0YQ+HZhfsRxlAYQ2EM
+xfPw17hO47ka12lcpzGGjTFsjOENNPya5/wPav2a5/wPav0GzzXIjcFzDZ5rcD+D5xrcz+B+Bs81
+eK7Bcw2ea3KdyXNNrjO5zuS5Js81ea7Jcxm5YeSGMU3mHucHN37Gb8END/b9GLlh5IaRGzfYZxa5
+sciNRW4sdzPprD1fa/T1+0lfrNIXr/TFLH3dLaWv8Blfx6WvG6Y3OPOVvm6ZPHj91J+h8udKqKaE
+a0rIpoRtSuimhG9KCKeEcUoop4RzSkinhHVKaKf0553+xNN/8/SnnnBPf/Lpzz796Sf8U0JAJQxU
+QkElHFRCQiUsVEJDJTxUQkQlTFRCRSVcVEJGJWxUQkclfFRCSCWMVEJJJZxUQkolrFRCSyW8VEJM
+JcxUQk0l3FRCTiXsVEJPJfxUQlAlDFVCUSUcVUJSJSxVQlMlPFVCVCVMVUJVJVxVQlYlbFVCVyV8
+VUJYJYxVQlklnFVCWiWsVUJbJbxVQlwlzFVCXSXcVUJeJexVQl8l/FVCYCUMVkJhJRxWQmIlLFZC
+YyU8VkJkJUxWQmUlXFZCZiVsVkJnJXxWQmgljFZCaSWcVkJqJaxWQmslvFbGa2W8VsZrZbxWxmtl
+vFbGa2W8VsZrZbxWxmtlvFZ+PMfe4ORYxmtlvFbGa2W8VsZrZbxWxmtlvFbGa2W8VsZrZbxWxmtl
+vFbGa2W8VsZrZbxWxmtlvFbGa2W8VsZrZbxWxmtlvFZOPHtyhmdKIw/2/STuOTl7c+KevUbaAfcM
+63Linp11IWevIfNlXdqBp58H+0zhuW79s3+i8Fw3yCHf+kfOmTsXlD0evGe8xs6Xh+8Zhq74+iJX
+fqvyW5XfusE+I/73Il/WvTsFjjgPasiXdfsnDuvebBFu4wTnzMnDeYK9zHnPnPSbHmyO5earmwzr
+cjs/MT04Z85vjRPcHGuk+g12PrfzWzsl2sn59+vnt5Rgn1HmXZl3Zd6VeYeHWZl3eOjBe8Zr/qxe
+S2T1mt+DPV/dOZY7/5a7c8yD39lvufczuB8Q58G+n8H9DO5ncD/UY3mQh/AwD/IQHuZJHk7yEAx6
+sM8YuWHkhpEbRh4aeWjkoXEbRgIYeWjkIULJg52Hi99a/Nbit5bnYfl6Hpav52H5+tB5UEO5tZae
+M+e3yteXSx68Z8796Al2Pfae8aWZBzOUx9e55fF1bnlOHirBe+bkoZzgcKx4GUYw9nWcvW9watry
+OHs92GeoxwrruBJ5LtZxbzDe2SnRS9nygvEGPrnlVGjvxtzPy9QC2YqTLRTI5sE4wcmoAtkKZCuQ
+rUC24mTb1+FHqeIKZCuQrUC2AtkKZCtOtlAgmwf5BHdUIVuBbAWyFchWnGz7Op5RHuzPQLYC2Qpk
+K5CtQLbiZAsFsnmwpwmyFchWIFuBbAWyFSfbvo5DpjjZPgWyFchWIFuBbAWyFSdbKJDNg7UDJ1uB
+bAWyFchWIFtR5h2yeTBOcOcdshXIViBbgWzFybav42TzYH8YshXIViBbgWwFspXB/UA2D8YJ7v1A
+tgLZCmQrkK0M8hCyebB/C7IVyFYgW4FsBbIVIw8hmwf5BDfHIFuBbAWyFchWjDyEbB7sz0C2AtkK
+ZCuQrUK26mQLFbJ5UE9w5r1CtgrZKmSrkK062fZ1nGwe7M9AtgrZKmSrkK1CtupkCxWyeTB24GSr
+kK1CtgrZKmSrTrZQIVvFvVfIViFbhWwVslXIVp1soeK1Kl6r4rUqiKt4rYrXqnititeqeK2K16p4
+rYrXqnititeqeK2K16p4rYrXqnititeqeK2K16p4rYrXqnititeqeK0KBiteq+K1Kl6r4rUqXqvi
+tSpeq+K1Kl6r4rUqXqvitSpeq+K1Kl6r4rUqXqvitSpeq+K1Kl6r4rUqXqvitSpeq+K1Kl6r4rUq
+XqvitSpeq+K1Kl6r4rUqXqvitSpeq+K1Kl6rQpuK16p4rYrXqnititeqeK2K16p4rYrXqnititeq
+eK2K16p4rYrXqnititeqeK2K16p4rYrXqnititeqeK2K16p4rYrXqngtwWsJXkvwWoLXEryW4LUE
+ryV4LcFrCV5L8FqC1xK8luC1BK8leC3BawleS/BagtcSaCN4LcFrCV5L8FqC1xK8luC1hKpJWA8K
+SBHWg0LVJFRNQtUkVE1C1SSsB4WqSVgPClWTUDUJVZNQNQlVk7AeFKomYT0oVE1C1STgQqiahKpJ
+WA8KVZOwHhSqJqFqEqomoWoSqiZhPSh/rVisB4WqSaiahKpJqJqEqklYDwpVk7AeFKomoWoSqiah
+ahKqJmE9KFRNwnpQqJqEqkmomoSqSaiahPWgUDUJ60GhahKqJqFqEqomoWoS1oNC1SSsB4WqSaia
+hKpJqJqEqklYDwpVk7AeFKomoWoSqiaBY0LVJKwHhapJWA8KVZNQNQlVk1A1CVWTsB4UqiZhPShU
+TULVJFRNQtUkVE3CelComoT1oFA1CVWTUDUJVVOjamqsBxtVU2M92KiaGlVTo2pqVE2NqqmxHmxU
+TY31YKNqalRNjaqpUTU1qqbGerBRNTXWg42qqVE1NaqmRtXU4FhjPdiomhrrwUbV1KiaGlVTo2pq
+VE2N9WDD2Dc39qFh7BuIaxj7BrUaxr6x1msY++bGPjSMfQNfDWPfMPYNY98w9g1j39zYh4axb27s
+Pw1j3zD2DWPfMPYNY9/c2IeGsW+Vbk2MfcPYN4x9A18NY9/c2IeGsffg/TAziLFvGPv211H611Lq
+1Artr6nUjf0OaCv96yv9ayz96yz9ay11Y7+vw7C4sf80iNQw9g0iNYx9w9g3N/ahYew92DeGsW8Y
++4axbxj7hrFvbuxDw9g3N/anK/bmGMa+Yewb+GoY+8Y6rmHsG+u4hrFvGPuGsW+gqWHsmxv70DD2
+zRgEjH3D2DeMfcPYN4x9c2MfGsa+LXIMY98w9g1j3zD2irFXN/ZBMfbqxn4HnmOKsVeMvWLsFWOv
+buz3dTzHPFgffTzH9PG/jIqxV4y9YuzVjX1QjL0H8wT3tzD2irFXjL1i7NWNfVCMvQf7njH2irFX
+QKQYe8XYqxv7oBh7D/QEZ74UY68Ye8XYK/1aSr+W0q+l9Gsp/VpKv5bSr6X0ayn9Wkq/ltKvpfRr
+Kf1aSr+W0q+l9Gsp/VpKv5bSr6X0aykrO6VfS1nZKf1aSr+W0q+l9Gsp/VpKv5bSr6X0aynlnNKv
+pfRrKf1aSr+W0q+l9Gsp/VpKv5bSr6X0ayn9Wkq/ltKvpfRrKf1aSr+W0q+l9Gsp/VpKv5bSr6X0
+ayn9Wkq/ltKvpfRrKf1aSr+W0q+lrBCVfi1lhaj0ayn9Wkq/ltKvpfRrKf1aSr+W0q+l9Gsp/VpK
+v5bSr6X0ayn9Wkq/ltKvpfRrKf1aSr+W0q+l9Gsp/VpKv5bSr6X0ayn9Wkq/ltKvpfRrKf1aSr+W
+0q+l9Gsp/VpKv5bSr6X0ayn9Wsr6VOnXUtanSr+W0q+l9Gsp/VpKv5bSr6X0ayn9Wkq/ltKvpfRr
+Kf1aSr+W0q+l9Gsp/VpKv5bSr6X0ayn9Wkq/Vqdfq9Ov1enX6vRrdfq1Ov1anX6tTr9Wp1+rU9d1
++rU6dV2HbJ0e+w7ZOmTrkK1Dtg7ZPLDQIVunx75Dtg7ZOmTrkK1DNg/2c0G2To99h2wdsnXI1iFb
+h2wepNAhW6fHvkO2Dtk6ZOuQrUM2D/b4QLZOj32HbB2ydcjWIVuHbB681/F57/TYd8jWIVuHbB2y
+dcjmwQodsnV67Dtk65CtQ7YO2Tpk82CGDtk6PfYdsnXI1iFbh2wdsnkwQodsnR77Dtk6ZOuQrUO2
+Dtk82M8F2To99h2ydcjWIVuHbB2y9c5zQbZOj32HbB2ydcjWIVuHbN3JFjpk6/TYd8jWIVuHbB2y
+dcjWnWyhQ7ZOj32HbB2ydcjWIVuHbN3JFjpk6/TYd8jWIVuHbB2ydcjWnWz7OmQ4S+AO2Tpk65Ct
+Q7YO2bqTLXTI1umx75CtQ7YO2TpkG5BtONnCgGyDHvsB2QZkG5BtQLYB2Qaef0C2gecfGPuBsR8Y
++5H+PuM2dbixDwNjP7BqA2M/MPYDYz8w9gNjP9zYh4Gx90BOcKzswNgPjP3A2A+M/XBjHwbG3oNx
+gjMXA2M/oN9AwQ2M/XBjv6/jtbEH+TMw9gNjPzD2A2M/MPZDGGeMvQdygvvsGPuBsR8Y+4GxH27s
+93UYQ2EMMfYDYz8w9gNjPzD2w419GBh7D/QEJ+cH1BoY+0E9NjD2w419GBj78f+/UuR+MPYDYz8w
+XQNjPwbPhbH3YH8GYz8w9gNjPzD2A2M/Js+FsfdgPxfGfmDsB8Z+YOwH3BhGHsKNgRYbGPuBsR8Y
++4GxHxj74cY+DIz9cGP/mRj7ibGfGPuJsZ8Y++nGPkyM/WTtOTH2E2M/MfYTYz8x9tONfZgY+4ny
+mhj7ibGfGPuJsZ+YLg9qmBj7ifKaGPuJsZ8Y+4mxn3itideaeK0JWyZea+K1Jl5r4rUmXmvitSZe
+a+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvi
+tSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUm
+XmvitSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZea8KoideaeK2J15p4rfn3n1P//ffU
+f/9BNV5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZea+K1Jl5r4rUmXmvitSZey/BahtcyvJbhtQyv
+ZXgtw2sZbDG8luG1DK9leC17PMfe4Hgtw2sZXsvwWobXMryW4bUMr2V4LcNrGV7L8FqG1zK8luG1
+DK9leC3Daxley/BahtcyvJbhtQyvZXgtw2sZXsvYeTT6tQx8Gf1axs6jsfNo7DwaNZKx82j0axk7
+jwbrjJ1HY+fRQJyx82jsPBr9WsbOo9GvZew8GjuPRtlj7DwaO49Gv5ahqox+LWPn0dh5NHYejZ1H
+Y+fR6NcyEGf0axk7j8bOo7HzaOw8GjuPRr+WsfNo9GsZO4/GzqOx82jsPBo7j0a/lrHzaPRrGTuP
+xs6jsfNo7DwaO49Gv5ax82j0axk8NHYeDR4aO4/GzqPRr2XsPBr9WsbOo7HzaOw8GjuPxs6j0a9l
+IM7o1zJ2Ho2dR2Pn0ajHjJ1Hg4fGzqPBQ2Pn0dh5tL//sQQ7j8bOo9GvZew8Gv1axs6jsfNolFjG
+zqOx82j0axnLLqNfy9h5NHYejZ1HY+dxsfO46Nda7Dwu+rUWO4+LncfFzuNi53Gx87jo11rsPC76
+tdbj69z1+Dp3sfO42Hlc7Dwu+rUWZdiiX2ux87jYeVzsPC52Hhf12GIdtyjDFuu4xc7jYudxsfO4
+AONi53HRr7Ug26KnYkG2BdkWZFuQbUG2Rb/WgmyLKm5BtgXZFmRbkG1BNg9SWJBt0VOxINuCbAuy
+Lci2IJsHe74g26KnYkG2BdkWZFuQbUE2D3JYkG3RU7Eg24JsC7ItyLYg23Ky7es42RY9FQuyLci2
+INuCbAuyLSdbWJBt0VOxINuCbAuyLci2IJsHe3wg26KnYkG2BdkWZFuQbUE2D/a8Q7ZFT8WCbAuy
+Lci2INuCbB78woJsi56KBdkWZFuQbUG2Bdk82PcD2RY9FQuyLci2INuCbAuyebDzELIteioWZFuQ
+bUG2BdkWZPNgjzNkW/RULMi2INuCbAuyLcjmwc7D9d7I9xv+AYsp6Xg=</a>
+      <a name="dataWidth" val="32"/>
+    </comp>
+    <comp lib="5" loc="(230,450)" name="ROM">
+      <a name="addrWidth" val="12"/>
+      <a name="contents">addr/data: 12 32
+compressed
+eJxFmduB7CAMQ/+pIiUEwsOUw8P0X8JlwGfvV9iZDARLkYR3pC880b/vuYzfRe5f4z1/rXX+8val
+v9+6fb1/j/d8/73vSF95vjNXeaL9Hfn7TBefeOaLLp3fv086v3+ffOZPTz7z7+u5vzz53F+ecr7P
+TznfZ1fk3l/O79MjZ734SBi/+R9Je4ZvPHLu39c2xhvfR2Z699XV3/3RP/X3fL/rmU+feuY713N/
+/a2/r+2sP55253PtPF992nm++vSzfn/62e+5nufvcvc/rB7j1sMNq8e49Xim1WNaPdTqoVYPtXro
+rYdbVo916/G7nvuX1WN/egviX6uIf60k/rU9+NeK4t9blcd7K4v3VhfvrTDeW2V+g/srf2vjfLDi
++GDV9sHK44PVx39WIP9ZhX6DsyX/3Ro5f0mzZ76s+Q1s2z4aD/wlzl7iMmcP8vnV3nI+v0rOX/L8
+vjq/2oNy7vkNoj0hBPIwyAury119c9xA8mIo+UuT/RiXJ3dw16qs1bmn33ucH8w82NdgX4N9TfY1
+2ZeyL2VfylrKWot9LfYFETxMCK+tHl7bV3jPPbI/OffswX292x4cLPYg2Mwh2Mwh2DOHYBwMvPSB
+tz58RuPwGY8DmAYwDWAaIvOAaQDTAKbBMN0D23sA0wCmwTB1AUwDmAYwDcLqYBrANIBpMExdANMA
+pgFMg2H6BDANYBrANAz2BaYBTAOYBmVfYBrANIBpWOwLTAOYfmD6GaZ7YJh+YPqB6WeYug9MPzD9
+wPQzTJ/vT8jB9APTzzB138E07J8fTM/gzPPtwZlnDxLPk3iezMzZNPC7mO6ZL6Z7cBAMfQ9+v/oN
+hLWEtYS1LoKf+yprVdZqrNXYRWOtxlqdtfpdy32DtQZrDdYa7Guy1mQtZS1lX8paylqLtZbtK14E
+t+m+uO9rFhtf89j4mgfH11w4YsPRfPgMBuZ9PwHBaAi6+N+MceM/OzY/fiKGHHHkiCVH82QXMeWI
+K0dsOZovn8H9Fe9gxJqjebOLmHPEnSP2HM2fn4hBRxw6YtHRPNpFTDri0hGbjo2ZMeqIU0esOppX
+u4hZR9w6Ytdx/OUXKoZjRyw7mme7iGlHXDti21GpGMYdce7I2x3t7XYJ7054d8K7k3n3HljFEt6d
+8O5k3u0S3p3w7oR3J/PuJ+HdCe9OeHcy73YJ7054d8K7k3n3k9D5hM6ny7G8B2ee7FKyqqZkVU0o
+f0L5E8qfUP6UrT6/Etz6oPwJN0+FXRR2AQ8TPExib1y6XhB2Bj1P+PvqPOEeVJ6w8oSXdXvLl3V7
+gLYk0xaXmrlDauYOqfOEnSfsPGHnCfGURE5IeErCU9Kghpd1ezBZffKEuEwyl3EJl0m4TFKqoVQD
+l0kkh7R4wmX5MMHMhO/k11bPr62eX4L6awzPnnv8YW9x2R/21v3Jmfk3+LF3FzP7H3t/A7wp4005
+WH1ysPrkz+qTP6tPhnU5/n1iFcvGuifDumyscxnWZViXYV2GdRnW5czeYV0mb2RYl2FdhnUZ1mVY
+l411e2Csy8Y6l2FdhnUZ1mVYl2FdxtEyrMuN+sC6DOsyrMuwLsO6TJLJsC4b61yGdRnWZViXYV2G
+dZlsk2FdJq9mWJdhXYZ1GdZlWJcXTwjrMnpYYF2BdQXWFVhXYF0x1u2Bsa4Y61yBdQXWFVhXYF2B
+dcVY9xRYV4x1rpB/CvmnkH8K+aeQfwr5p5B/CvmnkH8K+aeQfwr5p5B/CvmnkH8K+aeQfwr5p8CW
+AlsK+aeQfwr5p5B/CvmnkH8K+aeQfwr5p5B/CvmnkH8K+aeQfwr5p5B/hPwj5B8h/wj5R8g/Qv4R
+/9ejsPwj5B8h/wj5R8g/gkoIKiGohKASgkoI3iSohJhKOEElBJUQVEJQCUElBG8SVEJMJZygEvLX
+vUAlBJUQVELwJkElpLIvVEJQCQF3AXdBJQRvElRCTCWcoBKCSggqIaiEoBKCNwkqIaYSTlAJQSUE
+lRBUQlAJwZsElRBTCSeohKASgkoIKiGohOBNFZWophKuohIVlaioREUlKipR8aaKSlRTCVdRiYpK
+VFSiohIVlah4UyV118jzkLorqbuSuiupu5K6K52wSuqulrpdJXVXUneFURVGVVJ3pSNWSd3VUrer
+pO5K6q5/bbG/vthfY+yvM/bXGrPU7Sqpu5K6K6m7krorqbvSIauk7mqp21VSdyV1V1J3JXVXUnel
+U1ZJ3dVSt6uk7krqrqTuSuqu8KfCn0bqbpa6XSN1N1J3I3U3UncjdTc6Zo3U3Sx1u0bqbqTuRupu
+pO5G6m50zBqpu1nqdo3U3UjdDWVrKFuju9LomDV0rKFjDR1r6Fiju9LorjR0rKFjDY4145hrdFca
+3ZVGd6XRXWl0Vxods0Z3pVl3xTXUpqE2DbVpqE2ju9LomDW0pZF7G9rS0JZGd6XRXWloS0NbGkxo
+5I1Od6XTXel0VzrdlU53pdMx66hEN5Vwne5Kp7vS8aZOd6XTXel0zDqYdsPUdTDtYNrBtJNgO5h2
+MO1g2g1T18G0g2kH045udDDtYNrBtBumroNpB9MOpp2OWQfTDqYdTDs5s4NpB9MOph2/6GDawbSD
+aVf2BaYdTDuYdt7uAaYDTAeYDsPUDTAdYDrAdKD8A0wHmA4wHeSNAaYDTAeJcZAYB4lxkBgHiXEk
+nofEOCwx7oElq0FiHCTGQWIcJMZhidENEuMQ1iIxDhLjIDkMksMgMQ5LjG6QGEdnLRLjIDEOEuMg
+MQ4S45jsi8Q4lLVIjIPEOEiMg8Q4SYzTEqObJMZpiXEPLDFOEuMkMU4S4yQxTkuMboLg5K2cePeM
+f5/YWzDx7ol3T/NuN/HuiXdPvHvSMZt498S7J+/gRFcn3j3x7ol3TzpmE++eePfEu6d5t5t498S7
+J9496ZhNvHvi3RPvnubdbuLdE++eePekYzbx7ol3T7x7mne7+fdPLrx74t2TjtnEuyfePfHuad7t
+Jm/35O1WvFvpmCnerXi34t1q3u0U71a8W/FupWOmeLfi3Yp3q3m3U7xb8W7Fu5WOmeLdincrOq/o
+vHIqUU4lyqlEOZUoyq8ov6L8yv+/lFOJcipRlF9RfuVUovQuFB4qPFROJcqpRDmVKKcS5VSi9C6U
+U4naqcQp2qJoi3IqUU4lyqlE6V0opxLt1BlPUTxF8RQlJyinEqV3oZxK1E4lTnEZxWUUl1FcRjmV
+KL0LxWWU/8sopxLlVKIwU2Hm4lSy6F0sTiXr5X+5nEoWp5LFqWRxKlmcSha9i4U3LfLG4lSyOJUs
+TiWLU8mCdSv+fWIVW/RpF6xbsG7BugXrFqxb5I0F6xZ92gXrFqxbsG7BugXrFglkwbpFn3bBugXr
+FqxbsG7BusVZeMG6RZ92wboF6xasW7BuwbrFWXjBukWfdsG6BesWrFuwbsG6xVl4wbpFXl2wbsG6
+BesWrFvrd9f7un/KV8uw</a>
+      <a name="dataWidth" val="32"/>
+    </comp>
+    <comp lib="5" loc="(50,320)" name="Counter">
+      <a name="label" val="Time"/>
+      <a name="max" val="0xffff"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="9" loc="(770,260)" name="MidiSink"/>
+    <comp lib="9" loc="(770,490)" name="MidiSink"/>
+    <wire from="(140,240)" to="(160,240)"/>
+    <wire from="(140,470)" to="(160,470)"/>
+    <wire from="(160,220)" to="(160,240)"/>
+    <wire from="(160,240)" to="(190,240)"/>
+    <wire from="(160,450)" to="(160,470)"/>
+    <wire from="(160,470)" to="(190,470)"/>
+    <wire from="(200,250)" to="(200,260)"/>
+    <wire from="(200,480)" to="(200,490)"/>
+    <wire from="(210,180)" to="(210,190)"/>
+    <wire from="(210,190)" to="(500,190)"/>
+    <wire from="(210,410)" to="(210,420)"/>
+    <wire from="(210,420)" to="(500,420)"/>
+    <wire from="(220,230)" to="(230,230)"/>
+    <wire from="(220,460)" to="(230,460)"/>
+    <wire from="(30,340)" to="(30,350)"/>
+    <wire from="(470,280)" to="(480,280)"/>
+    <wire from="(470,510)" to="(480,510)"/>
+    <wire from="(480,280)" to="(560,280)"/>
+    <wire from="(480,510)" to="(560,510)"/>
+    <wire from="(50,320)" to="(80,320)"/>
+    <wire from="(500,190)" to="(500,240)"/>
+    <wire from="(500,420)" to="(500,470)"/>
+    <wire from="(580,250)" to="(590,250)"/>
+    <wire from="(580,260)" to="(640,260)"/>
+    <wire from="(580,270)" to="(690,270)"/>
+    <wire from="(580,480)" to="(590,480)"/>
+    <wire from="(580,490)" to="(640,490)"/>
+    <wire from="(580,500)" to="(690,500)"/>
+    <wire from="(590,230)" to="(590,250)"/>
+    <wire from="(590,250)" to="(740,250)"/>
+    <wire from="(590,460)" to="(590,480)"/>
+    <wire from="(590,480)" to="(740,480)"/>
+    <wire from="(640,230)" to="(640,260)"/>
+    <wire from="(640,260)" to="(740,260)"/>
+    <wire from="(640,460)" to="(640,490)"/>
+    <wire from="(640,490)" to="(740,490)"/>
+    <wire from="(690,230)" to="(690,270)"/>
+    <wire from="(690,270)" to="(740,270)"/>
+    <wire from="(690,460)" to="(690,500)"/>
+    <wire from="(690,500)" to="(740,500)"/>
+    <wire from="(720,290)" to="(730,290)"/>
+    <wire from="(720,310)" to="(720,320)"/>
+    <wire from="(720,310)" to="(750,310)"/>
+    <wire from="(720,520)" to="(730,520)"/>
+    <wire from="(720,550)" to="(720,560)"/>
+    <wire from="(720,550)" to="(750,550)"/>
+    <wire from="(730,230)" to="(730,240)"/>
+    <wire from="(730,240)" to="(740,240)"/>
+    <wire from="(730,280)" to="(730,290)"/>
+    <wire from="(730,280)" to="(740,280)"/>
+    <wire from="(730,460)" to="(730,470)"/>
+    <wire from="(730,470)" to="(740,470)"/>
+    <wire from="(730,510)" to="(730,520)"/>
+    <wire from="(730,510)" to="(740,510)"/>
+    <wire from="(750,290)" to="(750,310)"/>
+    <wire from="(750,520)" to="(750,550)"/>
+    <wire from="(760,290)" to="(760,320)"/>
+    <wire from="(760,520)" to="(760,560)"/>
+    <wire from="(80,240)" to="(100,240)"/>
+    <wire from="(80,240)" to="(80,320)"/>
+    <wire from="(80,320)" to="(80,470)"/>
+    <wire from="(80,470)" to="(100,470)"/>
+    <wire from="(90,190)" to="(210,190)"/>
+    <wire from="(90,190)" to="(90,220)"/>
+    <wire from="(90,220)" to="(100,220)"/>
+    <wire from="(90,420)" to="(210,420)"/>
+    <wire from="(90,420)" to="(90,450)"/>
+    <wire from="(90,450)" to="(100,450)"/>
+  </circuit>
+  <circuit name="midi-out">
+    <comp lib="1" loc="(140,80)" name="Bit Extender">
+      <a name="in_width" val="5"/>
+      <a name="out_width" val="8"/>
+      <a name="type" val="zero"/>
+    </comp>
+    <comp lib="1" loc="(160,400)" name="Clock"/>
+    <comp lib="1" loc="(170,100)" name="Constant">
+      <a name="value" val="0x40"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(190,310)" name="Pin">
+      <a name="width" val="7"/>
+    </comp>
+    <comp lib="1" loc="(190,530)" name="Pin"/>
+    <comp lib="1" loc="(230,240)" name="Pin"/>
+    <comp lib="1" loc="(270,240)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="OnOffL"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(30,120)" name="Clock"/>
+    <comp lib="1" loc="(320,240)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="NoteL"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(370,240)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="VelocityL"/>
+      <a name="labelloc" val="north"/>
+      <a name="radix" val="10unsigned"/>
+    </comp>
+    <comp lib="1" loc="(400,300)" name="Constant">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(410,240)" name="Constant">
+      <a name="facing" val="south"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(440,330)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="2" loc="(260,450)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(330,470)" name="OR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="4" loc="(210,90)" name="Adder"/>
+    <comp lib="5" loc="(220,420)" name="D Flip-Flop"/>
+    <comp lib="5" loc="(40,60)" name="Random">
+      <a name="width" val="5"/>
+    </comp>
+    <comp lib="6" loc="(120,440)" name="Button"/>
+    <comp lib="9" loc="(450,270)" name="MidiSink">
+      <a name="hold" val="50"/>
+    </comp>
+    <wire from="(120,440)" to="(160,440)"/>
+    <wire from="(140,80)" to="(170,80)"/>
+    <wire from="(160,400)" to="(170,400)"/>
+    <wire from="(160,440)" to="(160,460)"/>
+    <wire from="(160,440)" to="(180,440)"/>
+    <wire from="(160,460)" to="(230,460)"/>
+    <wire from="(170,400)" to="(170,420)"/>
+    <wire from="(170,420)" to="(180,420)"/>
+    <wire from="(190,310)" to="(260,310)"/>
+    <wire from="(190,530)" to="(200,530)"/>
+    <wire from="(200,170)" to="(200,270)"/>
+    <wire from="(200,170)" to="(220,170)"/>
+    <wire from="(200,270)" to="(320,270)"/>
+    <wire from="(200,500)" to="(200,530)"/>
+    <wire from="(200,500)" to="(290,500)"/>
+    <wire from="(210,90)" to="(220,90)"/>
+    <wire from="(220,440)" to="(230,440)"/>
+    <wire from="(220,90)" to="(220,170)"/>
+    <wire from="(230,240)" to="(240,240)"/>
+    <wire from="(240,240)" to="(240,260)"/>
+    <wire from="(240,260)" to="(270,260)"/>
+    <wire from="(260,280)" to="(260,310)"/>
+    <wire from="(260,280)" to="(370,280)"/>
+    <wire from="(260,450)" to="(290,450)"/>
+    <wire from="(270,240)" to="(270,260)"/>
+    <wire from="(270,260)" to="(420,260)"/>
+    <wire from="(290,450)" to="(290,460)"/>
+    <wire from="(290,460)" to="(300,460)"/>
+    <wire from="(290,480)" to="(290,500)"/>
+    <wire from="(290,480)" to="(300,480)"/>
+    <wire from="(30,120)" to="(50,120)"/>
+    <wire from="(320,240)" to="(320,270)"/>
+    <wire from="(320,270)" to="(420,270)"/>
+    <wire from="(330,470)" to="(400,470)"/>
+    <wire from="(370,240)" to="(370,280)"/>
+    <wire from="(370,280)" to="(420,280)"/>
+    <wire from="(400,300)" to="(410,300)"/>
+    <wire from="(400,320)" to="(400,470)"/>
+    <wire from="(400,320)" to="(430,320)"/>
+    <wire from="(410,240)" to="(410,250)"/>
+    <wire from="(410,250)" to="(420,250)"/>
+    <wire from="(410,290)" to="(410,300)"/>
+    <wire from="(410,290)" to="(420,290)"/>
+    <wire from="(430,300)" to="(430,320)"/>
+    <wire from="(440,300)" to="(440,330)"/>
+    <wire from="(50,100)" to="(50,120)"/>
+    <wire from="(80,80)" to="(100,80)"/>
+  </circuit>
+  <circuit name="midi-parallell">
+    <comp lib="1" loc="(160,270)" name="Clock"/>
+    <comp lib="1" loc="(260,230)" name="Bit Extender">
+      <a name="in_width" val="7"/>
+      <a name="out_width" val="8"/>
+      <a name="type" val="zero"/>
+    </comp>
+    <comp lib="1" loc="(320,220)" name="Constant">
+      <a name="value" val="0x91"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(320,240)" name="Constant">
+      <a name="value" val="0x40"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(360,210)" name="Splitter">
+      <a name="bit1" val="0"/>
+      <a name="bit10" val="1"/>
+      <a name="bit11" val="1"/>
+      <a name="bit12" val="1"/>
+      <a name="bit13" val="1"/>
+      <a name="bit14" val="1"/>
+      <a name="bit15" val="1"/>
+      <a name="bit16" val="2"/>
+      <a name="bit17" val="2"/>
+      <a name="bit18" val="2"/>
+      <a name="bit19" val="2"/>
+      <a name="bit2" val="0"/>
+      <a name="bit20" val="2"/>
+      <a name="bit21" val="2"/>
+      <a name="bit22" val="2"/>
+      <a name="bit23" val="2"/>
+      <a name="bit24" val="3"/>
+      <a name="bit25" val="3"/>
+      <a name="bit26" val="3"/>
+      <a name="bit27" val="3"/>
+      <a name="bit28" val="3"/>
+      <a name="bit29" val="3"/>
+      <a name="bit3" val="0"/>
+      <a name="bit30" val="3"/>
+      <a name="bit31" val="3"/>
+      <a name="bit4" val="0"/>
+      <a name="bit5" val="0"/>
+      <a name="bit6" val="0"/>
+      <a name="bit7" val="0"/>
+      <a name="bit8" val="1"/>
+      <a name="bit9" val="1"/>
+      <a name="facing" val="west"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="32"/>
+    </comp>
+    <comp lib="1" loc="(390,320)" name="Pin"/>
+    <comp lib="1" loc="(440,330)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="5" loc="(200,230)" name="Counter">
+      <a name="max" val="0x7f"/>
+      <a name="width" val="7"/>
+    </comp>
+    <comp lib="9" loc="(450,210)" name="MidiSink">
+      <a name="interface" val="parallel4"/>
+    </comp>
+    <wire from="(160,270)" to="(180,270)"/>
+    <wire from="(180,250)" to="(180,270)"/>
+    <wire from="(200,230)" to="(220,230)"/>
+    <wire from="(260,230)" to="(340,230)"/>
+    <wire from="(320,220)" to="(340,220)"/>
+    <wire from="(320,240)" to="(340,240)"/>
+    <wire from="(360,210)" to="(420,210)"/>
+    <wire from="(390,320)" to="(430,320)"/>
+    <wire from="(430,240)" to="(430,320)"/>
+    <wire from="(440,240)" to="(440,330)"/>
+  </circuit>
+  <circuit name="midi-serial">
+    <comp lib="1" loc="(170,260)" name="Clock"/>
+    <comp lib="1" loc="(270,220)" name="Bit Extender">
+      <a name="in_width" val="7"/>
+      <a name="out_width" val="8"/>
+      <a name="type" val="zero"/>
+    </comp>
+    <comp lib="1" loc="(310,240)" name="Constant">
+      <a name="value" val="0x0"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(310,330)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(330,210)" name="Constant">
+      <a name="value" val="0x91"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(330,230)" name="Constant">
+      <a name="value" val="0x40"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(390,320)" name="Pin"/>
+    <comp lib="1" loc="(440,330)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="3" loc="(370,230)" name="Multiplexer">
+      <a name="enable" val="false"/>
+      <a name="select" val="2"/>
+      <a name="size" val="20"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="5" loc="(210,220)" name="Counter">
+      <a name="max" val="0x7f"/>
+      <a name="width" val="7"/>
+    </comp>
+    <comp lib="5" loc="(330,280)" name="Counter">
+      <a name="max" val="0x3"/>
+      <a name="width" val="2"/>
+    </comp>
+    <comp lib="9" loc="(450,230)" name="MidiSink">
+      <a name="interface" val="serial"/>
+    </comp>
+    <wire from="(170,260)" to="(190,260)"/>
+    <wire from="(190,240)" to="(190,260)"/>
+    <wire from="(210,220)" to="(230,220)"/>
+    <wire from="(270,220)" to="(350,220)"/>
+    <wire from="(310,240)" to="(350,240)"/>
+    <wire from="(310,300)" to="(310,330)"/>
+    <wire from="(330,210)" to="(350,210)"/>
+    <wire from="(330,230)" to="(350,230)"/>
+    <wire from="(330,280)" to="(360,280)"/>
+    <wire from="(360,250)" to="(360,280)"/>
+    <wire from="(370,230)" to="(420,230)"/>
+    <wire from="(390,320)" to="(430,320)"/>
+    <wire from="(430,260)" to="(430,320)"/>
+    <wire from="(440,260)" to="(440,330)"/>
+  </circuit>
+  <circuit name="midi-in">
+    <comp lib="1" loc="(140,110)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data Available"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(210,170)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(60,290)" name="Clock"/>
+    <comp lib="9" loc="(120,180)" name="MidiIn"/>
+    <comp lib="9" loc="(420,180)" name="MidiSink">
+      <a name="interface" val="serial"/>
+    </comp>
+    <wire from="(100,210)" to="(100,250)"/>
+    <wire from="(110,130)" to="(110,150)"/>
+    <wire from="(110,130)" to="(140,130)"/>
+    <wire from="(110,210)" to="(110,290)"/>
+    <wire from="(110,290)" to="(410,290)"/>
+    <wire from="(120,180)" to="(210,180)"/>
+    <wire from="(140,110)" to="(140,130)"/>
+    <wire from="(140,130)" to="(320,130)"/>
+    <wire from="(210,170)" to="(210,180)"/>
+    <wire from="(210,180)" to="(390,180)"/>
+    <wire from="(320,130)" to="(320,230)"/>
+    <wire from="(320,230)" to="(400,230)"/>
+    <wire from="(400,210)" to="(400,230)"/>
+    <wire from="(410,210)" to="(410,290)"/>
+    <wire from="(50,130)" to="(110,130)"/>
+    <wire from="(50,130)" to="(50,250)"/>
+    <wire from="(50,250)" to="(100,250)"/>
+    <wire from="(60,290)" to="(110,290)"/>
+  </circuit>
+  <circuit name="midi-in-parallel4">
+    <comp lib="1" loc="(140,110)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data Available"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(210,170)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(60,290)" name="Clock"/>
+    <comp lib="9" loc="(120,180)" name="MidiIn">
+      <a name="interface" val="parallel3"/>
+    </comp>
+    <comp lib="9" loc="(420,180)" name="MidiSink">
+      <a name="interface" val="parallel3"/>
+    </comp>
+    <wire from="(100,210)" to="(100,250)"/>
+    <wire from="(110,130)" to="(110,150)"/>
+    <wire from="(110,130)" to="(140,130)"/>
+    <wire from="(110,210)" to="(110,290)"/>
+    <wire from="(110,290)" to="(410,290)"/>
+    <wire from="(120,180)" to="(210,180)"/>
+    <wire from="(140,110)" to="(140,130)"/>
+    <wire from="(140,130)" to="(320,130)"/>
+    <wire from="(210,170)" to="(210,180)"/>
+    <wire from="(210,180)" to="(390,180)"/>
+    <wire from="(320,130)" to="(320,230)"/>
+    <wire from="(320,230)" to="(400,230)"/>
+    <wire from="(400,210)" to="(400,230)"/>
+    <wire from="(410,210)" to="(410,290)"/>
+    <wire from="(50,130)" to="(110,130)"/>
+    <wire from="(50,130)" to="(50,250)"/>
+    <wire from="(50,250)" to="(100,250)"/>
+    <wire from="(60,290)" to="(110,290)"/>
+  </circuit>
+  <circuit name="midi-in-parallel3">
+    <comp lib="1" loc="(140,110)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data Available"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(210,170)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(60,290)" name="Clock"/>
+    <comp lib="9" loc="(120,180)" name="MidiIn">
+      <a name="interface" val="parallel3"/>
+    </comp>
+    <comp lib="9" loc="(420,180)" name="MidiSink">
+      <a name="interface" val="parallel3"/>
+    </comp>
+    <wire from="(100,210)" to="(100,250)"/>
+    <wire from="(110,130)" to="(110,150)"/>
+    <wire from="(110,130)" to="(140,130)"/>
+    <wire from="(110,210)" to="(110,290)"/>
+    <wire from="(110,290)" to="(410,290)"/>
+    <wire from="(120,180)" to="(210,180)"/>
+    <wire from="(140,110)" to="(140,130)"/>
+    <wire from="(140,130)" to="(320,130)"/>
+    <wire from="(210,170)" to="(210,180)"/>
+    <wire from="(210,180)" to="(390,180)"/>
+    <wire from="(320,130)" to="(320,230)"/>
+    <wire from="(320,230)" to="(400,230)"/>
+    <wire from="(400,210)" to="(400,230)"/>
+    <wire from="(410,210)" to="(410,290)"/>
+    <wire from="(50,130)" to="(110,130)"/>
+    <wire from="(50,130)" to="(50,250)"/>
+    <wire from="(50,250)" to="(100,250)"/>
+    <wire from="(60,290)" to="(110,290)"/>
+  </circuit>
+  <circuit name="midi-in-logisim5">
+    <comp lib="1" loc="(110,110)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data Available"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(180,60)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="Channel"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(210,100)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="Damping"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(270,130)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="Note"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(330,90)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="Velocity"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(410,140)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="Instrument"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(60,290)" name="Clock"/>
+    <comp lib="9" loc="(120,180)" name="MidiIn">
+      <a name="interface" val="logisim5"/>
+    </comp>
+    <comp lib="9" loc="(530,180)" name="MidiSink"/>
+    <wire from="(100,210)" to="(100,250)"/>
+    <wire from="(100,250)" to="(510,250)"/>
+    <wire from="(110,110)" to="(110,130)"/>
+    <wire from="(110,130)" to="(110,150)"/>
+    <wire from="(110,210)" to="(110,290)"/>
+    <wire from="(110,290)" to="(520,290)"/>
+    <wire from="(120,160)" to="(180,160)"/>
+    <wire from="(120,170)" to="(210,170)"/>
+    <wire from="(120,180)" to="(270,180)"/>
+    <wire from="(120,190)" to="(330,190)"/>
+    <wire from="(120,200)" to="(410,200)"/>
+    <wire from="(180,160)" to="(500,160)"/>
+    <wire from="(180,60)" to="(180,160)"/>
+    <wire from="(210,100)" to="(210,170)"/>
+    <wire from="(210,170)" to="(500,170)"/>
+    <wire from="(270,130)" to="(270,180)"/>
+    <wire from="(270,180)" to="(500,180)"/>
+    <wire from="(330,190)" to="(500,190)"/>
+    <wire from="(330,90)" to="(330,190)"/>
+    <wire from="(410,140)" to="(410,200)"/>
+    <wire from="(410,200)" to="(500,200)"/>
+    <wire from="(50,130)" to="(110,130)"/>
+    <wire from="(50,130)" to="(50,250)"/>
+    <wire from="(50,250)" to="(100,250)"/>
+    <wire from="(510,210)" to="(510,250)"/>
+    <wire from="(520,210)" to="(520,290)"/>
+    <wire from="(60,290)" to="(110,290)"/>
+  </circuit>
+  <circuit name="midi-in-logisim1">
+    <comp lib="1" loc="(140,110)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data Available"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(210,170)" name="Probe">
+      <a name="facing" val="south"/>
+      <a name="label" val="MIDI Data"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="1" loc="(60,290)" name="Clock"/>
+    <comp lib="9" loc="(120,180)" name="MidiIn">
+      <a name="interface" val="logisim1"/>
+    </comp>
+    <comp lib="9" loc="(420,180)" name="MidiSink">
+      <a name="interface" val="logisim1"/>
+    </comp>
+    <wire from="(100,210)" to="(100,250)"/>
+    <wire from="(110,130)" to="(110,150)"/>
+    <wire from="(110,130)" to="(140,130)"/>
+    <wire from="(110,210)" to="(110,290)"/>
+    <wire from="(110,290)" to="(410,290)"/>
+    <wire from="(120,180)" to="(210,180)"/>
+    <wire from="(140,110)" to="(140,130)"/>
+    <wire from="(140,130)" to="(320,130)"/>
+    <wire from="(210,170)" to="(210,180)"/>
+    <wire from="(210,180)" to="(390,180)"/>
+    <wire from="(320,130)" to="(320,230)"/>
+    <wire from="(320,230)" to="(400,230)"/>
+    <wire from="(400,210)" to="(400,230)"/>
+    <wire from="(410,210)" to="(410,290)"/>
+    <wire from="(50,130)" to="(110,130)"/>
+    <wire from="(50,130)" to="(50,250)"/>
+    <wire from="(50,250)" to="(100,250)"/>
+    <wire from="(60,290)" to="(110,290)"/>
+  </circuit>
+</project>
