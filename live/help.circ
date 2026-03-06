@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project source="5.0.5-HC" version="1.0">
+<project source="5.1.0-HC" version="1.0">
   This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
 
   <lib desc="#Base" name="0">
@@ -92,90 +92,140 @@
   <circuit name="NOT Gate Demo">
     <a name="appearance" val="classic"/>
     <comp lib="0" loc="(126,627)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="1"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(127,608)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="0"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(129,647)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="other"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(131,590)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="input"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(132,82)" name="Callout">
+      <a name="dx" val="40"/>
+      <a name="dy" val="40"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="input"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(14,273)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text">A multi-bit NOT gate performs the same transformation as a bitwise operation, with each output bit
 determined by the corresponding input bit.</a>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(17,50)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text">A NOT gate by default emits the complement of whatever input it receives. So it outputs a 1 when the input
 is 0, and it outputs a 0 when the input is 1.</a>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(18,242)" name="Text">
       <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
       <a name="text" val="Multi-bit NOT Gate"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(187,589)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="output"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(187,606)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="floating"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(188,628)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="0"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(191,648)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="error"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(20,30)" name="Text">
       <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
       <a name="text" val="NOT Gate"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(21,184)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text">If the input is not connected, or has an error (E) or floating (X) value, then the output will be an error. This default
 behavior can be summarized with the truth table above.</a>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(211,696)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="&quot;"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(250,82)" name="Callout">
       <a name="dx" val="-31"/>
       <a name="dy" val="41"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="ouput"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(27,483)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text">Instead of the default behavior described above, a NOT gate can be configured in special high-impedance output modes:
 * If the output behavior is set to "0/floating", it behaves in "open-collector" (a.k.a. "open-drain") inverter mode, 
 where output is either 0 (when the input is 1) or floating (when the input is 0). 
 * If the output behavior is set to "floating/1", the output is either floating (when the input is 1) or 0 (when the input is 1).
 When combined with pull-up or pull-down resistors, these modes can be used to create a circuit similar to a "wired-AND"
 or "wired-OR". See example circuits below.</a>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(279,317)" name="Callout">
       <a name="dx" val="-62"/>
       <a name="dy" val="41"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="4-bit NOT gate"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(29,713)" name="Text">
       <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
       <a name="text" val="NOT Gate Attributes"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(297,568)" name="Text">
       <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
       <a name="text" val="Output behavior as 0/floating"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(30,871)" name="Text">
       <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
       <a name="text" val="Example Circuits"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(32,458)" name="Text">
       <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
       <a name="text" val="High-impedance Output Modes"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(32,733)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text">Facing - Used to rotate the gate. You can also rotate the gate using arrow keys (up/down/left/right).
 Data Bits - The width, in bits, of the gate's input and output.
 Gate Size - Used to select a wide or narrow symbol.
@@ -185,63 +235,100 @@ either outputs 0 or leaves the output floating. Mode "floating/1" makes the NOT 
 Label - A label to appear above the gate.
 Label Font - Font for the label.
 </a>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(369,114)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="1"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(369,139)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="other"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(370,95)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="0"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(374,77)" name="Text">
       <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
       <a name="text" val="input"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(430,76)" name="Text">
       <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
       <a name="text" val="output"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(430,93)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="1"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(431,115)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="0"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(431,140)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="error"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(449,624)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="1"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(450,605)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="0"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(454,587)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="input"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(457,642)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="other"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(510,586)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="output"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(510,603)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="1"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(511,625)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="floating"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(514,568)" name="Text">
       <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
       <a name="text" val="Output behavior as floating/1"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(517,889)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="Transient Pulse Generator"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(519,643)" name="Text">
+      <a name="halign" val="center"/>
       <a name="text" val="error"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(721,166)" name="Text">
       <a name="format" val="markdownish"/>
@@ -320,6 +407,7 @@ Or a doc [page](/libs/wiring/pin.html) link for pin</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#185fba"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 AND gate</a>
       <a name="valign" val="top"/>
@@ -330,6 +418,7 @@ AND gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 NAND gate</a>
       <a name="valign" val="top"/>
@@ -340,6 +429,7 @@ NAND gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">5-input
 OR gate</a>
       <a name="valign" val="top"/>
@@ -349,6 +439,8 @@ OR gate</a>
       <a name="dx" val="-13"/>
       <a name="dy" val="-16"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="If no inputs, then error output"/>
       <a name="valign" val="top"/>
     </comp>
@@ -425,6 +517,8 @@ Any of the inputs can be configured to be active-low. This behaves exactly as if
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Floating input causes
 error, unless a result
 can be determined
@@ -437,6 +531,7 @@ from remaining inputs</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Both circuits work the same: the LED
 turns on only when  the input is 11010.</a>
       <a name="valign" val="top"/>
@@ -447,9 +542,11 @@ turns on only when  the input is 11010.</a>
       <a name="dy" val="-19"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="Each output bit is the result of ANDing the corresponding input bits."/>
       <a name="textwidth" val="228"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(280,330)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -457,6 +554,7 @@ turns on only when  the input is 11010.</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 NOR gate</a>
       <a name="valign" val="top"/>
@@ -467,6 +565,7 @@ NOR gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 OR gate</a>
       <a name="valign" val="top"/>
@@ -484,15 +583,19 @@ OR gate</a>
       <a name="dy" val="14"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="8-bit 3-input AND gate"/>
       <a name="textwidth" val="107"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(390,1780)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Same for 
 error inputs</a>
       <a name="valign" val="top"/>
@@ -503,6 +606,7 @@ error inputs</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 XOR gate</a>
       <a name="valign" val="top"/>
@@ -513,6 +617,7 @@ XOR gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 XNOR gate</a>
       <a name="valign" val="top"/>
@@ -522,6 +627,8 @@ XNOR gate</a>
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Unconnected
 inputs are ignored</a>
       <a name="valign" val="top"/>
@@ -838,6 +945,7 @@ inputs are ignored</a>
       <a name="dy" val="-10"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">ANSI/IEEE
 91a-1991</a>
       <a name="valign" val="bottom-overall"/>
@@ -848,6 +956,7 @@ inputs are ignored</a>
       <a name="dy" val="-10"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="DIN 40700"/>
       <a name="valign" val="bottom-overall"/>
     </comp>
@@ -857,6 +966,7 @@ inputs are ignored</a>
       <a name="dy" val="-10"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="IEC 60617-12"/>
       <a name="valign" val="bottom-overall"/>
     </comp>
@@ -1020,9 +1130,11 @@ AAAAAElFTkSuQmCC</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="single bus wire with multiple device outputs"/>
       <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(160,620)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -1030,9 +1142,11 @@ AAAAAElFTkSuQmCC</a>
       <a name="dy" val="-16"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="pull-down resistor ensures the bus is pulled down to 0 if no output is driving to 1"/>
       <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(170,350)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -1082,9 +1196,11 @@ Different standards bodies have adopted different symbols for  common gates. In 
       <a name="dy" val="13"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="any of the four devices can drive the bus wire to 1, or even more than one of them at the same time"/>
       <a name="textwidth" val="216"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(262,821)" name="Text">
       <a name="font" val="SansSerif bold 12"/>
@@ -1345,7 +1461,6 @@ Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these 
 </a>
       <a name="textwidth" val="700"/>
     </comp>
-    <comp lib="10" loc="(900,300)" name="Hyperlink"/>
   </circuit>
   <circuit name="Floating Buses">
     <comp lib="0" loc="(130,210)" name="Callout">
@@ -1354,6 +1469,7 @@ Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these 
       <a name="dy" val="-20"/>
       <a name="foreground" val="#185fba"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 AND gate</a>
       <a name="valign" val="top"/>
@@ -1364,6 +1480,7 @@ AND gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 NAND gate</a>
       <a name="valign" val="top"/>
@@ -1374,6 +1491,7 @@ NAND gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">5-input
 OR gate</a>
       <a name="valign" val="top"/>
@@ -1383,6 +1501,8 @@ OR gate</a>
       <a name="dx" val="-13"/>
       <a name="dy" val="-16"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="If no inputs, then error output"/>
       <a name="valign" val="top"/>
     </comp>
@@ -1392,6 +1512,7 @@ OR gate</a>
       <a name="dy" val="16"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">ANSI/IEEE
 91a-1991</a>
       <a name="valign" val="bottom-overall"/>
@@ -1402,6 +1523,7 @@ OR gate</a>
       <a name="dy" val="16"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="IEC 60617-12"/>
       <a name="valign" val="bottom-overall"/>
     </comp>
@@ -1411,6 +1533,7 @@ OR gate</a>
       <a name="dy" val="16"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text" val="DIN 40700"/>
       <a name="valign" val="bottom-overall"/>
     </comp>
@@ -1420,9 +1543,11 @@ OR gate</a>
       <a name="dy" val="-16"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="pull-down resistor ensures the bus is pulled down to 0 if no output is driving to 1"/>
       <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(170,1930)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -1607,6 +1732,8 @@ Any of the inputs can be configured to be active-low. This behaves exactly as if
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Floating input causes
 error, unless a result
 can be determined
@@ -1626,9 +1753,11 @@ from remaining inputs</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="single bus wire with multiple device outputs"/>
       <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(231,2094)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -1636,9 +1765,11 @@ from remaining inputs</a>
       <a name="dy" val="13"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="any of the four devices can drive the bus wire to 1, or even more than one of them at the same time"/>
       <a name="textwidth" val="216"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(264,1037)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -1646,6 +1777,7 @@ from remaining inputs</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Both circuits work the same: the LED
 turns on only when  the input is 11010.</a>
       <a name="valign" val="top"/>
@@ -1656,9 +1788,11 @@ turns on only when  the input is 11010.</a>
       <a name="dy" val="-19"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="Each output bit is the result of ANDing the corresponding input bits."/>
       <a name="textwidth" val="228"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(280,2380)" name="Text">
       <a name="font" val="SansSerif bold 12"/>
@@ -1673,6 +1807,7 @@ turns on only when  the input is 11010.</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 NOR gate</a>
       <a name="valign" val="top"/>
@@ -1683,6 +1818,7 @@ NOR gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 OR gate</a>
       <a name="valign" val="top"/>
@@ -1712,15 +1848,19 @@ OR gate</a>
       <a name="dy" val="14"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="8-bit 3-input AND gate"/>
       <a name="textwidth" val="107"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(390,1520)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Same for 
 error inputs</a>
       <a name="valign" val="top"/>
@@ -1738,6 +1878,7 @@ error inputs</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 XOR gate</a>
       <a name="valign" val="top"/>
@@ -1748,6 +1889,7 @@ XOR gate</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">2-input
 XNOR gate</a>
       <a name="valign" val="top"/>
@@ -1769,6 +1911,8 @@ XNOR gate</a>
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
       <a name="text">Unconnected
 inputs are ignored</a>
       <a name="valign" val="top"/>

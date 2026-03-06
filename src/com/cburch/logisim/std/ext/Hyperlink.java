@@ -111,7 +111,7 @@ public class Hyperlink extends InstanceFactory implements Reshapable {
           80,
           30,
         });
-    setIconName("hyperlink.gif");
+    setIconName("hyperlink.png");
     setInstancePoker(Poker.class);
   }
 
