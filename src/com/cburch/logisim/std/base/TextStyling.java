@@ -71,6 +71,8 @@ public class TextStyling {
   
   public final HeaderStyle header_style[];
 
+  public final LinkStyle link_style;
+
 
   public enum SizeUnit { PIXELS, POINTS, EMS }
 
@@ -114,6 +116,19 @@ public class TextStyling {
         size = new Size(0.25f, SizeUnit.EMS);
       else // LEADERBLOCK
         size = new Size(0.75f, SizeUnit.EMS);
+    }
+  }
+
+  public static final class LinkStyle {
+    public final Color color;
+    public final Color background_color;
+    public final boolean bold, underline, italic;
+    public LinkStyle(Color fg, Color bg, boolean b, boolean u, boolean i) {
+      color = fg;
+      background_color = bg;
+      bold = b;
+      underline = u;
+      italic = i;
     }
   }
 
@@ -195,7 +210,6 @@ public class TextStyling {
 
     margin = getAndParseMargin("margin");
     
-
     if (format == Text.TEXT_FORMAT_MARKDOWNISH) {
       // Set default paragraph margin
       float defParaMargin[] = { 0.5f, 0f, 0.5f, 0f };
@@ -232,6 +246,17 @@ public class TextStyling {
     for (int i = 0; i < 4; i++)
       if (margin[i] == null)
         margin[i] = new Size(defBodyMargin, SizeUnit.PIXELS);
+
+    Color a_fg, a_bg;
+    try { a_fg = Attributes.parseColor(map.get("a-color")); }
+    catch (Exception e) { a_fg = Color.BLUE; }
+    try { a_bg = Attributes.parseColor(map.get("a-background-color")); }
+    catch (Exception e) { a_bg = new Color(255, 255, 255, 0); } // transparent
+    boolean a_bold, a_line, a_ital;
+    a_bold = map.getOrDefault("a-font-weight", "normal").trim().equalsIgnoreCase("bold");
+    a_line = map.getOrDefault("a-text-decoration", "none").trim().equalsIgnoreCase("underline");
+    a_ital = map.getOrDefault("a-font-style", "normal").trim().equalsIgnoreCase("italic");
+    link_style = new LinkStyle(a_fg, a_bg, a_bold, a_line, a_ital);
   }
 
   // Used when editing markdownish-rendered Text, this replaces the font

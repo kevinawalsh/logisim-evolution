@@ -36,6 +36,7 @@ import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
 
@@ -304,6 +305,37 @@ public class Markdownish {
  
   }
 
+  private static final class AttrRun {
+    int start;   // in rendered string (inclusive)
+    int end;     // in rendered string (exclusive)
+    AttributedCharacterIterator.Attribute key;
+    Object value;
+    AttrRun(int s, int e, AttributedCharacterIterator.Attribute k, Object v) {
+      start = s;
+      end = e;
+      key = k;
+      value = v;
+    }
+  }
+
+  private static final class AttrRuns {
+      ArrayList<AttrRun> runs = new ArrayList<>();
+      HashMap<TextAttribute, AttrRun> prev = new HashMap<>();
+
+      void add(AttrRun run) { runs.add(run); }
+      void merge(int start, int end, TextAttribute key, Object val) {
+        if (val == null) return;
+        AttrRun last = prev.get(key);
+        if (last != null && last.end == start && last.value.equals(val)) {
+          last.end = end;
+        } else {
+          AttrRun run = new AttrRun(start, end, key, val);
+          runs.add(run);
+          prev.put(key, run);
+        }
+      }
+  }
+
   public final class Phrase {
     final Font font;
     final ArrayList<Span> spans; // not empty; otherwise, we can't map block to src text index
@@ -315,11 +347,8 @@ public class Markdownish {
 
     public AttributedString buildAttributedString() {
       StringBuilder sb = new StringBuilder();
-      ArrayList<AttrRun> runs = new ArrayList<>();
+      AttrRuns runs = new AttrRuns();
 
-      AttrRun prevFont = null;
-      AttrRun prevUnderline = null;
-      AttrRun prevColor = null;
       for (Span span : spans) {
         int outStart = sb.length();
         span.renderTo(sb);
@@ -328,39 +357,26 @@ public class Markdownish {
 
         runs.add(new AttrRun(outStart, outEnd, SPAN_ID, span));
 
-        // Apply font, merging with previous run if same value and adjacent
+        // Apply font
         Font f = adjustForStyle(font, span.style);
-        if (prevFont != null && prevFont.end == outStart && prevFont.value.equals(f)) {
-          prevFont.end = outEnd;
-        } else {
-          AttrRun run = new AttrRun(outStart, outEnd, TextAttribute.FONT, f);
-          runs.add(run);
-          prevFont = run;
-        }
+        runs.merge(outStart, outEnd, TextAttribute.FONT, f);
 
-        // Apply underlining, merging with previous run if same value and adjacent
-        Object u = (span.style & CLICKABLE) != 0 ? TextAttribute.UNDERLINE_ON : null;
-        if (prevUnderline != null && prevUnderline.end == outStart && prevUnderline.value.equals(u)) {
-          prevUnderline.end = outEnd;
-        } else if (u != null) {
-          AttrRun run = new AttrRun(outStart, outEnd, TextAttribute.UNDERLINE, u);
-          runs.add(run);
-          prevUnderline = run;
-        }
+        // Apply underlining
+        Object u = (span.style & CLICKABLE) != 0 && styling.link_style.underline
+          ? TextAttribute.UNDERLINE_ON : null;
+        runs.merge(outStart, outEnd, TextAttribute.UNDERLINE, u);
 
-        // Apply color, merging with previous run if same value and adjacent
-        Color c = (span.style & CLICKABLE) != 0 ? new Color(155, 155, 0, 128) : null;
-        if (prevColor != null && prevColor.end == outStart && prevColor.value.equals(c)) {
-          prevColor.end = outEnd;
-        } else if (c != null) {
-          AttrRun run = new AttrRun(outStart, outEnd, TextAttribute.BACKGROUND, c);
-          runs.add(run);
-          prevColor = run;
-        }
+        // Apply foreground color
+        Color fg = (span.style & CLICKABLE) != 0 ? styling.link_style.color : null;
+        runs.merge(outStart, outEnd, TextAttribute.FOREGROUND, fg);
 
+        // Apply background color
+        Color bg = (span.style & CLICKABLE) != 0 ? styling.link_style.background_color : null;
+        runs.merge(outStart, outEnd, TextAttribute.BACKGROUND, bg);
       }
+
       AttributedString as = new AttributedString(sb.toString());
-      for (AttrRun r : runs)
+      for (AttrRun r : runs.runs)
         as.addAttribute(r.key, r.value, r.start, r.end);
       return as;
     }
@@ -440,6 +456,10 @@ public class Markdownish {
   Font adjustForStyle(Font font, int style) {
     if ((style & MONOSPACE) != 0)
       font = monoFont.deriveFont(font.getStyle(), font.getSize2D());
+    if ((style & CLICKABLE) != 0 && styling.link_style.bold)
+      style |= BOLD;
+    if ((style & CLICKABLE) != 0 && styling.link_style.italic)
+      style |= ITALIC;
     switch (style & (BOLD | ITALIC)) {
       case BOLD:
         return font.deriveFont(font.getStyle() | Font.BOLD);
@@ -543,19 +563,6 @@ public class Markdownish {
         && (this.end - this.start) == (other.end - other.start);
     }
 
-  }
-
-  static final class AttrRun {
-    int start;   // in rendered string (inclusive)
-    int end;     // in rendered string (exclusive)
-    AttributedCharacterIterator.Attribute key;
-    Object value;
-    AttrRun(int s, int e, AttributedCharacterIterator.Attribute k, Object v) {
-      start = s;
-      end = e;
-      key = k;
-      value = v;
-    }
   }
   
   private void parseBlocks(int start, int end) {
