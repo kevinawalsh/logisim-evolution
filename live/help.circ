@@ -243,6 +243,21 @@ Label Font - Font for the label.
     <comp lib="0" loc="(519,643)" name="Text">
       <a name="text" val="error"/>
     </comp>
+    <comp lib="0" loc="(721,166)" name="Text">
+      <a name="format" val="markdownish"/>
+      <a name="text">Link test
+
+Maybe go to [wikipedia](https://en.wikipedia.org/wiki/List_of_7400-series_integrated_circuits) to see stuff?
+
+Or try [this page](http://sneaindia.com/Admin_index.php?id=21&amp;f=Technical) fro sneaindia.com
+
+Or go to the [floating bus example](#Floating Buses) circuit
+
+
+Alt link to the [floating bus example](logisim:///live/help.circ#Floating Buses) circuit
+
+Or a doc [page](/libs/wiring/pin.html) link for pin</a>
+    </comp>
     <comp lib="1" loc="(150,130)" name="Pin"/>
     <comp lib="1" loc="(170,370)" name="Pin">
       <a name="width" val="4"/>

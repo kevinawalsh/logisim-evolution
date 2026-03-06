@@ -693,6 +693,26 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     return new Text.CaretPosition(bounds, cursor, revBias);
   }
 
+  // Returns the URL of the link at (px, py) relative to the layout origin,
+  // or null if no link is at that point.
+  public String urlForPoint(int px, int py) {
+    if (lines == null || lines.isEmpty()) return null;
+    VisualLine vl = lineForY(py);
+    VisualCell vc = cellForX(vl, px);
+    VisualBox vb = boxForY(vc, py);
+    if (vb.layout == null || vb.astr == null) return null; // marker box, no text
+    TextHitInfo hit = vb.layout.hitTestChar(px - vb.x, 0);
+    int charPos = vb.start + hit.getInsertionIndex();
+    AttributedCharacterIterator it = vb.astr.getIterator();
+    int begin = it.getBeginIndex();
+    int end = it.getEndIndex();
+    if (end <= begin) return null;
+    it.setIndex(Math.min(Math.max(charPos, begin), end - 1));
+    Markdownish.Span span = (Markdownish.Span) it.getAttribute(Markdownish.SPAN_ID);
+    if (span == null) return null;
+    return span.url; // null if span is not a link
+  }
+
   public VisualLine lineForY(int py) {
     for (VisualLine vl : lines) {
       if (vl.h != 0 && py < vl.y + vl.h) {

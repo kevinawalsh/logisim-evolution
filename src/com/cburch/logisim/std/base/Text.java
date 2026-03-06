@@ -37,6 +37,7 @@ import java.util.List;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.event.MouseEvent;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
@@ -48,10 +49,12 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
+import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
@@ -60,6 +63,7 @@ import com.cburch.logisim.tools.CustomHandles;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.TextEditable;
+import com.cburch.logisim.tools.ToolTipMaker;
 import com.cburch.logisim.util.StringGetter;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
@@ -211,7 +215,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     super(name, desc);
     setIconName("comment.png");
     setShouldSnap(false);
-    // setInstancePoker(Poker.class); // WIP: possible implementation for markdown links
+    setInstancePoker(Poker.class);
   }
 
   @Override
@@ -259,7 +263,39 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     public Object getFeature(Object key) {
       if (key == TextEditable.class)
         return this;
+      if (key == ToolTipMaker.class) {
+        // Only offer tooltips for markdownish text (which may contain links).
+        // For other formats fall through to the default (no tooltip).
+        TextAttributes attrs = (TextAttributes) getAttributeSet();
+        if (attrs.isMarkdownish()) return this;
+        return null;
+      }
       return super.getFeature(key);
+    }
+
+    @Override
+    public String getToolTip(ComponentUserEvent event) {
+      TextAttributes attrs = (TextAttributes) getAttributeSet();
+      if (attrs.isMarkdownish()) {
+        LayoutEngine engine = attrs.getLayout();
+        if (engine instanceof StyledBoxLayout) {
+          Location loc = getLocation();
+          String url = ((StyledBoxLayout) engine).urlForPoint(
+              event.getX() - loc.getX(), event.getY() - loc.getY());
+          if (url != null) {
+            if (url.startsWith("#"))
+              return S.fmt("textClickToSwitch", htmlEscape(url.substring(1)));
+            if (url.startsWith("logisim:"))
+              return S.fmt("textClickToExample", htmlEscape(url.substring(8)));
+            return S.fmt("textClickToBrowse", htmlEscape(url));
+          }
+        }
+      }
+      return null;
+    }
+
+    private static String htmlEscape(String s) {
+      return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     @Override
@@ -478,27 +514,32 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     return Math.min(Math.max(val, min), max);
   }
 
-  // WIP: possible implementation for markdown links
-  // private static class Poker extends InstancePoker {
-  //   @Override
-  //   public void mousePressed(InstanceState state, MouseEvent e) {
-  //     Instance instance = state.getInstance();
-  //     // TextInstanceComponent comp = (TextInstanceComponent)instance.getComponent();
-  //     TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
-  //     if (attrs.getFormat() != TEXT_FORMAT_MARKDOWNISH)
-  //       return;
-  //     StyledBoxLayout.drawMarkdownishText(g, text, loc, textWidth, font, valign);
-  //   }
-  // 
-  //   @Override
-  //   public void mouseReleased(InstanceState state, MouseEvent e) {
-  //     Instance instance = state.getInstance();
-  //     // TextInstanceComponent comp = (TextInstanceComponent)instance.getComponent();
-  //     TextAttributes attrs = (TextAttributes) instance.getAttributeSet();
-  //     if (!attrs.isMarkdownish())
-  //       return;
-  //   }
-  // }
+  // Poker for markdownish text links. init() activates only when the click
+  // lands on a CLICKABLE span; otherwise returns false so PokeTool falls through
+  // to its normal behavior (showing the attribute panel).
+  public static class Poker extends InstancePoker {
+    private String pendingUrl;
+
+    @Override
+    public boolean init(InstanceState state, MouseEvent e) {
+      TextAttributes attrs = (TextAttributes) state.getAttributeSet();
+      if (!attrs.isMarkdownish()) return false;
+      LayoutEngine engine = attrs.getLayout();
+      if (!(engine instanceof StyledBoxLayout)) return false;
+      Location loc = state.getInstance().getLocation();
+      pendingUrl = ((StyledBoxLayout) engine).urlForPoint(e.getX() - loc.getX(), e.getY() - loc.getY());
+      return pendingUrl != null;
+    }
+
+    @Override
+    public void mouseReleased(InstanceState state, MouseEvent e) {
+      if (pendingUrl != null) {
+        String url = pendingUrl;
+        pendingUrl = null;
+        HelpBroker.followLink(url, state.getProject());
+      }
+    }
+  }
 
   interface LayoutEngine {
     Bounds getBounds(Location loc);

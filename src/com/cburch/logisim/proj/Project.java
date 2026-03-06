@@ -135,6 +135,13 @@ public class Project {
   private MyListener myListener = new MyListener();
   private boolean startupScreen = false;
 
+  // Whether the user has approved external (http/https/mailto) links from this
+  // project. Set to true when user clicks "Always trust" in the link confirmation
+  // dialog. Reset to false on each file load (so it's in-memory only, not saved).
+  private boolean externalLinksApproved = false;
+  public boolean isExternalLinksApproved() { return externalLinksApproved; }
+  public void setExternalLinksApproved(boolean approved) { externalLinksApproved = approved; }
+
   public Project(LogisimFile.FileWithSimulations file) {
     fileListeners.add(null, myListener);
     setLogisimFile(file);

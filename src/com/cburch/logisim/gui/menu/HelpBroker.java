@@ -30,12 +30,17 @@
 package com.cburch.logisim.gui.menu;
 import static com.cburch.logisim.gui.menu.Strings.S;
 
+import java.awt.KeyboardFocusManager;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import javax.swing.JCheckBox;
+import javax.swing.JOptionPane;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -225,6 +230,7 @@ public class HelpBroker {
           Loader loader = new Loader(null);
           LogisimFile.FileWithSimulations file = loader.openLogisimFile(srcfile, is);
           frame = new Frame(new Project(file));
+          frame.getProject().setExternalLinksApproved(true); // live example circuits always trusted
           frame.setVisible(true);
           helpFrames.put(filename, frame);
         }
@@ -258,6 +264,92 @@ public class HelpBroker {
     warned = true;
     SwingUtilities.invokeLater(() ->
         Errors.title(S.get("helpNotFoundTitle")).show(S.get("helpNotFoundError"), e));
+  }
+
+  // Follow a hyperlink from a canvas text component.
+  //
+  // Supported URL schemes:
+  //   "#CircuitName"               — switch to a named circuit in the same project (always trusted)
+  //   "logisim:///live/f.circ"     — open a built-in live example circuit (always trusted)
+  //   "logisim:///live/f.circ#C"   — same, navigate to circuit C inside
+  //                                  (1, 2, or 3 slashes after "logisim:" are all accepted)
+  //   "/libs/wiring/pin.html"      — relative path into built-in help docs (always trusted)
+  //   "http://..."  "https://..."  — open in browser; requires user confirmation unless
+  //   "mailto:..."                   project has already been marked as trusted
+  //
+  // TODO: future: "logisim://hostname/path#circuit" could download and open a remote project
+  // TODO: future: "logisim:///abs/path/to/file.circ#circuit" could open a local .circ file
+  //
+  // proj may be null (e.g. when called from a built-in help circuit context).
+  public static void followLink(String url, Project proj) {
+    if (url == null || url.isBlank()) return;
+
+    // "#CircuitName" — switch to a named circuit in the same project.
+    if (url.startsWith("#")) {
+      if (proj == null) return;
+      String circName = url.substring(1).trim();
+      if (circName.isEmpty()) return;
+      Circuit circ = proj.getLogisimFile().getCircuit(circName);
+      if (circ != null)
+        SwingUtilities.invokeLater(() -> proj.setCurrentCircuit(circ));
+      return;
+    }
+
+    // "logisim:" scheme — built-in live circuits (always trusted, no confirmation).
+    if (url.startsWith("logisim:")) {
+      // Strip scheme and any number of leading slashes to get a plain path.
+      // Accepts logisim:/live/..., logisim://live/..., logisim:///live/...
+      String rest = url.substring("logisim:".length());
+      while (rest.startsWith("/")) rest = rest.substring(1);
+      // rest is now like "live/file.circ" or "live/file.circ#CircuitName"
+      int hashIdx = rest.indexOf('#');
+      String circuitName = hashIdx >= 0 ? rest.substring(hashIdx + 1).trim() : null;
+      String path = hashIdx >= 0 ? rest.substring(0, hashIdx) : rest;
+      if (circuitName != null && circuitName.isBlank()) circuitName = null;
+      if (path.startsWith("live/")) {
+        openLive(path.substring("live/".length()), circuitName);
+      }
+      // Other logisim: paths are silently ignored pending future extension.
+      return;
+    }
+
+    // Relative path — link to a built-in help doc page (always trusted, no confirmation).
+    // e.g. "/libs/wiring/pin.html" opens the corresponding page from the built-in docs.
+    if (url.startsWith("/") && !url.startsWith("//")) {
+      if (url.startsWith("//")) url = url.substring(2);
+      else if (url.startsWith("/")) url = url.substring(1);
+      IOException e = showHelp(url);
+      if (e != null)
+        Errors.title(S.get("helpNotFoundTitle")).show(S.get("helpNotFoundError"), e);
+      return;
+    }
+
+    // External links — require user confirmation unless project is already trusted.
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:")) {
+      if (proj != null && !proj.isExternalLinksApproved()) {
+        Window parent = KeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
+        JCheckBox trustBox = new JCheckBox(S.get("helpOptionAlwaysTrustExternalLinks"));
+        boolean isMail = url.startsWith("mailto:");
+        Object[] content = {
+          isMail ? S.get("helpConfirmOpenEmail") : S.get("helpConfirmOpenUrl"),
+          url,
+          trustBox,
+        };
+        int result = JOptionPane.showOptionDialog(
+            parent, content,
+            isMail ? S.get("helpConfirmOpenEmailTitle") : S.get("helpConfirmOpenUrlTitle"),
+            JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+            new Object[] { S.get("helpConfirmOpen"), S.get("helpConfirmCancel") },
+            S.get("helpConfirmCancel"));
+        if (result != 0) return; // user cancelled
+        if (trustBox.isSelected())
+          proj.setExternalLinksApproved(true);
+      }
+      DesktopIntegration.openBrowser(url);
+      return;
+    }
+
+    // Unknown scheme — silently ignored.
   }
 
   public static IOException showHelp(String target) {
