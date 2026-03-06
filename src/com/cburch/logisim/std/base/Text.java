@@ -185,7 +185,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   static final Attribute<Color> FG_COLOR = Attributes.forColor(
       "foreground", S.getter("textForegroundColorAttr"));
-  static final Attribute<Color> BG_COLOR = Attributes.forColor(
+  public static final Attribute<Color> BG_COLOR = Attributes.forColor(
       "background", S.getter("textBackgroundColorAttr"));
 
   public final static AttributeOption TEXT_FORMAT_PLAIN =

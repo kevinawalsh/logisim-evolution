@@ -40,6 +40,7 @@ import com.cburch.logisim.tools.Tool;
 public class Ext extends Library {
 
   private static FactoryDescription[] DESCRIPTIONS = {
+    new FactoryDescription("Hyperlink", S.getter("hyperlinkComponent"), "hyperlink.gif", "Hyperlink"),
     new FactoryDescription("SerialIn", S.getter("serialInputComponent"), "serial-in.png", "SerialIn"),
     // new FactoryDescription("SerialOut", S.getter("serialOutputComponent"), "serial-in.png", "SerialOut"),
     // new FactoryDescription("WebGet", S.getter("httpComponent"), "http-get.png", "WebGet"),

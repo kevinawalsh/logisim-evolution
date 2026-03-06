@@ -279,6 +279,15 @@ Or a doc [page](/libs/wiring/pin.html) link for pin</a>
       <a name="type" val="output"/>
     </comp>
     <comp lib="1" loc="(80,920)" name="Pin"/>
+    <comp lib="10" loc="(820,390)" name="Hyperlink">
+      <a name="background" val="#4bdd32"/>
+      <a name="href" val="#Floating Buses"/>
+      <a name="labelcolor" val="#ff0bf1"/>
+      <a name="labelfont" val="SignPainter plain 12"/>
+    </comp>
+    <comp lib="10" loc="(820,450)" name="Hyperlink">
+      <a name="href" val="https://wikipedia.org"/>
+    </comp>
     <comp lib="2" loc="(150,920)" name="NOT Gate"/>
     <comp lib="2" loc="(190,920)" name="NOT Gate"/>
     <comp lib="2" loc="(210,130)" name="NOT Gate"/>
@@ -1336,6 +1345,7 @@ Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these 
 </a>
       <a name="textwidth" val="700"/>
     </comp>
+    <comp lib="10" loc="(900,300)" name="Hyperlink"/>
   </circuit>
   <circuit name="Floating Buses">
     <comp lib="0" loc="(130,210)" name="Callout">

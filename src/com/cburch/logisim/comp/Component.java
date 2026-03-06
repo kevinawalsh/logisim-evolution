@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.comp;
 
-import java.awt.Graphics;
 import java.util.List;
 
 import com.cburch.logisim.circuit.CircuitState;
