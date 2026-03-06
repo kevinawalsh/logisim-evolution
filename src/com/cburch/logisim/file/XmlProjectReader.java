@@ -545,6 +545,40 @@ public class XmlProjectReader extends XmlReader {
         }
       }
     }
+
+    if (version.compareTo(LogisimVersion.get(5, 1, 0)) < 0) {
+      // As of version 5.1.0, Text and Callout alignment options defaults have
+      // changed. Fix earlier files by adding the older defaults.
+      //   Text:
+      //     previously used: center, base
+      //     now defaults to: left, top
+      //   Callout:
+      //     previously used: center, base, 40, 40
+      //     now defaults to: left, center-overall, implied margin, -40, -40, margin:4px;
+      String baseLibName = findLibNameByDesc(root, "#Base");
+      if (baseLibName != null) {
+        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = compElt.getAttribute("lib");
+            String name = compElt.getAttribute("name");
+            if (lib == null || name == null || !lib.equals(baseLibName))
+              continue;
+            if (name.equals("Text")) {
+              setDefaultAttribute(doc, compElt, "halign", "center");
+              setDefaultAttribute(doc, compElt, "valign", "base");
+            } else if (name.equals("Callout")) {
+              setDefaultAttribute(doc, compElt, "halign", "center");
+              setDefaultAttribute(doc, compElt, "valign", "base");
+              setDefaultAttribute(doc, compElt, "dx", "40");
+              setDefaultAttribute(doc, compElt, "dy", "40");
+              setDefaultAttribute(doc, compElt, "style", "margin: 4px;");
+            }
+          }
+        }
+      }
+
+    }
+
   }
 
   private void repairForImageAndCalloutComponents(Document doc, Element root) {
