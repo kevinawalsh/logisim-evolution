@@ -46,7 +46,7 @@
   <lib desc="#Audio" name="8"/>
   <lib desc="#BFH-Praktika" name="9"/>
   <lib desc="#External I/O" name="10"/>
-  <main name="Common Gates - Reference"/>
+  <main name="Common Gates - Basics"/>
   <options>
     <a name="gateUndefined" val="ignore"/>
     <a name="simlimit" val="1000"/>
@@ -434,16 +434,6 @@ NAND gate</a>
 OR gate</a>
       <a name="valign" val="top"/>
     </comp>
-    <comp lib="0" loc="(148,1906)" name="Callout">
-      <a name="background" val="#b7e1eb71"/>
-      <a name="dx" val="-13"/>
-      <a name="dy" val="-16"/>
-      <a name="foreground" val="#236494"/>
-      <a name="halign" val="center"/>
-      <a name="style" val="margin: 4px;"/>
-      <a name="text" val="If no inputs, then error output"/>
-      <a name="valign" val="top"/>
-    </comp>
     <comp lib="0" loc="(20,1270)" name="Text">
       <a name="background" val="#87eb675e"/>
       <a name="format" val="markdownish"/>
@@ -468,7 +458,7 @@ To enable a more strict simulation behavior, treating unconnected inputs as floa
       <a name="format" val="markdownish"/>
       <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;} a { font-style: italic; font-weight: normal; text-decoration: underline; background-color: #fcf;}"/>
       <a name="text"># Common Gates - Basics
-Common multiple-input logic gates are AND, OR, NAND, NOR, XOR, XNOR.
+The common logic gates are: AND, OR, NAND, NOR, XOR, XNOR.
 
 Each one takes several inputs, combines these using the rules of Boolean logic, and outputs the result.
 
@@ -488,7 +478,7 @@ See also: [Advanced Features](#Common Gates - Advanced) and [Online Documentatio
  1 | 1 ||  1  |  0   |  1 |  0  |  0  |   1</a>
       <a name="textwidth" val="480"/>
     </comp>
-    <comp lib="0" loc="(20,580)" name="Text">
+    <comp lib="0" loc="(20,570)" name="Text">
       <a name="background" val="#87eb675e"/>
       <a name="format" val="markdownish"/>
       <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
@@ -514,7 +504,7 @@ The ***gate size*** attribute allows a choice of *narrow*, *medium*, or *wide*. 
 Any of the inputs can be configured to be active-low. This behaves exactly as if there were a NOT gate attached to that input, but used judiciously, negated inputs can make circuits more compact and easier to undertand.</a>
       <a name="textwidth" val="480"/>
     </comp>
-    <comp lib="0" loc="(200,1810)" name="Callout">
+    <comp lib="0" loc="(220,1810)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
@@ -527,6 +517,16 @@ can be determined
 from remaining inputs</a>
       <a name="valign" val="top"/>
     </comp>
+    <comp lib="0" loc="(248,1936)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-13"/>
+      <a name="dy" val="-16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="If no inputs, then error output"/>
+      <a name="valign" val="top"/>
+    </comp>
     <comp lib="0" loc="(264,1227)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
       <a name="dx" val="-15"/>
@@ -537,18 +537,6 @@ from remaining inputs</a>
       <a name="text">Both circuits work the same: the LED
 turns on only when  the input is 11010.</a>
       <a name="valign" val="top"/>
-    </comp>
-    <comp lib="0" loc="(272,904)" name="Callout">
-      <a name="background" val="#b7e1eb71"/>
-      <a name="dx" val="-20"/>
-      <a name="dy" val="-19"/>
-      <a name="foreground" val="#236494"/>
-      <a name="format" val="wrapped"/>
-      <a name="halign" val="center"/>
-      <a name="style" val="p-margin: 0px;"/>
-      <a name="text" val="Each output bit is the result of ANDing the corresponding input bits."/>
-      <a name="textwidth" val="228"/>
-      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(280,360)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -579,16 +567,16 @@ OR gate</a>
       <a name="text" val="Note: See below for behavior when some inputs are floating (z), errors (e), or unconnected."/>
       <a name="textwidth" val="190"/>
     </comp>
-    <comp lib="0" loc="(380,770)" name="Callout">
+    <comp lib="0" loc="(312,904)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
-      <a name="dx" val="-18"/>
-      <a name="dy" val="14"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-19"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
       <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
-      <a name="text" val="8-bit 3-input AND gate"/>
-      <a name="textwidth" val="107"/>
+      <a name="text" val="Each output bit is the result of ANDing the corresponding input bits."/>
+      <a name="textwidth" val="228"/>
       <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(390,1810)" name="Callout">
@@ -601,6 +589,17 @@ OR gate</a>
       <a name="text">Same for 
 error inputs</a>
       <a name="valign" val="top"/>
+    </comp>
+    <comp lib="0" loc="(410,760)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="24"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="8-bit 3-input AND gate"/>
+      <a name="textwidth" val="88"/>
+      <a name="valign" val="base"/>
     </comp>
     <comp lib="0" loc="(450,240)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
@@ -624,7 +623,7 @@ XOR gate</a>
 XNOR gate</a>
       <a name="valign" val="top"/>
     </comp>
-    <comp lib="0" loc="(60,1810)" name="Callout">
+    <comp lib="0" loc="(80,1810)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
       <a name="dx" val="20"/>
       <a name="dy" val="-20"/>
@@ -639,16 +638,6 @@ inputs are ignored</a>
       <a name="appear" val="right"/>
       <a name="fanout" val="5"/>
       <a name="incoming" val="5"/>
-    </comp>
-    <comp lib="1" loc="(130,1770)" name="Pin">
-      <a name="facing" val="west"/>
-      <a name="labelloc" val="east"/>
-      <a name="type" val="output"/>
-    </comp>
-    <comp lib="1" loc="(140,1880)" name="Pin">
-      <a name="facing" val="west"/>
-      <a name="labelloc" val="east"/>
-      <a name="type" val="output"/>
     </comp>
     <comp lib="1" loc="(140,200)" name="Pin">
       <a name="facing" val="west"/>
@@ -668,8 +657,12 @@ inputs are ignored</a>
       <a name="labelloc" val="east"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="1" loc="(190,1790)" name="Probe"/>
-    <comp lib="1" loc="(210,1750)" name="Pin"/>
+    <comp lib="1" loc="(150,1770)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(210,1790)" name="Probe"/>
     <comp lib="1" loc="(220,180)" name="Pin">
       <a name="label" val="X"/>
     </comp>
@@ -678,7 +671,8 @@ inputs are ignored</a>
     </comp>
     <comp lib="1" loc="(220,300)" name="Pin"/>
     <comp lib="1" loc="(220,340)" name="Pin"/>
-    <comp lib="1" loc="(280,1770)" name="Pin">
+    <comp lib="1" loc="(230,1750)" name="Pin"/>
+    <comp lib="1" loc="(240,1910)" name="Pin">
       <a name="facing" val="west"/>
       <a name="labelloc" val="east"/>
       <a name="type" val="output"/>
@@ -689,24 +683,29 @@ inputs are ignored</a>
       <a name="labelloc" val="east"/>
       <a name="type" val="output"/>
     </comp>
+    <comp lib="1" loc="(300,1770)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
     <comp lib="1" loc="(300,320)" name="Pin">
       <a name="facing" val="west"/>
       <a name="labelloc" val="east"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="1" loc="(300,770)" name="Pin">
+    <comp lib="1" loc="(340,770)" name="Pin">
       <a name="label" val="P"/>
       <a name="width" val="8"/>
     </comp>
-    <comp lib="1" loc="(300,800)" name="Pin">
+    <comp lib="1" loc="(340,800)" name="Pin">
       <a name="label" val="Q"/>
       <a name="width" val="8"/>
     </comp>
-    <comp lib="1" loc="(300,830)" name="Pin">
+    <comp lib="1" loc="(340,830)" name="Pin">
       <a name="label" val="R"/>
       <a name="width" val="8"/>
     </comp>
-    <comp lib="1" loc="(300,870)" name="Pin">
+    <comp lib="1" loc="(340,870)" name="Pin">
       <a name="label" val="out"/>
       <a name="type" val="output"/>
       <a name="width" val="8"/>
@@ -767,20 +766,13 @@ inputs are ignored</a>
     <comp lib="1" loc="(60,890)" name="Pin">
       <a name="label" val="E"/>
     </comp>
-    <comp lib="1" loc="(70,1750)" name="Pin"/>
-    <comp lib="1" loc="(70,1780)" name="Pin"/>
     <comp lib="1" loc="(80,1170)" name="Pin">
       <a name="facing" val="north"/>
       <a name="width" val="5"/>
     </comp>
-    <comp lib="2" loc="(120,1770)" name="OR Gate">
-      <a name="inputs" val="5"/>
-      <a name="size" val="30"/>
-    </comp>
+    <comp lib="1" loc="(90,1750)" name="Pin"/>
+    <comp lib="1" loc="(90,1780)" name="Pin"/>
     <comp lib="2" loc="(120,200)" name="AND Gate">
-      <a name="size" val="30"/>
-    </comp>
-    <comp lib="2" loc="(130,1880)" name="XOR Gate">
       <a name="size" val="30"/>
     </comp>
     <comp lib="2" loc="(130,320)" name="NAND Gate">
@@ -790,11 +782,18 @@ inputs are ignored</a>
       <a name="inputs" val="5"/>
       <a name="size" val="30"/>
     </comp>
+    <comp lib="2" loc="(140,1770)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
     <comp lib="2" loc="(170,1160)" name="NOT Gate">
       <a name="size" val="20"/>
     </comp>
     <comp lib="2" loc="(170,1180)" name="NOT Gate">
       <a name="size" val="20"/>
+    </comp>
+    <comp lib="2" loc="(230,1910)" name="XOR Gate">
+      <a name="size" val="30"/>
     </comp>
     <comp lib="2" loc="(250,1180)" name="AND Gate">
       <a name="inputs" val="5"/>
@@ -802,7 +801,7 @@ inputs are ignored</a>
       <a name="labelfont" val="SansSerif plain 14"/>
       <a name="size" val="70"/>
     </comp>
-    <comp lib="2" loc="(260,1770)" name="OR Gate">
+    <comp lib="2" loc="(280,1770)" name="OR Gate">
       <a name="inputs" val="5"/>
       <a name="size" val="30"/>
     </comp>
@@ -812,7 +811,7 @@ inputs are ignored</a>
     <comp lib="2" loc="(290,320)" name="NOR Gate">
       <a name="size" val="30"/>
     </comp>
-    <comp lib="2" loc="(360,800)" name="AND Gate">
+    <comp lib="2" loc="(400,800)" name="AND Gate">
       <a name="inputs" val="3"/>
       <a name="size" val="30"/>
       <a name="width" val="8"/>
@@ -838,9 +837,7 @@ inputs are ignored</a>
     <comp lib="6" loc="(430,1240)" name="LED">
       <a name="facing" val="north"/>
     </comp>
-    <wire from="(120,1770)" to="(130,1770)"/>
     <wire from="(120,200)" to="(140,200)"/>
-    <wire from="(130,1880)" to="(140,1880)"/>
     <wire from="(130,320)" to="(140,320)"/>
     <wire from="(130,830)" to="(140,830)"/>
     <wire from="(140,1160)" to="(150,1160)"/>
@@ -848,19 +845,21 @@ inputs are ignored</a>
     <wire from="(140,1180)" to="(150,1180)"/>
     <wire from="(140,1190)" to="(180,1190)"/>
     <wire from="(140,1200)" to="(180,1200)"/>
+    <wire from="(140,1770)" to="(150,1770)"/>
     <wire from="(170,1160)" to="(180,1160)"/>
     <wire from="(170,1180)" to="(180,1180)"/>
-    <wire from="(190,1770)" to="(200,1770)"/>
-    <wire from="(190,1790)" to="(200,1790)"/>
-    <wire from="(200,1770)" to="(200,1790)"/>
-    <wire from="(200,1790)" to="(210,1790)"/>
-    <wire from="(210,1750)" to="(230,1750)"/>
-    <wire from="(210,1780)" to="(210,1790)"/>
-    <wire from="(210,1780)" to="(230,1780)"/>
+    <wire from="(210,1770)" to="(220,1770)"/>
+    <wire from="(210,1790)" to="(220,1790)"/>
+    <wire from="(220,1770)" to="(220,1790)"/>
+    <wire from="(220,1790)" to="(230,1790)"/>
     <wire from="(220,180)" to="(240,180)"/>
     <wire from="(220,220)" to="(240,220)"/>
     <wire from="(220,300)" to="(240,300)"/>
     <wire from="(220,340)" to="(240,340)"/>
+    <wire from="(230,1750)" to="(250,1750)"/>
+    <wire from="(230,1780)" to="(230,1790)"/>
+    <wire from="(230,1780)" to="(250,1780)"/>
+    <wire from="(230,1910)" to="(240,1910)"/>
     <wire from="(240,180)" to="(240,190)"/>
     <wire from="(240,190)" to="(250,190)"/>
     <wire from="(240,210)" to="(240,220)"/>
@@ -870,26 +869,24 @@ inputs are ignored</a>
     <wire from="(240,330)" to="(240,340)"/>
     <wire from="(240,330)" to="(250,330)"/>
     <wire from="(250,1180)" to="(260,1180)"/>
-    <wire from="(260,1770)" to="(270,1770)"/>
-    <wire from="(270,1750)" to="(270,1770)"/>
-    <wire from="(270,1750)" to="(420,1750)"/>
-    <wire from="(270,1770)" to="(280,1770)"/>
+    <wire from="(280,1770)" to="(290,1770)"/>
     <wire from="(280,200)" to="(290,200)"/>
+    <wire from="(290,1750)" to="(290,1770)"/>
+    <wire from="(290,1750)" to="(420,1750)"/>
+    <wire from="(290,1770)" to="(300,1770)"/>
     <wire from="(290,320)" to="(300,320)"/>
-    <wire from="(300,770)" to="(320,770)"/>
-    <wire from="(300,800)" to="(330,800)"/>
-    <wire from="(300,830)" to="(320,830)"/>
-    <wire from="(300,870)" to="(370,870)"/>
-    <wire from="(320,770)" to="(320,790)"/>
-    <wire from="(320,790)" to="(330,790)"/>
-    <wire from="(320,810)" to="(320,830)"/>
-    <wire from="(320,810)" to="(330,810)"/>
+    <wire from="(340,770)" to="(360,770)"/>
+    <wire from="(340,800)" to="(370,800)"/>
+    <wire from="(340,830)" to="(360,830)"/>
+    <wire from="(340,870)" to="(410,870)"/>
     <wire from="(360,1140)" to="(360,1150)"/>
     <wire from="(360,1140)" to="(400,1140)"/>
-    <wire from="(360,800)" to="(370,800)"/>
+    <wire from="(360,770)" to="(360,790)"/>
+    <wire from="(360,790)" to="(370,790)"/>
+    <wire from="(360,810)" to="(360,830)"/>
+    <wire from="(360,810)" to="(370,810)"/>
     <wire from="(370,300)" to="(390,300)"/>
     <wire from="(370,340)" to="(390,340)"/>
-    <wire from="(370,800)" to="(370,870)"/>
     <wire from="(380,180)" to="(400,180)"/>
     <wire from="(380,220)" to="(400,220)"/>
     <wire from="(390,1770)" to="(420,1770)"/>
@@ -901,7 +898,9 @@ inputs are ignored</a>
     <wire from="(400,190)" to="(410,190)"/>
     <wire from="(400,210)" to="(400,220)"/>
     <wire from="(400,210)" to="(410,210)"/>
+    <wire from="(400,800)" to="(410,800)"/>
     <wire from="(410,1160)" to="(410,1180)"/>
+    <wire from="(410,800)" to="(410,870)"/>
     <wire from="(420,1160)" to="(420,1180)"/>
     <wire from="(430,1160)" to="(430,1170)"/>
     <wire from="(430,1230)" to="(430,1240)"/>
@@ -919,8 +918,6 @@ inputs are ignored</a>
     <wire from="(60,830)" to="(100,830)"/>
     <wire from="(60,860)" to="(80,860)"/>
     <wire from="(60,890)" to="(90,890)"/>
-    <wire from="(70,1750)" to="(90,1750)"/>
-    <wire from="(70,1780)" to="(90,1780)"/>
     <wire from="(80,1150)" to="(120,1150)"/>
     <wire from="(80,1150)" to="(80,1170)"/>
     <wire from="(80,180)" to="(80,190)"/>
@@ -935,6 +932,8 @@ inputs are ignored</a>
     <wire from="(80,820)" to="(100,820)"/>
     <wire from="(80,840)" to="(100,840)"/>
     <wire from="(80,840)" to="(80,860)"/>
+    <wire from="(90,1750)" to="(110,1750)"/>
+    <wire from="(90,1780)" to="(110,1780)"/>
     <wire from="(90,770)" to="(90,810)"/>
     <wire from="(90,810)" to="(100,810)"/>
     <wire from="(90,850)" to="(100,850)"/>
@@ -1132,7 +1131,6 @@ AAAAAElFTkSuQmCC</a>
       <a name="dy" val="-20"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
-      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="single bus wire with multiple device outputs"/>
       <a name="textwidth" val="267"/>
@@ -1144,7 +1142,6 @@ AAAAAElFTkSuQmCC</a>
       <a name="dy" val="-16"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
-      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="pull-down resistor ensures the bus is pulled down to 0 if no output is driving to 1"/>
       <a name="textwidth" val="267"/>
@@ -1198,7 +1195,6 @@ Different standards bodies have adopted different symbols for  common gates. In 
       <a name="dy" val="13"/>
       <a name="foreground" val="#236494"/>
       <a name="format" val="wrapped"/>
-      <a name="halign" val="center"/>
       <a name="style" val="p-margin: 0px;"/>
       <a name="text" val="any of the four devices can drive the bus wire to 1, or even more than one of them at the same time"/>
       <a name="textwidth" val="216"/>

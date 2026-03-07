@@ -20,6 +20,25 @@ a:active {
   text-decoration: underline;
 }
 
+a.logisim-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #1a1a2e;
+  color: #e0e0ff;
+  border: 1px solid #4444aa;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin: 4px;
+}
+a.logisim-link:hover { background: #2a2a4e; }
+a.logisim-link.success { border-color: #44aa44; color: #ccffcc; }
+a.logisim-link.error   { border-color: #aa4444; color: #ffcccc; }
+
 ul {
   padding-left: 7px;
   margin-left: 15px;
@@ -80,4 +99,12 @@ span.key {
 
 .aside {
     color: #888888;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+
 }

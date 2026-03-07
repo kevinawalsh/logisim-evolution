@@ -173,6 +173,24 @@ function doIncremental(event) {
     return false;
 }
 
+function live(e, el) {
+  e.preventDefault();
+  const url = el.href;
+  const original = el.innerHTML;
+
+  fetch(url, { method: 'GET' })
+    .then(r => {
+      if (!r.ok) throw new Error("Server error");
+      el.classList.add('success');
+      setTimeout(() => el.classList.remove('success'), 1500);
+    })
+    .catch(() => {
+      el.classList.add('error');
+      el.title = "Could not reach Logisim — is it running?";
+      setTimeout(() => el.classList.remove('error'), 3000);
+    });
+}
+
 window.onload = function() {
 
     function loadStyle(url) {
