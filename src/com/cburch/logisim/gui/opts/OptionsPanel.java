@@ -32,40 +32,33 @@ package com.cburch.logisim.gui.opts;
 
 import java.awt.LayoutManager;
 
-import javax.swing.JPanel;
-
 import com.cburch.logisim.file.Options;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 
-abstract class OptionsPanel extends JPanel {
+// Extends prefs.OptionsPanel so that both app and project panels share a
+// common supertype, allowing SettingsFrame to hold both in one array.
+abstract class OptionsPanel extends com.cburch.logisim.gui.prefs.OptionsPanel {
   private static final long serialVersionUID = 1L;
-  private OptionsFrame optionsFrame;
 
-  public OptionsPanel(OptionsFrame frame) {
-    super();
-    this.optionsFrame = frame;
+  public OptionsPanel(SettingsFrame frame) {
+    super(frame);
   }
 
-  public OptionsPanel(OptionsFrame frame, LayoutManager manager) {
-    super(manager);
-    this.optionsFrame = frame;
+  public OptionsPanel(SettingsFrame frame, LayoutManager manager) {
+    super(frame, manager);
   }
-
-  public abstract String getHelpText();
 
   Options getOptions() {
-    return optionsFrame.getOptions();
+    return getSettingsFrame().getOptions();
   }
 
-  OptionsFrame getOptionsFrame() {
-    return optionsFrame;
+  // Alias kept for MouseOptions (passes frame as AttrTable parent window)
+  SettingsFrame getOptionsFrame() {
+    return getSettingsFrame();
   }
 
   Project getProject() {
-    return optionsFrame.getProject();
+    return getSettingsFrame().getProject();
   }
-
-  public abstract String getTitle();
-
-  public abstract void localeChanged();
 }

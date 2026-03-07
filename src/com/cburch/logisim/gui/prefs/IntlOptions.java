@@ -60,7 +60,7 @@ class IntlOptions extends OptionsPanel {
   private PrefBoolean replAccents;
   private PrefOptionList gateShape;
 
-  public IntlOptions(PreferencesFrame window) {
+  public IntlOptions(SettingsFrame window) {
     super(window);
 
     locale = S.createLocaleSelector();

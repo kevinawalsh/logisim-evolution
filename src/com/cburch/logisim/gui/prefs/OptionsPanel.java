@@ -34,24 +34,29 @@ import java.awt.LayoutManager;
 
 import javax.swing.JPanel;
 
-abstract class OptionsPanel extends JPanel {
+public abstract class OptionsPanel extends JPanel {
   private static final long serialVersionUID = 1L;
-  private PreferencesFrame optionsFrame;
+  private SettingsFrame settingsFrame;
 
-  public OptionsPanel(PreferencesFrame frame) {
+  public OptionsPanel(SettingsFrame frame) {
     super();
-    this.optionsFrame = frame;
+    this.settingsFrame = frame;
   }
 
-  public OptionsPanel(PreferencesFrame frame, LayoutManager manager) {
+  public OptionsPanel(SettingsFrame frame, LayoutManager manager) {
     super(manager);
-    this.optionsFrame = frame;
+    this.settingsFrame = frame;
   }
 
   public abstract String getHelpText();
 
-  PreferencesFrame getPreferencesFrame() {
-    return optionsFrame;
+  // Alias kept for TemplateOptions/SoftwaresOptions (passes frame as dialog parent)
+  protected SettingsFrame getPreferencesFrame() {
+    return settingsFrame;
+  }
+
+  protected SettingsFrame getSettingsFrame() {
+    return settingsFrame;
   }
 
   public abstract String getTitle();

@@ -58,7 +58,7 @@ class MenuProject extends Menu {
       } else if (src == unload) {
         ProjectLibraryActions.doUnloadLibraries(proj);
       } else if (src == options) {
-        proj.getOptionsFrame().setVisible(true);
+        proj.showSettingsFrame();
       }
     }
   }

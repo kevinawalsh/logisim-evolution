@@ -29,101 +29,16 @@
  */
 
 package com.cburch.logisim.gui.prefs;
-import static com.cburch.logisim.gui.prefs.Strings.S;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.Dimension;
-
-import javax.swing.JFrame;
-import javax.swing.JTabbedPane;
-
-import com.cburch.logisim.gui.generic.LFrame;
-import com.cburch.logisim.util.LocaleListener;
-import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.WindowMenuItemManager;
-
-public class PreferencesFrame extends LFrame.Dialog {
-  private class MyListener implements LocaleListener {
-    public void localeChanged() {
-      setTitle(S.get("preferencesFrameTitle"));
-      for (int i = 0; i < panels.length; i++) {
-        tabbedPane.setTitleAt(i, panels[i].getTitle());
-        tabbedPane.setToolTipTextAt(i, panels[i].getToolTipText());
-        panels[i].localeChanged();
-      }
-    }
-  }
-
-  private static class WindowMenuManager extends WindowMenuItemManager
-    implements LocaleListener {
-    private PreferencesFrame window = null;
-
-    WindowMenuManager() {
-      super(S.get("preferencesFrameMenuItem"), true);
-      LocaleManager.addLocaleListener(this);
-    }
-
-    @Override
-    public JFrame getJFrame(boolean create, java.awt.Component parent) {
-      if (create) {
-        if (window == null) {
-          window = new PreferencesFrame();
-          window.setLocationRelativeTo(parent);
-          frameOpened(window);
-        }
-      }
-      return window;
-    }
-
-    public void localeChanged() {
-      setText(S.get("preferencesFrameMenuItem"));
-    }
-  }
+// Thin delegate — all UI is now in SettingsFrame.
+// Kept so that MenuFile and Startup continue to work without changes.
+public class PreferencesFrame {
 
   public static void initializeManager() {
-    MENU_MANAGER = new WindowMenuManager();
+    SettingsFrame.initializeManager();
   }
 
   public static void showPreferences() {
-    JFrame frame = MENU_MANAGER.getJFrame(true, null);
-    frame.setVisible(true);
-  }
-
-  private static final long serialVersionUID = 1L;
-
-  private static WindowMenuManager MENU_MANAGER = null;
-
-  private MyListener myListener = new MyListener();
-  private OptionsPanel[] panels;
-  private JTabbedPane tabbedPane;
-
-  private PreferencesFrame() {
-    super(null); // not associated with a project
-
-    panels = new OptionsPanel[] {
-      new TemplateOptions(this),
-      new IntlOptions(this), // index=1: see setSelectedIndex(1) below
-      new WindowOptions(this),
-      new LayoutOptions(this),
-      new ExperimentalOptions(this),
-      new SoftwaresOptions(this),
-    };
-    tabbedPane = new JTabbedPane();
-    for (int index = 0; index < panels.length; index++) {
-      OptionsPanel panel = panels[index];
-      tabbedPane.addTab(panel.getTitle(), null, panel,
-          panel.getToolTipText());
-    }
-
-    Container contents = getContentPane();
-    tabbedPane.setPreferredSize(new Dimension(450, 300));
-    contents.add(tabbedPane, BorderLayout.CENTER);
-
-    tabbedPane.setSelectedIndex(1);
-
-    LocaleManager.addLocaleListener(myListener);
-    myListener.localeChanged();
-    pack();
+    SettingsFrame.showAppSettings();
   }
 }

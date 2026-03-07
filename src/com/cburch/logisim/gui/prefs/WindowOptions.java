@@ -42,7 +42,7 @@ class WindowOptions extends OptionsPanel {
   private PrefBoolean[] checks;
   private PrefOptionList toolbarPlacement;
 
-  public WindowOptions(PreferencesFrame window) {
+  public WindowOptions(SettingsFrame window) {
     super(window);
 
     checks = new PrefBoolean[] {

@@ -1,0 +1,540 @@
+/**
+ * This file is part of Logisim-evolution.
+ *
+ * Logisim-evolution is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * Logisim-evolution is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Logisim-evolution.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Original code by Carl Burch (http://www.cburch.com), 2011.
+ * Subsequent modifications by:
+ *   + Haute École Spécialisée Bernoise
+ *     http://www.bfh.ch
+ *   + Haute École du paysage, d'ingénierie et d'architecture de Genève
+ *     http://hepia.hesge.ch/
+ *   + Haute École d'Ingénierie et de Gestion du Canton de Vaud
+ *     http://www.heig-vd.ch/
+ *   + REDS Institute - HEIG-VD, Yverdon-les-Bains, Switzerland
+ *     http://reds.heig-vd.ch
+ * This version of the project is currently maintained by:
+ *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
+ */
+
+package com.cburch.logisim.gui.prefs;
+import static com.cburch.logisim.gui.prefs.Strings.S;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+
+import javax.swing.ListSelectionModel;
+import com.cburch.logisim.file.Options;
+import com.cburch.logisim.gui.generic.LFrame;
+import com.cburch.logisim.gui.opts.MouseOptions;
+import com.cburch.logisim.gui.opts.SimulateOptions;
+import com.cburch.logisim.gui.opts.ToolbarOptions;
+import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.util.LocaleListener;
+import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.WindowMenuItemManager;
+
+public class SettingsFrame extends LFrame.Dialog {
+
+  // --- Nav item model ---
+
+  enum NavItemType { HEADER, PANEL }
+
+  static class NavItem {
+    final NavItemType type;
+    final OptionsPanel panel; // null for headers
+    boolean isApp;
+    String label;
+
+    NavItem(String label) { // header
+      this.type = NavItemType.HEADER;
+      this.label = label;
+      this.panel = null;
+    }
+    NavItem(OptionsPanel panel, boolean isApp) { // panel item
+      this.type = NavItemType.PANEL;
+      this.panel = panel;
+      this.isApp = isApp;
+      this.label = panel.getTitle();
+    }
+  }
+
+  // --- Header bar (scope badge pill + project switcher combo) ---
+
+  private static final Color APP_COLOR  = new Color(0x4A8EDB);
+  private static final Color PROJ_COLOR = new Color(0x4A9A55);
+
+  private class PillLabel extends JComponent {
+    private String text = "";
+    private Color color = APP_COLOR;
+
+    PillLabel() { setAlignmentY(CENTER_ALIGNMENT); }
+
+    void update(String txt, Color c) { text = txt; color = c; revalidate(); repaint(); }
+
+    @Override
+    public Dimension getPreferredSize() {
+      FontMetrics fm = getFontMetrics(getFont().deriveFont(Font.BOLD, 12f));
+      int tw = (fm != null ? fm.stringWidth(text) : 80);
+      return new Dimension(tw + 24, 22);
+    }
+    @Override public Dimension getMinimumSize() { return getPreferredSize(); }
+    @Override public Dimension getMaximumSize() { return getPreferredSize(); }
+
+    @Override
+    protected void paintComponent(Graphics g0) {
+      Graphics2D g = (Graphics2D) g0;
+      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+      int h = getHeight(), px = 10, arc = 6;
+      g.setFont(getFont().deriveFont(Font.BOLD, 12f));
+      FontMetrics fm = g.getFontMetrics();
+      g.setColor(color);
+      g.fillRoundRect(0, 0, getWidth(), h, arc, arc);
+      g.setColor(Color.WHITE);
+      g.drawString(text, px, fm.getAscent() + (h - fm.getHeight()) / 2);
+    }
+  }
+
+  private class HeaderBar extends JPanel {
+    private final PillLabel pill = new PillLabel();
+    private final JComboBox<Project> projectCombo = new JComboBox<>();
+    private boolean updatingCombo = false;
+
+    HeaderBar() {
+      setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+      setBorder(BorderFactory.createCompoundBorder(
+          BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0, 0, 0, 40)),
+          BorderFactory.createEmptyBorder(7, 12, 7, 8)));
+      setPreferredSize(new Dimension(0, 36));
+      projectCombo.setAlignmentY(CENTER_ALIGNMENT);
+      projectCombo.setRenderer(new DefaultListCellRenderer() {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value,
+            int idx, boolean sel, boolean focus) {
+          super.getListCellRendererComponent(list, value, idx, sel, focus);
+          if (value instanceof Project)
+            setText(((Project) value).getLogisimFile().getDisplayName());
+          return this;
+        }
+      });
+      projectCombo.addActionListener(e -> {
+        if (updatingCombo) return;
+        Project sel = (Project) projectCombo.getSelectedItem();
+        if (sel != null && sel != project) {
+          switchProject(sel);
+          selectFirstProjPanel();
+        }
+      });
+      add(pill);
+      add(Box.createHorizontalStrut(8));
+      add(projectCombo);
+      add(Box.createHorizontalGlue());
+      projectCombo.setVisible(false);
+    }
+
+    void update(String pillText, Color c, boolean isProj) {
+      pill.update(pillText, c);
+      projectCombo.setVisible(isProj);
+      if (isProj) refreshProjectCombo();
+      revalidate();
+      repaint();
+    }
+
+    void refreshProjectCombo() {
+      updatingCombo = true;
+      projectCombo.removeAllItems();
+      for (Project p : Projects.getOpenProjects()) projectCombo.addItem(p);
+      if (project != null) projectCombo.setSelectedItem(project);
+      updatingCombo = false;
+      revalidate();
+      repaint();
+    }
+  }
+
+  // --- Nav cell renderer ---
+
+  private static class NavCellRenderer extends DefaultListCellRenderer {
+    private static final Color HEADER_BG = new Color(0xEEEEEE);
+    private static final Font  HEADER_FONT;
+    static {
+      HEADER_FONT = new JLabel().getFont().deriveFont(Font.BOLD, 11f);
+    }
+
+    @Override
+    public Component getListCellRendererComponent(JList<?> list, Object value,
+        int index, boolean selected, boolean cellHasFocus) {
+      NavItem item = (NavItem) value;
+      JLabel label = (JLabel) super.getListCellRendererComponent(
+          list, item.label, index, selected && item.type == NavItemType.PANEL, false);
+      if (item.type == NavItemType.HEADER) {
+        label.setBackground(HEADER_BG);
+        label.setFont(HEADER_FONT);
+        label.setForeground(new Color(0x666666));
+        label.setBorder(BorderFactory.createEmptyBorder(6, 8, 2, 8));
+        label.setEnabled(false);
+      } else {
+        label.setBorder(BorderFactory.createEmptyBorder(4, 20, 4, 8));
+      }
+      return label;
+    }
+  }
+
+  // --- LocaleListener ---
+
+  private class MyListener implements LocaleListener {
+    @Override
+    public void localeChanged() {
+      setTitle(S.get("settingsFrameTitle"));
+      refreshNavLabels();
+      updateBadge();
+      for (OptionsPanel p : appPanels) p.localeChanged();
+      if (projPanels != null)
+        for (OptionsPanel p : projPanels) p.localeChanged();
+    }
+  }
+
+  // --- WindowMenuManager ---
+
+  private static class WinMenuManager extends WindowMenuItemManager implements LocaleListener {
+    WinMenuManager() {
+      super(S.get("settingsFrameTitle"), true);
+      LocaleManager.addLocaleListener(this);
+    }
+    @Override
+    public JFrame getJFrame(boolean create, java.awt.Component parent) {
+      return INSTANCE;
+    }
+    @Override
+    public void localeChanged() {
+      setText(S.get("settingsFrameTitle"));
+    }
+  }
+
+  // --- Static singleton API ---
+
+  private static SettingsFrame INSTANCE = null;
+  private static WinMenuManager MENU_MANAGER = null;
+
+  public static void initializeManager() {
+    MENU_MANAGER = new WinMenuManager();
+  }
+
+  public static void showAppSettings() {
+    SettingsFrame f = getInstance();
+    f.selectFirstAppPanel();
+    f.setVisible(true);
+    f.toFront();
+  }
+
+  public static void showProjectSettings(Project proj) {
+    SettingsFrame f = getInstance();
+    f.switchProject(proj);
+    f.selectFirstProjPanel();
+    f.setVisible(true);
+    f.toFront();
+  }
+
+  public static void showProjectPanel(Project proj, int panelIndex) {
+    SettingsFrame f = getInstance();
+    f.switchProject(proj);
+    f.selectProjPanel(panelIndex);
+    f.setVisible(true);
+    f.toFront();
+  }
+
+  private static SettingsFrame getInstance() {
+    if (INSTANCE == null)
+      INSTANCE = new SettingsFrame();
+    return INSTANCE;
+  }
+
+  // --- Instance state ---
+
+  private Project project;
+  private OptionsPanel[] appPanels;
+  private OptionsPanel[] projPanels; // null when no project
+
+  private final DefaultListModel<NavItem> navModel = new DefaultListModel<>();
+  private final JList<NavItem> navList = new JList<>(navModel);
+  private final JPanel contentHolder = new JPanel(new BorderLayout());
+  private final HeaderBar header = new HeaderBar();
+  private final MyListener myListener = new MyListener();
+  private JScrollPane navScroll; // set in buildUI, sized after locale applied
+
+  // Indices into navModel for section headers (updated when proj panels rebuilt)
+  private int projHeaderIndex = -1;
+
+  // --- Constructor ---
+
+  private SettingsFrame() {
+    super(null); // not associated with a specific project window
+    setDefaultCloseOperation(HIDE_ON_CLOSE);
+
+    appPanels = new OptionsPanel[] {
+      new TemplateOptions(this),
+      new IntlOptions(this),
+      new WindowOptions(this),
+      new LayoutOptions(this),
+      new ExperimentalOptions(this),
+      new SoftwaresOptions(this),
+    };
+    projPanels = null;
+
+    buildNavModel();
+    buildUI();
+
+    LocaleManager.addLocaleListener(myListener);
+    myListener.localeChanged();
+    Projects.propertyChangeProducer.addPropertyChangeListener(
+        Projects.projectListProperty, evt -> onProjectListChanged());
+    // Size nav column to fit its labels, then derive window sizes from that.
+    int navW = Math.max(160, navList.getPreferredSize().width) + 4;
+    navScroll.setPreferredSize(new Dimension(navW, 0));
+    setPreferredSize(new Dimension(navW + 570, 480));
+    setMinimumSize(new Dimension(navW + 320, 300));
+    pack();
+    setLocationRelativeTo(null);
+  }
+
+  // --- Project / Options accessors (used by panels) ---
+
+  public Project getProject() {
+    return project;
+  }
+
+  public Options getOptions() {
+    return project == null ? null : project.getLogisimFile().getOptions();
+  }
+
+  // --- Project switching ---
+
+  private void onProjectListChanged() {
+    List<Project> open = Projects.getOpenProjects();
+    if (project != null && !open.contains(project)) {
+      if (!open.isEmpty()) {
+        switchProject(open.get(0));
+        selectFirstProjPanel();
+      } else {
+        switchProject(null);
+        selectFirstAppPanel();
+      }
+    } else {
+      header.refreshProjectCombo();
+    }
+  }
+
+  private void switchProject(Project proj) {
+    if (proj == project) return;
+    project = proj;
+    projPanels = (proj == null) ? null : new OptionsPanel[] {
+      new SimulateOptions(this),
+      new ToolbarOptions(this),
+      new MouseOptions(this),
+      new RevertPanel(this),
+    };
+    buildNavModel();
+    navList.repaint();
+  }
+
+  // --- Nav model building ---
+
+  private void buildNavModel() {
+    navModel.clear();
+    navModel.addElement(new NavItem(S.get("settingsNavAppSection")));
+    for (OptionsPanel p : appPanels)
+      navModel.addElement(new NavItem(p, true));
+
+    if (projPanels != null) {
+      projHeaderIndex = navModel.size();
+      navModel.addElement(new NavItem(S.get("settingsNavProjectSection")));
+      for (OptionsPanel p : projPanels)
+        navModel.addElement(new NavItem(p, false));
+    } else {
+      projHeaderIndex = -1;
+    }
+  }
+
+  private void refreshNavLabels() {
+    for (int i = 0; i < navModel.size(); i++) {
+      NavItem item = navModel.get(i);
+      if (item.type == NavItemType.HEADER) {
+        item.label = (projHeaderIndex < 0 || i < projHeaderIndex)
+            ? S.get("settingsNavAppSection")
+            : S.get("settingsNavProjectSection");
+      } else {
+        item.label = item.panel.getTitle();
+      }
+    }
+    navList.repaint();
+  }
+
+  // --- UI construction ---
+
+  private void buildUI() {
+    // Nav list — skip header items for selection
+    navList.setCellRenderer(new NavCellRenderer());
+    navList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    navList.setFixedCellHeight(-1);
+    navList.setSelectionModel(new javax.swing.DefaultListSelectionModel() {
+      @Override
+      public void setSelectionInterval(int i0, int i1) {
+        // Skip headers
+        if (i0 >= 0 && i0 < navModel.size() && navModel.get(i0).type == NavItemType.HEADER)
+          return;
+        super.setSelectionInterval(i0, i1);
+      }
+    });
+    navList.addListSelectionListener(e -> {
+      if (!e.getValueIsAdjusting()) {
+        NavItem item = navList.getSelectedValue();
+        if (item != null && item.type == NavItemType.PANEL)
+          showPanel(item.panel, item.isApp);
+      }
+    });
+
+    // navScroll width is set after locale is applied (in constructor); height fills panel.
+    navScroll = new JScrollPane(navList,
+        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    navScroll.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0, 0, 0, 40)));
+
+    // Content area: header on top, panel below in scroll pane
+    JScrollPane contentScroll = new JScrollPane(contentHolder,
+        JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+        JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    contentScroll.setBorder(null);
+    contentScroll.setMinimumSize(new Dimension(300, 0));
+
+    JPanel rightSide = new JPanel(new BorderLayout());
+    rightSide.add(header, BorderLayout.NORTH);
+    rightSide.add(contentScroll, BorderLayout.CENTER);
+
+    // BorderLayout WEST keeps the nav at its preferred width (fixed); CENTER gets the rest.
+    JPanel mainPanel = new JPanel(new BorderLayout());
+    mainPanel.add(navScroll, BorderLayout.WEST);
+    mainPanel.add(rightSide, BorderLayout.CENTER);
+
+    getContentPane().add(mainPanel, BorderLayout.CENTER);
+  }
+
+  // --- Panel display ---
+
+  private void showPanel(OptionsPanel panel, boolean isApp) {
+    contentHolder.removeAll();
+    contentHolder.add(panel, BorderLayout.CENTER);
+    contentHolder.revalidate();
+    contentHolder.repaint();
+    String pillText = isApp ? S.get("settingsNavAppSection") : S.get("settingsNavProjectSection");
+    header.update(pillText, isApp ? APP_COLOR : PROJ_COLOR, !isApp);
+  }
+
+  private void updateBadge() {
+    NavItem item = navList.getSelectedValue();
+    if (item != null && item.type == NavItemType.PANEL)
+      showPanel(item.panel, item.isApp);
+  }
+
+  private void selectFirstAppPanel() {
+    // Find first non-header item in app section
+    for (int i = 0; i < navModel.size(); i++) {
+      NavItem item = navModel.get(i);
+      if (item.type == NavItemType.PANEL && item.isApp) {
+        navList.setSelectedIndex(i);
+        navList.ensureIndexIsVisible(i);
+        return;
+      }
+    }
+  }
+
+  private void selectFirstProjPanel() {
+    for (int i = 0; i < navModel.size(); i++) {
+      NavItem item = navModel.get(i);
+      if (item.type == NavItemType.PANEL && !item.isApp) {
+        navList.setSelectedIndex(i);
+        navList.ensureIndexIsVisible(i);
+        return;
+      }
+    }
+    // Fallback: no project panels — go to first app panel
+    selectFirstAppPanel();
+  }
+
+  private void selectProjPanel(int panelIndex) {
+    int found = 0;
+    for (int i = 0; i < navModel.size(); i++) {
+      NavItem item = navModel.get(i);
+      if (item.type == NavItemType.PANEL && !item.isApp) {
+        if (found == panelIndex) {
+          navList.setSelectedIndex(i);
+          navList.ensureIndexIsVisible(i);
+          return;
+        }
+        found++;
+      }
+    }
+    selectFirstProjPanel();
+  }
+
+  @Override
+  public void setVisible(boolean value) {
+    if (value && navList.getSelectedValue() == null)
+      selectFirstAppPanel();
+    if (value && MENU_MANAGER != null)
+      MENU_MANAGER.frameOpened(this);
+    super.setVisible(value);
+  }
+
+  // --- Inner RevertPanel (moved from OptionsFrame) ---
+
+  static class RevertPanel extends OptionsPanel {
+    private javax.swing.JButton revert = new javax.swing.JButton();
+
+    RevertPanel(SettingsFrame frame) {
+      super(frame);
+      setLayout(new com.cburch.logisim.util.TableLayout(1));
+      JPanel buttonPanel = new JPanel();
+      buttonPanel.add(revert);
+      revert.addActionListener(e -> getSettingsFrame().getProject().doAction(
+          com.cburch.logisim.file.LogisimFileActions.revertDefaults()));
+      add(buttonPanel);
+    }
+
+    @Override public String getHelpText() { return S.get("revertHelp"); }
+    @Override public String getTitle()    { return S.get("revertTitle"); }
+    @Override public void localeChanged() { revert.setText(S.get("revertButton")); }
+  }
+
+}

@@ -151,10 +151,10 @@ class TemplateOptions extends OptionsPanel {
   private JRadioButton plain = new JRadioButton();
   private JRadioButton empty = new JRadioButton();
   private JRadioButton custom = new JRadioButton();
-  private JTextField templateField = new JTextField(40);
+  private JTextField templateField = new JTextField(1);
   private JButton templateButton = new JButton();
 
-  public TemplateOptions(PreferencesFrame window) {
+  public TemplateOptions(SettingsFrame window) {
     super(window);
 
     ButtonGroup bgroup = new ButtonGroup();

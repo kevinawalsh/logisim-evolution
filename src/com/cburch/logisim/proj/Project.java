@@ -56,7 +56,6 @@ import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
-import com.cburch.logisim.gui.opts.OptionsFrame;
 import com.cburch.logisim.gui.test.TestFrame;
 import com.cburch.logisim.gui.test.TestThread;
 import com.cburch.logisim.tools.AddTool;
@@ -121,7 +120,6 @@ public class Project {
   private LinkedList<CircuitState> allRootStates
       = new LinkedList<>(); // all root sim states, in display order
   private Frame frame = null;
-  private OptionsFrame optionsFrame = null;
   private LogFrame logFrame = null;
   private TestFrame testFrame = null;
   private Tool tool = null;
@@ -473,10 +471,8 @@ public class Project {
     return file.getOptions();
   }
 
-  public OptionsFrame getOptionsFrame() {
-    if (optionsFrame == null)
-      optionsFrame = new OptionsFrame(this);
-    return optionsFrame;
+  public void showSettingsFrame() {
+    SettingsFrame.showProjectSettings(this);
   }
 
   public Selection getSelection() {
@@ -672,12 +668,6 @@ public class Project {
       for (LibraryListener l : fileListeners) {
         old.removeLibraryWeakListener(null, l);
       }
-    }
-    if (optionsFrame != null) {
-      // Options pane is too intertwined with current file. Someday it could
-      // be disentangled.
-      optionsFrame.dispose();
-      optionsFrame = null;
     }
     file = value.file;
     HashSet<CircuitState> toBeDefunct = new HashSet<>();

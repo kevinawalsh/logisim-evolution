@@ -44,7 +44,7 @@ class LayoutOptions extends OptionsPanel {
   private PrefOptionList radix1;
   private PrefOptionList radix2;
 
-  public LayoutOptions(PreferencesFrame window) {
+  public LayoutOptions(SettingsFrame window) {
     super(window);
 
     checks = new PrefBoolean[] {

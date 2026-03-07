@@ -47,7 +47,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.util.TableLayout;
 
-class SimulateOptions extends OptionsPanel {
+public class SimulateOptions extends OptionsPanel {
   private class MyListener implements ActionListener, AttributeListener {
     public void actionPerformed(ActionEvent event) {
       Object source = event.getSource();
@@ -145,7 +145,7 @@ class SimulateOptions extends OptionsPanel {
       new ComboOption(Options.GATE_UNDEFINED_IGNORE),
       new ComboOption(Options.GATE_UNDEFINED_ERROR) });
 
-  public SimulateOptions(OptionsFrame window) {
+  public SimulateOptions(com.cburch.logisim.gui.prefs.SettingsFrame window) {
     super(window);
 
     JPanel simLimitPanel = new JPanel();

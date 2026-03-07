@@ -51,7 +51,7 @@ class ExperimentalOptions extends OptionsPanel {
   // private JLabel dualScreenRestart = new JLabel();
   private PrefOptionList dualScreen;
 
-  public ExperimentalOptions(PreferencesFrame window) {
+  public ExperimentalOptions(SettingsFrame window) {
     super(window);
 
     autobackup = new PrefBoolean(AppPreferences.AUTO_BACKUP, S.getter("autobackupLabel"));

@@ -50,7 +50,7 @@ import com.cburch.logisim.gui.generic.ProjectExplorerToolNode;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.TableLayout;
 
-class ToolbarOptions extends OptionsPanel {
+public class ToolbarOptions extends OptionsPanel {
   private class Listener
     implements ProjectExplorer.Listener, ActionListener, ListSelectionListener {
     public void actionPerformed(ActionEvent event) {
@@ -142,7 +142,7 @@ class ToolbarOptions extends OptionsPanel {
   private JButton remove;
   private ToolbarList list;
 
-  public ToolbarOptions(OptionsFrame window) {
+  public ToolbarOptions(com.cburch.logisim.gui.prefs.SettingsFrame window) {
     super(window);
     explorer = new ProjectExplorer(getProject(), true /* show all */);
     addTool = new JButton();

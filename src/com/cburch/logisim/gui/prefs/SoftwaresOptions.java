@@ -88,10 +88,10 @@ public class SoftwaresOptions extends OptionsPanel {
 
   private JCheckBox questaValidationCheckBox = new JCheckBox();
   private JLabel questaPathLabel = new JLabel();
-  private JTextField questaPathField = new JTextField(40);
+  private JTextField questaPathField = new JTextField(1);
   private JButton questaPathButton = new JButton();
 
-  public SoftwaresOptions(PreferencesFrame window) {
+  public SoftwaresOptions(SettingsFrame window) {
     super(window);
 
     questaValidationCheckBox.addActionListener(myListener);

@@ -67,7 +67,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
-class MouseOptions extends OptionsPanel {
+public class MouseOptions extends OptionsPanel {
   private class AddArea extends JPanel {
     private static final long serialVersionUID = 1L;
 
@@ -275,7 +275,7 @@ class MouseOptions extends OptionsPanel {
   private AttrTable attrTable;
   private JButton remove = new JButton();
 
-  public MouseOptions(OptionsFrame window) {
+  public MouseOptions(com.cburch.logisim.gui.prefs.SettingsFrame window) {
     super(window, new GridLayout(1, 3));
 
     explorer = new ProjectExplorer(getProject(), true /* show all */);

@@ -346,7 +346,7 @@ public class Popups {
       }
 
       if (showCustomize)
-        add(customize, S.get(customize), e -> proj.getOptionsFrame().showToolbarPanel());
+        add(customize, S.get(customize), e -> proj.showSettingsFrame());
       add(location);
       addSeparator();
       add(hide, S.get(hide),
