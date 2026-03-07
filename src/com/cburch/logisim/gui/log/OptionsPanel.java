@@ -72,7 +72,7 @@ import javax.swing.plaf.basic.BasicComboBoxEditor;
 
 import com.cburch.logisim.comp.Component;
 
-class OptionsPanel extends LogPanel
+class SettingsPanel extends LogPanel
   implements ActionListener, ChangeListener, Model.Listener {
 
   // [ ] Stop-motion mode [ time_scale: 5ms ]
@@ -143,15 +143,15 @@ class OptionsPanel extends LogPanel
   JPanel selectionPanel = new JPanel();
   Box modePanel = new Box(BoxLayout.Y_AXIS);
   JPanel optionsPanel = new JPanel(new CardLayout());
-  Box stepOptionsPanel = new Box(BoxLayout.Y_AXIS);
-  Box realOptionsPanel = new Box(BoxLayout.Y_AXIS);
-  Box clockOptionsPanel = new Box(BoxLayout.Y_AXIS);
+  Box stepSettingsPanel = new Box(BoxLayout.Y_AXIS);
+  Box realSettingsPanel = new Box(BoxLayout.Y_AXIS);
+  Box clockSettingsPanel = new Box(BoxLayout.Y_AXIS);
   Box historyPanel = new Box(BoxLayout.Y_AXIS);
 
   JScrollPane pane;
 
   // todo: tooltips?
-  OptionsPanel(LogFrame frame) {
+  SettingsPanel(LogFrame frame) {
     super(frame);
 
     // top left has button
@@ -170,49 +170,49 @@ class OptionsPanel extends LogPanel
     // middle has timing options for each mode
     stepFine.setAlignmentX(0.0f); 
     stepFine.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
-    stepOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    stepOptionsPanel.add(stepFine);
-    stepOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    stepOptionsPanel.add(stepScale.getPanel());
-    stepOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    stepOptionsPanel.add(stepGate.getPanel());
-    stepOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    stepSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    stepSettingsPanel.add(stepFine);
+    stepSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    stepSettingsPanel.add(stepScale.getPanel());
+    stepSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    stepSettingsPanel.add(stepGate.getPanel());
+    stepSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
     realFine.setAlignmentX(0.0f); 
     realFine.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
-    realOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    realOptionsPanel.add(realFine);
-    realOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    realOptionsPanel.add(realScale.getPanel());
-    realOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    realSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    realSettingsPanel.add(realFine);
+    realSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    realSettingsPanel.add(realScale.getPanel());
+    realSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 
     clockFine.setAlignmentX(0.0f); 
     clockFine.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    clockOptionsPanel.add(clockFine);
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    clockOptionsPanel.add(clockScale.getPanel());
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    clockOptionsPanel.add(clockGate.getPanel());
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(clockFine);
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(clockScale.getPanel());
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(clockGate.getPanel());
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
     Box clockSrcBox = new Box(BoxLayout.X_AXIS);
     clockSrcBox.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
     clockSrcBox.setAlignmentX(0.0f); 
     clockSrcBox.add(clockSrcLabel);
     clockSrcBox.add(Box.createRigidArea(new Dimension(6, 0)));
     clockSrcBox.add(clockSrcButton);
-    clockOptionsPanel.add(clockSrcBox);
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    clockOptionsPanel.add(clockDiscipline.getPanel());
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(clockSrcBox);
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(clockDiscipline.getPanel());
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
     clockTicks.setAlignmentX(0.0f);
     clockTicks.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
-    clockOptionsPanel.add(clockTicks);
-    clockOptionsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+    clockSettingsPanel.add(clockTicks);
+    clockSettingsPanel.add(Box.createRigidArea(new Dimension(0, 5)));
    
-    optionsPanel.add(stepOptionsPanel, "stepTime");
-    optionsPanel.add(realOptionsPanel, "realTime");
-    optionsPanel.add(clockOptionsPanel, "clockTime");
+    optionsPanel.add(stepSettingsPanel, "stepTime");
+    optionsPanel.add(realSettingsPanel, "realTime");
+    optionsPanel.add(clockSettingsPanel, "clockTime");
 
     // right side has history options
     limit.setModel(new SpinnerNumberModel(400, 10, Integer.MAX_VALUE, 100));

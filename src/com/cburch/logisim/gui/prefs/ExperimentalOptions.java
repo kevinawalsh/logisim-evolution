@@ -41,7 +41,7 @@ import javax.swing.JPanel;
 
 import com.cburch.logisim.prefs.AppPreferences;
 
-class ExperimentalOptions extends OptionsPanel {
+class ExperimentalOptions extends SettingsPanel {
   private static final long serialVersionUID = 1L;
   // private JLabel autobackupRestart = new JLabel();
   private JLabel accelRestart = new JLabel();

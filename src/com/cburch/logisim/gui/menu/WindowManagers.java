@@ -44,7 +44,7 @@ import com.cburch.logisim.analyze.gui.AnalyzerManager;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.gui.find.FindManager;
-import com.cburch.logisim.gui.prefs.PreferencesFrame;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
@@ -112,7 +112,7 @@ public class WindowManagers {
       initialized = true;
       AnalyzerManager.initialize();
       FindManager.initialize();
-      PreferencesFrame.initializeManager();
+      SettingsFrame.initializeManager();
       Projects.propertyChangeProducer.addPropertyChangeListener(Projects.projectListProperty, myListener);
       computeListeners();
     }

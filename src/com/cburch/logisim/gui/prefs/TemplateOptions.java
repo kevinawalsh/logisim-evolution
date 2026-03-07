@@ -58,7 +58,7 @@ import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.Template;
 import com.cburch.logisim.util.JFileChoosers;
 
-class TemplateOptions extends OptionsPanel {
+class TemplateOptions extends SettingsPanel {
   private class MyListener implements ActionListener, PropertyChangeListener {
     public void actionPerformed(ActionEvent event) {
       Object src = event.getSource();
@@ -66,13 +66,13 @@ class TemplateOptions extends OptionsPanel {
         JFileChooser chooser = JFileChoosers.create();
         chooser.setDialogTitle(S.get("selectDialogTitle"));
         chooser.setApproveButtonText(S.get("selectDialogButton"));
-        int action = chooser.showOpenDialog(getPreferencesFrame());
+        int action = chooser.showOpenDialog(getSettingsFrame());
         if (action == JFileChooser.APPROVE_OPTION) {
           File file = chooser.getSelectedFile();
           FileInputStream reader = null;
           InputStream reader2 = null;
           try {
-            Loader loader = new Loader(getPreferencesFrame());
+            Loader loader = new Loader(getSettingsFrame());
             reader = new FileInputStream(file);
             Template template = Template.create(reader);
             reader2 = template.createStream();
@@ -81,13 +81,13 @@ class TemplateOptions extends OptionsPanel {
             AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
           } catch (LoadCanceledByUser ex) {
             JOptionPane.showMessageDialog(
-                getPreferencesFrame(),
+                getSettingsFrame(),
                 S.fmt("templateErrorMessage", ex.toString()),
                 S.get("templateErrorTitle"),
                 JOptionPane.ERROR_MESSAGE);
           } catch (IOException ex) {
             JOptionPane.showMessageDialog(
-                getPreferencesFrame(),
+                getSettingsFrame(),
                 S.fmt("templateErrorMessage", ex.toString()),
                 S.get("templateErrorTitle"),
                 JOptionPane.ERROR_MESSAGE);

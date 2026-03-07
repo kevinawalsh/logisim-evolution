@@ -242,8 +242,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
     AddTool tool = new AddTool(null, content.getEntityFactory());
     tools.add(index, tool);
     fireEvent(LibraryEvent.ADD_TOOL, tool);
-    com.cburch.logisim.tools.FactoryAttributes s =
-        (com.cburch.logisim.tools.FactoryAttributes) tool.getAttributeSet();
   }
 
   public void addLibrary(Library lib) {

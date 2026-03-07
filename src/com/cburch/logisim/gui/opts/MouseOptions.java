@@ -63,11 +63,13 @@ import com.cburch.logisim.gui.generic.AttrTableModel;
 import com.cburch.logisim.gui.generic.ProjectExplorer;
 import com.cburch.logisim.gui.generic.ProjectExplorerToolNode;
 import com.cburch.logisim.gui.main.AttrTableToolModel;
+import com.cburch.logisim.gui.prefs.SettingsPanel;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
 
-public class MouseOptions extends OptionsPanel {
+public class MouseOptions extends SettingsPanel {
   private class AddArea extends JPanel {
     private static final long serialVersionUID = 1L;
 
@@ -275,7 +277,7 @@ public class MouseOptions extends OptionsPanel {
   private AttrTable attrTable;
   private JButton remove = new JButton();
 
-  public MouseOptions(com.cburch.logisim.gui.prefs.SettingsFrame window) {
+  public MouseOptions(SettingsFrame window) {
     super(window, new GridLayout(1, 3));
 
     explorer = new ProjectExplorer(getProject(), true /* show all */);
@@ -300,7 +302,7 @@ public class MouseOptions extends OptionsPanel {
     removeArea.add(remove);
 
     // Area for viewing/changing attributes
-    attrTable = new AttrTable(getOptionsFrame());
+    attrTable = new AttrTable(getSettingsFrame());
 
     GridBagLayout gridbag = new GridBagLayout();
     GridBagConstraints gbc = new GridBagConstraints();

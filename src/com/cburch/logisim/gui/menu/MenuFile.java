@@ -44,7 +44,7 @@ import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 import com.cburch.logisim.gui.main.Frame;
-import com.cburch.logisim.gui.prefs.PreferencesFrame;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.proj.Projects;
@@ -289,7 +289,7 @@ class MenuFile extends Menu implements ActionListener {
     } else if (src == saveAs && proj != null) {
       ProjectActions.doSaveAs(proj);
     } else if (src == prefs) {
-      PreferencesFrame.showPreferences();
+      SettingsFrame.showAppSettings();
     } else if (src == quit) {
       ProjectActions.doQuit();
     }

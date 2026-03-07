@@ -49,7 +49,7 @@ import javax.swing.JTextField;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.Softwares;
 
-public class SoftwaresOptions extends OptionsPanel {
+public class SoftwaresOptions extends SettingsPanel {
 
   private class MyListener
     implements ActionListener, PreferenceChangeListener {
@@ -59,7 +59,7 @@ public class SoftwaresOptions extends OptionsPanel {
       Object source = ae.getSource();
 
       if (source == questaPathButton) {
-        Softwares.setQuestaPath(getPreferencesFrame());
+        Softwares.setQuestaPath(getSettingsFrame());
       }
       if (source == questaValidationCheckBox) {
         AppPreferences.QUESTA_VALIDATION.set(questaValidationCheckBox.isSelected());

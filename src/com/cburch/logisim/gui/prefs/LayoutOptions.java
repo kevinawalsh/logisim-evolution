@@ -37,7 +37,7 @@ import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.TableLayout;
 
-class LayoutOptions extends OptionsPanel {
+class LayoutOptions extends SettingsPanel {
   private static final long serialVersionUID = 1L;
   private PrefBoolean[] checks;
   private PrefOptionList afterAdd;

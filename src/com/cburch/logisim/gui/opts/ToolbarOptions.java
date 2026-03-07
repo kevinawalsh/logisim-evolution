@@ -47,10 +47,12 @@ import javax.swing.event.ListSelectionListener;
 import com.cburch.logisim.file.ToolbarData;
 import com.cburch.logisim.gui.generic.ProjectExplorer;
 import com.cburch.logisim.gui.generic.ProjectExplorerToolNode;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
+import com.cburch.logisim.gui.prefs.SettingsPanel;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.TableLayout;
 
-public class ToolbarOptions extends OptionsPanel {
+public class ToolbarOptions extends SettingsPanel {
   private class Listener
     implements ProjectExplorer.Listener, ActionListener, ListSelectionListener {
     public void actionPerformed(ActionEvent event) {
@@ -142,7 +144,7 @@ public class ToolbarOptions extends OptionsPanel {
   private JButton remove;
   private ToolbarList list;
 
-  public ToolbarOptions(com.cburch.logisim.gui.prefs.SettingsFrame window) {
+  public ToolbarOptions(SettingsFrame window) {
     super(window);
     explorer = new ProjectExplorer(getProject(), true /* show all */);
     addTool = new JButton();

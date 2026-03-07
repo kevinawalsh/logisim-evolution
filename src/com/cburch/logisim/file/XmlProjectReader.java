@@ -51,6 +51,7 @@ import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.std.hdl.VhdlContent;
@@ -263,8 +264,8 @@ public class XmlProjectReader extends XmlReader {
             }
             try {
               initAttributeSet(simElt, attrs, null);
-              for (com.cburch.logisim.data.Attribute a : attrs.getAttributes())
-              simState.put(path, attrs);
+              for (Attribute a : attrs.getAttributes())
+                simState.put(path, attrs);
             } catch (XmlReaderException ex) {
               addErrors(ex, "non-volatile simulation state");
             }

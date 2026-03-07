@@ -71,11 +71,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.WindowConstants;
 
-import com.cburch.logisim.gui.prefs.PreferencesFrame;
+import com.cburch.logisim.Main;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.gui.start.About;
 import com.cburch.logisim.gui.start.Startup;
-import com.cburch.logisim.Main;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.util.Debug;
 
@@ -170,7 +170,7 @@ public class DesktopIntegration {
 
     tryOrPrint(() -> {
       if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
-        desktop.setPreferencesHandler(e -> PreferencesFrame.showPreferences());
+        desktop.setPreferencesHandler(e -> SettingsFrame.showAppSettings());
         PreferencesMenuAutomaticallyPresent = true;
         return true;
       } else return false;

@@ -56,6 +56,7 @@ import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.gui.test.TestFrame;
 import com.cburch.logisim.gui.test.TestThread;
 import com.cburch.logisim.tools.AddTool;

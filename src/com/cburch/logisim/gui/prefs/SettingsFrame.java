@@ -54,8 +54,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-
 import javax.swing.ListSelectionModel;
+
+import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.opts.MouseOptions;
@@ -65,17 +66,16 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.TableLayout;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class SettingsFrame extends LFrame.Dialog {
-
-  // --- Nav item model ---
 
   enum NavItemType { HEADER, PANEL }
 
   static class NavItem {
     final NavItemType type;
-    final OptionsPanel panel; // null for headers
+    final SettingsPanel panel; // null for headers
     boolean isApp;
     String label;
 
@@ -84,15 +84,13 @@ public class SettingsFrame extends LFrame.Dialog {
       this.label = label;
       this.panel = null;
     }
-    NavItem(OptionsPanel panel, boolean isApp) { // panel item
+    NavItem(SettingsPanel panel, boolean isApp) { // panel item
       this.type = NavItemType.PANEL;
       this.panel = panel;
       this.isApp = isApp;
       this.label = panel.getTitle();
     }
   }
-
-  // --- Header bar (scope badge pill + project switcher combo) ---
 
   private static final Color APP_COLOR  = new Color(0x4A8EDB);
   private static final Color PROJ_COLOR = new Color(0x4A9A55);
@@ -184,8 +182,6 @@ public class SettingsFrame extends LFrame.Dialog {
     }
   }
 
-  // --- Nav cell renderer ---
-
   private static class NavCellRenderer extends DefaultListCellRenderer {
     private static final Color HEADER_BG = new Color(0xEEEEEE);
     private static final Font  HEADER_FONT;
@@ -212,21 +208,17 @@ public class SettingsFrame extends LFrame.Dialog {
     }
   }
 
-  // --- LocaleListener ---
-
   private class MyListener implements LocaleListener {
     @Override
     public void localeChanged() {
       setTitle(S.get("settingsFrameTitle"));
       refreshNavLabels();
       updateBadge();
-      for (OptionsPanel p : appPanels) p.localeChanged();
+      for (SettingsPanel p : appPanels) p.localeChanged();
       if (projPanels != null)
-        for (OptionsPanel p : projPanels) p.localeChanged();
+        for (SettingsPanel p : projPanels) p.localeChanged();
     }
   }
-
-  // --- WindowMenuManager ---
 
   private static class WinMenuManager extends WindowMenuItemManager implements LocaleListener {
     WinMenuManager() {
@@ -242,8 +234,6 @@ public class SettingsFrame extends LFrame.Dialog {
       setText(S.get("settingsFrameTitle"));
     }
   }
-
-  // --- Static singleton API ---
 
   private static SettingsFrame INSTANCE = null;
   private static WinMenuManager MENU_MANAGER = null;
@@ -281,11 +271,9 @@ public class SettingsFrame extends LFrame.Dialog {
     return INSTANCE;
   }
 
-  // --- Instance state ---
-
   private Project project;
-  private OptionsPanel[] appPanels;
-  private OptionsPanel[] projPanels; // null when no project
+  private SettingsPanel[] appPanels;
+  private SettingsPanel[] projPanels; // null when no project
 
   private final DefaultListModel<NavItem> navModel = new DefaultListModel<>();
   private final JList<NavItem> navList = new JList<>(navModel);
@@ -297,13 +285,11 @@ public class SettingsFrame extends LFrame.Dialog {
   // Indices into navModel for section headers (updated when proj panels rebuilt)
   private int projHeaderIndex = -1;
 
-  // --- Constructor ---
-
   private SettingsFrame() {
     super(null); // not associated with a specific project window
     setDefaultCloseOperation(HIDE_ON_CLOSE);
 
-    appPanels = new OptionsPanel[] {
+    appPanels = new SettingsPanel[] {
       new TemplateOptions(this),
       new IntlOptions(this),
       new WindowOptions(this),
@@ -329,8 +315,6 @@ public class SettingsFrame extends LFrame.Dialog {
     setLocationRelativeTo(null);
   }
 
-  // --- Project / Options accessors (used by panels) ---
-
   public Project getProject() {
     return project;
   }
@@ -338,8 +322,6 @@ public class SettingsFrame extends LFrame.Dialog {
   public Options getOptions() {
     return project == null ? null : project.getLogisimFile().getOptions();
   }
-
-  // --- Project switching ---
 
   private void onProjectListChanged() {
     List<Project> open = Projects.getOpenProjects();
@@ -359,7 +341,7 @@ public class SettingsFrame extends LFrame.Dialog {
   private void switchProject(Project proj) {
     if (proj == project) return;
     project = proj;
-    projPanels = (proj == null) ? null : new OptionsPanel[] {
+    projPanels = (proj == null) ? null : new SettingsPanel[] {
       new SimulateOptions(this),
       new ToolbarOptions(this),
       new MouseOptions(this),
@@ -369,18 +351,16 @@ public class SettingsFrame extends LFrame.Dialog {
     navList.repaint();
   }
 
-  // --- Nav model building ---
-
   private void buildNavModel() {
     navModel.clear();
     navModel.addElement(new NavItem(S.get("settingsNavAppSection")));
-    for (OptionsPanel p : appPanels)
+    for (SettingsPanel p : appPanels)
       navModel.addElement(new NavItem(p, true));
 
     if (projPanels != null) {
       projHeaderIndex = navModel.size();
       navModel.addElement(new NavItem(S.get("settingsNavProjectSection")));
-      for (OptionsPanel p : projPanels)
+      for (SettingsPanel p : projPanels)
         navModel.addElement(new NavItem(p, false));
     } else {
       projHeaderIndex = -1;
@@ -400,8 +380,6 @@ public class SettingsFrame extends LFrame.Dialog {
     }
     navList.repaint();
   }
-
-  // --- UI construction ---
 
   private void buildUI() {
     // Nav list — skip header items for selection
@@ -450,9 +428,7 @@ public class SettingsFrame extends LFrame.Dialog {
     getContentPane().add(mainPanel, BorderLayout.CENTER);
   }
 
-  // --- Panel display ---
-
-  private void showPanel(OptionsPanel panel, boolean isApp) {
+  private void showPanel(SettingsPanel panel, boolean isApp) {
     contentHolder.removeAll();
     contentHolder.add(panel, BorderLayout.CENTER);
     contentHolder.revalidate();
@@ -517,18 +493,16 @@ public class SettingsFrame extends LFrame.Dialog {
     super.setVisible(value);
   }
 
-  // --- Inner RevertPanel (moved from OptionsFrame) ---
-
-  static class RevertPanel extends OptionsPanel {
+  static class RevertPanel extends SettingsPanel {
     private javax.swing.JButton revert = new javax.swing.JButton();
 
     RevertPanel(SettingsFrame frame) {
       super(frame);
-      setLayout(new com.cburch.logisim.util.TableLayout(1));
+      setLayout(new TableLayout(1));
       JPanel buttonPanel = new JPanel();
       buttonPanel.add(revert);
       revert.addActionListener(e -> getSettingsFrame().getProject().doAction(
-          com.cburch.logisim.file.LogisimFileActions.revertDefaults()));
+          LogisimFileActions.revertDefaults()));
       add(buttonPanel);
     }
 

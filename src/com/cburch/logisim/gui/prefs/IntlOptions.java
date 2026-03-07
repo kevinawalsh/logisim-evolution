@@ -43,7 +43,7 @@ import javax.swing.JPanel;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.LocaleManager;
 
-class IntlOptions extends OptionsPanel {
+class IntlOptions extends SettingsPanel {
   private static class RestrictedLabel extends JLabel {
     private static final long serialVersionUID = 1L;
 

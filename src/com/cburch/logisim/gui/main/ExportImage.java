@@ -166,7 +166,7 @@ public class ExportImage {
     }
   }
 
-  private static class OptionsPanel extends JPanel implements ChangeListener {
+  private static class SettingsPanel extends JPanel implements ChangeListener {
     private static final long serialVersionUID = 1L;
     JSlider slider;
     JLabel curScale;
@@ -178,7 +178,7 @@ public class ExportImage {
     Dimension curScaleDim;
 
     @SuppressWarnings("rawtypes")
-    OptionsPanel(JList list) {
+    SettingsPanel(JList list) {
       // set up components
       formatPng = new JRadioButton("PNG");
       formatJpg = new JRadioButton("JPEG");
@@ -289,7 +289,7 @@ public class ExportImage {
           JOptionPane.YES_NO_OPTION);
       return;
     }
-    OptionsPanel options = new OptionsPanel(list);
+    SettingsPanel options = new SettingsPanel(list);
     int action = JOptionPane.showConfirmDialog(frame, options,
         S.get("exportImageSelect"), JOptionPane.OK_CANCEL_OPTION,
         JOptionPane.QUESTION_MESSAGE);

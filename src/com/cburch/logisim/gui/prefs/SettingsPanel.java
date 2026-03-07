@@ -28,37 +28,44 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.gui.opts;
+package com.cburch.logisim.gui.prefs;
 
 import java.awt.LayoutManager;
 
+import javax.swing.JPanel;
+
 import com.cburch.logisim.file.Options;
-import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 
-// Extends prefs.OptionsPanel so that both app and project panels share a
-// common supertype, allowing SettingsFrame to hold both in one array.
-abstract class OptionsPanel extends com.cburch.logisim.gui.prefs.OptionsPanel {
+public abstract class SettingsPanel extends JPanel {
   private static final long serialVersionUID = 1L;
+  private SettingsFrame settingsFrame;
 
-  public OptionsPanel(SettingsFrame frame) {
-    super(frame);
+  public SettingsPanel(SettingsFrame frame) {
+    super();
+    this.settingsFrame = frame;
   }
 
-  public OptionsPanel(SettingsFrame frame, LayoutManager manager) {
-    super(frame, manager);
+  public SettingsPanel(SettingsFrame frame, LayoutManager manager) {
+    super(manager);
+    this.settingsFrame = frame;
   }
 
-  Options getOptions() {
-    return getSettingsFrame().getOptions();
+  public abstract String getHelpText();
+
+  protected SettingsFrame getSettingsFrame() {
+    return settingsFrame;
   }
 
-  // Alias kept for MouseOptions (passes frame as AttrTable parent window)
-  SettingsFrame getOptionsFrame() {
-    return getSettingsFrame();
+  protected Project getProject() {
+    return settingsFrame.getProject();
   }
 
-  Project getProject() {
-    return getSettingsFrame().getProject();
+  protected Options getOptions() {
+    return settingsFrame.getOptions();
   }
+
+  public abstract String getTitle();
+
+  public abstract void localeChanged();
 }
