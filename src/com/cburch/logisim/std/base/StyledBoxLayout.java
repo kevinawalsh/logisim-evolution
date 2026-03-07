@@ -701,6 +701,11 @@ public class StyledBoxLayout implements Text.LayoutEngine {
     VisualCell vc = cellForX(vl, px);
     VisualBox vb = boxForY(vc, py);
     if (vb.layout == null || vb.astr == null) return null; // marker box, no text
+    // Reject clicks in the right margin (past the end of the rendered text).
+    // hitTestChar() always snaps to the nearest character, so without this
+    // check a click anywhere to the right of the last character on a line
+    // would falsely be attributed to whatever span that character belongs to.
+    if (px > vb.x + vb.layout.getAdvance()) return null;
     TextHitInfo hit = vb.layout.hitTestChar(px - vb.x, 0);
     int charPos = vb.start + hit.getInsertionIndex();
     AttributedCharacterIterator it = vb.astr.getIterator();
