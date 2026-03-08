@@ -69,8 +69,8 @@ class CanvasPainter implements PropertyChangeListener {
     this.canvas = canvas;
     this.grid = new GridPainter(canvas);
 
-    AppPreferences.PRINTER_VIEW.addPropertyChangeListener(this);
-    AppPreferences.ATTRIBUTE_HALO.addPropertyChangeListener(this);
+    AppPreferences.PRINTER_VIEW.addPropertyChangeWeakListener(this);
+    AppPreferences.ATTRIBUTE_HALO.addPropertyChangeWeakListener(this);
   }
 
   private void drawWidthIncompatibilityData(Graphics2D base, Graphics2D g,

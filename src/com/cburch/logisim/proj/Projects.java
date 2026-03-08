@@ -67,17 +67,8 @@ public class Projects {
       moveToBack((Frame)event.getSource());
     }
 
-    private int findProject(Frame frame) {
-      for (int i = 0; i < openProjects.size(); i++) {
-        Project proj = openProjects.get(i);
-        if (proj.getFrame() == frame)
-          return i;
-      }
-      return -1;
-    }
-
     private void moveToFront(Frame frame) {
-      int i = findProject(frame);
+      int i = openProjects.indexOf(frame.getProject());
       if (i < 0)
         return;
       Project proj = openProjects.remove(i);
@@ -85,7 +76,7 @@ public class Projects {
     }
 
     private void moveToBack(Frame frame) {
-      int i = findProject(frame);
+      int i = openProjects.indexOf(frame.getProject());
       if (i < 0)
         return;
       Project proj = openProjects.remove(i);

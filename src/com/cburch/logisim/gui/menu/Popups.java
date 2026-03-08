@@ -45,18 +45,19 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.file.LoadedLibrary;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.generic.PopupMenu;
-import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.main.ExternalClipboard;
+import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.main.LayoutClipboard;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.SelectionActions;
 import com.cburch.logisim.gui.main.StatisticsDialog;
+import com.cburch.logisim.gui.opts.ToolbarOptions;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.prefs.AppPreferences;
 
 public class Popups {
 
@@ -346,7 +347,7 @@ public class Popups {
       }
 
       if (showCustomize)
-        add(customize, S.get(customize), e -> proj.showSettingsFrame());
+        add(customize, S.get(customize), e -> proj.showSettingsFrame(ToolbarOptions.class));
       add(location);
       addSeparator();
       add(hide, S.get(hide),

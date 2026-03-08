@@ -41,11 +41,14 @@ import java.io.OutputStream;
 import javax.swing.JCheckBox;
 import javax.swing.JOptionPane;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import javax.swing.SwingUtilities;
 
@@ -57,6 +60,7 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.Errors;
@@ -204,7 +208,7 @@ public class HelpBroker {
 
   }
 
-  private static HashMap<String, Frame> helpFrames = new HashMap<>();;
+  private static HashMap<String, Frame> helpFrames = new HashMap<>();
   private static HelpProjectWindowListener listener = new HelpProjectWindowListener();
 
   private static class HelpProjectWindowListener extends WindowAdapter {
@@ -212,7 +216,6 @@ public class HelpBroker {
     public void windowClosed(WindowEvent event) {
       Frame frame = (Frame) event.getSource();
       // Project proj = frame.getProject();
-      helpFrames.values().remove(frame);
     }
   }
 
@@ -363,6 +366,23 @@ public class HelpBroker {
     String url = "http://" + host + "/" + lang + "/html/" + target;
     DesktopIntegration.openBrowser(url);
     return null;
+  }
+
+  private static void cullClosedProjects() {
+      final List<Project> nowOpen = Projects.getOpenProjects();
+      helpFrames.entrySet().removeIf(e -> !nowOpen.contains(e.getValue().getProject()));
+  }
+
+  private static class MyListener implements PropertyChangeListener {
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+      cullClosedProjects();
+    }
+  }
+  private static final MyListener myListener = new MyListener();
+  static {
+    Projects.propertyChangeProducer.addPropertyChangeWeakListener(
+        Projects.projectListProperty, myListener);
   }
 
 }

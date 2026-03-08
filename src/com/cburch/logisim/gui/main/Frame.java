@@ -482,7 +482,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     }
     mainPanel.addChangeListener(myProjectListener);
     AppPreferences.TOOLBAR_PLACEMENT
-        .addPropertyChangeListener(myProjectListener);
+        .addPropertyChangeWeakListener(myProjectListener);
     placeToolbar();
 
     LocaleManager.addLocaleListener(this);

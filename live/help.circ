@@ -1461,6 +1461,7 @@ Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these 
     </comp>
   </circuit>
   <circuit name="Floating Buses">
+    <a name="facing" val="north"/>
     <comp lib="0" loc="(130,210)" name="Callout">
       <a name="background" val="#b7e1eb71"/>
       <a name="dx" val="-15"/>

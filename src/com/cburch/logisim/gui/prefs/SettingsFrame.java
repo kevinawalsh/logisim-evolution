@@ -36,11 +36,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
+import javax.swing.JButton;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -48,17 +47,18 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 
 import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.generic.LFrame;
+import com.cburch.logisim.gui.generic.PillLabel;
 import com.cburch.logisim.gui.opts.MouseOptions;
 import com.cburch.logisim.gui.opts.SimulateOptions;
 import com.cburch.logisim.gui.opts.ToolbarOptions;
@@ -95,43 +95,13 @@ public class SettingsFrame extends LFrame.Dialog {
   private static final Color APP_COLOR  = new Color(0x4A8EDB);
   private static final Color PROJ_COLOR = new Color(0x4A9A55);
 
-  private class PillLabel extends JComponent {
-    private String text = "";
-    private Color color = APP_COLOR;
-
-    PillLabel() { setAlignmentY(CENTER_ALIGNMENT); }
-
-    void update(String txt, Color c) { text = txt; color = c; revalidate(); repaint(); }
-
-    @Override
-    public Dimension getPreferredSize() {
-      FontMetrics fm = getFontMetrics(getFont().deriveFont(Font.BOLD, 12f));
-      int tw = (fm != null ? fm.stringWidth(text) : 80);
-      return new Dimension(tw + 24, 22);
-    }
-    @Override public Dimension getMinimumSize() { return getPreferredSize(); }
-    @Override public Dimension getMaximumSize() { return getPreferredSize(); }
-
-    @Override
-    protected void paintComponent(Graphics g0) {
-      Graphics2D g = (Graphics2D) g0;
-      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-      int h = getHeight(), px = 10, arc = 6;
-      g.setFont(getFont().deriveFont(Font.BOLD, 12f));
-      FontMetrics fm = g.getFontMetrics();
-      g.setColor(color);
-      g.fillRoundRect(0, 0, getWidth(), h, arc, arc);
-      g.setColor(Color.WHITE);
-      g.drawString(text, px, fm.getAscent() + (h - fm.getHeight()) / 2);
-    }
-  }
-
   private class HeaderBar extends JPanel {
     private final PillLabel pill = new PillLabel();
     private final JComboBox<Project> projectCombo = new JComboBox<>();
     private boolean updatingCombo = false;
 
     HeaderBar() {
+      pill.setFont(UIManager.getFont("Label.font").deriveFont(Font.BOLD, 12f));
       setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
       setBorder(BorderFactory.createCompoundBorder(
           BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0, 0, 0, 40)),
@@ -153,7 +123,7 @@ public class SettingsFrame extends LFrame.Dialog {
         Project sel = (Project) projectCombo.getSelectedItem();
         if (sel != null && sel != project) {
           switchProject(sel);
-          selectFirstProjPanel();
+          selectSomeProjPanel();
         }
       });
       add(pill);
@@ -164,7 +134,8 @@ public class SettingsFrame extends LFrame.Dialog {
     }
 
     void update(String pillText, Color c, boolean isProj) {
-      pill.update(pillText, c);
+      pill.setText(pillText);
+      pill.setBackground(c);
       projectCombo.setVisible(isProj);
       if (isProj) refreshProjectCombo();
       revalidate();
@@ -174,8 +145,11 @@ public class SettingsFrame extends LFrame.Dialog {
     void refreshProjectCombo() {
       updatingCombo = true;
       projectCombo.removeAllItems();
-      for (Project p : Projects.getOpenProjects()) projectCombo.addItem(p);
-      if (project != null) projectCombo.setSelectedItem(project);
+      int i = 0;
+      for (Project p : Projects.getOpenProjects())
+        projectCombo.addItem(p);
+      if (project != null)
+        projectCombo.setSelectedItem(project);
       updatingCombo = false;
       revalidate();
       repaint();
@@ -208,7 +182,7 @@ public class SettingsFrame extends LFrame.Dialog {
     }
   }
 
-  private class MyListener implements LocaleListener {
+  private class MyListener implements LocaleListener, PropertyChangeListener {
     @Override
     public void localeChanged() {
       setTitle(S.get("settingsFrameTitle"));
@@ -217,6 +191,10 @@ public class SettingsFrame extends LFrame.Dialog {
       for (SettingsPanel p : appPanels) p.localeChanged();
       if (projPanels != null)
         for (SettingsPanel p : projPanels) p.localeChanged();
+    }
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+      onProjectListChanged(false);
     }
   }
 
@@ -244,26 +222,30 @@ public class SettingsFrame extends LFrame.Dialog {
 
   public static void showAppSettings() {
     SettingsFrame f = getInstance();
-    f.selectFirstAppPanel();
+    f.onProjectListChanged(true);
+    f.selectSomeAppPanel();
     f.setVisible(true);
     f.toFront();
   }
 
-  public static void showProjectSettings(Project proj) {
+  public static void showProjectSettings(Project proj, Class<? extends SettingsPanel> clazz) {
     SettingsFrame f = getInstance();
     f.switchProject(proj);
-    f.selectFirstProjPanel();
+    if (clazz == null)
+      f.selectSomeProjPanel();
+    else
+      f.selectPanel(clazz);
     f.setVisible(true);
     f.toFront();
   }
 
-  public static void showProjectPanel(Project proj, int panelIndex) {
-    SettingsFrame f = getInstance();
-    f.switchProject(proj);
-    f.selectProjPanel(panelIndex);
-    f.setVisible(true);
-    f.toFront();
-  }
+  // public static void showProjectPanel(Project proj, int panelIndex) {
+  //   SettingsFrame f = getInstance();
+  //   f.switchProject(proj);
+  //   f.selectProjPanel(panelIndex);
+  //   f.setVisible(true);
+  //   f.toFront();
+  // }
 
   private static SettingsFrame getInstance() {
     if (INSTANCE == null)
@@ -298,14 +280,15 @@ public class SettingsFrame extends LFrame.Dialog {
       new SoftwaresOptions(this),
     };
     projPanels = null;
+    onProjectListChanged(true);
 
     buildNavModel();
     buildUI();
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
-    Projects.propertyChangeProducer.addPropertyChangeListener(
-        Projects.projectListProperty, evt -> onProjectListChanged());
+    Projects.propertyChangeProducer.addPropertyChangeWeakListener(
+        Projects.projectListProperty, myListener);
     // Size nav column to fit its labels, then derive window sizes from that.
     int navW = Math.max(160, navList.getPreferredSize().width) + 4;
     navScroll.setPreferredSize(new Dimension(navW, 0));
@@ -315,6 +298,7 @@ public class SettingsFrame extends LFrame.Dialog {
     setLocationRelativeTo(null);
   }
 
+
   public Project getProject() {
     return project;
   }
@@ -323,18 +307,15 @@ public class SettingsFrame extends LFrame.Dialog {
     return project == null ? null : project.getLogisimFile().getOptions();
   }
 
-  private void onProjectListChanged() {
+  private void onProjectListChanged(boolean selectSomeProject) {
+    header.refreshProjectCombo();
     List<Project> open = Projects.getOpenProjects();
-    if (project != null && !open.contains(project)) {
-      if (!open.isEmpty()) {
-        switchProject(open.get(0));
-        selectFirstProjPanel();
-      } else {
-        switchProject(null);
-        selectFirstAppPanel();
-      }
-    } else {
-      header.refreshProjectCombo();
+    if (open.isEmpty()) {
+      switchProject(null);
+      selectSomeAppPanel();
+    } else if (selectSomeProject || project == null || !open.contains(project)) {
+      switchProject(open.get(0));
+      selectSomeProjPanel();
     }
   }
 
@@ -433,7 +414,7 @@ public class SettingsFrame extends LFrame.Dialog {
     contentHolder.add(panel, BorderLayout.CENTER);
     contentHolder.revalidate();
     contentHolder.repaint();
-    String pillText = isApp ? S.get("settingsNavAppSection") : S.get("settingsNavProjectSection");
+    String pillText = isApp ? S.get("settingsNavAppBadge") : S.get("settingsNavProjectBadge");
     header.update(pillText, isApp ? APP_COLOR : PROJ_COLOR, !isApp);
   }
 
@@ -443,10 +424,12 @@ public class SettingsFrame extends LFrame.Dialog {
       showPanel(item.panel, item.isApp);
   }
 
-  private void selectFirstAppPanel() {
-    // Find first non-header item in app section
+  private void selectSomeAppPanel() {
+    NavItem item = navList.getSelectedValue();
+    if (item != null && item.type == NavItemType.PANEL && item.isApp)
+      return;
     for (int i = 0; i < navModel.size(); i++) {
-      NavItem item = navModel.get(i);
+      item = navModel.get(i);
       if (item.type == NavItemType.PANEL && item.isApp) {
         navList.setSelectedIndex(i);
         navList.ensureIndexIsVisible(i);
@@ -455,46 +438,62 @@ public class SettingsFrame extends LFrame.Dialog {
     }
   }
 
-  private void selectFirstProjPanel() {
+  private void selectSomeProjPanel() {
+    NavItem item = navList.getSelectedValue();
+    if (item != null && item.type == NavItemType.PANEL && !item.isApp)
+      return;
     for (int i = 0; i < navModel.size(); i++) {
-      NavItem item = navModel.get(i);
+      item = navModel.get(i);
       if (item.type == NavItemType.PANEL && !item.isApp) {
         navList.setSelectedIndex(i);
         navList.ensureIndexIsVisible(i);
         return;
       }
     }
-    // Fallback: no project panels — go to first app panel
-    selectFirstAppPanel();
   }
 
-  private void selectProjPanel(int panelIndex) {
-    int found = 0;
+  private void selectPanel(Class<? extends SettingsPanel> clazz) {
+    NavItem item = navList.getSelectedValue();
+    if (item != null && item.type == NavItemType.PANEL && clazz.isInstance(item.panel))
+      return;
     for (int i = 0; i < navModel.size(); i++) {
-      NavItem item = navModel.get(i);
-      if (item.type == NavItemType.PANEL && !item.isApp) {
-        if (found == panelIndex) {
-          navList.setSelectedIndex(i);
-          navList.ensureIndexIsVisible(i);
-          return;
-        }
-        found++;
+      item = navModel.get(i);
+      if (item.type == NavItemType.PANEL && clazz.isInstance(item.panel)) {
+        navList.setSelectedIndex(i);
+        navList.ensureIndexIsVisible(i);
+        return;
       }
     }
-    selectFirstProjPanel();
   }
+
+  // private void selectProjPanel(int panelIndex) {
+  //   if (item != null && item.type == NavItemType.PANEL && !item.isApp)
+  //     return;
+  //   int found = 0;
+  //   for (int i = 0; i < navModel.size(); i++) {
+  //     NavItem item = navModel.get(i);
+  //     if (item.type == NavItemType.PANEL && !item.isApp) {
+  //       if (found == panelIndex) {
+  //         navList.setSelectedIndex(i);
+  //         navList.ensureIndexIsVisible(i);
+  //         return;
+  //       }
+  //       found++;
+  //     }
+  //   }
+  // }
 
   @Override
   public void setVisible(boolean value) {
     if (value && navList.getSelectedValue() == null)
-      selectFirstAppPanel();
+      selectSomeAppPanel();
     if (value && MENU_MANAGER != null)
       MENU_MANAGER.frameOpened(this);
     super.setVisible(value);
   }
 
   static class RevertPanel extends SettingsPanel {
-    private javax.swing.JButton revert = new javax.swing.JButton();
+    private JButton revert = new JButton();
 
     RevertPanel(SettingsFrame frame) {
       super(frame);

@@ -279,6 +279,10 @@ class ProjectExplorerModel implements TreeModel, ProjectListener, LibraryListene
     }
   }
 
+  public Node<?> findTool(Tool tool) {
+    return findObject(root, tool);
+  }
+
   private static Node<?> findObject(Node<?> node, Object value) {
     if (node == null)
       return null;
@@ -333,7 +337,6 @@ class ProjectExplorerModel implements TreeModel, ProjectListener, LibraryListene
   }
 
   public Node<?> findObject(List<?> candidatePath, Object obj) {
-    for (Object o : candidatePath)
     if (root == null || root.value == obj)
       return root;
     Node<?> node = root;

@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.gui.prefs;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
@@ -39,6 +41,14 @@ class PrefInteger extends JSpinner {
   private static final long serialVersionUID = 1L;
   private PrefMonitor<Integer> pref;
 
+  private PropertyChangeListener prefListener = new PropertyChangeListener() {
+    @Override
+    public void propertyChange(PropertyChangeEvent event) {
+      if (pref.isSource(event))
+        setValue(pref.get());
+    }
+  };
+
   PrefInteger(PrefMonitor<Integer> pref, int min, int max) {
     this.pref = pref;
     int val = pref.get();
@@ -47,9 +57,6 @@ class PrefInteger extends JSpinner {
     setMaximumSize(getPreferredSize());
 
     addChangeListener((event) -> pref.set((Integer)this.getValue()));
-    pref.addPropertyChangeListener((event) -> {
-      if (pref.isSource(event))
-        this.setValue(pref.get());
-    });
+    pref.addPropertyChangeWeakListener( prefListener);
   }
 }

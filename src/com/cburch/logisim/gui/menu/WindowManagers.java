@@ -113,7 +113,7 @@ public class WindowManagers {
       AnalyzerManager.initialize();
       FindManager.initialize();
       SettingsFrame.initializeManager();
-      Projects.propertyChangeProducer.addPropertyChangeListener(Projects.projectListProperty, myListener);
+      Projects.propertyChangeProducer.addPropertyChangeWeakListener(Projects.projectListProperty, myListener);
       computeListeners();
     }
   }

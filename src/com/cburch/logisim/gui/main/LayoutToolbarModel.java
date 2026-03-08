@@ -260,7 +260,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     ToolbarData data = proj.getOptions().getToolbarData();
     data.addToolbarWeakListener(null, myListener);
     data.addToolAttributeWeakListener(/*null,*/ myListener);
-    AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
+    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(myListener);
     proj.addProjectWeakListener(null, myListener);
   }
 

@@ -77,8 +77,8 @@ public class SystemClipboard {
     });
   }
 
-  public static void addPropertyChangeListener(PropertyChangeListener listener) {
-    listeners.addPropertyChangeListener(listener);
+  public static void addPropertyChangeWeakListener(PropertyChangeListener listener) {
+    listeners.addPropertyChangeWeakListener(listener);
   }
 
   public static Transferable getContents(Object requestor) {

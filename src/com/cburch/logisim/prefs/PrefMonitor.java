@@ -59,8 +59,8 @@ public class PrefMonitor<E> implements PreferenceChangeListener {
     set(getFromBackingStore()); // if needed, this updates value (and fires event)
   }
 
-  public void addPropertyChangeListener(PropertyChangeListener listener) {
-    AppPreferences.propertyChangeProducer.addPropertyChangeListener(name, listener);
+  public void addPropertyChangeWeakListener(PropertyChangeListener listener) {
+    AppPreferences.propertyChangeProducer.addPropertyChangeWeakListener(name, listener);
   }
 
   public void removePropertyChangeListener(PropertyChangeListener listener) {

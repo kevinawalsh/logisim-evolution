@@ -31,315 +31,316 @@
 package com.cburch.logisim.gui.opts;
 import static com.cburch.logisim.gui.opts.Strings.S;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.FlowLayout;
+import java.awt.event.InputEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
+import javax.swing.JSplitPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 
 import com.cburch.logisim.file.MouseMappings;
 import com.cburch.logisim.gui.generic.AttrTable;
-import com.cburch.logisim.gui.generic.AttrTableModel;
+import com.cburch.logisim.gui.generic.PillLabel;
 import com.cburch.logisim.gui.generic.ProjectExplorer;
 import com.cburch.logisim.gui.generic.ProjectExplorerToolNode;
 import com.cburch.logisim.gui.main.AttrTableToolModel;
-import com.cburch.logisim.gui.prefs.SettingsPanel;
 import com.cburch.logisim.gui.prefs.SettingsFrame;
-import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.gui.prefs.SettingsPanel;
+import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.MenuTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.InputEventUtil;
+import com.cburch.logisim.util.TableLayout;
 
 public class MouseOptions extends SettingsPanel {
-  private class AddArea extends JPanel {
-    private static final long serialVersionUID = 1L;
 
-    public AddArea() {
-      setPreferredSize(new Dimension(75, 60));
-      setMinimumSize(new Dimension(75, 60));
-      setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createEmptyBorder(10, 10, 10, 10),
-            BorderFactory.createEtchedBorder()));
-    }
-
+  private class MappingsListener implements MouseMappings.MouseMappingsListener {
     @Override
-    public void paintComponent(Graphics g) {
-      super.paintComponent(g);
-      Dimension sz = getSize();
-      g.setFont(remove.getFont());
-      String label1;
-      String label2;
-      if (curTool == null) {
-        g.setColor(Color.GRAY);
-        label1 = S.get("mouseMapNone");
-        label2 = null;
-      } else {
-        g.setColor(Color.BLACK);
-        label1 = S.get("mouseMapText");
-        label2 = S.fmt("mouseMapText2", curTool.getDisplayName());
-      }
-      FontMetrics fm = g.getFontMetrics();
-      int x1 = (sz.width - fm.stringWidth(label1)) / 2;
-      if (label2 == null) {
-        int y = Math.max(0,
-            (sz.height - fm.getHeight()) / 2 + fm.getAscent() - 2);
-        g.drawString(label1, x1, y);
-      } else {
-        int x2 = (sz.width - fm.stringWidth(label2)) / 2;
-        int y = Math.max(0,
-            (sz.height - 2 * fm.getHeight()) / 2
-            + fm.getAscent() - 2);
-        g.drawString(label1, x1, y);
-        y += fm.getHeight();
-        g.drawString(label2, x2, y);
-      }
-    }
-  }
-
-  private class MappingsModel extends AbstractTableModel {
-    private static final long serialVersionUID = 1L;
-    ArrayList<Integer> cur_keys;
-
-    MappingsModel() {
-      fireTableStructureChanged();
-    }
-
-    // AbstractTableModel methods
-    @Override
-    public void fireTableStructureChanged() {
-      cur_keys = new ArrayList<Integer>(getOptions().getMouseMappings()
-          .getMappedModifiers());
-      Collections.sort(cur_keys);
-      super.fireTableStructureChanged();
-    }
-
-    public int getColumnCount() {
-      return 2;
-    }
-
-    // other methods
-    Integer getKey(int row) {
-      return cur_keys.get(row);
-    }
-
-    int getRow(Integer mods) {
-      int row = Collections.binarySearch(cur_keys, mods);
-      if (row < 0)
-        row = -(row + 1);
-      return row;
-    }
-
-    public int getRowCount() {
-      return cur_keys.size();
-    }
-
-    Tool getTool(int row) {
-      if (row < 0 || row >= cur_keys.size())
-        return null;
-      Integer key = cur_keys.get(row);
-      return getOptions().getMouseMappings().getToolFor(key.intValue());
-    }
-
-    public Object getValueAt(int row, int column) {
-      Integer key = cur_keys.get(row);
-      if (column == 0) {
-        return InputEventUtil.toDisplayString(key.intValue());
-      } else {
-        Tool tool = getOptions().getMouseMappings().getToolFor(key);
-        return tool.getDisplayName();
-      }
-    }
-  }
-
-  private class MyListener implements ActionListener, MouseListener,
-          ListSelectionListener, MouseMappings.MouseMappingsListener,
-          ProjectExplorer.Listener {
-    //
-    // ActionListener method
-    //
-    public void actionPerformed(ActionEvent e) {
-      Object src = e.getSource();
-      if (src == remove) {
-        int row = mappings.getSelectedRow();
-        getProject().doAction(
-            OptionsActions.removeMapping(getOptions()
-              .getMouseMappings(), model.getKey(row)));
-        row = Math.min(row, model.getRowCount() - 1);
-        if (row >= 0)
-          setSelectedRow(row);
-      }
-    }
-
-    public void doubleClicked(ProjectExplorer.Event event) {
-    }
-
-    public JPopupMenu menuRequested(ProjectExplorer.Event event) {
-      return null;
-    }
-
-    //
-    // MouseListener methods
-    //
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    //
-    // MouseMappingsListener method
-    //
     public void mouseMappingsChanged() {
-      model.fireTableStructureChanged();
+      refreshMappings();
+    }
+  }
+
+  private class MappingDialog extends JDialog implements ProjectExplorer.Listener {
+    private static final long serialVersionUID = 1L;
+    private final Integer editingKey;
+    private Tool curTool = null;
+    private JRadioButton btn1, btn2, btn3;
+    private JCheckBox ctrlCheck, altCheck, shiftCheck, metaCheck;
+    private AttrTable attrTable;
+
+    MappingDialog(Integer editingKey) {
+      super(getSettingsFrame(),
+          editingKey == null ? S.get("mouseDialogAddTitle") : S.get("mouseDialogEditTitle"),
+          true /* modal */);
+      this.editingKey = editingKey;
+
+      // Left: tool explorer
+      ProjectExplorer explorer = new ProjectExplorer(getProject(), true);
+      explorer.setListener(this);
+      JScrollPane explorerPane = new JScrollPane(explorer,
+          ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
+          ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+      explorerPane.setPreferredSize(new Dimension(200, 300));
+
+      // Right top: mouse button radios
+      btn1 = new JRadioButton(InputEventUtil.toDisplayString(InputEvent.BUTTON1_DOWN_MASK));
+      btn2 = new JRadioButton(S.fmt("mouseUnavailableLabel", InputEventUtil.toDisplayString(InputEvent.BUTTON2_DOWN_MASK)));
+      btn3 = new JRadioButton(InputEventUtil.toDisplayString(InputEvent.BUTTON3_DOWN_MASK));
+      ButtonGroup btnGroup = new ButtonGroup();
+      btnGroup.add(btn1); btnGroup.add(btn2); btnGroup.add(btn3);
+      btn1.setSelected(true);
+
+      JPanel btnPanel = new JPanel();
+      btnPanel.setLayout(new BoxLayout(btnPanel, BoxLayout.PAGE_AXIS));
+      btnPanel.setBorder(BorderFactory.createTitledBorder(S.get("mouseButtonLabel")));
+      btnPanel.add(btn1); btnPanel.add(btn2); btnPanel.add(btn3);
+
+      // Right top: modifier checkboxes
+      ctrlCheck = new JCheckBox(InputEventUtil.toDisplayString(InputEvent.CTRL_DOWN_MASK));
+      altCheck = new JCheckBox(InputEventUtil.toDisplayString(InputEvent.ALT_DOWN_MASK));
+      shiftCheck = new JCheckBox(InputEventUtil.toDisplayString(InputEvent.SHIFT_DOWN_MASK));
+      metaCheck = new JCheckBox(InputEventUtil.toDisplayString(InputEvent.META_DOWN_MASK));
+
+      JPanel modPanel = new JPanel();
+      modPanel.setLayout(new BoxLayout(modPanel, BoxLayout.PAGE_AXIS));
+      modPanel.setBorder(BorderFactory.createTitledBorder(S.get("mouseModLabel")));
+      modPanel.add(ctrlCheck); modPanel.add(altCheck); modPanel.add(shiftCheck); modPanel.add(metaCheck);
+
+      // Right bottom: tool attributes
+      attrTable = new AttrTable(getSettingsFrame());
+      JPanel attrWrapper = new JPanel(new BorderLayout());
+      attrWrapper.setBorder(BorderFactory.createTitledBorder(S.get("mouseToolAttrsLabel")));
+      attrWrapper.add(attrTable, BorderLayout.CENTER);
+
+      JPanel optionsTop = new JPanel();
+      optionsTop.setLayout(new BoxLayout(optionsTop, BoxLayout.PAGE_AXIS));
+      optionsTop.add(btnPanel);
+      optionsTop.add(modPanel);
+
+      JPanel rightPanel = new JPanel(new BorderLayout());
+      rightPanel.add(optionsTop, BorderLayout.NORTH);
+      rightPanel.add(attrWrapper, BorderLayout.CENTER);
+
+      JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, explorerPane, rightPanel);
+      split.setDividerLocation(200);
+      split.setResizeWeight(0.0);
+
+      // Populate fields when editing an existing mapping
+      if (editingKey != null) {
+        int key = editingKey;
+        if ((key & InputEvent.BUTTON2_DOWN_MASK) != 0) btn2.setSelected(true);
+        else if ((key & InputEvent.BUTTON3_DOWN_MASK) != 0) btn3.setSelected(true);
+        else btn1.setSelected(true);
+        ctrlCheck.setSelected((key & InputEvent.CTRL_DOWN_MASK) != 0);
+        altCheck.setSelected((key & InputEvent.ALT_DOWN_MASK) != 0);
+        shiftCheck.setSelected((key & InputEvent.SHIFT_DOWN_MASK) != 0);
+        curTool = getOptions().getMouseMappings().getToolFor(editingKey);
+        if (curTool != null)
+          explorer.setSelectedTool(curTool);
+        updateAttrTable();
+      }
+
+      // Dialog buttons
+      JButton okButton = new JButton(
+          editingKey == null ? S.get("mouseDialogAdd") : S.get("mouseDialogSave"));
+      JButton cancelButton = new JButton(S.get("mouseDialogCancel"));
+      okButton.addActionListener(ae -> doOk());
+      cancelButton.addActionListener(ae -> dispose());
+
+      JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+      buttonRow.add(cancelButton);
+      buttonRow.add(okButton);
+
+      getContentPane().setLayout(new BorderLayout());
+      getContentPane().add(split, BorderLayout.CENTER);
+      getContentPane().add(buttonRow, BorderLayout.SOUTH);
+      setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+      pack();
+      setLocationRelativeTo(getSettingsFrame());
     }
 
-    public void mousePressed(MouseEvent e) {
-      if (e.getSource() == addArea && curTool != null) {
-        Tool t = curTool.cloneTool();
-        Integer mods = Integer.valueOf(e.getModifiersEx());
-        getProject().doAction(
-            OptionsActions.setMapping(getOptions()
-              .getMouseMappings(), mods, t));
-        setSelectedRow(model.getRow(mods));
+    private void updateAttrTable() {
+      if (curTool != null && curTool.getAttributeSet() != null) {
+        attrTable.setAttrTableModel(new AttrTableToolModel(getProject(), curTool));
+      } else {
+        attrTable.setAttrTableModel(null);
       }
     }
 
-    public void mouseReleased(MouseEvent e) {
+    private int getSelectedKey() {
+      int key = 0;
+      if (btn1.isSelected()) key |= InputEvent.BUTTON1_DOWN_MASK;
+      else if (btn2.isSelected()) key |= InputEvent.BUTTON2_DOWN_MASK;
+      else if (btn3.isSelected()) key |= InputEvent.BUTTON3_DOWN_MASK;
+      if (ctrlCheck.isSelected()) key |= InputEvent.CTRL_DOWN_MASK;
+      if (altCheck.isSelected()) key |= InputEvent.ALT_DOWN_MASK;
+      if (shiftCheck.isSelected()) key |= InputEvent.SHIFT_DOWN_MASK;
+      if (metaCheck.isSelected()) key |= InputEvent.META_DOWN_MASK;
+      return key;
     }
 
-    //
-    // Explorer.Listener methods
-    //
+    private void doOk() {
+      if (curTool == null) return;
+      int newKey = getSelectedKey();
+      MouseMappings mm = getOptions().getMouseMappings();
+      if (editingKey != null && editingKey.intValue() != newKey)
+        mm.setToolFor(editingKey, null);
+      getProject().doAction(OptionsActions.setMapping(mm, newKey, curTool.cloneTool()));
+      dispose();
+    }
+
+    @Override
     public void selectionChanged(ProjectExplorer.Event event) {
       Object target = event.getTarget();
-      if (target instanceof ProjectExplorerToolNode) {
-        Tool tool = ((ProjectExplorerToolNode) target).getValue();
-        setCurrentTool(tool);
-      } else {
-        setCurrentTool(null);
-      }
+      curTool = (target instanceof ProjectExplorerToolNode)
+          ? ((ProjectExplorerToolNode) target).getValue() : null;
+      updateAttrTable();
     }
 
-    //
-    // ListSelectionListener method
-    //
-    public void valueChanged(ListSelectionEvent e) {
-      int row = mappings.getSelectedRow();
-      if (row < 0) {
-        remove.setEnabled(false);
-        attrTable.setAttrTableModel(null);
-      } else {
-        remove.setEnabled(true);
-        Tool tool = model.getTool(row);
-        Project proj = getProject();
-        AttrTableModel model;
-        if (tool.getAttributeSet() == null) {
-          model = null;
-        } else {
-          model = new AttrTableToolModel(proj, tool);
-        }
-        attrTable.setAttrTableModel(model);
-      }
-    }
+    @Override
+    public void doubleClicked(ProjectExplorer.Event event) { }
+
+    @Override
+    public JPopupMenu menuRequested(ProjectExplorer.Event event) { return null; }
   }
 
+  private static final Color TRIGGER_COLOR = new Color(0xcc0099);
+  private static final Color ACTION_COLOR = new Color(0x6600ff);
   private static final long serialVersionUID = 1L;
 
-  private MyListener listener = new MyListener();
-  private Tool curTool = null;
-  private MappingsModel model;
-
-  private ProjectExplorer explorer;
-  private JPanel addArea = new AddArea();
-  private JTable mappings = new JTable();
-  private AttrTable attrTable;
-  private JButton remove = new JButton();
+  private final JLabel instruction;
+  private final JButton addButton, resetButton;
+  private final JPanel mappingsPanel;
+  private final MappingsListener mappingsListener = new MappingsListener();
 
   public MouseOptions(SettingsFrame window) {
-    super(window, new GridLayout(1, 3));
+    super(window);
+    setLayout(new BorderLayout());
 
-    explorer = new ProjectExplorer(getProject(), true /* show all */);
-    explorer.setListener(listener);
+    instruction = new JLabel();
 
-    // Area for adding mappings
-    addArea.addMouseListener(listener);
+    addButton = new JButton();
+    addButton.addActionListener(ae -> showMappingDialog(null));
+    resetButton = new JButton();
+    resetButton.addActionListener(ae -> doReset());
 
-    // Area for viewing current mappings
-    model = new MappingsModel();
-    mappings.setTableHeader(null);
-    mappings.setModel(model);
-    mappings.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    mappings.getSelectionModel().addListSelectionListener(listener);
-    mappings.clearSelection();
-    JScrollPane mapPane = new JScrollPane(mappings);
+    JPanel topArea = new JPanel();
+    topArea.setLayout(new BoxLayout(topArea, BoxLayout.PAGE_AXIS));
+    topArea.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+    instruction.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+    topArea.add(instruction);
+    JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+    buttonRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+    buttonRow.add(addButton);
+    buttonRow.add(resetButton);
+    topArea.add(buttonRow);
 
-    // Button for removing current mapping
-    JPanel removeArea = new JPanel();
-    remove.addActionListener(listener);
-    remove.setEnabled(false);
-    removeArea.add(remove);
+    TableLayout layout = new TableLayout(4);
+    mappingsPanel = new JPanel(layout);
+    mappingsPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
-    // Area for viewing/changing attributes
-    attrTable = new AttrTable(getSettingsFrame());
+    getOptions().getMouseMappings().addMouseMappingsListener(mappingsListener);
+    refreshMappings();
 
-    GridBagLayout gridbag = new GridBagLayout();
-    GridBagConstraints gbc = new GridBagConstraints();
-    setLayout(gridbag);
-    gbc.weightx = 1.0;
-    gbc.weighty = 1.0;
-    gbc.gridheight = 4;
-    gbc.fill = GridBagConstraints.BOTH;
-    JScrollPane explorerPane = new JScrollPane(explorer,
-        ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
-        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-    gridbag.setConstraints(explorerPane, gbc);
-    add(explorerPane);
-    gbc.weightx = 0.0;
-    JPanel gap = new JPanel();
-    gap.setPreferredSize(new Dimension(10, 10));
-    gridbag.setConstraints(gap, gbc);
-    add(gap);
-    gbc.weightx = 1.0;
-    gbc.gridheight = 1;
-    gbc.gridx = 2;
-    gbc.gridy = GridBagConstraints.RELATIVE;
-    gbc.weighty = 0.0;
-    gridbag.setConstraints(addArea, gbc);
-    add(addArea);
-    gbc.weighty = 1.0;
-    gridbag.setConstraints(mapPane, gbc);
-    add(mapPane);
-    gbc.weighty = 0.0;
-    gridbag.setConstraints(removeArea, gbc);
-    add(removeArea);
-    gbc.weighty = 1.0;
-    gridbag.setConstraints(attrTable, gbc);
-    add(attrTable);
+    add(topArea, BorderLayout.NORTH);
+    add(new JScrollPane(mappingsPanel,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
+  }
 
-    getOptions().getMouseMappings().addMouseMappingsListener(listener);
-    setCurrentTool(null);
+  private void refreshMappings() {
+    mappingsPanel.removeAll();
+    TableLayout layout = new TableLayout(4);
+    mappingsPanel.setLayout(layout);
+    JLabel trigger = new JLabel(S.get("mouseColumnTrigger")); 
+    // trigger.setPreferredSize(new Dimension(120, trigger.getPreferredSize().height));
+    JLabel action = new JLabel(S.get("mouseColumnAction")); 
+    // action.setPreferredSize(new Dimension(120, action.getPreferredSize().height));
+    mappingsPanel.add(trigger);
+    mappingsPanel.add(action);
+    mappingsPanel.add(new JPanel());
+    mappingsPanel.add(new JPanel());
+    ArrayList<Integer> keys = new ArrayList<>(getOptions().getMouseMappings().getMappedModifiers());
+    Collections.sort(keys);
+    for (Integer key : keys)
+      addMappingRow(key);
+    layout.setRowWeight(keys.size(), 1.0);
+    mappingsPanel.revalidate();
+    mappingsPanel.repaint();
+  }
+
+  private void addMappingRow(Integer key) {
+    Tool tool = getOptions().getMouseMappings().getToolFor(key);
+    String toolName = tool == null ? "" : tool.getDisplayName();
+    if (tool instanceof AddTool)
+      toolName = S.fmt("mouseAddTool", tool);
+    JPanel trigger = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    int i = 0;
+    for (String s : InputEventUtil.toDisplayString(key).split("\\+")) {
+      if (i++ > 0) trigger.add(new JLabel("+"));
+      PillLabel pill = new PillLabel(s.trim(), TRIGGER_COLOR);
+      pill.setPadding(8);
+      trigger.add(pill);
+    }
+
+    JPanel action = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    PillLabel pill = new PillLabel(toolName, ACTION_COLOR);
+    pill.setPadding(8);
+    action.add(pill);
+
+    JButton editBtn = new JButton(S.get("mouseEditButton"));
+    JButton removeBtn = new JButton(S.get("mouseRemoveButton"));
+    editBtn.addActionListener(ae -> showMappingDialog(key));
+    removeBtn.addActionListener(ae -> doRemove(key));
+    int sq = removeBtn.getPreferredSize().height;
+    mappingsPanel.add(trigger);
+    mappingsPanel.add(action);
+    JPanel edit = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    edit.add(editBtn);
+    mappingsPanel.add(edit);
+    JPanel rem = new JPanel(new FlowLayout(FlowLayout.LEFT));
+    rem.add(removeBtn);
+    mappingsPanel.add(rem);
+  }
+
+  private void showMappingDialog(Integer editingKey) {
+    new MappingDialog(editingKey).setVisible(true);
+  }
+
+  private void doRemove(Integer key) {
+    if (key == null) return;
+    getProject().doAction(
+        OptionsActions.removeMapping(getOptions().getMouseMappings(), key));
+  }
+
+  private void doReset() {
+    int confirm = JOptionPane.showConfirmDialog(getSettingsFrame(),
+        S.get("mouseResetConfirm"), S.get("mouseResetTitle"),
+        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+    if (confirm != JOptionPane.YES_OPTION) return;
+    MouseMappings mm = getOptions().getMouseMappings();
+    for (Integer k : new ArrayList<>(mm.getMappedModifiers()))
+      mm.setToolFor(k, null);
+    mm.setToolFor(InputEvent.CTRL_DOWN_MASK | InputEvent.BUTTON1_DOWN_MASK, MenuTool.SINGLETON);
+    mm.setToolFor(InputEvent.BUTTON2_DOWN_MASK, MenuTool.SINGLETON);
+    mm.setToolFor(InputEvent.BUTTON3_DOWN_MASK, MenuTool.SINGLETON);
   }
 
   @Override
@@ -354,22 +355,9 @@ public class MouseOptions extends SettingsPanel {
 
   @Override
   public void localeChanged() {
-    remove.setText(S.get("mouseRemoveButton"));
-    addArea.repaint();
-  }
-
-  private void setCurrentTool(Tool t) {
-    curTool = t;
-    localeChanged();
-  }
-
-  private void setSelectedRow(int row) {
-    if (row < 0)
-      row = 0;
-    if (row >= model.getRowCount())
-      row = model.getRowCount() - 1;
-    if (row >= 0) {
-      mappings.getSelectionModel().setSelectionInterval(row, row);
-    }
+    instruction.setText(S.get("mouseInstruction"));
+    addButton.setText(S.get("mouseAddButton"));
+    resetButton.setText(S.get("mouseResetButton"));
+    refreshMappings();
   }
 }

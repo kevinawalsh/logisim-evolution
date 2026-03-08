@@ -147,7 +147,7 @@ public class ProjectsDirty {
   }
 
   public static void initialize() {
-    Projects.propertyChangeProducer.addPropertyChangeListener(
+    Projects.propertyChangeProducer.addPropertyChangeWeakListener(
         Projects.projectListProperty, projectListListener);
     autobackup.start();
   }

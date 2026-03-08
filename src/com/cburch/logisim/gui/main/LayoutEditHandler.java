@@ -61,7 +61,7 @@ public class LayoutEditHandler extends EditHandler
     this.frame = frame;
 
     Project proj = frame.getProject();
-    SystemClipboard.addPropertyChangeListener(this);
+    SystemClipboard.addPropertyChangeWeakListener(this);
     proj.addProjectWeakListener(null, this);
     proj.addLibraryWeakListener(/*null,*/ this);
   }

@@ -372,7 +372,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     imap.put(KeyStroke.getKeyStroke("released SPACE"), selectAction);
     imap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), selectAction);
    
-    AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
+    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(myListener);
     LocaleManager.addLocaleListener(this);
   }
 
@@ -387,6 +387,19 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     } else {
       return null;
     }
+  }
+
+  public void setSelectedTool(Tool tool) {
+    ProjectExplorerModel model = (ProjectExplorerModel) getModel();
+    ProjectExplorerModel.Node<?> node = model.findTool(tool);
+    if (node != null) {
+      TreePath path = model.getPath(node);
+      scrollPathToVisible(path);
+      setSelectionPath(path);
+    }
+    else
+      Debug.println(1, "Oops: object not found: " + tool);
+
   }
 
   public Library getSelectedLibrary() {
@@ -419,6 +432,17 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
   public void setListener(Listener value) {
     listener = value;
+  }
+
+  // Same MIME type as ToolbarList.TOOLBAR_INDEX_FLAVOR; duplicated here to avoid
+  // a package dependency from gui/generic onto gui/opts.
+  private static final DataFlavor TOOLBAR_INDEX_FLAVOR;
+  static {
+    DataFlavor f = null;
+    try {
+      f = new DataFlavor("application/x-logisim-toolbar-index;class=java.lang.Integer");
+    } catch (ClassNotFoundException e) { }
+    TOOLBAR_INDEX_FLAVOR = f;
   }
 
   private class ProjectTransferHandler extends TransferHandler {
@@ -518,6 +542,13 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     
     @Override
     public boolean canImport(TransferSupport support) {
+      // Accept toolbar item drops even in showAll mode: dropping a toolbar item here
+      // signals "remove from toolbar" (the actual removal happens in the source's exportDone).
+      if (TOOLBAR_INDEX_FLAVOR != null && support.isDrop()
+          && support.isDataFlavorSupported(TOOLBAR_INDEX_FLAVOR)) {
+        support.setDropAction(MOVE);
+        return true;
+      }
       if (listener == null || !(getModel().getRoot() instanceof ProjectExplorerLibraryNode))
         return false; // no drag if we are in showAll mode (i.e. in prefs window)
       try {
@@ -589,6 +620,10 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     @Override
     public boolean importData(TransferSupport support) {
       // System.out.println("importing...");
+      // Toolbar item drop is a no-op here; the removal is handled by the source's exportDone.
+      if (TOOLBAR_INDEX_FLAVOR != null && support.isDrop()
+          && support.isDataFlavorSupported(TOOLBAR_INDEX_FLAVOR))
+        return true;
       if (listener == null || !(getModel().getRoot() instanceof ProjectExplorerLibraryNode))
         return false; // no import if we are in showAll mode (i.e. in prefs window)
       try {

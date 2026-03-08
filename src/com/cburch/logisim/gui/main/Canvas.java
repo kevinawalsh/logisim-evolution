@@ -734,9 +734,9 @@ public class Canvas extends JPanel
 
     AttributeSet options = proj.getOptions().getAttributeSet();
     options.addAttributeWeakListener(null, myProjectListener);
-    AppPreferences.COMPONENT_TIPS.addPropertyChangeListener(myListener);
-    AppPreferences.GATE_SHAPE.addPropertyChangeListener(myListener);
-    AppPreferences.SHOW_TICK_RATE.addPropertyChangeListener(myListener);
+    AppPreferences.COMPONENT_TIPS.addPropertyChangeWeakListener(myListener);
+    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(myListener);
+    AppPreferences.SHOW_TICK_RATE.addPropertyChangeWeakListener(myListener);
     loadOptions(options);
   }
 

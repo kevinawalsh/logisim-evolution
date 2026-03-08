@@ -229,12 +229,7 @@ public class ZoomControl extends JPanel {
     model.addPropertyChangeListener(ZoomModel.ZOOM, sliderModel);
 
     showCoordinates(AppPreferences.SHOW_COORDS.get());
-    AppPreferences.SHOW_COORDS.addPropertyChangeListener(
-        new PropertyChangeListener() {
-          public void propertyChange(PropertyChangeEvent event) {
-            showCoordinates(AppPreferences.SHOW_COORDS.get());
-          }
-        });
+    AppPreferences.SHOW_COORDS.addPropertyChangeWeakListener(coordsListener);
 
   }
 
@@ -342,6 +337,12 @@ public class ZoomControl extends JPanel {
     @Override
     public void propertyChange(PropertyChangeEvent event) {
       updateCoordinates();
+    }
+  };
+  private PropertyChangeListener coordsListener = new PropertyChangeListener() {
+    @Override
+    public void propertyChange(PropertyChangeEvent event) {
+      showCoordinates(AppPreferences.SHOW_COORDS.get());
     }
   };
 

@@ -31,107 +31,52 @@
 package com.cburch.logisim.gui.prefs;
 import static com.cburch.logisim.gui.prefs.Strings.S;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
-
-import javax.swing.JPanel;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.util.PathSettingUI;
 import com.cburch.logisim.util.Softwares;
+import com.cburch.logisim.util.StringGetter;
+import com.cburch.logisim.util.TableLayout;
 
 public class SoftwaresOptions extends SettingsPanel {
-
-  private class MyListener
-    implements ActionListener, PreferenceChangeListener {
-
-    @Override
-    public void actionPerformed(ActionEvent ae) {
-      Object source = ae.getSource();
-
-      if (source == questaPathButton) {
-        Softwares.setQuestaPath(getSettingsFrame());
-      }
-      if (source == questaValidationCheckBox) {
-        AppPreferences.QUESTA_VALIDATION.set(questaValidationCheckBox.isSelected());
-      }
-    }
-
-    @Override
-    public void preferenceChange(PreferenceChangeEvent pce) {
-      String property = pce.getKey();
-
-      if (property.equals(AppPreferences.QUESTA_PATH.getIdentifier())) {
-        questaPathField.setText(AppPreferences.QUESTA_PATH.get());
-      }
-      if (property.equals(AppPreferences.QUESTA_VALIDATION
-            .getIdentifier())) {
-        questaValidationCheckBox
-            .setSelected(AppPreferences.QUESTA_VALIDATION.get());
-      }
-    }
-
-  }
-
+  
   private static final long serialVersionUID = 1L;
+  
+  private PrefBoolean questaEnabled = new PrefBoolean(
+      AppPreferences.QUESTA_VALIDATION,
+      S.getter("softwaresQuestaValidationLabel"));
+  private PathSettingUI questaPath;
 
-  private MyListener myListener = new MyListener();
+  private static final StringGetter dlgTitle = 
+    com.cburch.logisim.util.Strings.S.getter("questaDialogTitle");
 
-  private JCheckBox questaValidationCheckBox = new JCheckBox();
-  private JLabel questaPathLabel = new JLabel();
-  private JTextField questaPathField = new JTextField(1);
-  private JButton questaPathButton = new JButton();
+  private static final StringGetter dlgBtnText = 
+    com.cburch.logisim.util.Strings.S.getter("questaDialogButton");
+
+  private PropertyChangeListener prefListener = new PropertyChangeListener() {
+    @Override
+    public void propertyChange(PropertyChangeEvent event) {
+      questaPath.set(AppPreferences.QUESTA_PATH.get());
+    }
+  };
 
   public SoftwaresOptions(SettingsFrame window) {
     super(window);
 
-    questaValidationCheckBox.addActionListener(myListener);
-    questaPathButton.addActionListener(myListener);
-    AppPreferences.getPrefs().addPreferenceChangeListener(myListener);
+    questaPath = new PathSettingUI(window,
+        AppPreferences.QUESTA_PATH.get(),
+        S.getter("softwaresQuestaPathButton"),
+        dlgTitle, dlgBtnText,
+        (f) -> Softwares.setQuestaPath(f));
+    questaPath.setLeftMargin(30);
 
-    GridBagLayout layout = new GridBagLayout();
-    GridBagConstraints c = new GridBagConstraints();
-    setLayout(layout);
+    AppPreferences.QUESTA_PATH.addPropertyChangeWeakListener(prefListener);
 
-    c.insets = new Insets(2, 4, 4, 2);
-    c.anchor = GridBagConstraints.BASELINE_LEADING;
-
-    c.fill = GridBagConstraints.HORIZONTAL;
-
-    c.gridwidth = 3;
-
-    c.gridx = 0; c.gridy = 0;
-    add(questaValidationCheckBox, c);
-
-    c.gridx = 0; c.gridy = 1;
-    add(questaPathLabel, c);
-
-    c.gridwidth = 1;
-
-    c.gridx = 0; c.gridy = 3; c.weightx = 0.0;
-    JPanel strut = new JPanel();
-    strut.setMinimumSize(new Dimension(50, 1));
-    strut.setPreferredSize(new Dimension(50, 1));
-    add(strut, c);
-
-    c.gridx = 1; c.gridy = 3; c.weightx = 1.0;
-    add(questaPathField, c);
-
-    c.gridx = 2; c.gridy = 3; c.weightx = 0.0;
-    add(questaPathButton, c);
-
-    questaValidationCheckBox.setSelected(AppPreferences.QUESTA_VALIDATION.get());
-    questaPathField.setText(AppPreferences.QUESTA_PATH.get());
-    questaPathField.setEditable(false);
+    setLayout(new TableLayout(1));
+    add(questaEnabled);
+    add(questaPath);
   }
 
   @Override
@@ -146,9 +91,7 @@ public class SoftwaresOptions extends SettingsPanel {
 
   @Override
   public void localeChanged() {
-    questaValidationCheckBox.setText(S.get("softwaresQuestaValidationLabel"));
-    questaPathButton.setText(S.get("softwaresQuestaPathButton"));
-    questaPathLabel.setText(S.get("softwaresQuestaPathLabel"));
+    questaPath.localeChanged();
   }
 
 }

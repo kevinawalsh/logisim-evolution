@@ -51,12 +51,12 @@ public class PropertyChangeWeakSupport {
 
     public PropertyChangeWeakSupport getPropertyChangeListeners();
 
-    default public void addPropertyChangeListener(
+    default public void addPropertyChangeWeakListener(
         PropertyChangeListener listener) {
-      addPropertyChangeListener(ALL_PROPERTIES, listener);
+      addPropertyChangeWeakListener(ALL_PROPERTIES, listener);
     }
 
-    default public void addPropertyChangeListener(String property,
+    default public void addPropertyChangeWeakListener(String property,
         PropertyChangeListener listener) {
       PropertyChangeWeakSupport s = getPropertyChangeListeners();
       s.listeners.add(new ListenerData(property, listener));

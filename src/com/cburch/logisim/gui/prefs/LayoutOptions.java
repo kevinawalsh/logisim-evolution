@@ -48,8 +48,6 @@ class LayoutOptions extends SettingsPanel {
     super(window);
 
     checks = new PrefBoolean[] {
-        new PrefBoolean(AppPreferences.PRINTER_VIEW,
-            S.getter("layoutPrinterView")),
         new PrefBoolean(AppPreferences.ATTRIBUTE_HALO,
             S.getter("layoutAttributeHalo")),
         new PrefBoolean(AppPreferences.COMPONENT_TIPS,

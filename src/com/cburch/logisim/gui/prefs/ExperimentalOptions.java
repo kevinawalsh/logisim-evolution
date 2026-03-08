@@ -31,7 +31,7 @@
 package com.cburch.logisim.gui.prefs;
 import static com.cburch.logisim.gui.prefs.Strings.S;
 
-import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Font;
 
 import javax.swing.Box;
@@ -40,15 +40,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.util.TableLayout;
 
 class ExperimentalOptions extends SettingsPanel {
   private static final long serialVersionUID = 1L;
-  // private JLabel autobackupRestart = new JLabel();
   private JLabel accelRestart = new JLabel();
   private PrefBoolean autobackup;
   private PrefInteger autobackupFreq;
   private PrefOptionList accel;
-  // private JLabel dualScreenRestart = new JLabel();
   private PrefOptionList dualScreen;
 
   public ExperimentalOptions(SettingsFrame window) {
@@ -56,93 +55,61 @@ class ExperimentalOptions extends SettingsPanel {
 
     autobackup = new PrefBoolean(AppPreferences.AUTO_BACKUP, S.getter("autobackupLabel"));
     autobackupFreq = new PrefInteger(AppPreferences.AUTO_BACKUP_FREQ, 1, 60);
-
-    JPanel autobackupSubpanel1 = new JPanel();
-    autobackupSubpanel1.setLayout(new BoxLayout(autobackupSubpanel1, BoxLayout.LINE_AXIS));
-    autobackupSubpanel1.add(autobackup);
-    autobackupSubpanel1.add(Box.createGlue());
-
-    JPanel autobackupSubpanel2 = new JPanel();
-    autobackupSubpanel2.setLayout(new BoxLayout(autobackupSubpanel2, BoxLayout.LINE_AXIS));
-    autobackupSubpanel2.add(new JLabel(S.get("autobackupFreqLabel")));
-    autobackupSubpanel2.add(Box.createGlue());
-    autobackupSubpanel2.add(autobackupFreq);
     autobackupFreq.setEnabled(autobackup.isSelected());
-    autobackupSubpanel2.add(Box.createGlue());
-
-    JPanel autobackupPanel3 = new JPanel();
-    autobackupPanel3.setLayout(new BoxLayout(autobackupPanel3, BoxLayout.PAGE_AXIS));
-    autobackupPanel3.add(autobackupSubpanel1);
-    autobackupPanel3.add(autobackupSubpanel2);
-    
-    JPanel autobackupPanel = new JPanel();
-    autobackupPanel.setLayout(new BoxLayout(autobackupPanel, BoxLayout.PAGE_AXIS));
-    autobackupPanel.add(autobackupPanel3);
-    // autobackupPanel.add(autobackupRestart);
-    // autobackupRestart.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
-    // autobackupRestart.setFont(autobackupRestart.getFont().deriveFont(Font.ITALIC));
-    // autobackupRestart.setVisible(false);
-    autobackup.addActionListener((ae) -> {
-      // autobackupRestart.setVisible(true);
-      autobackupFreq.setEnabled(autobackup.isSelected());
-    });
-    JPanel autobackupPanel2 = new JPanel();
-    autobackupPanel2.add(autobackupPanel);
+    autobackup.addActionListener(ae -> autobackupFreq.setEnabled(autobackup.isSelected()));
 
     accel = new PrefOptionList(AppPreferences.GRAPHICS_ACCELERATION,
         S.getter("accelLabel"), new PrefOption[] {
-          new PrefOption(AppPreferences.ACCEL_DEFAULT,
-              S.getter("accelDefault")),
-          new PrefOption(AppPreferences.ACCEL_NONE,
-              S.getter("accelNone")),
-          new PrefOption(AppPreferences.ACCEL_METAL,
-              S.getter("accelMetal")),
-          new PrefOption(AppPreferences.ACCEL_OPENGL,
-              S.getter("accelOpenGL")),
-          new PrefOption(AppPreferences.ACCEL_D3D,
-              S.getter("accelD3D")), });
-
-    JPanel accelPanel = new JPanel(new BorderLayout());
-    accelPanel.add(accel.getJLabel(), BorderLayout.LINE_START);
-    accelPanel.add(accel.getJComboBox(), BorderLayout.CENTER);
-    accelPanel.add(accelRestart, BorderLayout.PAGE_END);
+          new PrefOption(AppPreferences.ACCEL_DEFAULT, S.getter("accelDefault")),
+          new PrefOption(AppPreferences.ACCEL_NONE,    S.getter("accelNone")),
+          new PrefOption(AppPreferences.ACCEL_METAL,   S.getter("accelMetal")),
+          new PrefOption(AppPreferences.ACCEL_OPENGL,  S.getter("accelOpenGL")),
+          new PrefOption(AppPreferences.ACCEL_D3D,     S.getter("accelD3D")), });
     accelRestart.setFont(accelRestart.getFont().deriveFont(Font.ITALIC));
     accelRestart.setVisible(false);
-    accel.getJComboBox().addActionListener((ae) -> accelRestart.setVisible(true));
-    JPanel accelPanel2 = new JPanel();
-    accelPanel2.add(accelPanel);
+    accel.getJComboBox().addActionListener(ae -> accelRestart.setVisible(true));
 
     dualScreen = new PrefOptionList(AppPreferences.DUALSCREEN,
         S.getter("dualScreenLabel"), new PrefOption[] {
-          new PrefOption(AppPreferences.DUALSCREEN_NONE,
-              S.getter("dualScreenNone")),
-          new PrefOption(AppPreferences.DUALSCREEN_FIX,
-              S.getter("dualScreenFix")),
-          new PrefOption(AppPreferences.DUALSCREEN_MORE,
-              S.getter("dualScreenMore")),
-          new PrefOption(AppPreferences.DUALSCREEN_MOST,
-              S.getter("dualScreenMost")), });
+          new PrefOption(AppPreferences.DUALSCREEN_NONE, S.getter("dualScreenNone")),
+          new PrefOption(AppPreferences.DUALSCREEN_FIX,  S.getter("dualScreenFix")),
+          new PrefOption(AppPreferences.DUALSCREEN_MORE, S.getter("dualScreenMore")),
+          new PrefOption(AppPreferences.DUALSCREEN_MOST, S.getter("dualScreenMost")), });
 
-    JPanel dualScreenPanel = new JPanel(new BorderLayout());
-    dualScreenPanel.add(dualScreen.getJLabel(), BorderLayout.LINE_START);
-    dualScreenPanel.add(dualScreen.getJComboBox(), BorderLayout.CENTER);
-    // dualScreenPanel.add(dualScreenRestart, BorderLayout.PAGE_END);
-    // dualScreenRestart.setFont(dualScreenRestart.getFont().deriveFont(Font.ITALIC));
-    // dualScreenRestart.setVisible(false);
-    // dualScreen.getJComboBox().addActionListener(new ActionListener() {
-    //   public void actionPerformed(ActionEvent ae) {
-    //     dualScreenRestart.setVisible(true);
-    //   }
-    // });
-    JPanel dualScreenPanel2 = new JPanel();
-    dualScreenPanel2.add(dualScreenPanel);
+    // Row: [checkbox "Auto-save ... frequency (min):"] [spinner]
+    JPanel autobackupRow = new JPanel();
+    autobackupRow.setLayout(new BoxLayout(autobackupRow, BoxLayout.LINE_AXIS));
+    autobackupRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+    autobackupRow.add(autobackup);
+    autobackupRow.add(Box.createHorizontalStrut(4));
+    autobackupRow.add(autobackupFreq);
+    autobackupRow.add(Box.createHorizontalGlue());
 
-    setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-    add(Box.createGlue());
-    add(autobackupPanel2);
-    add(accelPanel2);
-    add(dualScreenPanel2);
-    add(Box.createGlue());
+    // Row: [label] [combo]
+    JPanel accelRow = new JPanel();
+    accelRow.setLayout(new BoxLayout(accelRow, BoxLayout.LINE_AXIS));
+    accelRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+    accelRow.add(accel.getJLabel());
+    accelRow.add(Box.createHorizontalStrut(8));
+    accelRow.add(accel.getJComboBox());
+    accelRow.add(Box.createHorizontalGlue());
+
+    accelRestart.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+    // Row: [label] [combo]
+    JPanel dualRow = new JPanel();
+    dualRow.setLayout(new BoxLayout(dualRow, BoxLayout.LINE_AXIS));
+    dualRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+    dualRow.add(dualScreen.getJLabel());
+    dualRow.add(Box.createHorizontalStrut(8));
+    dualRow.add(dualScreen.getJComboBox());
+    dualRow.add(Box.createHorizontalGlue());
+
+    setLayout(new TableLayout(1));
+    add(autobackupRow);
+    add(accelRow);
+    add(dualRow);
+    add(accelRestart);
   }
 
   @Override
@@ -158,9 +125,7 @@ class ExperimentalOptions extends SettingsPanel {
   @Override
   public void localeChanged() {
     accel.localeChanged();
-    // autobackupRestart.setText(S.get("autobackupRestartLabel"));
     accelRestart.setText(S.get("accelRestartLabel"));
     dualScreen.localeChanged();
-    // dualScreenRestart.setText(S.get("dualScreenRestartLabel"));
   }
 }

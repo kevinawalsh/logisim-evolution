@@ -61,7 +61,7 @@ class PrefOptionList implements ActionListener, PropertyChangeListener {
     }
 
     combo.addActionListener(this);
-    pref.addPropertyChangeListener(this);
+    pref.addPropertyChangeWeakListener(this);
     selectOption(pref.get());
   }
 

@@ -31,7 +31,6 @@
 package com.cburch.logisim.util;
 import static com.cburch.logisim.util.Strings.S;
 
-import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -40,10 +39,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.util.PathSettingUI;
 
 public final class Softwares {
 
@@ -89,17 +89,24 @@ public final class Softwares {
     }
   }
 
-  public static String getQuestaPath() {
-    return getQuestaPath(null);
-  }
-
-  public static String getQuestaPath(Component parent) {
+  private static String getQuestaPath(JFrame parent) {
     String prefPath = AppPreferences.QUESTA_PATH.get();
+    if (validatePath(prefPath, QUESTA))
+      return prefPath;
 
-    if (!validatePath(prefPath, QUESTA))
-        prefPath = setQuestaPath();
+    // current setting is not valid, prompt to update setting
+    new PathSettingUI(parent,
+        AppPreferences.QUESTA_PATH.get(),
+        S.getter("softwaresQuestaPathButton"),
+        S.getter("questaDialogTitle"),
+        S.getter("questaDialogButton"),
+        (f) -> setQuestaPath(f)).buttonClicked();
+    
+    prefPath = AppPreferences.QUESTA_PATH.get();
+    if (validatePath(prefPath, QUESTA))
+      return prefPath;
 
-    return prefPath;
+    return null;
   }
 
   private static String[] loadQuesta() {
@@ -112,43 +119,28 @@ public final class Softwares {
 
     return questaProgs;
   }
-
-  public static String setQuestaPath() {
-    return setQuestaPath(null);
-  }
-
-  public static String setQuestaPath(Component parent) {
-    String path = null;
-
-    JFileChooser chooser = JFileChoosers.create();
-    chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-    chooser.setDialogTitle(S.get("questaDialogTitle"));
-    chooser.setApproveButtonText(S.get("questaDialogButton"));
-    int action = chooser.showOpenDialog(parent);
-    if (action == JFileChooser.APPROVE_OPTION) {
-      File file = chooser.getSelectedFile(); // todo: relativize ??
-
-      try {
-        path = file.getCanonicalPath();
-      } catch (IOException ex) {
-        JOptionPane.showMessageDialog(parent,
-            S.get("questaIoErrorMessage"),
-            S.get("questaErrorTitle"),
-            JOptionPane.ERROR_MESSAGE);
-        return null;
-      }
-
-      if (validatePath(path, QUESTA)) {
-        AppPreferences.QUESTA_PATH.set(path);
-      } else {
-        JOptionPane.showMessageDialog(parent,
-            S.get("questaErrorMessage"),
-            S.get("questaErrorTitle"),
-            JOptionPane.ERROR_MESSAGE);
-        return null;
-      }
+  
+  public static String setQuestaPath(File file) {
+    String path;
+    try {
+      path = file.getCanonicalPath();
+    } catch (IOException ex) {
+      JOptionPane.showMessageDialog(null,
+          S.get("questaIoErrorMessage"),
+          S.get("questaErrorTitle"),
+          JOptionPane.ERROR_MESSAGE);
+      return null;
     }
 
+    if (validatePath(path, QUESTA)) {
+      AppPreferences.QUESTA_PATH.set(path);
+    } else {
+      JOptionPane.showMessageDialog(null,
+          S.get("questaErrorMessage"),
+          S.get("questaErrorTitle"),
+          JOptionPane.ERROR_MESSAGE);
+      return null;
+    }
     return path;
   }
 
@@ -174,7 +166,7 @@ public final class Softwares {
     if (!AppPreferences.QUESTA_VALIDATION.get())
       return SUCCESS;
 
-    String questaPath = getQuestaPath();
+    String questaPath = getQuestaPath(null);
     BufferedReader reader = null;
     File tmp = null;
 

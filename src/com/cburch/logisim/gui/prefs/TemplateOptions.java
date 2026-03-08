@@ -31,9 +31,6 @@
 package com.cburch.logisim.gui.prefs;
 import static com.cburch.logisim.gui.prefs.Strings.S;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -44,82 +41,70 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JTextField;
 
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LoadCanceledByUser;
+import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.Template;
 import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.util.PathSettingUI;
+import com.cburch.logisim.util.TableLayout;
 
 class TemplateOptions extends SettingsPanel {
+
   private class MyListener implements ActionListener, PropertyChangeListener {
+
     public void actionPerformed(ActionEvent event) {
-      Object src = event.getSource();
-      if (src == templateButton) {
-        JFileChooser chooser = JFileChoosers.create();
-        chooser.setDialogTitle(S.get("selectDialogTitle"));
-        chooser.setApproveButtonText(S.get("selectDialogButton"));
-        int action = chooser.showOpenDialog(getSettingsFrame());
-        if (action == JFileChooser.APPROVE_OPTION) {
-          File file = chooser.getSelectedFile();
-          FileInputStream reader = null;
-          InputStream reader2 = null;
-          try {
-            Loader loader = new Loader(getSettingsFrame());
-            reader = new FileInputStream(file);
-            Template template = Template.create(reader);
-            reader2 = template.createStream();
-            LogisimFile.load(file, reader2, loader); // to see if OK
-            AppPreferences.setTemplateFile(file, template); // todo: relativize ?
-            AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
-          } catch (LoadCanceledByUser ex) {
-            JOptionPane.showMessageDialog(
-                getSettingsFrame(),
-                S.fmt("templateErrorMessage", ex.toString()),
-                S.get("templateErrorTitle"),
-                JOptionPane.ERROR_MESSAGE);
-          } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                getSettingsFrame(),
-                S.fmt("templateErrorMessage", ex.toString()),
-                S.get("templateErrorTitle"),
-                JOptionPane.ERROR_MESSAGE);
-          } finally {
-            try {
-              if (reader != null)
-                reader.close();
-            } catch (IOException ex) {
-            }
-            try {
-              if (reader != null)
-                reader2.close();
-            } catch (IOException ex) {
-            }
-          }
-        }
-      } else {
-        int value = AppPreferences.TEMPLATE_UNKNOWN;
-        if (plain.isSelected())
-          value = AppPreferences.TEMPLATE_PLAIN;
-        else if (empty.isSelected())
-          value = AppPreferences.TEMPLATE_EMPTY;
-        else if (custom.isSelected())
-          value = AppPreferences.TEMPLATE_CUSTOM;
-        AppPreferences.setTemplateType(value);
-      }
+      int value = AppPreferences.TEMPLATE_UNKNOWN;
+      if (plain.isSelected())
+        value = AppPreferences.TEMPLATE_PLAIN;
+      else if (empty.isSelected())
+        value = AppPreferences.TEMPLATE_EMPTY;
+      else if (custom.isSelected())
+        value = AppPreferences.TEMPLATE_CUSTOM;
+      AppPreferences.setTemplateType(value);
       computeEnabled();
     }
 
+    private void templatePathChanged(File file) {
+      FileInputStream reader = null;
+      InputStream reader2 = null;
+      try {
+        Loader loader = new Loader(getSettingsFrame());
+        reader = new FileInputStream(file);
+        Template template = Template.create(reader);
+        reader2 = template.createStream();
+        LogisimFile.load(file, reader2, loader); // to see if OK
+        AppPreferences.setTemplateFile(file, template); // todo: relativize ?
+        AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
+      } catch (LoadCanceledByUser ex) {
+        JOptionPane.showMessageDialog(
+            getSettingsFrame(),
+            S.fmt("templateErrorMessage", ex.toString()),
+            S.get("templateErrorTitle"),
+            JOptionPane.ERROR_MESSAGE);
+      } catch (IOException ex) {
+        JOptionPane.showMessageDialog(
+            getSettingsFrame(),
+            S.fmt("templateErrorMessage", ex.toString()),
+            S.get("templateErrorTitle"),
+            JOptionPane.ERROR_MESSAGE);
+      } finally {
+        try { if (reader != null) reader.close(); }
+        catch (IOException ex) { }
+        try { if (reader != null) reader2.close(); }
+        catch (IOException ex) { }
+      }
+    }
+
     private void computeEnabled() {
-      custom.setEnabled(!templateField.getText().equals(""));
-      templateField.setEnabled(custom.isSelected());
+      custom.setEnabled(!path.field.getText().equals(""));
+      path.field.setEnabled(custom.isSelected());
     }
 
     public void propertyChange(PropertyChangeEvent event) {
@@ -130,32 +115,32 @@ class TemplateOptions extends SettingsPanel {
         empty.setSelected(value == AppPreferences.TEMPLATE_EMPTY);
         custom.setSelected(value == AppPreferences.TEMPLATE_CUSTOM);
       } else if (prop.equals(AppPreferences.TEMPLATE_FILE)) {
-        setTemplateField((File) event.getNewValue());
+        path.set((File) event.getNewValue());
       }
     }
 
-    private void setTemplateField(File f) {
-      try {
-        templateField.setText(f == null ? "" : f.getCanonicalPath());
-      } catch (IOException e) {
-        templateField.setText(f.getName());
-      }
-      computeEnabled();
-    }
   }
 
   private static final long serialVersionUID = 1L;
 
   private MyListener myListener = new MyListener();
 
+  private JLabel templateLabel = new JLabel();
   private JRadioButton plain = new JRadioButton();
   private JRadioButton empty = new JRadioButton();
   private JRadioButton custom = new JRadioButton();
-  private JTextField templateField = new JTextField(1);
-  private JButton templateButton = new JButton();
+  private PathSettingUI path;
 
   public TemplateOptions(SettingsFrame window) {
     super(window);
+
+    path = new PathSettingUI(window,
+        AppPreferences.getTemplateFile(),
+        S.getter("templateSelectButton"),
+        S.getter("selectDialogTitle"),
+        S.getter("selectDialogButton"),
+        (f) -> myListener.templatePathChanged(f));
+    path.setLeftMargin(30);
 
     ButtonGroup bgroup = new ButtonGroup();
     bgroup.add(plain);
@@ -165,44 +150,18 @@ class TemplateOptions extends SettingsPanel {
     plain.addActionListener(myListener);
     empty.addActionListener(myListener);
     custom.addActionListener(myListener);
-    templateField.setEditable(false);
-    templateButton.addActionListener(myListener);
     myListener.computeEnabled();
 
-    GridBagLayout gridbag = new GridBagLayout();
-    GridBagConstraints gbc = new GridBagConstraints();
-    setLayout(gridbag);
-    gbc.weightx = 1.0;
-    gbc.gridx = 0;
-    gbc.gridy = GridBagConstraints.RELATIVE;
-    gbc.gridwidth = 3;
-    gbc.anchor = GridBagConstraints.LINE_START;
-    gridbag.setConstraints(plain, gbc);
+    setLayout(new TableLayout(1));
+    add(templateLabel);
     add(plain);
-    gridbag.setConstraints(empty, gbc);
     add(empty);
-    gridbag.setConstraints(custom, gbc);
     add(custom);
-    gbc.fill = GridBagConstraints.HORIZONTAL;
-    gbc.gridwidth = 1;
-    gbc.gridy = 3;
-    gbc.gridx = GridBagConstraints.RELATIVE;
-    JPanel strut = new JPanel();
-    strut.setMinimumSize(new Dimension(50, 1));
-    strut.setPreferredSize(new Dimension(50, 1));
-    gbc.weightx = 0.0;
-    gridbag.setConstraints(strut, gbc);
-    add(strut);
-    gbc.weightx = 1.0;
-    gridbag.setConstraints(templateField, gbc);
-    add(templateField);
-    gbc.weightx = 0.0;
-    gridbag.setConstraints(templateButton, gbc);
-    add(templateButton);
+    add(path);
 
-    AppPreferences.propertyChangeProducer.addPropertyChangeListener(AppPreferences.TEMPLATE_TYPE,
+    AppPreferences.propertyChangeProducer.addPropertyChangeWeakListener(AppPreferences.TEMPLATE_TYPE,
         myListener);
-    AppPreferences.propertyChangeProducer.addPropertyChangeListener(AppPreferences.TEMPLATE_FILE,
+    AppPreferences.propertyChangeProducer.addPropertyChangeWeakListener(AppPreferences.TEMPLATE_FILE,
         myListener);
     switch (AppPreferences.getTemplateType()) {
     case AppPreferences.TEMPLATE_PLAIN:
@@ -215,7 +174,6 @@ class TemplateOptions extends SettingsPanel {
       custom.setSelected(true);
       break;
     }
-    myListener.setTemplateField(AppPreferences.getTemplateFile());
   }
 
   @Override
@@ -230,9 +188,10 @@ class TemplateOptions extends SettingsPanel {
 
   @Override
   public void localeChanged() {
+    templateLabel.setText(S.get("templateLabel"));
     plain.setText(S.get("templatePlainOption"));
     empty.setText(S.get("templateEmptyOption"));
     custom.setText(S.get("templateCustomOption"));
-    templateButton.setText(S.get("templateSelectButton"));
+    path.localeChanged();
   }
 }

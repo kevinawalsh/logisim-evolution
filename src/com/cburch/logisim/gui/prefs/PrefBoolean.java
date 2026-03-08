@@ -52,7 +52,7 @@ class PrefBoolean extends JCheckBox
     this.title = title;
 
     addActionListener(this);
-    pref.addPropertyChangeListener(this);
+    pref.addPropertyChangeWeakListener(this);
     setSelected(pref.get());
   }
 

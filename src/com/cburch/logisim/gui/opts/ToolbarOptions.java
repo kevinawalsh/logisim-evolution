@@ -31,12 +31,15 @@
 package com.cburch.logisim.gui.opts;
 import static com.cburch.logisim.gui.opts.Strings.S;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -153,16 +156,21 @@ public class ToolbarOptions extends SettingsPanel {
     moveDown = new JButton();
     remove = new JButton();
 
-    list = new ToolbarList(getOptions().getToolbarData());
+    list = new ToolbarList(getOptions().getToolbarData(), getProject());
+    
+    JLabel explanation = new JLabel("<html>"+S.get("toolbarExplanation")+"</html>");
+    explanation.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+    explanation.setPreferredSize(new Dimension(100, 140));
 
     TableLayout middleLayout = new TableLayout(1);
     JPanel middle = new JPanel(middleLayout);
+    middle.add(explanation);
     middle.add(addTool);
     middle.add(addSeparator);
     middle.add(moveUp);
     middle.add(moveDown);
     middle.add(remove);
-    middleLayout.setRowWeight(4, 1.0);
+    middleLayout.setRowWeight(5, 1.0);
 
     explorer.setListener(listener);
     addTool.addActionListener(listener);
@@ -173,15 +181,30 @@ public class ToolbarOptions extends SettingsPanel {
     list.addListSelectionListener(listener);
     listener.computeEnabled();
 
-    GridBagLayout gridbag = new GridBagLayout();
-    GridBagConstraints gbc = new GridBagConstraints();
-    setLayout(gridbag);
+    JLabel explorerLabel = new JLabel(S.get("toolbarAvailableItems"));
+    JLabel listLabel = new JLabel(S.get("toolbarCurrentItems"));
+
     JScrollPane explorerPane = new JScrollPane(explorer,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     JScrollPane listPane = new JScrollPane(list,
         ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+    GridBagLayout gridbag = new GridBagLayout();
+    GridBagConstraints gbc = new GridBagConstraints();
+    setLayout(gridbag);
+
+    gbc.gridy = 0;
+    gbc.gridx = 0;
+    gridbag.setConstraints(explorerLabel, gbc);
+    add(explorerLabel);
+    gbc.gridx = 2;
+    gridbag.setConstraints(listLabel, gbc);
+    add(listLabel);
+    
+    gbc.gridy = 1;
+    gbc.gridx = GridBagConstraints.RELATIVE;
     gbc.fill = GridBagConstraints.BOTH;
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;

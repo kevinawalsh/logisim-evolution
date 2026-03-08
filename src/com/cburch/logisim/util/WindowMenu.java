@@ -137,7 +137,7 @@ public class WindowMenu extends JMenu {
     toolbar.setEnabled(true);
     toolbar.setState(isToolbarVisible());
     toolbar.addActionListener(myListener);
-    AppPreferences.TOOLBAR_PLACEMENT.addPropertyChangeListener(myListener);
+    AppPreferences.TOOLBAR_PLACEMENT.addPropertyChangeWeakListener(myListener);
 
     computeEnabled();
     computeContents();

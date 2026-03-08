@@ -39,28 +39,6 @@ import java.util.StringTokenizer;
 import com.cburch.logisim.Main;
 
 public class InputEventUtil {
-  public static int fromDisplayString(String str) {
-    int ret = 0;
-    StringTokenizer toks = new StringTokenizer(str);
-    while (toks.hasMoreTokens()) {
-      String s = toks.nextToken();
-      if (s.equals(S.get("ctrlMod")))
-        ret |= InputEvent.CTRL_DOWN_MASK;
-      else if (s.equals(S.get("altMod")))
-        ret |= InputEvent.ALT_DOWN_MASK;
-      else if (s.equals(S.get("shiftMod")))
-        ret |= InputEvent.SHIFT_DOWN_MASK;
-      else if (s.equals(S.get("button1Mod")))
-        ret |= InputEvent.BUTTON1_DOWN_MASK;
-      else if (s.equals(S.get("button2Mod")))
-        ret |= InputEvent.BUTTON2_DOWN_MASK;
-      else if (s.equals(S.get("button3Mod")))
-        ret |= InputEvent.BUTTON3_DOWN_MASK;
-      else
-        throw new NumberFormatException("InputEventUtil");
-    }
-    return ret;
-  }
 
   public static int fromXMLString(String str) {
     int ret = 0;
@@ -86,120 +64,76 @@ public class InputEventUtil {
   }
 
   public static String toDisplayString(int mods) {
-    ArrayList<String> arr = new ArrayList<String>();
+    String os = Main.MacOS ? "MacOS" : Main.MSWindows ? "Windows" : "Linux";
+    ArrayList<String> ret = new ArrayList<String>();
+    if ((mods & InputEvent.META_DOWN_MASK) != 0)
+      ret.add(S.get("metaMod"+os));
     if ((mods & InputEvent.CTRL_DOWN_MASK) != 0)
-      arr.add(S.get("ctrlMod"));
+      ret.add(S.get("ctrlMod"+os));
     if ((mods & InputEvent.ALT_DOWN_MASK) != 0)
-      arr.add(S.get("altMod"));
+      ret.add(S.get("altMod"+os));
     if ((mods & InputEvent.SHIFT_DOWN_MASK) != 0)
-      arr.add(S.get("shiftMod"));
+      ret.add(S.get("shiftMod"+os));
     if ((mods & InputEvent.BUTTON1_DOWN_MASK) != 0)
-      arr.add(S.get("button1Mod"));
+      ret.add(S.get("button1"+os));
     if ((mods & InputEvent.BUTTON2_DOWN_MASK) != 0)
-      arr.add(S.get("button2Mod"));
+      ret.add(S.get("button2"+os));
     if ((mods & InputEvent.BUTTON3_DOWN_MASK) != 0)
-      arr.add(S.get("button3Mod"));
+      ret.add(S.get("button3"+os));
 
-    if (arr.isEmpty())
+    if (ret.isEmpty())
       return "";
-
-    Iterator<String> it = arr.iterator();
-    if (it.hasNext()) {
-      StringBuilder ret = new StringBuilder();
-      ret.append(it.next());
-      while (it.hasNext()) {
-        ret.append(" ");
-        ret.append(it.next());
-      }
-      return ret.toString();
-    } else {
-      return "";
-    }
+    else // "Control + Left-Click"
+      return String.join(" + ", ret);
   }
 
   public static String toKeyDisplayString(Character key, int mods) {
-    ArrayList<String> arr = new ArrayList<String>();
-    if (Main.MacOS) {
-      if ((mods & InputEvent.META_DOWN_MASK) != 0)
-        arr.add("\u2318"); // MacOS Command key
-      if ((mods & InputEvent.CTRL_DOWN_MASK) != 0)
-        arr.add("\u2303");
-      if ((mods & InputEvent.ALT_DOWN_MASK) != 0)
-        arr.add("\u2325"); // MacOS Option key
-      if ((mods & InputEvent.SHIFT_DOWN_MASK) != 0)
-        arr.add("\u21E7");
-    } else {
-      if ((mods & InputEvent.META_DOWN_MASK) != 0)
-        arr.add(S.get("metaMod"));
-      if ((mods & InputEvent.CTRL_DOWN_MASK) != 0)
-        arr.add(S.get("ctrlMod"));
-      if ((mods & InputEvent.ALT_DOWN_MASK) != 0)
-        arr.add(S.get("altMod"));
-      if ((mods & InputEvent.SHIFT_DOWN_MASK) != 0)
-        arr.add(S.get("shiftMod"));
-    }
+    String os = Main.MacOS ? "MacOS" : Main.MSWindows ? "Windows" : "Linux";
+    ArrayList<String> ret = new ArrayList<String>();
+    if ((mods & InputEvent.META_DOWN_MASK) != 0)
+      ret.add(S.get("metaKey"+os));
+    if ((mods & InputEvent.CTRL_DOWN_MASK) != 0)
+      ret.add(S.get("ctrlKey"+os));
+    if ((mods & InputEvent.ALT_DOWN_MASK) != 0)
+      ret.add(S.get("altKey"+os));
+    if ((mods & InputEvent.SHIFT_DOWN_MASK) != 0)
+      ret.add(S.get("shiftKey"+os));
 
-    Iterator<String> it = arr.iterator();
-    if (it.hasNext()) {
-      StringBuilder ret = new StringBuilder();
-      ret.append(it.next());
-      while (it.hasNext()) {
-        if (Main.MacOS)
-          ret.append(" ");
-        else
-          ret.append("+");
-        ret.append(it.next());
-      }
-      if (Main.MacOS)
-        return ret.toString() + " " + key; // "^ A"
-      else
-        return ret.toString() + "-" + key; // "Ctrl+Shift-A"
-    } else {
-      return "";
-    }
+    if (ret.isEmpty()) // "A"
+      return "" + key;
+    else if (Main.MacOS) // "^ A"
+      return String.join(" ", ret) + " " + key;
+    else // "Ctrl+Shift-A"
+      return String.join("+", ret) + "-" + key;
   }
 
   public static String toXMLString(int mods) {
-    ArrayList<String> arr = new ArrayList<String>();
+    ArrayList<String> xml = new ArrayList<String>();
     if ((mods & InputEvent.CTRL_DOWN_MASK) != 0)
-      arr.add(XML_CTRL);
+      xml.add(XML_CTRL);
     if ((mods & InputEvent.ALT_DOWN_MASK) != 0)
-      arr.add(XML_ALT);
+      xml.add(XML_ALT);
     if ((mods & InputEvent.SHIFT_DOWN_MASK) != 0)
-      arr.add(XML_SHIFT);
+      xml.add(XML_SHIFT);
     if ((mods & InputEvent.BUTTON1_DOWN_MASK) != 0)
-      arr.add(XML_BUTTON1);
+      xml.add(XML_BUTTON1);
     if ((mods & InputEvent.BUTTON2_DOWN_MASK) != 0)
-      arr.add(XML_BUTTON2);
+      xml.add(XML_BUTTON2);
     if ((mods & InputEvent.BUTTON3_DOWN_MASK) != 0)
-      arr.add(XML_BUTTON3);
+      xml.add(XML_BUTTON3);
 
-    Iterator<String> it = arr.iterator();
-    if (it.hasNext()) {
-      StringBuilder ret = new StringBuilder();
-      ret.append(it.next());
-      while (it.hasNext()) {
-        ret.append(" ");
-        ret.append(it.next());
-      }
-      return ret.toString();
-    } else {
+    if (xml.isEmpty())
       return "";
-    }
+    else
+      return String.join(" ", xml);
   }
 
   public static String XML_CTRL = "Ctrl";
-
   public static String XML_SHIFT = "Shift";
-
   public static String XML_ALT = "Alt";
-
   public static String XML_BUTTON1 = "Button1";
-
   public static String XML_BUTTON2 = "Button2";
-
   public static String XML_BUTTON3 = "Button3";
 
-  private InputEventUtil() {
-  }
+  private InputEventUtil() { }
 }

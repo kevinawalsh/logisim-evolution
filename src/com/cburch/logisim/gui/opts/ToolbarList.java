@@ -32,15 +32,21 @@ package com.cburch.logisim.gui.opts;
 
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractListModel;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.DropMode;
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
+import javax.swing.TransferHandler;
 
 import com.cburch.logisim.comp.ComponentDrawContext;
 import com.cburch.logisim.data.AttributeEvent;
@@ -48,10 +54,129 @@ import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.file.ToolbarData;
 import com.cburch.logisim.file.ToolbarData.ToolbarListener;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.proj.Action;
+import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 
 @SuppressWarnings({ "serial", "rawtypes" })
 class ToolbarList extends JList {
+
+  // DataFlavor for dragging items within (or out of) the toolbar list.
+  // The transferred data is the Integer index of the dragged item.
+  // ProjectExplorer uses an identical flavor to accept "drop to remove" gestures.
+  static final DataFlavor TOOLBAR_INDEX_FLAVOR;
+  static {
+    DataFlavor f = null;
+    try {
+      f = new DataFlavor("application/x-logisim-toolbar-index;class=java.lang.Integer");
+    } catch (ClassNotFoundException e) { }
+    TOOLBAR_INDEX_FLAVOR = f;
+  }
+
+  private class ToolbarTransferHandler extends TransferHandler {
+    private int dragSourceIndex = -1;
+    private boolean droppedInternally = false;
+
+    @Override
+    public int getSourceActions(JComponent c) {
+      return MOVE;
+    }
+
+    @Override
+    protected Transferable createTransferable(JComponent c) {
+      dragSourceIndex = getSelectedIndex();
+      droppedInternally = false;
+      if (dragSourceIndex < 0) return null;
+      final int idx = dragSourceIndex;
+      return new Transferable() {
+        @Override
+        public DataFlavor[] getTransferDataFlavors() {
+          return new DataFlavor[] { TOOLBAR_INDEX_FLAVOR };
+        }
+        @Override
+        public boolean isDataFlavorSupported(DataFlavor f) {
+          return TOOLBAR_INDEX_FLAVOR != null && TOOLBAR_INDEX_FLAVOR.equals(f);
+        }
+        @Override
+        public Object getTransferData(DataFlavor f) throws UnsupportedFlavorException {
+          if (TOOLBAR_INDEX_FLAVOR != null && TOOLBAR_INDEX_FLAVOR.equals(f))
+            return Integer.valueOf(idx);
+          throw new UnsupportedFlavorException(f);
+        }
+      };
+    }
+
+    @Override
+    protected void exportDone(JComponent c, Transferable data, int action) {
+      // When dropped on the ProjectExplorer (MOVE action, not internal reorder),
+      // remove the dragged item from the toolbar.
+      if (action == MOVE && !droppedInternally && dragSourceIndex >= 0 && project != null) {
+        Object item = base.get(dragSourceIndex);
+        Action a = (item == null)
+            ? ToolbarActions.removeSeparator(base, dragSourceIndex)
+            : ToolbarActions.removeTool(base, dragSourceIndex);
+        project.doAction(a);
+      }
+      dragSourceIndex = -1;
+      droppedInternally = false;
+    }
+
+    @Override
+    public boolean canImport(TransferSupport support) {
+      if (!support.isDrop()) return false;
+      // Internal reorder: toolbar item dropped back onto the toolbar list
+      if (TOOLBAR_INDEX_FLAVOR != null
+          && support.isDataFlavorSupported(TOOLBAR_INDEX_FLAVOR)) {
+        support.setDropAction(MOVE);
+        return true;
+      }
+      // External add: tool dragged in from the ProjectExplorer
+      if (support.isDataFlavorSupported(Tool.dnd.dataFlavor)) {
+        try {
+          Object t = support.getTransferable().getTransferData(Tool.dnd.dataFlavor);
+          if (t instanceof Tool) {
+            support.setDropAction(COPY); // don't remove from explorer
+            return true;
+          }
+        } catch (Exception e) { /* ignore — not a directly transferable Tool */ }
+      }
+      return false;
+    }
+
+    @Override
+    public boolean importData(TransferSupport support) {
+      if (!support.isDrop() || project == null) return false;
+      JList.DropLocation dl = (JList.DropLocation) support.getDropLocation();
+      int dropIndex = dl.getIndex();
+      if (dropIndex < 0) dropIndex = base.size();
+
+      try {
+        if (TOOLBAR_INDEX_FLAVOR != null
+            && support.isDataFlavorSupported(TOOLBAR_INDEX_FLAVOR)) {
+          // Internal reorder
+          int fromIndex = (Integer) support.getTransferable().getTransferData(TOOLBAR_INDEX_FLAVOR);
+          if (fromIndex < 0 || fromIndex >= base.size()) return false;
+          // Adjust insertion point for removal of the dragged item
+          int toIndex = (dropIndex > fromIndex) ? dropIndex - 1 : dropIndex;
+          if (fromIndex == toIndex) return false; // no-op: dropped in same position
+          droppedInternally = true;
+          project.doAction(ToolbarActions.moveTool(base, fromIndex, toIndex));
+          setSelectedIndex(toIndex);
+          return true;
+        }
+        if (support.isDataFlavorSupported(Tool.dnd.dataFlavor)) {
+          // Add tool from ProjectExplorer
+          Object obj = support.getTransferable().getTransferData(Tool.dnd.dataFlavor);
+          if (!(obj instanceof Tool)) return false;
+          project.doAction(ToolbarActions.addTool(base, ((Tool) obj).cloneTool(), dropIndex));
+          setSelectedIndex(dropIndex);
+          return true;
+        }
+      } catch (Exception e) { /* ignore */ }
+      return false;
+    }
+  }
+
   private static class ListRenderer extends DefaultListCellRenderer {
     @Override
     public Component getListCellRendererComponent(JList list, Object value,
@@ -64,7 +189,7 @@ class ToolbarList extends JList {
             t.getDisplayName(), index, isSelected, cellHasFocus);
         icon = new ToolIcon(t);
       } else if (value == null) {
-        ret = super.getListCellRendererComponent(list, "---", index,
+        ret = super.getListCellRendererComponent(list, "------------", index,
             isSelected, cellHasFocus);
         icon = null;
       } else {
@@ -132,17 +257,23 @@ class ToolbarList extends JList {
 
   private ToolbarData base;
   private Model model;
+  private Project project;
 
   @SuppressWarnings("unchecked")
-  public ToolbarList(ToolbarData base) {
+  public ToolbarList(ToolbarData base, Project project) {
     this.base = base;
+    this.project = project;
     this.model = new Model();
 
     setModel(model);
     setCellRenderer(new ListRenderer());
     setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-    AppPreferences.GATE_SHAPE.addPropertyChangeListener(model);
+    setDragEnabled(true);
+    setDropMode(DropMode.INSERT);
+    setTransferHandler(new ToolbarTransferHandler());
+
+    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(model);
     base.addToolbarWeakListener(null, model);
     base.addToolAttributeWeakListener(/*null,*/ model);
   }
