@@ -418,7 +418,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     mode = m;
     granularity = g;
     simulatorReset();
-    fireSignalsExtended(null); // reset, not extended, but works fine for now
+    fireSignalsReset(null);
     fireModeChanged(null);
   }
 

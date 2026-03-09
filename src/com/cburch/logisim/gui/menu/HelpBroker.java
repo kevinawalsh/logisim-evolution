@@ -209,15 +209,6 @@ public class HelpBroker {
   }
 
   private static HashMap<String, Frame> helpFrames = new HashMap<>();
-  private static HelpProjectWindowListener listener = new HelpProjectWindowListener();
-
-  private static class HelpProjectWindowListener extends WindowAdapter {
-    @Override
-    public void windowClosed(WindowEvent event) {
-      Frame frame = (Frame) event.getSource();
-      // Project proj = frame.getProject();
-    }
-  }
 
   public static boolean openLive(String filename, String circuitName) {
     File srcfile = new File(filename);

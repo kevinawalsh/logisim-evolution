@@ -82,7 +82,6 @@ public final class WiringTool extends Tool {
   private boolean repairOrigin = false;
   private Location unrepairableEnd = null;
 
-  private Wire shortening0 = null, shortening1 = null;
   private int direction = AIMLESS;
 
   public WiringTool() { }

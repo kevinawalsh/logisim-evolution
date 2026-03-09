@@ -148,11 +148,11 @@ public class SimulationTreeNode implements TreeNode,
       fireStructureChanged(); // fixme: use add/remove instead to preserve expand state
   }
   
-  private static class CompareByName implements Comparator<Object> {
-    public int compare(Object a, Object b) {
-      return a.toString().compareToIgnoreCase(b.toString());
-    }
-  }
+  // private static class CompareByName implements Comparator<Object> {
+  //   public int compare(Object a, Object b) {
+  //     return a.toString().compareToIgnoreCase(b.toString());
+  //   }
+  // }
 
   public int compare(Component a, Component b) {
     if (a != b) {

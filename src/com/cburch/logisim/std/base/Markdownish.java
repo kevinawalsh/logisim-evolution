@@ -936,17 +936,17 @@ public class Markdownish {
     return count;
   }
 
-  private int trailingHardBreak(int ls, int le) {
-    // 2 or more spaces before EOL is a hard-break
-    int count = countTrailing(ls, le, ' ');
-    if (count >= 2)
-      return le - count;
-    // 1 backslash before EOL is a hard-break, but only if odd number of backslashes
-    count = countTrailing(ls, le, '\\');
-    if (count % 2 != 0)
-      return le - 1;
-    return -1;
-  }
+  // private int trailingHardBreak(int ls, int le) {
+  //   // 2 or more spaces before EOL is a hard-break
+  //   int count = countTrailing(ls, le, ' ');
+  //   if (count >= 2)
+  //     return le - count;
+  //   // 1 backslash before EOL is a hard-break, but only if odd number of backslashes
+  //   count = countTrailing(ls, le, '\\');
+  //   if (count % 2 != 0)
+  //     return le - 1;
+  //   return -1;
+  // }
 
   // All \r should have been stripped already, so only \n or end of source can end a line
   private int lineEnd(int s, int eof) {

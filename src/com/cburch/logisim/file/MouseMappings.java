@@ -61,6 +61,10 @@ public class MouseMappings {
     listeners.add(l);
   }
 
+  public void removeMouseMappingsListener(MouseMappingsListener l) {
+    listeners.remove(l);
+  }
+
   public void copyFrom(MouseMappings other, LogisimFile file) {
     if (this == other)
       return;
@@ -120,10 +124,6 @@ public class MouseMappings {
 
   public Tool getToolFor(MouseEvent e) {
     return getToolFor(e.getModifiersEx());
-  }
-
-  public void removeMouseMappingsListener(MouseMappingsListener l) {
-    listeners.add(l);
   }
 
   //

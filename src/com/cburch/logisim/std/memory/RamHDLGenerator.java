@@ -237,10 +237,6 @@ public class RamHDLGenerator extends HDLGenerator {
 		return FileWriter.WriteContents(f, hdl, _err);
 	}
 
-  private String memInitFilename(int i) {
-      return String.format("../vhdl/memory/%s_%d.mif", hdlModuleName, i);
-  }
-
   private static final char HEX_DIGIT[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
   private String encodeMemInitDataVHDL(RamState state, int offset) {
     MemContents c = state.getContents();

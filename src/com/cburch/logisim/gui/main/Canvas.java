@@ -287,20 +287,20 @@ public class Canvas extends JPanel
       }
     }
 
-    private int scrollValue(JScrollBar bar, int val) {
-      if (val > 0) {
-        if (bar.getValue() < bar.getMaximum() + val * 2
-            * bar.getBlockIncrement()) {
-          return bar.getValue() + val * 2 * bar.getBlockIncrement();
-        }
-      } else {
-        if (bar.getValue() > bar.getMinimum() + val * 2
-            * bar.getBlockIncrement()) {
-          return bar.getValue() + val * 2 * bar.getBlockIncrement();
-        }
-      }
-      return 0;
-    }
+    // private int scrollValue(JScrollBar bar, int val) {
+    //   if (val > 0) {
+    //     if (bar.getValue() < bar.getMaximum() + val * 2
+    //         * bar.getBlockIncrement()) {
+    //       return bar.getValue() + val * 2 * bar.getBlockIncrement();
+    //     }
+    //   } else {
+    //     if (bar.getValue() > bar.getMinimum() + val * 2
+    //         * bar.getBlockIncrement()) {
+    //       return bar.getValue() + val * 2 * bar.getBlockIncrement();
+    //     }
+    //   }
+    //   return 0;
+    // }
   }
 
   private class MyProjectListener implements ProjectListener,

@@ -92,13 +92,13 @@ public class LogisimVersion {
     return n;
   }
 
-  // true iff s starts with ".", "-", or whitespace.
-  private static boolean hasLeadingSeparator(String s) {
-    if (!s.isEmpty())
-      return false;
-    char c = s.charAt(0);
-    return c == '.' || c == '-' || Character.isWhitespace(c);
-  }
+  // // true iff s starts with ".", "-", or whitespace.
+  // private static boolean hasLeadingSeparator(String s) {
+  //   if (!s.isEmpty())
+  //     return false;
+  //   char c = s.charAt(0);
+  //   return c == '.' || c == '-' || Character.isWhitespace(c);
+  // }
 
   // if s starts with a valid separator then a digit,
   //   returns length of the separator

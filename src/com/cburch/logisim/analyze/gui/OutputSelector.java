@@ -100,26 +100,6 @@ class OutputSelector {
     select.addItemListener(l);
   }
 
-  @SuppressWarnings("unchecked")
-  private void computePrototypeValue() {
-    String newValue;
-    if (source.bits.isEmpty()) {
-      newValue = "xx";
-    } else {
-      newValue = "xx";
-      for (String candidate: source.bits) {
-        if (candidate.length() > newValue.length())
-          newValue = candidate;
-      }
-    }
-    if (prototypeValue == null
-        || newValue.length() != prototypeValue.length()) {
-      prototypeValue = newValue;
-      select.setPrototypeDisplayValue(prototypeValue + "xx");
-      select.revalidate();
-    }
-  }
-
   public JPanel createPanel() {
     JPanel ret = new JPanel();
     ret.setLayout(new BoxLayout(ret, BoxLayout.Y_AXIS));
