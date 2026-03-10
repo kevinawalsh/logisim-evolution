@@ -31,7 +31,6 @@
 package com.cburch.logisim.comp;
 
 import java.awt.Color;
-import java.awt.Graphics;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
