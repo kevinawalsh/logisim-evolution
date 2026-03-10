@@ -48,7 +48,6 @@ import com.cburch.logisim.tools.WiringTool;
 public class Base extends Library {
   private final List<Tool> tools;
   private final AddTool textAdder = new AddTool(Base.class, Text.FACTORY);
-  private final AddTool imageAdder = new AddTool(Base.class, new Image());
   private final AddTool calloutAdder = new AddTool(Base.class, Callout.FACTORY);
 
   public Base() {
@@ -69,7 +68,6 @@ public class Base extends Library {
       cutter,
       text,
       calloutAdder,
-      imageAdder,
       // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings,
       // e.g. for the right-click binding.
       MenuTool.SINGLETON,

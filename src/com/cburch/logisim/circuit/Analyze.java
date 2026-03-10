@@ -47,6 +47,7 @@ import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
@@ -55,8 +56,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.std.base.Text;
-import com.cburch.logisim.std.base.Image;
 
 public class Analyze {
   public static class LocationBit {
@@ -366,17 +365,14 @@ public class Analyze {
           expressionMap.currentCause = comp;
           computer.computeExpression(expressionMap);
         } catch (UnsupportedOperationException e) {
-          throw new AnalyzeException.CannotHandle(comp.getFactory()
-              .getDisplayName());
+          throw new AnalyzeException.CannotHandle(comp.getFactory().getDisplayName());
         }
       } else if (comp.getFactory() instanceof Pin) {
         ; // pins are handled elsewhere
       } else if (comp.getFactory() instanceof SplitterFactory) {
         ; // splitters are handled elsewhere
-      } else if (comp.getFactory() instanceof Text) {
-        ; // ignore
-      } else if (comp.getFactory() instanceof Image) {
-        ; // ignore
+      } else if ((Boolean)comp.getFeature(ComponentFactory.DECORATIVE) == Boolean.TRUE) {
+        ; // ignore Text, Callout, Image, Hyperlink, etc.
       } else {
         throw new AnalyzeException.CannotHandle(comp.getFactory().getDisplayName());
       }

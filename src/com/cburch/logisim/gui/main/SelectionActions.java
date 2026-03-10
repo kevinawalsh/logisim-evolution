@@ -62,11 +62,11 @@ import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.JoinedAction;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.base.Text;
-import com.cburch.logisim.std.base.Image;
+import com.cburch.logisim.std.decor.Image;
 import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.TextTool;
-import com.cburch.logisim.tools.AddTool;
 
 public class SelectionActions {
 

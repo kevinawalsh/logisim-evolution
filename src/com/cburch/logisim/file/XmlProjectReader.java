@@ -298,8 +298,10 @@ public class XmlProjectReader extends XmlReader {
       if (name == null || name.equals(""))
         throw new XmlReaderException(S.get("toolNameMissing"));
       Tool tool = lib.getTool(name);
-      if (tool == null)
-        throw new XmlReaderException(S.fmt("xmlToolNotFound", name));
+      if (tool == null) {
+        try { throw new Exception("oops"); } catch (Exception e) { e.printStackTrace(); }
+        throw new XmlReaderException(S.fmt("toolNotFound", name));
+      }
       return tool;
     }
   }
@@ -577,7 +579,31 @@ public class XmlProjectReader extends XmlReader {
           }
         }
       }
-
+      
+      // As of version 5.1.0, a new Decor builtin library has been added.
+      addBuiltinLibrariesIfMissing(doc, root, "#Decor");
+      String decorLibName = findLibNameByDesc(root, "#Decor");
+      // Also, base/Image has been moved to decor/Image
+      if (baseLibName != null && decorLibName != null) {
+        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+          for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = elt.getAttribute("lib");
+            String name = elt.getAttribute("name");
+            if (lib == null || name == null || !lib.equals(baseLibName) || !name.equals("Image"))
+              continue;
+            elt.setAttribute("lib", decorLibName);
+          }
+        }
+        for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
+          for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
+            String lib = elt.getAttribute("lib");
+            String name = elt.getAttribute("name");
+            if (lib == null || name == null || !lib.equals(baseLibName) || !name.equals("Image"))
+              continue;
+            elt.setAttribute("lib", decorLibName);
+          }
+        }
+      }
     }
 
   }

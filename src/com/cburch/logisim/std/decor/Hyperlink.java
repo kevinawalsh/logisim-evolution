@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.ext;
+package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
@@ -64,16 +64,16 @@ import com.cburch.logisim.util.GraphicsUtil;
 public class Hyperlink extends InstanceFactory implements Reshapable {
 
   static final Attribute<String> ATTR_HREF =
-      Attributes.forString("href", S.getter("extHyperlinkHref"));
+      Attributes.forString("href", S.getter("decorHyperlinkHref"));
 
   private static final int MIN_SIZE = 10;
   private static final int ARC = 10;  // rounded corner radius
   private static final int DEPTH = 3; // 3D shadow depth
 
   static final Attribute<Integer> ATTR_WIDTH = Attributes.forIntegerRange(
-      "width", S.getter("extHyperlinkWidth"), MIN_SIZE, 10000);
+      "width", S.getter("decorHyperlinkWidth"), MIN_SIZE, 10000);
   static final Attribute<Integer> ATTR_HEIGHT = Attributes.forIntegerRange(
-      "height", S.getter("extHyperlinkHeight"), MIN_SIZE, 10000);
+      "height", S.getter("decorHyperlinkHeight"), MIN_SIZE, 10000);
 
   public static class Poker extends InstancePoker {
     @Override
@@ -187,7 +187,7 @@ public class Hyperlink extends InstanceFactory implements Reshapable {
   public void doReshapeAction(Project proj, Circuit circ, Component comp,
       Location handle, int rdx, int rdy) {
     int[] size = calculateNewSize(comp, handle, rdx, rdy);
-    SetAttributeAction act = new SetAttributeAction(circ, S.getter("extHyperlinkReshape"));
+    SetAttributeAction act = new SetAttributeAction(circ, S.getter("decorHyperlinkReshape"));
     act.set(comp, ATTR_WIDTH,  size[0]);
     act.set(comp, ATTR_HEIGHT, size[1]);
     proj.doAction(act);
@@ -201,6 +201,8 @@ public class Hyperlink extends InstanceFactory implements Reshapable {
       return (ToolTipMaker) (event) -> toolTipFor(instance.getAttributeSet());
     if (key == Reshapable.class)
       return this;
+    if (key == DECORATIVE)
+      return Boolean.TRUE;
     return super.getInstanceFeature(instance, key);
   }
 
@@ -281,5 +283,5 @@ public class Hyperlink extends InstanceFactory implements Reshapable {
   public void propagate(InstanceState state) {
     // No ports — nothing to propagate.
   }
-
+  
 }

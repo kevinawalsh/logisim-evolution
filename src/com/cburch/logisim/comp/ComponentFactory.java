@@ -72,6 +72,7 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   public static final Object SHOULD_SNAP = new Object();
   public static final Object TOOL_TIP = new Object();
   public static final Object FACING_ATTRIBUTE_KEY = new Object();
+  public static final Object DECORATIVE = new Object(); // plays no role in circuit behavior
 
   public boolean ActiveOnHigh(AttributeSet attrs);
 

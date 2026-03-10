@@ -37,7 +37,7 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
-import com.cburch.logisim.std.base.Image;
+import com.cburch.logisim.std.decor.Image;
 
 class SlideshowAttributes extends AbstractAttributeSet {
   private final /*public*/ static SlideshowAttributes instance = new SlideshowAttributes(); // why?

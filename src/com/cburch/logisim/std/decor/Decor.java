@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.ext;
+package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.util.List;
@@ -37,35 +37,31 @@ import com.cburch.logisim.tools.FactoryDescription;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
-public class Ext extends Library {
+public class Decor extends Library {
 
   private static FactoryDescription[] DESCRIPTIONS = {
-    new FactoryDescription("SerialIn", S.getter("serialInputComponent"), "serial-in.png", "SerialIn"),
-    // new FactoryDescription("SerialOut", S.getter("serialOutputComponent"), "serial-in.png", "SerialOut"),
-    // new FactoryDescription("WebGet", S.getter("httpComponent"), "http-get.png", "WebGet"),
-    new FactoryDescription("HttpIn", S.getter("httpInputComponent"), "http-in.png", "HttpIn"),
-    new FactoryDescription("RealTimeClock", S.getter("rtcComponent"), "rtc.png", "RealTimeClock"),
+    new FactoryDescription("Image", S.getter("stdImageComponent"), "image.gif", "Image"),
+    new FactoryDescription("Hyperlink", S.getter("hyperlinkComponent"), "hyperlink.png", "Hyperlink"),
   };
 
   private List<Tool> tools = null;
 
-  public Ext() { }
+  public Decor() { }
 
   @Override
   public String getDisplayName() {
-    return S.get("externalsLibrary");
+    return S.get("decorLibrary");
   }
 
   @Override
   public String getName() {
-    return "External I/O";
+    return "Decor";
   }
 
   @Override
   public List<Tool> getTools() {
-    if (tools == null) {
-      tools = FactoryDescription.getTools(Ext.class, DESCRIPTIONS);
-    }
+    if (tools == null)
+      tools = FactoryDescription.getTools(Decor.class, DESCRIPTIONS);
     return tools;
   }
 

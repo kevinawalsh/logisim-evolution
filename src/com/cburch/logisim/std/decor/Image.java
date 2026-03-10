@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.base;
+package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
@@ -488,10 +488,10 @@ public class Image extends InstanceFactory implements Reshapable {
   }
 
   public static AddTool getToolFromProject(Project proj) {
-    Library base = proj.getLogisimFile().getLibrary("Base");
-    if (base == null)
+    Library decor = proj.getLogisimFile().getLibrary("Decor");
+    if (decor == null)
       return null;
-    Tool tool = base.getTool("Image");
+    Tool tool = decor.getTool("Image");
     if (tool instanceof AddTool && ((AddTool)tool).getFactory() instanceof Image)
       return (AddTool)tool;
     return null;
@@ -506,6 +506,8 @@ public class Image extends InstanceFactory implements Reshapable {
   public Object getInstanceFeature(Instance instance, Object key) {
     if (key == Reshapable.class)
       return this;
+    else if (key == DECORATIVE)
+      return Boolean.TRUE;
     else
       return super.getInstanceFeature(instance, key);
   }

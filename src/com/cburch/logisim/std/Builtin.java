@@ -37,15 +37,16 @@ import java.util.List;
 
 import com.bfh.logisim.library.BFHPraktika;
 import com.cburch.logisim.std.arith.Arithmetic;
+import com.cburch.logisim.std.audio.Audio;
 import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.decor.Decor;
 import com.cburch.logisim.std.ext.Ext;
 import com.cburch.logisim.std.gates.Gates;
 import com.cburch.logisim.std.io.Io;
-import com.cburch.logisim.std.audio.Audio;
 import com.cburch.logisim.std.memory.Memory;
 import com.cburch.logisim.std.plexers.Plexers;
-import com.cburch.logisim.std.wiring.Wiring;
 import com.cburch.logisim.std.wiring.Analog;
+import com.cburch.logisim.std.wiring.Wiring;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
@@ -55,7 +56,7 @@ public class Builtin extends Library {
   public Builtin() {
     libraries = Arrays.asList(new Library[] { new Base(), new Gates(),
       new Wiring(), new Analog(), new Plexers(), new Arithmetic(), new Memory(),
-      new Io(), new Audio(), new BFHPraktika(), new Ext() });
+      new Io(), new Audio(), new BFHPraktika(), new Ext(), new Decor() });
   }
 
   public static boolean isBuiltinLibrary(Class<? extends Library> libClass) {
@@ -70,7 +71,8 @@ public class Builtin extends Library {
         || libClass == Io.class
         || libClass == Audio.class
         || libClass == BFHPraktika.class
-        || libClass == Ext.class;
+        || libClass == Ext.class
+        || libClass == Decor.class;
   }
 
   @Override

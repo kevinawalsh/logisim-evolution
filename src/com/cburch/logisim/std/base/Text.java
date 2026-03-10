@@ -506,6 +506,8 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       return this;
     else if (key == TextEditable.class)
       return this;
+    else if (key == DECORATIVE)
+      return Boolean.TRUE;
     else
       return super.getInstanceFeature(instance, key);
   }
