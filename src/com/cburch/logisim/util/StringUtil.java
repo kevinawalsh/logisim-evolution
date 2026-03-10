@@ -44,31 +44,31 @@ public class StringUtil {
     };
   }
 
-  public static String resizeString(String value, FontMetrics metrics,
-      int maxWidth) {
-    int width = metrics.stringWidth(value);
+  // public static String resizeString(String value, FontMetrics metrics,
+  //     int maxWidth) {
+  //   int width = metrics.stringWidth(value);
 
-    if (width < maxWidth)
-      return value;
-    if (value.length() < 4)
-      return value;
-    return resizeString(
-        new StringBuilder(value.substring(0, value.length() - 3) + ".."),
-        metrics, maxWidth);
-  }
+  //   if (width < maxWidth)
+  //     return value;
+  //   if (value.length() < 4)
+  //     return value;
+  //   return resizeString(
+  //       new StringBuilder(value.substring(0, value.length() - 3) + ".."),
+  //       metrics, maxWidth);
+  // }
 
-  private static String resizeString(StringBuilder value,
-      FontMetrics metrics, int maxWidth) {
-    int width = metrics.stringWidth(value.toString());
+  // private static String resizeString(StringBuilder value,
+  //     FontMetrics metrics, int maxWidth) {
+  //   int width = metrics.stringWidth(value.toString());
 
-    if (width < maxWidth)
-      return value.toString();
-    if (value.length() < 4)
-      return value.toString();
-    return resizeString(
-        value.delete(value.length() - 3, value.length() - 2), metrics,
-        maxWidth);
-  }
+  //   if (width < maxWidth)
+  //     return value.toString();
+  //   if (value.length() < 4)
+  //     return value.toString();
+  //   return resizeString(
+  //       value.delete(value.length() - 3, value.length() - 2), metrics,
+  //       maxWidth);
+  // }
 
   public static String toHexString(int bits, int value) {
     if (bits < 32)

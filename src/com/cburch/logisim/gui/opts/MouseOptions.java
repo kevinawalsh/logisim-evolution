@@ -256,7 +256,7 @@ public class MouseOptions extends SettingsPanel {
     mappingsPanel = new JPanel(layout);
     mappingsPanel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
-    getOptions().getMouseMappings().addMouseMappingsListener(mappingsListener);
+    getOptions().getMouseMappings().addMouseMappingsWeakListener(null, mappingsListener);
     refreshMappings();
 
     add(topArea, BorderLayout.NORTH);

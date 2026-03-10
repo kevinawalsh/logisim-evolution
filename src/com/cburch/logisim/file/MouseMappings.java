@@ -31,7 +31,6 @@
 package com.cburch.logisim.file;
 
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -39,31 +38,26 @@ import java.util.Set;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.tools.AddTool;
-import com.cburch.logisim.tools.SelectTool;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.WeakList;
 
 public class MouseMappings {
   public static interface MouseMappingsListener {
     public void mouseMappingsChanged();
   }
 
-  private ArrayList<MouseMappingsListener> listeners;
   private HashMap<Integer, Tool> map;
   private int cache_mods;
   private Tool cache_tool;
 
   public MouseMappings() {
-    listeners = new ArrayList<MouseMappingsListener>();
     map = new HashMap<Integer, Tool>();
   }
 
-  public void addMouseMappingsListener(MouseMappingsListener l) {
-    listeners.add(l);
-  }
-
-  public void removeMouseMappingsListener(MouseMappingsListener l) {
-    listeners.remove(l);
-  }
+  private WeakList<MouseMappingsListener> listeners = new WeakList<>();
+  public void addMouseMappingsWeakListener(Object owner, MouseMappingsListener l) { listeners.add(owner, l); }
+  public void removeMouseMappingsWeakListener(Object owner, MouseMappingsListener l) { listeners.remove(owner, l); }
+  private void fireMouseMappingsChanged() { for (MouseMappingsListener l : listeners) l.mouseMappingsChanged(); }
 
   public void copyFrom(MouseMappings other, LogisimFile file) {
     if (this == other)
@@ -81,12 +75,6 @@ public class MouseMappings {
       }
     }
     fireMouseMappingsChanged();
-  }
-
-  private void fireMouseMappingsChanged() {
-    for (MouseMappingsListener l : listeners) {
-      l.mouseMappingsChanged();
-    }
   }
 
   public Set<Integer> getMappedModifiers() {

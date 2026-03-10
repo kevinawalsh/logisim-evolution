@@ -336,13 +336,7 @@ public class Project {
     }
   }
 
-  /**
-   * Decide whether or not you can redo
-   *
-   * @return if we can redo
-   */
   public boolean getCanRedo() {
-    // If there's a redo option found, we can redo.
     return (redoLog.size() > 0);
   }
 
