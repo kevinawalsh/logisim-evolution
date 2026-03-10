@@ -30,8 +30,6 @@
 
 package com.cburch.logisim.file;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
