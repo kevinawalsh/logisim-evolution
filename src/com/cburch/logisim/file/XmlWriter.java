@@ -75,7 +75,9 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.appear.DrawingsClip;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.base.Text;
@@ -430,6 +432,29 @@ public class XmlWriter {
     return ret;
   }
 
+  Element fromDrawings(DrawingsClip drawings) {
+    Element ret = doc.createElement("drawings");
+    Direction af = drawings.getAnchorFacing();
+    Location al = drawings.getAnchorLocation();
+    if (af != null || al != null) {
+      Element anchor = doc.createElement("anchor-info");
+      if (af != null)
+        anchor.setAttribute("facing", af.toString());
+      if (al != null)
+        anchor.setAttribute("location", al.toString());
+      ret.appendChild(anchor);
+    }
+    for (Object o : drawings.getElements()) {
+      if (o instanceof AbstractCanvasObject) {
+        AbstractCanvasObject shape = (AbstractCanvasObject)o;
+        Element elt = shape.toDynamicSvgElement(doc);
+        if (elt != null)
+          ret.appendChild(elt);
+      }
+    }
+    return ret;
+  }
+
   // see: sort() above
   // project (contains ordered elements, do not sort)
   // - main
@@ -544,6 +569,7 @@ public class XmlWriter {
     else if (sel instanceof Collection<?>)
       scanSelection((Collection<Component>)sel, usedLibs, usedCircs, usedVhdl);
     // else: todo: no current way to track vhdl dependencies
+    // also, we don't currently handle direct copy-paste of cross-process dynamic appearance elements
 
     for (Library lib : usedLibs) {
       if (lib == file)
@@ -577,6 +603,9 @@ public class XmlWriter {
     } else if (sel instanceof Library) {
       e.setAttribute("type", "lib"); // not used by parser
       e.appendChild(fromLibrary((Library)sel));
+    } else if (sel instanceof DrawingsClip) {
+      e.setAttribute("type", "drawings"); // not used by parser
+      e.appendChild(fromDrawings((DrawingsClip)sel));
     } else {
       throw new IllegalArgumentException("clipboard type not supported: " + sel);
     }

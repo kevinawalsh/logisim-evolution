@@ -56,9 +56,9 @@ public class ClipboardActions extends Action {
   private boolean remove;
   private AppearanceCanvas canvas;
   private CanvasModel canvasModel;
-  private ClipboardContents oldClipboard;
+  private DrawingsClip oldClipboard;
   private Map<CanvasObject, Integer> affected;
-  private ClipboardContents newClipboard;
+  private DrawingsClip newClipboard;
 
   private ClipboardActions(boolean remove, AppearanceCanvas canvas) {
     this.remove = remove;
@@ -81,14 +81,14 @@ public class ClipboardActions extends Action {
     }
     contents.trimToSize();
     affected = ZOrder.getZIndex(aff, canvasModel);
-    newClipboard = new ClipboardContents(contents, anchorLocation,
-        anchorFacing);
+    newClipboard = new DrawingsClip(contents, anchorLocation, anchorFacing);
+    AppearanceClipboard.DATA.set(canvas.getProject(), newClipboard);
   }
 
   @Override
   public void doIt(Project proj) {
-    oldClipboard = Clipboard.SINGLETON.get();
-    Clipboard.SINGLETON.set(newClipboard);
+    // oldClipboard = AppearanceClipboard.DATA.get();
+    // AppearanceClipboard.DATA.set(newClipboard);
     if (remove) {
       canvasModel.removeObjects(affected.keySet());
     }
@@ -110,7 +110,7 @@ public class ClipboardActions extends Action {
       canvas.getSelection().clearSelected();
       canvas.getSelection().setSelected(affected.keySet(), true);
     }
-    Clipboard.SINGLETON.set(oldClipboard);
+    // AppearanceClipboard.DATA.set(oldClipboard);
   }
 
 }

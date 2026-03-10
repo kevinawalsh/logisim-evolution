@@ -154,26 +154,22 @@ public class LayoutClipboard<T> implements ClipboardOwner {
 
   public final DragDrop dnd; // flavor of this clipboard manager
   private XmlClipExtractor<T> extractor;
-  private XmlData current; // the owned system clip, if any, for this manager (fixme: not necessary?)
 
   private LayoutClipboard(String mimeType, XmlClipExtractor<T> x) {
     dnd = new DragDrop(mimeType);
     extractor = x;
   }
 
-  public void lostOwnership(Clipboard clipboard, Transferable contents) {
-    current = null;
-  }
+  @Override
+  public void lostOwnership(Clipboard clipboard, Transferable contents) { }
 
   public void set(Project proj, T value) {
-    current = encode(proj, value);
-    if (current != null)
-      SystemClipboard.setContents(current, this); 
+    XmlData data = encode(proj, value);
+    if (data != null)
+      SystemClipboard.setContents(data, this); 
   }
 
   public Clip<T> get(Project proj) {
-    // if (current != null)
-    //   return decode(proj, current, extractor);
     return decode(proj, SystemClipboard.getContents(null), extractor);
   }
 

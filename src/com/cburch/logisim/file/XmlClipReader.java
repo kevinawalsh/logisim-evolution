@@ -47,14 +47,17 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import com.cburch.draw.model.CanvasObject;
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitTransaction;
+import com.cburch.logisim.circuit.appear.AppearanceSvgReader;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.std.hdl.VhdlContent;
+import com.cburch.logisim.gui.appear.DrawingsClip;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
@@ -78,6 +81,9 @@ public class XmlClipReader extends XmlReader {
     // for selections of type Library
     Library selectedLibrary; // the selection, or null if cancelled
 
+    // for selections of type DrawingsClip
+    DrawingsClip selectedDrawings;
+
     HashMap<String, Circuit> circuits = new HashMap<>(); // circuit dependencies
     HashMap<String, VhdlContent> vhdl = new HashMap<>(); // vhdl dependencies
     HashSet<String> skippedLibraries = new HashSet<>();
@@ -92,6 +98,7 @@ public class XmlClipReader extends XmlReader {
 
     ReadClipContext(LogisimFile f) { super(f, null); }
 
+    public DrawingsClip getDrawings() { return selectedDrawings; }
     public Collection<Component> getSelectedComponents() { return selectedComponents; }
     public Circuit getSelectedCircuit() { return selectedCircuit.circuit; }
     public VhdlContent getSelectedVhdl() { return selectedVhdl; }
@@ -230,7 +237,7 @@ public class XmlClipReader extends XmlReader {
       for (Element o : XmlIterator.forChildElements(elt, "vhdl"))
         vDep.put(o.getAttribute("name"), o);
 
-      // second, reconstruct selection wires and components, or circuit, or vhdl
+      // second, reconstruct selection wires and components, or circuit, or vhdl, or drawings
       for (Element s : XmlIterator.forChildElements(elt, "selection")) { // normally only one
         for (Element c : XmlIterator.forChildElements(s)) {
           switch (c.getTagName()) {
@@ -255,6 +262,8 @@ public class XmlClipReader extends XmlReader {
           case "lib":
             selectedLibrary = parseLibrary(loader, c); // will be null if skipping lib
             break;
+          case "drawings":
+            selectedDrawings = parseDrawings(c);
           default:
             // do nothing
           }
@@ -262,7 +271,8 @@ public class XmlClipReader extends XmlReader {
       }
 
       if (selectedCircuit == null && selectedVhdl == null &&
-          selectedLibrary == null && selectedComponents.isEmpty())
+          selectedLibrary == null && selectedComponents.isEmpty() &&
+          selectedDrawings == null)
         throw new LoadCanceledByUser();
 
       if (badComponents.isEmpty())
@@ -313,10 +323,43 @@ public class XmlClipReader extends XmlReader {
         selectedCircuit = null;
         selectedVhdl = null;
         selectedLibrary = null;
+        selectedDrawings = null;
         selectedComponents.clear();
         badComponents.clear();
         throw new LoadCanceledByUser();
       }
+    }
+
+    DrawingsClip parseDrawings(Element elt) {
+      Direction af = null;
+      Location al = null;
+      Collection<CanvasObject> shapes = new ArrayList<>();
+      for (Element sub : XmlIterator.forChildElements(elt)) {
+        if (sub.getTagName().equals("anchor-info")) {
+          String s;
+          s = sub.getAttribute("facing");
+          if (s != null && !s.equals("")) {
+            try { af = Direction.parse(s); }
+            catch (Exception e) {
+              // throw new XmlReaderException("unexpected xml data: " + sub.getTagName());
+            }
+          }
+          s = sub.getAttribute("location");
+          if (s != null && !s.equals("")) {
+            try { al = Location.parse(s); }
+            catch (Exception e) {
+              // throw new XmlReaderException("unexpected xml data: " + sub.getTagName());
+            }
+          }
+        } else {
+          try {
+            shapes.add(AppearanceSvgReader.createShape(sub, null, null, this));
+          } catch (Exception e) {
+            // throw new XmlReaderException("unexpected xml data: " + sub.getTagName());
+          }
+        }
+      }
+      return new DrawingsClip(shapes, al, af);
     }
 
   }

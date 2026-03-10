@@ -73,13 +73,13 @@ public class AppearanceSvgReader {
       Location pinLoc = Location.create(
           Integer.parseInt(pinStr[0].trim()),
           Integer.parseInt(pinStr[1].trim()));
-      Instance pin = pins.get(pinLoc);
+      Instance pin = pins == null ? null : pins.get(pinLoc);
       if (pin == null)
         return null;
       return new AppearancePort(loc, pin);
     } 
 		AbstractCanvasObject ret;
-    if (name.startsWith("visible-")) {
+    if (name.startsWith("visible-") && circuit != null) {
       String pathstr = elt.getAttribute("path");
       if (pathstr == null || pathstr.length() == 0)
         return null;
@@ -130,7 +130,7 @@ public class AppearanceSvgReader {
 		List<Attribute<?>> attrs = ret.getAttributes();
 		if (attrs.contains(DrawAttr.DYNAMIC_CONDITION)) {
 			String dyn = elt.getAttribute("visibility");
-			if (dyn.equals("")) {
+			if (dyn.equals("") || circuit == null) {
         ret.setAttr(DrawAttr.DYNAMIC_CONDITION, null);
       } else {
         try {

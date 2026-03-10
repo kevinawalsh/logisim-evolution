@@ -38,15 +38,13 @@ import com.cburch.draw.model.CanvasObject;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 
-class ClipboardContents {
-  static final ClipboardContents EMPTY = new ClipboardContents(
-      Collections.<CanvasObject>emptySet(), null, null);
+public class DrawingsClip {
 
   private Collection<CanvasObject> onClipboard;
   private Location anchorLocation;
   private Direction anchorFacing;
 
-  public ClipboardContents(Collection<CanvasObject> onClipboard,
+  public DrawingsClip(Collection<CanvasObject> onClipboard,
       Location anchorLocation, Direction anchorFacing) {
     this.onClipboard = Collections
         .unmodifiableList(new ArrayList<CanvasObject>(onClipboard));

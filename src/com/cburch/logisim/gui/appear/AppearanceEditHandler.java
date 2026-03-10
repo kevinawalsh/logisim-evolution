@@ -43,8 +43,6 @@ import com.cburch.draw.actions.ModelInsertHandleAction;
 import com.cburch.draw.actions.ModelReorderAction;
 import com.cburch.draw.canvas.Canvas;
 import com.cburch.draw.canvas.Selection;
-import com.cburch.draw.canvas.SelectionEvent;
-import com.cburch.draw.canvas.SelectionListener;
 import com.cburch.draw.model.CanvasModel;
 import com.cburch.draw.model.CanvasModelEvent;
 import com.cburch.draw.model.CanvasModelListener;
@@ -57,22 +55,27 @@ import com.cburch.logisim.circuit.appear.AppearanceAnchor;
 import com.cburch.logisim.circuit.appear.AppearanceElement;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.main.SystemClipboard;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.proj.Project;
 
 public class AppearanceEditHandler extends EditHandler
-  implements SelectionListener, PropertyChangeListener, CanvasModelListener {
+  implements PropertyChangeListener {
   private AppearanceCanvas canvas;
+  private CanvasModelListener canvasListener = evt -> computeEnabled();
 
   AppearanceEditHandler(AppearanceCanvas canvas) {
     this.canvas = canvas;
-    canvas.getSelection().addSelectionListener(this);
+    canvas.getSelection().addSelectionListener(e -> computeEnabled());
     CanvasModel model = canvas.getModel();
     if (model != null)
-      model.addCanvasModelWeakListener(null, this);
+      model.addCanvasModelWeakListener(this, canvasListener);
     canvas.addPropertyChangeListener(Canvas.MODEL_PROPERTY, this);
+    SystemClipboard.addClipboardWeakListener(this, () -> computeEnabled());
   }
+
+
 
   @Override
   public void addControlPoint() {
@@ -88,7 +91,7 @@ public class AppearanceEditHandler extends EditHandler
     Selection sel = canvas.getSelection();
     boolean selEmpty = sel.isEmpty();
     boolean canChange = proj.getLogisimFile().contains(circ);
-    boolean clipExists = !Clipboard.SINGLETON.isEmpty();
+    boolean clipExists = AppearanceClipboard.DATA.isAvailable();
     boolean selHasRemovable = false;
     for (CanvasObject o : sel.getSelected()) {
       if (!(o instanceof AppearanceElement)) {
@@ -254,7 +257,9 @@ public class AppearanceEditHandler extends EditHandler
 
   @Override
   public void paste() {
-    ClipboardContents clip = Clipboard.SINGLETON.get();
+    DrawingsClip clip = AppearanceClipboard.DATA.get(canvas.getProject());
+    if (clip == null)
+      return;
     Collection<CanvasObject> contents = clip.getElements();
     List<CanvasObject> add = new ArrayList<CanvasObject>(contents.size());
     for (CanvasObject o : contents) {
@@ -294,7 +299,7 @@ public class AppearanceEditHandler extends EditHandler
 
     canvas.getProject().doAction(
         new SelectionAction(canvas,
-          S.getter("pasteClipboardAction"), null, add, add,
+          S.getter("pasteDrawingsAction"), null, add, add,
           anchorLocation, clip.getAnchorFacing()));
   }
 
@@ -303,11 +308,11 @@ public class AppearanceEditHandler extends EditHandler
     if (prop.equals(Canvas.MODEL_PROPERTY)) {
       CanvasModel oldModel = (CanvasModel) e.getOldValue();
       if (oldModel != null) {
-        oldModel.removeCanvasModelWeakListener(null, this);
+        oldModel.removeCanvasModelWeakListener(null, canvasListener);
       }
       CanvasModel newModel = (CanvasModel) e.getNewValue();
       if (newModel != null) {
-        newModel.addCanvasModelWeakListener(null, this);
+        newModel.addCanvasModelWeakListener(null, canvasListener);
       }
     }
   }
@@ -344,7 +349,4 @@ public class AppearanceEditHandler extends EditHandler
     canvas.repaint();
   }
 
-  public void selectionChanged(SelectionEvent e) {
-    computeEnabled();
-  }
 }
