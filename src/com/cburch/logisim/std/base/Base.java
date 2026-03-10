@@ -34,7 +34,6 @@ import static com.cburch.logisim.std.Strings.S;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.CutterTool;
 import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
@@ -47,8 +46,6 @@ import com.cburch.logisim.tools.WiringTool;
 
 public class Base extends Library {
   private final List<Tool> tools;
-  private final AddTool textAdder = new AddTool(Base.class, Text.FACTORY);
-  private final AddTool calloutAdder = new AddTool(Base.class, Callout.FACTORY);
 
   public Base() {
     PokeTool poke = new PokeTool();
@@ -56,10 +53,11 @@ public class Base extends Library {
     SelectTool select = new SelectTool();
     CutterTool cutter = new CutterTool();
     TextTool text = new TextTool();
+    EditTool edit = new EditTool(select, wiring);
 
     tools = Arrays.asList(new Tool[] {
       poke,
-      new EditTool(select, wiring),
+      edit,
       // Select by itself is kind of useless. It can select and move things, or
       // click to edit attributes. But it can't modify wires like EditTool can.
       // Leave it in, maybe useful for custom keyboard/mouse mappings.
@@ -67,16 +65,9 @@ public class Base extends Library {
       wiring,
       cutter,
       text,
-      calloutAdder,
       // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings,
       // e.g. for the right-click binding.
       MenuTool.SINGLETON,
-      // TextTool internally uses Text.FACTORY, but also supports click-to-edit,
-      // custom cursor, etc. A dedicated "add text tool" is only useful for
-      // having multiple text icons with different presets. But it also
-      // needs to exist here for XmlCircuitReader to re-construct circuits, and
-      // for XmlWriter to serialize circuits.
-      textAdder,
     });
   }
 

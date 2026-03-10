@@ -299,7 +299,6 @@ public class XmlProjectReader extends XmlReader {
         throw new XmlReaderException(S.get("toolNameMissing"));
       Tool tool = lib.getTool(name);
       if (tool == null) {
-        try { throw new Exception("oops"); } catch (Exception e) { e.printStackTrace(); }
         throw new XmlReaderException(S.fmt("toolNotFound", name));
       }
       return tool;
@@ -582,25 +581,30 @@ public class XmlProjectReader extends XmlReader {
       
       // As of version 5.1.0, a new Decor builtin library has been added.
       addBuiltinLibrariesIfMissing(doc, root, "#Decor");
+    }
+
+    if (version.compareTo(LogisimVersion.get(5, 1, 1)) < 0) {
+      // As of version 5.1.1, base/Text, base/Callout, and base/Image have moved
+      // to the new Decor library.
+      String baseLibName = findLibNameByDesc(root, "#Base");
       String decorLibName = findLibNameByDesc(root, "#Decor");
-      // Also, base/Image has been moved to decor/Image
       if (baseLibName != null && decorLibName != null) {
         for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
           for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
             String lib = elt.getAttribute("lib");
             String name = elt.getAttribute("name");
-            if (lib == null || name == null || !lib.equals(baseLibName) || !name.equals("Image"))
-              continue;
-            elt.setAttribute("lib", decorLibName);
+            if (lib != null && name != null && lib.equals(baseLibName) && 
+                (name.equals("Image") || name.equals("Callout") || name.equals("Text")))
+              elt.setAttribute("lib", decorLibName);
           }
         }
         for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
           for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
             String lib = elt.getAttribute("lib");
             String name = elt.getAttribute("name");
-            if (lib == null || name == null || !lib.equals(baseLibName) || !name.equals("Image"))
-              continue;
-            elt.setAttribute("lib", decorLibName);
+            if (lib != null && name != null && lib.equals(baseLibName) && 
+                (name.equals("Image") || name.equals("Callout") || name.equals("Text")))
+              elt.setAttribute("lib", decorLibName);
           }
         }
       }

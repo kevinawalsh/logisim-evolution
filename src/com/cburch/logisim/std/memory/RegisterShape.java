@@ -47,7 +47,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.util.UnmodifiableList;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
-import com.cburch.logisim.std.base.Text;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.draw.util.EditableLabel;
 import com.cburch.draw.shapes.SvgReader;
@@ -87,20 +86,19 @@ public class RegisterShape extends DynamicElement {
   @Override
   public List<Attribute<?>> getAttributes() {
     return UnmodifiableList.create(new Attribute<?>[] {
-      Text.ATTR_FONT,
-          ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
+      StdAttr.TEXT_FONT, ATTR_LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR });
   }
 
   @Override
   public <V> V getValue(Attribute<V> attr) {
-    if (attr == Text.ATTR_FONT)
+    if (attr == StdAttr.TEXT_FONT)
       return (V) label.getFont();
     return super.getValue(attr);
   }
 
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
-    if (attr == Text.ATTR_FONT) {
+    if (attr == StdAttr.TEXT_FONT) {
       label.setFont((Font)value);
       calculateBounds();
     } else {
@@ -148,7 +146,7 @@ public class RegisterShape extends DynamicElement {
 
   public void parseSvgElement(Element elt) {
     super.parseSvgElement(elt);
-    setAttr(Text.ATTR_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
+    setAttr(StdAttr.TEXT_FONT, SvgReader.getFontAttribute(elt, "value-", "monospaced", 10));
   }
 
   @Override

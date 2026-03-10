@@ -113,7 +113,7 @@ public class Tunnel extends InstanceFactory {
 
   @Override
   public Component createComponent(Location loc, AttributeSet attrs) {
-    // See same fix in std.base.Text
+    // See same fix in std.decor.Text
     InstanceComponent ret = new InstanceComponent(this, loc, attrs) {
       @Override
       public boolean visiblyContains(Location pt) {
@@ -135,7 +135,7 @@ public class Tunnel extends InstanceFactory {
   @Override
   public Bounds getOffsetBounds(AttributeSet attrsBase) { // nominal
     // This is only an estimate.
-    // See same fix in std.base.Text  
+    // See same fix in std.decor.Text  
     TunnelAttributes attrs = (TunnelAttributes) attrsBase;
 
     return getBoundsForTextbox(10, 10, attrs.getFacing());
@@ -143,7 +143,7 @@ public class Tunnel extends InstanceFactory {
 
   @Override
   public Bounds getVisibleOffsetBounds(AttributeSet attrsBase) { // visible
-    // See same fix in std.base.Text  
+    // See same fix in std.decor.Text  
     TunnelAttributes attrs = (TunnelAttributes) attrsBase;
 
     Font font = attrs.getFont();

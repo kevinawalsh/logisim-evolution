@@ -298,7 +298,7 @@ public class TextFieldCaret implements Caret, TextFieldListener {
   //   |(-3)    (-2)   (-1)I(+1)   (+2)   (+3)|   (+2) next word      (-2) prev word
   //   '--------------------------------------'   (+3) end of line    (-3) start of line
   // 
-  // For similar multi-line cursor mevements, see std/base/TextCaret.
+  // For similar multi-line cursor mevements, see std/decor/TextCaret.
   //
   //                                                   single-line          multi-line
   //          key          modifiers                   textfield action     textfield action

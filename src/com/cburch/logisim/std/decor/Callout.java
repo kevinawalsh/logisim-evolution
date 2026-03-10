@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.base;
+package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics2D;
@@ -64,9 +64,7 @@ public class Callout extends Text implements Reshapable {
           new AttributeOption[] {
             TEXT_FORMAT_PLAIN, TEXT_FORMAT_WRAPPED /* , TEXT_FORMAT_MARKDOWNISH */ });
 
-  public static final Callout FACTORY = new Callout();
-
-  private Callout() {
+  public Callout() {
     super("Callout", S.getter("calloutComponent"));
     setIconName("callout.png");
   }

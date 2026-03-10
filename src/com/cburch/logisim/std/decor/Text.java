@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.base;
+package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.util.Collection;
@@ -56,6 +56,7 @@ import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Caret;
@@ -133,8 +134,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
 
   public static Attribute<String> ATTR_TEXT = new MultilineAttribute("text",
       S.getter("textTextAttr"));
-  public static Attribute<Font> ATTR_FONT = Attributes.forFont("font",
-      S.getter("textFontAttr"));
+  public static Attribute<Font> ATTR_FONT = StdAttr.TEXT_FONT;
   public static Attribute<AttributeOption> ATTR_HALIGN = Attributes
       .forOption(
           "halign",

@@ -31,17 +31,21 @@
 package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.cburch.logisim.tools.FactoryDescription;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.tools.AddTool;
 
 public class Decor extends Library {
 
-  private static FactoryDescription[] DESCRIPTIONS = {
-    new FactoryDescription("Image", S.getter("stdImageComponent"), "image.gif", "Image"),
-    new FactoryDescription("Hyperlink", S.getter("hyperlinkComponent"), "hyperlink.png", "Hyperlink"),
+  private static Tool[] TOOLS = {
+    new AddTool(Decor.class, new FactoryDescription("Callout", S.getter("calloutComponent"), "callout.png", "Callout")),
+    new AddTool(Decor.class, new FactoryDescription("Image", S.getter("stdImageComponent"), "image.gif", "Image")),
+    new AddTool(Decor.class, new FactoryDescription("Hyperlink", S.getter("hyperlinkComponent"), "hyperlink.png", "Hyperlink")),
+    new AddTool(Decor.class, Text.FACTORY), // TODO: separate Markdown, Formatted, and Plain tools
   };
 
   private List<Tool> tools = null;
@@ -61,7 +65,8 @@ public class Decor extends Library {
   @Override
   public List<Tool> getTools() {
     if (tools == null)
-      tools = FactoryDescription.getTools(Decor.class, DESCRIPTIONS);
+      tools = Arrays.asList(TOOLS);
+      // tools = FactoryDescription.getTools(Decor.class, DESCRIPTIONS);
     return tools;
   }
 

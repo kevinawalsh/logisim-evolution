@@ -55,7 +55,6 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.base.Text;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.ToolTipMaker;

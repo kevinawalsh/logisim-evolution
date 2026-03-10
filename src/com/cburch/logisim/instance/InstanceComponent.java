@@ -68,7 +68,7 @@ import com.cburch.logisim.util.WeakList;
 // now, I've marked these both as "final". If something breaks, maybe we'll find
 // out. 
 // Edit: InstanceComponent is no longer final, and now has subclasses within
-// std/base/Text and std/wiring/Tunnel. Those classes have some trouble with
+// std/decor/Text and std/wiring/Tunnel. Those classes have some trouble with
 // computing Bounds (unlike all other components, they really needs a graphics
 // context to get the bounds), so they now have their own sublass of
 // InstanceComponent.

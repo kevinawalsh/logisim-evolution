@@ -82,7 +82,7 @@ import com.cburch.logisim.gui.generic.WrapLayout;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.Projects;
-import com.cburch.logisim.std.base.Text;
+import com.cburch.logisim.std.decor.Text;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;

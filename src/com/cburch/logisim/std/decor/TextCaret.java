@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.base;
+package com.cburch.logisim.std.decor;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

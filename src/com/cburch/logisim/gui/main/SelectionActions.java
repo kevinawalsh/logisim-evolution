@@ -61,8 +61,8 @@ import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Dependencies;
 import com.cburch.logisim.proj.JoinedAction;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.base.Text;
 import com.cburch.logisim.std.decor.Image;
+import com.cburch.logisim.std.decor.Text;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
@@ -825,12 +825,13 @@ public class SelectionActions {
   }
 
   public static void doCopy(Project proj, Collection<Component> comps) { // Note: copy is not an Action
-    // special case: selection is a single Text, or single Image
     if (comps.size() == 0) {
-      System.out.println("nothing to copy");
+      // System.out.println("nothing to copy");
     } else if (comps.size() > 1) {
       LayoutClipboard.forComponents.set(proj, comps);
     } else {
+      // special case: selection is a single Text, or single Image
+      // FIXME: replace this with a CLIPBOARD_COPY feature, and add support for Hyperlink
       Component comp = comps.iterator().next();
       if (comp.getFactory() instanceof Text) {
         String text = TextTool.getText(comp);

@@ -80,7 +80,7 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.appear.DrawingsClip;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.base.Text;
+import com.cburch.logisim.std.decor.Text;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.AddTool;

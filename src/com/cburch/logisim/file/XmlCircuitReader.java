@@ -51,10 +51,11 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.std.base.Text;
+import com.cburch.logisim.std.decor.Text;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Debug;
 
 import javax.swing.JOptionPane;
 
@@ -207,8 +208,10 @@ public class XmlCircuitReader extends CircuitTransaction {
             // For text components, don't even print a warning, since empty text
             // components have plagued many files, since there are still many
             // ways to inadvertently create empty text components.
+            // Also note: All text components now have the same nominal bounds,
+            // even empty text components.
             if (!(comp.getFactory() instanceof Text))
-              System.out.println("Note: Within " + circData.circuit.getName() +", ignoring component with empty bounds: " + comp);
+              Debug.println(1, "Note: Within " + circData.circuit.getName() +", ignoring component with empty bounds: " + comp);
           } else {
             Component conflict = componentsAt.get(bds);
             if (conflict != null) {

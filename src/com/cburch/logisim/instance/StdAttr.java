@@ -62,6 +62,9 @@ public class StdAttr {
   public static final Attribute<AttributeOption> EDGE_TRIGGER = Attributes
       .forOption("trigger", S.getter("stdTriggerAttr"),
           new AttributeOption[] { TRIG_RISING, TRIG_FALLING });
+  
+  public static Attribute<Font> TEXT_FONT = Attributes.forFont("font",
+      S.getter("textFontAttr"));
 
   public static final Attribute<String> LABEL = Attributes.forString("label",
       S.getter("stdLabelAttr"));

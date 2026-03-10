@@ -51,8 +51,8 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.base.Text;
-import com.cburch.logisim.std.base.TextCaret;
+import com.cburch.logisim.std.decor.Text;
+import com.cburch.logisim.std.decor.TextCaret;
 import com.cburch.logisim.util.Icons;
 
 public final class TextTool extends Tool {
