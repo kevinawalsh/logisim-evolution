@@ -35,8 +35,6 @@ import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Collections;
 import java.util.Set;
 
@@ -56,7 +54,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.GraphicsUtil;
 
-class CanvasPainter implements PropertyChangeListener {
+class CanvasPainter {
   private static final Set<Component> NO_COMPONENTS = Collections.emptySet();
 
   private Canvas canvas;
@@ -69,8 +67,8 @@ class CanvasPainter implements PropertyChangeListener {
     this.canvas = canvas;
     this.grid = new GridPainter(canvas);
 
-    AppPreferences.PRINTER_VIEW.addPropertyChangeWeakListener(this);
-    AppPreferences.ATTRIBUTE_HALO.addPropertyChangeWeakListener(this);
+    AppPreferences.PRINTER_VIEW.addPrefChangeWeakListener(this, e -> canvas.repaint());
+    AppPreferences.ATTRIBUTE_HALO.addPrefChangeWeakListener(this, e -> canvas.repaint());
   }
 
   private void drawWidthIncompatibilityData(Graphics2D base, Graphics2D g,
@@ -257,13 +255,6 @@ class CanvasPainter implements PropertyChangeListener {
       proj.getSimulator().drawPendingInputs(ptContext);
     } finally {
       gScaled.dispose();
-    }
-  }
-
-  public void propertyChange(PropertyChangeEvent event) {
-    if (AppPreferences.PRINTER_VIEW.isSource(event)
-        || AppPreferences.ATTRIBUTE_HALO.isSource(event)) {
-      canvas.repaint();
     }
   }
 

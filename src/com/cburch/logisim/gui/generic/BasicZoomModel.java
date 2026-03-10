@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.gui.generic;
 
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
@@ -42,27 +41,9 @@ public class BasicZoomModel implements ZoomModel {
   private PropertyChangeSupport support;
   private double zoomFactor;
   private boolean showGrid;
-  private PrefMonitor<Boolean> gridPref;
-  private PrefMonitor<Double> zoomPref;
-
-  private PropertyChangeListener zoomListener = new PropertyChangeListener() {
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-      setZoomFactor(zoomPref.get());
-    }
-  };
-
-  private PropertyChangeListener gridListener = new PropertyChangeListener() {
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-      setShowGrid(gridPref.get());
-    }
-  };
 
   public BasicZoomModel(PrefMonitor<Boolean> gridPref,
       PrefMonitor<Double> zoomPref, double[] zoomOpts) {
-    this.gridPref = gridPref;
-    this.zoomPref = zoomPref;
     zoomOptions = zoomOpts;
     support = new PropertyChangeSupport(this);
     zoomFactor = apply(1.0);
@@ -70,9 +51,6 @@ public class BasicZoomModel implements ZoomModel {
 
     setZoomFactor(zoomPref.get());
     setShowGrid(gridPref.get());
-
-    zoomPref.addPropertyChangeWeakListener(zoomListener);
-    gridPref.addPropertyChangeWeakListener(gridListener);
   }
 
   public void addPropertyChangeListener(String prop, PropertyChangeListener l) {
@@ -100,7 +78,6 @@ public class BasicZoomModel implements ZoomModel {
     if (value != showGrid) {
       showGrid = value;
       support.firePropertyChange(ZoomModel.SHOW_GRID, !value, value);
-      gridPref.set(value);
     }
   }
 

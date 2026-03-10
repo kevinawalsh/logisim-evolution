@@ -80,7 +80,7 @@ class RomAttributes extends AbstractAttributeSet {
         Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
         StdAttr.APPEARANCE, Rom.ATTR_PROPORTIONS });
 
-  // fixme: this isn't necessary since EventSourceWeakSupport now has an owner
+  // fixme: this isn't necessary since listener lists now have an owner
   // for each listener?
   private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
 

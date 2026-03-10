@@ -53,9 +53,9 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.tools.TextEditable;
 import com.cburch.logisim.tools.ToolTipMaker;
-import com.cburch.logisim.util.EventSourceWeakSupport;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.UnmodifiableList;
+import com.cburch.logisim.util.WeakList;
 
 // Tentative Design Notes (2 of 3): InstanceComponent and Instance are two sides
 // of the same coin. Every java InstanceComponent object has exactly one java
@@ -82,7 +82,7 @@ import com.cburch.logisim.util.UnmodifiableList;
 public /*final*/ class InstanceComponent
   implements Component, AttributeListener, ToolTipMaker {
 
-  private EventSourceWeakSupport<ComponentListener> listeners;
+  private WeakList<ComponentListener> listeners;
   private InstanceFactory factory;
   private Instance instance;
   private Location loc;
@@ -123,9 +123,9 @@ public /*final*/ class InstanceComponent
   }
 
   public void addComponentWeakListener(Object owner, ComponentListener l) {
-    EventSourceWeakSupport<ComponentListener> ls = listeners;
+    WeakList<ComponentListener> ls = listeners;
     if (ls == null) {
-      ls = new EventSourceWeakSupport<ComponentListener>();
+      ls = new WeakList<>();
       ls.add(owner, l);
       listeners = ls;
     } else {
@@ -253,7 +253,7 @@ public /*final*/ class InstanceComponent
 
   private void fireEndsChanged(ArrayList<EndData> oldEnds,
       ArrayList<EndData> newEnds) {
-    EventSourceWeakSupport<ComponentListener> ls = listeners;
+    WeakList<ComponentListener> ls = listeners;
     if (ls != null) {
       ComponentEvent e = null;
       for (ComponentListener l : ls) {
@@ -266,7 +266,7 @@ public /*final*/ class InstanceComponent
 
   @Override
   public void fireInvalidated() {
-    EventSourceWeakSupport<ComponentListener> ls = listeners;
+    WeakList<ComponentListener> ls = listeners;
     if (ls != null) {
       ComponentEvent e = null;
       for (ComponentListener l : ls) {

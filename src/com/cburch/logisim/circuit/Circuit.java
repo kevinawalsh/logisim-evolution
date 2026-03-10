@@ -77,7 +77,7 @@ import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.CollectionUtil;
 import com.cburch.logisim.util.Debug;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class Circuit implements AttributeDefaultProvider {
   private class EndChangedTransaction extends CircuitTransaction {
@@ -157,7 +157,7 @@ public class Circuit implements AttributeDefaultProvider {
   private CircuitAppearance appearance;
   private AttributeSet staticAttrs;
   private SubcircuitFactory subcircuitFactory;
-  private EventSourceWeakSupport<CircuitListener> listeners = new EventSourceWeakSupport<CircuitListener>();
+  private WeakList<CircuitListener> listeners = new WeakList<>();
   private HashSet<Component> comps = new HashSet<Component>(); // doesn't include wires
   CircuitWires wires = new CircuitWires();
   // wires is package-protected for CircuitState and Analyze only.

@@ -30,16 +30,16 @@
 
 package com.cburch.logisim.data;
 
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
-  private EventSourceWeakSupport<AttributeListener> listeners = null;
+  private WeakList<AttributeListener> listeners = null;
 
   public AbstractAttributeSet() { }
 
   public void addAttributeWeakListener(Object owner, AttributeListener l) {
     if (listeners == null)
-      listeners = new EventSourceWeakSupport<AttributeListener>();
+      listeners = new WeakList<>();
     listeners.add(owner, l);
   }
 

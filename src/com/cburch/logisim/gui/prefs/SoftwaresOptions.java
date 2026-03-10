@@ -58,7 +58,6 @@ public class SoftwaresOptions extends SettingsPanel {
   private PropertyChangeListener prefListener = new PropertyChangeListener() {
     @Override
     public void propertyChange(PropertyChangeEvent event) {
-      questaPath.set(AppPreferences.QUESTA_PATH.get());
     }
   };
 
@@ -71,8 +70,10 @@ public class SoftwaresOptions extends SettingsPanel {
         dlgTitle, dlgBtnText,
         (f) -> Softwares.setQuestaPath(f));
     questaPath.setLeftMargin(30);
+    questaPath.setDirOnly(true);
 
-    AppPreferences.QUESTA_PATH.addPropertyChangeWeakListener(prefListener);
+    AppPreferences.QUESTA_PATH.addPrefChangeWeakListener(this,
+      e -> questaPath.set(AppPreferences.QUESTA_PATH.get()));
 
     setLayout(new TableLayout(1));
     add(questaEnabled);

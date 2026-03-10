@@ -30,11 +30,6 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -42,7 +37,7 @@ import javax.swing.JPanel;
 import com.cburch.logisim.prefs.PrefMonitor;
 import com.cburch.logisim.util.StringGetter;
 
-class PrefOptionList implements ActionListener, PropertyChangeListener {
+class PrefOptionList {
   private PrefMonitor<String> pref;
   private StringGetter labelStr;
 
@@ -60,14 +55,9 @@ class PrefOptionList implements ActionListener, PropertyChangeListener {
       combo.addItem(opt);
     }
 
-    combo.addActionListener(this);
-    pref.addPropertyChangeWeakListener(this);
+    combo.addActionListener(e -> pref.set(this.getOption()));
+    pref.addPrefChangeWeakListener(this, e -> this.selectOption(pref.get()));
     selectOption(pref.get());
-  }
-
-  public void actionPerformed(ActionEvent e) {
-    PrefOption x = (PrefOption) combo.getSelectedItem();
-    pref.set((String) x.getValue());
   }
 
   JPanel createJPanel() {
@@ -89,10 +79,9 @@ class PrefOptionList implements ActionListener, PropertyChangeListener {
     label.setText(labelStr.toString() + " ");
   }
 
-  public void propertyChange(PropertyChangeEvent event) {
-    if (pref.isSource(event)) {
-      selectOption(pref.get());
-    }
+  private String getOption() {
+    PrefOption x = (PrefOption)combo.getSelectedItem();
+    return (String)x.getValue();
   }
 
   private void selectOption(Object value) {

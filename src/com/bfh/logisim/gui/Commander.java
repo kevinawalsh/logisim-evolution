@@ -188,8 +188,8 @@ public class Commander extends JFrame
       else if (e.getAction() == ProjectEvent.ACTION_SET_FILE)
         updateCircuitList();
     });
-    proj.addLibraryWeakListener(this);
-    proj.addCircuitWeakListener(this);
+    proj.addLibraryWeakListener(null, this);
+    proj.addCircuitWeakListener(null, this);
 
     // listen for simulator changes
     proj.getSimulator().addSimulatorListener(new Simulator.Listener() {

@@ -137,7 +137,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
       super(S.get("logFrameMenuItem"), false);
       proj = p;
       proj.addProjectWeakListener(null, this);
-      proj.addLibraryWeakListener(/*null,*/ this);
+      proj.addLibraryWeakListener(null, this);
     }
 
     @Override
@@ -195,7 +195,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
     windowManager = new WindowMenuManager(project);
     menuListener = new LogMenuListener(menubar);
     project.addProjectWeakListener(null, myListener);
-    project.addLibraryWeakListener(/*null,*/ myListener);
+    project.addLibraryWeakListener(null, myListener);
     setSimulator(project.getSimulator(), project.getCircuitState());
 
     panels = new LogPanel[] {

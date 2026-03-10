@@ -203,6 +203,7 @@ public class LocaleManager {
     }
   }
 
+  // called only by prefs/AppPreferences.java
   public static void setReplaceAccents(boolean value) {
     HashMap<Character, String> newRepl = value ? fetchReplaceAccents()
         : null;

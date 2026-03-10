@@ -39,21 +39,21 @@ import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class ToolbarData {
   public static interface ToolbarListener {
     public void toolbarChanged();
   }
 
-  private EventSourceWeakSupport<ToolbarListener> listeners;
-  private EventSourceWeakSupport<AttributeListener> toolListeners;
+  private WeakList<ToolbarListener> listeners;
+  private WeakList<AttributeListener> toolListeners;
   private ArrayList<Tool> contents;
 
   public ToolbarData() {
-    listeners = new EventSourceWeakSupport<ToolbarListener>();
-    toolListeners = new EventSourceWeakSupport<AttributeListener>();
-    contents = new ArrayList<Tool>();
+    listeners = new WeakList<>();
+    toolListeners = new WeakList<>();
+    contents = new ArrayList<>();
   }
 
   private void addAttributeListeners(Tool tool) {
@@ -86,7 +86,7 @@ public class ToolbarData {
     fireToolbarChanged();
   }
 
-  public void addToolAttributeWeakListener(/*Object owner,*/ AttributeListener l) {
+  public void addToolAttributeWeakListener(Object owner, AttributeListener l) {
     for (Tool tool : contents) {
       if (tool != null) {
         AttributeSet attrs = tool.getAttributeSet();
@@ -94,7 +94,7 @@ public class ToolbarData {
           attrs.addAttributeWeakListener(null, l);
       }
     }
-    toolListeners.add(null, l);
+    toolListeners.add(owner, l);
   }
 
   public void addToolbarWeakListener(Object owner, ToolbarListener l) {
@@ -172,7 +172,7 @@ public class ToolbarData {
     }
   }
 
-  public void removeToolAttributeWeakListener(/*Object owner,*/ AttributeListener l) {
+  public void removeToolAttributeWeakListener(Object owner, AttributeListener l) {
     for (Tool tool : contents) {
       if (tool != null) {
         AttributeSet attrs = tool.getAttributeSet();
@@ -180,7 +180,7 @@ public class ToolbarData {
           attrs.removeAttributeWeakListener(null, l);
       }
     }
-    toolListeners.remove(null, l);
+    toolListeners.remove(owner, l);
   }
 
   public void removeToolbarWeakListener(Object owner, ToolbarListener l) {

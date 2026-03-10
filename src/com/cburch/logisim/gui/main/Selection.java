@@ -192,7 +192,7 @@ public class Selection {
     myListener = new MyListener();
     attrs = new SelectionAttributes(canvas, this);
     proj.addProjectWeakListener(null, myListener);
-    proj.addCircuitWeakListener(/*null,*/myListener);
+    proj.addCircuitWeakListener(null, myListener);
   }
 
   private static Location computeNominalTopLeftCorner(Collection<Component> components) {

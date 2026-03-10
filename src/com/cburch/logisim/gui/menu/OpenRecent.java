@@ -34,8 +34,6 @@ import static com.cburch.logisim.gui.menu.Strings.S;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +46,7 @@ import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 
-class OpenRecent extends JMenu implements PropertyChangeListener {
+class OpenRecent extends JMenu {
   private class RecentItem extends JMenuItem implements ActionListener {
     private static final long serialVersionUID = 1L;
     private File file;
@@ -110,8 +108,7 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
   OpenRecent(LogisimMenuBar menubar) {
     this.menubar = menubar;
     this.recentItems = new ArrayList<RecentItem>();
-    AppPreferences.propertyChangeProducer.addPropertyChangeWeakListener(
-        AppPreferences.RECENT_PROJECTS, this);
+    AppPreferences.RECENT_PROJECTS.addPrefChangeWeakListener(this, e -> renewItems());
     renewItems();
   }
 
@@ -124,12 +121,6 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
     }
   }
 
-  public void propertyChange(PropertyChangeEvent event) {
-    if (event.getPropertyName().equals(AppPreferences.RECENT_PROJECTS)) {
-      renewItems();
-    }
-  }
-
   private void renewItems() {
     for (int index = recentItems.size() - 1; index >= 0; index--) {
       RecentItem item = recentItems.get(index);
@@ -137,7 +128,7 @@ class OpenRecent extends JMenu implements PropertyChangeListener {
     }
     recentItems.clear();
 
-    List<File> files = AppPreferences.getRecentFiles();
+    List<File> files = AppPreferences.RECENT_PROJECTS.get();
     if (files.isEmpty()) {
       recentItems.add(new RecentItem(null));
     } else {

@@ -67,7 +67,7 @@ import com.cburch.logisim.tools.SelectTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.Errors;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class Project {
   private static class ActionData {
@@ -128,9 +128,9 @@ public class Project {
   private LinkedList<ActionData> undoLog = new LinkedList<ActionData>();
   private int undoMods = 0;
   private LinkedList<ActionData> redoLog = new LinkedList<ActionData>();
-  private EventSourceWeakSupport<ProjectListener> projectListeners = new EventSourceWeakSupport<>();
-  private EventSourceWeakSupport<LibraryListener> fileListeners = new EventSourceWeakSupport<>();
-  private EventSourceWeakSupport<CircuitListener> circuitListeners = new EventSourceWeakSupport<>();
+  private WeakList<ProjectListener> projectListeners = new WeakList<>();
+  private WeakList<LibraryListener> fileListeners = new WeakList<>();
+  private WeakList<CircuitListener> circuitListeners = new WeakList<>();
   private Dependencies dependencies;
   private MyListener myListener = new MyListener();
   private boolean startupScreen = false;
@@ -143,21 +143,27 @@ public class Project {
   public void setExternalLinksApproved(boolean approved) { externalLinksApproved = approved; }
 
   public Project(LogisimFile.FileWithSimulations file) {
-    fileListeners.add(null, myListener);
+    fileListeners.add(this, myListener);
     setLogisimFile(file);
 
     // this.vhdlSimulator = new VhdlSimulator(this);
   }
 
-  public void addCircuitWeakListener(/*Object owner,*/ CircuitListener value) {
-    circuitListeners.add(null, value);
+  public void addCircuitWeakListener(Object owner, CircuitListener value) {
+    circuitListeners.add(owner, value);
+    // circuitListeners will prevent value from being garbage collected so long
+    // as owner is alive, so circuit can use a null owner, and later we can move
+    // the listeners to a different circuit without worrying about owners.
     Circuit current = getCurrentCircuit();
     if (current != null)
       current.addCircuitWeakListener(null, value);
   }
 
-  public void addLibraryWeakListener(/*Object owner,*/ LibraryListener value) {
-    fileListeners.add(null, value);
+  public void addLibraryWeakListener(Object owner, LibraryListener value) {
+    fileListeners.add(owner, value);
+    // fileListeners will prevent value from being garbage collected so long as
+    // owner is alive, so file can use a null owner, and later we can move the
+    // listeners to a different file without worrying about owners.
     file.addLibraryWeakListener(null, value);
   }
 
@@ -556,15 +562,15 @@ public class Project {
     // showUndoRedoLogs("after redo");
   }
 
-  public void removeCircuitWeakListener(/*Object owner,*/ CircuitListener value) {
-    circuitListeners.remove(null, value);
+  public void removeCircuitWeakListener(Object owner, CircuitListener value) {
+    circuitListeners.remove(owner, value);
     Circuit current = getCurrentCircuit();
     if (current != null)
       current.removeCircuitWeakListener(null, value);
   }
 
-  public void removeLibraryWeakListener(/*Object owner,*/ LibraryListener value) {
-    fileListeners.remove(null, value);
+  public void removeLibraryWeakListener(Object owner, LibraryListener value) {
+    fileListeners.remove(owner, value);
     file.removeLibraryWeakListener(null, value);
   }
 

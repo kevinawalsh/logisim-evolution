@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.circuit.appear;
 
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,16 +43,16 @@ import com.cburch.draw.model.CanvasModelListener;
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.draw.model.Drawing;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.CircuitAttributes;
+import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.instance.InstancePainter;
+import com.cburch.logisim.util.WeakList;
 
 import com.cburch.logisim.circuit.appear.DynamicElement;
 
@@ -68,7 +67,7 @@ public class CircuitAppearance extends Drawing {
   }
 
   private Circuit circuit;
-  private EventSourceWeakSupport<CircuitAppearanceListener> listeners;
+  private WeakList<CircuitAppearanceListener> listeners;
   private PortManager portManager;
   private CircuitPins circuitPins;
   private MyListener myListener;
@@ -77,7 +76,7 @@ public class CircuitAppearance extends Drawing {
 
   public CircuitAppearance(Circuit circuit) {
     this.circuit = circuit;
-    listeners = new EventSourceWeakSupport<CircuitAppearanceListener>();
+    listeners = new WeakList<>();
     portManager = new PortManager(this);
     circuitPins = new CircuitPins(portManager);
     myListener = new MyListener();

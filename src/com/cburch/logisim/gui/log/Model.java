@@ -48,7 +48,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.std.wiring.Pin;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class Model implements CircuitListener, SignalInfo.Listener {
 
@@ -84,7 +84,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   private SignalInfo clockSource;
   private Value curClockVal;
 
-  private EventSourceWeakSupport<Listener> listeners = new EventSourceWeakSupport<>();
+  private WeakList<Listener> listeners = new WeakList<>();
   private boolean fileEnabled = false;
   private File file = null;
   private boolean fileHeader = true;

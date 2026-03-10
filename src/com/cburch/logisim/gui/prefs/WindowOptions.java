@@ -46,8 +46,8 @@ class WindowOptions extends SettingsPanel {
     super(window);
 
     checks = new PrefBoolean[] {
-      new PrefBoolean(AppPreferences.LAYOUT_SHOW_GRID, S.getter("windowShowGridForLayout")),
-      new PrefBoolean(AppPreferences.APPEARANCE_SHOW_GRID, S.getter("windowShowGridForAppearance")),
+      // new PrefBoolean(AppPreferences.LAYOUT_SHOW_GRID, S.getter("windowShowGridForLayout")),
+      // new PrefBoolean(AppPreferences.APPEARANCE_SHOW_GRID, S.getter("windowShowGridForAppearance")),
       new PrefBoolean(AppPreferences.PRINTER_VIEW, S.getter("layoutPrinterView")),
       new PrefBoolean(AppPreferences.SHOW_TICK_RATE, S.getter("windowTickRate")),
       new PrefBoolean(AppPreferences.SHOW_COORDS, S.getter("windowCoordinates")),

@@ -169,8 +169,6 @@ public class Startup {
           "Logisim-evolution");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
 
-      LocaleManager.setReplaceAccents(false);
-
       // Initialize graphics acceleration if appropriate
       AppPreferences.handleGraphicsAcceleration();
 
@@ -500,12 +498,11 @@ public class Startup {
 
   private void loadTemplate() {
     if (templFile != null) {
-      AppPreferences.setTemplateFile(templFile);
-      AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
+      AppPreferences.TEMPLATE.setCustom(templFile, null);
     } else if (templEmpty) {
-      AppPreferences.setTemplateType(AppPreferences.TEMPLATE_EMPTY);
+      AppPreferences.TEMPLATE.setEmpty();
     } else if (templPlain) {
-      AppPreferences.setTemplateType(AppPreferences.TEMPLATE_PLAIN);
+      AppPreferences.TEMPLATE.setPlain();
     }
   }
 

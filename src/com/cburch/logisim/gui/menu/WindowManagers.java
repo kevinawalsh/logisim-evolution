@@ -52,11 +52,6 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class WindowManagers {
-  private static class MyListener implements PropertyChangeListener {
-    public void propertyChange(PropertyChangeEvent event) {
-      computeListeners();
-    }
-  }
 
   private static class ProjectManager extends WindowMenuItemManager
     implements ProjectListener, LibraryListener {
@@ -66,7 +61,7 @@ public class WindowManagers {
       super(proj.getLogisimFile().getName(), false);
       this.proj = proj;
       proj.addProjectWeakListener(null, this);
-      proj.addLibraryWeakListener(/*null,*/ this);
+      proj.addLibraryWeakListener(null, this);
       frameOpened(proj.getFrame());
     }
 
@@ -107,20 +102,19 @@ public class WindowManagers {
     }
   }
 
+  private static final Object PERMANENT = new Object();
   public static void initialize() {
     if (!initialized) {
       initialized = true;
       AnalyzerManager.initialize();
       FindManager.initialize();
       SettingsFrame.initializeManager();
-      Projects.propertyChangeProducer.addPropertyChangeWeakListener(Projects.projectListProperty, myListener);
+      Projects.addListChangeWeakListener(PERMANENT, () -> computeListeners());
       computeListeners();
     }
   }
 
   private static boolean initialized = false;
-
-  private static MyListener myListener = new MyListener();
 
   private static HashMap<Project, ProjectManager> projectMap = new LinkedHashMap<Project, ProjectManager>();
 

@@ -44,16 +44,16 @@ import com.cburch.draw.canvas.Selection;
 import com.cburch.draw.shapes.Text;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class Drawing implements CanvasModel {
-	private EventSourceWeakSupport<CanvasModelListener> listeners;
+	private WeakList<CanvasModelListener> listeners;
 	private ArrayList<CanvasObject> canvasObjects;
 	private DrawingOverlaps overlaps;
 
 	public Drawing() {
-		listeners = new EventSourceWeakSupport<CanvasModelListener>();
-		canvasObjects = new ArrayList<CanvasObject>();
+		listeners = new WeakList<>();
+		canvasObjects = new ArrayList<>();
 		overlaps = new DrawingOverlaps();
 	}
 

@@ -35,8 +35,6 @@ import java.awt.Graphics;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractListModel;
 import javax.swing.DefaultListCellRenderer;
@@ -205,7 +203,7 @@ class ToolbarList extends JList {
   }
 
   private class Model extends AbstractListModel
-    implements ToolbarListener, AttributeListener, PropertyChangeListener {
+    implements ToolbarListener, AttributeListener {
     public void attributeListChanged(AttributeEvent e) {
     }
 
@@ -219,12 +217,6 @@ class ToolbarList extends JList {
 
     public int getSize() {
       return base.size();
-    }
-
-    public void propertyChange(PropertyChangeEvent event) {
-      if (AppPreferences.GATE_SHAPE.isSource(event)) {
-        repaint();
-      }
     }
 
     public void toolbarChanged() {
@@ -273,9 +265,9 @@ class ToolbarList extends JList {
     setDropMode(DropMode.INSERT);
     setTransferHandler(new ToolbarTransferHandler());
 
-    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(model);
+    AppPreferences.GATE_SHAPE.addPrefChangeWeakListener(this, e -> repaint());
     base.addToolbarWeakListener(null, model);
-    base.addToolAttributeWeakListener(/*null,*/ model);
+    base.addToolAttributeWeakListener(null, model);
   }
 
   public void localeChanged() {

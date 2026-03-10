@@ -182,7 +182,7 @@ public class SettingsFrame extends LFrame.Dialog {
     }
   }
 
-  private class MyListener implements LocaleListener, PropertyChangeListener {
+  private class MyListener implements LocaleListener {
     @Override
     public void localeChanged() {
       setTitle(S.get("settingsFrameTitle"));
@@ -191,10 +191,6 @@ public class SettingsFrame extends LFrame.Dialog {
       for (SettingsPanel p : appPanels) p.localeChanged();
       if (projPanels != null)
         for (SettingsPanel p : projPanels) p.localeChanged();
-    }
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-      onProjectListChanged(false);
     }
   }
 
@@ -287,8 +283,7 @@ public class SettingsFrame extends LFrame.Dialog {
 
     LocaleManager.addLocaleListener(myListener);
     myListener.localeChanged();
-    Projects.propertyChangeProducer.addPropertyChangeWeakListener(
-        Projects.projectListProperty, myListener);
+    Projects.addListChangeWeakListener(this, () -> onProjectListChanged(false));
     // Size nav column to fit its labels, then derive window sizes from that.
     int navW = Math.max(160, navList.getPreferredSize().width) + 4;
     navScroll.setPreferredSize(new Dimension(navW, 0));

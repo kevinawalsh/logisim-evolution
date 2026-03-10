@@ -48,8 +48,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.List;
 
@@ -201,8 +199,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
       return ret;
     }
   }
-  private class MyListener implements MouseListener, TreeSelectionListener,
-          PropertyChangeListener {
+  private class MyListener implements MouseListener, TreeSelectionListener {
     private void checkForPopup(MouseEvent e) {
       if (e.isPopupTrigger()) {
         TreePath path = getPathForLocation(e.getX(), e.getY());
@@ -235,12 +232,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
 
     public void mouseReleased(MouseEvent e) {
       checkForPopup(e);
-    }
-
-    public void propertyChange(PropertyChangeEvent event) {
-      if (AppPreferences.GATE_SHAPE.isSource(event)) {
-        ProjectExplorer.this.repaint();
-      }
     }
 
     public void valueChanged(TreeSelectionEvent e) {
@@ -372,7 +363,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     imap.put(KeyStroke.getKeyStroke("released SPACE"), selectAction);
     imap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), selectAction);
    
-    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(myListener);
+    AppPreferences.GATE_SHAPE.addPrefChangeWeakListener(this, e -> this.repaint());
     LocaleManager.addLocaleListener(this);
   }
 

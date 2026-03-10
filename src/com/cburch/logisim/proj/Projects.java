@@ -44,7 +44,7 @@ import java.util.WeakHashMap;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.util.DesktopIntegration;
-import com.cburch.logisim.util.PropertyChangeWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class Projects {
 
@@ -115,7 +115,7 @@ public class Projects {
       if (frame == proj.getFrame() && !openProjects.contains(proj)) {
         openingLocations.remove(frame.getLocation());
         openProjects.add(proj);
-        propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
+        fireListChangeEvent();
         if (proj.isFileDirty())
           DesktopIntegration.setSuddenTerminationAllowed(false);
       }
@@ -186,7 +186,7 @@ public class Projects {
     frame.removeWindowListener(listener);
     openProjects.remove(proj);
     proj.getSimulator().shutDown();
-    propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
+    fireListChangeEvent();
     projectCleaned();
   }
 
@@ -270,7 +270,7 @@ public class Projects {
 
     if (frame.isVisible() && !openProjects.contains(proj)) {
       openProjects.add(proj);
-      propertyChangeProducer.firePropertyChange(projectListProperty, null, null);
+      fireListChangeEvent();
       if (proj.isFileDirty())
         DesktopIntegration.setSuddenTerminationAllowed(false);
     } else {
@@ -287,8 +287,6 @@ public class Projects {
     }
     return false;
   }
-
-  public static final String projectListProperty = "projectList";
 
   private static final WeakHashMap<Window, Point> frameLocations = new WeakHashMap<Window, Point>();
 
@@ -322,9 +320,14 @@ public class Projects {
     }
   }
 
-  public static final PropertyChangeWeakSupport.Producer propertyChangeProducer =
-      new PropertyChangeWeakSupport.Producer() {
-        PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(Projects.class);
-        public PropertyChangeWeakSupport getPropertyChangeListeners() { return propListeners; }
-      };
+  @FunctionalInterface
+  public interface Listener {
+    public void projectListChanged();
+  }
+
+  private static final WeakList<Listener> listeners = new WeakList<>();
+  public static void addListChangeWeakListener(Object owner, Listener l) { listeners.add(owner, l); }
+  public static void removeListChangeWeakListener(Object owner, Listener l) { listeners.remove(owner, l); }
+  private static void fireListChangeEvent() { for (Listener l : listeners) l.projectListChanged(); }
+
 }

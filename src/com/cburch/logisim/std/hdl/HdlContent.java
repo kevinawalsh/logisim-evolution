@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public abstract class HdlContent implements HdlModel /*, Cloneable */ {
 
@@ -44,7 +44,7 @@ public abstract class HdlContent implements HdlModel /*, Cloneable */ {
     return result;
   }
 
-  protected EventSourceWeakSupport<HdlModelListener> listeners;
+  protected WeakList<HdlModelListener> listeners;
 
   protected HdlContent() {
     this.listeners = null;
@@ -53,7 +53,7 @@ public abstract class HdlContent implements HdlModel /*, Cloneable */ {
   @Override
   public void addHdlModelWeakListener(Object owner, HdlModelListener l) {
     if (listeners == null)
-      listeners = new EventSourceWeakSupport<HdlModelListener>();
+      listeners = new WeakList<>();
     listeners.add(owner, l);
   }
 

@@ -121,7 +121,7 @@ public class ProjectActions {
   }
 
   private static LogisimFile createEmptyFile(Loader loader) {
-    InputStream templReader = AppPreferences.getEmptyTemplate().createStream();
+    InputStream templReader = AppPreferences.TEMPLATE.getEmptyTemplate().createStream();
     LogisimFile file;
     try {
       file = loader.openLogisimFile(null, templReader).file;
@@ -148,7 +148,7 @@ public class ProjectActions {
 
   public static LogisimFile createNewFile(Component errReportFrame) {
     Loader loader = new Loader(errReportFrame);
-    InputStream templReader = AppPreferences.getTemplate().createStream();
+    InputStream templReader = AppPreferences.TEMPLATE.getTemplate().createStream();
     LogisimFile file;
     try {
       file = loader.openLogisimFile(null, templReader).file;
@@ -192,8 +192,8 @@ public class ProjectActions {
     if (monitor != null)
       monitor.setProgress(SplashScreen.FILE_CREATE);
     Loader loader = new Loader(monitor);
-    InputStream templReader = AppPreferences.getTemplate().createStream();
     LogisimFile file = null;
+    InputStream templReader = AppPreferences.TEMPLATE.getTemplate().createStream();
     try {
       file = loader.openLogisimFile(null, templReader).file;
     } catch (IOException ex) {
@@ -414,7 +414,7 @@ public class ProjectActions {
 
     try {
       LogisimFile.FileWithSimulations libWithSim = loader.openLogisimFile(f);
-      AppPreferences.updateRecentFile(f);
+      AppPreferences.RECENT_PROJECTS.update(f);
       if (libWithSim == null)
         return null;
       if (proj == null) {
@@ -451,7 +451,7 @@ public class ProjectActions {
     source = checkForAutoBackups(monitor, source);
     Loader loader = new Loader(monitor);
     LogisimFile.FileWithSimulations file = loader.openLogisimFile(source, substitutions);
-    AppPreferences.updateRecentFile(source);
+    AppPreferences.RECENT_PROJECTS.update(source);
 
     return completeProject(monitor, loader, file, false);
   }
@@ -496,7 +496,7 @@ public class ProjectActions {
         } catch (Exception e) {
         }
       }
-      AppPreferences.updateRecentFile(f);
+      AppPreferences.RECENT_PROJECTS.update(f);
       proj.setFileAsClean();
       removeAutoBackup(proj);
     }

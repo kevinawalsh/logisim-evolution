@@ -39,11 +39,11 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 // Used only by Splitter and Video.
 public abstract class ManagedComponent extends AbstractComponent {
-  private EventSourceWeakSupport<ComponentListener> listeners = new EventSourceWeakSupport<ComponentListener>();
+  private WeakList<ComponentListener> listeners = new WeakList<>();
   private Location loc;
   private AttributeSet attrs;
   private ArrayList<EndData> ends;

@@ -44,8 +44,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -100,7 +98,7 @@ import com.cburch.logisim.util.VerticalSplitPane;
 
 public class Frame extends LFrame.MainWindow implements LocaleListener {
   class MyProjectListener implements ProjectListener, LibraryListener,
-        CircuitListener, PropertyChangeListener, ChangeListener {
+        CircuitListener, ChangeListener {
 
     public void attributeListChanged(AttributeEvent e) {
     }
@@ -158,13 +156,6 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
         Tool newTool = (Tool) event.getData();
         if (!getEditorView().equals(EDIT_APPEARANCE))
           viewAttributes(oldTool, newTool, false);
-      }
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-      if (AppPreferences.TOOLBAR_PLACEMENT.isSource(event)) {
-        placeToolbar();
       }
     }
 
@@ -377,8 +368,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     addWindowListener(new MyWindowListener());
 
     project.addProjectWeakListener(null, myProjectListener);
-    project.addLibraryWeakListener(/*null,*/ myProjectListener);
-    project.addCircuitWeakListener(/*null,*/ myProjectListener);
+    project.addLibraryWeakListener(null, myProjectListener);
+    project.addCircuitWeakListener(null, myProjectListener);
     computeTitle();
 
     // set up elements for the Layout view
@@ -481,8 +472,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       project.setTool(project.getOptions().getToolbarData().getFirstTool());
     }
     mainPanel.addChangeListener(myProjectListener);
-    AppPreferences.TOOLBAR_PLACEMENT
-        .addPropertyChangeWeakListener(myProjectListener);
+    AppPreferences.TOOLBAR_PLACEMENT.addPrefChangeWeakListener(this, e -> placeToolbar());
     placeToolbar();
 
     LocaleManager.addLocaleListener(this);

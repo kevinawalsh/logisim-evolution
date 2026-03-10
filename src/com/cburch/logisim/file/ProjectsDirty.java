@@ -128,15 +128,16 @@ public class ProjectsDirty {
       autobackup.schedule(proj);
   }
 
-  private static class ProjectListListener implements PropertyChangeListener {
-    public synchronized void propertyChange(PropertyChangeEvent event) {
+  private static Object listLock = new Object();
+  private static void projectsListChanged() {
+    synchronized (listLock) {
       for (DirtyListener l : listeners) {
-        l.proj.removeLibraryWeakListener(/*null,*/ l);
+        l.proj.removeLibraryWeakListener(null, l);
       }
       listeners.clear();
       for (Project proj : Projects.getOpenProjects()) {
         DirtyListener l = new DirtyListener(proj);
-        proj.addLibraryWeakListener(/*null,*/ l);
+        proj.addLibraryWeakListener(null, l);
         listeners.add(l);
 
         LogisimFile lib = proj.getLogisimFile();
@@ -146,13 +147,12 @@ public class ProjectsDirty {
     }
   }
 
+  private static final Object PERMANENT = new Object();
   public static void initialize() {
-    Projects.propertyChangeProducer.addPropertyChangeWeakListener(
-        Projects.projectListProperty, projectListListener);
+    Projects.addListChangeWeakListener(PERMANENT, () ->  projectsListChanged());
     autobackup.start();
   }
 
-  private static ProjectListListener projectListListener = new ProjectListListener();
   private static ArrayList<DirtyListener> listeners = new ArrayList<DirtyListener>();
 
   private ProjectsDirty() {

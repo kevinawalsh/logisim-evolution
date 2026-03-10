@@ -43,7 +43,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.data.TestException;
 import com.cburch.logisim.data.TestVector;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 class Model {
 
@@ -54,7 +54,7 @@ class Model {
     }
 
   }
-  private EventSourceWeakSupport<ModelListener> listeners;
+  private WeakList<ModelListener> listeners;
   private boolean selected = false;
   private Project project;
   private Circuit circuit;
@@ -72,7 +72,7 @@ class Model {
   private ArrayList<Integer> passed = new ArrayList<Integer>();
 
   public Model(Project proj, Circuit circuit) {
-    listeners = new EventSourceWeakSupport<ModelListener>();
+    listeners = new WeakList<>();
     this.circuit = circuit;
     this.project = proj;
   }

@@ -38,15 +38,14 @@ import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class FactoryAttributes implements AttributeSet, AttributeListener, Cloneable {
   private Class<? extends Library> libraryClass;
   private FactoryDescription desc;
   private ComponentFactory factory;
   private AttributeSet baseAttrs;
-  private EventSourceWeakSupport<AttributeListener> listeners
-      = new EventSourceWeakSupport<>();
+  private WeakList<AttributeListener> listeners = new WeakList<>();
 
   public FactoryAttributes(Class<? extends Library> libClass,
       FactoryDescription desc) {

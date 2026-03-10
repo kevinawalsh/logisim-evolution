@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 import com.cburch.hex.HexModel;
 import com.cburch.hex.HexModelListener;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class MemContents implements HexModel {
   public static MemContents create(int addrBits, int width) {
@@ -46,7 +46,7 @@ public class MemContents implements HexModel {
 
   private static final int PAGE_MASK = PAGE_SIZE - 1;
 
-  private EventSourceWeakSupport<HexModelListener> listeners = null;
+  private WeakList<HexModelListener> listeners = null;
   private int width;
   private int addrBits;
   private int mask;
@@ -76,7 +76,7 @@ public class MemContents implements HexModel {
 
   public void addHexModelWeakListener(Object owner, HexModelListener l) {
     if (listeners == null)
-      listeners = new EventSourceWeakSupport<HexModelListener>();
+      listeners = new WeakList<>();
     listeners.add(owner, l);
   }
 

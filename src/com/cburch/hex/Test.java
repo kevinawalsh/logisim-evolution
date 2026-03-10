@@ -35,12 +35,11 @@ import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class Test {
 	private static class Model implements HexModel {
-		private EventSourceWeakSupport<HexModelListener> listeners
-        = new EventSourceWeakSupport<>();
+		private WeakList<HexModelListener> listeners = new WeakList<>();
 		private int[] data = new int[924];
 
 		public void addHexModelWeakListener(Object owner, HexModelListener l) {

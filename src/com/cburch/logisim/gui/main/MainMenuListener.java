@@ -243,7 +243,7 @@ public class MainMenuListener extends MenuListener {
       }
 
       proj.addProjectWeakListener(null, this);
-      proj.addLibraryWeakListener(/*null,*/ this);
+      proj.addLibraryWeakListener(null, this);
       frame.addPropertyChangeListener(Frame.EDITOR_VIEW, this);
       frame.addPropertyChangeListener(Frame.EXPLORER_VIEW, this);
       Circuit circ = proj.getCurrentCircuit();

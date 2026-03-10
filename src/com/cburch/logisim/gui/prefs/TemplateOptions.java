@@ -33,15 +33,12 @@ import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JRadioButton;
@@ -51,27 +48,30 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.Template;
-import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.PathSettingUI;
 import com.cburch.logisim.util.TableLayout;
 
 class TemplateOptions extends SettingsPanel {
 
-  private class MyListener implements ActionListener, PropertyChangeListener {
+  private class MyListener implements ActionListener {
 
     public void actionPerformed(ActionEvent event) {
-      int value = AppPreferences.TEMPLATE_UNKNOWN;
       if (plain.isSelected())
-        value = AppPreferences.TEMPLATE_PLAIN;
+        AppPreferences.TEMPLATE.setPlain();
       else if (empty.isSelected())
-        value = AppPreferences.TEMPLATE_EMPTY;
-      else if (custom.isSelected())
-        value = AppPreferences.TEMPLATE_CUSTOM;
-      AppPreferences.setTemplateType(value);
-      computeEnabled();
+        AppPreferences.TEMPLATE.setEmpty();
+      else if (custom.isSelected()) {
+        AppPreferences.TEMPLATE.setCustom(null, null);
+        templatePathChanged(path.getFile());
+      }
+      // computeEnabled();
     }
 
     private void templatePathChanged(File file) {
+      if (file == null) {
+        AppPreferences.TEMPLATE.setCustom(null, null);
+        return;
+      }
       FileInputStream reader = null;
       InputStream reader2 = null;
       try {
@@ -80,8 +80,7 @@ class TemplateOptions extends SettingsPanel {
         Template template = Template.create(reader);
         reader2 = template.createStream();
         LogisimFile.load(file, reader2, loader); // to see if OK
-        AppPreferences.setTemplateFile(file, template); // todo: relativize ?
-        AppPreferences.setTemplateType(AppPreferences.TEMPLATE_CUSTOM);
+        AppPreferences.TEMPLATE.setCustom(file, template); // todo: relativize ?
       } catch (LoadCanceledByUser ex) {
         JOptionPane.showMessageDialog(
             getSettingsFrame(),
@@ -102,22 +101,10 @@ class TemplateOptions extends SettingsPanel {
       }
     }
 
-    private void computeEnabled() {
-      custom.setEnabled(!path.field.getText().equals(""));
-      path.field.setEnabled(custom.isSelected());
-    }
-
-    public void propertyChange(PropertyChangeEvent event) {
-      String prop = event.getPropertyName();
-      if (prop.equals(AppPreferences.TEMPLATE_TYPE)) {
-        int value = AppPreferences.getTemplateType();
-        plain.setSelected(value == AppPreferences.TEMPLATE_PLAIN);
-        empty.setSelected(value == AppPreferences.TEMPLATE_EMPTY);
-        custom.setSelected(value == AppPreferences.TEMPLATE_CUSTOM);
-      } else if (prop.equals(AppPreferences.TEMPLATE_FILE)) {
-        path.set((File) event.getNewValue());
-      }
-    }
+    // private void computeEnabled() {
+    //   custom.setEnabled(!path.field.getText().equals(""));
+    //   path.field.setEnabled(custom.isSelected());
+    // }
 
   }
 
@@ -135,7 +122,7 @@ class TemplateOptions extends SettingsPanel {
     super(window);
 
     path = new PathSettingUI(window,
-        AppPreferences.getTemplateFile(),
+        AppPreferences.TEMPLATE.getFile(),
         S.getter("templateSelectButton"),
         S.getter("selectDialogTitle"),
         S.getter("selectDialogButton"),
@@ -150,7 +137,7 @@ class TemplateOptions extends SettingsPanel {
     plain.addActionListener(myListener);
     empty.addActionListener(myListener);
     custom.addActionListener(myListener);
-    myListener.computeEnabled();
+    // myListener.computeEnabled();
 
     setLayout(new TableLayout(1));
     add(templateLabel);
@@ -159,21 +146,11 @@ class TemplateOptions extends SettingsPanel {
     add(custom);
     add(path);
 
-    AppPreferences.propertyChangeProducer.addPropertyChangeWeakListener(AppPreferences.TEMPLATE_TYPE,
-        myListener);
-    AppPreferences.propertyChangeProducer.addPropertyChangeWeakListener(AppPreferences.TEMPLATE_FILE,
-        myListener);
-    switch (AppPreferences.getTemplateType()) {
-    case AppPreferences.TEMPLATE_PLAIN:
-      plain.setSelected(true);
-      break;
-    case AppPreferences.TEMPLATE_EMPTY:
-      empty.setSelected(true);
-      break;
-    case AppPreferences.TEMPLATE_CUSTOM:
-      custom.setSelected(true);
-      break;
-    }
+    AppPreferences.TEMPLATE.addPrefChangeWeakListener(this, e -> prefChanged());
+
+    plain.setSelected(AppPreferences.TEMPLATE.isPlainType());
+    empty.setSelected(AppPreferences.TEMPLATE.isEmptyType());
+    custom.setSelected(AppPreferences.TEMPLATE.isCustomType());
   }
 
   @Override
@@ -194,4 +171,12 @@ class TemplateOptions extends SettingsPanel {
     custom.setText(S.get("templateCustomOption"));
     path.localeChanged();
   }
+
+  private void prefChanged() {
+    plain.setSelected(AppPreferences.TEMPLATE.isPlainType());
+    empty.setSelected(AppPreferences.TEMPLATE.isEmptyType());
+    custom.setSelected(AppPreferences.TEMPLATE.isCustomType());
+    path.set(AppPreferences.TEMPLATE.getFile());
+  }
+
 }

@@ -35,12 +35,11 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeEvent;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public abstract class AbstractDrawingAttributeSet implements Cloneable, AttributeSet {
 
-  private EventSourceWeakSupport<AttributeListener> listeners
-      = new EventSourceWeakSupport<>();
+  private WeakList<AttributeListener> listeners = new WeakList<>();
 
 	public AbstractDrawingAttributeSet() { }
 
@@ -52,7 +51,7 @@ public abstract class AbstractDrawingAttributeSet implements Cloneable, Attribut
 		try {
 			AbstractDrawingAttributeSet ret;
       ret = (AbstractDrawingAttributeSet) super.clone();
-			ret.listeners = new EventSourceWeakSupport<AttributeListener>();
+			ret.listeners = new WeakList<>();
 			return ret;
 		} catch (CloneNotSupportedException e) {
 			throw new UnsupportedOperationException("AbstractDrawingAttributeSet.clone");

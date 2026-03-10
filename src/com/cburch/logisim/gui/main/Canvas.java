@@ -44,9 +44,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -109,7 +106,7 @@ public class Canvas extends JPanel
   implements LocaleListener, CanvasPaneContents {
 
   private class MyListener implements MouseInputListener, KeyListener,
-          PopupMenuListener, PropertyChangeListener, MouseWheelListener {
+          PopupMenuListener, MouseWheelListener {
 
     boolean menu_on = false;
 
@@ -274,17 +271,6 @@ public class Canvas extends JPanel
 
     @Override
     public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-      if (AppPreferences.GATE_SHAPE.isSource(event)
-          || AppPreferences.SHOW_TICK_RATE.isSource(event)) {
-        paintCoordinator.requestRepaint();
-      } else if (AppPreferences.COMPONENT_TIPS.isSource(event)) {
-        boolean showTips = AppPreferences.COMPONENT_TIPS.get();
-        setToolTipText(showTips ? "" : null);
-      }
     }
 
     // private int scrollValue(JScrollBar bar, int val) {
@@ -726,17 +712,20 @@ public class Canvas extends JPanel
     addMouseWheelListener(myListener);
 
     proj.addProjectWeakListener(null, myProjectListener);
-    proj.addLibraryWeakListener(/*null,*/ myProjectListener);
-    proj.addCircuitWeakListener(/*null,*/ myProjectListener);
+    proj.addLibraryWeakListener(null, myProjectListener);
+    proj.addCircuitWeakListener(null, myProjectListener);
     proj.getSimulator().addSimulatorListener(tickCounter);
     selection.addListener(myProjectListener);
     LocaleManager.addLocaleListener(this);
 
     AttributeSet options = proj.getOptions().getAttributeSet();
     options.addAttributeWeakListener(null, myProjectListener);
-    AppPreferences.COMPONENT_TIPS.addPropertyChangeWeakListener(myListener);
-    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(myListener);
-    AppPreferences.SHOW_TICK_RATE.addPropertyChangeWeakListener(myListener);
+    AppPreferences.COMPONENT_TIPS.addPrefChangeWeakListener(this, e -> {
+        boolean showTips = AppPreferences.COMPONENT_TIPS.get();
+        setToolTipText(showTips ? "" : null);
+    });
+    AppPreferences.GATE_SHAPE.addPrefChangeWeakListener(this, e -> paintCoordinator.requestRepaint());
+    AppPreferences.SHOW_TICK_RATE.addPrefChangeWeakListener(this, e -> paintCoordinator.requestRepaint());
     loadOptions(options);
   }
 

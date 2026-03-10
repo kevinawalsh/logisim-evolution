@@ -36,14 +36,17 @@ import com.cburch.logisim.util.PropertyChangeWeakSupport;
 class Clipboard implements PropertyChangeWeakSupport.Producer {
 
   public ClipboardContents get() {
+    System.out.println("get = " + current);
     return current;
   }
 
   public boolean isEmpty() {
+    System.out.println("empty?");
     return current == null || current.getElements().isEmpty();
   }
 
   public void set(ClipboardContents value) {
+    System.out.println("set = " + value + " with " + propListeners.numListeners() + " listeners");
     ClipboardContents old = current;
     current = value;
     firePropertyChange(contentsProperty, old, current);

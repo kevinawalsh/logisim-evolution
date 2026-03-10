@@ -37,8 +37,6 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import javax.swing.ButtonGroup;
 import javax.swing.JFrame;
@@ -53,7 +51,7 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class WindowMenu extends JMenu {
-  private class MyListener implements LocaleListener, ActionListener, PropertyChangeListener {
+  private class MyListener implements LocaleListener, ActionListener {
     public void actionPerformed(ActionEvent e) {
       Object src = e.getSource();
       if (src == minimize) {
@@ -96,12 +94,6 @@ public class WindowMenu extends JMenu {
       toolbar.setText(S.get("windowShowToolbarItem"));
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-      if (AppPreferences.TOOLBAR_PLACEMENT.isSource(event)) {
-        toolbar.setState(isToolbarVisible());
-      }
-    }
   }
 
   private static final long serialVersionUID = 1L;
@@ -137,7 +129,8 @@ public class WindowMenu extends JMenu {
     toolbar.setEnabled(true);
     toolbar.setState(isToolbarVisible());
     toolbar.addActionListener(myListener);
-    AppPreferences.TOOLBAR_PLACEMENT.addPropertyChangeWeakListener(myListener);
+    AppPreferences.TOOLBAR_PLACEMENT.addPrefChangeWeakListener(this, 
+        e -> toolbar.setState(isToolbarVisible()));
 
     computeEnabled();
     computeContents();

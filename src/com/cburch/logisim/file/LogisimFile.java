@@ -67,8 +67,8 @@ import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Errors;
-import com.cburch.logisim.util.EventSourceWeakSupport;
 import com.cburch.logisim.util.UniquelyNamedThread;
+import com.cburch.logisim.util.WeakList;
 
 public class LogisimFile extends Library implements LibraryEventSource {
 
@@ -191,7 +191,7 @@ public class LogisimFile extends Library implements LibraryEventSource {
     return ret;
   }
 
-  private EventSourceWeakSupport<LibraryListener> listeners = new EventSourceWeakSupport<LibraryListener>();
+  private WeakList<LibraryListener> listeners = new WeakList<>();
   private Loader loader;
   private LinkedList<String> messages = new LinkedList<String>();
   private Options options = new Options();
@@ -256,6 +256,15 @@ public class LogisimFile extends Library implements LibraryEventSource {
 
   public void addLibraryWeakListener(Object owner, LibraryListener l) { listeners.add(owner, l); }
   public void removeLibraryWeakListener(Object owner, LibraryListener l) { listeners.remove(owner, l); }
+  private void fireEvent(LibraryEvent e) { for (LibraryListener l : listeners) l.libraryChanged(e); }
+
+  private void fireEvent(int action, Object data) {
+    fireEvent(new LibraryEvent(this, action, data));
+  }
+
+  private void fireEvent(int action, Object data, Object oldData) {
+    fireEvent(new LibraryEvent(this, action, data, oldData));
+  }
 
   public void addMessage(String msg) {
     messages.addLast(msg);
@@ -318,20 +327,6 @@ public class LogisimFile extends Library implements LibraryEventSource {
       }
     }
     return false;
-  }
-
-  private void fireEvent(int action, Object data) {
-    LibraryEvent e = new LibraryEvent(this, action, data);
-    for (LibraryListener l : listeners) {
-      l.libraryChanged(e);
-    }
-  }
-
-  private void fireEvent(int action, Object data, Object oldData) {
-    LibraryEvent e = new LibraryEvent(this, action, data, oldData);
-    for (LibraryListener l : listeners) {
-      l.libraryChanged(e);
-    }
   }
 
   // fixme: only for moving circuit. Why not indexOf?

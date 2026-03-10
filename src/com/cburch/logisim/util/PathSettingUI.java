@@ -83,7 +83,7 @@ public class PathSettingUI extends JPanel {
     button.setText(btnText.toString());
 
     field.setEditable(false);
-    field.addActionListener(e -> buttonClicked());
+    button.addActionListener(e -> buttonClicked());
 
     GridBagLayout gridbag = new GridBagLayout();
     GridBagConstraints gbc = new GridBagConstraints();
@@ -115,6 +115,14 @@ public class PathSettingUI extends JPanel {
 
   public void set(String f) {
     field.setText(f);
+  }
+
+  public File getFile() {
+    String path = field.getText();
+    if (path == null || path.equals(""))
+      return null;
+    else
+      return new File(path);
   }
 
   public void setLeftMargin(int amt) {

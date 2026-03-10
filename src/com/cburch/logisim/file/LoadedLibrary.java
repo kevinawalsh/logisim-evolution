@@ -48,7 +48,7 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.util.EventSourceWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class LoadedLibrary extends Library implements LibraryEventSource {
   private class MyListener implements LibraryListener {
@@ -138,12 +138,12 @@ public class LoadedLibrary extends Library implements LibraryEventSource {
 
   private MyListener myListener;
 
-  private EventSourceWeakSupport<LibraryListener> listeners;
+  private WeakList<LibraryListener> listeners;
 
   LoadedLibrary(Library base) {
     dirty = false;
     myListener = new MyListener();
-    listeners = new EventSourceWeakSupport<LibraryListener>();
+    listeners = new WeakList<>();
 
     while (base instanceof LoadedLibrary)
       base = ((LoadedLibrary) base).base;

@@ -35,78 +35,38 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
+import javax.swing.SwingUtilities;
 
-class RecentProjects implements PreferenceChangeListener {
-  private static class FileTime {
-    private long time;
-    private File file;
+import com.cburch.logisim.util.WeakList;
 
-    public FileTime(File file, long time) {
-      this.time = time;
-      this.file = file;
-    }
+public class RecentProjects {
 
-    @Override
-    public int hashCode() {
-      int x = Long.valueOf(time).hashCode();
-      int y = (file == null ? 0 : file.hashCode());
-      return x + 31*y;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      if (other instanceof FileTime) {
-        FileTime o = (FileTime) other;
-        return this.time == o.time && isSame(this.file, o.file);
-      } else {
-        return false;
-      }
-    }
-  }
-
-  private static boolean isSame(Object a, Object b) {
-    return a == null ? b == null : a.equals(b);
-  }
-
-  private static final String BASE_PROPERTY = "recent";
-
+  private static final String RECENT_KEY_PREFIX = "recent"; // recent0, recent1, ...
   private static final int NUM_RECENT = 10;
-  private File[] recentFiles;
 
+  private File[] recentFiles;
   private long[] recentTimes;
+  private Preferences backingStore;
 
   RecentProjects() {
     recentFiles = new File[NUM_RECENT];
     recentTimes = new long[NUM_RECENT];
     Arrays.fill(recentTimes, System.currentTimeMillis());
 
-    Preferences prefs = AppPreferences.getPrefs();
-    prefs.addPreferenceChangeListener(this);
+    backingStore = AppPreferences.getPrefs();
+    backingStore.addPreferenceChangeListener(e -> backingStoreChanged(e.getKey()));
 
-    for (int index = 0; index < NUM_RECENT; index++) {
-      getAndDecode(prefs, index);
-    }
+    for (int index = 0; index < NUM_RECENT; index++)
+      setFromBackingStore(index);
   }
 
-  private void getAndDecode(Preferences prefs, int index) {
-    String encoding = prefs.get(BASE_PROPERTY + index, null);
-    if (encoding == null)
-      return;
-    int semi = encoding.indexOf(';');
-    if (semi < 0)
-      return;
-    try {
-      long time = Long.parseLong(encoding.substring(0, semi));
-      File file = new File(encoding.substring(semi + 1));
-      updateInto(index, time, file);
-    } catch (NumberFormatException e) {
-    }
-  }
+  private final WeakList<AppPreferences.Listener<File>> listeners = new WeakList<>();
+  public void addPrefChangeWeakListener(Object owner, AppPreferences.Listener<File> l) { listeners.add(owner, l); }
+  public void removePrefChangeWeakListener(Object owner, AppPreferences.Listener<File> l) { listeners.remove(owner, l); }
+  private void firePrefChangeEvent(AppPreferences.ChangeEvent<File> evt) { for (AppPreferences.Listener<File> l : listeners) l.prefChanged(evt); }
 
-  public List<File> getRecentFiles() {
+  public List<File> get() {
     long now = System.currentTimeMillis();
     long[] ages = new long[NUM_RECENT];
     long[] toSort = new long[NUM_RECENT];
@@ -139,6 +99,74 @@ class RecentProjects implements PreferenceChangeListener {
     return ret;
   }
 
+  public void update(File file) {
+    File fileToSave = file;
+    try { fileToSave = file.getCanonicalFile(); }
+    catch (IOException e) { }
+    long now = System.currentTimeMillis();
+    int index = getReplacementIndex(now, fileToSave);
+    if (setAndFire(index, now, fileToSave))
+      setIntoBackingStore(index);
+  }
+
+  public void backingStoreChanged(String key) {
+    if (!key.startsWith(RECENT_KEY_PREFIX))
+      return;
+    int index = -1;
+    try { index = Integer.parseInt(key.substring(RECENT_KEY_PREFIX.length())); }
+    catch (NumberFormatException e) { }
+    if (index < 0 || index >= NUM_RECENT)
+      return;
+    File oldFile = recentFiles[index];
+    long oldTime = recentTimes[index];
+    setFromBackingStore(index);
+    File newFile = recentFiles[index];
+    long newTime = recentTimes[index];
+    if (!isSame(oldFile, newFile) || oldTime != newTime)
+      SwingUtilities.invokeLater(() ->
+          firePrefChangeEvent(new AppPreferences.ChangeEvent<File>(this, oldFile, newFile)));
+  }
+
+  private boolean setAndFire(int index, long newTime, File newFile) {
+    File oldFile = recentFiles[index];
+    long oldTime = recentTimes[index];
+    if (!isSame(oldFile, newFile) || oldTime != newTime) {
+      recentFiles[index] = newFile;
+      recentTimes[index] = newTime;
+      SwingUtilities.invokeLater(() ->
+          firePrefChangeEvent(new AppPreferences.ChangeEvent<File>(this, oldFile, newFile)));
+      return true;
+    }
+    return false;
+  }
+
+  private void setIntoBackingStore(int index) {
+    try {
+      File file = recentFiles[index];
+      long time = recentTimes[index];
+      String encoding = "" + time + ";" + file.getCanonicalPath();
+      backingStore.put(RECENT_KEY_PREFIX + index, encoding);
+    } catch (IOException e) {
+    }
+  }
+
+  private void setFromBackingStore(int index) { // does not fire
+    String encoding = backingStore.get(RECENT_KEY_PREFIX + index, null);
+    if (encoding == null)
+      return;
+    int semi = encoding.indexOf(';');
+    if (semi < 0)
+      return;
+    try {
+      long time = Long.parseLong(encoding.substring(0, semi));
+      File file = new File(encoding.substring(semi + 1));
+      recentTimes[index] = time;
+      recentFiles[index] = file;
+    } catch (NumberFormatException e) {
+      return;
+    }
+  }
+
   private int getReplacementIndex(long now, File f) {
     long oldestAge = -1;
     int oldestIndex = 0;
@@ -163,61 +191,8 @@ class RecentProjects implements PreferenceChangeListener {
     }
   }
 
-  public void preferenceChange(PreferenceChangeEvent event) {
-    Preferences prefs = event.getNode();
-    String prop = event.getKey();
-    if (prop.startsWith(BASE_PROPERTY)) {
-      String rest = prop.substring(BASE_PROPERTY.length());
-      int index = -1;
-      try {
-        index = Integer.parseInt(rest);
-        if (index < 0 || index >= NUM_RECENT)
-          index = -1;
-      } catch (NumberFormatException e) {
-      }
-      if (index >= 0) {
-        File oldValue = recentFiles[index];
-        long oldTime = recentTimes[index];
-        getAndDecode(prefs, index);
-        File newValue = recentFiles[index];
-        long newTime = recentTimes[index];
-        if (!isSame(oldValue, newValue) || oldTime != newTime) {
-          AppPreferences.propertyChangeProducer.firePropertyChange(
-              AppPreferences.RECENT_PROJECTS, new FileTime(
-                oldValue, oldTime), new FileTime(newValue,
-                  newTime));
-        }
-      }
-    }
+  private static boolean isSame(Object a, Object b) {
+    return a == null ? b == null : a.equals(b);
   }
 
-  private void updateInto(int index, long time, File file) {
-    File oldFile = recentFiles[index];
-    long oldTime = recentTimes[index];
-    if (!isSame(oldFile, file) || oldTime != time) {
-      recentFiles[index] = file;
-      recentTimes[index] = time;
-      try {
-        AppPreferences.getPrefs().put(BASE_PROPERTY + index,
-            "" + time + ";" + file.getCanonicalPath());
-        AppPreferences.propertyChangeProducer.firePropertyChange(
-            AppPreferences.RECENT_PROJECTS, new FileTime(oldFile,
-              oldTime), new FileTime(file, time));
-      } catch (IOException e) {
-        recentFiles[index] = oldFile;
-        recentTimes[index] = oldTime;
-      }
-    }
-  }
-
-  public void updateRecent(File file) {
-    File fileToSave = file;
-    try {
-      fileToSave = file.getCanonicalFile();
-    } catch (IOException e) {
-    }
-    long now = System.currentTimeMillis();
-    int index = getReplacementIndex(now, fileToSave);
-    updateInto(index, now, fileToSave);
-  }
 }

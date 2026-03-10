@@ -30,9 +30,6 @@
 
 package com.cburch.logisim.gui.main;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.ComponentFactory;
@@ -44,8 +41,6 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.ProjectEvent;
-import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.std.base.Base;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
@@ -54,16 +49,16 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 
 public class LayoutEditHandler extends EditHandler
-  implements ProjectListener, LibraryListener, PropertyChangeListener {
+  implements LibraryListener {
   private Frame frame;
 
   LayoutEditHandler(Frame frame) {
     this.frame = frame;
 
     Project proj = frame.getProject();
-    SystemClipboard.addPropertyChangeWeakListener(this);
-    proj.addProjectWeakListener(null, this);
-    proj.addLibraryWeakListener(/*null,*/ this);
+    SystemClipboard.addClipboardWeakListener(this, () -> computeEnabled());
+    proj.addProjectWeakListener(this, e -> computeEnabled());
+    proj.addLibraryWeakListener(null, this);
   }
 
   @Override
@@ -252,6 +247,7 @@ public class LayoutEditHandler extends EditHandler
     }
   }
 
+  @Override
   public void libraryChanged(LibraryEvent e) {
     int action = e.getAction();
     if (action == LibraryEvent.ADD_LIBRARY) {
@@ -281,26 +277,6 @@ public class LayoutEditHandler extends EditHandler
     Selection sel = frame.getCanvas().getSelection();
     selectSelectTool(proj);
     SelectionActions.doPaste(proj, sel);
-  }
-
-  public void projectChanged(ProjectEvent e) {
-    computeEnabled();
-    // int action = e.getAction();
-    // if (action == ProjectEvent.ACTION_SET_FILE) {
-    //   computeEnabled();
-    // } else if (action == ProjectEvent.ACTION_SET_CURRENT) {
-    //   computeEnabled();
-    // } else if (action == ProjectEvent.ACTION_SELECTION) {
-    //   computeEnabled();
-    // } else if (action == ProjectEvent.ACTION_SET_TOOL) {
-    //   computeEnabled();
-    // }
-  }
-
-  public void propertyChange(PropertyChangeEvent event) {
-    if (!event.getPropertyName().equals(SystemClipboard.CONTENTS_PROPERTY))
-      System.out.println("huh?");
-    computeEnabled();
   }
 
   @Override

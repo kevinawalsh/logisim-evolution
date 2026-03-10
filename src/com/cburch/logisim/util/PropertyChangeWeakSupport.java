@@ -123,6 +123,7 @@ public class PropertyChangeWeakSupport {
 
   private Object source;
   private ConcurrentLinkedQueue<ListenerData> listeners = new ConcurrentLinkedQueue<>();
+  public int numListeners() { return listeners.size(); }
 
   public PropertyChangeWeakSupport(Object src) { source = src; }
 

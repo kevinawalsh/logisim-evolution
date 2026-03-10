@@ -32,8 +32,6 @@ import static com.cburch.logisim.gui.menu.Strings.S;
 
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -364,16 +362,9 @@ public class HelpBroker {
       helpFrames.entrySet().removeIf(e -> !nowOpen.contains(e.getValue().getProject()));
   }
 
-  private static class MyListener implements PropertyChangeListener {
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-      cullClosedProjects();
-    }
-  }
-  private static final MyListener myListener = new MyListener();
+  private static final Object PERMANENT = new Object();
   static {
-    Projects.propertyChangeProducer.addPropertyChangeWeakListener(
-        Projects.projectListProperty, myListener);
+    Projects.addListChangeWeakListener(PERMANENT, () -> cullClosedProjects());
   }
 
 }

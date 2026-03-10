@@ -37,33 +37,23 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.FlavorEvent;
 import java.awt.datatransfer.FlavorListener;
 import java.awt.datatransfer.Transferable;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import com.cburch.logisim.util.Errors;
-import com.cburch.logisim.util.PropertyChangeWeakSupport;
+import com.cburch.logisim.util.WeakList;
 
 public class SystemClipboard {
 
-  // SystemClipboard provieds a static/singleton to notify interested listeners of
-  // changes to the system clipboard contents. Only weak references are held to
-  // the listeners. This is effectively a proxy, needed because the system
-  // clipboard holds strong references to listeners. Here, only one
-  // strongly-held singleton object listens to the system clipboard, and all
-  // weakly-referenced logisim listeners can be notified.
+  // SystemClipboard provieds a static/singleton to notify interested listeners
+  // of changes to the system clipboard contents. This is effectively a proxy,
+  // needed because the system clipboard holds strong references to listeners.
+  // Here, only one strongly-held singleton object listens to the system
+  // clipboard, and all weakly-referenced logisim listeners can be notified.
   //
   // SystemClipboard also provides a wrapper around the system clipboard
   // setContents(), getContents(), and other methods to retry in case the
   // clipboard is busy.
 
-  public static final String CONTENTS_PROPERTY = "system-clipboard-contents";
   public static final Clipboard sysclip = Toolkit.getDefaultToolkit().getSystemClipboard();
-
-  private static final PropertyChangeWeakSupport.Producer listeners =
-    new PropertyChangeWeakSupport.Producer() {
-      PropertyChangeWeakSupport propListeners = new PropertyChangeWeakSupport(SystemClipboard.class);
-      public PropertyChangeWeakSupport getPropertyChangeListeners() { return propListeners; }
-    };
 
   private SystemClipboard() {
     sysclip.addFlavorListener(new FlavorListener() {
@@ -72,14 +62,19 @@ public class SystemClipboard {
         // wait a small amount of time until the clipboard is ready (avoid exception "cannot open system clipboard)
         // see https://stackoverflow.com/questions/51797673/in-java-why-do-i-get-java-lang-illegalstateexception-cannot-open-system-clipboa
         try { Thread.sleep(10); } catch (InterruptedException ex) { };
-        listeners.firePropertyChange(CONTENTS_PROPERTY, null, null);
+        fireClipboardEvent();
       }
     });
   }
 
-  public static void addPropertyChangeWeakListener(PropertyChangeListener listener) {
-    listeners.addPropertyChangeWeakListener(listener);
+  @FunctionalInterface
+  public interface Listener {
+    public void clipboardChanged();
   }
+  private static final WeakList<Listener> listeners = new WeakList<>();
+  public static void addClipboardWeakListener(Object owner, Listener l) { listeners.add(owner, l); }
+  public static void removeClipboardWeakListener(Object owner, Listener l) { listeners.remove(owner, l); }
+  private static void fireClipboardEvent() { for (Listener l : listeners) l.clipboardChanged(); }
 
   public static Transferable getContents(Object requestor) {
     for (int timeout = 1; timeout <= 128; timeout *= 4) { 

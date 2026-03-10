@@ -38,8 +38,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.InputEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -75,7 +73,7 @@ import com.cburch.logisim.util.InputEventUtil;
 
 class LayoutToolbarModel extends AbstractToolbarModel {
   private class MyListener implements ProjectListener, AttributeListener,
-          ToolbarData.ToolbarListener, PropertyChangeListener {
+          ToolbarData.ToolbarListener {
     
     @Override
     public void attributeListChanged(AttributeEvent e) { }
@@ -95,22 +93,15 @@ class LayoutToolbarModel extends AbstractToolbarModel {
         if (old != null) {
           ToolbarData data = old.getOptions().getToolbarData();
           data.removeToolbarWeakListener(null, this);
-          data.removeToolAttributeWeakListener(/*null,*/ this);
+          data.removeToolAttributeWeakListener(null, this);
         }
         LogisimFile file = (LogisimFile) e.getData();
         if (file != null) {
           ToolbarData data = file.getOptions().getToolbarData();
           data.addToolbarWeakListener(null, this);
-          data.addToolAttributeWeakListener(/*null,*/ this);
+          data.addToolAttributeWeakListener(null, this);
         }
         buildContents();
-      }
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-      if (AppPreferences.GATE_SHAPE.isSource(event)) {
-        fireToolbarAppearanceChanged();
       }
     }
 
@@ -259,8 +250,8 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     // set up listeners
     ToolbarData data = proj.getOptions().getToolbarData();
     data.addToolbarWeakListener(null, myListener);
-    data.addToolAttributeWeakListener(/*null,*/ myListener);
-    AppPreferences.GATE_SHAPE.addPropertyChangeWeakListener(myListener);
+    data.addToolAttributeWeakListener(null, myListener);
+    AppPreferences.GATE_SHAPE.addPrefChangeWeakListener(this, e -> fireToolbarAppearanceChanged());
     proj.addProjectWeakListener(null, myListener);
   }
 

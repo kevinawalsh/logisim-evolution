@@ -30,18 +30,12 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import javax.swing.JCheckBox;
 
 import com.cburch.logisim.prefs.PrefMonitor;
 import com.cburch.logisim.util.StringGetter;
 
-class PrefBoolean extends JCheckBox
-  implements ActionListener, PropertyChangeListener {
+class PrefBoolean extends JCheckBox {
   private static final long serialVersionUID = 1L;
   private PrefMonitor<Boolean> pref;
   private StringGetter title;
@@ -51,22 +45,12 @@ class PrefBoolean extends JCheckBox
     this.pref = pref;
     this.title = title;
 
-    addActionListener(this);
-    pref.addPropertyChangeWeakListener(this);
+    addActionListener(e -> pref.set(this.isSelected()));
+    pref.addPrefChangeWeakListener(this, e -> this.setSelected(pref.get()));
     setSelected(pref.get());
-  }
-
-  public void actionPerformed(ActionEvent e) {
-    pref.set(this.isSelected());
   }
 
   void localeChanged() {
     setText(title.toString());
-  }
-
-  public void propertyChange(PropertyChangeEvent event) {
-    if (pref.isSource(event)) {
-      setSelected(pref.get());
-    }
   }
 }
