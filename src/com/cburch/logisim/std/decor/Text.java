@@ -38,6 +38,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
+import javax.swing.Icon;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
@@ -65,6 +66,7 @@ import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.TextEditable;
 import com.cburch.logisim.tools.ToolTipMaker;
+import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 
 import static com.cburch.logisim.util.GraphicsUtil.ALIGN;
@@ -450,6 +452,28 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
   }
 
   @Override
+  public void paintIcon(InstancePainter painter) {
+    if (!"Text".equals(getName())) {
+      super.paintIcon(painter);
+      return;
+    }
+    AttributeOption fmt = painter.getAttributeValue(ATTR_FORMAT);
+    String name;
+    if (fmt == TEXT_FORMAT_MARKDOWNISH)
+      name = "markdownish.png";
+    else if (fmt == TEXT_FORMAT_WRAPPED)
+      name = "wrappedText.png";
+    else
+      name = "comment.png";
+    Icon icon = Icons.getIcon(name);
+    Graphics2D g = painter.getGraphics();
+    if (icon != null)
+      icon.paintIcon(painter.getDestination(), painter.getGraphics(), 2, 2);
+    else
+      super.paintIcon(painter);
+  }
+
+  @Override
   public void drawHandles(ComponentDrawContext context) {
     Graphics2D g = context.getGraphics();
     g.setColor(Color.GRAY);
@@ -498,6 +522,20 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
     SetAttributeAction act = new SetAttributeAction(circ, S.getter("textReshape"));
     act.set(comp, TEXT_WIDTH, textWidth);
     proj.doAction(act);
+  }
+
+  @Override
+  public final Object getFeature(Object key, AttributeSet attrs) {
+    if (key == TOOL_TIP) {
+      AttributeOption fmt = attrs.getValue(ATTR_FORMAT);
+      if (fmt == TEXT_FORMAT_MARKDOWNISH)
+        return S.get("textComponentMarkdownishTip");
+      else if (fmt == TEXT_FORMAT_WRAPPED)
+        return S.get("textComponentWrappedTip");
+      else
+        return S.get("textComponentPlainTip");
+    }
+    return super.getFeature(key, attrs);
   }
 
   @Override

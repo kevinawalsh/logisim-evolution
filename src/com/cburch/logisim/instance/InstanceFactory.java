@@ -176,7 +176,7 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
   }
 
   @Override
-  public final Object getFeature(Object key, AttributeSet attrs) {
+  public Object getFeature(Object key, AttributeSet attrs) {
     if (key == FACING_ATTRIBUTE_KEY) {
       return facingAttribute;
     }

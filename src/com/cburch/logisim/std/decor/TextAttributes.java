@@ -68,6 +68,7 @@ class TextAttributes extends AbstractAttributeSet {
   private Color fg;
   private Color bg;
   protected AttributeOption format;
+  protected boolean formatReadOnly; // used for AddTool/FactoryDescription in Decor library
   protected int width;
   protected TextStyling styling;
 
@@ -224,6 +225,30 @@ class TextAttributes extends AbstractAttributeSet {
     computeLayout(style);
     if (attr == Text.ATTR_FORMAT)
       fireAttributeListChanged();
+  }
+
+  @Override
+  public void setReadOnly(Attribute<?> attr, boolean value) {
+    if (attr == Text.ATTR_FORMAT)
+      formatReadOnly = value;
+    else
+      super.setReadOnly(attr, value);
+  }
+
+  @Override
+  public boolean isReadOnly(Attribute<?> attr) {
+    if (attr == Text.ATTR_FORMAT)
+      return formatReadOnly;
+    else
+      return super.isReadOnly(attr);
+  }
+
+  @Override
+  public boolean isToSave(Attribute<?> attr) {
+    if (attr == Text.ATTR_FORMAT)
+      return !formatReadOnly;
+    else
+      return super.isToSave(attr);
   }
 
   // public static normalize(String str) {

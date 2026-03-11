@@ -59,6 +59,7 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.file.XmlWriter;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.LayoutClipboard;
@@ -75,8 +76,8 @@ import com.cburch.logisim.std.hdl.VhdlEntity;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.DragDrop;
-import com.cburch.logisim.file.LogisimFileActions;
 
 public class AddTool extends Tool {
 
@@ -183,6 +184,9 @@ public class AddTool extends Tool {
       return this.libraryClass == o.libraryClass
           && this.description.equals(o.description);
     } else {
+      // FIXME: what if o.description != null?
+      if (o.description != null)
+        Debug.error("AddTool.equals: should have checked o.description?");
       return this.factory.equals(o.factory);
     }
   }
@@ -634,8 +638,10 @@ public class AddTool extends Tool {
       return false;
     AddTool o = (AddTool) other;
     if (this.sourceLoadAttempted && o.sourceLoadAttempted) {
+      // FIXME: factory could be null here, if load attempt failed?
       return this.factory.equals(o.factory);
     } else if (this.description == null) {
+      // fixme: shouldn't we also check
       return o.description == null;
     } else {
       return this.description.equals(o.description);
