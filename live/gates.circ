@@ -1,0 +1,2309 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project source="5.1.1-HC" version="1.0">
+  This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
+
+  <lib desc="#Base" name="0">
+    <tool name="Text Tool">
+      <a name="background" val="#ffffff00"/>
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="foreground" val="#000000"/>
+      <a name="format" val="plain"/>
+      <a name="halign" val="center"/>
+      <a name="style" val=""/>
+      <a name="text" val="text"/>
+      <a name="valign" val="base"/>
+    </tool>
+  </lib>
+  <lib desc="#Wiring" name="1">
+    <tool name="Constant">
+      <a name="radix" val="2"/>
+      <a name="value" val="0x0"/>
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="2">
+    <tool name="PLA">
+      <a name="table" val=""/>
+    </tool>
+  </lib>
+  <lib desc="#Plexers" name="3">
+    <tool name="Multiplexer">
+      <a name="enable" val="false"/>
+    </tool>
+    <tool name="Demultiplexer">
+      <a name="enable" val="false"/>
+    </tool>
+  </lib>
+  <lib desc="#Arithmetic" name="4"/>
+  <lib desc="#Memory" name="5">
+    <tool name="ROM">
+      <a name="contents">addr/data: 8 8
+0
+</a>
+    </tool>
+  </lib>
+  <lib desc="#I/O" name="6"/>
+  <lib desc="#Analog" name="7"/>
+  <lib desc="#Audio" name="8"/>
+  <lib desc="#BFH-Praktika" name="9"/>
+  <lib desc="#External I/O" name="10"/>
+  <lib desc="#Decor" name="11"/>
+  <main name="Common Gates - Basics"/>
+  <options>
+    <a name="gateUndefined" val="ignore"/>
+    <a name="simlimit" val="1000"/>
+    <a name="simrand" val="0"/>
+    <a name="simsmooth" val="50"/>
+  </options>
+  <mappings>
+    <tool lib="0" map="Button2" name="Menu Tool"/>
+    <tool lib="0" map="Button3" name="Menu Tool"/>
+    <tool lib="0" map="Ctrl Button1" name="Menu Tool"/>
+  </mappings>
+  <toolbar>
+    <tool lib="0" name="Poke Tool"/>
+    <tool lib="0" name="Edit Tool"/>
+    <tool lib="0" name="Wiring Tool"/>
+    <tool lib="0" name="Cutter Tool"/>
+    <tool lib="0" name="Text Tool">
+      <a name="background" val="#ffffff00"/>
+      <a name="font" val="SansSerif plain 12"/>
+      <a name="foreground" val="#000000"/>
+      <a name="format" val="plain"/>
+      <a name="halign" val="center"/>
+      <a name="style" val=""/>
+      <a name="text" val="text"/>
+      <a name="valign" val="base"/>
+    </tool>
+    <tool lib="11" name="Callout"/>
+    <tool lib="11" name="Image"/>
+    <sep/>
+    <tool lib="1" name="Pin"/>
+    <tool lib="1" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </tool>
+    <tool lib="2" name="NOT Gate"/>
+    <tool lib="2" name="AND Gate"/>
+    <tool lib="2" name="OR Gate"/>
+    <tool lib="2" name="XOR Gate"/>
+    <tool lib="2" name="NAND Gate"/>
+    <tool lib="2" name="NOR Gate"/>
+  </toolbar>
+  <circuit name="NOT Gate Demo">
+    <a name="appearance" val="classic"/>
+    <comp lib="1" loc="(150,130)" name="Pin"/>
+    <comp lib="1" loc="(170,370)" name="Pin">
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(240,130)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(260,370)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(340,910)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(80,920)" name="Pin"/>
+    <comp lib="11" loc="(126,627)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="1"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(127,608)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="0"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(129,647)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="other"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(131,590)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="input"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(132,82)" name="Callout">
+      <a name="dx" val="40"/>
+      <a name="dy" val="40"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="input"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(14,273)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text">A multi-bit NOT gate performs the same transformation as a bitwise operation, with each output bit
+determined by the corresponding input bit.</a>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(17,50)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text">A NOT gate by default emits the complement of whatever input it receives. So it outputs a 1 when the input
+is 0, and it outputs a 0 when the input is 1.</a>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(18,242)" name="Text">
+      <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="Multi-bit NOT Gate"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(187,589)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="output"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(187,606)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="floating"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(188,628)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="0"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(191,648)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="error"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(20,30)" name="Text">
+      <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="NOT Gate"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(21,184)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text">If the input is not connected, or has an error (E) or floating (X) value, then the output will be an error. This default
+behavior can be summarized with the truth table above.</a>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(211,696)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="&quot;"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(250,82)" name="Callout">
+      <a name="dx" val="-31"/>
+      <a name="dy" val="41"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="ouput"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(27,483)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text">Instead of the default behavior described above, a NOT gate can be configured in special high-impedance output modes:
+* If the output behavior is set to "0/floating", it behaves in "open-collector" (a.k.a. "open-drain") inverter mode, 
+where output is either 0 (when the input is 1) or floating (when the input is 0). 
+* If the output behavior is set to "floating/1", the output is either floating (when the input is 1) or 0 (when the input is 1).
+When combined with pull-up or pull-down resistors, these modes can be used to create a circuit similar to a "wired-AND"
+or "wired-OR". See example circuits below.</a>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(279,317)" name="Callout">
+      <a name="dx" val="-62"/>
+      <a name="dy" val="41"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="4-bit NOT gate"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(29,713)" name="Text">
+      <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="NOT Gate Attributes"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(297,568)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="Output behavior as 0/floating"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(30,871)" name="Text">
+      <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="Example Circuits"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(32,458)" name="Text">
+      <a name="font" val="SansSerif bold 14"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="High-impedance Output Modes"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(32,733)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text">Facing - Used to rotate the gate. You can also rotate the gate using arrow keys (up/down/left/right).
+Data Bits - The width, in bits, of the gate's input and output.
+Gate Size - Used to select a wide or narrow symbol.
+Output Value - Configures the output behavior. Mode "0/1" is the traditional behavior, with the NOT gate outputing
+either 0 or 1, depending on the input. Mode "0/floating" is open-collector (aka open-drain) behavior, so the NOT gate
+either outputs 0 or leaves the output floating. Mode "floating/1" makes the NOT gate leave the output floating or output a 1.
+Label - A label to appear above the gate.
+Label Font - Font for the label.
+</a>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(369,114)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="1"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(369,139)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="other"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(370,95)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="0"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(374,77)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="input"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(430,76)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="output"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(430,93)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="1"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(431,115)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="0"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(431,140)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="error"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(449,624)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="1"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(450,605)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="0"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(454,587)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="input"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(457,642)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="other"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(510,586)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="output"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(510,603)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="1"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(511,625)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="floating"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(514,568)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="Output behavior as floating/1"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(517,889)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="Transient Pulse Generator"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(519,643)" name="Text">
+      <a name="halign" val="center"/>
+      <a name="text" val="error"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="2" loc="(150,920)" name="NOT Gate"/>
+    <comp lib="2" loc="(190,920)" name="NOT Gate"/>
+    <comp lib="2" loc="(210,130)" name="NOT Gate"/>
+    <comp lib="2" loc="(230,370)" name="NOT Gate">
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="2" loc="(230,920)" name="NOT Gate"/>
+    <comp lib="2" loc="(270,920)" name="NOT Gate"/>
+    <comp lib="2" loc="(330,910)" name="XOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <wire from="(100,900)" to="(100,920)"/>
+    <wire from="(100,900)" to="(290,900)"/>
+    <wire from="(100,920)" to="(120,920)"/>
+    <wire from="(150,130)" to="(180,130)"/>
+    <wire from="(150,920)" to="(160,920)"/>
+    <wire from="(170,370)" to="(200,370)"/>
+    <wire from="(190,920)" to="(200,920)"/>
+    <wire from="(210,130)" to="(240,130)"/>
+    <wire from="(230,370)" to="(260,370)"/>
+    <wire from="(230,920)" to="(240,920)"/>
+    <wire from="(270,920)" to="(290,920)"/>
+    <wire from="(330,910)" to="(340,910)"/>
+    <wire from="(80,920)" to="(100,920)"/>
+  </circuit>
+  <circuit name="Common Gates - Basics">
+    <comp lib="1" loc="(120,1150)" name="Splitter">
+      <a name="appear" val="right"/>
+      <a name="fanout" val="5"/>
+      <a name="incoming" val="5"/>
+    </comp>
+    <comp lib="1" loc="(140,200)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="C"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(140,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="R"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(140,830)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="out"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(150,1770)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(210,1790)" name="Probe"/>
+    <comp lib="1" loc="(220,180)" name="Pin">
+      <a name="label" val="X"/>
+    </comp>
+    <comp lib="1" loc="(220,220)" name="Pin">
+      <a name="label" val="Y"/>
+    </comp>
+    <comp lib="1" loc="(220,300)" name="Pin"/>
+    <comp lib="1" loc="(220,340)" name="Pin"/>
+    <comp lib="1" loc="(230,1750)" name="Pin"/>
+    <comp lib="1" loc="(240,1910)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(290,200)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="V"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(300,1770)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(300,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(340,770)" name="Pin">
+      <a name="label" val="P"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(340,800)" name="Pin">
+      <a name="label" val="Q"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(340,830)" name="Pin">
+      <a name="label" val="R"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(340,870)" name="Pin">
+      <a name="label" val="out"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(360,1150)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="width" val="5"/>
+    </comp>
+    <comp lib="1" loc="(370,300)" name="Pin"/>
+    <comp lib="1" loc="(370,340)" name="Pin"/>
+    <comp lib="1" loc="(380,180)" name="Pin"/>
+    <comp lib="1" loc="(380,220)" name="Pin"/>
+    <comp lib="1" loc="(390,1770)" name="Pin"/>
+    <comp lib="1" loc="(400,1140)" name="Splitter">
+      <a name="facing" val="south"/>
+      <a name="fanout" val="5"/>
+      <a name="incoming" val="5"/>
+    </comp>
+    <comp lib="1" loc="(460,1760)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(460,200)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(460,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(60,180)" name="Pin">
+      <a name="label" val="A"/>
+    </comp>
+    <comp lib="1" loc="(60,220)" name="Pin">
+      <a name="label" val="B"/>
+    </comp>
+    <comp lib="1" loc="(60,300)" name="Pin">
+      <a name="label" val="P"/>
+    </comp>
+    <comp lib="1" loc="(60,340)" name="Pin">
+      <a name="label" val="Q"/>
+    </comp>
+    <comp lib="1" loc="(60,770)" name="Pin">
+      <a name="label" val="A"/>
+    </comp>
+    <comp lib="1" loc="(60,800)" name="Pin">
+      <a name="label" val="B"/>
+    </comp>
+    <comp lib="1" loc="(60,830)" name="Pin">
+      <a name="label" val="C"/>
+    </comp>
+    <comp lib="1" loc="(60,860)" name="Pin">
+      <a name="label" val="D"/>
+    </comp>
+    <comp lib="1" loc="(60,890)" name="Pin">
+      <a name="label" val="E"/>
+    </comp>
+    <comp lib="1" loc="(80,1170)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="width" val="5"/>
+    </comp>
+    <comp lib="1" loc="(90,1750)" name="Pin"/>
+    <comp lib="1" loc="(90,1780)" name="Pin"/>
+    <comp lib="11" loc="(130,240)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#185fba"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+AND gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(130,360)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+NAND gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(140,870)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">5-input
+OR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(20,1270)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## XOR &amp; XNOR Multiple-Input Behavior
+Multi-input XOR and XNOR gates can be confusing. Normally, XOR outputs a 1 when an *odd number of inputs* are 1, and XNOR does the opposite. This "parity" behavior is most typical. For XOR and XNOR gates with more than two inputs, the ***multiple-input behavior*** attribute allows for a different, less common behavior, where XOR outputs a 1 when *exactly one input* is a 1, and XNOR does the opposite. 
+
+**Suggestion** &#128073; Don't use multi-input XOR and XNOR gates. For parity calculations, use the ***Even Parity*** or ***Odd Parity*** gates instead. For *exactly-one* calculations, which are less common, consider building a circuit from a ***Bit Adder*** and a ***Comparator*** (found under ***Arithmetic***).
+
+## Errors, Unconnected, and Floating Inputs
+
+* As a convenience, any input left unconnected is ignored: if there is no wire or other connection to the input, the simulator acts as if the input did not exist at all. So a 5-input gate with only two inputs connected behaves just like a 2-input gate. This doesn't match physical circuits or more realistic simulators, where such inputs would be considered *floating*, but it makes editing a circuit a little more forgiving. 
+* If all inputs are unconnected, the output is an error. 
+* If only one input is connected, the behavior depends on the gate type.
+* If some inputs are errors, a gate's output is calculated from the remaining inputs, but only the output would be unchanged even if the errors were replaced by any combination of 0 and 1 values. For example, for an AND gate, if any input is 0, then the output is 0, even if some inputs are errors. Similarly, for an OR gate, if any input is 1, then the output is 1, regardless of other inputs.
+
+To enable a more strict simulation behavior, treating unconnected inputs as floating values, go to ***Project &gt; Options &gt; Simulation***.</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;} a { font-style: italic; font-weight: normal; text-decoration: underline; background-color: #fcf;}"/>
+      <a name="text"># Common Gates - Basics
+The common logic gates are: AND, OR, NAND, NOR, XOR, XNOR.
+
+Each one takes several inputs, combines these using the rules of Boolean logic, and outputs the result.
+
+See also: [Advanced Features](#Common Gates - Advanced) and [Online Documentation &amp; Reference](/libs/gates/common.html)</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,420)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">### Gate Behavior with 2 Inputs
+ A | B || AND | NAND | OR | NOR | XOR | XNOR
+---|---||-----|------|----|-----|-----|------
+ 0 | 0 ||  0  |  1   |  0 |  1  |  0  |   1
+ 0 | 1 ||  0  |  1   |  1 |  0  |  1  |   0
+ 1 | 0 ||  0  |  1   |  1 |  0  |  1  |   0
+ 1 | 1 ||  1  |  0   |  1 |  0  |  0  |   1</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,570)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Multiple Inputs and Multi-Bit Gates
+Use the ***number of inputs*** attribute to allow more than two inputs. All inputs are combined using the usual rules of Boolean logic to produce a single output result. Use the *data bits* attribute to allow a gate to operate on multiple bits simultaneously.
+
+**Keyboard shortcut** &#128073;To change the *number of inputs* for a gate, select it and type a number. Or select several gates to change them all.
+
+**Keyboard shortcut** &#128073;To change the *data bits*, select some gates, hold the option key (⌥) or Alt key, and type a number.
+</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,930)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Visuals
+The ***gate size*** attribute allows a choice of *narrow*, *medium*, or *wide*. Gates can be rotated to face any direction using the ***facing*** attribute. A gate can be given a ***label***, which will follow the gate if it is moved or copied.
+
+**Keyboard shortcut** &#128073;Select some gates, then use arrow keys (↑→↓←) to rotate them so they face a different direction.
+
+## Negated Inputs
+Any of the inputs can be configured to be active-low. This behaves exactly as if there were a NOT gate attached to that input, but used judiciously, negated inputs can make circuits more compact and easier to undertand.</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(220,1810)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Floating input causes
+error, unless a result
+can be determined
+from remaining inputs</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(248,1936)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-13"/>
+      <a name="dy" val="-16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="If no inputs, then error output"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(264,1227)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Both circuits work the same: the LED
+turns on only when  the input is 11010.</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(280,360)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+NOR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(290,240)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+OR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(310,470)" name="Text">
+      <a name="background" val="#87eb6700"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text" val="Note: See below for behavior when some inputs are floating (z), errors (e), or unconnected."/>
+      <a name="textwidth" val="190"/>
+    </comp>
+    <comp lib="11" loc="(312,904)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-19"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="Each output bit is the result of ANDing the corresponding input bits."/>
+      <a name="textwidth" val="228"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(390,1810)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Same for 
+error inputs</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(410,760)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="24"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="8-bit 3-input AND gate"/>
+      <a name="textwidth" val="88"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(450,240)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+XOR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(450,360)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+XNOR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(80,1810)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Unconnected
+inputs are ignored</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="2" loc="(120,200)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(130,320)" name="NAND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(130,830)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(140,1770)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(170,1160)" name="NOT Gate">
+      <a name="size" val="20"/>
+    </comp>
+    <comp lib="2" loc="(170,1180)" name="NOT Gate">
+      <a name="size" val="20"/>
+    </comp>
+    <comp lib="2" loc="(230,1910)" name="XOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(250,1180)" name="AND Gate">
+      <a name="inputs" val="5"/>
+      <a name="label" val="wide"/>
+      <a name="labelfont" val="SansSerif plain 14"/>
+      <a name="size" val="70"/>
+    </comp>
+    <comp lib="2" loc="(280,1770)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(280,200)" name="OR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(290,320)" name="NOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(400,800)" name="AND Gate">
+      <a name="inputs" val="3"/>
+      <a name="size" val="30"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="2" loc="(430,1230)" name="AND Gate">
+      <a name="facing" val="south"/>
+      <a name="inputs" val="5"/>
+      <a name="label" val="medium"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="negate2" val="true"/>
+      <a name="negate4" val="true"/>
+    </comp>
+    <comp lib="2" loc="(450,1760)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(450,200)" name="XOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(450,320)" name="XNOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="6" loc="(260,1180)" name="LED"/>
+    <comp lib="6" loc="(430,1240)" name="LED">
+      <a name="facing" val="north"/>
+    </comp>
+    <wire from="(120,200)" to="(140,200)"/>
+    <wire from="(130,320)" to="(140,320)"/>
+    <wire from="(130,830)" to="(140,830)"/>
+    <wire from="(140,1160)" to="(150,1160)"/>
+    <wire from="(140,1170)" to="(180,1170)"/>
+    <wire from="(140,1180)" to="(150,1180)"/>
+    <wire from="(140,1190)" to="(180,1190)"/>
+    <wire from="(140,1200)" to="(180,1200)"/>
+    <wire from="(140,1770)" to="(150,1770)"/>
+    <wire from="(170,1160)" to="(180,1160)"/>
+    <wire from="(170,1180)" to="(180,1180)"/>
+    <wire from="(210,1770)" to="(220,1770)"/>
+    <wire from="(210,1790)" to="(220,1790)"/>
+    <wire from="(220,1770)" to="(220,1790)"/>
+    <wire from="(220,1790)" to="(230,1790)"/>
+    <wire from="(220,180)" to="(240,180)"/>
+    <wire from="(220,220)" to="(240,220)"/>
+    <wire from="(220,300)" to="(240,300)"/>
+    <wire from="(220,340)" to="(240,340)"/>
+    <wire from="(230,1750)" to="(250,1750)"/>
+    <wire from="(230,1780)" to="(230,1790)"/>
+    <wire from="(230,1780)" to="(250,1780)"/>
+    <wire from="(230,1910)" to="(240,1910)"/>
+    <wire from="(240,180)" to="(240,190)"/>
+    <wire from="(240,190)" to="(250,190)"/>
+    <wire from="(240,210)" to="(240,220)"/>
+    <wire from="(240,210)" to="(250,210)"/>
+    <wire from="(240,300)" to="(240,310)"/>
+    <wire from="(240,310)" to="(250,310)"/>
+    <wire from="(240,330)" to="(240,340)"/>
+    <wire from="(240,330)" to="(250,330)"/>
+    <wire from="(250,1180)" to="(260,1180)"/>
+    <wire from="(280,1770)" to="(290,1770)"/>
+    <wire from="(280,200)" to="(290,200)"/>
+    <wire from="(290,1750)" to="(290,1770)"/>
+    <wire from="(290,1750)" to="(420,1750)"/>
+    <wire from="(290,1770)" to="(300,1770)"/>
+    <wire from="(290,320)" to="(300,320)"/>
+    <wire from="(340,770)" to="(360,770)"/>
+    <wire from="(340,800)" to="(370,800)"/>
+    <wire from="(340,830)" to="(360,830)"/>
+    <wire from="(340,870)" to="(410,870)"/>
+    <wire from="(360,1140)" to="(360,1150)"/>
+    <wire from="(360,1140)" to="(400,1140)"/>
+    <wire from="(360,770)" to="(360,790)"/>
+    <wire from="(360,790)" to="(370,790)"/>
+    <wire from="(360,810)" to="(360,830)"/>
+    <wire from="(360,810)" to="(370,810)"/>
+    <wire from="(370,300)" to="(390,300)"/>
+    <wire from="(370,340)" to="(390,340)"/>
+    <wire from="(380,180)" to="(400,180)"/>
+    <wire from="(380,220)" to="(400,220)"/>
+    <wire from="(390,1770)" to="(420,1770)"/>
+    <wire from="(390,300)" to="(390,310)"/>
+    <wire from="(390,310)" to="(400,310)"/>
+    <wire from="(390,330)" to="(390,340)"/>
+    <wire from="(390,330)" to="(400,330)"/>
+    <wire from="(400,180)" to="(400,190)"/>
+    <wire from="(400,190)" to="(410,190)"/>
+    <wire from="(400,210)" to="(400,220)"/>
+    <wire from="(400,210)" to="(410,210)"/>
+    <wire from="(400,800)" to="(410,800)"/>
+    <wire from="(410,1160)" to="(410,1180)"/>
+    <wire from="(410,800)" to="(410,870)"/>
+    <wire from="(420,1160)" to="(420,1180)"/>
+    <wire from="(430,1160)" to="(430,1170)"/>
+    <wire from="(430,1230)" to="(430,1240)"/>
+    <wire from="(440,1160)" to="(440,1180)"/>
+    <wire from="(450,1160)" to="(450,1170)"/>
+    <wire from="(450,1760)" to="(460,1760)"/>
+    <wire from="(450,200)" to="(460,200)"/>
+    <wire from="(450,320)" to="(460,320)"/>
+    <wire from="(60,180)" to="(80,180)"/>
+    <wire from="(60,220)" to="(80,220)"/>
+    <wire from="(60,300)" to="(80,300)"/>
+    <wire from="(60,340)" to="(80,340)"/>
+    <wire from="(60,770)" to="(90,770)"/>
+    <wire from="(60,800)" to="(80,800)"/>
+    <wire from="(60,830)" to="(100,830)"/>
+    <wire from="(60,860)" to="(80,860)"/>
+    <wire from="(60,890)" to="(90,890)"/>
+    <wire from="(80,1150)" to="(120,1150)"/>
+    <wire from="(80,1150)" to="(80,1170)"/>
+    <wire from="(80,180)" to="(80,190)"/>
+    <wire from="(80,190)" to="(90,190)"/>
+    <wire from="(80,210)" to="(80,220)"/>
+    <wire from="(80,210)" to="(90,210)"/>
+    <wire from="(80,300)" to="(80,310)"/>
+    <wire from="(80,310)" to="(90,310)"/>
+    <wire from="(80,330)" to="(80,340)"/>
+    <wire from="(80,330)" to="(90,330)"/>
+    <wire from="(80,800)" to="(80,820)"/>
+    <wire from="(80,820)" to="(100,820)"/>
+    <wire from="(80,840)" to="(100,840)"/>
+    <wire from="(80,840)" to="(80,860)"/>
+    <wire from="(90,1750)" to="(110,1750)"/>
+    <wire from="(90,1780)" to="(110,1780)"/>
+    <wire from="(90,770)" to="(90,810)"/>
+    <wire from="(90,810)" to="(100,810)"/>
+    <wire from="(90,850)" to="(100,850)"/>
+    <wire from="(90,850)" to="(90,890)"/>
+  </circuit>
+  <circuit name="Common Gates - Advanced">
+    <comp lib="1" loc="(160,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(190,500)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(190,520)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(190,550)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(190,570)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(310,430)" name="Probe">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(320,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(470,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(50,310)" name="Pin">
+      <a name="width" val="2"/>
+    </comp>
+    <comp lib="1" loc="(60,310)" name="Splitter"/>
+    <comp lib="1" loc="(60,510)" name="Pin"/>
+    <comp lib="1" loc="(60,530)" name="Pin"/>
+    <comp lib="1" loc="(60,560)" name="Pin"/>
+    <comp lib="1" loc="(60,580)" name="Pin"/>
+    <comp lib="11" loc="(100,870)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="10"/>
+      <a name="dy" val="-10"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">ANSI/IEEE
+91a-1991</a>
+      <a name="valign" val="bottom-overall"/>
+    </comp>
+    <comp lib="11" loc="(100,980)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="10"/>
+      <a name="dy" val="-10"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="DIN 40700"/>
+      <a name="valign" val="bottom-overall"/>
+    </comp>
+    <comp lib="11" loc="(110,930)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="10"/>
+      <a name="dy" val="-10"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="IEC 60617-12"/>
+      <a name="valign" val="bottom-overall"/>
+    </comp>
+    <comp lib="11" loc="(120,830)" name="Image">
+      <a name="image">PNG:
+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
+AAAAAElFTkSuQmCC</a>
+      <a name="xscale" val="0.8"/>
+      <a name="yscale" val="0.8"/>
+    </comp>
+    <comp lib="11" loc="(142,821)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="AND"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(160,460)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="single bus wire with multiple device outputs"/>
+      <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(160,620)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-21"/>
+      <a name="dy" val="-16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="pull-down resistor ensures the bus is pulled down to 0 if no output is driving to 1"/>
+      <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(170,350)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="push-pull output is always driving"/>
+      <a name="textwidth" val="111"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(192,821)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="OR"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text"># Common Gates - Advanced Features
+
+## Output Driver Option
+
+Normally, gates use **push-pull** outputs: they actively output either 1 or 0 at all times, as long as the inputs are well defined. The ***Output Driver*** attribute allows for two other behaviors. 
+* With a **pull-up-only** output driver (equivalent to open-emitter/open-source) a gate can actively output 1, but instead of outputting 0 it will produce a floating (z) output. 
+* With **pull-down-only** output driver (equivalent to open-collector/open-drain), a gate can actively output 0, but instead of outputting 1 it will produce a floating (z) output. 
+This allows creation of *wired-OR* and *wired-AND* busses. ***Pull Resistor*** (found in the ***Analog*** library) can be useful for these too.</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,670)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Gate Appearance and International Standards
+
+Different standards bodies have adopted different symbols for  common gates. In **Logisim &gt; Settings &gt; International** you can choose from **ANSI/IEEE Standard 91a-1991** (curved, distinctive shapes commonly used in computer science textbooks and educational materials), **IEC 60617-12** (rectangular, uniform shapes often used in professional settings and engineering), and **DIN 40700** (an older, less common standard).</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(231,544)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="13"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="any of the four devices can drive the bus wire to 1, or even more than one of them at the same time"/>
+      <a name="textwidth" val="216"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(262,821)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="NAND"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(322,821)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="NOR"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(330,349)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="pull-down-only output is floating when not driving output low"/>
+      <a name="textwidth" val="146"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(382,821)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="XOR"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(452,821)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="XNOR"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(480,350)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="pull-up-only output is floating when not driving output high"/>
+      <a name="textwidth" val="134"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="2" loc="(110,520)" name="AND Gate">
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(110,570)" name="AND Gate">
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(140,560)" name="XOR Gate">
+      <a name="facing" val="west"/>
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(150,320)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(150,510)" name="OR Gate">
+      <a name="facing" val="west"/>
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(310,320)" name="AND Gate">
+      <a name="out" val="0Z"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(460,320)" name="AND Gate">
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="7" loc="(130,590)" name="Pull Resistor">
+      <a name="facing" val="north"/>
+    </comp>
+    <wire from="(100,300)" to="(100,330)"/>
+    <wire from="(100,300)" to="(260,300)"/>
+    <wire from="(100,330)" to="(120,330)"/>
+    <wire from="(110,290)" to="(110,310)"/>
+    <wire from="(110,290)" to="(270,290)"/>
+    <wire from="(110,310)" to="(120,310)"/>
+    <wire from="(110,520)" to="(130,520)"/>
+    <wire from="(110,570)" to="(130,570)"/>
+    <wire from="(130,430)" to="(130,510)"/>
+    <wire from="(130,430)" to="(310,430)"/>
+    <wire from="(130,510)" to="(130,520)"/>
+    <wire from="(130,510)" to="(150,510)"/>
+    <wire from="(130,520)" to="(130,560)"/>
+    <wire from="(130,560)" to="(130,570)"/>
+    <wire from="(130,560)" to="(140,560)"/>
+    <wire from="(130,570)" to="(130,590)"/>
+    <wire from="(150,320)" to="(160,320)"/>
+    <wire from="(180,500)" to="(190,500)"/>
+    <wire from="(180,520)" to="(190,520)"/>
+    <wire from="(180,550)" to="(190,550)"/>
+    <wire from="(180,570)" to="(190,570)"/>
+    <wire from="(260,300)" to="(260,330)"/>
+    <wire from="(260,300)" to="(410,300)"/>
+    <wire from="(260,330)" to="(280,330)"/>
+    <wire from="(270,290)" to="(270,310)"/>
+    <wire from="(270,290)" to="(420,290)"/>
+    <wire from="(270,310)" to="(280,310)"/>
+    <wire from="(310,320)" to="(320,320)"/>
+    <wire from="(410,300)" to="(410,330)"/>
+    <wire from="(410,330)" to="(430,330)"/>
+    <wire from="(420,290)" to="(420,310)"/>
+    <wire from="(420,310)" to="(430,310)"/>
+    <wire from="(460,320)" to="(470,320)"/>
+    <wire from="(50,310)" to="(60,310)"/>
+    <wire from="(60,510)" to="(80,510)"/>
+    <wire from="(60,530)" to="(80,530)"/>
+    <wire from="(60,560)" to="(80,560)"/>
+    <wire from="(60,580)" to="(80,580)"/>
+    <wire from="(80,290)" to="(110,290)"/>
+    <wire from="(80,300)" to="(100,300)"/>
+  </circuit>
+  <circuit name="Common Gates - Reference">
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text"># Common Gates - Reference
+
+## Properties
+
+Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these properties:
+
+| Property      | Values                       | Notes
+|:--------      |:---------                    |:----------
+| Facing        | East, North, West, South     | Orientation of the output port.
+| Data Bits     | 1-32                         | Width of each input and output port. If set 
++               |                              | to *N*, the gate outputs *N* values, with 
++               |                              | each output value computed from the 
++               |                              | corresponding bit of the input ports.
+| Gate Size     | Narrow, Medium, Wide         | Size of the gate symbol.
+| Number of     | 2-32                         | Up to 32 inputs are allowed.
++    Inputs     |                              | Unconnected inputs are ignored.
+| Output Driver | 0/1 (push-pull),&lt;br&gt;         | Determines the set of possible output values,
++               | 0/floating (pull-down-only), | in other words, if the output port is capable
++               | &lt;br&gt;floating/1 (pull-up-only)| of actively driving high values, low values,
++               |                              | or both.
+| Label         | any text                     | Text to be shown on top of the gate.
+| Label Font    | any font                     | Font to be used for the label.
+| Negate *i*    | Yes, No                      | Whether to invert the value of input port 
++               |                              | *i*. Negated inputs are drawn with a "bubble"
++               |                              | symbol at the port.
+| Multiple-Input| When an odd number are on,   | For XOR and XNOR gates with more than two 
++ Behavior      | &lt;br&gt;When one input is on     | inputs, chooses between parity-style 
++               |                              | behavior and one-hot behavior.
+
+## Keyboard Shortcuts
+
++ &#128073;Arrow keys (↑→↓←) change the *Facing* property for the selected gate or gates.
+
++ &#128073;Typing a number (2-32) changes the *Number of Inputs* property for the 
+  selected gate or gates.
+
++ &#128073;Typing a number (1-32) while holding the option key (⌥) or Alt key changes the *Data Bits*
+   property for the selected gate or gates.
+
+
+## Behavior
+
+* **AND** Gate
+  - Unconnected inputs are ignored.
+  - If there are no connected inputs, outputs error (e).
+  - Outputs 1 when *all* connected inputs are 1 (and there are some connected inputs).
+  - Outputs 0 when *any* input is 0.
+  - In all other cases, outputs error (e). This includes cases where some inputs are floating
+    (z) or errors (e), unless some input is 0, in which case the above rule applies and the
+    output is 0.
+
+* **NAND** Gate
+  - Outputs 1, 0, or e, whenever AND would have outputted 0, 1, or e, respectively.
+
+* **OR** Gate
+  - Unconnected inputs are ignored.
+  - If there are no connected inputs, outputs error (e).
+  - Outputs 1 when *any* input is 1.
+  - Outputs 0 when *all* connected inputs are 0 (and there are some connected inputs).
+  - In all other cases, outputs error (e). This includes cases where some inputs are floating
+    (z) or errors (e), unless some input is 1, in which case the above rule applies and the
+    output is 1.
+
+* **NOR** Gate
+  - Outputs 1, 0, or e, whenever OR would have outputted 0, 1, or e, respectively.
+
+* **XOR** Gate with Multiple-Input Behavior set to "When an odd number are on"
+  - Unconnected inputs are ignored.
+  - If there are no connected inputs, outputs error (e).
+  - Outputs 1 when an odd number of inputs are 1, and all other connected inputs
+    are 0.
+  - Outputs 0 when an even number of inputs are 1, and all other connected inputs
+    are 0 (and there are some connected inputs).
+  - In all other cases, outputs error (e). This includes all cases where some inputs are 
+    floating (z) or errors (e).
+
+* **XOR** Gate with Multiple-Input Behavior set to "When one input is on"
+  - Unconnected inputs are ignored.
+  - If there are no connected inputs, outputs error (e).
+  - Outputs 1 when exactly one input is 1, and all other connected inputs
+    are 0.
+  - Outputs 0 when either zero or more than two connected inputs are 1, and all
+    other connected inputs are 0 (and there are some connected inputs).
+  - In all other cases, outputs error (e). This includes all cases where some inputs are 
+    floating (z) or errors (e).
+
+* **XNOR** Gate
+  - Outputs 1, 0, or e, whenever XOR would have outputted 0, 1, or e, respectively.
+</a>
+      <a name="textwidth" val="700"/>
+    </comp>
+  </circuit>
+  <circuit name="Floating Buses">
+    <a name="facing" val="north"/>
+    <comp lib="1" loc="(120,960)" name="Splitter">
+      <a name="appear" val="right"/>
+      <a name="fanout" val="5"/>
+      <a name="incoming" val="5"/>
+    </comp>
+    <comp lib="1" loc="(130,1480)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(140,1590)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(140,170)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="C"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(140,290)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="R"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(140,640)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="out"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(160,1900)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(190,2050)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(190,2070)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(190,2100)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(190,2120)" name="Pin">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(210,1460)" name="Pin"/>
+    <comp lib="1" loc="(220,150)" name="Pin">
+      <a name="label" val="X"/>
+    </comp>
+    <comp lib="1" loc="(220,190)" name="Pin">
+      <a name="label" val="Y"/>
+    </comp>
+    <comp lib="1" loc="(220,270)" name="Pin"/>
+    <comp lib="1" loc="(220,310)" name="Pin"/>
+    <comp lib="1" loc="(280,1480)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(290,170)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="V"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(300,290)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(300,580)" name="Pin">
+      <a name="label" val="P"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(300,610)" name="Pin">
+      <a name="label" val="Q"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(300,640)" name="Pin">
+      <a name="label" val="R"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(300,680)" name="Pin">
+      <a name="label" val="out"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(310,2010)" name="Probe">
+      <a name="facing" val="west"/>
+    </comp>
+    <comp lib="1" loc="(320,1900)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(360,960)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="width" val="5"/>
+    </comp>
+    <comp lib="1" loc="(370,270)" name="Pin"/>
+    <comp lib="1" loc="(370,310)" name="Pin"/>
+    <comp lib="1" loc="(380,150)" name="Pin"/>
+    <comp lib="1" loc="(380,190)" name="Pin"/>
+    <comp lib="1" loc="(390,1480)" name="Pin"/>
+    <comp lib="1" loc="(400,950)" name="Splitter">
+      <a name="facing" val="south"/>
+      <a name="fanout" val="5"/>
+      <a name="incoming" val="5"/>
+    </comp>
+    <comp lib="1" loc="(460,1470)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(460,170)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(460,290)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(470,1900)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(50,1890)" name="Pin">
+      <a name="width" val="2"/>
+    </comp>
+    <comp lib="1" loc="(60,150)" name="Pin">
+      <a name="label" val="A"/>
+    </comp>
+    <comp lib="1" loc="(60,1890)" name="Splitter"/>
+    <comp lib="1" loc="(60,190)" name="Pin">
+      <a name="label" val="B"/>
+    </comp>
+    <comp lib="1" loc="(60,2060)" name="Pin"/>
+    <comp lib="1" loc="(60,2080)" name="Pin"/>
+    <comp lib="1" loc="(60,2110)" name="Pin"/>
+    <comp lib="1" loc="(60,2130)" name="Pin"/>
+    <comp lib="1" loc="(60,270)" name="Pin">
+      <a name="label" val="P"/>
+    </comp>
+    <comp lib="1" loc="(60,310)" name="Pin">
+      <a name="label" val="Q"/>
+    </comp>
+    <comp lib="1" loc="(60,580)" name="Pin">
+      <a name="label" val="A"/>
+    </comp>
+    <comp lib="1" loc="(60,610)" name="Pin">
+      <a name="label" val="B"/>
+    </comp>
+    <comp lib="1" loc="(60,640)" name="Pin">
+      <a name="label" val="C"/>
+    </comp>
+    <comp lib="1" loc="(60,670)" name="Pin">
+      <a name="label" val="D"/>
+    </comp>
+    <comp lib="1" loc="(60,700)" name="Pin">
+      <a name="label" val="E"/>
+    </comp>
+    <comp lib="1" loc="(70,1460)" name="Pin"/>
+    <comp lib="1" loc="(70,1490)" name="Pin"/>
+    <comp lib="1" loc="(80,980)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="width" val="5"/>
+    </comp>
+    <comp lib="11" loc="(130,210)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#185fba"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+AND gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(130,330)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+NAND gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(140,680)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">5-input
+OR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(148,1616)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-13"/>
+      <a name="dy" val="-16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="If no inputs, then error output"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(150,2410)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="25"/>
+      <a name="dy" val="16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">ANSI/IEEE
+91a-1991</a>
+      <a name="valign" val="bottom-overall"/>
+    </comp>
+    <comp lib="11" loc="(150,2470)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="25"/>
+      <a name="dy" val="16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="IEC 60617-12"/>
+      <a name="valign" val="bottom-overall"/>
+    </comp>
+    <comp lib="11" loc="(150,2540)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="25"/>
+      <a name="dy" val="16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="DIN 40700"/>
+      <a name="valign" val="bottom-overall"/>
+    </comp>
+    <comp lib="11" loc="(160,2170)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-21"/>
+      <a name="dy" val="-16"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="pull-down resistor ensures the bus is pulled down to 0 if no output is driving to 1"/>
+      <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(170,1930)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="push-pull output is always driving"/>
+      <a name="textwidth" val="111"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(180,2390)" name="Image">
+      <a name="image">PNG:
+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
+AAAASUVORK5CYII=</a>
+    </comp>
+    <comp lib="11" loc="(20,1080)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## XOR &amp; XNOR Multiple-Input Behavior
+Multi-input XOR and XNOR gates can be confusing. Normally, XOR outputs a 1 when an *odd number of inputs* are 1, and XNOR does the opposite. This "parity" behavior is most typical. For XOR and XNOR gates with more than two inputs, the ***multiple-input behavior*** attribute allows for a different, less common behavior, where XOR outputs a 1 when *exactly one input* is a 1, and XNOR does the opposite. 
+
+**Suggestion** &#128073; Don't use multi-input XOR and XNOR gates. For parity calculations, use the ***Even Parity*** or ***Odd Parity*** gates instead. For *exactly-one* calculations, which are less common, consider building a circuit from a ***Bit Adder*** and a ***Comparator*** (found under ***Arithmetic***).
+
+## Errors, Unconnected, and Floating Inputs
+
+As a convenience, any input left unconnected is ignored: if there is no wire or other connection to the input, the simulator acts as if the input did not exist at all. So a 5-input gate with only two inputs connected behaves just like a 2-input gate. This doesn't match physical circuits or more realistic simulators, where such inputs would be considered *floating*, but it makes editing a circuit a little more forgiving. If all inputs are unconnected, the output is an error. If only one input is connected, the behavior depends on the gate type. To enable a more strict simulation behavior, treating unconnected inputs as floating values, go to ***Project &gt; Options &gt; Simulation***.
+
+</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,1650)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Output Driver Option
+
+Normally, gates use **push-pull** outputs: they actively output either 1 or 0 at all times, as long as the inputs are well defined. The ***Output Driver*** attribute allows for two other behaviors. 
+* With a **pull-up-only** output driver (equivalent to open-emitter/open-source) a gate can actively output 1, but instead of outputting 0 it will produce a floating (z) output. 
+* With **pull-down-only** output driver (equivalent to open-collector/open-drain), a gate can actively output 0, but instead of outputting 1 it will produce a floating (z) output. 
+This allows creation of *wired-OR* and *wired-AND* busses. ***Pull Resistor*** (found in the ***Analog*** library) can be useful for these too.</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text"># Overview of Common Gates
+Common mutliple-input logic gates are AND, OR, NAND, NOR, XOR, XNOR.
+
+Each one takes several inputs, combines these using the rules of Boolean logic, and outputs the result.</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,2230)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Gate Shapes and International Standards
+
+Different standards bodies have adopted different shapes for  common gates. In **Logisim &gt; Settings &gt; International** you can choose from **ANSI/IEEE Standard 91a-1991** (curved, distinctive shapes commonly used in computer science textbooks and educational materials), **IEC 60617-12** (rectangular, uniform shapes often used in professional settings and engineering), and **DIN 40700** (an older, less common standard).</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,380)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Multiple Inputs and Multi-Bit Gates
+Use the ***number of inputs*** attribute to allow more than two inputs. All inputs are combined using the usual rules of Boolean logic to produce a single output result. Use the *data bits* attribute to allow a gate to operate on multiple bits simultaneously.
+
+**Keyboard shortcut** &#128073;To change the *number of inputs* for a gate, select it and type a number. Or select several gates to change them all.
+
+**Keyboard shortcut** &#128073;To change the *data bits*, select some gates, hold the option key (⌥) or Alt key, and type a number.
+</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(20,740)" name="Text">
+      <a name="background" val="#87eb675e"/>
+      <a name="format" val="markdownish"/>
+      <a name="style" val="margin: 0.5em; h1 { accent: underline 0.25em; }; h2 { accent: block 0.75em #3dd;}"/>
+      <a name="text">## Visuals
+The ***gate size*** attribute allows a choice of *narrow*, *medium*, or *wide*. Gates can be rotated to face any direction using the ***facing*** attribute. A gate can be given a ***label***, which will follow the gate if it is moved or copied.
+
+**Keyboard shortcut** &#128073;Select some gates, then use arrow keys (↑→↓←) to rotate them so they face a different direction.
+
+## Negated Inputs
+Any of the inputs can be configured to be active-low. This behaves exactly as if there were a NOT gate attached to that input, but used judiciously, negated inputs can make circuits more compact and easier to undertand.</a>
+      <a name="textwidth" val="480"/>
+    </comp>
+    <comp lib="11" loc="(200,1520)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Floating input causes
+error, unless a result
+can be determined
+from remaining inputs</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(210,2380)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="AND"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(222,2036)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="single bus wire with multiple device outputs"/>
+      <a name="textwidth" val="267"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(231,2094)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="13"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="any of the four devices can drive the bus wire to 1, or even more than one of them at the same time"/>
+      <a name="textwidth" val="216"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(264,1037)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Both circuits work the same: the LED
+turns on only when  the input is 11010.</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(272,714)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-19"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="Each output bit is the result of ANDing the corresponding input bits."/>
+      <a name="textwidth" val="228"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(280,2380)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="OR"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(280,330)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+NOR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(290,210)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+OR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(330,1929)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="pull-down-only output is floating when not driving output low"/>
+      <a name="textwidth" val="146"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(350,2380)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="NAND"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(380,580)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-18"/>
+      <a name="dy" val="14"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="8-bit 3-input AND gate"/>
+      <a name="textwidth" val="107"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(390,1520)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Same for 
+error inputs</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(430,2380)" name="Text">
+      <a name="font" val="SansSerif bold 12"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="NOR"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(450,210)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+XOR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(450,330)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">2-input
+XNOR gate</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(480,1930)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="style" val="p-margin: 0px;"/>
+      <a name="text" val="pull-up-only output is floating when not driving output high"/>
+      <a name="textwidth" val="134"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(60,1520)" name="Callout">
+      <a name="background" val="#b7e1eb71"/>
+      <a name="dx" val="20"/>
+      <a name="dy" val="-20"/>
+      <a name="foreground" val="#236494"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text">Unconnected
+inputs are ignored</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="2" loc="(110,2070)" name="AND Gate">
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(110,2120)" name="AND Gate">
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(120,1480)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(120,170)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(130,1590)" name="XOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(130,290)" name="NAND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(130,640)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(140,2110)" name="XOR Gate">
+      <a name="facing" val="west"/>
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(150,1900)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(150,2060)" name="OR Gate">
+      <a name="facing" val="west"/>
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(170,970)" name="NOT Gate">
+      <a name="size" val="20"/>
+    </comp>
+    <comp lib="2" loc="(170,990)" name="NOT Gate">
+      <a name="size" val="20"/>
+    </comp>
+    <comp lib="2" loc="(250,990)" name="AND Gate">
+      <a name="inputs" val="5"/>
+      <a name="label" val="wide"/>
+      <a name="labelfont" val="SansSerif plain 14"/>
+      <a name="size" val="70"/>
+    </comp>
+    <comp lib="2" loc="(260,1480)" name="OR Gate">
+      <a name="inputs" val="5"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(280,170)" name="OR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(290,290)" name="NOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(310,1900)" name="AND Gate">
+      <a name="out" val="0Z"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(360,610)" name="AND Gate">
+      <a name="inputs" val="3"/>
+      <a name="size" val="30"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="2" loc="(430,1040)" name="AND Gate">
+      <a name="facing" val="south"/>
+      <a name="inputs" val="5"/>
+      <a name="label" val="medium"/>
+      <a name="labelfont" val="SansSerif plain 10"/>
+      <a name="negate2" val="true"/>
+      <a name="negate4" val="true"/>
+    </comp>
+    <comp lib="2" loc="(450,1470)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(450,170)" name="XOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(450,290)" name="XNOR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(460,1900)" name="AND Gate">
+      <a name="out" val="Z1"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="6" loc="(260,990)" name="LED"/>
+    <comp lib="6" loc="(430,1050)" name="LED">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="7" loc="(130,2140)" name="Pull Resistor">
+      <a name="facing" val="north"/>
+    </comp>
+    <wire from="(100,1880)" to="(100,1910)"/>
+    <wire from="(100,1880)" to="(260,1880)"/>
+    <wire from="(100,1910)" to="(120,1910)"/>
+    <wire from="(110,1870)" to="(110,1890)"/>
+    <wire from="(110,1870)" to="(270,1870)"/>
+    <wire from="(110,1890)" to="(120,1890)"/>
+    <wire from="(110,2070)" to="(130,2070)"/>
+    <wire from="(110,2120)" to="(130,2120)"/>
+    <wire from="(120,1480)" to="(130,1480)"/>
+    <wire from="(120,170)" to="(140,170)"/>
+    <wire from="(130,1590)" to="(140,1590)"/>
+    <wire from="(130,2010)" to="(130,2060)"/>
+    <wire from="(130,2010)" to="(310,2010)"/>
+    <wire from="(130,2060)" to="(130,2070)"/>
+    <wire from="(130,2060)" to="(150,2060)"/>
+    <wire from="(130,2070)" to="(130,2110)"/>
+    <wire from="(130,2110)" to="(130,2120)"/>
+    <wire from="(130,2110)" to="(140,2110)"/>
+    <wire from="(130,2120)" to="(130,2140)"/>
+    <wire from="(130,290)" to="(140,290)"/>
+    <wire from="(130,640)" to="(140,640)"/>
+    <wire from="(140,1000)" to="(180,1000)"/>
+    <wire from="(140,1010)" to="(180,1010)"/>
+    <wire from="(140,970)" to="(150,970)"/>
+    <wire from="(140,980)" to="(180,980)"/>
+    <wire from="(140,990)" to="(150,990)"/>
+    <wire from="(150,1900)" to="(160,1900)"/>
+    <wire from="(170,970)" to="(180,970)"/>
+    <wire from="(170,990)" to="(180,990)"/>
+    <wire from="(180,2050)" to="(190,2050)"/>
+    <wire from="(180,2070)" to="(190,2070)"/>
+    <wire from="(180,2100)" to="(190,2100)"/>
+    <wire from="(180,2120)" to="(190,2120)"/>
+    <wire from="(190,1480)" to="(200,1480)"/>
+    <wire from="(200,1480)" to="(200,1500)"/>
+    <wire from="(200,1500)" to="(210,1500)"/>
+    <wire from="(210,1460)" to="(230,1460)"/>
+    <wire from="(210,1490)" to="(210,1500)"/>
+    <wire from="(210,1490)" to="(230,1490)"/>
+    <wire from="(220,150)" to="(240,150)"/>
+    <wire from="(220,190)" to="(240,190)"/>
+    <wire from="(220,270)" to="(240,270)"/>
+    <wire from="(220,310)" to="(240,310)"/>
+    <wire from="(240,150)" to="(240,160)"/>
+    <wire from="(240,160)" to="(250,160)"/>
+    <wire from="(240,180)" to="(240,190)"/>
+    <wire from="(240,180)" to="(250,180)"/>
+    <wire from="(240,270)" to="(240,280)"/>
+    <wire from="(240,280)" to="(250,280)"/>
+    <wire from="(240,300)" to="(240,310)"/>
+    <wire from="(240,300)" to="(250,300)"/>
+    <wire from="(250,990)" to="(260,990)"/>
+    <wire from="(260,1480)" to="(270,1480)"/>
+    <wire from="(260,1880)" to="(260,1910)"/>
+    <wire from="(260,1880)" to="(410,1880)"/>
+    <wire from="(260,1910)" to="(280,1910)"/>
+    <wire from="(270,1460)" to="(270,1480)"/>
+    <wire from="(270,1460)" to="(420,1460)"/>
+    <wire from="(270,1480)" to="(280,1480)"/>
+    <wire from="(270,1870)" to="(270,1890)"/>
+    <wire from="(270,1870)" to="(420,1870)"/>
+    <wire from="(270,1890)" to="(280,1890)"/>
+    <wire from="(280,170)" to="(290,170)"/>
+    <wire from="(290,290)" to="(300,290)"/>
+    <wire from="(300,580)" to="(320,580)"/>
+    <wire from="(300,610)" to="(330,610)"/>
+    <wire from="(300,640)" to="(320,640)"/>
+    <wire from="(300,680)" to="(370,680)"/>
+    <wire from="(310,1900)" to="(320,1900)"/>
+    <wire from="(320,580)" to="(320,600)"/>
+    <wire from="(320,600)" to="(330,600)"/>
+    <wire from="(320,620)" to="(320,640)"/>
+    <wire from="(320,620)" to="(330,620)"/>
+    <wire from="(360,610)" to="(370,610)"/>
+    <wire from="(360,950)" to="(360,960)"/>
+    <wire from="(360,950)" to="(400,950)"/>
+    <wire from="(370,270)" to="(390,270)"/>
+    <wire from="(370,310)" to="(390,310)"/>
+    <wire from="(370,610)" to="(370,680)"/>
+    <wire from="(380,150)" to="(400,150)"/>
+    <wire from="(380,190)" to="(400,190)"/>
+    <wire from="(390,1480)" to="(420,1480)"/>
+    <wire from="(390,270)" to="(390,280)"/>
+    <wire from="(390,280)" to="(400,280)"/>
+    <wire from="(390,300)" to="(390,310)"/>
+    <wire from="(390,300)" to="(400,300)"/>
+    <wire from="(400,150)" to="(400,160)"/>
+    <wire from="(400,160)" to="(410,160)"/>
+    <wire from="(400,180)" to="(400,190)"/>
+    <wire from="(400,180)" to="(410,180)"/>
+    <wire from="(410,1880)" to="(410,1910)"/>
+    <wire from="(410,1910)" to="(430,1910)"/>
+    <wire from="(410,970)" to="(410,990)"/>
+    <wire from="(420,1870)" to="(420,1890)"/>
+    <wire from="(420,1890)" to="(430,1890)"/>
+    <wire from="(420,970)" to="(420,990)"/>
+    <wire from="(430,1040)" to="(430,1050)"/>
+    <wire from="(430,970)" to="(430,980)"/>
+    <wire from="(440,970)" to="(440,990)"/>
+    <wire from="(450,1470)" to="(460,1470)"/>
+    <wire from="(450,170)" to="(460,170)"/>
+    <wire from="(450,290)" to="(460,290)"/>
+    <wire from="(450,970)" to="(450,980)"/>
+    <wire from="(460,1900)" to="(470,1900)"/>
+    <wire from="(50,1890)" to="(60,1890)"/>
+    <wire from="(60,150)" to="(80,150)"/>
+    <wire from="(60,190)" to="(80,190)"/>
+    <wire from="(60,2060)" to="(80,2060)"/>
+    <wire from="(60,2080)" to="(80,2080)"/>
+    <wire from="(60,2110)" to="(80,2110)"/>
+    <wire from="(60,2130)" to="(80,2130)"/>
+    <wire from="(60,270)" to="(80,270)"/>
+    <wire from="(60,310)" to="(80,310)"/>
+    <wire from="(60,580)" to="(90,580)"/>
+    <wire from="(60,610)" to="(80,610)"/>
+    <wire from="(60,640)" to="(100,640)"/>
+    <wire from="(60,670)" to="(80,670)"/>
+    <wire from="(60,700)" to="(90,700)"/>
+    <wire from="(70,1460)" to="(90,1460)"/>
+    <wire from="(70,1490)" to="(90,1490)"/>
+    <wire from="(80,150)" to="(80,160)"/>
+    <wire from="(80,160)" to="(90,160)"/>
+    <wire from="(80,180)" to="(80,190)"/>
+    <wire from="(80,180)" to="(90,180)"/>
+    <wire from="(80,1870)" to="(110,1870)"/>
+    <wire from="(80,1880)" to="(100,1880)"/>
+    <wire from="(80,270)" to="(80,280)"/>
+    <wire from="(80,280)" to="(90,280)"/>
+    <wire from="(80,300)" to="(80,310)"/>
+    <wire from="(80,300)" to="(90,300)"/>
+    <wire from="(80,610)" to="(80,630)"/>
+    <wire from="(80,630)" to="(100,630)"/>
+    <wire from="(80,650)" to="(100,650)"/>
+    <wire from="(80,650)" to="(80,670)"/>
+    <wire from="(80,960)" to="(120,960)"/>
+    <wire from="(80,960)" to="(80,980)"/>
+    <wire from="(90,580)" to="(90,620)"/>
+    <wire from="(90,620)" to="(100,620)"/>
+    <wire from="(90,660)" to="(100,660)"/>
+    <wire from="(90,660)" to="(90,700)"/>
+  </circuit>
+</project>

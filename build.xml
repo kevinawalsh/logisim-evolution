@@ -116,7 +116,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         </javac>
     </target>
 
-    <target name="jar" depends="compile,version,contact">
+    <target name="jar" depends="compile,version,contact,helpindex">
         <jar destfile="logisim-evolution.jar" duplicate="fail">
             <fileset dir="bin" />
             <fileset dir="." includes="doc/ resources/ live/" />
@@ -170,23 +170,16 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         <java jar="logisim-evolution.jar" fork="true"/>
     </target>
 
-    <target name="helpdocs">
-        <antcall target="helpdocs_for_lang"><param name="lang" value="de"/></antcall>
-        <antcall target="helpdocs_for_lang"><param name="lang" value="el"/></antcall>
-        <antcall target="helpdocs_for_lang"><param name="lang" value="en"/></antcall>
-        <antcall target="helpdocs_for_lang"><param name="lang" value="es"/></antcall>
-        <antcall target="helpdocs_for_lang"><param name="lang" value="fr"/></antcall>
-        <antcall target="helpdocs_for_lang"><param name="lang" value="pt"/></antcall>
-        <antcall target="helpdocs_for_lang"><param name="lang" value="ru"/></antcall>
-    </target>
-
-    <target name="helpdocs_for_lang">
-        <exec dir="doc" executable="jhindexer">
-            <arg value="-locale"/>
-            <arg value="${lang}"/>
-            <arg value="-db"/>
-            <arg value="search_lookup_${lang}"/>
-            <arg value="${lang}"/>
+    <target name="helpindex">
+        <exec executable="python3">
+            <arg value="build-help-index.py"/>
+            <arg value="en"/>
+            <arg value="de"/>
+            <arg value="fr"/>
+            <arg value="es"/>
+            <arg value="pt"/>
+            <arg value="ru"/>
+            <arg value="el"/>
         </exec>
     </target>
 

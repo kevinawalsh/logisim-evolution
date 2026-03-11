@@ -2,6 +2,48 @@ body {
     font-family: sans-serif;
 }
 
+/* First-level items (e.g. "Reference") — left-anchored dividers */
+ul.sidecontent > li {
+    margin-top: 1em;
+    padding-top: 0.4em;
+    border-top: 1px solid #aaa;
+    margin-left: 0;
+    padding-left: 0;
+    font-weight: bold;
+    list-style: none;
+}
+
+/* Second-level section headers (e.g. "Beginner's Tutorial") */
+ul.sidecontent > li > ul > li.sec {
+    margin-top: 0.5em;
+    padding-left: 0.5em;
+    font-weight: bold;
+    list-style: none;
+}
+
+/* Third-level items (pages within sections) */
+ul.sidecontent > li > ul > li.sec > ul > li {
+    padding-left: 1.5em;
+    font-weight: normal;
+    list-style: none;
+}
+
+/* Second-level lib headers (e.g. "Wiring", "Gates") */
+ul.sidecontent > li > ul > li.lib {
+    margin-top: 0.5em;
+    padding-left: 0.5em;
+    font-weight: bold;
+    list-style: none;
+}
+
+/* Third-level items (the icon entries) — indent the ul so the outside marker moves with content */
+ul.sidecontent > li > ul > li.lib > ul {
+    padding-left: 1.5em;
+}
+ul.sidecontent > li > ul > li.lib > ul > li {
+    font-weight: normal;
+}
+
 .sidebar {
     height: 100%;
     /* width: 0; */
@@ -31,7 +73,7 @@ body {
 
 .sidebar ul {
     list-style-type: none;
-    margin-left: 10px;
+    margin-left: 0px;
     margin-bottom: 8px;
     padding: 0px;
 }
