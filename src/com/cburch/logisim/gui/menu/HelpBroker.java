@@ -187,7 +187,7 @@ public class HelpBroker {
     }
 
     if (filename == null) {
-      send_err(req, 400, "Expected: ?file=help.circ&circ=Circuit Name");
+      send_err(req, 400, "Expected: ?file=name.circ&circ=Circuit Name");
       return;
     }
 

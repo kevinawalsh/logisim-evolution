@@ -40,6 +40,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.awt.GraphicsEnvironment;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.UIDefaults;
@@ -594,26 +595,39 @@ public class Startup {
       int numOpened = 0;
       boolean first = true;
       for (File fileToOpen : filesToOpen) {
-        try {
-          if (testVector != null) {
-            Project proj = ProjectActions.doOpenNoWindow(monitor,
-                fileToOpen, substitutions);
-            proj.doTestVector(testVector, circuitToTest);
-          } else {
-            ProjectActions.doOpen(monitor, fileToOpen, substitutions);
+        String failmsg = null;
+        if (!fileToOpen.exists()) {
+          failmsg = S.fmt("startupMissingFileError", fileToOpen.toString());
+        } else if (fileToOpen.isDirectory()) {
+          failmsg = S.fmt("startupIsDirectoryError", fileToOpen.toString());
+        } else if (!fileToOpen.canRead()) {
+          failmsg = S.fmt("startupPermissionsError", fileToOpen.toString());
+        } else {
+          try {
+            if (testVector != null) {
+              Project proj = ProjectActions.doOpenNoWindow(monitor,
+                  fileToOpen, substitutions);
+              proj.doTestVector(testVector, circuitToTest);
+            } else {
+              ProjectActions.doOpen(monitor, fileToOpen, substitutions);
+            }
+            numOpened++;
+          } catch (LoadCanceledByUser ex) {
+            // eat exception
+          } catch (LoadFailedException ex) {
+            Errors.title(S.get("startupFailTitle")).show(
+                S.fmt("startupCantOpenError", fileToOpen.getName()), ex);
           }
-          numOpened++;
-        } catch (LoadCanceledByUser ex) {
-          // eat exception
-        } catch (LoadFailedException ex) {
-          Errors.title(S.get("startupFailTitle")).show(
-              S.fmt("startupCantOpenError", fileToOpen.getName()), ex);
         }
         if (first) {
           first = false;
           if (showSplash)
             monitor.close();
           monitor = null;
+        }
+        if (failmsg != null) {
+          String ttl = S.get("startupFailTitle");
+          JOptionPane.showMessageDialog(null, failmsg, ttl, JOptionPane.ERROR_MESSAGE);
         }
       }
       if (numOpened == 0 && filesToPrint.isEmpty()) {
