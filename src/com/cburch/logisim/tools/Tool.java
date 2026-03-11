@@ -218,4 +218,8 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
     return null;
   }
 
+  public String getQuickHelp() {
+    return com.cburch.logisim.gui.generic.QuickHelp.load(getClass());
+  }
+
 }

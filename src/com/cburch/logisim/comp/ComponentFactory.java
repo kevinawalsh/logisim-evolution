@@ -69,10 +69,13 @@ import com.cburch.logisim.util.StringGetter;
  *                   AndGate  OrGate  NandGate  XorGate  etc.
  */
 public interface ComponentFactory extends AttributeDefaultProvider {
+  
+  // keys for getFeature()
   public static final Object SHOULD_SNAP = new Object();
   public static final Object TOOL_TIP = new Object();
   public static final Object FACING_ATTRIBUTE_KEY = new Object();
   public static final Object DECORATIVE = new Object(); // plays no role in circuit behavior
+  public static final Object QUICK_HELP = new Object();
 
   public boolean ActiveOnHigh(AttributeSet attrs);
 
@@ -139,7 +142,6 @@ public interface ComponentFactory extends AttributeDefaultProvider {
 
   public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver);
 
-  public void paintIcon(ComponentDrawContext context, int x, int y,
-      AttributeSet attrs);
+  public void paintIcon(ComponentDrawContext context, int x, int y, AttributeSet attrs);
 
 }

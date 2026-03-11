@@ -186,6 +186,9 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
     if (key == SHOULD_SNAP) {
       return shouldSnap;
     }
+    if (key == QUICK_HELP) {
+      return com.cburch.logisim.gui.generic.QuickHelp.load(getClass());
+    }
     return super.getFeature(key, attrs);
   }
 

@@ -609,11 +609,11 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       Tool tool = ((AttrTableToolModel) value).getTool();
       toolbox.setHaloedTool(tool);
       layoutToolbarModel.setHaloedTool(tool);
-      helpPanel.view(tool.toString());
+      helpPanel.view(tool);
     } else {
       toolbox.setHaloedTool(null);
       layoutToolbarModel.setHaloedTool(null);
-      helpPanel.view("none");
+      helpPanel.viewNone();
     }
     if (value instanceof AttrTableComponentModel) {
       Circuit circ = ((AttrTableComponentModel) value).getCircuit();

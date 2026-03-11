@@ -535,6 +535,13 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       else
         return S.get("textComponentPlainTip");
     }
+    if (key == QUICK_HELP) {
+      AttributeOption fmt = attrs.getValue(ATTR_FORMAT);
+      String suffix = fmt == TEXT_FORMAT_WRAPPED ? "-wrapped"
+          : fmt == TEXT_FORMAT_MARKDOWNISH ? "-markdownish"
+          : "-plain";
+      return com.cburch.logisim.gui.generic.QuickHelp.load(getClass(), suffix);
+    }
     return super.getFeature(key, attrs);
   }
 

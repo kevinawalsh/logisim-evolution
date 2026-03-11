@@ -27,37 +27,70 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package com.cburch.logisim.gui.generic;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+package com.cburch.logisim.gui.generic;
+import static com.cburch.logisim.gui.main.Strings.S;
+
+import java.awt.Color;
+import java.awt.Font;
+
+import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
+import javax.swing.event.HyperlinkEvent;
 
 import com.cburch.logisim.gui.main.Frame;
+import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.tools.Tool;
 
 public class HelpTabContent extends JScrollPane {
 
-  private JPanel panel = new JPanel();
+  private JEditorPane editor = new JEditorPane("text/html", "");
   private Project proj;
 
   public HelpTabContent(Frame frame) {
     super();
-    setViewportView(panel);
     proj = frame.getProject();
+    editor.setEditable(false);
+    editor.setOpaque(false);
+    editor.addHyperlinkListener(e -> {
+      if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
+        HelpBroker.followLink(e.getDescription(), proj);
+    });
+    setViewportView(editor);
     getVerticalScrollBar().setUnitIncrement(16);
-
-    view("default");
+    viewNone();
   }
 
-  public void view(String s) {
-    panel.removeAll();
-    panel.add(new JLabel("quick help goes here"));
-    panel.add(new JLabel("for " + s));
+  public void viewNone() {
+    editor.setText(wrapHtml("<i>" + S.get("quickhelpNoneMessage") + "</i>"));
+    editor.setCaretPosition(0);
+  }
+
+  public void view(Tool tool) {
+    String msg = tool.getQuickHelp();
+    if (msg == null)
+      msg = "<i>" + S.fmt("quickhelpMissingMessage", tool.getDescription()) + "</i>";
+    editor.setText(wrapHtml(msg));
+    editor.setCaretPosition(0);
+  }
+
+  private static String wrapHtml(String body) {
+    Font font = UIManager.getFont("Label.font");
+    Color fg = UIManager.getColor("Label.foreground");
+    String fontFamily = font != null ? font.getFamily() : "sans-serif";
+    int fontSize = font != null ? font.getSize() : 12;
+    String color = fg != null
+        ? String.format("#%02x%02x%02x", fg.getRed(), fg.getGreen(), fg.getBlue())
+        : "#000000";
+    return "<html><head><style>"
+        + "body{font-family:" + fontFamily + ";font-size:" + fontSize + "pt;"
+        + "color:" + color + ";margin:6px}"
+        + "a{color:#4A8EDB}"
+        + "</style></head><body>"
+        + body
+        + "</body></html>";
   }
 
 }

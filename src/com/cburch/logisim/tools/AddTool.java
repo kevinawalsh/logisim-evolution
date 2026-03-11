@@ -734,4 +734,14 @@ public class AddTool extends Tool {
     }
   }
 
+  @Override
+  public String getQuickHelp() {
+    ComponentFactory source = getFactory();
+    if (source == null)
+      return null;
+    AttributeSet attrs = getBaseAttributes();
+    String msg = (String)source.getFeature(ComponentFactory.QUICK_HELP, attrs);
+    return msg;
+  }
+
 }
