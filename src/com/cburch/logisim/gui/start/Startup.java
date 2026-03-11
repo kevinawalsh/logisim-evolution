@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.awt.GraphicsEnvironment;
+import java.awt.KeyboardFocusManager;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -177,6 +178,14 @@ public class Startup {
       ToolTipManager tipManager = ToolTipManager.sharedInstance();
       int delay = tipManager.getDismissDelay();
       tipManager.setDismissDelay(Math.max(delay, 20_000));
+
+      // On macOS, AWT delivers mouse events globally (across Spaces), so tooltips
+      // from a Logisim window on one Space can appear over other apps on another Space.
+      // Fix: suppress tooltips whenever no Logisim window is active (activeWindow == null
+      // means focus is held by a non-Logisim app).
+      KeyboardFocusManager.getCurrentKeyboardFocusManager()
+          .addPropertyChangeListener("activeWindow",
+              e -> tipManager.setEnabled(e.getNewValue() != null));
     }
 
     Startup ret = new Startup();
