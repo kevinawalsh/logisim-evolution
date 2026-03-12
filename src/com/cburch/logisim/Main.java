@@ -121,11 +121,4 @@ public class Main {
   // public static final String ONLINE_DOCS_LINK = getFromFile("/contact.txt", "docs", ""); // used in html and javascript, but not in java code
   // public static final String RELEASE_LINK = getFromFile("/contact.txt", "releases", ""); // used in html and javascript, but not in java code
 
-  static {
-  System.out.println("CRASH_CONTACT_LINK = " + CRASH_CONTACT_LINK);
-  System.out.println("CRASH_CONTACT_EMAIL = " + CRASH_CONTACT_EMAIL);
-  System.out.println("SOURCE_LINK = " + SOURCE_LINK);
-  System.out.println("ONLINE_DOCS_LINK = " + ONLINE_DOCS_LINK);
-  }
-
 }
