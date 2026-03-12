@@ -78,12 +78,19 @@ public class Main {
     return defaultValue;
   }
 
-  private static String getFromFile(String filename, int linenum, String defaultValue) {
+  private static String getFromFile(String filename, String tag, String defaultValue) {
     String s = getFromFile(filename, null);
     if (s == null)
       return defaultValue;
     String lines[] = s.split("\\r?\\n");
-    return (lines == null || lines.length < linenum) ? defaultValue : lines[linenum].trim();
+    for (String line: lines) {
+      line = line.trim();
+      if (line.startsWith(tag+":")) {
+        String val = line.substring(tag.length()+1).trim();
+        return val.isEmpty() ? defaultValue : val;
+      }
+    }
+    return defaultValue;
   }
 
   private static String getCurrentVersion() {
@@ -108,7 +115,17 @@ public class Main {
   public static final LogisimVersion VERSION = LogisimVersion.parse(getCurrentVersion());
   public static final String VERSION_NAME = VERSION.toString();
   public static final int COPYRIGHT_YEAR = getCurrentCopyrightYear();;
-  public static final String CRASH_CONTACT_LINK = getFromFile("/crash-contact.txt", 0, "");
-  public static final String CRASH_CONTACT_EMAIL = getFromFile("/crash-contact.txt", 1, "");
+  public static final String CRASH_CONTACT_LINK = getFromFile("/contact.txt", "issues", "");
+  public static final String CRASH_CONTACT_EMAIL = getFromFile("/contact.txt", "contact", "");
+  public static final String SOURCE_LINK = getFromFile("/contact.txt", "source", "https://github.com/kevinawalsh/logisim-evolution");
+  // public static final String ONLINE_DOCS_LINK = getFromFile("/contact.txt", "docs", ""); // used in html and javascript, but not in java code
+  // public static final String RELEASE_LINK = getFromFile("/contact.txt", "releases", ""); // used in html and javascript, but not in java code
+
+  static {
+  System.out.println("CRASH_CONTACT_LINK = " + CRASH_CONTACT_LINK);
+  System.out.println("CRASH_CONTACT_EMAIL = " + CRASH_CONTACT_EMAIL);
+  System.out.println("SOURCE_LINK = " + SOURCE_LINK);
+  System.out.println("ONLINE_DOCS_LINK = " + ONLINE_DOCS_LINK);
+  }
 
 }

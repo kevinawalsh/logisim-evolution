@@ -487,7 +487,7 @@ public class XmlWriter {
     doc.appendChild(ret);
     ret.appendChild(doc
         .createTextNode("\nThis file is intended to be "
-          + "loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).\n"));
+          + "loaded by Logisim-evolution (" + Main.SOURCE_LINK + ").\n"));
     ret.setAttribute("version", "1.0");
     ret.setAttribute("source", Main.VERSION_NAME);
 
@@ -557,7 +557,7 @@ public class XmlWriter {
     doc.appendChild(ret);
     ret.appendChild(doc
         .createTextNode("\nThis clipboard data is intended to be "
-          + " used by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).\n"));
+          + " used by Logisim-evolution (" + Main.SOURCE_LINK + ").\n"));
     ret.setAttribute("version", "1.0");
     ret.setAttribute("source", Main.VERSION_NAME);
 

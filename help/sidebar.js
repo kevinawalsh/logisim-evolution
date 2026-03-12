@@ -1,6 +1,11 @@
+const _h = window.location.hostname;
+const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
+// const isApp = (_h === '127.0.0.1' || _h === '[::1]');
+
 // window location should be "/logisim-evolution/en/..." or similar
 let parts = window.location.pathname.split('/');
 let lang = (parts[2] && parts[2].length === 2) ? parts[2] : 'en';
+
 
 function escapeHTML(str) {
     return new Option(str).innerHTML;
@@ -176,74 +181,91 @@ function doIncremental(event) {
 
 function live(e, el) {
   e.preventDefault();
-  const url = el.href;
-  const original = el.innerHTML;
 
-  fetch(url, { method: 'GET' })
+  if (!isApp) {
+    showLiveInfo(el, false);
+    return;
+  }
+
+  fetch(el.href, { method: 'GET' })
     .then(r => {
       if (!r.ok) throw new Error("Server error");
       el.classList.add('success');
       setTimeout(() => el.classList.remove('success'), 1500);
     })
-    .catch(() => {
-      el.classList.add('error');
-      el.title = "Could not reach Logisim — is it running?";
-      setTimeout(() => el.classList.remove('error'), 3000);
-    });
+    .catch(() => showLiveInfo(el, true));
+}
+
+function showLiveInfo(el, appNotRunning) {
+  const params = new URL(el.href).searchParams;
+  const name = (params.get('file') || '').replace(/\.circ$/, '');
+  let msg = appNotRunning ? 'Could not reach Logisim \u2014 is it running?\n\n' : '';
+  msg += 'This demo is available in Logisim under File \u2192 Examples \u2192 ' + name + '.';
+  if (!appNotRunning)
+    msg += '\n\nDownload: __RELEASE_LINK__';
+  alert(msg);
 }
 
 window.onload = function() {
 
-    function loadStyle(url) {
-        return new Promise((resolve, reject) => {
-            let link = document.createElement('link');
-            link.type = 'text/css';
-            link.rel = 'stylesheet';
-            link.onload = () => { resolve(); }
-            link.href = url;
-            let headScript = document.querySelector('script');
-            headScript.parentNode.append(link);
-        });
-    }
+  if (!isApp) {
+    const banner = document.createElement('div');
+    banner.id = 'logisim-banner';
+    banner.innerHTML = 'Logisim-Evolution documentation, version __VERSION__.'
+      + ' <a href="__SOURCE_LINK__">Source on GitHub</a>.';
+    document.body.prepend(banner);
+  }
 
-    function loadScript(url, callback) {
-        let head = document.head;
-        let script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = url;
-        script.onreadystatechange = callback;
-        script.onload = callback;
-        head.appendChild(script);
-    }
+  function loadStyle(url) {
+    return new Promise((resolve, reject) => {
+      let link = document.createElement('link');
+      link.type = 'text/css';
+      link.rel = 'stylesheet';
+      link.onload = () => { resolve(); }
+      link.href = url;
+      let headScript = document.querySelector('script');
+      headScript.parentNode.append(link);
+    });
+  }
 
-    // fetch sidebar data and inject sidebar into body
-    async function loadSidebar() {
-        const response = await fetch("/logisim-evolution/"+lang+"/sidebar.html");
-        const sidebar_list = await response.text();
+  function loadScript(url, callback) {
+    let head = document.head;
+    let script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = url;
+    script.onreadystatechange = callback;
+    script.onload = callback;
+    head.appendChild(script);
+  }
 
-        // sidebar.html may contain relative urls, adjust them here
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = sidebar_list;
-        const base = "/logisim-evolution/" + lang + "/";
-        // Fix href attributes
-        tempDiv.querySelectorAll('a[href]').forEach(a => {
-            const h = a.getAttribute('href');
-            if (h && !h.startsWith('/') && !h.match(/^[a-z]+:/))
-                a.setAttribute('href', base + h);
-        });
-        // Fix list-style-image: url(...) in style attributes
-        // Note: all sidebar list-style-image urls are currently absolute paths,
-        // so this step isn't needed now, but it may be in future.
-        tempDiv.querySelectorAll('[style]').forEach(el => {
-            el.setAttribute('style', el.getAttribute('style').replace(
-                /url\((['"]?)(?!\/|[a-z]+:)(.*?)\1\)/g,
-                    (_, q, p) => `url(${q}${base}${p}${q})`
-                ));
-        });
+  // fetch sidebar data and inject sidebar into body
+  async function loadSidebar() {
+    const response = await fetch("/logisim-evolution/"+lang+"/sidebar.html");
+    const sidebar_list = await response.text();
+
+    // sidebar.html may contain relative urls, adjust them here
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = sidebar_list;
+    const base = "/logisim-evolution/" + lang + "/";
+    // Fix href attributes
+    tempDiv.querySelectorAll('a[href]').forEach(a => {
+      const h = a.getAttribute('href');
+      if (h && !h.startsWith('/') && !h.match(/^[a-z]+:/))
+        a.setAttribute('href', base + h);
+    });
+    // Fix list-style-image: url(...) in style attributes
+    // Note: all sidebar list-style-image urls are currently absolute paths,
+    // so this step isn't needed now, but it may be in future.
+    tempDiv.querySelectorAll('[style]').forEach(el => {
+      el.setAttribute('style', el.getAttribute('style').replace(
+        /url\((['"]?)(?!\/|[a-z]+:)(.*?)\1\)/g,
+          (_, q, p) => `url(${q}${base}${p}${q})`
+        ));
+    });
 
         const body = document.body.innerHTML;
         document.body.innerHTML = 
-          '<div id="myCollapsedBar" class="collapsedbar">'
+        '<div id="myCollapsedBar" class="collapsedbar">'
         + '<a href="javascript:void(0)" title="Open Menu" class="menu" onclick="openNav()"></a>'
         + '</div>'
         + '<div id="mySidebar" class="sidebar">'
@@ -255,106 +277,106 @@ window.onload = function() {
 
         let fs = localStorage.getItem("sidebar");
         if (fs === "closed")
-          closeNav()
+        closeNav()
 
         let sidebar = document.getElementById("mySidebar"); // document.querySelector(".sidebar");
         let top = localStorage.getItem("sidebar-scroll");
         if (top)
-            sidebar.scrollTop = parseInt(top, 10);
+        sidebar.scrollTop = parseInt(top, 10);
         highlightCurrentPage();
 
         window.addEventListener("beforeunload", () => {
           localStorage.setItem("sidebar-scroll", sidebar.scrollTop);
         });
 
+  }
+
+  function highlightCurrentPage() {
+    const currentPath = normalizePath(window.location.pathname);
+    const sidebar = document.getElementById("mySidebar");
+    if (!sidebar) return;
+
+    // Find the anchor whose href path matches the current page
+    const links = sidebar.querySelectorAll("a");
+    let active = null;
+    for (const link of links) {
+      const url = new URL(link.href);
+      if (normalizePath(url.pathname) === currentPath) {
+        active = link;
+        break;
+      }
     }
+    if (!active) return;
 
-    function highlightCurrentPage() {
-        const currentPath = normalizePath(window.location.pathname);
-        const sidebar = document.getElementById("mySidebar");
-        if (!sidebar) return;
+    // Highlight it
+    active.classList.add("sidebar-current");
 
-        // Find the anchor whose href path matches the current page
-        const links = sidebar.querySelectorAll("a");
-        let active = null;
-        for (const link of links) {
-            const url = new URL(link.href);
-            if (normalizePath(url.pathname) === currentPath) {
-                active = link;
-                break;
-            }
-        }
-        if (!active) return;
+    // Scroll the sidebar so the link is visible, roughly centered
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const linkRect = active.getBoundingClientRect();
+    const offset = linkRect.top - sidebarRect.top - (sidebar.clientHeight / 2);
+    sidebar.scrollTop = sidebar.scrollTop + offset;
+  }
 
-        // Highlight it
-        active.classList.add("sidebar-current");
+  function normalizePath(path) {
+    if (path.endsWith("/index.html"))
+      return path.slice(0, -"index.html".length); // "somedir/index.html" -> "somedir/"
+    if (!path.endsWith("/") && !path.includes("."))
+      return path + "/";                           // "somedir" -> "somedir/"
+    return path;                                     // "somedir/" or "tutor-gates.html" unchanged
+  }
 
-        // Scroll the sidebar so the link is visible, roughly centered
-        const sidebarRect = sidebar.getBoundingClientRect();
-        const linkRect = active.getBoundingClientRect();
-        const offset = linkRect.top - sidebarRect.top - (sidebar.clientHeight / 2);
-        sidebar.scrollTop = sidebar.scrollTop + offset;
+  function restoreSearchState() {
+    let searchQuery = localStorage.getItem("query");
+    if (!searchQuery)
+      return;
+    let q = document.getElementById("query");
+    q.value = searchQuery;
+
+    let suggestState = localStorage.getItem("suggest");
+    if (suggestState === "open") {
+      doIncremental(null);
+    } else {
+      showSearch();
     }
+  }
 
-    function normalizePath(path) {
-        if (path.endsWith("/index.html"))
-            return path.slice(0, -"index.html".length); // "somedir/index.html" -> "somedir/"
-        if (!path.endsWith("/") && !path.includes("."))
-            return path + "/";                           // "somedir" -> "somedir/"
-        return path;                                     // "somedir/" or "tutor-gates.html" unchanged
-    }
+  async function fetchSearchInfo() {
+    const response = await fetch("/logisim-evolution/"+lang+"/contents.json");
+    const documents = await response.json();
 
-    function restoreSearchState() {
-        let searchQuery = localStorage.getItem("query");
-        if (!searchQuery)
-            return;
-        let q = document.getElementById("query");
-        q.value = searchQuery;
+    miniSearch.addAll(documents);
 
-        let suggestState = localStorage.getItem("suggest");
-        if (suggestState === "open") {
-            doIncremental(null);
-        } else {
-            showSearch();
-        }
-    }
+    let search = document.getElementById("search");
+    if (!search)
+      return;
+    search.innerHTML = '<form autocomplete="off" onsubmit="doSearch(event);">'
+      + '<input type="submit" value="Search">'
+      + '<span>'
+      + '<input type="text" id="query" name="query" onkeydown="keydown(event)" oninput="doIncremental(event)"/>'
+      + '</span>'
+      + '<div id="results"></div>'
+      + '</form>';
+    restoreSearchState();
+  }
 
-    async function fetchSearchInfo() {
-        const response = await fetch("/logisim-evolution/"+lang+"/contents.json");
-        const documents = await response.json();
+  function setupSearch() {
+    miniSearch = new MiniSearch({
+      fields: ['title', 'text'], // fields to index for full-text search
+      storeFields: ['title', 'url', ], // fields to return with search results
+      searchOptions: {
+        prefix: term => term.length > 2,
+        fuzzy: term => term.length > 3 ? 0.2 : null
+      }
+    });
+    fetchSearchInfo();
+  }
 
-        miniSearch.addAll(documents);
+  async function initialize() {
+    await loadStyle("/logisim-evolution/sidebar.css");
+    await loadSidebar();
+    loadScript("/logisim-evolution/minisearch-6.1.0.min.js", setupSearch);
+  }
 
-        let search = document.getElementById("search");
-        if (!search)
-            return;
-        search.innerHTML = '<form autocomplete="off" onsubmit="doSearch(event);">'
-            + '<input type="submit" value="Search">'
-            + '<span>'
-            + '<input type="text" id="query" name="query" onkeydown="keydown(event)" oninput="doIncremental(event)"/>'
-            + '</span>'
-            + '<div id="results"></div>'
-            + '</form>';
-        restoreSearchState();
-    }
-
-    function setupSearch() {
-        miniSearch = new MiniSearch({
-            fields: ['title', 'text'], // fields to index for full-text search
-            storeFields: ['title', 'url', ], // fields to return with search results
-            searchOptions: {
-                prefix: term => term.length > 2,
-                fuzzy: term => term.length > 3 ? 0.2 : null
-            }
-        });
-        fetchSearchInfo();
-    }
-
-    async function initialize() {
-        await loadStyle("/logisim-evolution/sidebar.css");
-        await loadSidebar();
-        loadScript("/logisim-evolution/minisearch-6.1.0.min.js", setupSearch);
-    }
-
-    initialize();
+  initialize();
 };

@@ -71,7 +71,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     
     <target name="contact">
         <mkdir dir="bin"/>
-        <copy file="crash-contact.txt" tofile="bin/crash-contact.txt"/>
+        <copy file="contact.txt" tofile="bin/contact.txt"/>
     </target>
 
     <target name="version">
