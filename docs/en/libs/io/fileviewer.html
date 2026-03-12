@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>File Viewer</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/fileviewer.gif" width="32" height="32">
+<em>File Viewer</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Input/Output</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/fileviewer.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>Displays arbitrary lines of text from a file, with one line hilighted
+depending on the value of the inputs. When the input is <var>n</var>, the File
+Viewer will scroll to, and highlight, line <var>n</var> of the file.
+Alternatively, the text file can contain address labels (a number in decimal or
+hex at the start of each line, followed by a ":"), and the File Viewer will
+scroll to, and highlight, whichever line has address <var>n</var>.
+
+<p>This component is particularly useful for building and simulating CPUs in
+Logisim. By placing a File Viewer component into the circuit and loading the
+text of the assembly-language program being executed elsewhere in the simulator,
+and sending the program counter to the File Viewer where it is used to select
+the line number of the file to hilight, the user can follow the program's
+progress line by line. Similarly, if we send the current opcode from a circuit
+to a File Viewer that is configured with a list of all opcode mnemonics, the
+File Viewer will highlight the current opcode's mnemonic, which can be nice for
+debugging purposes.
+
+<h2>Pins</h2>
+
+<p>There is only one input pin, on the west edge, with bit width matching the
+value of the 'Address Bit Width' attribute. This input is used to select the
+current line to highlight.
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Address Bit Width</dt>
+<dd>The number of bits for the input pin.</dd>
+
+<dt>Lines</dt>
+<dd>The number of lines of the file to display at once, i.e. the "height" of the
+display area for the component.</dd>
+
+<dt>Columns</dt>
+<dd>The number of characters wide the display area sholud be.</dd>
+
+<dt>Select</dt>
+<dd>If 'Select' is 'Line Number', an input value of <var>n</var> will cause line
+<var>n</var> to be highlited. If 'Select' is 'Address Label', each line of the
+file should be prefixed with an address (in hex or decimal) and a colon, and an
+input value of <var>n</var> will cause the line with address label <var>n</var>
+to be highlited.</dd>
+
+<dt>Contents</dt>
+<dd>The contents of the file to be displayed.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>None.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

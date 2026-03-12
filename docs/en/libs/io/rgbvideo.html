@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>RGB Video</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/rgbvideo.png" width="32" height="32">
+<em>RGB Video</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Input/Output</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/rgbvideo.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>Stores a 2-D grid of RGB values and displays them as a small grid of colored
+pixels, similar to a very simplified framebuffer and color video display.</p>
+
+<h2>Pins</h2>
+
+<dl>
+
+<dt>Reset - South edge, first from left (input, one bit).</dt>
+<dd>When Reset is 1, the contents of the internal memory is reset and 
+all pixels reset back to the default color.</dd>
+
+<dt>Clock - South edge, second from left (input, one bit).</dt>
+<dd>When the clock rises from 0 to 1, new data from the other inputs is used to
+update the stored values in the internal memory.</dd>
+
+<dt>Write Enable - South edge, third from left (input, one bit).</dt>
+<dd>When write enable is 0, no new data is written into the internal memory.
+When write enable is 1, new data is written upon the rising edge of the
+clock.</dd>
+
+<dt>X, Y - South edge, fourth and fifth from left (inputs, bit width determined by 'Width' and 'Height' attributes, respectively).</dt>
+<dd>Specifies the X, Y coordinates at which to write new data in the internal
+memory.</dd>
+
+<dt>Data - South edge, last from left (input, bit width determined by 'Color Model' attribute).</dt>
+<dd>Specifies the data to be written to the internal memory.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Cursor</dt>
+<dd>If Cursor is 'Blinking Dot', then the RGB video will display a dot at the
+current X, Y coordinates, blinking whenever the clock ticks. Otherwise no cursor
+is displayed.</dd>
+
+<dt>Reset Behavior</dt>
+<dd>Whether a high reset signal should take effect asynchronously or
+synchronously with the clock.</dd>
+
+<dt>Color Model</dt>
+<dd>Selects how the values in the internal memory are mapped to video display
+colors. A number of models are available for various RGB formats (such as 24-bit
+8-8-8 RGB, and 15-bit 5-6-5 RGB) and defined by various color palettes (such as
+the 7-bit ATARI 2600 color palette).</dd>
+
+<dt>Width</dt>
+<dd>Selects how many columns are displayed.</dd>
+
+<dt>Height</dt>
+<dd>Selects how many rows are displayed.</dd>
+
+<dt>Scale</dt>
+<dd>Selects how large each pixel should be. Larger pixels are useful when the
+width and height are small.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>None.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

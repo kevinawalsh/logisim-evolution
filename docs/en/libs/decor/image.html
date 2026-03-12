@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Image Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/image.png" width="32" height="32">
+<em>Image Tool</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Decor Library</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>5.0.4-HC</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/example-image.jpeg" width="205" height="205"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>This tool adds images to a circuit, which can be useful for including
+diagrams and other visuals for documentation purposes.
+
+<p>Image data can be embedded within the project. This is simple and convenient,
+but may make for very large project files if the embedded images are large or
+high-resolution. Alternatively, the Logisim project can store only a link to a
+separate image file, which must then be kept alongside the project file. In this
+case, you can update the separate image file at any time, including while
+viewing the project in Logisim&emdash;the image shown in the circuit will update
+after a short delay, as soon as Logisim notices the external file has changed.
+
+<p>Limitation: The size scale of an image can't yet be adjusted within Logisim,
+the image is always shown at 100% size without cropping.
+Images do not normally "snap to grid" on the canvas. While moving a callout, you
+can hold the ALT key (or option on MacOS) to force "snap to grid" behavior.
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Image</dt>
+<dd>Click this to choose a PNG or JPG/JPEG image file. After selecting a file,
+you can choose to embed the image data within your project, or store only a
+link to the file.</dd>
+
+<dt>Label</dt>
+<dd>A text label appearing near the image.
+This can be edited by changing the
+attribute in the attribute table, or using the <a class="icon"
+href="text.html"><img src="/logisim-evolution/icons/text.gif"> Text Tool</a> directly the
+canvas.</dd>
+
+<dt>Label Location</dt>
+<dd>Where to place the label, if any, relative to the image.</dd>
+
+<dt>Label Font</dt>
+<dd>The font used for the image label.</dd>
+
+<dt>Label Color</dt>
+<dd>The color used for the image label.</dd>
+
+</dl>
+
+<h2>Limitations</h2>
+
+<p>Currently supports only PNG or JPG/JPEG images.
+
+<p>Currently supports only local files. Linking to a URL is not supported, for example.
+
+<h2>FPGA Synthesis</h2><p>Images are silently during FPGA synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>AND/OR/NAND/NOR Gate</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1>
+<img  align="center" src="/logisim-evolution/icons/andGate.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/orGate.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/nandGate.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/norGate.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/xorGate.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/xnorGate.gif" width="32" height="32">
+<em>Common Gates: AND, OR, NAND, NOR, XOR, XNOR</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Gates</a></td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top">By default, ANSI/IEEE 91a-1991 "shaped" symbols are used.
+        Alternative symbols are available as options under "International" in
+        <a href="../../guide/prefs/intl.html">Application Settings</a>.<br>
+        <img src="/logisim-evolution/img-libs/gates-common.png" width="487" height="194"></td>
+</table></p>
+
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=gates.circ&circuit=Common Gates - Basics">Live Circuit: Common Gates - Basics</a></li>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=gates.circ&circuit=Common Gates - Advanced">Live Circuit: Common Gates - Advanced</a></li>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=gates.circ&circuit=Floating Buses">Live Circuit: Floating Buses</a></li>
+</ul>
+
+<h2>Behavior</h2>
+
+<p>The common logic gates are: AND, OR, NAND, NOR, XOR, XNOR. Each one takes
+several inputs, combines these using the rules of Boolean logic, and outputs the
+result.</p>
+
+<p>Gates can take up to 32 input bits (see <i>Number of Inputs</i> attribute).
+All inputs are combined using the usual rules of Boolean logic to produce a
+single output result. Use the <i>Data Bits</i> attribute to allow a gate to
+operate on multiple bits simultaneously.</p>
+
+<p><b>XOR &amp; XNOR Multiple-Input Behavior</b> Multi-input XOR and XNOR gates
+can be confusing. Normally, XOR outputs a 1 when an <i>odd number of inputs</i> are
+1, and XNOR does the opposite. This "parity" behavior is most typical. For XOR
+and XNOR gates with more than two inputs, the <b><i>multiple-input
+behavior</i></b> attribute allows for a different, less common behavior, where
+XOR outputs a 1 when <i>exactly one input</i> is a 1, and XNOR does the opposite.</p>
+
+<ul>
+<li><b>AND</b> Gate
+    <ul>
+        <li>Unconnected inputs are ignored.
+        <li>If there are no connected inputs, outputs error (e).
+        <li>Outputs 1 when <i>all</i> connected inputs are 1 (and there are some connected inputs).
+        <li>Outputs 0 when <i>any</i> input is 0.
+        <li>In all other cases, outputs error (e). This includes cases where
+            some inputs are floating (z) or errors (e), unless some input is 0,
+            in which case the above rule applies and the output is 0.
+    </ul>
+</li>
+
+<li><b>NAND</b> Gate
+    <ul>
+        <li>Outputs 1, 0, or e, whenever AND would have outputted 0, 1, or e, respectively.
+    </ul>
+
+<li><b>OR</b> Gate
+    <ul>
+        <li>Unconnected inputs are ignored.
+        <li>If there are no connected inputs, outputs error (e).
+        <li>Outputs 1 when <i>any</i> input is 1.
+        <li>Outputs 0 when <i>all</i> connected inputs are 0 (and there are some connected inputs).
+        <li>In all other cases, outputs error (e). This includes cases where
+            some inputs are floating (z) or errors (e), unless some input is 1,
+            in which case the above rule applies and the output is 1.
+    </ul>
+
+<li><b>NOR</b> Gate
+    <ul>
+        <li>Outputs 1, 0, or e, whenever OR would have outputted 0, 1, or e, respectively.
+    </ul>
+
+<li><b>XOR</b> Gate with Multiple-Input Behavior set to "When an odd number are on"
+    <ul>
+        <li>Unconnected inputs are ignored.
+        <li>If there are no connected inputs, outputs error (e).
+        <li>Outputs 1 when an odd number of inputs are 1, and all other connected inputs
+            are 0.
+        <li>Outputs 0 when an even number of inputs are 1, and all other connected inputs
+            are 0 (and there are some connected inputs).
+        <li>In all other cases, outputs error (e). This includes all cases where some inputs are
+            floating (z) or errors (e).
+    </ul>
+
+<li><b>XOR</b> Gate with Multiple-Input Behavior set to "When one input is on"
+    <ul>
+        <li>Unconnected inputs are ignored.
+        <li>If there are no connected inputs, outputs error (e).
+        <li>Outputs 1 when exactly one input is 1, and all other connected inputs
+            are 0.
+        <li>Outputs 0 when either zero or more than two connected inputs are 1, and all
+            other connected inputs are 0 (and there are some connected inputs).
+        <li>In all other cases, outputs error (e). This includes all cases where some inputs are
+            floating (z) or errors (e).
+    </ul>
+
+<li><b>XNOR</b> Gate
+    <ul>
+        <li>Outputs 1, 0, or e, whenever XOR would have outputted 0, 1, or e, respectively.
+    </ul>
+</ul>
+
+<h3>Errors, Unconnected, and Floating Inputs</h3>
+
+<ul>
+    <li>As a convenience, any input left unconnected is ignored: if there is no
+    wire or other connection to the input, the simulator acts as if the input
+    did not exist at all. So a 5-input gate with only two inputs connected
+    behaves just like a 2-input gate. This doesn't match physical circuits or
+    more realistic simulators, where such inputs would be considered
+    <i>floating</i>, but it makes editing a circuit a little more
+    forgiving.</li>
+
+    <li>If all inputs are unconnected, the output is an error.</li>
+    <li>If only one input is connected, the behavior depends on the gate type.</li>
+
+    <li>If some inputs are errors, a gate's output is calculated from the
+    remaining inputs, but only the output would be unchanged even if the errors
+    were replaced by any combination of 0 and 1 values. For example, for an AND
+    gate, if any input is 0, then the output is 0, even if some inputs are
+    errors. Similarly, for an OR gate, if any input is 1, then the output is 1,
+    regardless of other inputs.</li>
+</ul>
+
+<p>To enable a more strict simulation behavior, treating unconnected inputs as
+floating values, see "Simulation" in <a href="../../guide/opts/index.html">Project
+Options</a>.</p>
+
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property for the selected gate or
+gates.
+
+<li><b>Typing a number (2-32)</b> changes the <i>Number of Inputs</i> property
+for the selected gate or gates.
+
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b> changes
+the <i>Data Bits</i> property for the selected gate or gates.
+</ul>
+
+
+<h2>Attributes</h2>
+
+Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these properties:
+
+<dl>
+
+<dt>Facing, with possible values: East, North, West, South
+<dd>Orientation of the output port.
+
+<dt>Data Bits, with possible values: 1-32
+<dd>Width of each input and output port. If set to <i>N</i>, the gate outputs
+<i>N</i> values, with each output value computed from the corresponding bit of
+the input ports.
+
+
+<dt>Gate Size, with possible values: Narrow, Medium, Wide
+<dd>Size of the gate symbol.
+
+<dt>Number of Inputs, with possible values: 2-32
+<dd>Up to 32 inputs are allowed. Unconnected inputs are ignored.
+
+<dt>Output Driver, with possible values: 0/1 (push-pull), 0/floating (pull-down-only), floating/1 (pull-up-only)
+<dd>Determines the set of possible output values, in other words, if the output
+port is capable of actively driving high values, low values, or both.
+See <a onclick="live(event, this)" href="/logisim-evolution/live?file=gates.circ&circuit=Floating Buses">Live Circuit: Floating Buses</a>
+for demo.
+
+<dt>Label, with possible values: any text
+<dd>Text to be shown on top of the gate.
+
+<dt>Label Font, with possible values: any font
+<dd>Font to be used for the label.
+
+<dt>Negate <i>i</i>, with possible values: Yes, No
+<dd>Whether to invert the value of input port <i>i</i>. Negated inputs are drawn
+with a "bubble" symbol at the port.
+
+<dt>Multiple-Input Behavior, with possible values: When an odd number are on, When one input is on
+<dd>For XOR and XNOR gates with more than two inputs, chooses between
+parity-style behavior and one-hot behavior.
+
+<dt>Label</dt>
+<dd>The text within the label associated with the gate.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+<dt>Negate <var>x</var></dt>
+<dd>If <q>yes</q>, the input is negated before it is fed into the gate.
+Inputs are counted from top-to-bottom if facing east or west,
+and left-to-right if facing north or south.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2>
+<p>All common gates support VHDL and Verilog synthesis. Floating outputs
+(selected with <i>Output Value</i> attribute) are not supported for
+synthesis.</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

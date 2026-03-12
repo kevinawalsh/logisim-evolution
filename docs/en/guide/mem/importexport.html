@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+	<title>Memory Import/Export Format</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+<body bgcolor="FFFFFF">
+
+<h1>Memory Import/Export Format</h1>
+
+<p>The contents of RAM and ROM components can be exported to an external file,
+or imported from an external file. These actions can be accessed by
+right-clicking a memory component, or from the integrated hex editor. A variety
+of file formats are supported. Most are identified by their first line, which
+usually says "v3.0" followed by tags that specify various decoding options. The
+options control various decisions:
+<ul>
+    <li><p><b>Encoding/Notation</b>&mdash;How the file is decoded into a stream
+    of bits. As raw uninterpreted binary data? As ascii or utf-8 characters? Or
+    as hex digits (written in ascii, but each interpreted as specifying a 4-bit
+    hex value)?
+    <li><p><b>Grouping of bits</b>&mdash;How is the decoded stream of bits split into
+    groups, each of a size appropriate for one memory cell. In most cases, the
+    bit stream is just split up into consecutive groups of <var>w</var> bits,
+    where <var>w</var> is the width of a memory cell. Note that when
+    <var>w</var> is not an even multiiple of four or eight, then the boundaries
+    between groupings won't correspond to the boundaries between hex digits or
+    bytes: that is, in most cases Logisim treats the data as a stream of
+    <em>bits</em>, not a stream of <em>hex digits</em> or <em>bytes</em>.
+    <li><p><b>Endianness</b>&mdash;How is each group of bits assembled into a
+    single value for one memory cell. When the width <var>w</var> of a memory
+    cell is 8 bits or less, and in big-endian modes, then the of the stream bits
+    are always packed into values from most-significant (left) to
+    least-significant (right) bit.  When the width <var>w</var> of a memory cell
+    is more than 8 bits and a little-endian mode is used, the ordering is more
+    complex: sets of eight bits are put together whenever possible into bytes of the memory word,
+    start with the least significant byte, with smaller sets used to fil. the
+    most significant partial byte when necessary.
+</ul>
+
+<p>For memory components configured to hold bytes (8-bit values), the grouping and
+endianness are irrelevant, making most of the formats and options described
+below superfluous. But in other cases, when memory is configured to hold large
+values (e.g. 32-bits per word) or unusually-sized values (e.g. 5-bits per word),
+then the grouping and endianness values matter.
+
+<h2>Endianness</h2>
+
+<p>In several of the formats described below, the endianness can affect how bits
+are packed into memory cells.
+
+<p><b>Big-endian conversion:</b>
+If we have 3-bit memory words, then the first 7 bytes
+of an imported file corresponds to around 7*8/3 = 18.6 memory words like so:
+<blockquote><pre>
+  file bytes: |1......|2......|3......|4......|5......|6......|7......|
+memory words: |1.|2.|3.|4.|5.|6.|7.|8.|9.|A.|B.|C.|D.|E.|F.|0.|1.|2.|
+</pre></blockquote>
+<p>If instead have 9-bit words, then the first 7 bytes
+corresponds to around 7*8/9 = 6.2 words like so:
+<blockquote><pre>
+  file bytes: |1......|2......|3......|4......|5......|6......|7......|
+memory words: |1.......|2.......|3.......|4.......|5.......|6.......|
+</pre></blockquote>
+<p>And if we have 16-bit words, then the first 7 bytes
+corresponds to around 7*8/16 = 3.5 words like so:
+<blockquote><pre>
+  file bytes: |1......|2......|3......|4......|5......|6......|7......|
+memory words: |1..............|2..............|3..............|
+</pre></blockquote>
+
+<p><b>Little-endian conversion:</b>
+If we have 3-bit words, then the first 7 bytes
+corresponds to around 7*8/3 = 18.6 words like so:
+<blockquote><pre>
+  file bytes: |7......|6......|5......|4......|3......|2......|1......|
+memory words:   |2.|1.|0.|F.|E.|D.|C.|B.|A.|9.|8.|7.|6.|5.|4.|3.|2.|1.|
+</pre></blockquote>
+<p>If instead have 9-bit words, then the first 7 bytes
+corresponds to around 7*8/9 = 6.2 words like so:
+<blockquote><pre>
+  file bytes: |7......|6......|5......|4......|3......|2......|1......|
+memory words:   |6.......|5.......|4.......|3.......|2.......|1.......|
+</pre></blockquote>
+<p>And if we have 16-bit words, then the first 7 bytes
+corresponds to around 7*8/16 = 3.5 words like so:
+<blockquote><pre>
+  file bytes: |7......|6......|5......|4......|3......|2......|1......|
+memory words:         |3..............|2..............|1..............|
+</pre></blockquote>
+
+<h2>Hex Bytes Plain</h2>
+
+<blockquote><span class="key">v3.0 hex bytes plain [big-endian|little-endian]</span> 
+A sequence of hex digits, spread out with as much whitespace desired (the parser
+is a bit forgiving and will ignore "0x" prefixes). The hex digits are assembled
+into a stream of bits and these are then broken up into word-sized chunks and
+used to fill the locations of memory. Anything on a line after a "#" is ignored.
+The file must be encoded using utf-8 or plain ascii.
+</blockquote>
+
+<p>Example:
+<blockquote class="note"><pre>v3.0 hex bytes plain big-endian
+a2b300000000000000000001aaba00f000000000000000000000000000000000 # a comment
+0200000000000000000000000000000000000000000000000000000000000000
+00 00000 00000000 0000000000000000000000000000000000000000000000000 # whitespace optional
+0000000000000000000000000000000000000000000000000000000000000000
+</blockquote>
+
+<p>This is the same format as used by the Linux "<tt>xxd --plain</tt>"
+command. Note that whitespace between the hex digits is ignored, having no
+impact on how the file is decoded. Instead, all of the file data together is
+taken as a single contiguous stream of bits before being grouped into word-sized
+chunks.
+
+<p>If loaded into a memory component with 4-bit values, each hex digit in the
+above example would be used to fill one location in the memory (with <tt>0xa</tt> in the
+first location, <tt>0x2</tt> in the next location, <tt>0xb</tt> in the next,
+etc.) If the memory is 8-bits wide instead, then pairs of hex digits are used to
+fill the locations: <tt>0xa2</tt>, then <tt>0xb3</tt>, etc. 
+
+<p>Memory components can be configured to be a width that is not a multiple of
+four, so the hex digits in the file do not always correspond neatly to memory
+locations. For example, if the above file were loaded into a memory component
+configured to use words that are only 2 bits wide, then the first hex digit will
+fill up two locations in the memory (with the high-order bits going in the first
+location, and the low-order bits going in the second location). 
+<blockquote><pre>            hex:  a  |  2  |  b  |  3  |  0  | ...
+         binary: 1010  0010  1011  0011  0000  ...
+memory location: 0011  2233  4455  6677  8899  ...
+</blockquote>
+<p>If, on the other hand, the same contents are loaded into a memory component
+with values that are 10 bits wide, the first two and a half hex digits will go
+into location zero, the remainder of the third digit with two more hex digits
+will specify the value of location one, etc.
+<blockquote><pre>            hex:  a  |  2  |  b  |  3  |  0  | ...
+         binary: 1010  0010  1011  0011  0000  ...
+memory location: 0000  0000  0011  1111  1111  ...
+</blockquote>
+<p>In some oddly-sized memory cases, a few leftover zero bits in the
+file, if needed, will be silently ignored. 
+
+<p>If memory words are larger than 8 bits, then by default the ordering will be
+"big-endian", so the first byte in the file ends up in the most significant 8
+bits of the memory location. The "little-endian" option would instead cause the
+first byte in the file to end up in the least significant 8 bits of the memory
+location. For memory words of size 8 bits or less, the endianness is irrelevant.
+
+<h2>Hex Bytes Addressed</h2>
+
+<blockquote><span class="key">v3.0 hex bytes addressed
+[big-endian|little-endian]</span> A sequence of lines starting with an address
+in hex (with or without "0x" prefix), followed by an optional ":", then a
+sequence of hex digits (with or without "0x" prefix) with optional
+single-whitespace separators. Note that the addresses here are <em>byte</em>
+addresses, not <em>word</em> addresses. The addresses need not be in increasing
+order, and you can leave gaps, which will be filled with zeros. Anything on a
+line after a "#" is ignored. Anything after two consecutive whitespaces will
+also be ignored. The file must be encoded using utf-8 or plain ascii.
+</blockquote>
+
+<p>Example:
+<blockquote class="note"><pre>v3.0 hex bytes addressed big-endian
+00: a2b3 0000 0000 0000 0100 0000 f000 baaa 0000 0000 0000 0000 0000 0000 0000 0000 # a comment
+20: 0000 0002 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000  also a comment
+40: 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+60: 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
+</blockquote>
+
+<p>This format is compatible with the default output format of the Linux
+"<tt>xxd</tt>" command. Note that the whitespace between groups of four hex
+digits in the example above is optional and has no impact on the meaning of the
+file. As with "v3.0 hex plain", the bits specified in the file are considered as
+taken together a single large stream of bits, and then grouped in word-sized
+chunks to fill memory. The meaning of the "little-endian" and "big-endian" tags
+is the same as above, with the default ordering again being "big-endian".
+
+<h2>Hex Words Plain</h2>
+
+<blockquote><span class="key">v3.0 hex words plain</span> 
+Each whitespace-separated group of hex digits (with optional "0x" prefix) is
+taken as a single word and put into a single location in memory. Anything after
+"#" on a line will be ignored. The file must be encoded using utf-8 or plain
+ascii. </blockquote>
+
+<p>Example:
+<blockquote class="note"><pre>v3.0 hex words plain
+a2b30000 00000000 01000000 f000baaa 00000000 00000000 00000000 00000000
+00000002 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+</blockquote>
+
+<p>This format is similar to "v3.0 hex bytes plain" except that whitespace
+between hex digits is significant, with each whitespace-separated group of
+digits filling a single memory location. If memory words are 10 bits wide, then
+each group of hex digits should range from 000 to 3ff, and if memory words are 2
+bits wide, then each group should range from 0 to 3.
+
+<p>Endianness is irrelevant for this format.
+
+<h2>Hex Words Addressed</h2>
+
+<blockquote><span class="key">v3.0 hex words addressed</span> A sequence of
+lines starting with an address in hex (with or without "0x" prefix), followed by
+an optional ":", then a sequence of hex digits (with or without "0x" prefix)
+with a single whitespace separator. Each whitespace-separated group of hex
+digits is taken as a single word and put into a single location in memory. Note
+that the addresses here are <em>word</em> addresses, not <em>byte</em>
+addresses. The addresses need not be in increasing order, and you can leave
+gaps, which will be filled with zeros. Anything after a "#" or two consective
+whitespaces on a line will be ignored. The file must be encoded using utf-8 or
+plain ascii.</blockquote>
+
+<p>Example:
+<blockquote class="note"><pre>v3.0 hex words addressed
+00: a2b30000 00000000 01000000 f000baaa 00000000 00000000 00000000 00000000
+08: 00000002 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+10: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+18: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+</blockquote>
+
+<p>This format is similar to "v3.0 hex bytes addressed" except that 
+whitespace is significant, and the addresses here are <em>word</em>
+addresses rather than <em>byte</em> addresses. If memory words are 10 bits wide,
+then each group of hex digits should range from 000 to 3ff, and if memory words
+are 2 bits wide, then each group should range from 0 to 3. The file must be
+encoded using utf-8 or plain ascii.
+
+<p>Endianness is irrelevant for this format.
+
+<h2>Hex Bytes</h2>
+
+<blockquote><span class="key">v3.0 hex bytes</span> This attempts to (partially)
+auto-detect the format. If the file contains ":", then "v3.0 hex bytes
+addressed" will be used, otherwise "v3.0 hex bytes plain" will be
+used.</blockquote>
+
+<h2>Hex Words</h2>
+
+<blockquote><span class="key">v3.0 hex words</span> This attempts to (partially)
+auto-detect the format. If the file contains ":", then "v3.0 hex words
+addressed" will be used, otherwise "v3.0 hex words plain" will be
+used.</blockquote>
+
+<h2>Binary</h2>
+
+<blockquote>Raw binary format. Each byte of the file is taken as-is. There is no
+header on the first line, no comments, and no provisions for endoding or
+decoding. The bytes (or partial bytes) from the file are packed into the memory
+words, in either big-endian or little-endian order.</blockquote>
+
+<p>Example: Literally any file.</p>
+
+<p>For memory components with width different from 8, bits are packed into the
+words in a manner similar to "v3.0 hex bytes" formats, described above. For
+example, if memory words are 20 bits each, for big-endian the first byte of the
+file will be put into the most signficant 8 bits of the memory word, the next
+byte will go into the middle 8 bits of the memory word, and the most significant
+4 bits of the third byte of the file will go into the bottom 4 bits of the
+memory word.
+
+<h2>Escaped ASCII</h2>
+
+<blockquote>No header line, and no comments. Each byte of the file is taken
+as-is, except that bytes that are not regular printable ascii must be escaped
+using simple (C-style or Java-style) escapes or hex escape sequences. Any
+non-printable ascii found in the file will be silently ignored, such such as
+newlines, tabs, emoji, or other unusual unicode characters, and any other bytes
+outside the ASCII range 0x20 - 0x7E.</blockquote>
+
+<p>Example:
+<blockquote class="note"><pre>Hello
+World\n\0</blockquote>
+
+<p>In this example, the file specifies 12 bytes (<tt>H e l l o W o r l d newline
+zero</tt>), each of which is turned into 8-bits according to the ASCII
+specification (<tt>48 65 6c 6c 6f 57 6f 72 6c 64 0a 00</tt>). As can be seen in
+this example, C-style and Java-style escapes are acceptable (such as "\n" for
+newline, "\t" for tab, and "\0" for the nul character). In addition, hex escapes
+such as "\xA1" are allowed.
+
+<p>For memory components with width different from 8, bits are packed into the
+words in a manner similar to "v3.0 hex bytes" formats, described above. For
+example, if memory words are 20 bits each, for big-endian the first byte of the
+file will be put into the most signficant 8 bits of the memory word, the next
+byte will go into the middle 8 bits of the memory word, and the most significant
+4 bits of the third byte of the file will go into the bottom 4 bits of the
+memory word.
+
+
+<h2>Legacy format: v2.0 raw</h2>
+
+<blockquote><span class="key">v2.0 raw</span> A sequence of space-sparated hex numbers (without "0x"), each
+optionally prefixed with a decimal count and a "*", spread out on as many lines
+as desired. Anything on a line after a "#" is ignored. The file must be encoded
+using utf-8 or plain ascii.</blockquote>
+
+<p>The "v2.0 raw" format is the original Logisim file format for storing memory
+contents. It is intentionally simple, permiting you to write simple programs to
+generate memory images that can then be loaded into Logisim memory components.
+As an example of this file format, if we had a 256-byte memory whose first five
+bytes were 2, 3, 0, 20, and -1, and all subsequent values were 0, then "v2.0
+raw" format memory image would be the following text file:</p>
+<blockquote class="note"><pre>v2.0 raw
+02
+03
+00
+14
+ff
+</pre></blockquote>
+<p>The first line identifies the file format. Subsequent values list the values
+in hexadecimal, starting from address 0; you can place several such values on
+the same line if you prefer. Each number corresponds to one location in the
+resulting memory. For example, if the memory uses words that are 10 bits wide,
+each number should be in the range 0-1023, and if the memory words are only 2
+bits wide, each number should be in the range 0-3. If there are more memory
+locations than are identified in the file, Logisim will load 0 into the other
+memory locations.</p>
+
+<p>The "v2.0 raw" format also supports a simple form of run-length encoding; for
+example, rather than list the value <tt>00</tt> sixteen times in a row, the file
+can include <tt>16*00</tt>. Notice than the number of repetitions is written in
+base 10. Files exported by Logisim will use run-length encoding for runs of at
+least four values.</p>
+
+<p>You can place comments into a "v2.0 raw" format file using the '#' symbol:
+All characters in the line starting from the '#' symbol will be ignored by
+Logisim. As an example, here is a memory image containing 32-bit values:</p>
+<blockquote class="note"><pre>v2.0 raw
+10*0 1000000 # ten consecutive values of 0x00000000, followed by 0x1000000
+2            # same as 0x0000002
+5 6 A3B      # three more 32-bit numbers
+15*f000baaa  # another 32-bit number, repeated fifteen times
+</pre></blockquote>
+
+<p>Logisim's "v2.0 raw" parser is a bit forgiving, and actually accepts any text
+that can get past Java's <tt>Long.parseLong(text, 16)</tt> function. 
+
+
+<p><strong>Next:</strong> <a href="hex.html">Hex editor</a>.</p>
+
+</body>
+</html>

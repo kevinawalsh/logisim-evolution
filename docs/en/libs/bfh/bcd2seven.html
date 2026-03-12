@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>BCD2SevenSegment</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/subcirc.gif" width="32" height="32"> <em>BCD2SevenSegment</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">BFH mega functions</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/BCD2SevenSegment-big.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>This component converts a four-bit binary-coded-decimal digit to a format
+suitable for use with a <a href="../io/7seg.html"><img class="icon"
+    src="/logisim-evolution/icons/7seg.gif"> 7-Segment Display</a>. The BCD2SevenSegment
+component as a "hole" in the center, sized to exactly fit one such display.
+
+<p>This component is not necessary in most scenarios&mdash;it was created as a
+stop-gap measure before FPGA support was added to many components, but is no
+longer useful for new circuits. Rather than using a BCD2SevenSegment converter
+paired with a Seven Segment Display, you can simply use a <a
+href="../io/hexdig.html"><img class="icon" src="/logisim-evolution/icons/hexdig.gif"> Hex
+Digit Display</a> alone (which internally contains suitable number format
+conversion logic).
+
+<h2>Pins</h2>
+
+<dl>
+
+<dt>South edge (input, four bits)</dt>
+<dd>The binary-coded-decimal digit to be converted.</dd>
+
+<dt>Inside edges (seven outputs, one bit each)</dt>
+<dd>Outputs corresponding to the seven inputs of a <a href="../io/7seg.html"><img class="icon"
+    src="/logisim-evolution/icons/7seg.gif"> 7-Segment Display</a>.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<p>None.</p>
+
+<p>Note: A number of attributes are defined for this component, but none are useful in any
+way. They should all be ignored.</p>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

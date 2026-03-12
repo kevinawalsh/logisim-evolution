@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Dynamic Clock Control</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/dynclock.gif" width="32" height="32"> <em>Dynamic Clock Control</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">BFH mega functions</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/dynclock-big.png" width="75" height="70"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>This component only affects FPGA synthesis, and has no effect on the circuit
+within Logisim's simulation. It allows for in-circuit or user control of the
+FPGA clock speed. Or more specifically, it controls how the synthesized FPGA
+circuit derives its clock from the raw FPGA oscillator.</p>
+
+<p>To use the component, place one Dynamic Clock Control component in the
+top-level of the circuit. The input to this component controls the clock speed
+of the circuit, when synthesized on an FPGA, as follows. The input is
+interpreted as an unsigned binary number, between zero and
+<var>2<sup><small><var>w</var></small></sup>-1</var>, where <var>w</var> is the
+width specified by the Tick Resolution attribute. When the input is zero, all
+FPGA clock ticks will be disabled, effectively stopping the clock entirely. When
+the input is <var>n &gt; 0</var>, then only one out of every <var>n</var> FPGA
+clock ticks will be enabled, giving an effective clock that is only
+<var>1/n</var> as fast as the maximum possible clock rate. (Note: the maximum
+possible clock rate when using dynamic clock control is actually half the raw
+FPGA oscillator speed. So if the FPGA has a 50MHz oscillator, the maximum speed
+is 25MHz. When the dynamic clock control input is set to <var>n=1</var>, then
+the circuit operates at that speed, but setting it to <var>n=5</var> would
+reduct the clock speed to 5MHz.</p>
+
+<blockquote class="hint">Hint: Dynamic Clock Control is nice for teaching demonstrations to
+    execute in "slow motion." Pick a few convenient values for the clock speed
+    reduction (e.g. slow, fast, faster, and fastest), define these as constants
+    feeding into a multiplexer, which in turn feeds into the Dynamic Clock
+    Control. With user-facing switches to control the multiplexor, this lets the
+    user pick among these speeds to run the FPGA. Here is an example with just
+    two choices: slow and "turbo", selectable by the user with a button:
+<center><img src="/logisim-evolution/img-libs/dynclock-example.png"></center>
+</blockquote>
+
+<p>In order to make use of the Dynamic Clock Control, it must be enabled when
+sythesizing the circuit for use in an FPGA. The FPGA Commander window has an
+option allowing the user to select a clock speed, which must be set to the
+"Dynamic Speed" option.
+
+<center><img src="/logisim-evolution/img-libs/dynclock-commander.png"></center>
+
+<h2>Pins</h2>
+
+<p>There is only one pin, an input whose bit width matches the Tick Resolution
+attribute. This input determines the clock speed when synthesized for an FPGA.
+Zero disables the FPGA clock. Other values divide the clock, with larger values
+making the clock slower.
+
+</dl>
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Tick Resolution</dt>
+<dd>The bit width for the input.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

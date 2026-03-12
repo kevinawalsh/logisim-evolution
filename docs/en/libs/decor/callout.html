@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Callout Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/callout.png" width="32" height="32">
+<em>Callout Tool</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Decor Library</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>5.0.4-HC</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/callout.png" width="160" height="88"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>This tool adds callouts to a circuit, similar to a "speach bubble". These are
+text boxes, but with an adjustible line or "tail" that can draw attention
+elsewhere.
+
+<p>To edit the text, use the
+<a class="icon" href="text.html"><img src="/logisim-evolution/icons/text.gif">
+Text Tool</a>.
+To adjust the tail, use the
+<a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif">
+Multi-Tool</a> and move the magenta handle.
+
+<p>The style used for the callout is based on the text alignment and the
+position of the tail. Left-aligned text, for example, will have the tail joined
+to a highlight bar on the left side of the text, for example, while
+center-aligned text will have the tail joined to a highlight bar on the top or
+bottom of the text.
+
+<img style="border: 1px solid gray; margin: 10px;" src="/logisim-evolution/img-libs/callout-examples.png" width="565" height="115">
+
+<p>Tip: Like text boxes, callouts can be placed anywhere on the canvas; they do
+not "snap" to the grid. While moving a callout, you can hold the ALT key (or
+option on MacOS) to force "snap to grid" behavior.
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Text</dt>
+<dd>The text appearing in the callout box. This can be edited by changing the
+attribute in the attribute table, or using the <a class="icon"
+href="text.html"><img src="/logisim-evolution/icons/text.gif"> Text Tool</a> directly the
+canvas.</dd>
+
+<dt>Font</dt>
+<dd>The font used for the callout box.</dd>
+
+<dt>Horizontal Alignment</dt>
+<dd>Controls the horizontal alignment of the text, as well as where the text appears relative to
+the origin (i.e. where the mouse was clicked when creating the callout). 
+This
+also affects the style used to draw the callout's tail and highlight bar.
+"Left" uses left-alignment, and positions the text so its left edge is at the origin.
+"Right" uses right-alignment, and positions the text so its right edge is at the
+origin. "Center" horizontally centers each line, and positions the text
+horizontally so the center is at the origin.</dd>
+
+<dt>Vertical Alignment</dt>
+<dd>Controls the where the text appears relative to the origin (i.e. where the
+mouse was clicked when creating the comment). 
+This also affects the style used to draw the callout's tail and highlight bar.
+"Base" positions the text so the
+origin is at the baseline of the first line of text. "Top" positions the text so
+the origin is at the top of first line of the text. "Bottom" positions the text
+so the origin is at the bottom of the first line of text. "Center" centers the
+first line of text vertically at the origin.
+NOTE: For legacy reasons, when
+there are multiple lines of text, vertical alignment is relative to the
+<i>first</i> line of text, never to the last line or to the entire block of
+text. </dd>
+
+<dt>Offset dx<br>Offset dy</dt>
+<dd>Control where the tail ends, relative to the origin. The tail position can
+    be adjusted by changing these attributes, or by using the
+<a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif">
+Multi-Tool</a> to move the magenta handle on the tail.</dd>
+
+</dl>
+
+<h2>FPGA Synthesis</h2><p>Callouts are silently during FPGA synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>DIP Switch</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/dipswitch.gif" width="32" height="32">
+<em>DIP Switch</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Input/Output</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/dipswitch.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>Outputs a set of zeros or one, as defined by the user-controlled
+switches.</p>
+
+<h2>Pins</h2>
+
+<p>A DIP Switch has as multiple output pins, as determined by the 'Number of Switch'
+attribute.</p>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+Alt-0 through Alt-9 alter its <q>Number of Switch</q> attribute,
+and the arrow keys alter its <q>Facing</q> attribute,
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The location of the output pin relative to the component.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the component.</dd>
+
+<dt>Label Location</dt>
+<dd>The location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+<dt>Label Color</dt>
+<dd>The color with which to draw the label.</dd>
+
+<dt>Number of Switch</dt>
+<dd>How many switches and outputs the component has.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>Pressing the mouse button will toggle one of the switches from 0 to 1 or vice
+versa.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

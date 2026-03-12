@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>RGBLED</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/rgbled.gif" width="32" height="32">
+<em>RGBLED</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Input/Output</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/rgbled.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>Displays the value of its three inputs as one of eight possible colors.</p>
+
+<h2>Pins</h2>
+
+<p>A RGBLED has three pins, one representing red, one for green, and one for
+blue. When all inputs are 0, the LED appears black. WHen all are 1, the LED
+appears white. Otherwise the LED appears colored according to the RGB value of
+the three inputs.</p>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+the arrow keys alter its <q>Facing</q> attribute.</p>
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The location of the input pin relative to the component.</dd>
+
+<dt>Active On High?</dt>
+<dd>If <q>yes</q>, then each RGBLED input is considered "On" when the input is
+1, and "Off" otherwise. If <q>no</q>, the input is "On" when the input is 0, and
+"Off" otherwise.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the component.</dd>
+
+<dt>Label Location</dt>
+<dd>The location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+<dt>Label Color</dt>
+<dd>The color with which to draw the label.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis, as if it were
+three separate LEDs (one for R, one for G, and one for B).</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

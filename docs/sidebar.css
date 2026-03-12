@@ -1,0 +1,260 @@
+body {
+    font-family: sans-serif;
+}
+
+/* First-level items (e.g. "Reference") — left-anchored dividers */
+ul.sidecontent > li {
+    margin-top: 1em;
+    padding-top: 0.4em;
+    border-top: 1px solid #aaa;
+    margin-left: 0;
+    padding-left: 0;
+    font-weight: bold;
+    list-style: none;
+}
+
+/* Second-level section headers (e.g. "Beginner's Tutorial") */
+ul.sidecontent > li > ul > li.sec {
+    margin-top: 0.5em;
+    padding-left: 0.5em;
+    font-weight: bold;
+    list-style: none;
+}
+
+/* Third-level items (pages within sections) */
+ul.sidecontent > li > ul > li.sec > ul > li {
+    padding-left: 1.5em;
+    font-weight: normal;
+    list-style: none;
+}
+
+/* Second-level lib headers (e.g. "Wiring", "Gates") */
+ul.sidecontent > li > ul > li.lib {
+    margin-top: 0.5em;
+    padding-left: 0.5em;
+    font-weight: bold;
+    list-style: none;
+}
+
+/* Third-level items (the icon entries) — indent the ul so the outside marker moves with content */
+ul.sidecontent > li > ul > li.lib > ul {
+    padding-left: 1.5em;
+}
+ul.sidecontent > li > ul > li.lib > ul > li {
+    font-weight: normal;
+}
+
+.sidebar {
+    height: 100%;
+    /* width: 0; */
+    width: 200px;
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    background-color: white;
+    /* overflow-x: hidden; */
+    overflow-y: auto;
+    overflow-x: scroll;
+    transition: 0.5s;
+    padding-top: 30px;
+    padding-left: 15px;
+    color: black;
+    font-size: 14px;
+}
+
+.sidebar li img {
+  /* position:absolute; */
+  top:2px;
+  left:-20px;
+  width:16px;
+  height:16px;
+}
+
+.sidebar ul {
+    list-style-type: none;
+    margin-left: 0px;
+    margin-bottom: 8px;
+    padding: 0px;
+}
+
+.sidebar a {
+    /* padding: 8px 8px 8px 36px; */
+    padding: 1px 0px; 
+    text-decoration: none;
+    color: #313171;
+    display: block;
+}
+
+.sidebar a:hover {
+    color: #3131f1;
+}
+
+.sidebar .sidebar-current {
+    color: #212151;
+    background-color: rgba(100, 130, 255, 0.25);
+    border-radius: 3px;
+    padding: 1px 5px;
+}
+
+.sidebar .btn {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+
+.menu {
+    width:26px;
+    height:18px;
+    position:relative;
+    display:inline-block;
+    border-top:5px solid white;
+}
+
+.menu:after, .menu:before {
+    content: '';
+    width: 100%;
+    height:5px;
+    background-color:white;
+    position:absolute;
+    left:0;
+}
+
+.menu:after { bottom:0px; }
+.menu:before { top:4px; }
+
+.collapsedbar {
+    position: fixed;
+    z-index: 1;
+    top: 4px;
+    left: 4px;
+    background-color: #111;
+    /* overflow-x: hidden; */
+    padding: 7px; 
+}
+
+.collapsedbar a {
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+    text-decoration: none;
+    font-size: 25px;
+    color: #a1a1a1;
+    display: block;
+}
+
+.collapsedbar a:hover {
+    color: #f1f1f1;
+}
+
+.collapsedbar .btn {
+    /* position: absolute; */
+    top: 0px; /* 10px; */
+    right: 0px; /* 10px; */
+    font-size: 36px;
+    margin-left: 0px; 36px;
+    margin: 0;
+}
+
+#search {
+    position: absolute;
+    right: 0px;
+    padding: 0px 0px;
+    border: 2px solid white;
+    margin-right: 0px;
+}
+
+#results {
+    position: absolute;
+    clear: both;
+    border: 2px solid gray;
+    visibility: hidden;
+    margin-top: 5px;
+    margin-right: 0px;
+    padding: 5px;
+    width: 340px;
+    background-color: #ded;
+}
+
+#suggest {
+    clear: both;
+    /* border: 2px solid gray; */
+    visibility: hidden;
+    margin: 0px 1px;
+    padding: 0px;
+    background-color: #ddd;
+    color: #333;
+    font-size: 14px;
+}
+
+.suggestion, .activesuggestion {
+    display: block;
+    /*  width: 100%; */
+    margin: 0px;
+    padding: 3px;
+    border: 1px solid gray;
+    background-color: #ddd;
+}
+
+.activesuggestion, .suggestion:hover {
+    background-color: white;
+    color: black;
+}
+
+#search form {
+    margin: 0px;
+    width: 350px;
+    overflow: hidden;
+}
+#search span input {
+    width: 100%;
+    font-size: 14px;
+}
+#search span {
+    display: block;
+    overflow: hidden;
+    padding-right: 4px;
+}
+#search input:first-child {
+  float: right;
+}
+
+#closesearch {
+  float: right;
+  padding-left: 50px;
+}
+
+#closesearch a {
+    /* padding: 8px 8px 8px 36px; */
+    padding: 1px 0px; 
+    text-decoration: none;
+    font-size: 14px;
+    color: #313171;
+    display: block;
+}
+
+#closesearch a:hover {
+    color: #3131f1;
+}
+
+#main {
+    clear: both;
+    margin-left: 250px;
+    transition: margin-left .5s;
+    padding: 16px;
+    padding-top: 16px;
+}
+
+body {
+    padding-top: 0px;
+    padding-right: 0px;
+}
+
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+@media screen and (max-height: 450px) {
+    .sidebar {padding-top: 15px;}
+    .sidebar a {font-size: 18px;}
+}

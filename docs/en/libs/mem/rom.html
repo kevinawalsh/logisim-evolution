@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>ROM</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/rom.gif" width="32" height="32">
+<em>ROM</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Memory</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.1.0</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td><table><tr><th height="140" align="right">Classic Logisim:</th><td rowspan="2" valign="top"><img src="/logisim-evolution/img-libs/rom.png"></td></tr>
+    <tr><th align="right">ANSI:</th></tr></table></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>The ROM component stores up to 16,777,216 values (specified in the Address
+Bit Width attribute), each of which can include up to to 32 bits
+(specified in the Data Bit Width attribute). It behaves similarly to a
+<a href="ram.html"><img class="icon" src="/logisim-evolution/icons/ram.gif"> RAM</a> with
+the 'Non-Volatile' attribute set, but with a greatly simplified interface: a
+circuit can access the current values in ROM, but it cannot change them, so
+there is no clock, no control inputs, and there is only one output-only data
+bus. The user can modify individual values interactively via the Poke Tool, or
+the user can edit, export, or import the contents via the Menu Tool.</p>
+
+<p>The ROM component's contents are stored as an attribute of the component.
+This allows the ROM contents to be set before placing the component into the
+circuit. Multiple ROM components can be kept in the toolbar, each configured
+with different contents. The contents are non-volatile, and persist across
+simulation resets or when Logisim exits.</p>
+
+<p>Current values are displayed in the component. Addresses are displayed in hex
+to the left of the display area. Inside the display area, each value is listed
+in hex. The value at the currently selected address will be displayed in inverse
+text (white on dark gray).</p>
+
+<h2>Single, Dual, and Quad Lines Modes</h2>
+
+<p>Logisim ROM has a 'Line Size' attribute that controls how many locations
+("lines") of memory are accessed at a time. Setting 'Line Size' to 'Single' is
+the simplest case: at most one location is accessed at a time, and there is one
+output labeled <var>D</var>. When 'Line Size' is set to 'Dual', however, the ROM
+component reads two locations simultaneously, and there are two outputs, labeled
+<var>D</var> and <var>1</var>. In 'Quad' mode, ROM will read four locations,
+with four databuses labeled <var>D</var>, <var>1</var>, <var>2</var>, and
+<var>3</var>. The addresses accessed are all consective: for 'Dual' line mode,
+ROM will access addresses <var>A</var> and <var>A+1</var>; for 'Quad' line mode,
+ROM will access addresses <var>A</var>, <var>A+1</var>,  <var>A+2</var>, and
+<var>A+3</var>.</p> 
+
+<h2>Address Alignment</h2>
+
+<p>In 'Dual' and 'Quad' line modes, the selected address must be aligned to a
+multiple of 2 or 4, respectively. There is no support for mis-aligned accesses.
+This means the lowest bit or lowest two bits of the address must always be zero
+in those modes. If the address is mis-aligned the ROM will output all error (E)
+values instead of loading data from the ROM contents.
+
+<p>The decision to omit support in Logisim for mis-aligned addresses is
+deliberate. Support for mis-aligned addresses is not trivial in many actual
+scenarios: a memory chip may require multiple row accesses, for example, in
+order to perform a mis-aligned read. In addition, FPGA synthesis is
+substantially simpler when mis-aligned addresses are not permitted.</p>
+
+<h2>Importing and Exporting Memory Contents</h2>
+
+The contents of memory can be imported from an external data file, or exported
+to an external file. A variety of file formats are supported: see <a
+href="../../guide/mem/importexport.html">Memory Import/Export Format</a> in the
+<em>User's Guide</em> for details.</p>
+
+<h2>Pins (assuming "Classic Logisim" appearance)</h2>
+
+<dl>
+
+<dt><var>A</var> on west edge (input, bit width matches Address Bit Width attribute)</dt>
+<dd>Selects which of the values is currently being accessed by the circuit.</dd>
+
+<dt><var>D</var> on east edge (input/output, bit width matches Data Bit Width attribute)</dt>
+<dd>Outputs the value at the currently selected address.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+the digits '0' through '9' alter its <q>Address Bit Width</q> attribute
+and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> attribute.</p>
+
+<dl>
+
+<dt>Address Bit Width</dt>
+<dd>The bit width of the address bits. The number of values stored in
+ROM is 2<sup><var>addrBitWidth</var></sup>.</dd>
+
+<dt>Data Bit Width</dt>
+<dd>The bit width of each individual value in memory.</dd>
+
+<dt>Line Size</dt>
+<dd>Allows for Single, Dual, or Quad line mode.</dd>
+
+<dt>Contents</dt>
+<dd>Stores the contents of memory.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the register.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+<dt>Appearance</dt>
+<dd>Selects between the "Classic Logisim" appearance style, which is somewhat
+more compact, or "ANSI" style, which is more conventional but larger.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>Clicking the ROM component brings keyboard and mouse focus to the ROM
+(indicated by a red rectangle), allowing for the contents to be viewed or
+edited. Because Poke Tool editing all takes place within a very small space, the
+interface for this is severely but necessarily constrained. <!-- (see <a
+href="../../guide/mem/poke.html">poking memory</a> in the <em>User's Guide</em>
+for additional details about using the Poke Tool with memory).--> For all but the
+simplest editing, it is more convenient to right-click the ROM and select "Edit
+Contents..." to bring up the <a href="../../guide/mem/hex.html">integrated hex
+editor</a>.</p>
+
+<p>The Poke Tool has two modes of operation: You can edit the address displayed,
+and you can edit an individual value at some memory location.</p>
+
+<p><b>Editing Addresses:</b> Use the Poke Tool and click anywhere within the
+memory component but <em>outside</em> the gray box holding the memory contents.
+Logisim will draw a red rectangle around the address at the upper left corner.
+From here:
+<ul>
+    <li><p>Typing <span class="key">R</span> or <span class="key">r</span> will
+    clear the contents of memory.</li>
+    <li><p>Typing hex digits will change the address (assuming the new address
+    isn't too large) and scroll the memory contents to show that address.</li>
+    <li><p>Scrolling with the mouse wheel increments or decrements the address
+    and scrolls the memory forward or backward.
+    <li><p>The <span class="key">Down</span> (or <span class="key">Enter</span>)
+    key will increment the address and scroll the memory contents forward by one
+    row.</li>
+    <li><p>The <span class="key">Up</span> (or <span class="key">Backspace</span>
+    or <span class="key">Delete</span>) keys will also increment or decrement
+    the address to key will decrement the address and scroll the memory contents
+    backwards by one row.</li>
+    <li><p>The <span class="key">Page Down</span> (or <span
+        class="key">Space</span>) and <span class="key">Page Up</span> keys will
+    increment or decrement the address to scroll the memory contents forward or
+    backward by one full page.</li>
+</ul>
+
+<p><b>Editing Contents:</b> Use the Poke Tool and click anywhere within the
+memory component <em>within</em> the gray box holding the memory contents.
+Logisim will draw a red rectangle around the memory cell currently being
+edited. From here:
+<ul>
+    <li><p>Typing <span class="key">R</span> or <span class="key">r</span> will
+    clear the contents of memory.</li>
+    <li><p>Typing hex digits will change the contents of that cell.</li>
+    <li><p>Scrolling with the mouse wheel moves up or down to an adjacent memory
+    cell.</li>
+    <li><p>The <span class="key">Up</span>, <span class="key">Down</span>, <span
+        class="key">Left</span>, and <span class="key">Right</span> arrow keys
+    move to an adjacent memory cell.
+    <li><p>The <span class="key">Page Up</span> and <span class="key">Page
+        Down</span> keys move up or down by a full page.
+    <li><p>The <span class="key">Backspace</span> (or <span
+        class="key">Delete</span>) and <span class="key">Tab</span> (or <span
+        class="key">Space</span>) keys similarly move to the previous or next
+    memory cell.</li>
+</ul>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis. With Verilog,
+only 'Single' line mode is supported.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

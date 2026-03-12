@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Slideshow</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/slideshow.gif" width="32" height="32">
+<em>Slideshow</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Input/Output</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>5.0.1-HC</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/slideshow.jpg"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>Holds a small collection of images, and displays one of them based on the
+value of its input. A slideshow might have a 3-bit input, used to select one of
+8 possible images.
+
+<h2>Pins</h2>
+
+<p>There is only one input pin, on the west edge, with bit width determined by
+the 'Address Bit Width' attribute. This input is used to select the
+image to be displayed.
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Address Bit Width</dt>
+<dd>The number of bits for the input pin.</dd>
+
+<dt>Number of images</dt>
+<dd>The number of images stored in the slideshow, up to 32 images maximum.</dd>
+
+<dt>Display Width<br>Display Height</dt>
+<dd>The size of the displayed image, in pixels.</d>
+
+<dt>Image Fit</dt>
+<dd>This attribute has no effect if the images exactly fit the specified width and height
+    for the component, or if it can be naturally scaled to fit without changing
+    the aspect ratio. For images that don't fit nicely, this attribute
+    controls how the images are fit into the display area: "scale to fit"
+    will maintain the aspect ratio but scale the image as large as possible
+    while still fiting entirely within the boundary, 
+    even if this leaves some space unfilled; "scale and crop" maintains the
+    aspect ratio but scale the image so it fills the entire boundary with no
+    empty areas; "stretch to fit" will stretch the image to fit the boundary
+    even if this distorts the aspect ratio; and "crop to fit" will simply crop
+    the image to fit, neither scaling nor stretching.
+
+<img style="border: 1px solid gray; margin: 10px;" src="/logisim-evolution/img-libs/slideshow-examples.jpg" width="873" height="131">
+
+</dd>
+
+<dt>Image 1, 2, 3, ...</dt>
+<dd>Click these to choose PNG or JPG/JPEG image files for the slideshow. After
+selecting each file, you can choose to embed the image data within your project,
+or store only a link to the file.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>Limitations</h2>
+
+<p>Currently supports only PNG or JPG/JPEG images.
+
+<p>Currently supports only local files. Linking to a URL is not supported, for example.
+
+<h2>Credits</h2>
+
+<p>This component was inspired by a similar feature in
+<a href="https://cycling74.com/products/max">Max MSP</a> by Cycling 74.
+
+<h2>FPGA Synthesis</h2><p>None.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

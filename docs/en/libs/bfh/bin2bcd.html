@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Bin2BCD</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/subcirc.gif" width="32" height="32"> <em>Bin2BCD</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">BFH mega functions</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.x.x</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/bin2bcd-big.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>This component converts an unsigned binary number into binary-coded-decimal
+format. It takes one input, the number to be converted. Each four-bit output
+represents a decimal number from zero to nine. There are a sufficient number of
+four-bit outputs to represent any possible input. For example, for an eight-bit
+input ranging from 0 to 255, there will be three four-bit oututs, representing
+the "one's place", "ten's place", and "hundred's place".
+
+<h2>Pins</h2>
+
+<dl>
+
+<dt>West edge (input, bit width matches Binary Data Bits attribute)</dt>
+<dd>The input as an unsigned binary value to be converted to
+binary-coded-decimal format.</dd>
+
+<dt>North edge (outputs, four bits each)</dt>
+<dd>Each output represents a single decimal digit, with place value starting
+with "one's place" on the right side, as indicated by the labels.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Binary Data Bits</dt>
+<dd>The bit width for the input.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

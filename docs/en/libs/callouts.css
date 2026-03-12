@@ -1,0 +1,146 @@
+body {
+  font-family: sans-serif;
+}
+
+.callouts {
+    position: relative;
+    display: inline-block;
+    border: 1px solid #eee;
+}
+
+.container, .container *, .callouts ul *::before, .callouts ul *::after {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.callouts ul {
+    list-style-type: none;
+    position: absolute;
+    display: inline-block;
+    margin: 0px;
+    padding-inline-start: 0px;
+    --callout-color: #FDE; /* override in html */
+    top: 50px; /* override in html to position callout */
+    left: 50px; /* override in html to position callout */
+    max-width: 500px; /* override in html if desired */
+}
+
+.callouts li {
+    display: inline-block;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    padding: 10px;
+    background-color: var(--callout-color);
+    box-shadow: 0 0 10px hsl(from var(--callout-color) h 100% 20%);
+}
+
+.callouts li .tip::before {
+    content: "Tip: ";
+    font-weight: bold;
+    font-style: italic;
+}
+.callouts li .tip {
+    margin: 5px 0 0 0;
+    color: hsl(from var(--callout-color) h 100% 25%);
+}
+
+/* TOP */
+.callouts--top::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 23px;
+    top: -42px;
+    border: 10px solid transparent;
+    border-bottom: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--top::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 25px;
+    top: -32px;
+    border: 8px solid transparent;
+    border-bottom: 25px solid var(--callout-color);
+    z-index: 3;
+}
+
+/* BOTTOM */
+.callouts--bottom::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 23px;
+    bottom: -42px;
+    border: 10px solid transparent;
+    border-top: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--bottom::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 25px;
+    bottom: -31px;
+    border: 8px solid transparent;
+    border-top: 24px solid var(--callout-color);
+    z-index: 3;
+}
+
+/* LEFT */
+.callouts--left::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: -42px;
+    top: 18px;
+    border: 10px solid transparent;
+    border-right: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--left::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: -31px;
+    top: 20px;
+    border: 8px solid transparent;
+    border-right: 24px solid var(--callout-color);
+    z-index: 3;
+}
+
+/* RIGHT */
+.callouts--right::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    right: -42px;
+    top: 18px;
+    border: 10px solid transparent;
+    border-left: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--right::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    right: -31px;
+    top: 20px;
+    border: 8px solid transparent;
+    border-left: 24px solid var(--callout-color);
+    z-index: 3;
+}
+

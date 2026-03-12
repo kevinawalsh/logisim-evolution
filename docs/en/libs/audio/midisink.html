@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>MIDI Sink</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/midisink.gif" width="32" height="32">
+<em>MIDI Sink</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Audio</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>5.0.3-HC</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/midisink.jpg" width="82" height="102"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>MIDI Sink accepts MIDI audio data provided by a simulated circuit and plays
+it back through the native audio system. The MIDI Sink component has data inputs
+on the west edge to specify the MIDI note number, velocity, duration, and other
+parameters. A write-enable input and a clock input on the south edge control the
+timing of playback. When the write-enable input is 1 and the clock is triggered,
+the MIDI parameters are captured and sent to the native audio system for
+playback, without buffering.
+
+<p>A blue speaker icon indicates that the native audio system is working
+properly and accepting data. A red speaker icon indicates playback errors.
+
+<p>A choice of interfaces is provided for how MIDI data is specified, either
+serially as a byte stream, in parallel with all MIDI parameters packed
+into a single 24-bit or 32-bit value, or as separate values on different pins.
+
+<ul>
+    <li><em>"Serial (byte)"</em>: The MIDI Sink has one 8-bit input pin. Data
+from this input is a sequence of bytes following standard MIDI stream encoding.
+For example, the sequence of bytes 0x91, 0x22, 0x33 encodes a MIDI NoteOn message for
+channel 1, note number 0x22, velocity 0x33. This data will take at least three
+clock cycles to write, since this MIDI component interface at most one byte of
+input per cycle.</li>
+    <li><em>"Parallel (24 bits)"</em>: The MIDI Sink has one 24-bit input pin to
+specify a MIDI message with size up to 3 bytes, in either big-endian or
+little-endian order, formatted as in the standard MIDI stream encoding. In that
+encoding, the highest (left-most) bit of each byte is 1 for the initial
+"control" byte of a message, and 0 for remaining "parameter" bytes of a message.
+This distinction allows for auto-detection of endianness. If the highest
+(left-most) bit of the 24-bit input value is 1, the byte order is treated as
+big-endian. For example, 0x912233 is interpreted as the byte sequence 0x91,
+0x22, 0x33, which encodes MIDI NoteOn message for channel 1, note number 0x22,
+velocity 0x33. If the highest (left-most) bit of the 24-bit input value is 0,
+the byte order is treated as little-endian. For example, 0x332291 is interpreted
+as the byte sequence 0x91, 0x22, 0x33, as before. This interface is more
+efficient than the "Serial (byte)" interface, because an entire 3-byte MIDI
+message is transferred in a single clock cycle. MIDI messages shorter than
+3-bytes must be padded to 24 bits with zeros, however.</li>
+    <li><em>"Parallel (32 bits)"</em>: The MIDI Sink has one 32-bit input pin to
+specify a MIDI message with size up to 3 bytes, in either big-endian or
+little-endian order, formatted as in the standard MIDI stream encoding. This
+interface is identical to the "Parallel (24 bits)" interface, except that all
+messages must be padded with an extra zero byte. This interface is for
+convenience, e.g. when building 32-bit CPU-like circuits.
+    <li><em>"Logisim (32 bits)"</em>: The MIDI Sink has one 32-bit input pin
+        which specifies playback (or release) of a single MIDI note. The format is:<br>
+        <tt>xxxD CCCC IIII IIII xVVV VVVV NNNN NNNN</tt><br>
+        where:
+<ul>
+    <li>D is a 1-bit "Damper" control. If set to 1, all notes on this channel
+        are silenced so that any new note is played in isolation.</li>
+    <li>CCCC is the 4-bit MIDI channel number to be used. If unconnected, the
+        <em>Channel</em> attribute is used as a default.</li>
+    <li>IIIIIIIII is the 8-bit MIDI instrument to be used for notes. If left
+        unconnected, the <em>Instrument</em> attribute is used as a
+        default.</li>
+    <li>VVVVVVVV is a 7-bit attack (or release) velocity number.</li>
+    <li>NNNNNNNNN is an 8-bit note number specifying the MIDI note to be played
+        (or released) as a signed two's complement number. Values 1 to 127 play
+        a note (NoteOn). If the <em>Auto Hold Time</em> attribute is set to a
+        non-zero value, the note will automatically be released after that many
+        milliseconds. To manually release a note (NoteOff), negative note
+        numbers can be used, for example, -60 will release note 60. A note value
+        of zero is ignored.</li>
+</ul>
+    <li><em>"Logisim (8+7+1+4+8 bits)"</em>: The MIDI Sink has five input pins,
+all of which together specify playback (or release) of a MIDI note. All inputs
+take effect together when the component is enabled and the clock is triggered.
+<ul>
+    <li><em>Channel</em> input: The MIDI channel number to be used. If left
+        unconnected, the <em>Channel</em> attribute is used as a default.</li>
+    <li><em>Input</em> input: The MIDI channel instrument to be used for notes.
+        If left unconnected, the <em>Instrument</em> attribute is used as a
+        default.</li>
+    <li><em>Damper</em> input: if set to 1, all notes on this channel are silenced
+        so that any new note is played in isolation.
+    <li><em>Note</em> input: The note to be played (or released). Values 1 to
+        127 play a note (NoteOn). If the <em>Auto Hold Time</em> attribute is
+        set to a non-zero value, the note will automatically be released after
+        that many milliseconds. To manually release a note, negative note
+        numbers can be used, for example, -60 will release note 60. A note value
+        of zero is ignored.</li>
+    <li><em>Velocity</em> input: The attack (or release) velocity.</li>
+        the attack (or release) velocity.</li>
+</ul>
+
+<blockquote class="warning">Warning: Only a subset of MIDI is currently supported.</blockquote>
+
+<h2>Pins</h2>
+
+<dl>
+
+<dt>South edge, left side (input, bit width 1)</dt>
+<dd>Write Enable: When this value is 1, clock triggers and MIDI playback is
+    enabled. When the value is 0, other inputs are ignored.</dd>
+
+<dt>South edge, right pin marked with triangle (input, bit width 1)</dt>
+<dd>Clock: At the instant that this is triggered as specified by the Trigger
+    attribute, other inputs are processed to play or release MIDI notes or
+    execute other MIDI commands.</dd>
+
+<dt>West edge (input, bit width 8, present only when interface is "Serial (byte)")</dt>
+<dd>Serial MIDI Data: accepts bytes of a standard MIDI stream. See below for
+    details on the "Serial (byte)" interface attribute.</dd>
+
+<dt>West edge (input, bit width 24 or 32, present only when interface is
+    "Parallel (32 bit)" or "Parallel (24 bit)")</dt>
+<dd>MIDI Command: accepts 1-byte, 2-byte, or 3-byte MIDI commands packed in
+    little-endian or big-endian order. See below for details on the "Parallel
+    (32 bit)" and "Parallel (24 bit)" and "Parallel (24 bit)" interface
+    attributes.</dd>
+
+<dt>West edge (input, bit width 32, present only when interface is "Logisim (32 bit)")</dt>
+<dd>Data: 32-bit value encoding damper, channel, instrument, velocity, and note
+    data. See below for details on the "Logisim (32 bit)" interface attribute.</dd>
+
+<dt>West edge (input, bit width 4, present only when interface is "Logisim (8+7+1+4+8 bits)")</dt>
+<dd>Channel: MIDI channel number. See below for details on the "Logisim
+    (8+7+1+4+8 bits)" interface attribute.</dd>
+
+<dt>West edge (input, bit width 1, present only when interface is "Logisim (8+7+1+4+8 bits)")</dt>
+<dd>Damping: When 1, silences other notes on this channel before playing a new
+    note. See below for details on the "Logisim (8+7+1+4+8 bits)" interface attribute.</dd>
+
+<dt>West edge (input, bit width 8, present only when interface is "Logisim (8+7+1+4+8 bits)")</dt>
+<dd>Note: MIDI note number. Positive values turn on a note. Negative values
+    silence the corresponding note. See below for details on the "Logisim (8+7+1+4+8 bits)" interface attribute.</dd>
+
+<dt>West edge (input, bit width 7, present only when interface is "Logisim (8+7+1+4+8 bits)")</dt>
+<dd>Velocity: MIDI velocity number. See below for details on the "Logisim (8+7+1+4+8 bits)" interface attribute.</dd>
+
+<dt>West edge (input, bit width 8, present only when interface is "Logisim (8+7+1+4+8 bits)")</dt>
+<dd>Instrument: MIDI instrument number. See below for details on the "Logisim (8+7+1+4+8 bits)" interface attribute.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Trigger</dt>
+<dd>Configures how the clock input is interpreted. The value <q>rising edge</q>
+indicates that the register should update its value at the instant when the
+clock rises from 0 to 1. The <q>falling edge</q> value indicates that it should
+update at the instant the clock falls from 1 to 0.</dd>
+
+<dt>Instrument</dt>
+<dd>The default MIDI instrument to use for playback if the instrument is not
+otherwise specified or is not valid. This attribute only affects playback when
+the <em>Interface</em> attribute is set to either <em>"Logisim (32
+bits)"</em> or <em>"Logisim (8+7+1+4+8 bits)"</em>.</dd>
+
+<dt>Channel</dt>
+<dd>The default MIDI channel to use for playback if the channel is not otherwise
+specified or is not valid. This attribute only affects playback when the
+<em>Interface</em> attribute is set to either <em>"Logisim (32 bits)"</em> or
+<em>"Logisim (8+7+1+4+8 bits)"</em>.</dd>
+
+<dt>Auto Hold Time (ms)</dt>
+<dd>The default duration each MIDI note is played, in milliseconds. This
+attribute only affects playback when the <em>Interface</em> attribute is set to
+either <em>"Logisim (32 bits)"</em> or <em>"Logisim (8+7+1+4+8 bits)"</em>.</dd>
+
+<dt>Interface</dt>
+<dd>Specifies how MIDI data is encoded. This attribute determines the number and
+width of the MIDI Sink's input pins.
+</dd>
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Not yet supported.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

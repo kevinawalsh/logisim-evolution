@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Controlled Buffer/Inverter</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/pla.gif" width="32" height="32">
+<em>PLA (Programmable Logic Array)</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Gates</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>3.0.0 HC</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/pla.png" width="60" height="60"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>A PLA, or Programmable Logic Array, is essentially a configurable universal
+truth table. It is configured by either right-clicking and selecting "Edit PLA
+Program..." or clicking 'Program' in the attribute list. Within the program
+editor, each line specifies a pattern of ones, zeros, and 'X' values (for "don't
+care"), a corresponding output pattern, and (optionally) a comment or note.
+
+<p>If any input bit to the PLA is floating (i.e. unknown) or an error, then the
+every output bit of the PLA is an error value.
+
+<p><img style="float: right;" src="/logisim-evolution/img-libs/pla-editor.png">The value
+at the input pin is compared to each of the rows of the table. When a matching
+row is found, the output specified by that row is used as the output for the
+PLA. Unlike an actual truth-table, rows are matched in the order they are
+written, so they do not need to be mutually exclusive: if multiple rows match
+the input, only the first matching row will be used to determine the output. Nor
+do the rows need to be exhaustive: if no rows match, the output will be all
+zeros.
+
+<p>The PLA program editor additionally allows the table to be be exported to or
+imported from a text file. The format is straightforward, for example:
+<blockquote class="plain"><pre># Logisim PLA program table
+1xx 01 # first case
+01x 01 # my favorite case
+001 01
+001 10 # fallback case</pre></blockquote>
+Lines starting with '#' are ignored. Other lines specify a row of the PLA
+program, with input first, followed by output, then an optional comment
+preceeded by a '#' character.
+
+<p>The comments on each row of the PLA program have no effect on the circuit
+simulation, but they can be useful for documenting the rationale behind each row
+of the program, much like comments in a programming language. However, the
+comment for the current matching row is also displayed on the PLA component
+itself during the simulation. This can be useful for debugging, or simply for
+displaying information to the user about what the circuit is doing. 
+
+<blockquote>Bonus feature: If you include a '#' symbol <em>within</em> a
+    comment, only the part before the '#' will appear on the PLA during the
+    simulation. That way you can include a short label for each row, and a
+    longer comment for documentation.</blockquote>
+
+<h2>Pins (assuming component faces east, control line right-handed)</h2>
+
+<dl>
+
+<dt>West edge (input, bit width matches Bit Width In attribute)</dt>
+<dd>The component input that will be used to match against rows in the PLA
+program.</dd>
+
+<dt>East edge (output, bit width matches Bit Width Out attribute)</dd>
+<dd>The component's output, as determined by the PLA program, or and error value
+if the input was not well-defined.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+the arrow keys alter its <q>Facing</q> attribute.</p>
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The direction of the component (its output relative to its input).</dd>
+
+<dt>Bit Width In</dt>
+<dd>The bit width of the component's input.</dd>
+
+<dt>Bit Width Out</dt>
+<dd>The bit width of the component's output.</dd>
+
+<dt>Program</dt>
+<dd>The PLA program that specifies the relation between input and output.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the gate.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+	<title>Poking memory</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+<body bgcolor="FFFFFF">
+
+<h1>Poking memory</h1>
+
+<p>Clicking a RAM or ROM component with the Poke Tool brings keyboard and mouse
+focus to the component (indicated by a red rectangle), allowing for the contents
+to be viewed or edited. Because Poke Tool editing all takes place within a very
+small space, the interface for this is severely but necessarily constrained. For
+all but the simplest editing, it is more convenient to right-click the RAM and
+select "Edit Contents..." to bring up the <a href="hex.html">integrated hex
+editor</a>.</p>
+
+<p>The Poke Tool has two modes of operation: You can edit the address displayed,
+and you can edit an individual value at some memory location.</p>
+
+<p><b>Editing Addresses:</b> Use the Poke Tool and click anywhere within the
+memory component but <em>outside</em> the gray box holding the memory contents.
+Logisim will draw a red rectangle around the address at the upper left corner.
+From here:
+<ul>
+    <li><p>Typing <span class="key">R</span> or <span class="key">r</span> will
+    clear the contents of memory.</li>
+    <li><p>Typing hex digits will change the address (assuming the new address
+    isn't too large) and scroll the memory contents to show that address.</li>
+    <li><p>Scrolling with the mouse wheel increments or decrements the address
+    and scrolls the memory forward or backward.
+    <li><p>The <span class="key">Down</span> (or <span class="key">Enter</span>)
+    key will increment the address and scroll the memory contents forward by one
+    row.</li>
+    <li><p>The <span class="key">Up</span> (or <span class="key">Backspace</span>
+    or <span class="key">Delete</span>) keys will also increment or decrement
+    the address to key will decrement the address and scroll the memory contents
+    backwards by one row.</li>
+    <li><p>The <span class="key">Page Down</span> (or <span
+        class="key">Space</span>) and <span class="key">Page Up</span> keys will
+    increment or decrement the address to scroll the memory contents forward or
+    backward by one full page.</li>
+</ul>
+
+<p><b>Editing Contents:</b> Use the Poke Tool and click anywhere within the
+memory component <em>within</em> the gray box holding the memory contents.
+Logisim will draw a red rectangle around the memory cell currently being
+edited. From here:
+<ul>
+    <li><p>Typing <span class="key">R</span> or <span class="key">r</span> will
+    clear the contents of memory.</li>
+    <li><p>Typing hex digits will change the contents of that cell.</li>
+    <li><p>Scrolling with the mouse wheel moves up or down to an adjacent memory
+    cell.</li>
+    <li><p>The <span class="key">Up</span>, <span class="key">Down</span>, <span
+        class="key">Left</span>, and <span class="key">Right</span> arrow keys
+    move to an adjacent memory cell.
+    <li><p>The <span class="key">Page Up</span> and <span class="key">Page
+        Down</span> keys move up or down by a full page.
+    <li><p>The <span class="key">Backspace</span> (or <span
+        class="key">Delete</span>) and <span class="key">Tab</span> (or <span
+        class="key">Space</span>) keys similarly move to the previous or next
+    memory cell.</li>
+</ul>
+
+<p><strong>Next:</strong> <a href="menu.html">Memory Import/Export Format</a>.</p>
+
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Transistor</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/trans0.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/trans1.gif" width="32" height="32">
+<em>Transistor</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Analog</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.7.0 (moved to Analog in 4.0.2 HC)</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/trans0.png" width="44" height="23">
+	<img src="/logisim-evolution/img-libs/trans1.png" width="44" height="23"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>A transistor has two inputs, called <em>gate</em> and <em>source</em>,
+and one output, called <em>drain</em>. When diagrammed, the <em>source</em>
+input and <em>drain</em> output are drawn connected by a plate;
+Logisim draws an arrowhead to indicate the direction of data flow from input to output.
+The <em>gate</em> input is drawn connected to a plate that is parallel to the
+plate connecting <em>source</em> to <em>drain</em>. Logisim supports two types of
+transistors, with slightly different behaviors described below; the P-type
+transistor is indicated by a circle connecting the <em>gate</em> input to its
+plate, while the N-type transistor has no such circle. Note: these components roughly
+approximate the behavior of actual FET transistors, but several simplifications
+are made.</p>
+
+<p>Depending on the value found at <em>gate</em>,
+the value at <em>source</em> may be transmitted to
+<em>drain</em>; or there may be no connection from <em>source</em>,
+so <em>drain</em> is left floating (shown as 'X'). The determination of transmitting or disconnecting
+depends on the type of transistor: A P-type transistor
+(indicated by a circle on the <em>gate</em> line) transmits
+when <em>gate</em> is 0, while an N-type transistor (which has no such circle)
+transmits when <em>gate</em> is 1. For a P-type transistor, a high
+<em>source</em> input will propagate to the <em>drain</em> output, while for an
+N-type transistor, a low <em>source</em> input will propagate to the
+<em>drain</em> output. Other <em>source</em> values will leave <em>drain</em>
+floating (shown as 'X'). Error values (shown as 'E') cause the transistor to
+output errors or, in some cases, floating ('X') values.</p>
+
+<center><table>
+<tr><td><table><thead>
+<tr><td></td><th colspan="4" align="center"><b>P-type</b></th></tr>
+<tr><td></td><td colspan="4" align="center"><img src="/logisim-evolution/img-libs/trans0.png" width="44" height="23"></td></tr>
+</thead><tbody>
+<tr><td colspan="2"></td><th colspan="3"><em>gate</em></th></tr>
+<tr><td colspan="2"></td><th align="center">0</th><th align="center">1</th><th align="center">E/X</th></tr>
+<tr><td></td><th align="center">0</th>
+      <td align="center">X</td><td align="center">X</td><td align="center">E</td></tr>
+<tr><th><em>source</em></th><th align="center">1</th>
+      <td align="center">1</td><td align="center">X</td><td align="center">E</td></tr>
+<tr><td></td><th align="center">X</th>
+      <td align="center">X</td><td align="center">X</td><td align="center">X</td></tr>
+<tr><td></td><th align="center">E</th>
+      <td align="center">E</td><td align="center">X</td><td align="center">E</td></tr>
+</tbody></table></td><td>&nbsp;&nbsp;&nbsp;</td><td><table><thead>
+<tr><td></td><th colspan="4" align="center"><b>N-type</b></th></tr>
+<tr><td></td><td colspan="4" align="center"><img src="/logisim-evolution/img-libs/trans1.png" width="44" height="23"></td></tr>
+</thead><tbody>
+<tr><td colspan="2"></td><th colspan="3"><em>gate</em></th></tr>
+<tr><td colspan="2"></td><th align="center">0</th><th align="center">1</th><th align="center">E/X</th></tr>
+<tr><td></td><th align="center">0</th>
+      <td align="center">X</td><td align="center">0</td><td align="center">E</td></tr>
+<tr><th><em>source</em></th><th align="center">1</th>
+      <td align="center">X</td><td align="center">X</td><td align="center">E</td></tr>
+<tr><td></td><th align="center">X</th>
+      <td align="center">X</td><td align="center">X</td><td align="center">X</td></tr>
+<tr><td></td><th align="center">E</th>
+      <td align="center">X</td><td align="center">E</td><td align="center">E</td></tr>
+</table></td></tr></table></center>
+
+<p>Or in summarized form:</p>
+
+<center><table>
+<tr><td><table><thead>
+<tr><th colspan="2" align="center"><b>P-type</b></th></tr>
+<tr><td colspan="2" align="center"><img src="/logisim-evolution/img-libs/trans0.png" width="44" height="23"></td></tr>
+</thead><tbody>
+<tr><th><em>gate</em></th><th><em>source</em></th><th><em>drain</em></th></tr>
+<tr><td align="center">0</td><td align="center">0</td><td align="center">X</td></tr>
+<tr><td align="center">0</td><td align="center">1</td><td align="center">1</td></tr>
+<tr><td align="center">1</td><td align="center">-</td><td align="center">X</td></tr>
+<tr><td align="center">E/X</td><td align="center">-</td><td align="center">E/X*</td></tr>
+</tbody></table></td><td>&nbsp;&nbsp;&nbsp;</td><td><table><thead>
+<tr><th colspan="2" align="center"><b>N-type</b></th></tr>
+<tr><td colspan="2" align="center"><img src="/logisim-evolution/img-libs/trans1.png" width="44" height="23"></td></tr>
+</thead><tbody>
+<tr><th><em>gate</em></th><th><em>source</em></th><th><em>drain</em></th></tr>
+<tr><td align="center">0</td><td align="center">-</td><td align="center">X</td></tr>
+<tr><td align="center">1</td><td align="center">0</td><td align="center">0</td></tr>
+<tr><td align="center">1</td><td align="center">1</td><td align="center">X</td></tr>
+<tr><td align="center">E/X</td><td align="center">-</td><td align="center">E/X*</td></tr>
+</table></td></tr></table>
+<p>* Note: If <em>source</em> is X, <em>drain</em> is X; otherwise <em>drain</em> is E.</p>
+</center>
+
+<blockquote class="warning">Note: Transistors in logisim only transmit values in one direction,
+    from source to drain, as indicated by the small arrow. This is not realistic
+    for many types of transistor logic, which can be symmetric devices allowing
+    current to flow in either direction depending on how the inputs are
+    wired.</blockquote>
+
+<p>If the Data Bits attribute is more than 1, the <em>gate</em> input is still
+a single bit, but its value is applied simultaneously to each of the
+<em>source</em> input's bits.</p> 
+
+<p>An N-type transistor behaves very similarly to a
+<a href="../gates/controlled.html"><img class="icon" src="/logisim-evolution/icons/controlledBuffer.gif"> Tri-State Buffer</a>, but it only transmits low <em>source</em> values.
+A P-type transistor behaves very similarly to a
+<a href="../gates/controlled.html"><img class="icon" src="/logisim-evolution/icons/controlledBuffer.gif"> Tri-State Buffer</a> as well, but it only transmits high <em>source</em> values. A pair of N-type and
+P-type transistors connected together in parallel will function similarly to a 
+single <a href="../gates/controlled.html"><img class="icon" src="/logisim-evolution/icons/controlledBuffer.gif"> Controlled Buffer</a>, passing both ones and zeros when enabled, and with a floating output when
+disabled.</p>
+
+<h2>Pins (assuming component faces east, gate line top/left)</h2>
+
+<dl>
+
+<dt>West edge (input, bit width matches Data Bits attribute)</dt>
+<dd>The component's <em>source</em> input that will transmit to the output
+if triggered by the <em>gate</em> input.</dd>
+
+<dt>North edge (input, bit width 1)</dt>
+<dd>The component's <em>gate</em> input. For P-type transistors, the transistor
+will transmit if the <em>gate</em> value is 0; for N-type transistors,
+this will trigger the transistor if the <em>gate</em> value is 1.</dd>
+
+<dt>East edge (output, bit width matches Data Bits attribute)</dd>
+<dd>The component's output, which will match the <em>source</em> input
+if indicated by the <em>gate</em> input, or will be floating if the <em>gate</em>
+input is the negation of what indicates negation. If <em>gate</em> is floating
+or an error value, then the output will be an error value.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute
+and the arrow keys alter its <q>Facing</q> attribute.</p>
+
+<dl>
+
+<dt>Type</dt>
+<dd>Determines whether the transistor is P-type or N-type.</dd>
+
+<dt>Facing</dt>
+<dd>The direction of the component (its output relative to its input).</dd>
+
+<dt>Gate Location</dt>
+<dd>The location of the gate input.</dd>
+
+<dt>Data Bits</dt>
+<dd>The bit width of the component's inputs and outputs.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>None. FPGA devices generally do not support 
+tri-state devices.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

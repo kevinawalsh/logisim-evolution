@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Comment Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/comment.png" width="32" height="32">
+<em>Comment Tool</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Decor Library</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.0 Beta 1</td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>The Comment Tool adds free-form text comments to a circuit. It is a limited
+and less useful version of the <a class="icon" href="text.html"><img
+    src="/logisim-evolution/icons/text.gif"> Text Tool</a>, as it can't edit labels on
+components, and the user interface for this tool is awkward.</p>
+
+<p>To use this tool, first select the tool, then enter the desired text in the
+'Text' attribute in the attrbutes panel at the bottom left. Then click anywhere
+on the circuit to insert a comment with that text.</p>
+
+<p>In contrast to all other components in the current built-in libraries,
+comments can be placed anywhere on the canvas; they do not snap to the grid.</p>
+
+<h2>Attributes</h2>
+
+<dl>
+
+<dt>Text</dt>
+<dd>The text appearing in the comment. This can be edited by changing the
+attribute in the attribute table, or using the <a class="icon"
+href="text.html"><img src="/logisim-evolution/icons/text.gif"> Text Tool</a> directly the
+canvas.</dd>
+
+<dt>Font</dt>
+<dd>The font used for the comment.</dd>
+
+<dt>Horizontal Alignment</dt>
+<dd>Controls the horizontal alignment, as well as where the text appears relative to
+the origin (i.e. where the mouse was clicked when creating the comment).  "Left"
+uses left-alignment, and positions the text so its left edge is at the origin.
+"Right" uses right-alignment, and positions the text so its right edge is at the
+origin. "Center" horizontally centers each line, and positions the text
+horizontally so the center is at the origin.</dd>
+
+<dt>Vertical Alignment</dt>
+<dd>Controls the where the text appears relative to the origin (i.e. where the
+mouse was clicked when creating the comment). "Base" positions the text so the
+origin is at the baseline of the first line of text. "Top" positions the text so
+the origin is at the top of first line of the text. "Bottom" positions the text
+so the origin is at the bottom of the first line of text. "Center" centers the
+first line of text vertically at the origin.
+NOTE: For legacy reasons, when
+there are multiple lines of text, vertical alignment is relative to the
+<i>first</i> line of text, never to the last line or to the entire block of
+text. </dd>
+
+</dl>
+
+<h2>FPGA Synthesis</h2><p>Comments are silently during FPGA synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

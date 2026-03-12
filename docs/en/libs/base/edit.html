@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Multi-Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img class="big" src="/logisim-evolution/icons/edit.gif">
+<em>Multi-Tool</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Mouse Tools</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.3.0</td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>The Multi-Tool allows the user to select and rearrange existing components,
+and to add, move, and rearrange wires. Exactly what the tool does depends on
+where the user presses the mouse on the canvas. This tool is a combination of
+the <a class="icon" href="select.html"><img src="/logisim-evolution/icons/move.gif"> Move Tool</a> and
+the <a class="icon" href="wiring.html"><img src="/logisim-evolution/icons/wiring.gif"> Wiring Tool</a>.
+</p>
+
+<h3>Drawing Wires</h3>
+
+<ul>
+<li><p><img class="nonicon" src="multi-wire-anim.gif" style="float: right; border: 1px solid gray;">
+When the mouse is over a wiring point for an existing component,
+or if it is atop a current wire, the Multi-Tool will display a small green circle
+around the mouse's location. Clicking and dragging will create new wire
+segments. All wires in Logisim are either horizontal or vertical, never
+diagonal, but logisim will create an "L" shaped sequence of wire segments for
+you if you drag diagonally.</p>
+<blockquote class="hint"> Hint: <b>Press space while dragging to bend a wire's path.</b>.
+    You can do this repeatedly to make a complicated zig-zag
+    path for the wire by pressing space at each place the wire should turn a
+    corner. <b>Press backspace while dragging to straighten a wire's path</b>.
+    Each backspace will remove a corner point resulting in fewer turns and a
+    more direct path. </blockquote></li>
+
+
+<li><p><img class="nonicon" src="multi-wire-extend-anim.gif" style="float: right; border: 1px solid gray;">
+Click and drag the end of a wire to shorten or extend it, or click and drag
+the middle of a wire segment and drag along the wire to open a gap.</p></li>
+
+<li><p>Hover over the wiring point of a component to see a description of that
+input or output.</p>
+</ul>
+
+<p>Some components draw short stubs near the points to which wires can connect,
+such as the <a href="../gates/common.html">OR gate</a> and <a
+href="../gates/controlled.html">controlled buffer</a>. Logisim will silently
+correct attempts to create wires that slightly overshoot the stub's
+end.</p></li>
+
+<h3>Selecting, Moving, and Editing</h3>
+
+<ul>
+<li><p><img class="nonicon" src="multi-select-anim.gif" style="float: right; border: 1px solid gray;">
+A simple click on wire or a component, without dragging, will simply
+select the the component or wire segment. Holding <span class="key">shift</span>
+while clicking a wire or component will add it to the current selection if it
+was not there already, or will remove it if it was. After selecting the desired
+items in the selection, you can of course cut/copy/paste/delete/duplicate all
+the items via the <a href="../../guide/menu/edit.html">Edit menu</a>.</p></li>
+
+<li><p>Click then drag the mouse on the background (i.e. starting at a location
+not contained within any components) to begin a rectangular selection. All
+components that are fully contained by the rectangle will be selected. Holding
+<span class="key">shift</span> while making a rectanglar selection will add the
+new elements if they were not there already, or will remove them if they
+were.</p></li>
+
+<li><p>Clicking and dragging a currently-selected component or wire segment will
+begin moving all elements of the selection.</p>
+
+<p>By default, Logisim will compute a way to add new wires, or remove or shorten
+existing wires, so that no existing connections are lost during the move.
+If you're performing a move where you do not want these changes to be made, you
+can press the <span class="key">shift</span> key during the move. If you want to
+disable this behavior entirely, go to Project &gt; Options, select the Canvas
+tab, and uncheck the <q>Keep Connections When Moving</q> box; in this case, the
+connections are computed only when the <span class="key">shift</span> key
+<em>is</em> down.</p>
+
+<blockquote>
+    Note: <b>Dragging a selection containing wires</b> can somteimes lead to
+    surprises. If you drag a selection including some wires on top of some other
+    wires, all wires are merged, and the newly-merged wires are added the
+    selection.  As a result, if you then drag the selection a second time, the
+    wires previously at the location will not be left behind. This behavior is
+    in keeping with the rule in Logisim that wires never overlap. And it does
+    not normally constitute a major problem: Logisim will draw the full
+    selection in the midst of dropping, and you should not drop it until you are
+    sure it is in the correct location.</blockquote>
+</li>
+</ul>
+
+<p>Some keys have an effect when items have been selected.</p>
+
+<ul>
+
+<li><b>Rotate components</b> using the arrow keys 
+<span class="key">Up</span>
+<span class="key">Down</span>
+<span class="key">Left</span>
+<span class="key">Right</span>. This 
+changes the Facing attribute for all components in the
+selection that have such an attribute.</p></li>
+
+<li><p><b>Remove components and wires</b> using 
+<span class="key">Delete</span> or
+<span class="key">Backspace</span> keys.
+These will delete everything selected from the circuit.</p></li>
+
+<li><p><b>Duplicate components and wires</b> using the
+<span class="key">Insert</span> key. This will create a duplicate of all
+currently-selected wires and components. </p></li>
+
+</ul>
+
+<p>When duplicating a selection or pasting, Logisim does not immediately place
+the new components into the circuit; instead, the selection will be a collection
+of "ghosts," which will be dropped into the circuit as soon as they are either
+deselected or dragged to another location.</p>
+
+<h3>Obsolete/Broken Features</h3>
+
+<ul>
+<li><p>Pressing the <span class="key">Alt</span> key when clicking causes the click to be ignored.
+<strike>If, however, the user presses the <span class="key">Alt</span> key at a point in the middle of
+the wire, then the green circle will disappear. A mouse press selects the wire,
+and a mouse drag moves it.</strike></p></li>
+
+<li><p><strike>However, if the <span class="key">Alt</span> key is pressed at a location not contained within
+any components, this initiates the addition of a new wire. A small green circle
+is drawn in such a circumstance to indicate this.</strike></p></li>
+</ul>
+
+
+<h2>Attributes</h2>
+
+<p>None. Selecting a component, though, will display its attributes.
+With multiple components selected, attributes shared by all are shown,
+blank if they have different values and otherwise with the value they
+all have in common. (Wires are ignored if there are any non-wires in
+the selection.) Changes to the attribute value affect all selected
+components.</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

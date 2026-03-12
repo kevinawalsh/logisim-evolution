@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Octave</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/octave.gif" width="32" height="32">
+<em>Octave</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Audio</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>5.0.3-HC</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/octave.jpg" width="182" height="166"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>Octave controls the playback of 12 notes, one full octave on a piano
+keyboard. Notes are controlled independently, each with a dedicated pin for each
+note to control whether the corresponding sound is playing or not. Note playback
+is controlled by a common enable signal and clock trigger, so that audio is
+synchronized.
+
+<h2>Pins</h2>
+
+<dl>
+
+<dt>West edge (12 separate inputs, each having bit width 1)</dt>
+<dd>Note Inputs: When the clock triggers, and if the component enable is not 0,
+the value found at each input is examined. A value of 1 will cause the
+corresponding note to be played, as if hitting a piano key. A value of 0, or any
+error value, will silence the corresponding note. Thus a constant 1 value for a
+note input will cause the note to be triggered fresh on each clock tick, if the
+component is enabled.
+
+<dt>South edge, left side (input, bit width 1)</dt>
+<dd>Enable: When this value is 0, all other inputs are ignored, but any
+previously triggered notes may continue to sound, as if holding a key down on a
+piano keyboard. When the enable value is disconnected, or any other value than
+0, all notes are immediately silenced, and new values are taken from the Note
+Inputs.</dd>
+
+<dt>South edge, right pin marked with triangle (input, bit width 1)</dt>
+<dd>Clock: At the instant that this is triggered as specified by the Trigger
+attribute, if <em>Enable</em> is not 0, all sounds are silenced and new sounds
+are triggered depending on the Note Inputs.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+<dl>
+
+<dt>Trigger</dt>
+<dd>Configures how the clock input is interpreted. The value <q>rising edge</q>
+indicates that the register should update its value at the instant when the
+clock rises from 0 to 1. The <q>falling edge</q> value indicates that it should
+update at the instant the clock falls from 1 to 0.</dd>
+
+<dt>Octave</dt>
+<dd>Determines which piano keyboard octave the notes represent. Octave 4
+contains a piano keyboard's "middle C" note.
+</dd>
+
+<dt>Center on C</dt>
+<dd>Determines whether the simulated octave should begin on the C note or A note
+for the specified octave. A value of "Yes" corresponds to an octave spanning
+from C of the specified octave, to the next higher B. A value of "No"
+corresponds to an octave from A to G#.
+</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Not yet supported.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Controlled Buffer/Inverter</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/controlledBuffer.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/controlledInverter.gif" width="32" height="32">
+<em>Controlled Buffer/Inverter</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Gates</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.0 Beta 1</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/controlled.png" width="74" height="20"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>The tri-state buffer and tri-state inverter, often called <em>controlled
+buffers/inverters</em>, each have a one-bit "control"
+input pin on the south side. The value at this control pin affects how
+the component behaves:</p>
+<ul>
+
+<li>When the value on the control pin is 1,
+then the component behaves just like the respective component, either a <a
+href="buffer.html">buffer</a> or a <a href="not.html">NOT Gate</a> (a.k.a
+"inverter").</li>
+
+<li>When the control pin value is 0 or unknown (i.e., floating), then the
+component's output is floating, regardless of the other input pin.</li>
+
+<li>When the control pin value is an error value (such as would occur when two
+conflicting values are being fed into the input), then the output is an
+error value.</li>
+
+</ul>
+
+<p>Controlled buffers can be useful when you have a wire (often called a
+<em>shared bus</em>) whose value should match the output of one of several
+components, each of which is independently controllable by some control signal.
+By placing a tri-state buffer between each component
+output and the bus, you can control whether that component's output is
+fed onto the bus or not.</p>
+
+<h2>Pins (assuming component faces east, control line right-handed)</h2>
+
+<dl>
+
+<dt>West edge (input, bit width matches Data Bits attribute)</dt>
+<dd>The component input that will be used to compute the output if the
+control input is 1.</dd>
+
+<dt>South edge (input, bit width 1)</dt>
+<dd>The component's control input.</dd>
+
+<dt>East edge (output, bit width matches Data Bits attribute)</dd>
+<dd>The component's output, which will be floating if the control input
+is 0 or floating, the error value if the control input is the error
+value, and will be computed based on the west-side input if the control
+input is 1.</dd>
+
+</dl>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute
+and the arrow keys alter its <q>Facing</q> attribute.</p>
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The direction of the component (its output relative to its input).</dd>
+
+<dt>Data Bits</dt>
+<dd>The bit width of the component's inputs and outputs.</dd>
+
+<dt>Gate Size</dt>
+<dd>(Tri-state inverter only) Determines whether to draw a larger or a smaller
+version of the component.</dd>
+
+<dt>Control Line Location</dt>
+<dd>The location of the control line, imagining we are facing the output
+from the input: If the component faces east and is <q>right-handed,</q>
+the control line is to the south; but if it is <q>left-handed,</q>
+the control line is to the north.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the gate.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None.</p>
+
+<h2>FPGA Synthesis</h2><p>Tri-state devides are not supported for synthesis.</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

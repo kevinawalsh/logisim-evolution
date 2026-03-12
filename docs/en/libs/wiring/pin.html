@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Pin</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/pinInput.gif" width="32" height="32">
+<img  align="center" src="/logisim-evolution/icons/pinOutput.gif" width="32" height="32">
+<em>Pin</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Wiring</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.0 Beta 1 (in Base library, moved to Wiring in 2.7.0)</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+	<td valign="top"><img src="/logisim-evolution/img-libs/pin.png" width="101" height="51"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>A pin serves as an output from a circuit or as an input to a circuit, depending on the value
+of its 'Type' attribute. Logisim represents output
+pins using a circle or rounded rectangle, and input pins are represented
+using squares or rectangles. In either case, the individual bits of the
+value being sent or received is displayed within the component (except
+in printer view, when the bit width is shown instead).</p>
+
+<p>A pin is a convenient component for interacting with a circuit, and
+beginning Logisim users need not use them in any other way. But a
+user building a circuit using several subcircuits (as described in the
+`<a href="../../guide/subcirc/index.html">Subcircuits</a>' section of
+the <em>User's Guide</em>) will use pins also
+to specify the interface between an outer
+circuit and the subcircuits it contains. In particular, a circuit layout's pin
+components define the pins that appear on the subcircuit component when
+the layout is used within another circuit. In such a circuit, the values
+sent and received to those locations on the subcircuit component are
+tied to the pins within the subcircuit layout.</p>
+
+<h2>Pins</h2>
+
+<p>A pin component has only one pin. Counterintuitively, when the Pin
+component's type is set to 'input', the pin will actually be an output&mdash;
+the Pin component in this case is taking input from the user (or from some other
+circuit in which this layout is embedded) and outputting that value to the
+connected wire. Conversely, when the Pin's type is set to 'output' the pin takes
+input from the connected wire and outputs it to the screen for the user to see
+(or to some other circuit in which thhis layout is embedded). In either case,
+its bit width matches the Data Bits attribute, and its location depends on the
+Facing attribute.</p>
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute,
+the arrow keys alter its <q>Facing</q> attribute,
+and Alt with an arrow key alters its <q>Label Location</q> attribute.</p>
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The side of the component where its input/output pin should be.</dd>
+
+<dt>Type</dt>
+<dd>Specifies whether the component is used to input values into the circuit, or
+to output values from the circuit.</dd>
+
+<dt>Data Bits</dt>
+<dd>The number of bits for the value that the pin handles.</dd>
+
+<dt>Behavior</dt>
+<dd>Controls how an input pin behaves in several special cases, mostly involving
+error and unknown values. Output pins do not have a Behavior attribute, as they
+work the same in all circumstances: whatever value is carried by the connected
+wire is shown to the user and passed up to any parent circuit, and if no wire is
+connected, an 'X' is used instead to indicate a floating value. For input pins,
+several behaviors are available:
+<ul><li><b>Simple</b>. In most cases "Simple" behavior should be sufficient. 
+    For an input controled by the user, the user can select either zero or one
+    (or any combination of zeros and ones for a multi-bit input pin). For an
+    input controlled by a parent circuit, whatever value the parent sends (0, 1,
+    E, or X, or some combination of them) is passed to the circuit, or zero is
+    used if the parent does not have a wire connected to that pin. Note that
+    with "Simple" behavior, an input pin will never create a new floating value
+    (X) or error value (E), though it can passes them along from a parent
+    circuit.</li>
+    <li><b>Tri-State</b>. This behavior is nearly identical to "Simple"
+    behavior, except that for input pins controlled by the user, the user can
+    additional select "X" to indicate a floating input.</li>
+    <li><b>Pull Down</b> and <b>Pull Up</b>. This behavior is nearly identical
+    to "Simple" behavior, except that for input pins controlled by a parent
+    circuit: if the parent circuit attempts to send an unknown value (X) to this
+    pin, it will be converted automatically to either zero (for Pull Down) or one (for Pull
+    Up) before being sent into the circuit. Note that this does not affect the
+    parent circuit in any way&mdash;the parent circuit wire will still show X,
+    while the subcircuit will receive a zero or one.</li>
+</ul>
+</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the component.</dd>
+
+<dt>Label Location</dt>
+<dd>The location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+<dt>Radix</dt>
+<dd>The number base used for displaying values (and entering values for input
+pins).</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>Clicking an output pin has no effect, although the pin's attributes
+will be displayed.</p>
+
+<p>Clicking an input pin will toggle the bit that is clicked or, when the
+'Radix' is set to something other than binary, iterate through different
+possible values. The keyboard can also be used to enter values using the Poke
+tool.</p>
+
+<p>When viewing the state of a subcircuit
+as described in the `<a href="../../guide/subcirc/debug.html">Debugging
+Subcircuits</a>' of the <em>User's Guide</em>,
+the value of each input pin is tied ("pinned") to whatever value the subcircuit
+is receiving from the containing parent circuit. Manually change the value of
+the input pin break this link between the subcircuit's state and the containing
+circuit's state, essentially creating a new isolated simulation of just this one
+circuit, independent from any parent circuit. In this situation, any attempting
+to change the input pin's value using the Poke Tool will cause Logisim to warn
+the user and confirm whether breaking this link is actually desired.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

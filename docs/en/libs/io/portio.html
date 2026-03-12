@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Port I/O</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1><img  align="center" src="/logisim-evolution/icons/pio.gif" width="32" height="32">
+<em>Port I/O</em></h1>
+
+<p><table>
+<tr><td><strong>Library:</strong></td>
+	<td><a href="index.html">Input/Output</a></td></tr>
+<tr><td><strong>Introduced:</strong></td>
+	<td>2.1.3</td></tr>
+<tr><td valign="top"><strong>Appearance:</strong></td>
+    <td valign="top"><img src="/logisim-evolution/img-libs/portio.png"></td></tr>
+</table></p>
+
+<h2>Behavior</h2>
+
+<p>This component was designed for FPGA synthesis, but it may be useful as a
+generic I/O component as well. A Port I/O component displays a series of values
+as small colored boxes: 0 is shown as dark green, 1 as bright green, X
+(floating) as gray, and Z (error) as red. The component can be configured as an
+output, as an input, or as a bi-directional port:
+<ul>
+    <li><p><b>output mode:</b> takes a value from the connected wire and displays
+    the bits as a series of colored dots.
+    <li><p><b>input mode:</b> drives a series of bits to the connected wire based
+    on tri-state toggle switches, shown as colored dots, which the user can
+    click to change between 0, 1, or X.
+    <li><p><b>bi-directional mode:</b> each bit acts as an input or an output based on a control signal (or a series of
+    control signals, one for each bit).
+</ul>
+
+<p>In output mode, this component is mostly equivalent to a simple array of
+<a href="led.html"><img class="icon" src="/logisim-evolution/icons/led.gif"> LED</a>
+components or a 
+<a href="dotmat.html"><img class="icon" src="/logisim-evolution/icons/dotmat.gif"> LED
+Matrix</a>, or in some cases could be replaced by
+an <a href="../wiring/pin.html"><img class="icon"
+    src="/logisim-evolution/icons/pinOutput.gif"> Output Pin</a>.
+In input mode, a Port I/O component is mostly equivalent to a 
+<a href="dipswitch.html"><img class="icon" src="/logisim-evolution/icons/dipswitch.gif">
+    DIP Switch</a>, or in some cases could be replaced by an
+<a href="../wiring/pin.html"><img class="icon" src="/logisim-evolution/icons/pinInput.gif"> Input Pin</a>.
+However, Port I/O has certain advantages: it supports up to 120 bits, it is very
+compact, it supports a bi-directional mode, and it supports FPGA synthesis. In
+particular, it is the only way from within Logisim to make use of the
+bi-directional features of FPGA I/O resources.
+
+<h2>Pins</h2>
+
+<p>When configured in bi-directional or output mode, there is one data input pin (or,
+if there are more than 32 bits, enough data input pins as needed for all of the
+bits). The values at this port (or ports) are used to drive the lights.
+
+<p>When configured in bi-directional or input mode, there is one data output pin (or,
+if there are more than 32 bits, enough data output pins as needed for all of the
+bits). Te values at this port (or ports) are driven depending on the
+user-selected toggle switches.
+
+<p>When configured in the bi-directional 'in/out (single enable)' mode, there is
+a single 1-bit control input that determines whether all of the bits are in
+output mode (when the control input is a 1) or input mode.
+
+<p>When configured in the bi-directional 'in/out (per-bit enable)' mode, there
+is one n-bit control input for each n-bit data input. Each of these control bits
+determines whether the corresponding data bit is in output mode (when the
+control input is a 1) or input mode.
+
+<h2>Attributes</h2>
+
+<p>When the component is selected or being added,
+Alt-0 through Alt-9 alter its <q>Number of PIN</q> attribute,
+and the arrow keys alter its <q>Facing</q> attribute,
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The location of the ports relative to the component.</dd>
+
+<dt>Label</dt>
+<dd>The text within the label associated with the component.</dd>
+
+<dt>Label Location</dt>
+<dd>The location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>The font with which to render the label.</dd>
+
+<dt>Label Color</dt>
+<dd>The color with which to draw the label.</dd>
+
+<dt>Number of PIN</dt>
+<dd>The number of bits for the component, up to a maximum of 128.</dd>
+
+<dt>Direction</dt>
+<dd>Whether the Port I/O should function in input mode, output mode, in/out
+(single enable) mode, or in/out (per-bit enable) mode. </dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>For bits in input mode, pressing the mouse on a colored square will cycle
+through the values 0 (light green), 1 (dark green), and X (floating, gray).</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.</p>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>

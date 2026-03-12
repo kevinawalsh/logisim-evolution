@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Analog Library</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body bgcolor="FFFFFF">
+
+<h1>Analog library</h1>
+
+<p>The Analog library includes components that normally would not be necessary
+for a purely digital design. 
+
+<blockquote class="warning">Warning: Logisim's circuit simulator is a discrete event simulator
+    using a four-valued logic: each bit can be zero (0), one (1), error (E),
+    unknown (X). Propagation of signals through gates and wires is simulated in
+    a very crude fashion, usually just one time step per gate or component and
+    instantaneous transmission along wires. As such, only a very crude
+    approximation is made to simulate the analog behavior of components. The
+    components in this library are simplistic, and only meant for the most basic
+    of educational purposes.</blockquote>
+
+<table>
+<tr><td align="right"><a href="const01.html">
+	<img class="icon" src="/logisim-evolution/icons/power.gif">
+	<img class="icon" src="/logisim-evolution/icons/ground.gif"></a></td>
+	<td><a href="const01.html">Power, Ground</a> &mdash; signal source and sink</td></tr>
+<tr><td align="right"><a href="transistor.html">
+	<img class="icon" src="/logisim-evolution/icons/trans0.gif">
+	<img class="icon" src="/logisim-evolution/icons/trans1.gif"></a></td>
+	<td><a href="transistor.html">Transistor</a> &mdash; simplified PNP and NPN transistors</td></tr>
+<tr><td align="right"><a href="transmis.html"><img class="icon" src="/logisim-evolution/icons/transmis.gif"></a></td>
+	<td><a href="transmis.html">Transmission Gate</a> &mdash; block or transmit a signal</td></tr>
+<tr><td align="right"><a href="pull.html"><img class="icon" src="/logisim-evolution/icons/pullshap.gif"></a></td>
+	<td><a href="pull.html">Pull Resistor</a> &mdash; weakly pull signal to a default value</td></tr>
+</table>
+
+<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+
+</body>
+</html>
