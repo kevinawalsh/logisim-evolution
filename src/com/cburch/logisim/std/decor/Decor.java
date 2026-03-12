@@ -79,6 +79,23 @@ public class Decor extends Library {
     new AddTool(Decor.class, new FactoryDescription("Hyperlink", S.getter("hyperlinkComponent"), "hyperlink.png", "Hyperlink")),
   };
 
+  static {
+    // TOOLS[0] is plain text (default)
+    plainDesc.setToolTip(S.getter("textComponentPlainTip"));
+    TOOLS[0].getAttributeSet().setAttr(Text.ATTR_FORMAT, Text.TEXT_FORMAT_PLAIN);
+    TOOLS[0].getAttributeSet().setReadOnly(Text.ATTR_FORMAT, true);
+
+    // TOOLS[1] is wrapped text
+    wrappedDesc.setToolTip(S.getter("textComponentWrappedTip"));
+    TOOLS[1].getAttributeSet().setAttr(Text.ATTR_FORMAT, Text.TEXT_FORMAT_WRAPPED);
+    TOOLS[1].getAttributeSet().setReadOnly(Text.ATTR_FORMAT, true);
+
+    // TOOLS[2] is markdownish text
+    markdownishDesc.setToolTip(S.getter("textComponentMarkdownishTip"));
+    TOOLS[2].getAttributeSet().setAttr(Text.ATTR_FORMAT, Text.TEXT_FORMAT_MARKDOWNISH);
+    TOOLS[2].getAttributeSet().setReadOnly(Text.ATTR_FORMAT, true);
+  }
+
   private List<Tool> tools = null;
 
   public Decor() { }
@@ -95,24 +112,8 @@ public class Decor extends Library {
 
   @Override
   public List<Tool> getTools() {
-    if (tools == null) {
-      // TOOLS[0] is plain text (default)
-      plainDesc.setToolTip(S.getter("textComponentPlainTip"));
-      TOOLS[0].getAttributeSet().setAttr(Text.ATTR_FORMAT, Text.TEXT_FORMAT_PLAIN);
-      TOOLS[0].getAttributeSet().setReadOnly(Text.ATTR_FORMAT, true);
-      
-      // TOOLS[1] is wrapped text
-      wrappedDesc.setToolTip(S.getter("textComponentWrappedTip"));
-      TOOLS[1].getAttributeSet().setAttr(Text.ATTR_FORMAT, Text.TEXT_FORMAT_WRAPPED);
-      TOOLS[1].getAttributeSet().setReadOnly(Text.ATTR_FORMAT, true);
-      
-      // TOOLS[2] is markdownish text
-      markdownishDesc.setToolTip(S.getter("textComponentMarkdownishTip"));
-      TOOLS[2].getAttributeSet().setAttr(Text.ATTR_FORMAT, Text.TEXT_FORMAT_MARKDOWNISH);
-      TOOLS[2].getAttributeSet().setReadOnly(Text.ATTR_FORMAT, true);
-
+    if (tools == null)
       tools = Arrays.asList(TOOLS);
-    }
     return tools;
   }
 

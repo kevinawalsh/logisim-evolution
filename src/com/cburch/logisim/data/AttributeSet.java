@@ -83,7 +83,7 @@ public interface AttributeSet {
   // value that is already set.
   public default <V> void setAttr(Attribute<V> attr, V value) {
     if (isReadOnly(attr)) {
-      System.err.printf("attempt change readonly attribute %s to %s\n", attr, value);
+      System.err.printf("attempt change readonly attribute %s from %s to %s\n", attr, getValue(attr), value);
       return;
     }
     V oldValue = getValue(attr);
