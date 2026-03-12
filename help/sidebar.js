@@ -219,6 +219,27 @@ window.onload = function() {
     async function loadSidebar() {
         const response = await fetch("/"+lang+"/sidebar.html");
         const sidebar_list = await response.text();
+
+        // sidebar.html may contain relative urls, adjust them here
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = sidebar_list;
+        const base = "/" + lang + "/";
+        // Fix href attributes
+        tempDiv.querySelectorAll('a[href]').forEach(a => {
+            const h = a.getAttribute('href');
+            if (h && !h.startsWith('/') && !h.match(/^[a-z]+:/))
+                a.setAttribute('href', base + h);
+        });
+        // Fix list-style-image: url(...) in style attributes
+        // Note: all sidebar list-style-image urls are currently absolute paths,
+        // so this step isn't needed now, but it may be in future.
+        tempDiv.querySelectorAll('[style]').forEach(el => {
+            el.setAttribute('style', el.getAttribute('style').replace(
+                /url\((['"]?)(?!\/|[a-z]+:)(.*?)\1\)/g,
+                    (_, q, p) => `url(${q}${base}${p}${q})`
+                ));
+        });
+
         const body = document.body.innerHTML;
         document.body.innerHTML = 
           '<div id="myCollapsedBar" class="collapsedbar">'
@@ -226,7 +247,7 @@ window.onload = function() {
         + '</div>'
         + '<div id="mySidebar" class="sidebar">'
         + '<a href="javascript:void(0)" id="closebtn" class="btn" onclick="closeNav()">&lt</a>'
-        + sidebar_list
+        + tempDiv.innerHTML
         + '</div>'
         + '<div id="search"></div>'
         + '<div id="main">' + body + ' </div>';
