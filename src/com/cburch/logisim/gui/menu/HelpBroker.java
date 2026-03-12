@@ -86,7 +86,7 @@ public class HelpBroker {
         if (srv == null)
           srv = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 10);
 
-        srv.createContext("/live", (req) -> handleLive(req));
+        srv.createContext("/logisim-evolution/live", (req) -> handleLive(req));
         srv.createContext("/", (req) -> handle(req));
         srv.start();
         running = true;
@@ -110,7 +110,7 @@ public class HelpBroker {
   }
 
   private static void handle(HttpExchange req) {
-    // The req path will look like "/en/guide/about/index.html"
+    // The req path will look like "/logisim-evolution/en/guide/about/index.html"
     // This maps to jar resource "/help/en/guide/about/index.html"
     
     if (!req.getRequestMethod().equals("GET")) {
@@ -125,6 +125,8 @@ public class HelpBroker {
       send_err(req, 404, "Missing leading slash");
       return;
     }
+    if (urlpath.startsWith("/logisim-evolution/"))
+        urlpath = urlpath.substring("/logisim-evolution".length());
     String rsrc = "/help" + urlpath;
     // If path ends in "/", add "index.html"
     // Otherwise, try adding "/index.html" but fall back on failure.
@@ -350,7 +352,7 @@ public class HelpBroker {
     if (MenuHelp.class.getResource("/help/"+lang+"/guide/index.html") == null)
       lang = "en";
     String host = srv.getAddress().getAddress().getHostAddress() + ":" + srv.getAddress().getPort();
-    String url = "http://" + host + "/" + lang + "/" + target;
+    String url = "http://" + host + "/logisim-evolution/" + lang + "/" + target;
     DesktopIntegration.openBrowser(url);
     return null;
   }

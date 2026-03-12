@@ -8,9 +8,6 @@
 #
 # For each language, scans help/{lang}/ recursively, extracts the page title and
 # body text from every .html file, and writes help/{lang}/contents.json.
-#
-# The sidebar HTML files (help/{lang}/sidebar.html) are hand-maintained and are NOT
-# modified by this script.
 
 import sys, os, os.path, json
 from html.parser import HTMLParser
@@ -95,8 +92,10 @@ def build(lang, base):
         for fn in sorted(filenames):
             if not fn.endswith(".html"):
                 continue
+            if fn == "sidebar.html":
+                continue
             path = os.path.join(dirpath, fn)
-            rel = "/" + os.path.relpath(path, os.path.join(base, "help")).replace("\\", "/")
+            rel = "/logisim-evolution/" + os.path.relpath(path, os.path.join(base, "help")).replace("\\", "/")
             title, text = extract(path, ignore)
             entries.append({
                 "id": len(entries) + 1,

@@ -1,5 +1,6 @@
-
-let lang = window.location.pathname.substring(1, 3);
+// window location should be "/logisim-evolution/en/..." or similar
+let parts = window.location.pathname.split('/');
+let lang = (parts[2] && parts[2].length === 2) ? parts[2] : 'en';
 
 function escapeHTML(str) {
     return new Option(str).innerHTML;
@@ -217,13 +218,13 @@ window.onload = function() {
 
     // fetch sidebar data and inject sidebar into body
     async function loadSidebar() {
-        const response = await fetch("/"+lang+"/sidebar.html");
+        const response = await fetch("/logisim-evolution/"+lang+"/sidebar.html");
         const sidebar_list = await response.text();
 
         // sidebar.html may contain relative urls, adjust them here
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = sidebar_list;
-        const base = "/" + lang + "/";
+        const base = "/logisim-evolution/" + lang + "/";
         // Fix href attributes
         tempDiv.querySelectorAll('a[href]').forEach(a => {
             const h = a.getAttribute('href');
@@ -319,7 +320,7 @@ window.onload = function() {
     }
 
     async function fetchSearchInfo() {
-        const response = await fetch("/"+lang+"/contents.json");
+        const response = await fetch("/logisim-evolution/"+lang+"/contents.json");
         const documents = await response.json();
 
         miniSearch.addAll(documents);
@@ -350,9 +351,9 @@ window.onload = function() {
     }
 
     async function initialize() {
-        await loadStyle("/sidebar.css");
+        await loadStyle("/logisim-evolution/sidebar.css");
         await loadSidebar();
-        loadScript("/minisearch-6.1.0.min.js", setupSearch);
+        loadScript("/logisim-evolution/minisearch-6.1.0.min.js", setupSearch);
     }
 
     initialize();
