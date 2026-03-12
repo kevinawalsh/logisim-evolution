@@ -250,6 +250,7 @@ public final class Wire
     return this;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <V> V getValue(Attribute<V> attr) {
     if (attr == dir_attr)

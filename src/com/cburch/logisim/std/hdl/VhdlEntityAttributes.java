@@ -240,6 +240,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     // if (attr == VhdlEntity.NAME_ATTR)
     //   return (V) content.getName(); // never happens
@@ -257,6 +258,7 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> void updateAttr(Attribute<V> attr, V value) {
     // if (attr == VhdlEntity.NAME_ATTR)
     //   content.setName((String) value); // never happens

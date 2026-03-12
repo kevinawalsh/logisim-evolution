@@ -165,6 +165,7 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   }
 
   private class ResultPanel extends JList<Result> {
+    @SuppressWarnings("unchecked")
     ResultPanel() {
       setModel(model);
       setCellRenderer(new ResultRenderer());

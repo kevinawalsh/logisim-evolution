@@ -111,7 +111,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
         <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" release="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/rsyntaxtextarea-stripped.jar:libs/jSerialComm-2.11.2.jar">
             <compilerarg line="-Xmaxerrs 10000"/>
-            <!-- <compilerarg line="-Xlint:unchecked"/> -->
+            <compilerarg line="-Xlint:unchecked"/>
             <compilerarg line="-Xlint:deprecation"/>
         </javac>
     </target>
@@ -172,7 +172,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
 
     <target name="helpindex">
         <exec executable="python3">
-            <arg value="build-help-index.py"/>
+            <arg value="doc/build-help-index.py"/>
             <arg value="en"/>
             <arg value="de"/>
             <arg value="fr"/>

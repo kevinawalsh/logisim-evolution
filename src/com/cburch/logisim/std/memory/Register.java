@@ -389,6 +389,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <V> V getValue(Attribute<V> attr) {
       if (attr == StdAttr.WIDTH)
         return (V) width;

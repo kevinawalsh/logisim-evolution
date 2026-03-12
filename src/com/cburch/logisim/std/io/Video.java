@@ -157,6 +157,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
   Value val(CircuitState s, int pin) { return s.getValue(loc(pin)); }
   int addr(CircuitState s, int pin) { return val(s, pin).toIntValue(); }
 
+  @SuppressWarnings("unchecked")
   public void propagate(CircuitState circuitState) {
     AttributeSet attrs = getAttributeSet();
     State state = getState(circuitState, attrs);
@@ -314,6 +315,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     else return gray4; // ???
   }
 
+  @SuppressWarnings("unchecked")
   void drawVideo(ComponentDrawContext context, int x, int y, State state) {
     Graphics g = context.getGraphics();
 
@@ -349,6 +351,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     }
   }
 
+  @SuppressWarnings("unchecked")
   private State getState(CircuitState circuitState, AttributeSet attrs) {
     State state = (State) circuitState.getDataAsCustom(this);
     if (state == null) {
@@ -409,6 +412,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
       return super.getFeature(key);
   }
 
+  @SuppressWarnings("unchecked")
   public String getToolTip(ComponentUserEvent e) {
     int end = -1;
     for (int i = getEnds().size() - 1; i >= 0; i--) {
@@ -437,6 +441,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     configureComponent();
   }
 
+  @SuppressWarnings("unchecked")
   void configureComponent() {
     AttributeSet attrs = getAttributeSet();
     String model = (String)attrs.getValue(MODEL_OPTION);

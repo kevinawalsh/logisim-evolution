@@ -59,6 +59,7 @@ class AttrTableSelectionModel extends AttributeSetTableModel implements
 	}
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> java.awt.Component getCellEditor(Attribute<V> attr, Window parent, V value) {
     if (attr instanceof CanvasBoundAttribute)
       return ((CanvasBoundAttribute)attr).getCellEditor(parent, canvas, value);

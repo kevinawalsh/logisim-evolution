@@ -45,6 +45,7 @@ public class SplayQueue<T extends QNode> {
   private int size;
 
   // add(t) inserts a new node into the queue.
+  @SuppressWarnings("unchecked")
   public void add(T t) {
     if (root == null) {
       root = t;
@@ -155,6 +156,7 @@ public class SplayQueue<T extends QNode> {
   }
 
   // peek() returns the smallest node, or null if the queue is empty.
+  @SuppressWarnings("unchecked")
   public T peek() {
     if (root == null)
       return null;
@@ -163,6 +165,7 @@ public class SplayQueue<T extends QNode> {
   }
 
   // remove() removes the smallest node, or null if the queue is empty.
+  @SuppressWarnings("unchecked")
   public T remove() {
     if (root == null)
       return null;

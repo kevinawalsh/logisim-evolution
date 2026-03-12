@@ -173,6 +173,7 @@ public class DrawingAttributeSet extends AbstractDrawingAttributeSet {
 	}
 
   @Override
+  @SuppressWarnings("unchecked")
 	public <V> V getValue(Attribute<V> attr) {
     for (int i = 0; i < attrs_all.length; i++) {
       if (attrs_all[i].equals(attr))

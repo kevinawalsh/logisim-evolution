@@ -50,10 +50,12 @@ public class Cache<E> {
     mask = data.length - 1;
   }
 
+  @SuppressWarnings("unchecked")
   public E get(int hashCode) {
     return (E)data[hashCode & mask];
   }
 
+  @SuppressWarnings("unchecked")
   public E get(E value) {
     if (value == null)
       return null;

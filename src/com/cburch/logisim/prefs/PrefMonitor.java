@@ -114,6 +114,7 @@ public class PrefMonitor<E> {
     return dflt;
   }
 
+  @SuppressWarnings("unchecked")
   private void setFromBackingStore() { // does not fire
     E newValue;
     if (dflt instanceof Double)
@@ -134,6 +135,7 @@ public class PrefMonitor<E> {
     value = newValue;
   }
 
+  @SuppressWarnings("unchecked")
   private E convertFromString(String s) {
     if (s == null)
       return dflt;

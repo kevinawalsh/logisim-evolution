@@ -79,6 +79,7 @@ public class ComboBox<T> extends JComboBox<T> {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public T getSelectedValue() {
     return (T)getSelectedItem();
   }

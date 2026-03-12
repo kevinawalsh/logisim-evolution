@@ -91,11 +91,13 @@ public class LinkedQueue<T extends QNode> {
   }
 
   // peek() returns the smallest node, or null if the queue is empty.
+  @SuppressWarnings("unchecked")
   public T peek() {
     return (T)head;
   }
 
   // remove() removes the smallest node, or null if the queue is empty.
+  @SuppressWarnings("unchecked")
   public T remove() {
     if (head == null)
       return null;

@@ -589,6 +589,7 @@ public class BindingsDialog extends JDialog {
     SourceRenderer renderer;
     TypeButton typeButton = new TypeButton();
 
+    @SuppressWarnings("unchecked")
     SourceList() {
       setModel(model);
       setCellRenderer(renderer = new SourceRenderer());

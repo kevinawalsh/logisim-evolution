@@ -463,6 +463,7 @@ class SettingsPanel extends LogPanel
     JPanel getPanel() {
       return panel;
     }
+    @SuppressWarnings("unchecked")
     E getValue() {
       return (E)getSelectedItem();
     }
@@ -473,6 +474,7 @@ class SettingsPanel extends LogPanel
       return renderAsText(getValue());
     }
     class Renderer extends DefaultListCellRenderer {
+      @SuppressWarnings("unchecked")
       @Override
       public java.awt.Component getListCellRendererComponent(JList<?> list,
           Object w, int index, boolean isSelected, boolean cellHasFocus) {

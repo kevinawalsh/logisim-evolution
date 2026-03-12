@@ -261,6 +261,7 @@ public class Image extends InstanceFactory implements Reshapable {
     public void setValue(ImageContent r) { result = r; }
     public ImageContent getValue() { return result; }
 
+    @SuppressWarnings("unchecked")
     public void setVisible(boolean b) {
       if (!b)
         return;

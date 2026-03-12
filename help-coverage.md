@@ -9,8 +9,8 @@
  - NorGate                quickhelp:no    docs:gates/common.html             livehelp:gates.circ    examples:
  - XorGate                quickhelp:no    docs:gates/common.html             livehelp:gates.circ    examples:
  - XnorGate               quickhelp:no    docs:gates/common.html             livehelp:gates.circ    examples:
- - OddParityGate          quickhelp:no    docs:                              livehelp:              examples:
- - EvenParityGate         quickhelp:no    docs:                              livehelp:              examples:
+ - OddParityGate          quickhelp:no    docs:gates/parity.html             livehelp:              examples:
+ - EvenParityGate         quickhelp:no    docs:gates/parity.html             livehelp:              examples:
  - ControlledBuffer       quickhelp:no    docs:gates/controlled.html         livehelp:              examples:
  - PLA                    quickhelp:no    docs:gates/pla.html                livehelp:              examples:
 

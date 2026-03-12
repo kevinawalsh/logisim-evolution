@@ -72,6 +72,7 @@ public class ExternalClipboard<T> implements ClipboardOwner {
     // as LayoutClipboard.forComponent.isAvailable() takes priority for that flavor.
   }
   
+  @SuppressWarnings("unchecked")
   public void set(Project proj, Component comp, T plain) {
     String xml = XmlWriter.encodeSelection(proj.getLogisimFile(), proj, Collections.singletonList(comp));
     Transferable xfer = null;
@@ -140,6 +141,7 @@ public class ExternalClipboard<T> implements ClipboardOwner {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public T get(Project proj) {
     // if (current != null)
     //   return current;

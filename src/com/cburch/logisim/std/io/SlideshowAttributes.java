@@ -70,6 +70,7 @@ class SlideshowAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <E> E getValue(Attribute<E> attr) {
     if (attr == Slideshow.ATTR_WIDTH)
       return (E) addrWidth;

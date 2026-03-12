@@ -6,10 +6,10 @@
 #         python3 build-help-index.py en
 #         python3 build-help-index.py en de fr es pt ru el
 #
-# For each language, scans doc/{lang}/html/ recursively, extracts the page title and
-# body text from every .html file, and writes doc/contents_{lang}.json.
+# For each language, scans ./{lang}/html/ recursively, extracts the page title and
+# body text from every .html file, and writes ./contents_{lang}.json.
 #
-# The sidebar HTML files (doc/sidebar_{lang}.html) are hand-maintained and are NOT
+# The sidebar HTML files (./sidebar_{lang}.html) are hand-maintained and are NOT
 # modified by this script.
 #
 # Requires: pip install beautifulsoup4
@@ -84,7 +84,7 @@ def extract(html_path, ignore_prefixes):
 
 
 def build(lang, home):
-    html_root = os.path.join(home, "doc", lang, "html")
+    html_root = os.path.join(home, lang, "html")
     if not os.path.isdir(html_root):
         print(f"  ERROR: {html_root} not found, skipping.")
         return
@@ -98,7 +98,7 @@ def build(lang, home):
             if not fn.endswith(".html"):
                 continue
             path = os.path.join(dirpath, fn)
-            rel = "/" + os.path.relpath(path, os.path.join(home, "doc")).replace("\\", "/")
+            rel = "/" + os.path.relpath(path, home).replace("\\", "/")
             title, text = extract(path, ignore)
             entries.append({
                 "id": len(entries) + 1,
@@ -107,7 +107,7 @@ def build(lang, home):
                 "text": text,
             })
 
-    out = os.path.join(home, "doc", f"contents_{lang}.json")
+    out = os.path.join(home, f"contents_{lang}.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
     print(f"  Built search index for {lang}: wrote {len(entries)} entries to {out}")

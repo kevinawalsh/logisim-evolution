@@ -90,6 +90,7 @@ public class RegisterShape extends DynamicElement {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == StdAttr.TEXT_FONT)
       return (V) label.getFont();

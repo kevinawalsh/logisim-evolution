@@ -77,6 +77,7 @@ class FileViewerAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <E> E getValue(Attribute<E> attr) {
     if (attr == FileViewer.ATTR_WIDTH)
       return (E) width;
@@ -96,6 +97,7 @@ class FileViewerAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == FileViewer.ATTR_WIDTH)
       width = (BitWidth) value;

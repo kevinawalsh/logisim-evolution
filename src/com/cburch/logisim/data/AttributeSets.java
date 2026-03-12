@@ -71,6 +71,7 @@ public class AttributeSets {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <V> V getValue(Attribute<V> attr) {
       int index = attrs.indexOf(attr);
       return index < 0 ? null : (V)values[index];

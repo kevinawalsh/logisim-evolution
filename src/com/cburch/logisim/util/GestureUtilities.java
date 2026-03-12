@@ -212,7 +212,8 @@ public class GestureUtilities {
     }
   }
 
-  public static void addMagnificationListenerTo(JComponent comp, MagnificationListener listener) { 
+  @SuppressWarnings("unchecked")
+  public static void addMagnificationListenerTo(JComponent comp, MagnificationListener listener) {
     if (!appleGestureSupported)
       return;
     try {
@@ -243,7 +244,8 @@ public class GestureUtilities {
     }
   }
 
-  public static void removeMagnificationListenerFrom(JComponent comp, MagnificationListener listener) { 
+  @SuppressWarnings("unchecked")
+  public static void removeMagnificationListenerFrom(JComponent comp, MagnificationListener listener) {
     if (!appleGestureSupported)
       return;
     try {
@@ -267,7 +269,8 @@ public class GestureUtilities {
     }
   }
 
-  public static void addRotationListenerTo(JComponent comp, RotationListener listener) { 
+  @SuppressWarnings("unchecked")
+  public static void addRotationListenerTo(JComponent comp, RotationListener listener) {
     if (!appleGestureSupported)
       return;
     try {
@@ -299,7 +302,8 @@ public class GestureUtilities {
     }
   }
 
-  public static void removeRotationListenerFrom(JComponent comp, RotationListener listener) { 
+  @SuppressWarnings("unchecked")
+  public static void removeRotationListenerFrom(JComponent comp, RotationListener listener) {
     if (!appleGestureSupported)
       return;
     try {

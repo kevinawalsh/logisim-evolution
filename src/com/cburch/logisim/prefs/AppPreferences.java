@@ -43,6 +43,7 @@ import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.util.LocaleManager;
 
+@SuppressWarnings("unchecked")
 public class AppPreferences {
   
   public static final class ChangeEvent<E> {

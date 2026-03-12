@@ -115,6 +115,7 @@ public class AppearanceAnchor extends AppearanceElement {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == FACING)
       return (V) facing;

@@ -125,6 +125,7 @@ public abstract class AttributeSetTableModel
       return a.sameOptions(b);
     }
 
+    @SuppressWarnings("unchecked")
     public void setValue(Window parent, Object valueOrStr) throws AttrTableSetException {
       // Attribute<Object> attr = this.attr;
       if (attr == null || valueOrStr == null)
@@ -156,6 +157,7 @@ public abstract class AttributeSetTableModel
   private HashMap<Attribute<?>, AttrRow<?>> rowMap = new HashMap<>();
   private ArrayList<AttrRow<?>> rows = new ArrayList<>();
 
+  @SuppressWarnings("unchecked")
   public AttributeSetTableModel(AttributeSet attrs) {
     this.attrs = attrs;
     if (attrs != null) {
@@ -172,6 +174,7 @@ public abstract class AttributeSetTableModel
     listeners.add(listener);
   }
 
+  @SuppressWarnings("unchecked")
   public void attributeListChanged(AttributeEvent e) {
     // if nothing has changed, don't do anything
     int index = 0;

@@ -116,6 +116,7 @@ class RomAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == Mem.ADDR_ATTR)
       return (V) addrBits;

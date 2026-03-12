@@ -551,6 +551,7 @@ public class XmlWriter {
   // - lib* (contains ordered elements, do not sort)
   //   - tool*
   //     - a*
+  @SuppressWarnings("unchecked")
   private Element fromSelection(Object sel) {
     Element ret = doc.createElement("clipdata");
     doc.appendChild(ret);
