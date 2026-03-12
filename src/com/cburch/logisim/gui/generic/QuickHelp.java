@@ -36,11 +36,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 /**
- * Loads quick-help HTML fragments from classpath resources under doc/{lang}/quickhelp/.
+ * Loads quick-help HTML fragments from classpath resources under help/{lang}/quickhelp/.
  *
  * Resource files mirror the Java package structure with "com.cburch.logisim." stripped:
- *   com.cburch.logisim.std.wiring.Pin  →  doc/{lang}/quickhelp/std/wiring/Pin.html
- *   com.cburch.logisim.tools.WiringTool → doc/{lang}/quickhelp/tools/WiringTool.html
+ *   com.cburch.logisim.std.wiring.Pin  →  help/{lang}/quickhelp/std/wiring/Pin.html
+ *   com.cburch.logisim.tools.WiringTool → help/{lang}/quickhelp/tools/WiringTool.html
  *
  * The current locale language is tried first; if the resource doesn't exist for that
  * language, "en" is used as the fallback — the same pattern used by HelpBroker.showHelp().
@@ -59,15 +59,15 @@ public class QuickHelp {
   }
 
   /** Load the HTML fragment for the given class with a suffix, or null if not found.
-   *  E.g. load(Text.class, "-plain") → doc/{lang}/quickhelp/std/decor/Text-plain.html */
+   *  E.g. load(Text.class, "-plain") → help/{lang}/quickhelp/std/decor/Text-plain.html */
   public static String load(Class<?> cls, String suffix) {
     String pkg = cls.getPackage().getName();
     String sub = pkg.startsWith(PREFIX) ? pkg.substring(PREFIX.length()) : pkg;
     String rel = sub.replace('.', '/') + "/" + cls.getSimpleName() + suffix + ".html";
     String lang = Locale.getDefault().getLanguage();
-    String content = loadPath("/doc/" + lang + "/quickhelp/" + rel);
+    String content = loadPath("/help/" + lang + "/quickhelp/" + rel);
     if (content == null && !"en".equals(lang))
-      content = loadPath("/doc/en/quickhelp/" + rel);
+      content = loadPath("/help/en/quickhelp/" + rel);
     return content;
   }
 

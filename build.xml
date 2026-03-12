@@ -119,7 +119,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     <target name="jar" depends="compile,version,contact,helpindex">
         <jar destfile="logisim-evolution.jar" duplicate="fail">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ resources/ live/" />
+            <fileset dir="." includes="help/ resources/ live/" />
 
             <!-- fat jar: add all libs except jSerialComm -->
             <zipgroupfileset dir="libs" includes="*.jar" excludes="jSerialComm-*.jar"/>
@@ -144,7 +144,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     <target name="jarsrc" depends="jar">
         <jar destfile="logisim-evolution-src.jar" duplicate="fail">
             <fileset dir="bin" />
-            <fileset dir="." includes="doc/ resources/ live/ src/ build.xml" />
+            <fileset dir="." includes="help/ resources/ live/ src/ build.xml" />
 
             <!-- fat jar: add all libs except jSerialComm -->
             <zipgroupfileset dir="libs" includes="*.jar" excludes="jSerialComm-*.jar"/>
@@ -172,7 +172,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
 
     <target name="helpindex">
         <exec executable="python3">
-            <arg value="doc/build-help-index.py"/>
+            <arg value="scripts/build-help-index.py"/>
             <arg value="en"/>
             <arg value="de"/>
             <arg value="fr"/>

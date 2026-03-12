@@ -39,8 +39,6 @@ import java.io.OutputStream;
 import javax.swing.JCheckBox;
 import javax.swing.JOptionPane;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -112,8 +110,8 @@ public class HelpBroker {
   }
 
   private static void handle(HttpExchange req) {
-    // The req path will look like "/en/html/guide/about/index.html"
-    // This maps to jar resource "/doc/en/html/guide/about/index.html"
+    // The req path will look like "/en/guide/about/index.html"
+    // This maps to jar resource "/help/en/guide/about/index.html"
     
     if (!req.getRequestMethod().equals("GET")) {
       send_err(req, 405, "Sorry, that method is not allowed.");
@@ -127,7 +125,7 @@ public class HelpBroker {
       send_err(req, 404, "Missing leading slash");
       return;
     }
-    String rsrc = "/doc" + urlpath;
+    String rsrc = "/help" + urlpath;
     // If path ends in "/", add "index.html"
     // Otherwise, try adding "/index.html" but fall back on failure.
     InputStream is;
@@ -305,7 +303,7 @@ public class HelpBroker {
       return;
     }
 
-    // Relative path — link to a built-in help doc page (always trusted, no confirmation).
+    // Relative path — link to a built-in help page (always trusted, no confirmation).
     // e.g. "/libs/wiring/pin.html" opens the corresponding page from the built-in docs.
     if (url.startsWith("/") && !url.startsWith("//")) {
       if (url.startsWith("//")) url = url.substring(2);
@@ -349,10 +347,10 @@ public class HelpBroker {
     if (e != null)
       return e;
     String lang = Locale.getDefault().getLanguage();
-    if (MenuHelp.class.getResource("/doc/"+lang+"/html/guide/index.html") == null)
+    if (MenuHelp.class.getResource("/help/"+lang+"/guide/index.html") == null)
       lang = "en";
     String host = srv.getAddress().getAddress().getHostAddress() + ":" + srv.getAddress().getPort();
-    String url = "http://" + host + "/" + lang + "/html/" + target;
+    String url = "http://" + host + "/" + lang + "/" + target;
     DesktopIntegration.openBrowser(url);
     return null;
   }
