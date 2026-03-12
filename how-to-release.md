@@ -2,8 +2,8 @@
 
 1. Check git status, ensure on holycross branch all work is committed.
 
-2. Bump version, and copyright year, in various files:
-   - VERSION and COPYRIGHT\_YEAR
+2. Bump version, copyright year, and contact info in various files:
+   - VERSION, COPYRIGHT\_YEAR, and contact.txt
    - README.md
    - logisim-win-install.nsi
    - build-mac-release-package.sh
@@ -11,7 +11,7 @@
    - build-win-release-package.bat
    - logisim-l4j.xml
 
-3. ant cleanall && ant jar
+3. ant cleanall && ant jar publish-docs
    - Copy logisim-evolution.jar to logisim-evolution-${VERSION}hc.jar
    - Artifact for release: logisim-evolution-${VERSION}hc.jar
 
@@ -51,3 +51,4 @@
    - Artifact for release: Logisim-Evolution-${VERSION}hc.exe
 
 7. Create github release, and upload all artifacts
+   - Ensure github pages are showing new version of docs

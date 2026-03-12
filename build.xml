@@ -183,4 +183,10 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
         </exec>
     </target>
 
+    <target name="publish-docs">
+        <exec executable="python3">
+            <arg value="scripts/publish-docs.py"/>
+        </exec>
+    </target>
+
 </project>

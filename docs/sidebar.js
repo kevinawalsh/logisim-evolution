@@ -1,6 +1,6 @@
 const _h = window.location.hostname;
-const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
-// const isApp = (_h === '127.0.0.1' || _h === '[::1]');
+// const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
+const isApp = (_h === '127.0.0.1' || _h === '[::1]');
 
 // window location should be "/logisim-evolution/en/..." or similar
 let parts = window.location.pathname.split('/');
@@ -198,12 +198,46 @@ function live(e, el) {
 
 function showLiveInfo(el, appNotRunning) {
   const params = new URL(el.href).searchParams;
-  const name = (params.get('file') || '').replace(/\.circ$/, '');
-  let msg = appNotRunning ? 'Could not reach Logisim \u2014 is it running?\n\n' : '';
-  msg += 'This demo is available in Logisim under File \u2192 Examples \u2192 ' + name + '.';
+  const name = escapeHTML((params.get('file') || '').replace(/\.circ$/, ''));
+
+  const old = document.getElementById('logisim-live-info');
+  if (old) old.remove();
+
+  const popup = document.createElement('div');
+  popup.id = 'logisim-live-info';
+  const W = 300;
+  const r = el.getBoundingClientRect();
+  const left = Math.min(r.left, window.innerWidth - W - 16);
+  const top = r.bottom + 8;
+  popup.style.cssText = 'position:fixed;top:' + top + 'px;left:' + Math.max(8, left) + 'px;width:' + W + 'px;'
+    + 'background:#fff;border:1px solid #bbb;border-radius:6px;'
+    + 'box-shadow:0 4px 16px rgba(0,0,0,.25);padding:12px 36px 12px 14px;'
+    + 'font-size:13px;line-height:1.5;z-index:9999;';
+
+  let html = '';
+  if (appNotRunning)
+    html += '<p style="margin:0 0 6px"><b>Could not reach Logisim</b> \u2014 is it running?</p>';
+  html += '<p style="margin:0' + (!appNotRunning ? ' 0 6px' : '') + '">'
+        + 'This demo is in Logisim under <b>File \u2192 Examples \u2192 ' + name + '</b>.</p>';
   if (!appNotRunning)
-    msg += '\n\nDownload: https://github.com/kevinawalsh/logisim-evolution/releases';
-  alert(msg);
+    html += '<p style="margin:6px 0 0"><a href="https://github.com/kevinawalsh/logisim-evolution/releases" target="_blank" rel="noopener">'
+          + 'Download Logisim</a></p>';
+  html += '<button onclick="document.getElementById(\'logisim-live-info\').remove()"'
+        + ' title="Dismiss"'
+        + ' style="position:absolute;top:6px;right:8px;border:none;background:none;'
+        + 'font-size:18px;line-height:1;cursor:pointer;color:#888;padding:0;">&times;</button>';
+
+  popup.innerHTML = html;
+  document.body.appendChild(popup);
+
+  function onOutside(e) {
+    const p = document.getElementById('logisim-live-info');
+    if (p && !p.contains(e.target)) {
+      p.remove();
+      document.removeEventListener('mousedown', onOutside, true);
+    }
+  }
+  setTimeout(() => document.addEventListener('mousedown', onOutside, true), 0);
 }
 
 window.onload = function() {
