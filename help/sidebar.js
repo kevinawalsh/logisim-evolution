@@ -1,6 +1,6 @@
 const _h = window.location.hostname;
-// const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
-const isApp = (_h === '127.0.0.1' || _h === '[::1]');
+const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
+// const isApp = (_h === '127.0.0.1' || _h === '[::1]');
 
 // window location should be "/logisim-evolution/en/..." or similar
 let parts = window.location.pathname.split('/');
