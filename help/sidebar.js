@@ -217,7 +217,7 @@ window.onload = function() {
 
     // fetch sidebar data and inject sidebar into body
     async function loadSidebar() {
-        const response = await fetch("/sidebar_"+lang+".html");
+        const response = await fetch("/"+lang+"/sidebar.html");
         const sidebar_list = await response.text();
         const body = document.body.innerHTML;
         document.body.innerHTML = 
@@ -298,7 +298,7 @@ window.onload = function() {
     }
 
     async function fetchSearchInfo() {
-        const response = await fetch("/contents_"+lang+".json");
+        const response = await fetch("/"+lang+"/contents.json");
         const documents = await response.json();
 
         miniSearch.addAll(documents);

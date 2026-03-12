@@ -6,13 +6,11 @@
 #         python3 build-help-index.py en
 #         python3 build-help-index.py en de fr es pt ru el
 #
-# For each language, scans ./{lang}/html/ recursively, extracts the page title and
-# body text from every .html file, and writes ./contents_{lang}.json.
+# For each language, scans help/{lang}/ recursively, extracts the page title and
+# body text from every .html file, and writes help/{lang}/contents.json.
 #
-# The sidebar HTML files (./sidebar_{lang}.html) are hand-maintained and are NOT
+# The sidebar HTML files (help/{lang}/sidebar.html) are hand-maintained and are NOT
 # modified by this script.
-#
-# Requires: pip install beautifulsoup4
 
 import sys, os, os.path, json
 from html.parser import HTMLParser
@@ -83,8 +81,8 @@ def extract(html_path, ignore_prefixes):
     return title, text
 
 
-def build(lang, home):
-    html_root = os.path.join(home, lang, "html")
+def build(lang, base):
+    html_root = os.path.join(base, "help", lang)
     if not os.path.isdir(html_root):
         print(f"  ERROR: {html_root} not found, skipping.")
         return
@@ -98,7 +96,7 @@ def build(lang, home):
             if not fn.endswith(".html"):
                 continue
             path = os.path.join(dirpath, fn)
-            rel = "/" + os.path.relpath(path, home).replace("\\", "/")
+            rel = "/" + os.path.relpath(path, os.path.join(base, "help")).replace("\\", "/")
             title, text = extract(path, ignore)
             entries.append({
                 "id": len(entries) + 1,
@@ -107,7 +105,7 @@ def build(lang, home):
                 "text": text,
             })
 
-    out = os.path.join(home, f"contents_{lang}.json")
+    out = os.path.join(base, "help", lang, "contents.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
     print(f"  Built search index for {lang}: wrote {len(entries)} entries to {out}")
@@ -119,8 +117,9 @@ if len(sys.argv) < 2:
     print(f"  e.g. {sys.argv[0]} en de fr es pt ru el")
     sys.exit(1)
 
-home = os.path.dirname(os.path.realpath(sys.argv[0]))
+scripts = os.path.dirname(os.path.realpath(sys.argv[0]))
+base = os.path.dirname(scripts)
 
 for lang in sys.argv[1:]:
     # print(f"==== building help index for lang={lang} ====")
-    build(lang, home)
+    build(lang, base)
