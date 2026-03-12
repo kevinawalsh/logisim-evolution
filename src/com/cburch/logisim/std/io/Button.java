@@ -191,9 +191,9 @@ public class Button extends InstanceFactory {
   private void recomputeLabelTextFieldPosition(Instance instance) {
     AttributeOption clocking = instance.getAttributeValue(ATTR_CLOCKING);
     if (clocking == CLOCKING_SYNCHRONOUS)
-      instance.computeLabelTextField(Instance.AVOID_CENTER | Instance.AVOID_LEFT | Instance.AVOID_BOTTOM);
+      instance.computeLabelTextField(Instance.AVOID_LEFT | Instance.AVOID_BOTTOM);
     else
-      instance.computeLabelTextField(Instance.AVOID_CENTER | Instance.AVOID_LEFT);
+      instance.computeLabelTextField(Instance.AVOID_LEFT);
   }
 
   private void updatePorts(Instance instance) {
@@ -313,11 +313,13 @@ public class Button extends InstanceFactory {
     Graphics2D g = painter.getGraphics();
     
     // centered labels shift when button is pressed or latched
-    double labelOffset = 0;
-    if (pressed || (behavior == BEHAVIOR_LATCHING && val == active)) {
-      Object labelLoc = painter.getAttributeValue(StdAttr.LABEL_LOC);
-      if (labelLoc == StdAttr.LABEL_CENTER)
-        labelOffset = DEPTH;
+    Object labelLoc = painter.getAttributeValue(StdAttr.LABEL_LOC);
+    double labelOffset = 0, centerAdjust = 0;
+    if (labelLoc == StdAttr.LABEL_CENTER) {
+      centerAdjust = DEPTH/2d;
+      if (pressed || (behavior == BEHAVIOR_LATCHING && val == active)) {
+          labelOffset = DEPTH;
+      }
     }
 
     if (pressed) {
@@ -371,7 +373,7 @@ public class Button extends InstanceFactory {
         // raised circle (if on, then only slightly raised)
         double p = 0; // pressed/toggled offset
         if (val == active) {
-          p = DEPTH/3;
+          p = DEPTH/3d;
           if (labelOffset != 0)
             labelOffset = p;
         }
@@ -453,10 +455,10 @@ public class Button extends InstanceFactory {
     }
 
     // draw label, possibly shifted
-    g.translate(labelOffset, labelOffset-DEPTH);
+    g.translate(labelOffset-centerAdjust, labelOffset-centerAdjust);
     g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
-    g.translate(-labelOffset, -labelOffset+DEPTH);
+    g.translate(-labelOffset+centerAdjust, -labelOffset+centerAdjust);
     painter.drawPorts();
   }
 
