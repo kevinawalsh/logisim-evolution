@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;

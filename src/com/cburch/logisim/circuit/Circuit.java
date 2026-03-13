@@ -169,8 +169,8 @@ public class Circuit implements AttributeDefaultProvider {
   private LogisimFile logiFile;
 
   public Circuit(String name, LogisimFile file) {
+    staticAttrs = new CircuitAttributes(this, name);
     appearance = new CircuitAppearance(this);
-    staticAttrs = CircuitAttributes.createBaseAttrs(this, file, name);
     subcircuitFactory = new SubcircuitFactory(this);
     locker = new CircuitLocker();
     circuitsUsingThis = new WeakHashMap<Component, Circuit>();
@@ -463,9 +463,6 @@ public class Circuit implements AttributeDefaultProvider {
     return locker;
   }
 
-  //
-  // access methods
-  //
   public String getName() {
     return staticAttrs.getValue(CircuitAttributes.CIRCUIT_NAME);
   }
@@ -727,7 +724,7 @@ public class Circuit implements AttributeDefaultProvider {
 
   @Override
   public String toString() {
-    return staticAttrs.getValue(CircuitAttributes.CIRCUIT_NAME);
+    return getName();
   }
   
   public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {

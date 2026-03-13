@@ -168,7 +168,9 @@ class CircuitChange {
       return false;
     case SET:
       return comp.getFactory() instanceof Pin
-          && (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE);
+          && (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE); // FIXME: also label, b/c that
+                                                               // affects appearance? and pull
+                                                               // options?
     case SET_FOR_CIRCUIT:
       return attr == CircuitAttributes.CIRCUIT_APPEARANCE
           || attr == CircuitAttributes.CIRCUIT_NAME
