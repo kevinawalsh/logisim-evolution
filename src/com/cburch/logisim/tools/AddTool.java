@@ -185,8 +185,14 @@ public class AddTool extends Tool {
           && this.description.equals(o.description);
     } else {
       // FIXME: what if o.description != null?
-      if (o.description != null)
-        Debug.error("AddTool.equals: should have checked o.description?");
+      if (o.description != null) {
+        try { throw new Exception("oops"); }
+        catch (Exception e) {
+          Debug.error("AddTool.equals: should have checked o.description?"
+              + "\n  this = " + this
+              + "\n  o = " + o, e);
+        }
+      }
       return this.factory.equals(o.factory);
     }
   }
