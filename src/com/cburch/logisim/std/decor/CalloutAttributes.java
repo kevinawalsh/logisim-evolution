@@ -69,6 +69,11 @@ class CalloutAttributes extends TextAttributes {
   int getDy() { return dy; }
 
   @Override
+  protected boolean hasDefaultMargin() {
+    return true;
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public <V> V getValue(Attribute<V> attr) {
     if (attr == Callout.ATTR_DX)

@@ -92,8 +92,13 @@ class TextAttributes extends AbstractAttributeSet {
     computeLayout("" /*no style*/);
   }
 
+  protected boolean hasDefaultMargin() {
+    // use a margin by default only if there is a background color
+    return bg != null && bg.getAlpha() != 0;
+  }
+
   protected void computeLayout(String style) {
-    styling = new TextStyling(style, font, fg, bg, format);
+    styling = new TextStyling(style, font, fg, bg, format, hasDefaultMargin());
     if (format == Text.TEXT_FORMAT_MARKDOWNISH)
       layout = new StyledBoxLayout(text, width, styling);
     else if (format == Text.TEXT_FORMAT_WRAPPED)

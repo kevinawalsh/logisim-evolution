@@ -56,7 +56,8 @@ import com.cburch.logisim.data.Attributes;
 //   }
 public class TextStyling {
 
-  private static final int DEFAULT_BODY_MARGIN = 4; // only if there is a background
+  private static final int DEFAULT_BODY_MARGIN = 4; // only applied if requested (e.g. for callout,
+                                                    // or if there is a background)
 
   public final String str; // original user-specified string
   public final AttributeOption format;
@@ -148,7 +149,7 @@ public class TextStyling {
     }
   }
 
-  public TextStyling(String styles, Font bodyFont, Color fgColor, Color bgColor, AttributeOption fmt) {
+  public TextStyling(String styles, Font bodyFont, Color fgColor, Color bgColor, AttributeOption fmt, boolean defaultHasMargin) {
     str = styles;
     font = bodyFont;
     color = fgColor;
@@ -240,9 +241,8 @@ public class TextStyling {
           paragraph_margin[p] = ZERO_PX;
     }
 
-    // Set default body margin: 4px if background, 0 if no background
-    // TODO: maybe negative margin sometimes? e.g. TEXT_FORMAT_WRAPPED with no background
-    float defBodyMargin = bgColor != null && bgColor.getAlpha() != 0 ? DEFAULT_BODY_MARGIN : 0;
+    // Set default body margin: 4px if requested, 0px otherwiise
+    float defBodyMargin = defaultHasMargin ? DEFAULT_BODY_MARGIN : 0;
     for (int i = 0; i < 4; i++)
       if (margin[i] == null)
         margin[i] = new Size(defBodyMargin, SizeUnit.PIXELS);
@@ -262,7 +262,7 @@ public class TextStyling {
   // Used when editing markdownish-rendered Text, this replaces the font
   // with an editing-specific font, and eliminates paragraph margins.
   public TextStyling withReplacedFontAndSpacing(Font altFont) {
-    TextStyling repl = new TextStyling(str, altFont, color, background_color, format);
+    TextStyling repl = new TextStyling(str, altFont, color, background_color, format, false);
     for (int p = 0; p < 4; p++)
       repl.paragraph_margin[p] = ZERO_PX;
     return repl;
