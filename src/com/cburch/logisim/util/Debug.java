@@ -518,7 +518,7 @@ public class Debug {
        "relevant. Don't be shy, they want to hear from you!\n");
     System.err.println();
     System.err.println(
-        "Care has been taken to ensure your prrivacy. Crash logs contain no personal\n" +
+        "Care has been taken to ensure your privacy. Crash logs contain no personal\n" +
         "information, no details about your activity, no telmetry or other tracking\n" +
         "data, and no detailed information about you or your computer. We tried to\n" +
         "include only basic information about the error logisim encountered.\n" +
@@ -657,7 +657,7 @@ public class Debug {
        " relevant. Don't be shy, they want to hear from you!";
 
     body += "<br>" +
-        "<br>Care has been taken to ensure your prrivacy. Crash logs contain no personal" +
+        "<br>Care has been taken to ensure your privacy. Crash logs contain no personal" +
         " information, no details about your activity, no telmetry or other tracking" +
         " data, and no detailed information about you or your computer. We tried to" +
         " include only basic information about the error logisim encountered." +
