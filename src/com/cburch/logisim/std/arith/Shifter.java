@@ -32,8 +32,9 @@ package com.cburch.logisim.std.arith;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.Arrays;
+import javax.swing.Icon;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.data.Attribute;
@@ -50,6 +51,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
+import com.cburch.logisim.util.Icons;
 
 public class Shifter extends InstanceFactory {
   static final AttributeOption SHIFT_LOGICAL_LEFT = new AttributeOption("ll",
@@ -104,7 +106,33 @@ public class Shifter extends InstanceFactory {
     instance.setPorts(ps);
   }
 
-  private void drawArrow(Graphics g, int x, int y, int d) {
+  @Override
+  public void paintIcon(InstancePainter painter) {
+    AttributeOption type = painter.getAttributeValue(ATTR_SHIFT);
+    String name;
+    if (type == SHIFT_LOGICAL_LEFT) {
+      name = "shifterLeft.gif";
+    } else if (type == SHIFT_LOGICAL_RIGHT) {
+      name = "shifterRight.gif";
+    } else if (type == SHIFT_ARITHMETIC_RIGHT) {
+      name = "shifterArith.gif";
+    } else if (type == SHIFT_ROLL_LEFT) {
+      name = "rotateLeft.gif";
+    } else if (type == SHIFT_ROLL_RIGHT) {
+      name = "rotateRight.gif";
+    } else {
+      super.paintIcon(painter);
+      return;
+    }
+    Icon icon = Icons.getIcon(name);
+    Graphics2D g = painter.getGraphics();
+    if (icon != null)
+      icon.paintIcon(painter.getDestination(), painter.getGraphics(), 2, 2);
+    else
+      super.paintIcon(painter);
+  }
+
+  private void drawArrow(Graphics2D g, int x, int y, int d) {
     int[] px = { x + d, x, x + d };
     int[] py = { y + d, y, y - d };
     g.fillPolygon(px, py, 3);
@@ -119,12 +147,14 @@ public class Shifter extends InstanceFactory {
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.WIDTH) {
       configurePorts(instance);
+    } else if (attr == ATTR_SHIFT) {
+      instance.fireInvalidated();
     }
   }
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Graphics g = painter.getGraphics();
+    Graphics2D g = painter.getGraphics();
     painter.drawBounds();
 
     painter.drawPorts();
