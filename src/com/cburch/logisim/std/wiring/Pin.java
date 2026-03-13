@@ -34,14 +34,15 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.WindowFocusListener;
-import java.awt.event.WindowEvent;
+import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.awt.geom.Line2D;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -525,13 +526,13 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
           x -= w/2 - 3;
           y -= 4;
         } else if (radix == RadixOption.RADIX_2) {
-          x -= 5 + 10 * (bitCaret % 8);
-          y -= 2 + 14 * (bitCaret / 8);
+          x -= 7 + 10 * (bitCaret % 8);
+          y -= 3 + 14 * (bitCaret / 8);
         } else {
-          x -= 4 + 7 * (bitCaret / r);
+          x -= 5 + 7 * (bitCaret / r);
           y -= 4;
         }
-        g.drawLine(x - 6, y, x, y);
+        g.draw(new Line2D.Float(x - 5.5f, y, x, y));
       }
       g.setColor(Color.BLACK);
     }
@@ -749,14 +750,14 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       BitWidth width = attrs.getValue(StdAttr.WIDTH);
       if (width == BitWidth.ONE) {
         g.drawOval(x + bds.getX() + 1, y + bds.getY() + 1,
-            bds.getWidth() - 1, bds.getHeight() - 1);
+            bds.getWidth() - 2, bds.getHeight() - 2);
       } else {
         g.drawRoundRect(x + bds.getX() + 1, y + bds.getY() + 1,
-            bds.getWidth() - 1, bds.getHeight() - 1, 6, 6);
+            bds.getWidth() - 2, bds.getHeight() - 2, 6, 6);
       }
     } else {
       g.drawRect(x + bds.getX() + 1, y + bds.getY() + 1,
-          bds.getWidth() - 1, bds.getHeight() - 1);
+          bds.getWidth() - 2, bds.getHeight() - 2);
     }
   }
 
@@ -828,14 +829,14 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     g.setColor(Color.black);
     if (attrs.type == OUTPUT) {
       if (attrs.width.getWidth() == 1) {
-        g.drawOval(x + 1, y + 1, bds.getWidth() - 1,
-            bds.getHeight() - 1);
+        g.drawOval(x + 1, y + 1, bds.getWidth() - 2,
+            bds.getHeight() - 2);
       } else {
-        g.drawRoundRect(x + 1, y + 1, bds.getWidth() - 1,
-            bds.getHeight() - 1, 12, 12);
+        g.drawRoundRect(x + 1, y + 1, bds.getWidth() - 2,
+            bds.getHeight() - 2, 12, 12);
       }
     } else {
-      g.drawRect(x + 1, y + 1, bds.getWidth() - 1, bds.getHeight() - 1);
+      g.drawRect(x + 1, y + 1, bds.getWidth() - 2, bds.getHeight() - 2);
     }
 
     painter.drawLabel();

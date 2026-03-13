@@ -138,7 +138,7 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
         x0 = bds.getX() + (bds.getWidth() + lineWidth) / 2 - 5;
       }
       int cx = x0;
-      int cy = bds.getY() + bds.getHeight() - 10;
+      int cy = bds.getY() + bds.getHeight() - (wid > 8 ? 9 : 10);
       int cur = 0;
       for (int k = 0; k < wid; k++) {
         GraphicsUtil.drawCenteredText(g,
@@ -154,8 +154,9 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
       }
     } else {
       String text = radix.toString(value);
-      GraphicsUtil.drawCenteredText(g, text, bds.getX() + bds.getWidth()
-          / 2, bds.getY() + bds.getHeight() / 2 - 2);
+      GraphicsUtil.drawCenteredText(g, text,
+          bds.getX() + bds.getWidth() / 2,
+          bds.getY() + bds.getHeight() / 2);
     }
   }
 
