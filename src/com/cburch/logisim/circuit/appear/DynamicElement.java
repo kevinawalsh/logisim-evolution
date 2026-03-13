@@ -62,19 +62,19 @@ import com.cburch.logisim.util.GraphicsUtil;
 public abstract class DynamicElement extends AbstractCanvasObject {
 
   public static final AttributeOption LABEL_NONE = new AttributeOption(
-      "none", S.getter("circuitLabelNone"));
+      "none", S.getter("circuitRevisionPlacementNone"));
   public static final AttributeOption LABEL_TOP = new AttributeOption(
-      "top", S.getter("circuitLabelTop"));
+      "top", S.getter("circuitRevisionPlacementTop"));
   public static final AttributeOption LABEL_BOTTOM = new AttributeOption(
-      "bottom", S.getter("circuitLabelBottom"));
+      "bottom", S.getter("circuitRevisionPlacementBottom"));
   public static final AttributeOption LABEL_LEFT = new AttributeOption(
-      "left", S.getter("circuitLabelLeft"));
+      "left", S.getter("circuitRevisionPlacementLeft"));
   public static final AttributeOption LABEL_RIGHT = new AttributeOption(
-      "right", S.getter("circuitLabelRight"));
+      "right", S.getter("circuitRevisionPlacementRight"));
   public static final AttributeOption LABEL_CENTER = new AttributeOption(
-      "center", S.getter("circuitLabelCenter"));
+      "center", S.getter("circuitRevisionPlacementCenter"));
   public static final Attribute<AttributeOption> ATTR_LABEL = Attributes
-      .forOption("showlabel", S.getter("circuitShowLabelAttr"),
+      .forOption("showlabel", S.getter("circuitRevisionPlacementAttr"),
           new AttributeOption[] { LABEL_NONE,
             LABEL_TOP, LABEL_BOTTOM, LABEL_LEFT, LABEL_RIGHT, LABEL_CENTER });
 

@@ -266,10 +266,11 @@ class SelectionAttributes extends AbstractAttributeSet {
       System.err.println("never happens");
       return circ.getStaticAttributes().isReadOnly(attr);
     } else {
-      if (selected.size() > 1 && attr == CircuitAttributes.NAME_ATTR)
-        return true; // Can't rename multiple circuits at a time
-      if (selected.size() > 1 && attr == VhdlEntity.NAME_ATTR)
-        return true; // Can't rename multiple vhdl at a time
+      // Dead code... these are no longer part of instance attribute sets
+      // if (selected.size() > 1 && attr == CircuitAttributes.CIRCUIT_NAME)
+      //   return true; // Can't rename multiple circuits at a time
+      // if (selected.size() > 1 && attr == VhdlEntity.NAME_ATTR)
+      //   return true; // Can't rename multiple vhdl at a time
       int i = findIndex(attr);
       boolean[] ro = readOnly;
       // Can't rename if any of the selection component attribs were read-only,

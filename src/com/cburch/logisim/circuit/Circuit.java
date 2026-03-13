@@ -467,7 +467,7 @@ public class Circuit implements AttributeDefaultProvider {
   // access methods
   //
   public String getName() {
-    return staticAttrs.getValue(CircuitAttributes.NAME_ATTR);
+    return staticAttrs.getValue(CircuitAttributes.CIRCUIT_NAME);
   }
 
   public Set<Component> getNonWires() {
@@ -722,12 +722,12 @@ public class Circuit implements AttributeDefaultProvider {
 
   // Note: caller must have validated name already
   public void setCircuitName(String name) {
-    staticAttrs.setAttr(CircuitAttributes.NAME_ATTR, name);
+    staticAttrs.setAttr(CircuitAttributes.CIRCUIT_NAME, name);
   }
 
   @Override
   public String toString() {
-    return staticAttrs.getValue(CircuitAttributes.NAME_ATTR);
+    return staticAttrs.getValue(CircuitAttributes.CIRCUIT_NAME);
   }
   
   public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
@@ -735,7 +735,7 @@ public class Circuit implements AttributeDefaultProvider {
   }
 
   public Object getDefaultAttributeValue(Attribute<?> attr, LogisimVersion ver) {
-    if (attr == CircuitAttributes.NAME_ATTR)
+    if (attr == CircuitAttributes.CIRCUIT_NAME)
       return null;
     for (int i = 0; i < CircuitAttributes.STATIC_ATTRS.length; i++) {
       if (CircuitAttributes.STATIC_ATTRS[i] == attr)

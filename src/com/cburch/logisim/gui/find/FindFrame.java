@@ -787,11 +787,11 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
   // Things to search:
   // x vhdl entity contents (entity.getContents...)
   // x circuit contents (circ.nonWires...)
-  // x circuit name CircuitAttributes.NAME_ATTR
+  // x circuit name CircuitAttributes.CIRCUIT_NAME
   // x vhdl name VhdlEntity.NAME_ATTR
   // - toolbar contents (layout toolbar getItems)
   // x standard label attributes on various components (except Pin, Tunnel) StdAttr.LABEL
-  // x circuit shared label attributes CircuitAttributes.CIRCUIT_LABEL_ATTR
+  // x circuit shared label attributes CircuitAttributes.CIRCUIT_REVISION
   // x text components Text.ATTR_TEXT
   // x tunnel names StdAttr.LABEL
   // x pin names StdAttr.LABEL

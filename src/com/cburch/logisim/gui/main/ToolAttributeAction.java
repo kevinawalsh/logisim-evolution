@@ -79,6 +79,7 @@ public class ToolAttributeAction extends Action {
 
   @Override
   public void doIt(Project proj) {
+    System.out.println("doIt");
     if (affectsAppearance()) {
       ActionTransaction xn = new ActionTransaction(true);
       xn.execute();
@@ -89,8 +90,10 @@ public class ToolAttributeAction extends Action {
 
   @Override
   public void undo(Project proj) {
+    System.out.println("undo");
     if (affectsAppearance()) {
-      ActionTransaction xn = new ActionTransaction(true);
+      System.out.println("wrong direction??");
+      ActionTransaction xn = new ActionTransaction(true); // FIXME: false??
       xn.execute();
     } else {
       execute(false);

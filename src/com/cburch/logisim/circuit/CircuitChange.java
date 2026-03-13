@@ -170,11 +170,11 @@ class CircuitChange {
       return comp.getFactory() instanceof Pin
           && (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE);
     case SET_FOR_CIRCUIT:
-      return attr == CircuitAttributes.APPEARANCE_ATTR
-          || attr == CircuitAttributes.NAME_ATTR
-          || attr == CircuitAttributes.CIRCUIT_LABEL_ATTR
-          || attr == CircuitAttributes.CIRCUIT_LABEL_FACING_ATTR
-          || attr == CircuitAttributes.CIRCUIT_LABEL_FONT_ATTR;
+      return attr == CircuitAttributes.CIRCUIT_APPEARANCE
+          || attr == CircuitAttributes.CIRCUIT_NAME
+          || attr == CircuitAttributes.CIRCUIT_REVISION
+          || attr == CircuitAttributes.CIRCUIT_REVISION_FACING_ATTR
+          || attr == CircuitAttributes.CIRCUIT_REVISION_FONT_ATTR;
     case SET_FOR_VHDL:
       return attr == VhdlEntity.NAME_ATTR
           || attr == StdAttr.APPEARANCE; // note: always true so far
@@ -187,7 +187,7 @@ class CircuitChange {
   boolean concernsSiblingComponents() {
     switch (type) {
     case SET:
-      if ( (comp.getFactory() instanceof SubcircuitFactory && attr == CircuitAttributes.APPEARANCE_ATTR)
+      if ( (comp.getFactory() instanceof SubcircuitFactory && attr == CircuitAttributes.CIRCUIT_APPEARANCE)
           || (comp.getFactory() instanceof VhdlEntity && attr == StdAttr.APPEARANCE)) { 
         System.out.println("yes, concerns sibling");
         return true;

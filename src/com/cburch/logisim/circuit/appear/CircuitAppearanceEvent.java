@@ -33,10 +33,10 @@ package com.cburch.logisim.circuit.appear;
 import com.cburch.logisim.circuit.Circuit;
 
 public class CircuitAppearanceEvent {
-  public static final int APPEARANCE = 1;
+  // public static final int APPEARANCE = 1; // never used
   public static final int BOUNDS = 2;
   public static final int PORTS = 4;
-  public static final int ALL_TYPES = 7;
+  public static final int ALL_TYPES = -1; // all events fired so far have this type
 
   private Circuit circuit;
   private int affects;

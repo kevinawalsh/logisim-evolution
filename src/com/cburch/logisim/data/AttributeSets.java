@@ -33,9 +33,6 @@ package com.cburch.logisim.data;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cburch.logisim.circuit.CircuitAttributes;
-import com.cburch.logisim.instance.StdAttr;
-
 public class AttributeSets {
 
   public static class ArrayBacked extends AbstractAttributeSet {
@@ -145,12 +142,6 @@ public class AttributeSets {
       Object value = src.getValue(attr);
       dst.setAttr(attrObj, value);
     }
-  }
-
-  public static <V> boolean isAttrLabel(Attribute<V> attr) {
-    return (attr.equals(StdAttr.LABEL))
-        || (attr.equals(CircuitAttributes.CIRCUIT_LABEL_ATTR))
-        || (attr.equals(CircuitAttributes.NAME_ATTR));
   }
 
   public static final AttributeSet EMPTY

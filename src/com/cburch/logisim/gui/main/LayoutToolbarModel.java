@@ -139,7 +139,7 @@ class LayoutToolbarModel extends AbstractToolbarModel {
     @Override
     public void attributeValueChanged(AttributeEvent e) {
       if (e.getAttribute() == VhdlEntity.NAME_ATTR
-          || e.getAttribute() == CircuitAttributes.NAME_ATTR) {
+          || e.getAttribute() == CircuitAttributes.CIRCUIT_NAME) {
         makeLabel();
         fireToolbarContentsChanged();
       } else {

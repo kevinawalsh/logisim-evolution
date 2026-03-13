@@ -209,14 +209,14 @@ public class CircuitAppearance extends Drawing {
     if (circuit == null || circuit.getStaticAttributes() == null)
       return null;
     else
-      return circuit.getStaticAttributes().getValue(CircuitAttributes.APPEARANCE_ATTR);
+      return circuit.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_APPEARANCE);
   }
 
   public String getCircuitName() {
     if (circuit == null || circuit.getStaticAttributes() == null)
       return null;
     else
-      return circuit.getStaticAttributes().getValue(CircuitAttributes.NAME_ATTR);
+      return circuit.getStaticAttributes().getValue(CircuitAttributes.CIRCUIT_NAME);
   }
 
   public Direction getFacing() {

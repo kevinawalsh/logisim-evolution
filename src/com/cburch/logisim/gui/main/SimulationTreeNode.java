@@ -135,7 +135,7 @@ public class SimulationTreeNode implements TreeNode,
 
   public void attributeValueChanged(AttributeEvent e) {
     Object attr = e.getAttribute();
-    if (attr == CircuitAttributes.CIRCUIT_LABEL_ATTR || attr == StdAttr.LABEL)
+    if (attr == CircuitAttributes.CIRCUIT_REVISION || attr == StdAttr.LABEL)
       fireAppearanceChanged();
   }
 

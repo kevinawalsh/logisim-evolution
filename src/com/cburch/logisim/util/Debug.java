@@ -804,6 +804,11 @@ public class Debug {
   //     System.out.print(Thread.currentThread().getName() + ": " + msg);
   // }
 
+  public static void trace(String fmt, Object... args) {
+    System.out.printf("++ " + Thread.currentThread().getName() + "\n++ " + fmt, args);
+    Thread.dumpStack();
+  }
+
   static void doCmd(String cmd, String... args) {
     if (cmd.equals("verbose")) {
       verbose++;

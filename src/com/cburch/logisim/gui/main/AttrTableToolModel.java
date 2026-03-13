@@ -107,7 +107,7 @@ public class AttrTableToolModel extends AttributeSetTableModel {
     Circuit circ = getCircuit();
     VhdlContent vhdl = getVhdlContent();
     String err = null;
-    if (attr == CircuitAttributes.NAME_ATTR) {
+    if (attr == CircuitAttributes.CIRCUIT_NAME) {
       if (circ == null)
         return; // huh ?
       String name = ((String)value).trim();

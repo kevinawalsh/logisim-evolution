@@ -43,8 +43,8 @@ import java.util.Map;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
-import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -64,6 +64,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.util.StringUtil;
@@ -146,7 +147,7 @@ public class SubcircuitFactory extends InstanceFactory {
     attrs.setPinInstances(pins);
     instance.setPorts(ports);
     instance.recomputeBounds();
-    configureLabel(instance); // since this affects the circuit's bounds
+    configureLabel(instance); // label position is affected the circuit's bounds
   }
 
   private void configureLabel(Instance instance) {
@@ -222,12 +223,12 @@ public class SubcircuitFactory extends InstanceFactory {
       Direction facing, Direction defaultFacing) {
     AttributeSet staticAttrs = source.getStaticAttributes();
     String label =
-        staticAttrs.getValue(CircuitAttributes.CIRCUIT_LABEL_ATTR);
+        staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION);
     if (label != null && !label.equals("")) {
       Direction up =
-          staticAttrs.getValue(CircuitAttributes.CIRCUIT_LABEL_FACING_ATTR);
+          staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION_FACING_ATTR);
       Font font =
-          staticAttrs.getValue(CircuitAttributes.CIRCUIT_LABEL_FONT_ATTR);
+          staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION_FONT_ATTR);
 
       int back = label.indexOf('\\');
       int lines = 1;
@@ -341,13 +342,12 @@ public class SubcircuitFactory extends InstanceFactory {
   @Override
   public void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.FACING) {
+      Debug.printf(0, "SubcircuitFactory.instanceAttributeChanged(FACING) --> computePorts(instance)\n");
       computePorts(instance);
     } else if (attr == StdAttr.LABEL_LOC) {
       configureLabel(instance);
-    } else if (attr == CircuitAttributes.APPEARANCE_ATTR) {
-      // final Circuit src = source;
-      // System.out.println("subcirc instance changed appearance for " + source);
-      // Thread.dumpStack();
+    } else if (attr == CircuitAttributes.CIRCUIT_APPEARANCE) {
+      Debug.trace("SubcircuitFactory.instanceAttributeChanged() with static attr " + attr);
       CircuitTransaction xn = new ChangeAppearanceTransaction();
       source.getLocker().execute(xn);
     }
