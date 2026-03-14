@@ -58,13 +58,13 @@ public class Base extends Library {
     tools = Arrays.asList(new Tool[] {
       poke,
       edit,
+      wiring,
+      cutter,
+      text,
       // Select by itself is kind of useless. It can select and move things, or
       // click to edit attributes. But it can't modify wires like EditTool can.
       // Leave it in, maybe useful for custom keyboard/mouse mappings.
       select,
-      wiring,
-      cutter,
-      text,
       // MenuTool is kind of useless, but necessary for custom keyboard/mouse mappings,
       // e.g. for the right-click binding.
       MenuTool.SINGLETON,

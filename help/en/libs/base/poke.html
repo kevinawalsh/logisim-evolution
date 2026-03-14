@@ -14,8 +14,6 @@
 
 <p>Found in <a href="index.html">Mouse Tools</a></p>
 
-<h2>Behavior</h2>
-
 <p>The Poke Tool is for interacting with a circuit: use the mouse and keyboard
 to probe values, change inputs, edit values stored in registers and memory, and
 prod other components to change state or perform actions.</p>
@@ -24,12 +22,16 @@ prod other components to change state or perform actions.</p>
 
 <p><a class="logisim-link" onclick="live(event, this)"
   href="/logisim-evolution/live?file=interaction.circ"
-  data-examples-path="logisim features &rarr; input and poke tool">Live Circuit: Interaction using input and poke tool</a></li></a>
+  data-examples-path="logisim features &rarr; input and poke tool">Live Circuit:
+  Interaction using input and poke tool</a></p>
 
 <p>Many components respond to being poked:
 <ul>
-  <li>Poke a wire or bus to see the value it carries. For a bus, poke again to
-    see the value in hex, signed decimal, and other encodings.
+  <li>Poke a wire or bus segment to see the value it carries, and hilight the
+    entire connected set of wire segments. For a bus, poke again (or
+    hit <span class="key">Space</span>, <span class="key">Tab</span>
+    or <span class="key">Enter</span>, to cycle through display in hex, signed
+    decimal, and other encodings.</li>
   <li>Poke a
     <a href="../io/button.html"><img class="p16" src="/logisim-evolution/icons/button.gif"> Button</a>,
     <a href="../io/dipswitch.html"><img class="p16" src="/logisim-evolution/icons/dipswitch.gif"> DipSwitch</a>, or
@@ -53,7 +55,7 @@ prod other components to change state or perform actions.</p>
   <li>Poke a
     <a href="../decor/hyperlink.html"><img class="p16" src="/logisim-evolution/icons/hyperlink.png">  Hyperlink</a>
     component, or links in
-    <a href="../decor/comment.html"><img class="p16" src="/logisim-evolution/icons/markdownish.png"> styled text block comments</a>
+    <a href="../decor/markdown.html"><img class="p16" src="/logisim-evolution/icons/markdownish.png"> styled text block comments</a>
     to open the URL in a browser.</li>
 </ul>
 
@@ -75,7 +77,8 @@ several inputs or buttons. You can enable easy keyboard interaction in your
 circuits: just label any component with a one-letter name. Then, when using the
 poke tool, typing the letter will poke that named component, just as if you had
 clicked it. This only works if you haven't already selected some component that
-expects keyboard input.
+expects keyboard input. Case does not matter here, 'a' and 'A' are treated the
+same.</p>
 
 <img src="/logisim-evolution/img-libs/poke-hotkeys.png" style="display: block; margin: 0 auto; max-width: 100%;">
 
