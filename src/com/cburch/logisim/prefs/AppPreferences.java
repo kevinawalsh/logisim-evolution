@@ -30,8 +30,6 @@
 
 package com.cburch.logisim.prefs;
 
-import java.io.File;
-import java.util.List;
 import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;

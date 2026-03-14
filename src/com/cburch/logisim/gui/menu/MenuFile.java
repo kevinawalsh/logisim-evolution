@@ -120,8 +120,11 @@ class MenuFile extends Menu implements ActionListener {
     "logisim features > in-circuit slideshow     : FilesAndImages.circ : main",
     "logisim features > in-circuit file viewer   : FilesAndImages.circ : main",
     "logisim features > joystick + vga video     : vga-joystick.circ : main",
+    "logisim features > slider + dot matrix      : invaders.circ : main",
+    "logisim features > inputs and poke tool     : interaction.circ : main",
 
     "miscellaneous > ideal relay                 : IdealRelay.circ : main",
+    "miscellaneous > invaders game               : invaders.circ : main",
 
   };
 

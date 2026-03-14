@@ -198,7 +198,8 @@ function live(e, el) {
 
 function showLiveInfo(el, appNotRunning) {
   const params = new URL(el.href).searchParams;
-  const name = escapeHTML((params.get('file') || '').replace(/\.circ$/, ''));
+  const name = el.dataset.examplesPath
+    || escapeHTML((params.get('file') || '').replace(/\.circ$/, ''));
 
   const old = document.getElementById('logisim-live-info');
   if (old) old.remove();
