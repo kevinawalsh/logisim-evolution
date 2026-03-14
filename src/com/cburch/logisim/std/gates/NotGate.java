@@ -228,8 +228,7 @@ class NotGate extends InstanceFactory {
     if (shape == AppPreferences.SHAPE_RECTANGULAR) {
       paintRectangularBase(g, painter);
     } else if (shape == AppPreferences.SHAPE_DIN40700) {
-      int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20
-          : 30;
+      int width = painter.getAttributeValue(ATTR_SIZE) == SIZE_NARROW ? 20 : 30;
       PainterDin.paintAnd(painter, width, 18, true);
     } else {
       PainterShaped.paintNot(painter);
@@ -239,6 +238,9 @@ class NotGate extends InstanceFactory {
       ((Graphics2D) g).rotate(-rotate);
     }
     g.translate(-x, -y);
+
+    if (shape == AppPreferences.SHAPE_SHAPED)
+      PainterShaped.paintDriverSymbol(painter, 20, 20, x+5, y-7);
   }
 
   @Override

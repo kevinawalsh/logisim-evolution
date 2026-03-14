@@ -220,8 +220,12 @@ class Buffer extends InstanceFactory {
   @Override
   public void paintInstance(InstancePainter painter) {
     Graphics g = painter.getGraphics();
+    Location loc = painter.getLocation();
+    int x = loc.getX();
+    int y = loc.getY();
     g.setColor(Color.BLACK);
     paintBase(painter);
+    PainterShaped.paintDriverSymbol(painter, 20, 20, x, y-7);
     painter.drawPorts();
     painter.drawLabel();
   }
