@@ -89,6 +89,7 @@ import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.hdl.HdlContentView;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Pokable;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.HorizontalSplitPane;
 import com.cburch.logisim.util.JFileChoosers;
@@ -131,7 +132,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
       if (action == ProjectEvent.ACTION_SET_FILE) {
         computeTitle();
-        project.setTool(project.getOptions().getToolbarData().getFirstTool());
+        boolean avoidPoke = !hasPokableComponents();
+        project.setTool(project.getOptions().getToolbarData().getFirstTool(avoidPoke));
         placeToolbar();
       } else if (action == ProjectEvent.ACTION_SET_STATE) {
         if (event.getData() instanceof CircuitState) {
@@ -469,7 +471,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
     project.setFrame(this);
     if (project.getTool() == null) {
-      project.setTool(project.getOptions().getToolbarData().getFirstTool());
+      boolean avoidPoke = !hasPokableComponents();
+      project.setTool(project.getOptions().getToolbarData().getFirstTool(avoidPoke));
     }
     mainPanel.addChangeListener(myProjectListener);
     AppPreferences.TOOLBAR_PLACEMENT.addPrefChangeWeakListener(this, e -> placeToolbar());
@@ -477,6 +480,17 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
     LocaleManager.addLocaleListener(this);
     toolbox.updateStructure();
+  }
+  
+  private boolean hasPokableComponents() {
+    Circuit circuit = project.getCurrentCircuit();
+    if (circuit == null)
+      return false;
+    for (Component comp : circuit.getComponents()) {
+      if (comp.getFeature(Pokable.class) != null)
+        return true;
+    }
+    return false;
   }
 
   private void computeTitle() {

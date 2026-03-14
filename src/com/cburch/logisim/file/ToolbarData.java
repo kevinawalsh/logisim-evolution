@@ -38,6 +38,7 @@ import java.util.Map;
 import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
+import com.cburch.logisim.tools.PokeTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.WeakList;
 
@@ -141,7 +142,13 @@ public class ToolbarData {
     return contents;
   }
 
-  public Tool getFirstTool() {
+  public Tool getFirstTool(boolean avoidPoke) {
+    if (avoidPoke) {
+      for (Tool tool : contents) {
+        if (tool != null && !(tool instanceof PokeTool))
+          return tool;
+      }
+    }
     for (Tool tool : contents) {
       if (tool != null)
         return tool;

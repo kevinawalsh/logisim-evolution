@@ -90,7 +90,7 @@ class AppearanceToolbarModel extends AbstractToolbarModel
     canvas.addPropertyChangeListener(Canvas.TOOL_PROPERTY, this);
   }
 
-  AbstractTool getFirstTool() {
+  AbstractTool getFirstTool(boolean avoidPoke) {
     ToolbarToolItem item = (ToolbarToolItem) items.get(0);
     return item.getTool();
   }
