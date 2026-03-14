@@ -74,6 +74,7 @@ public class GridPainter {
   private double zoomFactor;
   private Image gridImage;
   private int gridImageWidth;
+  private double gridImageExactWidth;
 
   public GridPainter(Component destination) {
     this.destination = destination;
@@ -111,16 +112,21 @@ public class GridPainter {
       return;
 
     Image img = gridImage;
-    int w = gridImageWidth;
     if (img == null) {
       paintGridOld(g, size, zoom, clip);
       return;
     }
-    int x0 = (clip.x / w) * w; // round down to multiple of w
-    int y0 = (clip.y / w) * w;
-    for (int x = 0; x < clip.width + w; x += w) {
-      for (int y = 0; y < clip.height + w; y += w) {
-        g.drawImage(img, x0 + x, y0 + y, dest);
+    int w = gridImageWidth;
+    double ew = gridImageExactWidth;
+    int kx0 = (int)(clip.x / ew);
+    int ky0 = (int)(clip.y / ew);
+    int kx1 = (int)((clip.x + clip.width  + w) / ew) + 1;
+    int ky1 = (int)((clip.y + clip.height + w) / ew) + 1;
+    for (int kx = kx0; kx < kx1; kx++) {
+      int tx = (int) Math.round(kx * ew);
+      for (int ky = ky0; ky < ky1; ky++) {
+        int ty = (int) Math.round(ky * ew);
+        g.drawImage(img, tx, ty, dest);
       }
     }
   }
@@ -136,47 +142,24 @@ public class GridPainter {
         }
       }
     } else {
-      /* Kevin Walsh of Cornell suggested the code below instead. */
       int x0 = size * (int) Math.ceil(clip.x / f / size);
       int x1 = x0 + (int) (clip.width / f);
       int y0 = size * (int) Math.ceil(clip.y / f / size);
       int y1 = y0 + (int) (clip.height / f);
+      int num = 1, off0 = 0;
+      if (f >= 2.0) {
+        num = (int)(f + 0.001);
+        off0 = -(num / 2);
+      }
       if (f <= 0.5)
         g.setColor(GRID_ZOOMED_OUT_COLOR);
       for (double x = x0; x < x1; x += size) {
         for (double y = y0; y < y1; y += size) {
           int sx = (int) Math.round(f * x);
           int sy = (int) Math.round(f * y);
-          g.fillRect(sx, sy, 1, 1);
+          g.fillRect(sx + off0, sy + off0, num, num);
         }
       }
-      if (f <= 0.5) { // make every 5th pixel darker
-        int size5 = 5 * size;
-        g.setColor(Color.GRAY);
-        x0 = size5 * (int) Math.ceil(clip.x / f / size5);
-        y0 = size5 * (int) Math.ceil(clip.y / f / size5);
-        for (double x = x0; x < x1; x += size5) {
-          for (double y = y0; y < y1; y += size5) {
-            int sx = (int) Math.round(f * x);
-            int sy = (int) Math.round(f * y);
-            g.fillRect(sx, sy, 1, 1);
-          }
-        }
-      }
-
-      /*
-       * Original code by Carl Burch int x0 = 10 * (int) Math.ceil(clip.x
-       * / f / 10); int x1 = x0 + (int)(clip.width / f); int y0 = 10 *
-       * (int) Math.ceil(clip.y / f / 10); int y1 = y0 + (int)
-       * (clip.height / f); int s = f > 0.5 ? 1 : f > 0.25 ? 2 : 3; int i0
-       * = s - ((x0 + 10*s - 1) % (s * 10)) / 10 - 1; int j0 = s - ((y1 +
-       * 10*s - 1) % (s * 10)) / 10 - 1; for (int i = 0; i < s; i++) { for
-       * (int x = x0+i*10; x < x1; x += s*10) { for (int j = 0; j < s;
-       * j++) { g.setColor(i == i0 && j == j0 ? Color.gray :
-       * GRID_ZOOMED_OUT_COLOR); for (int y = y0+j*10; y < y1; y += s*10)
-       * { int sx = (int) Math.round(f * x); int sy = (int) Math.round(f *
-       * y); g.fillRect(sx, sy, 1, 1); } } } }
-       */
     }
   }
 
@@ -227,6 +210,12 @@ public class GridPainter {
   // creating the grid image
   //
   private void updateGridImage(int size, double f) {
+    if (f >= 3.0) {
+      // At higher zoom levels, force falback to paintGridOld(), it is
+      // more accurate and will be sufficiently fast.
+      gridImage = null;
+      return;
+    }
     double ww = f * size * 5;
     while (2 * ww < 150)
       ww *= 2;
@@ -289,8 +278,8 @@ public class GridPainter {
         }
       }
     }
-    gridImage = destination.createImage(new MemoryImageSource(w, w, pix, 0,
-          w));
+    gridImage = destination.createImage(new MemoryImageSource(w, w, pix, 0, w));
     gridImageWidth = w;
+    gridImageExactWidth = ww;
   }
 }
