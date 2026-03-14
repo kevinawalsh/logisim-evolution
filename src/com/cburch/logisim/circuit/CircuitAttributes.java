@@ -32,24 +32,13 @@ package com.cburch.logisim.circuit;
 import static com.cburch.logisim.circuit.Strings.S;
 
 import java.awt.Font;
-import java.util.Arrays;
-import java.util.List;
 
-import com.cburch.logisim.circuit.appear.CircuitAppearanceEvent;
-import com.cburch.logisim.circuit.appear.CircuitAppearanceListener;
-import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeEvent;
-import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeOption;
-import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.util.Debug;
 
 // A circuit has one CircuitAttributes to hold parameters related to the circuit itself, like
 // CIRCUIT_NAME and CIRCUIT_APPEARANCE.
@@ -64,15 +53,8 @@ public class CircuitAttributes extends AttributeSets.ArrayBacked {
     this.source = source;
     // no need to save name, it already appears as an attribute of circuit's outer xml node
     setToSave(CIRCUIT_NAME, false);
-    setAttr(CIRCUIT_NAME, name);
+    super.updateAttr(CIRCUIT_NAME, name); // don't call our override, we can't yet fire events
   }
-
-  // @Override
-  // protected void copyInto(AbstractAttributeSet destSet) {
-  //   super.copyInto(destSet);
-  //   CircuitAttributes other = (CircuitAttributes)destSet; 
-  //   other.source = this.source;
-  // }
 
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
@@ -89,32 +71,16 @@ public class CircuitAttributes extends AttributeSets.ArrayBacked {
         // FIXME - confirm... CircuitChange should have already assured that we
         // are within a suitable transaction, locking any parent circuits, etc.
         source.getAppearance().setDefaultAppearance(true);
-        // source.getLocker().execute(new GoToDefaultAppearanceTransaction());
       } else { // CUSTOM
         // Do nothing: 
         // - If user switched to CUSTOM in the properties panel, nothing changes yet,
         //   until user goes into appearance editor and makes actual changes.
         // - If Circuit made the switch to CUSTOM in response to appearance editor activity,
-        //   as signaled by a callback from appearance, then CircuitAppearance was already changed.
-        //   (FIXME: MAYBE? does CircuitAppearance ever call fire to relay changes without
-        //   updating its own state first?)
+        //   as signaled by a callback from appearance, then CircuitAppearance was already
+        //   changed, so no work to be done here.
       }    
     }
   }
-
-  // private class GoToDefaultAppearanceTransaction extends CircuitTransaction {
-  //   @Override
-  //   protected Map<Circuit, Integer> getAccessedCircuits() {
-  //     Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
-  //     for (Circuit supercirc : source.getCircuitsUsingThis())
-  //       accessMap.put(supercirc, READ_WRITE);
-  //     return accessMap;
-  //   }
-  //   @Override
-  //   protected void run(CircuitMutator mutator) {
-  //     source.getAppearance().setDefaultAppearance(true);
-  //   }
-  // }
 
   public static final Attribute<String> CIRCUIT_NAME = Attributes.forString(
       "circuit", S.getter("circuitName"));

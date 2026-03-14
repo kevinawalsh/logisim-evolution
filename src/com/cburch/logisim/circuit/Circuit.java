@@ -192,10 +192,6 @@ public class Circuit implements AttributeDefaultProvider {
   public void addCircuitWeakListener(Object owner, CircuitListener l) { listeners.add(owner, l); }
   public void removeCircuitWeakListener(Object owner, CircuitListener l) { listeners.remove(owner, l); }
 
-  // public void RecalcDefaultShape() {
-  //   appearance.recomputeDefaultAppearance();
-  // }
-
   public void autoHdlAnnotate(FPGAReport err) {
     ArrayList<Component> comps = new ArrayList<>();
     for (Component comp : this.getNonWires()) {
@@ -302,9 +298,6 @@ public class Circuit implements AttributeDefaultProvider {
     }
   }
 
-  //
-  // Graphics methods
-  //
   public void draw(ComponentDrawContext context, Collection<Component> hidden) {
     Graphics g = context.getGraphics();
     Graphics g_copy = g.create();

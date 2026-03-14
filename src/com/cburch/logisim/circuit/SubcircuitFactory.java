@@ -37,7 +37,6 @@ import java.awt.Composite;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JMenuItem;
@@ -48,8 +47,6 @@ import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.circuit.appear.CircuitAppearanceListener;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.AttributeEvent;
-import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -192,16 +189,14 @@ public class SubcircuitFactory extends InstanceFactory {
     //   - When FACING changes --> adjust instance ports, bounds, and label.
     //   - When LABEL_LOC changes --> adjust label.
     instance.addAttributeListener();
-    // 2. Changes to source circuit static attributes, i.e. values in CircuitAttributes.
-    //   - When CIRCUIT_NAME changes, or other things that can similarly impact
-    //     the subcircuit appearance --> adjust instance ports, bounds, and label.
-    source.getStaticAttributes().addAttributeWeakListener(instance, new SourceListener());
-    // 3. Changes to the source's CircuitAppearance
+    // 2. Changes to the source's CircuitAppearance
     //   - When appearance changes --> adjust instance ports, bounds, and label.
     source.getAppearance().addCircuitAppearanceWeakListener(instance, new AppearanceListener(instance));
-    // Note: For #2 and #3, we are conservative... we don't carefully track
-    // whether a specific change to the appearance has any real impact on the
-    // layout of the ports or the bounds, instead we recalculate just in case.
+    // Note: For #2 we are conservative... we don't carefully track whether a
+    // specific change to the appearance has any real impact on the layout of
+    // the ports or the bounds, instead we recalculate just in case. Case #2
+    // also handles cases where source circuit attributes like CIRCUIT_NAME
+    // change, since those will trigger appearance change events.
 
     computePortsBoundsAndLabel(instance);
   }
@@ -217,35 +212,13 @@ public class SubcircuitFactory extends InstanceFactory {
     }
   }
 
-  // Listener case #2 -- this may not be needed at all?
-  private class SourceListener implements AttributeListener {
-    public void attributeListChanged(AttributeEvent e) { }
-    public void attributeValueChanged(AttributeEvent e) {
-      @SuppressWarnings("unchecked")
-      Object attr = e.getAttribute();
-      if (attr == CircuitAttributes.CIRCUIT_NAME
-          || attr == CircuitAttributes.CIRCUIT_REVISION
-          || attr == CircuitAttributes.CIRCUIT_REVISION_FACING_ATTR // ?
-          || attr == CircuitAttributes.CIRCUIT_REVISION_FONT_ATTR // ?
-          || attr == CircuitAttributes.CIRCUIT_APPEARANCE) {
-        // FIXME: Is CIRCUIT_APPEARANCE sufficient?
-        // FIXME: This can all happen once, in the circuit... does not need
-        // to be per-instance, right?!?
-        // Debug.trace("SubcircuitFactory.instanceAttributeChanged() with static attr " + attr);
-        // CircuitTransaction xn = new ChangeAppearanceTransaction();
-        // source.getLocker().execute(xn); --> source.getAppearance().recomputeDefaultAppearance();
-      }
-    }
-  }
-
-  // Listener case #3
+  // Listener case #2
   private class AppearanceListener implements CircuitAppearanceListener {
     Instance subcircInstance;
     AppearanceListener(Instance subcircInstance) {
       this.subcircInstance = subcircInstance;
     }
     public void circuitAppearanceChanged(Circuit circuit) {
-      // TODO: wrap this in a suitable transaction?
       computePortsBoundsAndLabel(subcircInstance);
       subcircInstance.fireInvalidated();
     }
@@ -397,7 +370,7 @@ public class SubcircuitFactory extends InstanceFactory {
 
   private void paintBase(InstancePainter painter, Graphics2D g) {
     SubcircuitAttributes attrs = (SubcircuitAttributes) painter.getAttributeSet();
-    Direction facing = attrs.getFacing();
+    Direction facing = attrs.getValue(StdAttr.FACING);
     Direction defaultFacing = source.getAppearance().getFacing();
     Location loc = painter.getLocation();
     g.translate(loc.getX(), loc.getY());
