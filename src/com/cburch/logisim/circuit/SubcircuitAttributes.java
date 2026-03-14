@@ -132,12 +132,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  protected void copyInto(AbstractAttributeSet dest) {
-    SubcircuitAttributes other = (SubcircuitAttributes) dest;
-    // other.subcircInstance = null;
-    // other.listener = null;
-    Debug.trace("huh? didn't copy attributes?");
-  }
+  protected void copyInto(AbstractAttributeSet dest) { }
 
   @Override
   public List<Attribute<?>> getAttributes() {

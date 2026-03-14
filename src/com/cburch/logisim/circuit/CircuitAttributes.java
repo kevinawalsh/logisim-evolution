@@ -67,12 +67,21 @@ public class CircuitAttributes extends AttributeSets.ArrayBacked {
     setAttr(CIRCUIT_NAME, name);
   }
 
+  // @Override
+  // protected void copyInto(AbstractAttributeSet destSet) {
+  //   super.copyInto(destSet);
+  //   CircuitAttributes other = (CircuitAttributes)destSet; 
+  //   other.source = this.source;
+  // }
+
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     super.updateAttr(attr, value);
     if (attr == CIRCUIT_NAME) {
       // When the name changes, we fire CircuitListener.circuitChanged().
       source.fireEvent(CircuitEvent.ACTION_SET_NAME, value);
+      // Also update the appearance (if it uses a default that shows the label)
+      source.getAppearance().recomputeDefaultAppearance();
     } else if (attr == CIRCUIT_APPEARANCE) {
       // If the appearance just changeed to a default (computed, non-custom)
       // style, recalculate the shape now.

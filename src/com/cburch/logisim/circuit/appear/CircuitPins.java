@@ -56,8 +56,10 @@ public class CircuitPins {
 
     public void attributeValueChanged(AttributeEvent e) {
       Attribute<?> attr = e.getAttribute();
-      if (attr == StdAttr.FACING || attr == StdAttr.LABEL
-          || attr == Pin.ATTR_TYPE) {
+      // NOTE: This list of attributes here which could affect the appearance ports
+      // and layout must be consistent with the similar list in CircuitChange which ensures affected
+      // circuits are locked.
+      if (attr == StdAttr.FACING || attr == StdAttr.LABEL || attr == Pin.ATTR_TYPE) {
         appearanceManager.updatePorts();
       }
     }

@@ -167,10 +167,15 @@ class CircuitChange {
       }
       return false;
     case SET:
+      // NOTE: The list of attributes in appear/CircuitPins which could affect the
+      // appearance ports and layout must be consistent with the list here, which
+      // ensures affected circuits are locked.
       return comp.getFactory() instanceof Pin
-          && (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE || attr == StdAttr.LABEL); // FIXME: also label, b/c that
-                                                               // affects appearance? and pull
-                                                               // options?
+          && (attr == StdAttr.WIDTH   // WIDTH also needed b/c behavior of ports changes, even though appearance is the same
+              || attr == Pin.ATTR_TYPE
+              || attr == StdAttr.LABEL
+              || attr == StdAttr.FACING
+              /* || attr == StdAttr.BEHAVIOR*/); // behavior doesn't affect parent?
     case SET_FOR_CIRCUIT:
       return attr == CircuitAttributes.CIRCUIT_APPEARANCE
           || attr == CircuitAttributes.CIRCUIT_NAME

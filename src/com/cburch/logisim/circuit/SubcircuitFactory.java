@@ -245,6 +245,7 @@ public class SubcircuitFactory extends InstanceFactory {
       this.subcircInstance = subcircInstance;
     }
     public void circuitAppearanceChanged(Circuit circuit) {
+      // TODO: wrap this in a suitable transaction?
       computePortsBoundsAndLabel(subcircInstance);
       subcircInstance.fireInvalidated();
     }
