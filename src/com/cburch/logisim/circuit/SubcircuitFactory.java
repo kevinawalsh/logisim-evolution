@@ -46,7 +46,10 @@ import javax.swing.JPopupMenu;
 import com.bfh.logisim.hdlgenerator.CircuitHDLGenerator;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.circuit.appear.CircuitAppearanceListener;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeEvent;
+import com.cburch.logisim.data.AttributeListener;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
@@ -120,7 +123,7 @@ public class SubcircuitFactory extends InstanceFactory {
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC));
   }
 
-  void computePorts(Instance instance) {
+  void computePortsBoundsAndLabel(Instance instance) {
     Direction facing = instance.getAttributeValue(StdAttr.FACING);
     Map<Location, Instance> portLocs =
         source.getAppearance().getPortOffsets(facing);
@@ -142,8 +145,7 @@ public class SubcircuitFactory extends InstanceFactory {
       }
     }
 
-    CircuitAttributes attrs =
-        (CircuitAttributes)instance.getAttributeSet();
+    SubcircuitAttributes attrs = (SubcircuitAttributes)instance.getAttributeSet();
     attrs.setPinInstances(pins);
     instance.setPorts(ports);
     instance.recomputeBounds();
@@ -177,18 +179,75 @@ public class SubcircuitFactory extends InstanceFactory {
     instance.setTextField(StdAttr.LABEL, StdAttr.LABEL_FONT, x, y, ha, va);
   }
 
-  //
-  // methods for configuring instances
-  //
+  @Override
+  public AttributeSet createAttributeSet() {
+    return new SubcircuitAttributes(source);
+  }
+
   @Override
   public void configureNewInstance(Instance instance) {
-    CircuitAttributes attrs =
-        (CircuitAttributes)instance.getAttributeSet();
-    attrs.setSubcircuit(instance);
 
+    // For each Instance we create, we add listeners to respond to:
+    // 1. Changes to instance attributes, i.e. values in SubcircuitAttributes.
+    //   - When FACING changes --> adjust instance ports, bounds, and label.
+    //   - When LABEL_LOC changes --> adjust label.
     instance.addAttributeListener();
-    computePorts(instance);
-    // configureLabel(instance); already done in computePorts
+    // 2. Changes to source circuit static attributes, i.e. values in CircuitAttributes.
+    //   - When CIRCUIT_NAME changes, or other things that can similarly impact
+    //     the subcircuit appearance --> adjust instance ports, bounds, and label.
+    source.getStaticAttributes().addAttributeWeakListener(instance, new SourceListener());
+    // 3. Changes to the source's CircuitAppearance
+    //   - When appearance changes --> adjust instance ports, bounds, and label.
+    source.getAppearance().addCircuitAppearanceWeakListener(instance, new AppearanceListener(instance));
+    // Note: For #2 and #3, we are conservative... we don't carefully track
+    // whether a specific change to the appearance has any real impact on the
+    // layout of the ports or the bounds, instead we recalculate just in case.
+
+    computePortsBoundsAndLabel(instance);
+  }
+
+  // Listener case #1
+  @Override
+  public void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
+    if (attr == StdAttr.FACING) {
+      Debug.printf(0, "SubcircuitFactory.instanceAttributeChanged(FACING) --> computePortsBoundsAndLabel(instance)\n");
+      computePortsBoundsAndLabel(instance);
+    } else if (attr == StdAttr.LABEL_LOC) {
+      configureLabel(instance);
+    }
+  }
+
+  // Listener case #2 -- this may not be needed at all?
+  private class SourceListener implements AttributeListener {
+    public void attributeListChanged(AttributeEvent e) { }
+    public void attributeValueChanged(AttributeEvent e) {
+      @SuppressWarnings("unchecked")
+      Object attr = e.getAttribute();
+      if (attr == CircuitAttributes.CIRCUIT_NAME
+          || attr == CircuitAttributes.CIRCUIT_REVISION
+          || attr == CircuitAttributes.CIRCUIT_REVISION_FACING_ATTR // ?
+          || attr == CircuitAttributes.CIRCUIT_REVISION_FONT_ATTR // ?
+          || attr == CircuitAttributes.CIRCUIT_APPEARANCE) {
+        // FIXME: Is CIRCUIT_APPEARANCE sufficient?
+        // FIXME: This can all happen once, in the circuit... does not need
+        // to be per-instance, right?!?
+        // Debug.trace("SubcircuitFactory.instanceAttributeChanged() with static attr " + attr);
+        // CircuitTransaction xn = new ChangeAppearanceTransaction();
+        // source.getLocker().execute(xn); --> source.getAppearance().recomputeDefaultAppearance();
+      }
+    }
+  }
+
+  // Listener case #3
+  private class AppearanceListener implements CircuitAppearanceListener {
+    Instance subcircInstance;
+    AppearanceListener(Instance subcircInstance) {
+      this.subcircInstance = subcircInstance;
+    }
+    public void circuitAppearanceChanged(Circuit circuit) {
+      computePortsBoundsAndLabel(subcircInstance);
+      subcircInstance.fireInvalidated();
+    }
   }
 
   /**
@@ -214,32 +273,28 @@ public class SubcircuitFactory extends InstanceFactory {
     }
   }
 
-  @Override
-  public AttributeSet createAttributeSet() {
-    return new CircuitAttributes(source);
-  }
-
-  private void drawCircuitLabel(InstancePainter painter, Bounds bds,
+  private void drawCircuitRevisionLabel(InstancePainter painter, Bounds bds,
       Direction facing, Direction defaultFacing) {
     AttributeSet staticAttrs = source.getStaticAttributes();
-    String label =
-        staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION);
-    if (label != null && !label.equals("")) {
+    String revlabel = staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION);
+    // FIXME: most of this code is just drawing a multi-line string, which
+    // probably can be done using GraphicsUtil much more simply.
+    if (revlabel != null && !revlabel.equals("")) {
       Direction up =
           staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION_FACING_ATTR);
       Font font =
           staticAttrs.getValue(CircuitAttributes.CIRCUIT_REVISION_FONT_ATTR);
 
-      int back = label.indexOf('\\');
+      int back = revlabel.indexOf('\\');
       int lines = 1;
       boolean backs = false;
-      while (back >= 0 && back <= label.length() - 2) {
-        char c = label.charAt(back + 1);
+      while (back >= 0 && back <= revlabel.length() - 2) {
+        char c = revlabel.charAt(back + 1);
         if (c == 'n')
           lines++;
         else if (c == '\\')
           backs = true;
-        back = label.indexOf('\\', back + 2);
+        back = revlabel.indexOf('\\', back + 2);
       }
 
       int x = bds.getX() + bds.getWidth() / 2;
@@ -254,30 +309,30 @@ public class SubcircuitFactory extends InstanceFactory {
         }
         g.setFont(font);
         if (lines == 1 && !backs) {
-          GraphicsUtil.drawCenteredText(g, label, x, y);
+          GraphicsUtil.drawCenteredText(g, revlabel, x, y);
         } else {
           FontMetrics fm = g.getFontMetrics();
           int height = fm.getHeight();
           y = y - (height * lines - fm.getLeading()) / 2 + fm.getAscent();
-          back = label.indexOf('\\');
-          while (back >= 0 && back <= label.length() - 2) {
-            char c = label.charAt(back + 1);
+          back = revlabel.indexOf('\\');
+          while (back >= 0 && back <= revlabel.length() - 2) {
+            char c = revlabel.charAt(back + 1);
             if (c == 'n') {
-              String line = label.substring(0, back);
+              String line = revlabel.substring(0, back);
               GraphicsUtil.drawText(g, line, x, y,
                   GraphicsUtil.H_CENTER, GraphicsUtil.V_BASELINE);
               y += height;
-              label = label.substring(back + 2);
-              back = label.indexOf('\\');
+              revlabel = revlabel.substring(back + 2);
+              back = revlabel.indexOf('\\');
             } else if (c == '\\') {
-              label = label.substring(0, back)
-                + label.substring(back + 1);
-              back = label.indexOf('\\', back + 1);
+              revlabel = revlabel.substring(0, back)
+                + revlabel.substring(back + 1);
+              back = revlabel.indexOf('\\', back + 1);
             } else {
-              back = label.indexOf('\\', back + 2);
+              back = revlabel.indexOf('\\', back + 2);
             }
           }
-          GraphicsUtil.drawText(g, label, x, y, GraphicsUtil.H_CENTER,
+          GraphicsUtil.drawText(g, revlabel, x, y, GraphicsUtil.H_CENTER,
               GraphicsUtil.V_BASELINE);
         }
       } finally {
@@ -339,44 +394,14 @@ public class SubcircuitFactory extends InstanceFactory {
     return s;
   }
 
-  @Override
-  public void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    if (attr == StdAttr.FACING) {
-      Debug.printf(0, "SubcircuitFactory.instanceAttributeChanged(FACING) --> computePorts(instance)\n");
-      computePorts(instance);
-    } else if (attr == StdAttr.LABEL_LOC) {
-      configureLabel(instance);
-    } else if (attr == CircuitAttributes.CIRCUIT_APPEARANCE) {
-      Debug.trace("SubcircuitFactory.instanceAttributeChanged() with static attr " + attr);
-      CircuitTransaction xn = new ChangeAppearanceTransaction();
-      source.getLocker().execute(xn);
-    }
-  }
-
-  private class ChangeAppearanceTransaction extends CircuitTransaction {
-    ChangeAppearanceTransaction() { }
-    @Override
-    protected Map<Circuit, Integer> getAccessedCircuits() {
-      Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
-      for (Circuit supercirc : source.getCircuitsUsingThis()) {
-        accessMap.put(supercirc, READ_WRITE);
-      }
-      return accessMap;
-    }
-    @Override
-    protected void run(CircuitMutator mutator) {
-      source.getAppearance().recomputeDefaultAppearance();
-    }
-  }
-
   private void paintBase(InstancePainter painter, Graphics2D g) {
-    CircuitAttributes attrs = (CircuitAttributes) painter.getAttributeSet();
+    SubcircuitAttributes attrs = (SubcircuitAttributes) painter.getAttributeSet();
     Direction facing = attrs.getFacing();
     Direction defaultFacing = source.getAppearance().getFacing();
     Location loc = painter.getLocation();
     g.translate(loc.getX(), loc.getY());
     source.getAppearance().paintSubcircuit(painter, g, facing);
-    drawCircuitLabel(painter, getOffsetBounds(attrs), facing, defaultFacing);
+    drawCircuitRevisionLabel(painter, getOffsetBounds(attrs), facing, defaultFacing);
     g.translate(-loc.getX(), -loc.getY());
     painter.drawLabel();
   }
@@ -409,9 +434,29 @@ public class SubcircuitFactory extends InstanceFactory {
   public void propagate(InstanceState stateInContext) {
     CircuitState subState = getSubstate(stateInContext);
 
-    CircuitAttributes attrs =
-        (CircuitAttributes)stateInContext.getAttributeSet();
+
+    SubcircuitAttributes attrs = (SubcircuitAttributes)stateInContext.getAttributeSet();
     Instance[] pins = attrs.getPinInstances();
+
+    // FIXME: why can't we just use the pins from CircuitAppearance, instead of
+    // keeping a separate copy stashed away in SubcircuitAttributes?
+    // BEGIN SANITY CHECK
+    Direction facing = stateInContext.getInstance().getAttributeValue(StdAttr.FACING);
+    Map<Location, Instance> portLocs = source.getAppearance().getPortOffsets(facing);
+    Instance[] pins2 = new Instance[portLocs.size()];
+    int j = -1;
+    for (Map.Entry<Location, Instance> portLoc : portLocs.entrySet()) {
+      j++;
+      pins2[j] = portLoc.getValue();
+    }
+    if (pins2.length != pins.length) {
+      System.out.printf("pin size mismatch: %d vs %d\n", pins2.length, pins.length);
+    } else for (int i = 0; i < pins.length; i++) {
+      if (pins2[i] != pins[i])
+        System.out.printf("pin[%d] mismatch: %s vs %s\n", i, pins2[i], pins[i]);
+    }
+    // END OF SANITY CHECK
+
     for (int i = 0; i < pins.length; i++) {
       Instance pin = pins[i];
       InstanceState pinState = subState.dangerouslyGetTransientInstanceState(pin);

@@ -61,7 +61,7 @@ public class CircuitAppearance extends Drawing {
     public void modelChanged(CanvasModelEvent event) {
       if (!suppressRecompute) {
         setDefaultAppearance(false);
-        fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
+        fireCircuitAppearanceChanged();
       }
     }
   }
@@ -158,12 +158,9 @@ public class CircuitAppearance extends Drawing {
     }
   }
 
-  void fireCircuitAppearanceChanged(int affected) {
-    CircuitAppearanceEvent event;
-    event = new CircuitAppearanceEvent(circuit, affected);
-    for (CircuitAppearanceListener listener : listeners) {
-      listener.circuitAppearanceChanged(event);
-    }
+  private void fireCircuitAppearanceChanged() {
+    for (CircuitAppearanceListener listener : listeners)
+      listener.circuitAppearanceChanged(circuit);
   }
 
   public Bounds getAbsoluteBounds() {
@@ -307,7 +304,7 @@ public class CircuitAppearance extends Drawing {
     if (isDefault) {
       recomputeDefaultAppearance();
     } else {
-      fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
+      fireCircuitAppearanceChanged();
     }
   }
 
@@ -362,7 +359,7 @@ public class CircuitAppearance extends Drawing {
     } finally {
       suppressRecompute = oldSuppress;
     }
-    fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
+    fireCircuitAppearanceChanged();
   }
 
   void replaceAutomatically(List<AppearancePort> removes,
@@ -377,7 +374,7 @@ public class CircuitAppearance extends Drawing {
     } finally {
       suppressRecompute = oldSuppress;
     }
-    fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
+    fireCircuitAppearanceChanged();
   }
 
   public void setDefaultAppearance(boolean value) {
@@ -424,7 +421,7 @@ public class CircuitAppearance extends Drawing {
     } finally {
       suppressRecompute = false;
     }
-    fireCircuitAppearanceChanged(CircuitAppearanceEvent.ALL_TYPES);
+    fireCircuitAppearanceChanged();
   }
 
   @Override

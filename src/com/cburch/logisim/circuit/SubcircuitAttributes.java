@@ -57,14 +57,19 @@ import com.cburch.logisim.util.Debug;
 // to the circuit itself, like CIRCUIT_NAME and CIRCUIT_APPEARANCE.
 public class SubcircuitAttributes extends AbstractAttributeSet {
 
-  // // For each subcircuit instance, one of these listens for changes both to the
-  // // underlying circuit's static attributes and to the underlying circuit's
-  // // appearance.
-  // private class MyListener
+  // For each Instance created by SubcircuitFactory, the corresponding
+  // SubcircuitAttributes listens for changes both to the underlying source
+  // circuit's static attributes, and to the underlying source circuit's
+  // appearance. This is needed because when the source's appearance changes,
+  // REVISION_LABEL changes, etc., each Instance needs to adjust it's port
+  // locations, bounds, etc., to match the (potentially) new apearance. We
+  // call into SubcircuitFactory to do the adjustment.
+  //
+  // private class SourceListener
   //   implements AttributeListener, CircuitAppearanceListener {
 
   //   private Circuit source;
-  //   private MyListener(Circuit s) { source = s; }
+  //   private SourceListener(Circuit s) { source = s; }
 
   //   public void attributeListChanged(AttributeEvent e) { }
 
@@ -73,7 +78,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
   //     Attribute<Object> a = (Attribute<Object>) e.getAttribute();
   //     for (Attribute<?> s : STATIC_ATTRS)
   //       if (s == a)
-  //         Debug.printf(0, "CircuitAttributes.MyListener mis-relaying static attr %s\n", a);
+  //         Debug.printf(0, "old:CircuitAttributes.SourceListener mis-relaying static attr %s\n", a);
   //     fireAttributeValueChanged(a, e.getValue());
   //   }
 
@@ -81,19 +86,19 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
   //   // subcircuit factory to recompute the ports and bounds for this instance,
   //   // and we invalidate the instance so it is redrawn.
   //   public void circuitAppearanceChanged(CircuitAppearanceEvent e) {
-  //     Debug.printf(0, "CircuitAttributes.MyListener.circuitAppearanceChanged()\n");
+  //     Debug.printf(0, "old:CircuitAttributes.SourceListener.circuitAppearanceChanged()\n");
   //     SubcircuitFactory factory;
   //     factory = (SubcircuitFactory) subcircInstance.getFactory();
   //     if (e.isConcerning(CircuitAppearanceEvent.PORTS)) {
-  //       Debug.printf(0, "CircuitAttributes.MyListener ... --> computePorts(instance)\n");
+  //       Debug.printf(0, "old:CircuitAttributes.SourceListener ... --> computePorts(instance)\n");
   //       factory.computePorts(subcircInstance);
   //     }
   //     if (e.isConcerning(CircuitAppearanceEvent.BOUNDS)) {
-  //       Debug.printf(0, "CircuitAttributes.MyListener ... --> recomputeBounds()\n");
+  //       Debug.printf(0, "old:CircuitAttributes.SourceListener ... --> recomputeBounds()\n");
   //       subcircInstance.recomputeBounds();
   //     }
   //     subcircInstance.fireInvalidated();
-  //     // FIXME: Also reset the custom flag... why here?
+  //     // old:FIXME: Also reset the custom flag... why here?
   //     if (source != null & !source.getAppearance().isDefaultAppearance()) {
   //       Debug.printf(0, "why here?\n");
   //       source.getStaticAttributes().setAttr(CIRCUIT_APPEARANCE, APPEAR_CUSTOM);
@@ -107,17 +112,17 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
         StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
       });
 
-  private Circuit source;
+  // private Circuit source;
   // private Instance subcircInstance;
   private Direction facing;
   private String label;
   private Object labelLocation;
   private Font labelFont;
-  // private MyListener listener;
+  // private SourceListener listener;
   private Instance[] pinInstances;
 
-  public CircuitAttributes(Circuit source) {
-    this.source = source;
+  public SubcircuitAttributes(Circuit source) {
+    // this.source = source;
     // subcircInstance = null;
     facing = source.getAppearance().getFacing();
     label = "";
@@ -128,7 +133,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
 
   @Override
   protected void copyInto(AbstractAttributeSet dest) {
-    CircuitAttributes other = (CircuitAttributes) dest;
+    SubcircuitAttributes other = (SubcircuitAttributes) dest;
     // other.subcircInstance = null;
     // other.listener = null;
     Debug.trace("huh? didn't copy attributes?");
@@ -157,7 +162,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
     else
       return null;
     // else {
-    //   Debug.trace("CircuitAttributes.getValue() with static attr " + attr);
+    //   Debug.trace("old:CircuitAttributes.getValue() with static attr " + attr);
     //   return source.getStaticAttributes().getValue(attr);
     // }
   }
@@ -167,7 +172,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
   //   Attribute<?>[] statics = STATIC_ATTRS;
   //   for (int i = 0; i < statics.length; i++) {
   //     if (statics[i] == attr) {
-  //       Debug.trace("CircuitAttributes.isToSave() with static attr " + attr);
+  //       Debug.trace("old:CircuitAttributes.isToSave() with static attr " + attr);
   //       return false;
   //     }
   //   }
@@ -185,7 +190,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
   // void setSubcircuit(Instance value) {
   //   subcircInstance = value;
   //   if (subcircInstance != null && listener == null) {
-  //     listener = new MyListener(source);
+  //     listener = new SourceListener(source);
   //     source.getStaticAttributes().addAttributeWeakListener(null, listener);
   //     source.getAppearance().addCircuitAppearanceWeakListener(null, listener);
   //   }
@@ -196,7 +201,7 @@ public class SubcircuitAttributes extends AbstractAttributeSet {
     if (attr == StdAttr.FACING) {
       facing = (Direction) value;
       // if (subcircInstance != null) {
-      //   Debug.printf(0, "CircuitAttributes.updateAttr(FACING) --> recomputeBounds()\n");
+      //   Debug.printf(0, "old:CircuitAttributes.updateAttr(FACING) --> recomputeBounds()\n");
       //   subcircInstance.recomputeBounds();
       // }
     } else if (attr == StdAttr.LABEL) {

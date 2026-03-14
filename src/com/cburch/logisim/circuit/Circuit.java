@@ -175,6 +175,14 @@ public class Circuit implements AttributeDefaultProvider {
     locker = new CircuitLocker();
     circuitsUsingThis = new WeakHashMap<Component, Circuit>();
     logiFile = file;
+
+    appearance.addCircuitAppearanceWeakListener(this, circ -> {
+      // if appearance editor was used to change the appearance, make
+      // sure we are set to APPEARANCE_CUSTOM
+      if (!appearance.isDefaultAppearance())
+        staticAttrs.setAttr(CircuitAttributes.CIRCUIT_APPEARANCE,
+            CircuitAttributes.APPEAR_CUSTOM);
+    });
   }
 
   public LogisimFile getLogisimFile() {
@@ -184,11 +192,9 @@ public class Circuit implements AttributeDefaultProvider {
   public void addCircuitWeakListener(Object owner, CircuitListener l) { listeners.add(owner, l); }
   public void removeCircuitWeakListener(Object owner, CircuitListener l) { listeners.remove(owner, l); }
 
-  public void RecalcDefaultShape() {
-    if (appearance.isDefaultAppearance()) {
-      appearance.recomputeDefaultAppearance();
-    }
-  }
+  // public void RecalcDefaultShape() {
+  //   appearance.recomputeDefaultAppearance();
+  // }
 
   public void autoHdlAnnotate(FPGAReport err) {
     ArrayList<Component> comps = new ArrayList<>();

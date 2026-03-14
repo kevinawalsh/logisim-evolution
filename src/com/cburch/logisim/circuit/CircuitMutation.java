@@ -76,7 +76,7 @@ public final class CircuitMutation extends CircuitTransaction {
     HashMap<Circuit, Integer> accessMap = new HashMap<>();
     HashSet<Object> supercircsDone = new HashSet<>();
     // HashSet<VhdlEntity> vhdlDone = new HashSet<>();
-    HashSet<ComponentFactory> siblingsDone = new HashSet<>();
+    // HashSet<ComponentFactory> siblingsDone = new HashSet<>();
     for (CircuitChange change : changes) {
       Circuit circ = change.getCircuit();
       VhdlContent vhdl = change.getVhdl();
@@ -96,30 +96,30 @@ public final class CircuitMutation extends CircuitTransaction {
           accessMap.put(supercirc, READ_WRITE);
       }
 
-      if (change.concernsSiblingComponents()) {
-        System.out.println("processing change that concerns siblings.. nvm");
-        /*ComponentFactory factory = change.getComponent().getFactory();
-        boolean isFirstForSibling = siblingsDone.add(factory);
-        if (isFirstForSibling) {
-          if (factory instanceof SubcircuitFactory) {
-            Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
-            boolean isFirstForCirc = supercircsDone.add(sibling);
-            if (isFirstForCirc) {
-              for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
-                accessMap.put(supercirc, READ_WRITE);
-              }
-            }
-          } else if (factory instanceof VhdlEntity) {
-            VhdlEntity sibling = (VhdlEntity)factory;
-            boolean isFirstForVhdl = vhdlDone.add(sibling);
-            if (isFirstForVhdl) {
-              for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
-                accessMap.put(supercirc, READ_WRITE);
-              }
-            }
-          }
-        } */
-      }
+      // if (change.concernsSiblingComponents()) {
+      //   System.out.println("processing change that concerns siblings.. nvm");
+      //   ComponentFactory factory = change.getComponent().getFactory();
+      //   boolean isFirstForSibling = siblingsDone.add(factory);
+      //   if (isFirstForSibling) {
+      //     if (factory instanceof SubcircuitFactory) {
+      //       Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
+      //       boolean isFirstForCirc = supercircsDone.add(sibling);
+      //       if (isFirstForCirc) {
+      //         for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
+      //           accessMap.put(supercirc, READ_WRITE);
+      //         }
+      //       }
+      //     } else if (factory instanceof VhdlEntity) {
+      //       VhdlEntity sibling = (VhdlEntity)factory;
+      //       boolean isFirstForVhdl = vhdlDone.add(sibling);
+      //       if (isFirstForVhdl) {
+      //         for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
+      //           accessMap.put(supercirc, READ_WRITE);
+      //         }
+      //       }
+      //     }
+      //   }
+      // }
     }
     return accessMap;
   }

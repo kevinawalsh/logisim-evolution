@@ -80,44 +80,44 @@ public class ToolAttributeAction extends Action {
   @Override
   public void doIt(Project proj) {
     System.out.println("doIt");
-    if (affectsAppearance()) {
-      ActionTransaction xn = new ActionTransaction(true);
-      xn.execute();
-    } else {
+    // if (affectsAppearance()) {
+    //   ActionTransaction xn = new ActionTransaction(true);
+    //   xn.execute();
+    // } else {
       execute(true);
-    }
+    // }
   }
 
   @Override
   public void undo(Project proj) {
     System.out.println("undo");
-    if (affectsAppearance()) {
-      System.out.println("wrong direction??");
-      ActionTransaction xn = new ActionTransaction(true); // FIXME: false??
-      xn.execute();
-    } else {
+    // if (affectsAppearance()) {
+    //   System.out.println("wrong direction??");
+    //   ActionTransaction xn = new ActionTransaction(true); // FIXME: false??
+    //   xn.execute();
+    // } else {
       execute(false);
-    }
+    // }
   }
 
-  boolean affectsAppearance() {
-    AttributeSet attrs = config.getEvent().getAttributeSet();
-    if (attrs instanceof FactoryAttributes) {
-      ComponentFactory factory = ((FactoryAttributes)attrs).getFactory();
-      if (factory instanceof SubcircuitFactory) {
-        for (Attribute<?> attr : config.getAttributeValues().keySet()) {
-          if (attr == CircuitAttributes.APPEARANCE_ATTR)
-            return true;
-        }
-      } else if (factory instanceof VhdlEntity) {
-        for (Attribute<?> attr : config.getAttributeValues().keySet()) {
-          if (attr == StdAttr.APPEARANCE)
-            return true;
-        }
-      }
-    }
-    return false;
-  }
+  // boolean affectsAppearance() {
+  //   AttributeSet attrs = config.getEvent().getAttributeSet();
+  //   if (attrs instanceof FactoryAttributes) {
+  //     ComponentFactory factory = ((FactoryAttributes)attrs).getFactory();
+  //     if (factory instanceof SubcircuitFactory) {
+  //       for (Attribute<?> attr : config.getAttributeValues().keySet()) {
+  //         if (attr == CircuitAttributes.CIRCUIT_APPEARANCE)
+  //           return true;
+  //       }
+  //     } else if (factory instanceof VhdlEntity) {
+  //       for (Attribute<?> attr : config.getAttributeValues().keySet()) {
+  //         if (attr == StdAttr.APPEARANCE)
+  //           return true;
+  //       }
+  //     }
+  //   }
+  //   return false;
+  // }
 
   private void execute(boolean forward) {
     if (forward) {
@@ -142,35 +142,35 @@ public class ToolAttributeAction extends Action {
     }
   }
 
-  private class ActionTransaction extends CircuitTransaction {
-    private boolean forward;
-    ActionTransaction(boolean forward) { this.forward = forward; }
+  // private class ActionTransaction extends CircuitTransaction {
+  //   private boolean forward;
+  //   ActionTransaction(boolean forward) { this.forward = forward; }
 
-    @Override
-    protected Map<Circuit, Integer> getAccessedCircuits() {
-      Map<Circuit, Integer> accessMap = new HashMap<>();
-      AttributeSet attrs = config.getEvent().getAttributeSet();
-      if (attrs instanceof FactoryAttributes) {
-        ComponentFactory factory = ((FactoryAttributes)attrs).getFactory();
-        if (factory instanceof SubcircuitFactory) {
-          Circuit circuit = ((SubcircuitFactory)factory).getSubcircuit();
-          for (Circuit supercirc : circuit.getCircuitsUsingThis()) {
-            accessMap.put(supercirc, READ_WRITE);
-          }
-        } else if (factory instanceof VhdlEntity) {
-          VhdlEntity vhdl = (VhdlEntity)factory;
-          for (Circuit supercirc : vhdl.getCircuitsUsingThis()) {
-            accessMap.put(supercirc, READ_WRITE);
-          }
-        }
-      }
-      return accessMap;
-    }
+  //   @Override
+  //   protected Map<Circuit, Integer> getAccessedCircuits() {
+  //     Map<Circuit, Integer> accessMap = new HashMap<>();
+  //     AttributeSet attrs = config.getEvent().getAttributeSet();
+  //     if (attrs instanceof FactoryAttributes) {
+  //       ComponentFactory factory = ((FactoryAttributes)attrs).getFactory();
+  //       if (factory instanceof SubcircuitFactory) {
+  //         Circuit circuit = ((SubcircuitFactory)factory).getSubcircuit();
+  //         for (Circuit supercirc : circuit.getCircuitsUsingThis()) {
+  //           accessMap.put(supercirc, READ_WRITE);
+  //         }
+  //       } else if (factory instanceof VhdlEntity) {
+  //         VhdlEntity vhdl = (VhdlEntity)factory;
+  //         for (Circuit supercirc : vhdl.getCircuitsUsingThis()) {
+  //           accessMap.put(supercirc, READ_WRITE);
+  //         }
+  //       }
+  //     }
+  //     return accessMap;
+  //   }
 
-    @Override
-    protected void run(CircuitMutator mutator) {
-      ToolAttributeAction.this.execute(forward);
-    }
-  }
+  //   @Override
+  //   protected void run(CircuitMutator mutator) {
+  //     ToolAttributeAction.this.execute(forward);
+  //   }
+  // }
 
 }

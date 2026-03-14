@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.circuit.appear;
 
+import com.cburch.logisim.circuit.Circuit;
+
 public interface CircuitAppearanceListener {
-  public void circuitAppearanceChanged(CircuitAppearanceEvent event);
+  public void circuitAppearanceChanged(Circuit circuit);
 }

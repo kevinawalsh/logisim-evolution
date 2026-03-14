@@ -44,6 +44,7 @@ import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitAttributes;
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.circuit.SubcircuitAttributes;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
@@ -118,13 +119,13 @@ public class CircuitHDLGenerator extends HDLGenerator {
     // The NetlistComponent is embedded in some parent circuit, and the end
     // refers to the port ordering as seen from that parent. This matches the
     // ordering used by NetlistComponent, which uses the ordering defined by
-    // Component.getEnds(), which in turn comes from CircuitAttributes, which is
+    // Component.getEnds(), which in turn comes from SubcircuitAttributes, which is
     // based ultimately on the appearance and the sorting order of the pins
     // within the appearance (not on the canvas). Here we need to figure out
     // which Pin underlies that end, so that we can figure out which internal
     // net it belongs to. Forunately, SubcircuitFactory tucks the needed
     // correspondence away inside the circuit attributes.
-    CircuitAttributes attrs = (CircuitAttributes)comp.original.getAttributeSet();
+    SubcircuitAttributes attrs = (SubcircuitAttributes)comp.original.getAttributeSet();
     Component pin = attrs.getPinInstances()[end].getComponent();
     return getPortMappingForPin(pin);
   }
@@ -146,7 +147,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
 
   // For a given internal Pin, get the external end number.
 	private int getEndIndex(NetlistComponent comp, NetlistComponent pin) {
-    CircuitAttributes attrs = (CircuitAttributes)comp.original.getAttributeSet();
+    SubcircuitAttributes attrs = (SubcircuitAttributes)comp.original.getAttributeSet();
     Instance[] ports = attrs.getPinInstances();
     for (int i = 0; i < ports.length; i++)
       if (ports[i].getComponent() == pin.original)

@@ -59,7 +59,7 @@ public class CircuitAttributes extends AttributeSets.ArrayBacked {
 
   private final Circuit source;
 
-  public CircuitAttributes(Circuit source, Library lib, String name) {
+  public CircuitAttributes(Circuit source, String name) {
     super(STATIC_ATTRS, STATIC_DEFAULTS);
     this.source = source;
     // no need to save name, it already appears as an attribute of circuit's outer xml node
@@ -74,28 +74,38 @@ public class CircuitAttributes extends AttributeSets.ArrayBacked {
       // When the name changes, we fire CircuitListener.circuitChanged().
       source.fireEvent(CircuitEvent.ACTION_SET_NAME, value);
     } else if (attr == CIRCUIT_APPEARANCE) {
-      // When the appearance changes to a default (computed, non-custom)
-      // style, we recalculate the shape.
-      // FIXME/CONFIRM: this needs to be in a suitable transaction
+      // If the appearance just changeed to a default (computed, non-custom)
+      // style, recalculate the shape now.
       if (value == APPEAR_CLASSIC || value == APPEAR_FPGA) {
+        // FIXME - confirm... CircuitChange should have already assured that we
+        // are within a suitable transaction, locking any parent circuits, etc.
         source.getAppearance().setDefaultAppearance(true);
-        source.RecalcDefaultShape();
-      }
-      // FIXME: Need to trigger the transaction from the old code path...
-      //  appearance attr changes in static set
-      //   --> the old CircuitAttribute instance listeners (one for each instance),
-      //       catch this, and re-fire as if it was an instance attr change
-      //   --> the SubcircuitFactory, which is listening to each instance attr set,
-      //       gets invoked via SubcircuitFactory.instanceAttributeChanged()
-      //   --> that does the actual work of making a proper transaction to run
-      //       source.getAppearance().recomputeDefaultAppearance() [multiple times!!],
-      //       each of which triggers an AppearanceChangedEvent
-      //   --> each of which is caught by each of the old CircuitAttribute instance listeners
-      //       [n-squared behavior!!?!?], via circuitAppearanceChanged(), which
-      //       then call back into SubcircuitFactory to recompute the ports+bounds,
-      //       then the bounds again.
+        // source.getLocker().execute(new GoToDefaultAppearanceTransaction());
+      } else { // CUSTOM
+        // Do nothing: 
+        // - If user switched to CUSTOM in the properties panel, nothing changes yet,
+        //   until user goes into appearance editor and makes actual changes.
+        // - If Circuit made the switch to CUSTOM in response to appearance editor activity,
+        //   as signaled by a callback from appearance, then CircuitAppearance was already changed.
+        //   (FIXME: MAYBE? does CircuitAppearance ever call fire to relay changes without
+        //   updating its own state first?)
+      }    
     }
   }
+
+  // private class GoToDefaultAppearanceTransaction extends CircuitTransaction {
+  //   @Override
+  //   protected Map<Circuit, Integer> getAccessedCircuits() {
+  //     Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
+  //     for (Circuit supercirc : source.getCircuitsUsingThis())
+  //       accessMap.put(supercirc, READ_WRITE);
+  //     return accessMap;
+  //   }
+  //   @Override
+  //   protected void run(CircuitMutator mutator) {
+  //     source.getAppearance().setDefaultAppearance(true);
+  //   }
+  // }
 
   public static final Attribute<String> CIRCUIT_NAME = Attributes.forString(
       "circuit", S.getter("circuitName"));

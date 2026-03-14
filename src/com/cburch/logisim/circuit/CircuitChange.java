@@ -168,7 +168,7 @@ class CircuitChange {
       return false;
     case SET:
       return comp.getFactory() instanceof Pin
-          && (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE); // FIXME: also label, b/c that
+          && (attr == StdAttr.WIDTH || attr == Pin.ATTR_TYPE || attr == StdAttr.LABEL); // FIXME: also label, b/c that
                                                                // affects appearance? and pull
                                                                // options?
     case SET_FOR_CIRCUIT:
@@ -185,21 +185,21 @@ class CircuitChange {
     }
   }
 
-  // fixme: remove? never happens...?
-  boolean concernsSiblingComponents() {
-    switch (type) {
-    case SET:
-      if ( (comp.getFactory() instanceof SubcircuitFactory && attr == CircuitAttributes.CIRCUIT_APPEARANCE)
-          || (comp.getFactory() instanceof VhdlEntity && attr == StdAttr.APPEARANCE)) { 
-        System.out.println("yes, concerns sibling");
-        return true;
-      } else {
-        return false;
-      }
-    default:
-      return false;
-    }
-  }
+  // // FIXME: remove? never happens...?
+  // boolean concernsSiblingComponents() {
+  //   switch (type) {
+  //   case SET:
+  //     if ( (comp.getFactory() instanceof SubcircuitFactory && attr == CircuitAttributes.CIRCUIT_APPEARANCE)
+  //         || (comp.getFactory() instanceof VhdlEntity && attr == StdAttr.APPEARANCE)) { 
+  //       System.out.println("yes, concerns sibling");
+  //       return true;
+  //     } else {
+  //       return false;
+  //     }
+  //   default:
+  //     return false;
+  //   }
+  // }
 
   void execute(CircuitMutator mutator, ReplacementMap prevReplacements) {
     switch (type) {
