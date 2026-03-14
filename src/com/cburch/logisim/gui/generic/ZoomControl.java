@@ -95,7 +95,7 @@ public class ZoomControl extends JPanel {
     protected void paintComponent(Graphics g) {
       int width = getWidth();
       int height = getHeight();
-      g.setColor(state ? Color.BLACK : Color.GRAY);
+      g.setColor(state ? Color.BLACK : Color.LIGHT_GRAY);
       int xdim = (Math.min(width, 18) - 4) / 3 * 3 + 1;
       int ydim = (Math.min(height, 32) - 4) / 3 * 3 + 1;
       int xoff = (width - xdim) / 2;

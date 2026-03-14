@@ -70,6 +70,7 @@ public class GridPainter {
   private Listener listener;
   private ZoomModel zoomModel;
   private boolean showGrid;
+  private boolean disabledGrid;
   private int gridSize;
   private double zoomFactor;
   private Image gridImage;
@@ -80,6 +81,7 @@ public class GridPainter {
     this.destination = destination;
     support = new PropertyChangeSupport(this);
     showGrid = true;
+    disabledGrid = false;
     gridSize = 10;
     zoomFactor = 1.0;
     updateGridImage(gridSize, zoomFactor);
@@ -103,13 +105,13 @@ public class GridPainter {
   }
 
   public void paintGrid(Graphics g) {
+    if (!showGrid || disabledGrid)
+      return;
+
     Rectangle clip = g.getClipBounds();
     Component dest = destination;
     double zoom = zoomFactor;
     int size = gridSize;
-
-    if (!showGrid)
-      return;
 
     Image img = gridImage;
     if (img == null) {
@@ -173,6 +175,10 @@ public class GridPainter {
       showGrid = value;
       support.firePropertyChange(SHOW_GRID_PROPERTY, !value, value);
     }
+  }
+
+  public void setInhibitGrid(boolean value) {
+    disabledGrid = value;
   }
 
   private void changedZoomFactor(double value) {

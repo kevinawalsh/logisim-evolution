@@ -319,11 +319,17 @@ public final class PokeTool extends Tool {
 
   @Override
   public boolean isBuiltin() { return true; }
+  
+  @Override
+  public void select(Canvas canvas) {
+    canvas.getGridPainter().setInhibitGrid(true);
+  }
 
   @Override
   public void deselect(Canvas canvas) {
     removeCaret(true);
     canvas.setHighlightedWires(WireSet.EMPTY);
+    canvas.getGridPainter().setInhibitGrid(false);
   }
 
   @Override

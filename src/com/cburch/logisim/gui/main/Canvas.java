@@ -870,7 +870,7 @@ public class Canvas extends JPanel
     return viewport.errorMessage;
   }
 
-  GridPainter getGridPainter() {
+  public GridPainter getGridPainter() {
     return painter.getGridPainter();
   }
 
