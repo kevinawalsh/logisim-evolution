@@ -59,8 +59,6 @@ import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Selection;
 import com.cburch.logisim.gui.main.Selection.Event;
-import com.cburch.logisim.gui.main.SelectionActions;
-import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 
@@ -181,16 +179,6 @@ public final class EditTool extends Tool {
   @Override
   public String getDisplayName() {
     return S.get("editTool");
-  }
-
-  private Attribute<Direction> getFacingAttribute(Component comp) {
-    AttributeSet attrs = comp.getAttributeSet();
-    Object key = ComponentFactory.FACING_ATTRIBUTE_KEY;
-    Attribute<?> a = (Attribute<?>) comp.getFactory()
-        .getFeature(key, attrs);
-    @SuppressWarnings("unchecked")
-    Attribute<Direction> ret = (Attribute<Direction>) a;
-    return ret;
   }
 
   @Override

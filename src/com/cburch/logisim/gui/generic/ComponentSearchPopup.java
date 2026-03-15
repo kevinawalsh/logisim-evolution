@@ -56,10 +56,13 @@ import com.cburch.logisim.tools.AddTool;
 public class ComponentSearchPopup extends JPanel {
 
   // If search has n <= MAX_ITEMS, all n of them will be displayed in popop.
-  private static final int MAX_ITEMS = 10;
-  // Otherwise, the first TRUNCATE_ITEMS of them will be displayed, with
-  // a message saying "(k more results)" with k = n - TRUNCATE_ITEMS.
-  private static final int TRUNCATE_ITEMS = 6;
+  private static final int MAX_ITEMS = 20;
+  // Otherwise... something else.
+  // - maybe the first TRUNCATE_ITEMS of them will be displayed, with
+  //   a message saying "(k more results)" with k = n - TRUNCATE_ITEMS
+  // - or show a small arrow at bottom, and allow up/down arrows to scroll the list?
+  // - or just a "..."
+  private static final int TRUNCATE_ITEMS = 10;
 
   private static final Color BG_COLOR    = new Color(255, 255, 200);
   private static final Color BORDER_COLOR = Color.DARK_GRAY;
@@ -126,9 +129,12 @@ public class ComponentSearchPopup extends JPanel {
   /** Update the search text and matching results; reset selection if needed. */
   public void updateSearch(String text, List<AddTool> newMatches) {
     this.searchText = text;
-    this.matches = newMatches;
+    if (newMatches.size() <= MAX_ITEMS)
+      this.matches = newMatches;
+    else
+      this.matches = newMatches.subList(0, MAX_ITEMS); // FIXME
     if (selectedIndex >= matches.size())
-      selectedIndex = 0; // FIXME: select bottom-most item
+      selectedIndex = 0; // FIXME: select bottom-most item?
     updateSize();
     repaint();
   }

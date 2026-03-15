@@ -57,6 +57,7 @@ import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Selection.Event;
@@ -415,26 +416,18 @@ public final class SelectTool extends Tool {
         case KeyEvent.VK_UP:
           if (e.getModifiersEx() == 0)
             attemptReface(canvas, Direction.NORTH, e);
-          else
-            select.keyPressed(canvas, e);
           break;
         case KeyEvent.VK_DOWN:
           if (e.getModifiersEx() == 0)
             attemptReface(canvas, Direction.SOUTH, e);
-          else
-            select.keyPressed(canvas, e);
           break;
         case KeyEvent.VK_LEFT:
           if (e.getModifiersEx() == 0)
             attemptReface(canvas, Direction.WEST, e);
-          else
-            select.keyPressed(canvas, e);
           break;
         case KeyEvent.VK_RIGHT:
           if (e.getModifiersEx() == 0)
             attemptReface(canvas, Direction.EAST, e);
-          else
-            select.keyPressed(canvas, e);
           break;
         default:
           processKeyEvent(canvas, e, KeyConfigurationEvent.KEY_PRESSED);
@@ -775,6 +768,16 @@ public final class SelectTool extends Tool {
     } else {
       return !dflt;
     }
+  }
+
+  private Attribute<Direction> getFacingAttribute(Component comp) {
+    AttributeSet attrs = comp.getAttributeSet();
+    Object key = ComponentFactory.FACING_ATTRIBUTE_KEY;
+    Attribute<?> a = (Attribute<?>) comp.getFactory()
+        .getFeature(key, attrs);
+    @SuppressWarnings("unchecked")
+    Attribute<Direction> ret = (Attribute<Direction>) a;
+    return ret;
   }
 
   private void attemptReface(Canvas canvas, final Direction facing, KeyEvent e) {

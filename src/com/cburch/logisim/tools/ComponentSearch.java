@@ -55,8 +55,8 @@ final class ComponentSearch {
       return;
     searchText = s;
     searchPopup = new ComponentSearchPopup(canvas, tool -> dismissSearch(canvas, tool));
-    searchPopup.showAt(x, y);
     updateSearch(canvas);
+    searchPopup.showAt(x, y);
   }
 
   public void cancelSearch() {
@@ -138,7 +138,8 @@ final class ComponentSearch {
   }
 
   private void tabComplete(Canvas canvas) {
-    // FIXME: use first (or currently selected) row from popup instead of longest prefix?
+    // TODO: consider using the currently selected row from popup,
+    // instead of longest prefix?
     List<AddTool> results = getMatchingTools(canvas);
     if (results.isEmpty())
       return;
