@@ -399,16 +399,16 @@ public final class SelectTool extends Tool {
       handleMoveDrag(canvas, curDx, curDy, e.getModifiersEx());
     } else {
       switch (e.getKeyCode()) {
-      case KeyEvent.VK_BACK_SPACE:
-      case KeyEvent.VK_DELETE:
-        if (!canvas.getSelection().isEmpty()) {
-          Action act = SelectionActions.delete(canvas.getSelection());
-          canvas.getProject().doAction(act);
-          e.consume();
-        }
-        break;
-      default:
-        processKeyEvent(canvas, e, KeyConfigurationEvent.KEY_PRESSED);
+        case KeyEvent.VK_BACK_SPACE:
+        case KeyEvent.VK_DELETE:
+          if (!canvas.getSelection().isEmpty()) {
+            Action act = SelectionActions.delete(canvas.getSelection());
+            canvas.getProject().doAction(act);
+            e.consume();
+          }
+          break;
+        default:
+          processKeyEvent(canvas, e, KeyConfigurationEvent.KEY_PRESSED);
       }
     }
   }
@@ -688,8 +688,7 @@ public final class SelectTool extends Tool {
     if (!handlers.isEmpty()) {
       boolean consume = false;
       ArrayList<KeyConfigurationResult> results = new ArrayList<>();
-      for (Map.Entry<Component, KeyConfigurator> entry : handlers
-          .entrySet()) {
+      for (Map.Entry<Component, KeyConfigurator> entry : handlers.entrySet()) {
         Component comp = entry.getKey();
         KeyConfigurator handler = entry.getValue();
         KeyConfigurationEvent event = new KeyConfigurationEvent(type,

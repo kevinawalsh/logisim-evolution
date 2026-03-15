@@ -31,10 +31,21 @@
 package com.cburch.logisim.gui.generic;
 import static com.cburch.logisim.gui.main.Strings.S;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
+import javax.swing.JButton;
 import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
@@ -47,31 +58,111 @@ import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
 
-public class HelpTabContent extends JScrollPane {
+public class HelpTabContent extends JPanel {
+
+  private static final int BTN_SIZE = 15;
+  private static final int BTN_MARGIN = 4;
 
   private JEditorPane editor = new JEditorPane("text/html", "");
   private Project proj;
+  private String currentTitle = "";
+  private String currentHtml = "";
 
   public HelpTabContent(Frame frame) {
-    super();
+    super(new BorderLayout());
     proj = frame.getProject();
     editor.setEditable(false);
     editor.setOpaque(false);
     editor.addHyperlinkListener(e -> {
       if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
         HelpBroker.followLink(e.getDescription(), proj);
-      
     });
-    setViewportView(editor);
-    getVerticalScrollBar().setUnitIncrement(16);
+
+    JScrollPane scrollPane = new JScrollPane(editor);
+    scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+    JButton popoutBtn = makePopoutButton();
+
+    JLayeredPane layered = new JLayeredPane();
+    layered.add(scrollPane, JLayeredPane.DEFAULT_LAYER);
+    layered.add(popoutBtn, JLayeredPane.PALETTE_LAYER);
+    layered.addComponentListener(new ComponentAdapter() {
+      @Override
+      public void componentResized(ComponentEvent e) {
+        int w = layered.getWidth(), h = layered.getHeight();
+        scrollPane.setBounds(0, 0, w, h);
+        int sbw = scrollPane.getVerticalScrollBar().getPreferredSize().width;
+        popoutBtn.setBounds(w - BTN_SIZE - BTN_MARGIN - sbw, BTN_MARGIN, BTN_SIZE, BTN_SIZE);
+      }
+    });
+
+    add(layered, BorderLayout.CENTER);
     viewNone();
   }
 
+  private JButton makePopoutButton() {
+    JButton btn = new JButton() {
+      @Override
+      protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        int w = getWidth(), h = getHeight();
+        // semi-transparent fill
+        // g2.setColor(new Color(160, 160, 160, 60));
+        // g2.fillRect(0, 0, w, h);
+        // border
+        g2.setStroke(new java.awt.BasicStroke(2f,
+            java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
+        // g2.setColor(new Color(100, 100, 100, 120));
+        g2.setColor(new Color(50, 50, 50, 120));
+        g2.drawLine(w-10, 1, 1, 1);
+        g2.drawLine(1, 1, 1, h-2);
+        g2.drawLine(1, h-2, w-2, h-2);
+        g2.drawLine(w-2, h-2, w-2, 9);
+        // arrow
+        // g2.setColor(new Color(50, 50, 50, 120));
+        g2.drawLine(7, h-8, w-2, 1);
+        g2.drawLine(w-2, 1, w-6, 1);
+        g2.drawLine(w-2, 1, w-2, 5);
+        g2.dispose();
+      }
+    };
+    btn.setFont(btn.getFont().deriveFont(Font.PLAIN, 9f));
+    btn.setOpaque(false);
+    btn.setContentAreaFilled(false);
+    btn.setBorderPainted(false);
+    btn.setFocusable(false);
+    btn.setToolTipText("Open in separate window");
+    btn.addActionListener(e -> openPopout());
+    return btn;
+  }
+
+  private void openPopout() {
+    String title = currentTitle.isEmpty() ? "Quick Help" : "Quick Help for " + currentTitle;
+    JFrame win = new JFrame(title);
+    JEditorPane popEditor = new JEditorPane("text/html", currentHtml);
+    popEditor.setEditable(false);
+    popEditor.addHyperlinkListener(e -> {
+      if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
+        HelpBroker.followLink(e.getDescription(), proj);
+    });
+    JScrollPane sp = new JScrollPane(popEditor);
+    sp.getVerticalScrollBar().setUnitIncrement(16);
+    win.setContentPane(sp);
+    win.setMinimumSize(new Dimension(300, 200));
+    win.setSize(450, 500);
+    win.setLocationRelativeTo(this);
+    win.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+    win.setVisible(true);
+  }
+
   public void viewNone() {
-    editor.setText(wrapHtml("<i>" + S.get("quickhelpNoneMessage") + "</i>"));
+    currentTitle = "";
+    currentHtml = wrapHtml("<i>" + S.get("quickhelpNoneMessage") + "</i>");
+    editor.setText(currentHtml);
     editor.setCaretPosition(0);
   }
-  
+
   public void view(Tool tool) {
     if (tool == null) {
       viewNone();
@@ -80,7 +171,9 @@ public class HelpTabContent extends JScrollPane {
     String msg = tool.getQuickHelp();
     if (msg == null)
       msg = "<i>" + S.fmt("quickhelpMissingMessage", tool.getDisplayName()) + "</i>";
-    editor.setText(wrapHtml(msg));
+    currentTitle = tool.getDisplayName();
+    currentHtml = wrapHtml(msg);
+    editor.setText(currentHtml);
     editor.setCaretPosition(0);
   }
 
@@ -92,7 +185,9 @@ public class HelpTabContent extends JScrollPane {
     String msg = getQuickHelp(comp);
     if (msg == null)
       msg = "<i>" + S.fmt("quickhelpMissingMessage", comp.getFactory().getDisplayName()) + "</i>";
-    editor.setText(wrapHtml(msg));
+    currentTitle = comp.getFactory().getDisplayName();
+    currentHtml = wrapHtml(msg);
+    editor.setText(currentHtml);
     editor.setCaretPosition(0);
   }
 
