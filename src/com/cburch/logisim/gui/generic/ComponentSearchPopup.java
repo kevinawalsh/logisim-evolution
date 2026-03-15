@@ -32,6 +32,7 @@ package com.cburch.logisim.gui.generic;
 
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -39,6 +40,7 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -76,10 +78,17 @@ public class ComponentSearchPopup extends JPanel {
   private static final int PADDING_Y    = 4;
   private static final int HEADER_EXTRA = 2; // extra space below header divider
 
+  private static final Cursor HAND_CURSOR =
+      Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+  private static final Cursor DEFAULT_CURSOR =
+      Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+
   private String searchText = "";
   private List<AddTool> matches = Collections.emptyList();
   private int selectedIndex = 0;
   private final Canvas canvas;
+  private boolean flipped = false; // true when popup is above the cursor
+  private int anchorX, anchorY;   // canvas-local cursor position at showAt()
 
   // Cached metrics
   private int fontAscent;
@@ -99,6 +108,25 @@ public class ComponentSearchPopup extends JPanel {
           onSelect.accept(matches.get(row));
         }
       }
+      @Override
+      public void mouseExited(MouseEvent e) {
+        setCursor(DEFAULT_CURSOR);
+      }
+    });
+    addMouseMotionListener(new MouseMotionAdapter() {
+      @Override
+      public void mouseMoved(MouseEvent e) {
+        int row = rowAtY(e.getY());
+        if (row >= 0 && row < matches.size()) {
+          setCursor(HAND_CURSOR);
+          if (row != selectedIndex) {
+            selectedIndex = row;
+            repaint();
+          }
+        } else {
+          setCursor(DEFAULT_CURSOR);
+        }
+      }
     });
   }
 
@@ -106,20 +134,22 @@ public class ComponentSearchPopup extends JPanel {
 
   /** Show the popup at the given canvas-local pixel position. */
   public void showAt(int canvasX, int canvasY) {
+    anchorX = canvasX;
+    anchorY = canvasY;
     updateSize();
     int w = getPreferredSize().width;
     int h = getPreferredSize().height;
 
-    // Flip horizontally if near right edge
     Rectangle view = canvas.getVisibleRect();
+
+    // Flip horizontally if near right edge
     int x = canvasX + 8;
     if (x + w > view.x + view.width)
       x = canvasX - w - 4;
 
-    // Flip vertically if near bottom edge
-    int y = canvasY + 8;
-    if (y + h > view.y + view.height)
-      y = canvasY - h - 4;
+    // Flip vertically if near bottom edge; header follows the cursor
+    flipped = (canvasY + 8 + h > view.y + view.height);
+    int y = flipped ? canvasY - h - 4 : canvasY + 8;
 
     setBounds(x, y, w, h);
     canvas.add(this);
@@ -134,8 +164,13 @@ public class ComponentSearchPopup extends JPanel {
     else
       this.matches = newMatches.subList(0, MAX_ITEMS); // FIXME
     if (selectedIndex >= matches.size())
-      selectedIndex = 0; // FIXME: select bottom-most item?
+      selectedIndex = matches.size() - 1;
     updateSize();
+    if (flipped) {
+      // Re-anchor: keep the bottom of the popup close to the cursor
+      int h = getPreferredSize().height;
+      setLocation(getX(), anchorY - h - 4);
+    }
     repaint();
   }
 
@@ -182,24 +217,28 @@ public class ComponentSearchPopup extends JPanel {
     g.setColor(BORDER_COLOR);
     g.drawRoundRect(0, 0, w - 1, h - 1, 6, 6);
 
+    int headerTop = flipped ? h - headerH : 0;
+    int itemsTop  = flipped ? 0           : headerH;
+    int dividerY  = flipped ? h - headerH : headerH - HEADER_EXTRA - 1;
+
     // Header: typed text with simulated cursor
     g.setFont(g.getFont().deriveFont(Font.BOLD));
     g.setColor(HEADER_FG);
     String header = "\u00bb " + searchText + "_";
-    g.drawString(header, PADDING_X, PADDING_Y + fontAscent);
+    g.drawString(header, PADDING_X, headerTop + PADDING_Y + fontAscent);
 
     // Divider line
     g.setFont(g.getFont().deriveFont(Font.PLAIN));
     g.setColor(BORDER_COLOR);
-    g.drawLine(1, headerH - HEADER_EXTRA - 1, w - 2, headerH - HEADER_EXTRA - 1);
+    g.drawLine(1, dividerY, w - 2, dividerY);
 
     // Rows
     if (matches.isEmpty()) {
       g.setColor(NOMATCH_FG);
-      g.drawString("(no matches)", PADDING_X, headerH + PADDING_Y + fontAscent);
+      g.drawString("(no matches)", PADDING_X, itemsTop + PADDING_Y + fontAscent);
     } else {
       for (int i = 0; i < matches.size(); i++) {
-        int rowY = headerH + i * rowH;
+        int rowY = itemsTop + i * rowH;
         if (i == selectedIndex) {
           g.setColor(SELECT_BG);
           g.fillRect(1, rowY, w - 2, rowH);
@@ -216,8 +255,14 @@ public class ComponentSearchPopup extends JPanel {
   // ----- private helpers -----
 
   private int rowAtY(int pixelY) {
-    if (pixelY < headerH) return -1;
-    return (pixelY - headerH) / rowH;
+    if (!flipped) {
+      if (pixelY < headerH) return -1;
+      return (pixelY - headerH) / rowH;
+    } else {
+      int row = pixelY / rowH;
+      if (row >= matches.size()) return -1;
+      return row;
+    }
   }
 
   private void updateSize() {

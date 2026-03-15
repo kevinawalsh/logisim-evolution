@@ -214,7 +214,7 @@ public class Circuit implements AttributeDefaultProvider {
         names.put(name, comp); // no name clash, leave this one alone
         continue;
       }
-      // Name is alreayd taken, change label, or pick a new label
+      // Name is already taken, change label, or pick a new label
       String label = comp.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
       int seqno = 0;
       String suffix;

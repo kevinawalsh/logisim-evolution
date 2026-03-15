@@ -51,10 +51,7 @@ import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
-import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
-import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.gui.main.Selection;
@@ -364,7 +361,10 @@ public final class EditTool extends Tool {
     char c = e.getKeyChar();
     // Start search on any letter when nothing is selected and not wiring
     if (current != wiring && canvas.getSelection().isEmpty()
-        && Character.isLetter(c) && e.getModifiersEx() == 0) {
+        && c != KeyEvent.CHAR_UNDEFINED
+        && !Character.isISOControl(c)
+        && !Character.isWhitespace(c)
+        && e.getModifiersEx() == 0) {
       search.beginSearch(canvas, String.valueOf(c), lastRawX, lastRawY);
       e.consume();
       return;
