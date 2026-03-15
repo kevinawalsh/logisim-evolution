@@ -407,6 +407,35 @@ public final class SelectTool extends Tool {
             e.consume();
           }
           break;
+        case KeyEvent.VK_INSERT:
+          Action act = SelectionActions.duplicate(canvas.getSelection());
+          canvas.getProject().doAction(act);
+          e.consume();
+          break;
+        case KeyEvent.VK_UP:
+          if (e.getModifiersEx() == 0)
+            attemptReface(canvas, Direction.NORTH, e);
+          else
+            select.keyPressed(canvas, e);
+          break;
+        case KeyEvent.VK_DOWN:
+          if (e.getModifiersEx() == 0)
+            attemptReface(canvas, Direction.SOUTH, e);
+          else
+            select.keyPressed(canvas, e);
+          break;
+        case KeyEvent.VK_LEFT:
+          if (e.getModifiersEx() == 0)
+            attemptReface(canvas, Direction.WEST, e);
+          else
+            select.keyPressed(canvas, e);
+          break;
+        case KeyEvent.VK_RIGHT:
+          if (e.getModifiersEx() == 0)
+            attemptReface(canvas, Direction.EAST, e);
+          else
+            select.keyPressed(canvas, e);
+          break;
         default:
           processKeyEvent(canvas, e, KeyConfigurationEvent.KEY_PRESSED);
       }
@@ -747,4 +776,26 @@ public final class SelectTool extends Tool {
       return !dflt;
     }
   }
+
+  private void attemptReface(Canvas canvas, final Direction facing, KeyEvent e) {
+    if (e.getModifiersEx() == 0) {
+      final Circuit circuit = canvas.getCircuit();
+      final Selection sel = canvas.getSelection();
+      SetAttributeAction act = new SetAttributeAction(circuit,
+          S.getter("selectionRefaceAction"));
+      for (Component comp : sel.getComponents()) {
+        if (!(comp instanceof Wire)) {
+          Attribute<Direction> attr = getFacingAttribute(comp);
+          if (attr != null) {
+            act.set(comp, attr, facing);
+          }
+        }
+      }
+      if (!act.isEmpty()) {
+        canvas.getProject().doAction(act);
+        e.consume();
+      }
+    }
+  }
+
 }

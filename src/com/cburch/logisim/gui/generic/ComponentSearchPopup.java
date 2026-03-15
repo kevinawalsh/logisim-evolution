@@ -55,6 +55,12 @@ import com.cburch.logisim.tools.AddTool;
  */
 public class ComponentSearchPopup extends JPanel {
 
+  // If search has n <= MAX_ITEMS, all n of them will be displayed in popop.
+  private static final int MAX_ITEMS = 10;
+  // Otherwise, the first TRUNCATE_ITEMS of them will be displayed, with
+  // a message saying "(k more results)" with k = n - TRUNCATE_ITEMS.
+  private static final int TRUNCATE_ITEMS = 6;
+
   private static final Color BG_COLOR    = new Color(255, 255, 200);
   private static final Color BORDER_COLOR = Color.DARK_GRAY;
   private static final Color HEADER_FG   = new Color(40, 40, 180);
@@ -122,7 +128,7 @@ public class ComponentSearchPopup extends JPanel {
     this.searchText = text;
     this.matches = newMatches;
     if (selectedIndex >= matches.size())
-      selectedIndex = 0;
+      selectedIndex = 0; // FIXME: select bottom-most item
     updateSize();
     repaint();
   }
