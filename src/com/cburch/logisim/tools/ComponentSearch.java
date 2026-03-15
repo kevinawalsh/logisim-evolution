@@ -174,7 +174,7 @@ final class ComponentSearch {
     searchPopup = null;
     if (tool != null) {
       canvas.getProject().setTool(tool);
-      // TODO: draw ghost immediately at mouse position
+      tool.snapToMouse(canvas);
     }
   }
 

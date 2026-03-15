@@ -34,6 +34,7 @@ import static com.cburch.logisim.tools.Strings.S;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -548,6 +549,12 @@ public class AddTool extends Tool {
       if (added != null)
         canvas.getSelection().add(added);
     }
+  }
+
+  public synchronized void snapToMouse(Canvas canvas) {
+    Point p = canvas.getMousePosition();
+    if (p != null)
+      moveTo(canvas, p.x, p.y);
   }
 
   private synchronized void moveTo(Canvas canvas, int x, int y) {
