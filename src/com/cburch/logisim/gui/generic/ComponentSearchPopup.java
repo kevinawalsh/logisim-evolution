@@ -16,19 +16,11 @@
  *
  * Original code by Carl Burch (http://www.cburch.com), 2011.
  * Subsequent modifications by:
- *   + Haute École Spécialisée Bernoise
- *     http://www.bfh.ch
- *   + Haute École du paysage, d'ingénierie et d'architecture de Genève
- *     http://hepia.hesge.ch/
- *   + Haute École d'Ingénierie et de Gestion du Canton de Vaud
- *     http://www.heig-vd.ch/
- *   + REDS Institute - HEIG-VD, Yverdon-les-Bains, Switzerland
- *     http://reds.heig-vd.ch
- * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
 package com.cburch.logisim.gui.generic;
+import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.Color;
 import java.awt.Container;
@@ -37,10 +29,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.geom.RoundRectangle2D;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -52,60 +47,84 @@ import com.cburch.logisim.tools.AddTool;
 
 /**
  * A floating popup panel added directly to the Canvas (like Callout) that
- * displays a list of AddTool completions matching a typed prefix. Navigation
- * is driven externally by EditTool (keyboard events stay on the canvas).
+ * displays a scrollable list of AddTool completions matching a typed prefix.
+ * The visible window size is computed from available canvas space. When
+ * matches exceed the window, triangle scroll indicators appear at the edges
+ * of the item list. Navigation is driven externally via the public API
+ * (keyboard events stay on the canvas).
  */
 public class ComponentSearchPopup extends JPanel {
 
-  // If search has n <= MAX_ITEMS, all n of them will be displayed in popop.
-  private static final int MAX_ITEMS = 20;
-  // Otherwise... something else.
-  // - maybe the first TRUNCATE_ITEMS of them will be displayed, with
-  //   a message saying "(k more results)" with k = n - TRUNCATE_ITEMS
-  // - or show a small arrow at bottom, and allow up/down arrows to scroll the list?
-  // - or just a "..."
-  private static final int TRUNCATE_ITEMS = 10;
+  // Maximum rows to show when space is plentiful
+  private static final int MAX_VISIBLE = 15;
+  // Threshold to switch to reversed orientation
+  private static final int OK_VISIBLE = 6;
+  // Minimum rows to show even when space is very tight
+  private static final int MIN_VISIBLE = 3;
+  // Height (px) of the triangle scroll-indicator rows
+  private static final int INDICATOR_H  = 7;
 
-  private static final Color BG_COLOR    = new Color(255, 255, 200);
-  private static final Color BORDER_COLOR = Color.DARK_GRAY;
-  private static final Color HEADER_FG   = new Color(40, 40, 180);
-  private static final Color SELECT_BG   = new Color(100, 160, 255);
-  private static final Color SELECT_FG   = Color.WHITE;
-  private static final Color ITEM_FG     = Color.BLACK;
-  private static final Color NOMATCH_FG  = new Color(140, 140, 140);
+  // Colours
+  private static final Color BG_COLOR        = new Color(255, 255, 200);
+  private static final Color BORDER_COLOR    = Color.DARK_GRAY;
+  private static final Color HEADER_FG       = new Color(40, 40, 180);
+  private static final Color HEADER_BG       = new Color(224, 255, 249);
+  private static final Color SELECT_BG       = new Color(100, 160, 255);
+  private static final Color SELECT_FG       = Color.WHITE;
+  private static final Color ITEM_FG         = Color.BLACK;
+  private static final Color NOMATCH_FG      = new Color(140, 140, 140);
+  private static final Color TRI_ACTIVE_FG   = new Color(100, 100, 100);
+  private static final Color TRI_INACTIVE_FG = Color.GRAY;
 
+  // Layout constants
   private static final int PADDING_X    = 8;
   private static final int PADDING_Y    = 4;
-  private static final int HEADER_EXTRA = 2; // extra space below header divider
+  private static final int HEADER_EXTRA = 0; // extra gap below header divider
 
-  private static final Cursor HAND_CURSOR =
-      Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-  private static final Cursor DEFAULT_CURSOR =
-      Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+  // Cursors
+  private static final Cursor HAND_CURSOR    = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+  private static final Cursor DEFAULT_CURSOR = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
+  // Special return values from rowAtY()
+  private static final int ROW_NONE     = -1;
+  private static final int ROW_UP_IND   = -2;
+  private static final int ROW_DOWN_IND = -3;
+
+  // Search state
   private String searchText = "";
   private List<AddTool> matches = Collections.emptyList();
   private int selectedIndex = 0;
+  private int scrollOffset  = 0;
+  private int windowSize    = MIN_VISIBLE; // max visible rows; set in showAt()
+
+  // Position / orientation
   private final Canvas canvas;
   private boolean flipped = false; // true when popup is above the cursor
-  private int anchorX, anchorY;   // canvas-local cursor position at showAt()
+  private int anchorY;             // canvas-local pixel y at showAt()
 
-  // Cached metrics
+  // Cached font metrics (set in initMetrics() and refreshed in paintComponent())
   private int fontAscent;
   private int fontHeight;
-  private int headerH;
-  private int rowH;
+  private int headerH;  // height of the header row
+  private int rowH;     // height of each item row
+
+  // -----------------------------------------------------------------------
 
   public ComponentSearchPopup(Canvas canvas, Consumer<AddTool> onSelect) {
     this.canvas = canvas;
     setOpaque(false);
     setLayout(null);
+
     addMouseListener(new MouseAdapter() {
       @Override
       public void mousePressed(MouseEvent e) {
-        int row = rowAtY(e.getY());
-        if (row >= 0 && row < matches.size()) {
-          onSelect.accept(matches.get(row));
+        int hit = rowAtY(e.getY());
+        if (hit == ROW_UP_IND) {
+          scroll(-1);
+        } else if (hit == ROW_DOWN_IND) {
+          scroll(1);
+        } else if (hit >= 0 && hit < matches.size()) {
+          onSelect.accept(matches.get(hit));
         }
       }
       @Override
@@ -113,14 +132,17 @@ public class ComponentSearchPopup extends JPanel {
         setCursor(DEFAULT_CURSOR);
       }
     });
+
     addMouseMotionListener(new MouseMotionAdapter() {
       @Override
       public void mouseMoved(MouseEvent e) {
-        int row = rowAtY(e.getY());
-        if (row >= 0 && row < matches.size()) {
+        int hit = rowAtY(e.getY());
+        if (hit == ROW_UP_IND || hit == ROW_DOWN_IND) {
           setCursor(HAND_CURSOR);
-          if (row != selectedIndex) {
-            selectedIndex = row;
+        } else if (hit >= 0 && hit < matches.size()) {
+          setCursor(HAND_CURSOR);
+          if (hit != selectedIndex) {
+            selectedIndex = hit;
             repaint();
           }
         } else {
@@ -128,27 +150,28 @@ public class ComponentSearchPopup extends JPanel {
         }
       }
     });
+
+    addMouseWheelListener(e -> scroll(e.getWheelRotation() > 0 ? 1 : -1));
   }
 
   // ----- public API -----
 
-  /** Show the popup at the given canvas-local pixel position. */
+  /** Show the popup anchored to the given canvas-local pixel position. */
   public void showAt(int canvasX, int canvasY) {
-    anchorX = canvasX;
-    anchorY = canvasY;
-    updateSize();
+    anchorY     = canvasY;
+    scrollOffset = 0;
+    initMetrics();
+    computeWindowSize();  // sets flipped and windowSize
+    refreshLayout();      // sets preferred/actual size
+
+    Rectangle view = canvas.getVisibleRect();
     int w = getPreferredSize().width;
     int h = getPreferredSize().height;
 
-    Rectangle view = canvas.getVisibleRect();
-
-    // Flip horizontally if near right edge
     int x = canvasX + 8;
     if (x + w > view.x + view.width)
       x = canvasX - w - 4;
 
-    // Flip vertically if near bottom edge; header follows the cursor
-    flipped = (canvasY + 8 + h > view.y + view.height);
     int y = flipped ? canvasY - h - 4 : canvasY + 8;
 
     setBounds(x, y, w, h);
@@ -156,39 +179,39 @@ public class ComponentSearchPopup extends JPanel {
     canvas.repaint(x - 1, y - 1, w + 2, h + 2);
   }
 
-  /** Update the search text and matching results; reset selection if needed. */
+  /** Replace the current matches list and search text; update display. */
   public void updateSearch(String text, List<AddTool> newMatches) {
-    this.searchText = text;
-    if (newMatches.size() <= MAX_ITEMS)
-      this.matches = newMatches;
-    else
-      this.matches = newMatches.subList(0, MAX_ITEMS); // FIXME
-    if (selectedIndex >= matches.size())
-      selectedIndex = matches.size() - 1;
-    updateSize();
-    if (flipped) {
-      // Re-anchor: keep the bottom of the popup close to the cursor
-      int h = getPreferredSize().height;
-      setLocation(getX(), anchorY - h - 4);
+    searchText = text;
+    matches = newMatches;
+    if (matches.isEmpty()) {
+      selectedIndex = 0;
+      scrollOffset  = 0;
+    } else {
+      if (selectedIndex >= matches.size())
+        selectedIndex = matches.size() - 1;
+      ensureVisible();
     }
+    refreshLayout();
     repaint();
   }
 
-  /** Move the highlighted row up (-1) or down (+1). Wraps around. */
+  /** Move the keyboard selection up (-1) or down (+1), scrolling if needed. */
   public void moveSelection(int delta) {
     if (matches.isEmpty()) return;
     selectedIndex = Math.floorMod(selectedIndex + delta, matches.size());
+    ensureVisible();
+    refreshLayout();
     repaint();
   }
 
   /** Return the currently highlighted AddTool, or null if none. */
   public AddTool getSelectedTool() {
-    if (selectedIndex < matches.size())
+    if (selectedIndex >= 0 && selectedIndex < matches.size())
       return matches.get(selectedIndex);
     return null;
   }
 
-  /** Remove from canvas and trigger repaint. */
+  /** Remove from the canvas and trigger a repaint. */
   public void dismiss() {
     Container parent = getParent();
     if (parent != null) {
@@ -201,103 +224,245 @@ public class ComponentSearchPopup extends JPanel {
   // ----- painting -----
 
   @Override
-  public void paintComponent(Graphics g) {
+  public void paintComponent(Graphics gg) {
+    Graphics2D g = (Graphics2D)gg;
+    // Refresh cached metrics from the actual painting Graphics
     FontMetrics fm = g.getFontMetrics();
     fontAscent = fm.getAscent();
     fontHeight = fm.getHeight();
     headerH = fontHeight + PADDING_Y * 2 + HEADER_EXTRA;
-    rowH = fontHeight + PADDING_Y * 2;
+    rowH    = fontHeight + PADDING_Y * 2;
 
     int w = getWidth();
     int h = getHeight();
 
-    // Background
-    g.setColor(BG_COLOR);
-    g.fillRoundRect(0, 0, w - 1, h - 1, 6, 6);
-    g.setColor(BORDER_COLOR);
-    g.drawRoundRect(0, 0, w - 1, h - 1, 6, 6);
-
+    // Header position depends on orientation
     int headerTop = flipped ? h - headerH : 0;
     int itemsTop  = flipped ? 0           : headerH;
     int dividerY  = flipped ? h - headerH : headerH - HEADER_EXTRA - 1;
 
-    // Header: typed text with simulated cursor
+    int visibleCount = Math.min(matches.size(), windowSize);
+    boolean hasUp   = scrollOffset > 0;
+    boolean hasDown = scrollOffset + visibleCount < matches.size();
+
+    // Background and border
+    g.setColor(BG_COLOR);
+    g.fillRoundRect(1, 1, w - 2, h - 2, 6, 6);
+    Shape savedClip = g.getClip();
+    g.setClip(new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 6, 6));
+    g.setColor(HEADER_BG);
+    g.fillRect(1, headerTop+1, w - 2, headerH - HEADER_EXTRA - 2);
+    g.setClip(savedClip);
+    if (scrollOffset <= selectedIndex && selectedIndex < scrollOffset + visibleCount) {
+      g.setColor(SELECT_BG);
+      g.fillRect(1, itemsTop + INDICATOR_H + rowH * (selectedIndex - scrollOffset), w - 2, rowH-1);
+    }
+    g.setColor(BORDER_COLOR);
+    g.drawRoundRect(1, 1, w - 2, h - 2, 6, 6);
+
+    // Header: bold typed text with simulated cursor
     g.setFont(g.getFont().deriveFont(Font.BOLD));
     g.setColor(HEADER_FG);
-    String header = "\u00bb " + searchText + "_";
-    g.drawString(header, PADDING_X, headerTop + PADDING_Y + fontAscent);
-
-    // Divider line
+    g.drawString("\u00bb " + searchText + "_", PADDING_X, headerTop + PADDING_Y + fontAscent);
     g.setFont(g.getFont().deriveFont(Font.PLAIN));
     g.setColor(BORDER_COLOR);
     g.drawLine(1, dividerY, w - 2, dividerY);
 
-    // Rows
+    // No-matches placeholder
     if (matches.isEmpty()) {
       g.setColor(NOMATCH_FG);
-      g.drawString("(no matches)", PADDING_X, itemsTop + PADDING_Y + fontAscent);
-    } else {
-      for (int i = 0; i < matches.size(); i++) {
-        int rowY = itemsTop + i * rowH;
-        if (i == selectedIndex) {
-          g.setColor(SELECT_BG);
-          g.fillRect(1, rowY, w - 2, rowH);
-          g.setColor(SELECT_FG);
-        } else {
-          g.setColor(ITEM_FG);
-        }
-        String name = matches.get(i).getDisplayName();
-        g.drawString(name, PADDING_X, rowY + PADDING_Y + fontAscent);
-      }
+      g.drawString(S.get("componentSearchNoMatch"), PADDING_X, itemsTop + PADDING_Y + fontAscent);
+      return;
     }
+
+    int y = itemsTop;
+
+    // Up scroll indicator
+    drawTriangle(g, w, y, INDICATOR_H, true, hasUp);
+    y += INDICATOR_H;
+
+    // Item rows
+    for (int i = 0; i < visibleCount; i++) {
+      int idx = scrollOffset + i;
+      g.setColor(idx == selectedIndex ? SELECT_FG : ITEM_FG);
+      g.drawString(matches.get(idx).getDisplayName(), PADDING_X, y + PADDING_Y + fontAscent);
+      y += rowH;
+    }
+
+    // Down scroll indicator
+    drawTriangle(g, w, y, INDICATOR_H, false, hasDown);
   }
 
   // ----- private helpers -----
 
-  private int rowAtY(int pixelY) {
-    if (!flipped) {
-      if (pixelY < headerH) return -1;
-      return (pixelY - headerH) / rowH;
+  /** Draw a centred filled triangle pointing up or down within a zone. */
+  private void drawTriangle(Graphics g, int w, int zoneY, int zoneH, boolean up, boolean active) {
+    if (!active)
+      return;
+    int cx = w / 2;
+    int cy = zoneY + zoneH / 2;
+    int hw = 6, hh = 3; // half-width and half-height of triangle
+    if (up) {
+      g.setColor(active ? TRI_ACTIVE_FG : TRI_INACTIVE_FG);
+      g.fillPolygon(
+          new int[]{ cx,      cx - hw, cx + hw },
+          new int[]{ cy - hh, cy + hh, cy + hh },
+          3);
     } else {
-      int row = pixelY / rowH;
-      if (row >= matches.size()) return -1;
-      return row;
+      g.setColor(active ? TRI_ACTIVE_FG : TRI_INACTIVE_FG);
+      g.fillPolygon(
+          new int[]{ cx,      cx - hw, cx + hw },
+          new int[]{ cy + hh, cy - hh, cy - hh },
+          3);
     }
   }
 
-  private void updateSize() {
-    // Use a temporary Graphics to measure, or fall back to screen metrics.
-    // We use a simple heuristic: average char width * maxLen + padding.
-    // Actual painting uses real FontMetrics; this is just for pre-layout.
-    Graphics g = canvas.getGraphics();
-    if (g == null) {
-      setPreferredSize(new Dimension(200, 80));
-      return;
-    }
-    FontMetrics fm = g.getFontMetrics();
-    g.dispose();
+  /**
+   * Return the logical hit-zone for a mouse event at pixel y.
+   * Returns ROW_UP_IND, ROW_DOWN_IND, a valid item index, or ROW_NONE.
+   */
+  private int rowAtY(int pixelY) {
+    if (matches.isEmpty()) return ROW_NONE;
 
-    fontAscent = fm.getAscent();
-    fontHeight = fm.getHeight();
+    int visibleCount = Math.min(matches.size(), windowSize);
+    boolean hasUp   = scrollOffset > 0;
+    boolean hasDown = scrollOffset + visibleCount < matches.size();
+
+    // Items area starts after header (normal) or at top (flipped)
+    int y = pixelY - (flipped ? 0 : headerH);
+    if (y < 0) return ROW_NONE; // in header region
+
+    // if (hasUp) {
+      if (y < INDICATOR_H) return ROW_UP_IND;
+      y -= INDICATOR_H;
+    // }
+    // y is now relative to the start of item rows
+    int itemsH = visibleCount * rowH;
+    if (y < itemsH) {
+      int idx = scrollOffset + y / rowH;
+      return idx < matches.size() ? idx : ROW_NONE;
+    }
+    y -= itemsH;
+    if (/*hasDown &&*/ y < INDICATOR_H) return ROW_DOWN_IND;
+    return ROW_NONE;
+  }
+
+  /**
+   * Scroll the viewport by delta rows, clamping to valid range.
+   * Clamps selection to remain within the new visible window.
+   */
+  private void scroll(int delta) {
+    if (matches.isEmpty()) return;
+    int visibleCount = Math.min(matches.size(), windowSize);
+    int maxOffset = Math.max(0, matches.size() - visibleCount);
+    scrollOffset = Math.max(0, Math.min(maxOffset, scrollOffset + delta));
+    // Keep selection visible
+    if (selectedIndex < scrollOffset)
+      selectedIndex = scrollOffset;
+    else if (selectedIndex >= scrollOffset + visibleCount)
+      selectedIndex = scrollOffset + visibleCount - 1;
+    refreshLayout();
+    repaint();
+  }
+
+  /** Scroll viewport so that selectedIndex is within the visible window. */
+  private void ensureVisible() {
+    if (matches.isEmpty()) return;
+    if (selectedIndex < scrollOffset) {
+      scrollOffset = selectedIndex;
+    } else if (selectedIndex >= scrollOffset + windowSize) {
+      scrollOffset = selectedIndex - windowSize + 1;
+    }
+    scrollOffset = Math.max(0, scrollOffset);
+  }
+
+  /**
+   * Initialise font metrics from a temporary canvas Graphics.
+   * Must be called before computeWindowSize() and refreshLayout().
+   */
+  private void initMetrics() {
+    Graphics g = canvas.getGraphics();
+    if (g != null) {
+      FontMetrics fm = g.getFontMetrics();
+      g.dispose();
+      fontAscent = fm.getAscent();
+      fontHeight = fm.getHeight();
+    } else {
+      fontAscent = 12;
+      fontHeight = 16;
+    }
     headerH = fontHeight + PADDING_Y * 2 + HEADER_EXTRA;
     rowH = fontHeight + PADDING_Y * 2;
+  }
 
-    // Width: max of header text and all item names
-    int maxW = fm.stringWidth("\u00bb " + searchText + "_") + PADDING_X * 2 + 4;
-    if (matches.isEmpty()) {
-      maxW = Math.max(maxW, fm.stringWidth("(no matches)") + PADDING_X * 2 + 4);
+  /**
+   * Choose orientation (flipped) and compute windowSize from available canvas
+   * space. Conservatively subtracts space for both indicator rows and the
+   * header so the popup is guaranteed to fit.
+   */
+  private void computeWindowSize() {
+    Rectangle view = canvas.getVisibleRect();
+    // Overhead = header + worst-case two indicator rows + 2px bottom margin
+    int overhead = headerH + 2 * INDICATOR_H + 2;
+    int availableBelow = (view.y + view.height) - (anchorY + 8) - overhead;
+    int availableAbove = (anchorY - 4) - view.y - overhead;
+    int wsBelow = Math.max(0, availableBelow / rowH);
+    int wsAbove = Math.max(0, availableAbove / rowH);
+
+    // Prefer below, only flip when
+    //  - the full list doesn't fit below
+    //  - even a reasonable subset can't fit below
+    //  - there is more space above, so flipping would help
+    if (wsBelow < matches.size() && wsBelow < OK_VISIBLE && wsAbove > wsBelow) {
+      flipped = true;
+      windowSize = wsAbove;
     } else {
-      for (AddTool tool : matches) {
-        int tw = fm.stringWidth(tool.getDisplayName()) + PADDING_X * 2 + 4;
-        if (tw > maxW) maxW = tw;
+      flipped = false;
+      windowSize = wsBelow;
+    }
+    windowSize = Math.max(MIN_VISIBLE, windowSize);
+  }
+
+  /**
+   * Recompute the popup's preferred/actual size based on current state, and
+   * re-anchor the top edge if the popup is flipped (so the bottom stays near
+   * the cursor even as the height changes with scroll state).
+   */
+  private void refreshLayout() {
+    int visibleCount = matches.isEmpty() ? 1 : Math.min(matches.size(), windowSize);
+    boolean hasUp   = !matches.isEmpty() && scrollOffset > 0;
+    boolean hasDown = !matches.isEmpty() && scrollOffset + visibleCount < matches.size();
+
+    // Width: wide enough for any match name (all, not just visible, to avoid
+    // resizing as the user scrolls), plus an underscore so there is room to
+    // fully type the longest item without widening.
+    Graphics g = canvas.getGraphics();
+    int maxW = 140;
+    if (g != null) {
+      FontMetrics fm = g.getFontMetrics();
+      g.dispose();
+      maxW = Math.max(maxW, fm.stringWidth("\u00bb " + searchText + "_") + PADDING_X * 2 + 4);
+      if (matches.isEmpty()) {
+        maxW = Math.max(maxW, fm.stringWidth(S.get("componentSearchNoMatch")) + PADDING_X * 2 + 4);
+      } else {
+        for (AddTool tool : matches) {
+          int tw = fm.stringWidth("\u00bb " + tool.getDisplayName() + "_") + PADDING_X * 2 + 4;
+          if (tw > maxW) maxW = tw;
+        }
       }
     }
-    maxW = Math.max(maxW, 140);
 
-    int numRows = matches.isEmpty() ? 1 : matches.size();
-    int totalH = headerH + numRows * rowH + 2;
+    int totalH = headerH
+        + INDICATOR_H
+        + visibleCount * rowH
+        + INDICATOR_H
+        + 2;
 
     setPreferredSize(new Dimension(maxW, totalH));
     setSize(maxW, totalH);
+
+    // If flipped, keep the bottom edge anchored near the cursor
+    if (flipped && getParent() != null)
+      setLocation(getX(), anchorY - totalH - 4);
   }
 }
