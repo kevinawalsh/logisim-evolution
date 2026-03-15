@@ -38,14 +38,18 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.Circuit;
+import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.gui.generic.ComponentSearchPopup;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.Wire;
@@ -101,6 +105,11 @@ public final class EditTool extends Tool {
   private int pressX; // last coordinate where mouse was pressed
   private int pressY; // (used to determine when a short wire has been clicked)
 
+  // Quick-insert search state
+  private boolean searchActive = false;
+  private String searchText = "";
+  private ComponentSearchPopup searchPopup = null;
+
   public EditTool(SelectTool select, WiringTool wiring) {
     this.listener = new Listener();
     this.select = select;
@@ -151,6 +160,7 @@ public final class EditTool extends Tool {
 
   @Override
   public void deselect(Canvas canvas) {
+    dismissSearch();
     current = select;
     canvas.getSelection().setSuppressHandles(null);
     cache.clear();
@@ -356,6 +366,43 @@ public final class EditTool extends Tool {
       wiring.keyPressed(canvas, e);
       return;
     }
+    if (searchActive) {
+      switch (e.getKeyCode()) {
+      case KeyEvent.VK_ESCAPE:
+        dismissSearch();
+        e.consume();
+        return;
+      case KeyEvent.VK_BACK_SPACE:
+        if (searchText.length() > 0) {
+          searchText = searchText.substring(0, searchText.length() - 1);
+          if (searchText.isEmpty())
+            dismissSearch();
+          else
+            updateSearch(canvas);
+        }
+        e.consume();
+        return;
+      case KeyEvent.VK_UP:
+        searchPopup.moveSelection(-1);
+        e.consume();
+        return;
+      case KeyEvent.VK_DOWN:
+        searchPopup.moveSelection(1);
+        e.consume();
+        return;
+      case KeyEvent.VK_TAB:
+        tabComplete(canvas);
+        e.consume();
+        return;
+      case KeyEvent.VK_ENTER:
+        selectCurrentResult(canvas);
+        e.consume();
+        return;
+      default:
+        // let keyTyped handle printable characters
+        return;
+      }
+    }
     switch (e.getKeyCode()) {
     case KeyEvent.VK_BACK_SPACE:
     case KeyEvent.VK_DELETE:
@@ -417,6 +464,29 @@ public final class EditTool extends Tool {
 
   @Override
   public void keyTyped(Canvas canvas, KeyEvent e) {
+    char c = e.getKeyChar();
+    if (searchActive) {
+      if (c != KeyEvent.CHAR_UNDEFINED && !Character.isISOControl(c)) {
+        searchText += c;
+        updateSearch(canvas);
+        e.consume();
+      }
+      return;
+    }
+    // Start search on any letter when nothing is selected and not wiring
+    if (current != wiring && canvas.getSelection().isEmpty()
+        && Character.isLetter(c) && e.getModifiersEx() == 0) {
+      searchText = String.valueOf(c);
+      searchActive = true;
+      searchPopup = new ComponentSearchPopup(canvas, tool -> {
+        dismissSearch();
+        canvas.getProject().setTool(tool);
+      });
+      searchPopup.showAt(lastRawX, lastRawY);
+      updateSearch(canvas);
+      e.consume();
+      return;
+    }
     select.keyTyped(canvas, e);
   }
 
@@ -446,6 +516,8 @@ public final class EditTool extends Tool {
 
   @Override
   public void mousePressed(Canvas canvas, MouseEvent e) {
+    if (searchActive)
+      dismissSearch();
     canvas.requestFocusInWindow();
     boolean wire = updateLocation(canvas, e);
     Location oldWireLoc = wireLoc;
@@ -600,6 +672,67 @@ public final class EditTool extends Tool {
 
   private boolean updateLocation(Canvas canvas, MouseEvent e) {
     return updateLocation(canvas, e.getX(), e.getY(), e.getModifiersEx());
+  }
+
+  private void updateSearch(Canvas canvas) {
+    List<AddTool> results = getMatchingTools(canvas);
+    searchPopup.updateSearch(searchText, results);
+  }
+
+  private List<AddTool> getMatchingTools(Canvas canvas) {
+    String prefix = searchText.toLowerCase();
+    LogisimFile file = canvas.getProject().getLogisimFile();
+    List<AddTool> results = new ArrayList<>();
+    for (Tool tool : file.getToolsAndSublibraryTools()) {
+      if (tool instanceof AddTool) {
+        AddTool addTool = (AddTool) tool;
+        if (addTool.getDisplayName().toLowerCase().startsWith(prefix))
+          results.add(addTool);
+      }
+    }
+    Collections.sort(results,
+        (a, b) -> a.getDisplayName().compareToIgnoreCase(b.getDisplayName()));
+    if (results.size() > 5)
+      results = results.subList(0, 5);
+    return results;
+  }
+
+  private void tabComplete(Canvas canvas) {
+    List<AddTool> results = getMatchingTools(canvas);
+    if (results.isEmpty()) return;
+    // Longest common prefix of all match display names (case-insensitive,
+    // but stored in the case of the first match)
+    String first = results.get(0).getDisplayName();
+    int len = first.length();
+    for (int i = 1; i < results.size(); i++) {
+      String name = results.get(i).getDisplayName();
+      int j = 0;
+      while (j < len && j < name.length()
+          && Character.toLowerCase(first.charAt(j)) == Character.toLowerCase(name.charAt(j)))
+        j++;
+      len = j;
+    }
+    String extended = first.substring(0, len);
+    if (extended.length() > searchText.length()) {
+      searchText = extended;
+      updateSearch(canvas);
+    }
+  }
+
+  private void selectCurrentResult(Canvas canvas) {
+    AddTool tool = searchPopup.getSelectedTool();
+    dismissSearch();
+    if (tool != null)
+      canvas.getProject().setTool(tool);
+  }
+
+  private void dismissSearch() {
+    searchActive = false;
+    searchText = "";
+    if (searchPopup != null) {
+      searchPopup.dismiss();
+      searchPopup = null;
+    }
   }
 
   public boolean isBuiltin() { return true; }
