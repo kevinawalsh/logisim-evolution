@@ -50,6 +50,7 @@ import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.generic.Callout;
+import com.cburch.logisim.gui.generic.QuickHelp;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.prefs.PrefMonitor;
 import com.cburch.logisim.util.DragDrop;
@@ -219,7 +220,7 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
   }
 
   public String getQuickHelp() {
-    return com.cburch.logisim.gui.generic.QuickHelp.load(getClass());
+    return QuickHelp.load(getClass());
   }
 
 }

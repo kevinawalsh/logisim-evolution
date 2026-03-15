@@ -619,23 +619,43 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
 
   void setAttrTableModel(AttrTableModel value) {
     attrTable.setAttrTableModel(value);
+    boolean helped = false;
     if (value instanceof AttrTableToolModel) {
       Tool tool = ((AttrTableToolModel) value).getTool();
       toolbox.setHaloedTool(tool);
       layoutToolbarModel.setHaloedTool(tool);
       helpPanel.view(tool);
+      helped = true;
     } else {
       toolbox.setHaloedTool(null);
       layoutToolbarModel.setHaloedTool(null);
-      helpPanel.viewNone();
     }
     if (value instanceof AttrTableComponentModel) {
       Circuit circ = ((AttrTableComponentModel) value).getCircuit();
       Component comp = ((AttrTableComponentModel) value).getComponent();
       layoutCanvas.setHaloedComponent(circ, comp);
+      helpPanel.view(comp);
+      helped = true;
     } else {
       layoutCanvas.setHaloedComponent(null, null);
     }
+    if (!helped && value instanceof AttrTableSelectionModel) {
+      Component choice = null;
+      for (Component sel: getCanvas().getSelection().getComponents()) {
+        if (choice == null) {
+          choice = sel;
+        } else if (choice.getFactory() != sel.getFactory()) {
+          choice = null;
+          break;
+        }
+      }
+      if (choice != null) {
+        helpPanel.view(choice);
+        helped = true;
+      }
+    }
+    if (!helped)
+      helpPanel.view(project.getTool());
   }
 
   public void setEditorView(String view) {

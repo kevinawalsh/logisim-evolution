@@ -47,6 +47,7 @@ import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.generic.QuickHelp;
 import com.cburch.logisim.gui.log.Loggable;
 import com.cburch.logisim.tools.Pokable;
 import com.cburch.logisim.tools.key.KeyConfigurator;
@@ -187,7 +188,7 @@ public abstract class InstanceFactory extends AbstractComponentFactory {
       return shouldSnap;
     }
     if (key == QUICK_HELP) {
-      return com.cburch.logisim.gui.generic.QuickHelp.load(getClass());
+      return QuickHelp.load(getClass());
     }
     return super.getFeature(key, attrs);
   }

@@ -39,6 +39,9 @@ import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 
+import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentFactory;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.proj.Project;
@@ -57,6 +60,7 @@ public class HelpTabContent extends JScrollPane {
     editor.addHyperlinkListener(e -> {
       if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
         HelpBroker.followLink(e.getDescription(), proj);
+      
     });
     setViewportView(editor);
     getVerticalScrollBar().setUnitIncrement(16);
@@ -67,26 +71,54 @@ public class HelpTabContent extends JScrollPane {
     editor.setText(wrapHtml("<i>" + S.get("quickhelpNoneMessage") + "</i>"));
     editor.setCaretPosition(0);
   }
-
+  
   public void view(Tool tool) {
+    if (tool == null) {
+      viewNone();
+      return;
+    }
     String msg = tool.getQuickHelp();
     if (msg == null)
-      msg = "<i>" + S.fmt("quickhelpMissingMessage", tool.getDescription()) + "</i>";
+      msg = "<i>" + S.fmt("quickhelpMissingMessage", tool.getDisplayName()) + "</i>";
     editor.setText(wrapHtml(msg));
     editor.setCaretPosition(0);
+  }
+
+  public void view(Component comp) {
+    if (comp == null) {
+      viewNone();
+      return;
+    }
+    String msg = getQuickHelp(comp);
+    if (msg == null)
+      msg = "<i>" + S.fmt("quickhelpMissingMessage", comp.getFactory().getDisplayName()) + "</i>";
+    editor.setText(wrapHtml(msg));
+    editor.setCaretPosition(0);
+  }
+
+  private static String getQuickHelp(Component comp) {
+    ComponentFactory source = comp.getFactory();
+    if (source == null)
+      return null;
+    AttributeSet attrs = comp.getAttributeSet();
+    String msg = (String)source.getFeature(ComponentFactory.QUICK_HELP, attrs);
+    return msg;
   }
 
   private static String wrapHtml(String body) {
     Font font = UIManager.getFont("Label.font");
     Color fg = UIManager.getColor("Label.foreground");
     String fontFamily = font != null ? font.getFamily() : "sans-serif";
-    int fontSize = font != null ? font.getSize() : 12;
+    int fontSize = font != null ? font.getSize() : 10;
     String color = fg != null
         ? String.format("#%02x%02x%02x", fg.getRed(), fg.getGreen(), fg.getBlue())
         : "#000000";
     return "<html><head><style>"
         + "body{font-family:" + fontFamily + ";font-size:" + fontSize + "pt;"
         + "color:" + color + ";margin:6px}"
+        + "p{margin:2px 0}"
+        + "ul{margin:2px 0;padding-left:10px}"
+        + "li{margin:0;padding:0}"
         + "a{color:#4A8EDB}"
         + "</style></head><body>"
         + body

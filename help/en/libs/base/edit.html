@@ -19,7 +19,7 @@
 rearrange existing components, and to add, move, and rearrange wires. It is a
 flexible tool with many features and actions depending on where you click, and
 which modifier keys you press. In effect, Edit Tool is hybrid combination of
-<a class="icon" href="select.html"><img class="p16" src="/logisim-evolution/icons/move.gif"> Move Tool</a> and
+<a class="icon" href="move.html"><img class="p16" src="/logisim-evolution/icons/move.gif"> Move Tool</a> and
 <a class="icon" href="wiring.html"><img class="p16" src="/logisim-evolution/icons/wiring.gif"> Wiring Tool</a>,
 which are simpler single-purpose editing tools.</p>
 
@@ -80,7 +80,7 @@ selecting items, familiar actions like cut, copy, delete, and duplicate all
 work. See <a href="../../guide/menu/edit.html">Edit menu</a> for
 details.</p></li>
 
-<li><p><b>Select regions:</b> Click then drag on the background grid to begin a
+<li><p><b>Select area:</b> Click then drag on the background grid to begin a
 rectangular selection. All components that are <i>fully</i> contained by the
 rectangle will be selected. Holding <span class="key">shift</span> while
 making a rectanglar selection will add the new elements to the selection if
@@ -95,8 +95,17 @@ button. If you want to disable this behavior entirely, go to Project &gt;
 Options, select the Canvas tab, and uncheck the <q>Keep Connections When
 Moving</q> box; with that option unchecked, <span class="key">shift</span> key
 behavior is reversed: wires are not reconnected unless the
-<span class="key">shift</span> key is held.</p></li>
+<span class="key">shift</span> key is held.</p>
 
+<blockquote class="hint"> Tip: When moving one or more <a href="../decor">Decorative
+components</a>, without any other items, the normal <i>snap-to-grid</i> behavior
+is not enfoced: these components have no wires or ports, so they may be placed
+anywhere on the canvas. If you want to align them nicely to the grid, hold the
+<span class="key">shift</span> key while moving them. For all other components,
+<i>snap-to-grid</i> is required, so <span class="key">shift</span> affects only
+wire re-connection behavior.</blockquote>
+
+</li>
 <!-- <blockquote>Note: <b>Dragging a selection containing wires</b> can sometimes
 lead to surprises. If you drag a selection including some wires on top of some
 other wires, all wires are merged, and the newly-merged wires are added the
@@ -135,6 +144,14 @@ left panel. With multiple components selected, attributes shared by all are
 shown in that panel. Each attribute shows a value if all components share that
 same value, or is left blank otherwise. Changing these attributes affects all
 selected components.</p></li>
+
+<blockquote class="hint"> Tip: Many components also respond to hotkeys to change
+their attributes when they are selected. For example, select one or a few gates,
+then type a number &mdash; this changes the number of inputs for each gate. Or
+hold <span class="key">Alt</span> or <span class="key">Option</span> and type a
+number to change the `Bit Width' of their inputs and outputs. See each
+component's reference page for details on how they respond to
+hotkeys.</blockquote>
 
 <!-- <li><p><b>Remove components and wires</b> using 
 <span class="key">Delete</span> or

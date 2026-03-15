@@ -50,6 +50,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.gui.generic.QuickHelp;
 import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
@@ -540,7 +541,7 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       String suffix = fmt == TEXT_FORMAT_WRAPPED ? "-wrapped"
           : fmt == TEXT_FORMAT_MARKDOWNISH ? "-markdownish"
           : "-plain";
-      return com.cburch.logisim.gui.generic.QuickHelp.load(getClass(), suffix);
+      return QuickHelp.load(getClass(), suffix);
     }
     return super.getFeature(key, attrs);
   }
