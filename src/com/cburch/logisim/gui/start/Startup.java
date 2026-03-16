@@ -31,15 +31,16 @@
 package com.cburch.logisim.gui.start;
 import static com.cburch.logisim.gui.start.Strings.S;
 
+import java.awt.GraphicsEnvironment;
+import java.awt.KeyboardFocusManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.awt.GraphicsEnvironment;
-import java.awt.KeyboardFocusManager;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -52,12 +53,13 @@ import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Print;
-import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.HelpBroker;
+import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.WindowManagers;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
+import com.cburch.logisim.tools.ComponentListingExporter;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.Errors;
@@ -74,29 +76,31 @@ public class Startup {
   
   private static HashMap<String, Integer> options = new HashMap<>();
   static {
-    options.put("-geom", ONEPARAM);
-    options.put("-empty", 0);
-    options.put("-plain", 0);
-    options.put("-template", ONEPARAM);
-    options.put("-gates", ONEPARAM);
-    options.put("-locale", ONEPARAM);
-    options.put("-accents", ONEPARAM);
-    options.put("-nosplash", 0);
-    options.put("-clearprefs", 0);
-    options.put("-questa", ONEPARAM);
-    options.put("-sub", TWOPARAM);
-    options.put("-test", TWOPARAM); // is this a tty option? what is this?
+    options.put("--geom", ONEPARAM);
+    options.put("--empty", 0);
+    options.put("--plain", 0);
+    options.put("--template", ONEPARAM);
+    options.put("--gates", ONEPARAM);
+    options.put("--locale", ONEPARAM);
+    options.put("--accents", ONEPARAM);
+    options.put("--nosplash", 0);
+    options.put("--clearprefs", 0);
+    options.put("--questa", ONEPARAM);
+    options.put("--sub", TWOPARAM);
+    options.put("--test", TWOPARAM); // is this a tty option? what is this?
 
-    options.put("-version", HEADLESS);
-    options.put("-help", HEADLESS);
-    options.put("-list", HEADLESS | NEEDFILE);
-    options.put("-pretty", 0);
-    options.put("-png", HEADLESS | ONEPARAM | NEEDFILE);
-    options.put("-tty", HEADLESS | ONEPARAM | NEEDFILE);
-    options.put("-circuit", HEADLESS | ONEPARAM);
-    options.put("-load", HEADLESS | ONEPARAM);
+    options.put("--version", HEADLESS);
+    options.put("--help", HEADLESS);
+    options.put("--list", HEADLESS | NEEDFILE);
+    options.put("--pretty", 0);
+    options.put("--png", HEADLESS | ONEPARAM | NEEDFILE);
+    options.put("--tty", HEADLESS | ONEPARAM | NEEDFILE);
+    options.put("--circuit", HEADLESS | ONEPARAM);
+    options.put("--load", HEADLESS | ONEPARAM);
 
-    options.put("-verbose", 0);
+    options.put("--generate-component-listing", HEADLESS | ONEPARAM);
+
+    options.put("--verbose", 0);
     options.put("-v", 0);
     options.put("-vv", 0);
     options.put("-vvv", 0);
@@ -104,10 +108,16 @@ public class Startup {
     options.put("-vvvvv", 0);
 
     options.put("-?", HEADLESS); // undocumented synonym for -help
-    options.put("-clearprops", 0); // obsolete synonym for -clearprefs
-    options.put("-noupdate", 0); // obsolte like auto-updates
-    options.put("-analyze", 0); // obsolete option to enable analysis menu
-    options.put("-debug", 0); // undocumented, enables debug console
+    options.put("--clearprops", 0); // obsolete synonym for -clearprefs
+    options.put("--noupdate", 0); // obsolte like auto-updates
+    options.put("--analyze", 0); // obsolete option to enable analysis menu
+    options.put("--debug", 0); // undocumented, enables debug console
+ 
+    // Backwards compatibility: also accept -singledash options.
+    for (Map.Entry<String, Integer> e : new HashSet<>(options.entrySet())) {
+      if (e.getKey().startsWith("--"))
+        options.put(e.getKey().substring(1), e.getValue());
+    }
   }
 
   public static Startup parseArgs(String[] args) {
@@ -136,6 +146,8 @@ public class Startup {
       if (i + n >= args.length)
         fail(S.fmt(n == 1 ? "argMissingParam" : "argMissingParams", arg));
       i += n;
+      if (arg.startsWith("--"))
+        arg = arg.substring(1);
       // special cases
       doClearPreferences |= (arg.equals("-clearprefs") || arg.equals("-clearprops"));
       if (arg.equals("-help") || arg.equals("-?"))
@@ -208,7 +220,8 @@ public class Startup {
       i += n;
       if ((o & NEEDFILE) != 0 && ret.filesToOpen.isEmpty())
         fail(S.fmt("argMissingFiles", arg));
-
+      if (arg.startsWith("--"))
+        arg = arg.substring(1);
       if (arg.equals("-tty")) {
         ret.headlessTty = true;
         String[] fmts = param0.split(",");
@@ -385,6 +398,9 @@ public class Startup {
           AppPreferences.QUESTA_VALIDATION.set(false);
         else
           fail(S.get("argQuestaOptionError"));
+      } else if (arg.equals("-generate-component-listing")) {
+        ret.doComponentListing = true;
+        ret.componentListingOutfile = param0;
       } else if (arg.equals("-help") || arg.equals("-?")) {
         // already handled above
       }
@@ -458,6 +474,8 @@ public class Startup {
   // from other sources
   private boolean initialized = false;
   private SplashScreen monitor = null;
+  private boolean doComponentListing = false;
+  private String componentListingOutfile;
 
   private ArrayList<File> filesToPrint = new ArrayList<>();
 
@@ -519,7 +537,11 @@ public class Startup {
   public void run() {
     if (Main.headless) {
       try {
-        TtyInterface.run(this);
+        if (doComponentListing)
+          ComponentListingExporter.run(componentListingOutfile);
+        else
+          TtyInterface.run(this);
+        System.exit(0);
       } catch (Exception t) {
         t.printStackTrace();
         System.exit(1);
