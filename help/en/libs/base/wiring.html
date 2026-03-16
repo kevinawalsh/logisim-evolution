@@ -13,37 +13,35 @@
 <h1><img src="/logisim-evolution/icons/wiring.gif">
 <em>Wiring Tool</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Mouse Tools</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0 Beta 1</td></tr>
-</table></p>
+<p>Found in <a href="index.html">Mouse Tools</a></p>
 
-<h2>Behavior</h2>
-
-<p>The wiring tool is for creating wire segments that carry
-values from one endpoint to another. It behaves similarly to wires. It behaves
-similarly to the <a class="icon" href="edit.html"><img
-src="/logisim-evolution/icons/edit.gif"> Multi-Tool</a>, except that it does not select
-components, it only adds new wires and modifies existing wires.
+<p>The Wiring Tool is for creating and rearranging wires. It behaves similarly
+to the <a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif"> Edit Tool</a>,
+except it only adds new wires and modifies existing wires, and it does not
+handle selection or adding new components.</p>
 
 <ul>
 <li><p><img class="nonicon" src="multi-wire-anim.gif" style="float: right; border: 1px solid gray;">
 Clicking and dragging anywhere on the canvas will create a new wire or modify an
-existing wire segment. Wires in Logisim are either horizontal or vertical, never
-diagonal, but logisim will create an "L" shaped sequence of wire segments for
-you if you drag diagonally.</p>
-<blockquote class="hint"> Hint: <b>Press space while dragging to bend a wire's path.</b>.
-    You can do this repeatedly to make a complicated zig-zag
-    path for the wire by pressing space at each place the wire should turn a
-    corner. <b>Press backspace while dragging to straighten a wire's path</b>.
-    Each backspace will remove a corner point resulting in fewer turns and a
-    more direct path. </blockquote></li>
+existing wire segment. All wires in Logisim are either horizontal or vertical,
+never diagonal, but logisim will create an "L" shaped sequence of wire segments
+if you drag diagonally. You can control the orientation of the "L" with mouse
+movement: if the drag starts horizontally, the first segement will be
+horizontal, for example.</p>
+
+<blockquote class="hint"> Tip: <b>Press <span class="key">Space</span> while
+dragging to bend a wire's path.</b>. You can do this repeatedly to make a
+complicated zig-zag path for the wire by pressing <span class="key">Space</span>
+at each place the wire should turn a corner. <b>Press <span class="key">Backspace</span>
+while dragging to straighten a wire's path</b>. Each <span class="key">Backspace</span>
+will remove a corner point, resulting in fewer turns and a more direct path.
+<b>Press <span class="key">Escape</span> to cancel wire drawing.</b>
+</blockquote>
 
 <li><p><img class="nonicon" src="multi-wire-extend-anim.gif" style="float: right; border: 1px solid gray;">
 Click and drag the end of a wire to shorten or extend it, or click and drag
-the middle of a wire segment and drag along the wire to open a gap.</p></li>
+the middle of a wire segment and drag along the wire to open a gap and reroute a
+wire.</p></li>
 
 <li><p>Click and drag on a blank area of the canvas to start a completely new
 wire.</p></li>
