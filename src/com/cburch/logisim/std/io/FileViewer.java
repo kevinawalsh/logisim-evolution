@@ -297,6 +297,11 @@ public class FileViewer extends InstanceFactory {
     public List<String> parse(String str) {
       return Arrays.asList(str.split("\\R"));
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofDescription("multi-line text");
+    }
   }
 
   static final AttributeOption BY_LINE = new AttributeOption("line",

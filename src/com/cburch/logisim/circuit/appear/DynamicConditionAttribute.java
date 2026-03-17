@@ -72,4 +72,9 @@ public class DynamicConditionAttribute extends CanvasBoundAttribute<DynamicCondi
     return value == null ? DynamicCondition.NONE.toDisplayString() : value.toDisplayString();
   }
 
+  @Override
+  public Domain getDomain() {
+    return Domain.ofDescription("expression of the form: path > val, path < val, path == val, path != val, path is error, path is undefined, path is defined; where path is a slash-delineated component path within the circuit");
+  }
+
 }

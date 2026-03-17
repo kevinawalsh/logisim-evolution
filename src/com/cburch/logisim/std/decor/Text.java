@@ -132,6 +132,9 @@ public class Text extends InstanceFactory implements CustomHandles, Reshapable {
       }
       return escaped.toString();
     }
+    
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("any text, with newlines escaped"); }
 
   }
 

@@ -118,6 +118,11 @@ public class Rom extends Mem {
       String contents = HexFile.saveToStringForCircFile(state);
       return "addr/data: " + addr + " " + data + "\n" + contents;
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofDescription("encoding of memory contents");
+    }
   }
 
   @SuppressWarnings("serial")

@@ -247,6 +247,9 @@ public class Image extends InstanceFactory implements Reshapable {
         throw new IllegalArgumentException("Bad image data for " + getName());
       }
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("path or encoded contents of image"); }
   }
 
   private static class FileChooser extends java.awt.Component implements JInputDialog<ImageContent> {

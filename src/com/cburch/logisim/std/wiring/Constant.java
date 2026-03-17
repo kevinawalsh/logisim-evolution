@@ -393,6 +393,11 @@ public class Constant extends InstanceFactory {
     public String toStandardString(ValueWithRadix value) {
       return value.toStandardString();
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofType("int");
+    }
   }
 
   // TODO: Allow editing of value via text tool/attribute table

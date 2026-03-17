@@ -56,10 +56,15 @@ public final class BitWidth implements Comparable<BitWidth> {
     public java.awt.Component getCellEditor(BitWidth value) {
       ComboBox combo = new ComboBox<>(choices);
       if (value != null) {
-        int wid = value.getWidth();
-        if (wid <= 0 || wid > prefab.length) { // FIXME: should check min/max?
-          combo.addItem(value);
+        boolean found = false;
+        for (BitWidth b : choices) {
+          if (b.equals(value)) {
+              found = true;
+              break;
+          }
         }
+        if (!found)
+          combo.addItem(value);
         combo.setSelectedItem(value);
       }
       return combo;
@@ -68,6 +73,11 @@ public final class BitWidth implements Comparable<BitWidth> {
     @Override
     public BitWidth parse(String value) {
       return BitWidth.parse(value);
+    }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofIntRange(choices[0].getWidth(), choices[choices.length-1].getWidth());
     }
   }
 

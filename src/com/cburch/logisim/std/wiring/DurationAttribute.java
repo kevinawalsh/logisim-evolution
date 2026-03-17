@@ -77,4 +77,9 @@ public class DurationAttribute extends Attribute<Integer> {
     }
   }
 
+  @Override
+  public Domain getDomain() {
+    return Domain.ofIntRange(min, max);
+  }
+
 }

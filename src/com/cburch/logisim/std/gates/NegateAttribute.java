@@ -87,4 +87,6 @@ class NegateAttribute extends Attribute<Boolean> {
     return BOOLEAN_ATTR.toDisplayString(value);
   }
 
+  @Override
+  public Domain getDomain() { return Domain.ofList(new String[] {"true", "false"}); }
 }

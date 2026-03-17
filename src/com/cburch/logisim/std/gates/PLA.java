@@ -120,6 +120,11 @@ class PLA extends InstanceFactory {
     public PLATable parse(String str) {
       return PLATable.parse(str);
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofDescription("encoding of the PLA table");
+    }
   }
 
   private class PLAAttributes extends AbstractAttributeSet {

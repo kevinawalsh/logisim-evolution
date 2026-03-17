@@ -92,4 +92,52 @@ public abstract class Attribute<V> {
   public String toString() {
     return name;
   }
+
+  public abstract Domain getDomain();
+
+  // Attribute.Domain describes the domain of XML values an attribute can take on.
+  public static class Domain {
+    public enum Kind {
+      LIST,          // finite, quickly enumerable - options[] holds the list of values
+      INT_RANGE,     // integer range [min, max] inclusive
+      DOUBLE_RANGE,  // floating-point range [min, max] inclusive
+      TYPE,          // any value of a given type — freeform hint names it ("font", "color", etc.)
+      DESCRIPTION,   // free-form prose for opaque or complicated types
+      UNKNOWN        // no information available
+    }
+
+    public final Kind kind;
+    public final String[] options;   // LIST only: the values that can appear in the XML attribute
+    public final int imin, imax;     // INT_RANGE only
+    public final double dmin, dmax;  // DOUBLE_RANGE only
+    public final String hint;        // TYPE and DESCRIPTION: the text; null otherwise
+
+    public static final Domain UNKNOWN
+      = new Domain(Kind.UNKNOWN, null, 0, 0, 0, 0, "unknown");
+
+    public static Domain ofList(Object[] options) {
+      String vals[] = new String[options.length];
+      for (int i = 0; i < options.length; i++)
+        vals[i] = options[i].toString();
+      return new Domain(Kind.LIST, vals, 0, 0, 0, 0, String.join(", ", vals));
+    }
+    public static Domain ofIntRange(int min, int max) {
+      return new Domain(Kind.INT_RANGE, null, min, max, 0, 0, String.format("%d - %d, inclusive, integer", min, max));
+    }
+    public static Domain ofDoubleRange(double min, double max) {
+      return new Domain(Kind.DOUBLE_RANGE, null, 0, 0, min, max, String.format("%f - %f, inclusive, floating point", min, max));
+    }
+    public static Domain ofType(String type) {
+      return new Domain(Kind.TYPE, null, 0, 0, 0, 0, "any " + type);
+    }
+    public static Domain ofDescription(String desc) {
+      return new Domain(Kind.DESCRIPTION, null, 0, 0, 0, 0, desc);
+    }
+
+    private Domain(Kind k, String[] o, int im, int ix, double dm, double dx, String h) {
+      kind = k; options = o; imin = im; imax = ix; dmin = dm; dmax = dx; hint = h;
+    }
+
+  }
+
 }

@@ -463,6 +463,9 @@ public class HttpIn extends InstanceFactory {
     public java.awt.Component getCellEditor(Window source, HttpInputFormat fmt) {
       return new HttpInputFormatDialog(source, fmt);
     }
+    
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("format string for parsing fetched data"); }
 
   }
 

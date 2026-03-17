@@ -498,6 +498,11 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     public String toStandardString(ColorModelColor value) {
       return value == null ? "000000#" + MODEL_RGB : String.format("%x#%s", value.color & 0xffffff, value.model);
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofDescription("any color within the specified color model");
+    }
   }
 
   private static class ColorChooser extends ColorPicker

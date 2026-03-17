@@ -800,6 +800,9 @@ public class SerialIn extends InstanceFactory {
     public String parse(String value) {
       return value;
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("serial port path"); }
   }
 
   private static class FormatAttribute extends Attribute<SerialInputFormat> {
@@ -848,6 +851,9 @@ public class SerialIn extends InstanceFactory {
     public java.awt.Component getCellEditor(Window source, SerialInputFormat fmt) {
       return new SerialInputFormatDialog(source, fmt);
     }
+    
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("format string for parsing received data"); }
 
   }
 

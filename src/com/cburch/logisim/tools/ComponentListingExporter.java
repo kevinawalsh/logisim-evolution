@@ -33,7 +33,6 @@ package com.cburch.logisim.tools;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,9 +70,10 @@ import com.cburch.logisim.std.Builtin;
  */
 public class ComponentListingExporter {
 
-  // Maximum number of values to enumerate for an IntegerRangeAttribute.
-  // Ranges larger than this get a "min-max" string instead of a list.
-  private static final int MAX_ENUM_RANGE = 6;
+  // Maximum INT_RANGE size to enumerate during port-affecting attribute detection.
+  // Ranges larger than this are not varied. 32 covers the largest port-affecting
+  // range known (gate inputs 2-32).
+  private static final int MAX_ENUM_RANGE = 32;
 
   public static void run(String outputFile) {
     try {
@@ -192,7 +192,7 @@ public class ComponentListingExporter {
     // Get default port positions (facing=east if applicable)
     AttributeSet eastAttrs = defaultAttrs;
     if (facingAttr != null) {
-      eastAttrs = cloneWithValue(defaultAttrs, facingAttr, Direction.EAST);
+      eastAttrs = cloneWithValue(defaultAttrs, facingAttr, "east");
     }
 
     // Check standard rotation
@@ -215,9 +215,9 @@ public class ComponentListingExporter {
 
     // Generate variants: combinations of port-affecting non-FACING attributes
     List<Attribute<?>> variantAttrList = new ArrayList<>(portAffecting);
-    List<List<Object>> variantValueSets = new ArrayList<>();
+    List<List<String>> variantValueSets = new ArrayList<>();
     for (Attribute<?> pa : variantAttrList) {
-      List<Object> vals = getFiniteValues(pa);
+      List<String> vals = getFiniteValues(pa);
       if (vals == null || vals.isEmpty()) {
         variantAttrList = Collections.emptyList(); // safety
         break;
@@ -225,7 +225,7 @@ public class ComponentListingExporter {
       variantValueSets.add(vals);
     }
 
-    List<List<Object>> combos = buildCombos(variantValueSets);
+    List<List<String>> combos = buildCombos(variantValueSets);
     if (combos.isEmpty()) combos.add(Collections.emptyList());
 
     // Determine facings to enumerate per combo
@@ -284,18 +284,22 @@ public class ComponentListingExporter {
     // variants
     w.key("variants");
     w.beginArray();
-    for (List<Object> combo : combos) {
+    for (List<String> combo : combos) {
       for (Direction facing : facingsToEnumerate) {
         // Build attrs for this variant
         AttributeSet varAttrs = defaultAttrs;
         if (facing != null) {
-          varAttrs = cloneWithValue(varAttrs, facingAttr, facing);
+          varAttrs = cloneWithValue(varAttrs, facingAttr, facing.toString());
+          if (varAttrs == null) continue;
         }
+        boolean comboFailed = false;
         for (int i = 0; i < variantAttrList.size(); i++) {
           @SuppressWarnings("rawtypes")
           Attribute attr = variantAttrList.get(i);
           varAttrs = cloneWithValue(varAttrs, attr, combo.get(i));
+          if (varAttrs == null) { comboFailed = true; break; }
         }
+        if (comboFailed) continue;
 
         List<PortInfo> ports = getPortInfos(factory, varAttrs);
         if (ports == null) continue;
@@ -303,7 +307,7 @@ public class ComponentListingExporter {
         w.beginObject();
         if (facing != null) w.keyValue("facing", facing.toString());
         for (int i = 0; i < variantAttrList.size(); i++) {
-          w.keyValue(variantAttrList.get(i).getName(), combo.get(i).toString());
+          w.keyValue(variantAttrList.get(i).getName(), combo.get(i));
         }
         w.key("ports");
         w.beginArray();
@@ -415,7 +419,7 @@ public class ComponentListingExporter {
 
     Direction[] others = { Direction.WEST, Direction.NORTH, Direction.SOUTH };
     for (Direction dir : others) {
-      AttributeSet dirAttrs = cloneWithValue(eastAttrs, facingAttr, dir);
+      AttributeSet dirAttrs = cloneWithValue(eastAttrs, facingAttr, dir.toString());
       List<PortInfo> dirPorts = getPortInfos(factory, dirAttrs);
       if (dirPorts == null) return false;
       if (dirPorts.size() != eastPorts.size()) return false;
@@ -450,7 +454,7 @@ public class ComponentListingExporter {
     // Use east-facing as baseline (to avoid facing from confusing the check)
     AttributeSet baseAttrs = defaultAttrs;
     if (facingAttr != null) {
-      baseAttrs = cloneWithValue(defaultAttrs, facingAttr, Direction.EAST);
+      baseAttrs = cloneWithValue(defaultAttrs, facingAttr, "east");
     }
     List<PortInfo> basePorts = getPortInfos(factory, baseAttrs);
     if (basePorts == null) return Collections.emptyList();
@@ -458,11 +462,12 @@ public class ComponentListingExporter {
     List<Attribute<?>> result = new ArrayList<>();
     for (Attribute<?> attr : defaultAttrs.getAttributes()) {
       if (attr == facingAttr) continue;
-      List<Object> vals = getFiniteValues(attr);
+      List<String> vals = getFiniteValues(attr);
       if (vals == null || vals.size() <= 1) continue;
-      for (Object val : vals) {
-        @SuppressWarnings({"unchecked","rawtypes"})
+      for (String val : vals) {
+        @SuppressWarnings("rawtypes")
         AttributeSet testAttrs = cloneWithValue(baseAttrs, (Attribute)attr, val);
+        if (testAttrs == null) continue;
         List<PortInfo> testPorts = getPortInfos(factory, testAttrs);
         if (testPorts == null) continue;
         if (!portInfosEqual(basePorts, testPorts)) {
@@ -488,228 +493,72 @@ public class ComponentListingExporter {
   // Attribute value enumeration
   // ---------------------------------------------------------------------------
 
-  /** Returns a List<String> for finite-valued attrs, or a String description. */
+  /** Returns a List<String> for LIST-domain attrs, or a hint String for others. */
   private static Object describeValues(Attribute<?> attr) {
-    String cn = attr.getClass().getName();
-
-    // Exact-type dispatch (no instanceof) per project convention
-    if (cn.equals("com.cburch.logisim.data.Attributes$BooleanAttribute")) {
-      List<String> v = new ArrayList<>();
-      v.add("true"); v.add("false");
-      return v;
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$DirectionAttribute")) {
-      List<String> v = new ArrayList<>();
-      v.add("east"); v.add("west"); v.add("north"); v.add("south");
-      return v;
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$OptionAttribute")
-        || cn.equals("com.cburch.logisim.data.Attributes$BooleanAttribute")
-        || cn.equals("com.cburch.logisim.data.Attributes$DirectionAttribute")) {
-      // Already handled above; this branch reached by OptionAttribute proper
-      Object[] vals = getValsField(attr);
-      if (vals != null) {
-        List<String> result = new ArrayList<>();
-        for (Object v : vals) result.add(v.toString());
-        return result;
-      }
-      return "options";
-    }
-    // Handle unknown OptionAttribute subclasses by attempting vals reflection
-    if (isOptionAttributeSubclass(attr)) {
-      Object[] vals = getValsField(attr);
-      if (vals != null) {
-        List<String> result = new ArrayList<>();
-        for (Object v : vals) result.add(v.toString());
-        return result;
-      }
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$IntegerRangeAttribute")) {
-      int start = getIntField(attr, "start", 0);
-      int end   = getIntField(attr, "end",   0);
-      return start + "-" + end;
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$IntegerAttribute")) {
-      return "any integer";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$HexIntegerAttribute")) {
-      return "any integer (hex format in XML: 0x...)";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$DoubleAttribute")) {
-      return "any number";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$DoubleRangeAttribute")) {
-      double start = getDblField(attr, "start", 0);
-      double end   = getDblField(attr, "end",   0);
-      return start + " to " + end;
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$StringAttribute")) {
-      return "any text";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$ColorAttribute")) {
-      return "color (#RRGGBB or #RRGGBBAA)";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$FontAttribute")) {
-      return "font (family style size, e.g. SansSerif plain 12)";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$LocationAttribute")) {
-      return "location (x,y)";
-    }
-    if (cn.equals("com.cburch.logisim.data.Attributes$FilenameAttribute")) {
-      return "file path";
-    }
-    if (cn.equals("com.cburch.logisim.data.BitWidth$Attribute")) {
-      Object[] choices = getValsField(attr, "choices");
-      if (choices != null && choices.length > 0) {
-        return choices[0].toString() + "-" + choices[choices.length - 1].toString();
-      }
-      return "1-32";
-    }
-    if (cn.equals("com.cburch.logisim.std.wiring.DurationAttribute")) {
-      int min = getIntField(attr, "minimum", 1);
-      int max = getIntField(attr, "maximum", Integer.MAX_VALUE);
-      return min + "-" + (max == Integer.MAX_VALUE ? "max" : max);
-    }
-    if (cn.equals("com.cburch.logisim.std.gates.NegateAttribute")) {
-      List<String> v = new ArrayList<>();
-      v.add("true"); v.add("false");
-      return v;
-    }
-
-    // Fallback: unknown type
-    System.err.println("WARNING: unknown attribute type " + cn
-        + " for attr '" + attr.getName() + "'");
-    return "complex (" + attr.getClass().getSimpleName() + ")";
-  }
-
-  /** Returns finite values for attributes suitable for port-affecting variation. */
-  private static List<Object> getFiniteValues(Attribute<?> attr) {
-    String cn = attr.getClass().getName();
-    // Boolean-like
-    if (cn.equals("com.cburch.logisim.data.Attributes$BooleanAttribute")
-        || cn.equals("com.cburch.logisim.std.gates.NegateAttribute")) {
-      List<Object> v = new ArrayList<>();
-      v.add(Boolean.TRUE); v.add(Boolean.FALSE);
-      return v;
-    }
-    // Option-like (includes DirectionAttribute subclass)
-    if (cn.equals("com.cburch.logisim.data.Attributes$OptionAttribute")
-        || cn.equals("com.cburch.logisim.data.Attributes$DirectionAttribute")
-        || isOptionAttributeSubclass(attr)) {
-      Object[] vals = getValsField(attr);
-      if (vals == null) return null;
-      List<Object> result = new ArrayList<>();
-      for (Object v : vals) result.add(v);
+    Attribute.Domain domain = attr.getDomain();
+    if (domain.kind == Attribute.Domain.Kind.LIST) {
+      List<String> result = new ArrayList<>();
+      for (String s : domain.options) result.add(s);
       return result;
     }
-    // Integer range (only if range is not too large)
-    if (cn.equals("com.cburch.logisim.data.Attributes$IntegerRangeAttribute")) {
-      int start = getIntField(attr, "start", 0);
-      int end   = getIntField(attr, "end",   0);
-      if (end - start > MAX_ENUM_RANGE) return null;
-      List<Object> result = new ArrayList<>();
-      for (int i = start; i <= end; i++) result.add(Integer.valueOf(i));
-      return result;
-    }
-    // BitWidth range
-    if (cn.equals("com.cburch.logisim.data.BitWidth$Attribute")) {
-      Object[] choices = getValsField(attr, "choices");
-      if (choices == null) return null;
-      List<Object> result = new ArrayList<>();
-      for (Object c : choices) result.add(c);
-      return result;
-    }
-    return null; // not finite/enumerable
+    return domain.hint;
   }
 
-  // ---------------------------------------------------------------------------
-  // Reflection helpers
-  // ---------------------------------------------------------------------------
-
-  private static Object[] getValsField(Attribute<?> attr) {
-    return getValsField(attr, "vals");
-  }
-
-  private static Object[] getValsField(Attribute<?> attr, String fieldName) {
-    for (Class<?> c = attr.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
-      try {
-        Field f = c.getDeclaredField(fieldName);
-        f.setAccessible(true);
-        return (Object[]) f.get(attr);
-      } catch (NoSuchFieldException e) {
-        // try superclass
-      } catch (Exception e) {
-        return null;
-      }
+  /**
+   * Returns XML-string values for port-affecting attribute variation, or null
+   * if this attribute's domain is not enumerable within the variation limit.
+   * Only LIST and small INT_RANGE domains are enumerated.
+   */
+  private static List<String> getFiniteValues(Attribute<?> attr) {
+    Attribute.Domain domain = attr.getDomain();
+    if (domain.kind == Attribute.Domain.Kind.LIST) {
+      List<String> result = new ArrayList<>();
+      for (String s : domain.options) result.add(s);
+      return result;
+    }
+    if (domain.kind == Attribute.Domain.Kind.INT_RANGE) {
+      if (domain.imax - domain.imin > MAX_ENUM_RANGE) return null;
+      List<String> result = new ArrayList<>();
+      for (int i = domain.imin; i <= domain.imax; i++) result.add(String.valueOf(i));
+      return result;
     }
     return null;
-  }
-
-  private static int getIntField(Attribute<?> attr, String name, int dflt) {
-    for (Class<?> c = attr.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
-      try {
-        Field f = c.getDeclaredField(name);
-        f.setAccessible(true);
-        return f.getInt(attr);
-      } catch (NoSuchFieldException e) {
-        // try superclass
-      } catch (Exception e) {
-        return dflt;
-      }
-    }
-    return dflt;
-  }
-
-  private static double getDblField(Attribute<?> attr, String name, double dflt) {
-    for (Class<?> c = attr.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
-      try {
-        Field f = c.getDeclaredField(name);
-        f.setAccessible(true);
-        return f.getDouble(attr);
-      } catch (NoSuchFieldException e) {
-        // try superclass
-      } catch (Exception e) {
-        return dflt;
-      }
-    }
-    return dflt;
-  }
-
-  /** Returns true if attr's superclass chain includes OptionAttribute. */
-  private static boolean isOptionAttributeSubclass(Attribute<?> attr) {
-    for (Class<?> c = attr.getClass().getSuperclass();
-         c != null && c != Object.class; c = c.getSuperclass()) {
-      if (c.getName().equals("com.cburch.logisim.data.Attributes$OptionAttribute"))
-        return true;
-    }
-    return false;
   }
 
   // ---------------------------------------------------------------------------
   // AttributeSet cloning helpers
   // ---------------------------------------------------------------------------
 
+  /**
+   * Clones attrs and sets attr to the value parsed from xmlValue. Returns null
+   * if parsing or setting fails (e.g., the value is not valid for this component
+   * state), allowing callers to skip that value gracefully.
+   */
   @SuppressWarnings({"rawtypes","unchecked"})
   private static AttributeSet cloneWithValue(AttributeSet attrs,
-      Attribute attr, Object value) {
-    System.out.printf("in %s change %s to %s\n", attrs.getClass(), attr, value);
-    AttributeSet copy = (AttributeSet) attrs.clone();
-    ((AbstractAttributeSet) copy).changeAttr((Attribute<Object>) attr, value);
-    return copy;
+      Attribute attr, String xmlValue) {
+    try {
+      Object parsed = attr.parse(xmlValue);
+      AttributeSet copy = (AttributeSet) attrs.clone();
+      ((AbstractAttributeSet) copy).changeAttr((Attribute<Object>) attr, parsed);
+      return copy;
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Cartesian product
   // ---------------------------------------------------------------------------
 
-  private static List<List<Object>> buildCombos(List<List<Object>> valueSets) {
-    List<List<Object>> result = new ArrayList<>();
+  private static List<List<String>> buildCombos(List<List<String>> valueSets) {
+    List<List<String>> result = new ArrayList<>();
     result.add(new ArrayList<>());
-    for (List<Object> valueSet : valueSets) {
-      List<List<Object>> next = new ArrayList<>();
-      for (List<Object> existing : result) {
-        for (Object val : valueSet) {
-          List<Object> combo = new ArrayList<>(existing);
+    for (List<String> valueSet : valueSets) {
+      List<List<String>> next = new ArrayList<>();
+      for (List<String> existing : result) {
+        for (String val : valueSet) {
+          List<String> combo = new ArrayList<>(existing);
           combo.add(val);
           next.add(combo);
         }

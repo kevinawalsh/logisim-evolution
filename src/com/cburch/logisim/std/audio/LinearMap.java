@@ -185,6 +185,9 @@ public class LinearMap extends FitRange {
         throw new NumberFormatException("high and low must be different");
       return new BoundedRange(lo, hi, orig);
     }
+    
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("[lo, hi], designating an inclusive range of signed or unsigned integers"); }
 
   }
 

@@ -114,6 +114,15 @@ public class SplitterAttributes extends AbstractAttributeSet {
         return "" + (index - 1);
       }
     }
+
+    @Override
+    public Domain getDomain() {
+      // "none", "1", "2", ... "n", where n is the fanout
+      String vals[] = new String[options.length];
+      for (int i = 0; i < options.length; i++)
+        vals[i] = (options[i].value < 0) ? unchosen_val : ""+options[i].value;
+      return Domain.ofList(vals);
+    }
   }
 
   private static class BitOutOption {

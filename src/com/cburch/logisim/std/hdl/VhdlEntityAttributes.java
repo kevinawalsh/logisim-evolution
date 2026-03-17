@@ -95,6 +95,11 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
     public String toDisplayString(Integer value) {
       return value == null ? "(default) " + g.getDefaultValue() : value.toString();
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofIntRange(start, end);
+    }
   }
 
   public static Attribute<Integer> forGeneric(VhdlContent.Generic g) {

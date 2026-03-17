@@ -219,6 +219,11 @@ public class Attributes {
       return new LinkedFile(abs.toFile(), rel.toFile());
     }
 
+    @Override
+    public Domain getDomain() {
+      return Domain.ofDescription("file name");
+    }
+
   }
 
   private static class FilenameChooser extends java.awt.Component implements JInputDialog<LinkedFile> {
@@ -350,6 +355,9 @@ public class Attributes {
           + hex(c.getBlue());
       return c.getAlpha() == 255 ? ret : ret + hex(c.getAlpha());
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofType("color"); }
   }
 
   private static class ColorChooser extends ColorPicker
@@ -399,6 +407,9 @@ public class Attributes {
     public Double parse(String value) {
       return Double.valueOf(value);
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofType("double"); }
   }
 
   private static class DoubleRangeAttribute extends Attribute<Double> {
@@ -427,6 +438,9 @@ public class Attributes {
         throw new NumberFormatException("value too large, can't exceed " + end);
       return Double.valueOf(v);
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofDoubleRange(start, end); }
   }
 
   private static class FontAttribute extends Attribute<Font> {
@@ -459,6 +473,9 @@ public class Attributes {
           + FontUtil.toStyleStandardString(f.getStyle()) + " "
           + f.getSize();
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofType("font"); }
   }
 
   private static class FontChooser extends JFontChooser
@@ -518,6 +535,9 @@ public class Attributes {
     public String toStandardString(Integer value) {
       return toDisplayString(value);
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("integer in hex notation"); }
   }
 
   private static class IntegerAttribute extends Attribute<Integer> {
@@ -529,6 +549,9 @@ public class Attributes {
     public Integer parse(String value) {
       return Integer.valueOf(value);
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofType("int"); }
   }
 
   private static class IntegerRangeAttribute extends Attribute<Integer> {
@@ -573,6 +596,9 @@ public class Attributes {
         throw new NumberFormatException("integer too large");
       return Integer.valueOf(v);
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofIntRange(start, end); }
   }
 
   private static class LocationAttribute extends Attribute<Location> {
@@ -584,6 +610,9 @@ public class Attributes {
     public Location parse(String value) {
       return Location.parse(value);
     }
+
+    @Override
+    public Domain getDomain() { return Domain.ofDescription("integer x, y coordinates"); }
   }
 
   private static class OptionAttribute<V> extends Attribute<V> {
@@ -624,6 +653,11 @@ public class Attributes {
         return value.toString();
       }
     }
+
+    @Override
+    public Domain getDomain() {
+      return Domain.ofList(vals);
+    }
   }
 
   private static class OptionComboRenderer<V> extends BasicComboBoxRenderer {
@@ -659,6 +693,8 @@ public class Attributes {
     public String parse(String value) {
       return value;
     }
+    @Override
+    public Domain getDomain() { return Domain.ofType("string"); }
   }
 
   public static Attribute<BitWidth> forBitWidth(String name) {
