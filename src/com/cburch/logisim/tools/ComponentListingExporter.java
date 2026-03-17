@@ -479,7 +479,8 @@ public class ComponentListingExporter {
   // ---------------------------------------------------------------------------
 
   private static final String ROTATION_STANDARD = "standard";
-  private static final String ROTATION_MIRROR = "mirrored";
+  private static final String ROTATION_MIRROR_LEFT = "left-mirrored";
+  private static final String ROTATION_MIRROR_RIGHT = "right-mirrored";
   private static final String ROTATION_CUSTOM = "custom";
   private static final String ROTATION_NONE = "none";
   private static String classifyRotation(ComponentFactory factory,
@@ -497,7 +498,8 @@ public class ComponentListingExporter {
       return ROTATION_STANDARD; // NONE?
     }
     boolean maybeStandard = true;
-    boolean maybeMirror = true;
+    boolean maybeMirrorLeft = true;
+    boolean maybeMirrorRight = true;
 
     Direction[] others = { Direction.WEST, Direction.NORTH, Direction.SOUTH };
     for (Direction dir : others) {
@@ -524,7 +526,7 @@ public class ComponentListingExporter {
         // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
         maybeStandard &= (dp.dx == expectedDx && dp.dy == expectedDy);
       }
-      for (int i = 0; i < eastPorts.size() && maybeMirror; i++) {
+      for (int i = 0; i < eastPorts.size() && maybeMirrorLeft; i++) {
         PortInfo ep = eastPorts.get(i);
         PortInfo dp = dirPorts.get(i);
         int expectedDx, expectedDy;
@@ -539,16 +541,33 @@ public class ComponentListingExporter {
           expectedDy =  ep.dx;
         }
         // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
-        maybeMirror &= (dp.dx == expectedDx && dp.dy == expectedDy);
+        maybeMirrorLeft &= (dp.dx == expectedDx && dp.dy == expectedDy);
+      }
+      for (int i = 0; i < eastPorts.size() && maybeMirrorRight; i++) {
+        PortInfo ep = eastPorts.get(i);
+        PortInfo dp = dirPorts.get(i);
+        int expectedDx, expectedDy;
+        if (dir == Direction.WEST) {
+          expectedDx = -ep.dx;
+          expectedDy = -ep.dy * -1;
+        } else if (dir == Direction.NORTH) {
+          expectedDx =  ep.dy * -1;
+          expectedDy = -ep.dx;
+        } else { // SOUTH
+          expectedDx = -ep.dy;
+          expectedDy =  ep.dx;
+        }
+        // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
+        maybeMirrorRight &= (dp.dx == expectedDx && dp.dy == expectedDy);
       }
     }
     // System.out.printf("std=%s mirror=%s\n", maybeStandard?"maybe":"no", maybeMirror?"maybe":"no");
-    if (maybeStandard && maybeMirror)
-      return ROTATION_STANDARD; // either is fine
-    else if (maybeStandard)
+    if (maybeStandard)
       return ROTATION_STANDARD;
-    else if (maybeMirror)
-      return ROTATION_MIRROR;
+    else if (maybeMirrorLeft)
+      return ROTATION_MIRROR_LEFT;
+    else if (maybeMirrorRight)
+      return ROTATION_MIRROR_RIGHT;
     else
       return ROTATION_CUSTOM;
   }
