@@ -58,7 +58,7 @@ class FileViewerAttributes extends AbstractAttributeSet {
   int cols = 40;
   AttributeOption select = FileViewer.BY_LINE;
   AttributeOption storage = FileViewer.FILE_EMBED;
-  List<String> contents = null;
+  List<String> contents = List.of("");
   Attributes.LinkedFile filename = null;
 
   public FileViewerAttributes() { }

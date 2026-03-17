@@ -31,15 +31,19 @@
 package com.cburch.logisim.std.gates;
 
 import java.awt.Color;
-import java.awt.Graphics2D;
-
 import java.awt.Font;
+import java.awt.Graphics2D;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
@@ -63,7 +67,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 
-abstract class AbstractGate extends InstanceFactory {
+abstract class AbstractGate extends InstanceFactory implements ComponentListingFeature {
   static Value pullOutput(Value value, Object outType) {
     if (outType == GateAttributes.OUTPUT_01) {
       return value;
@@ -308,6 +312,32 @@ abstract class AbstractGate extends InstanceFactory {
     } else {
       return Location.create(-dx, dy);
     }
+  }
+
+  @Override
+  public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+    HashMap<String, String> notes = new HashMap<>();
+    String msg = "when true, this in%d is shifted 10 units opposite the direction the component is facing.";
+    notes.put("negate0", String.format(msg, 0));
+    notes.put("negate1", String.format(msg, 1));
+    for (int i = 2; i < 32; i++)
+      notes.put("negate"+i, "present iff inputs>"+i+"; " + String.format(msg, i));
+    return notes;
+  }
+
+  @Override
+  public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+    ArrayList<String> excluded = new ArrayList<>();
+    for (int i = 0; i < 32; i++)
+      excluded.add("negate"+i);
+    return excluded;
+  }
+  
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return this;
+    return super.getFeature(key, attrs);
   }
 
   @Override

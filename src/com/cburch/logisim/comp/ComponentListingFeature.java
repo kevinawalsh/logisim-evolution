@@ -31,6 +31,9 @@
 package com.cburch.logisim.comp;
 
 import java.util.Map;
+import java.util.List;
+
+import com.cburch.logisim.data.AttributeSet;
 
 /**
  * Feature interface for providing extra annotation notes for component
@@ -51,6 +54,12 @@ public interface ComponentListingFeature {
    * into the "note" field of the corresponding attribute entry in the JSON
    * output. Return an empty map if no notes are needed.
    */
-  Map<String, String> getAttributeNotes();
+  Map<String, String> getAttributeNotes(AttributeSet attrs);
+
+  /**
+   * Returns a list of attributes to be excluded from the enumeration during
+   * port layout analysis.
+   */
+  List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs);
 
 }

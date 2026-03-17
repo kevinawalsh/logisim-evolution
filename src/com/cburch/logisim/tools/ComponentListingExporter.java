@@ -30,11 +30,16 @@
 
 package com.cburch.logisim.tools;
 
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -61,12 +66,19 @@ import com.cburch.logisim.std.Builtin;
  * anchor point (the "loc" attribute in .circ XML). +dx is East (right), +dy is
  * South (down). Units are Logisim grid units (10 = 1 grid square).
  *
- * Standard rotation: for components with standard_rotation=true, variants list
+ * Rotation: for components with rotation="standard", variants list
  * facing=east port positions only. Derive other facings by rotating (dx,dy)
  * around the anchor (0,0):
  *   west:  (-dx, -dy)   [180 degrees]
  *   north: (dy,  -dx)   [CCW 90 degrees in screen coordinates]
  *   south: (-dy,  dx)   [CW  90 degrees in screen coordinates]
+ * Rotation: for components with rotation="mirrored", variants list
+ * facing=east port positions only. Derive north facing by rotating 90 degrees
+ * CCW about anchor (0,0), and derive other facings by facings by mirroring (dx,dy)
+ * over the x or y axis, or 
+ *   west:  (-dx,  dy)   [Mirror east facing layout over y axis]
+ *   north: (dy,  -dx)   [CCW 90 degrees in screen coordinates]
+ *   south: (-dy, -dx)   [Mirror north facing layout over x axis]
  */
 public class ComponentListingExporter {
 
@@ -78,27 +90,34 @@ public class ComponentListingExporter {
   public static void run(String outputFile) {
     try {
       PrintWriter out;
+      CountingOutputStream cos;
       if (outputFile == null || outputFile.equals("-")) {
-        out = new PrintWriter(System.out);
+        cos = new CountingOutputStream(System.out);
       } else {
-        out = new PrintWriter(new FileWriter(outputFile));
+        cos = new CountingOutputStream(new FileOutputStream(outputFile));
       }
+      out = new PrintWriter(new OutputStreamWriter(cos, StandardCharsets.UTF_8));
+      // if (outputFile == null || outputFile.equals("-")) {
+      //   out = new PrintWriter(System.out);
+      // } else {
+      //   out = new PrintWriter(new FileWriter(outputFile));
+      // }
       try {
-        buildListing(out);
+        buildListing(out, cos);
       } finally {
         out.flush();
         if (outputFile != null && !outputFile.equals("-"))
           out.close();
       }
-      System.err.println("Component listing written to: " +
-          (outputFile == null ? "stdout" : outputFile));
+      if (outputFile != null && !outputFile.equals("-"))
+        System.err.printf("Component listing written to: %s\n", outputFile);
     } catch (IOException e) {
       System.err.println("Error writing component listing: " + e.getMessage());
       System.exit(1);
     }
   }
 
-  private static void buildListing(PrintWriter out) {
+  private static void buildListing(PrintWriter out, CountingOutputStream cos) {
     Builtin builtin = new Builtin();
     JsonWriter w = new JsonWriter(out);
     w.beginObject();
@@ -110,16 +129,40 @@ public class ComponentListingExporter {
     w.keyValue("origin", "component anchor — the 'loc' attribute in .circ XML");
     w.keyValue("x_positive", "East (right)");
     w.keyValue("y_positive", "South (down)");
-    w.keyValue("units", "Logisim grid units (10 = 1 grid square)");
+    w.keyValue("units", "Logisim grid units (10 = 1 grid square), all coordinates must be multiples of 10");
     w.endObject();
-    w.key("standard_rotation_transforms");
+    w.key("rotation_transforms");
+    w.beginObject();
+    w.key("standard");
     w.beginObject();
     w.keyValue("description",
-        "For components with standard_rotation=true, variants list facing=east " +
-        "port positions only. Derive other facings by rotating (dx,dy) around (0,0):");
+        "For components with rotation='standard', port_layouts list facing=east layout of " +
+        "port positions only. Derive layouts for other facings by rotating (dx,dy) around (0,0):");
     w.keyValue("west",  "(-dx, -dy)  [180 degrees]");
     w.keyValue("north", "(dy, -dx)   [CCW 90 degrees in screen coordinates]");
     w.keyValue("south", "(-dy, dx)   [CW 90 degrees in screen coordinates]");
+    w.endObject();
+    w.key("mirrored");
+    w.beginObject();
+    w.keyValue("description",
+        "For components with rotation='mirrored', port_layouts list facing=east layout of " +
+        "port positions only. Derive layouts for north facing by rotating (dx,dy) " +
+        "around (0,0) by 90 CCW in screen coordinates. Derive layouts for west and " +
+        "south facings by mirroring over the x or y axis:");
+    w.keyValue("west",  "(-dx, dy)   [Mirror east facing layout over x axis]");
+    w.keyValue("north", "(dy, -dx)   [CCW 90 degrees in screen coordinates]");
+    w.keyValue("south", "(-dy, -dx)  [Mirror north facing layout over x axis]");
+    w.endObject();
+    w.key("custom");
+    w.beginObject();
+    w.keyValue("description",
+        "For components with rotation='custom', port_layouts list all port position layouts.");
+    w.endObject();
+    w.key("none");
+    w.beginObject();
+    w.keyValue("description",
+        "For components with rotation='none', port position layouts do not vary.");
+    w.endObject();
     w.endObject();
     w.key("port_types");
     w.beginObject();
@@ -127,22 +170,37 @@ public class ComponentListingExporter {
     w.keyValue("output", "signal flows out of the component");
     w.keyValue("inout",  "bidirectional signal");
     w.endObject();
+    w.key("output_driver_types");
+    w.beginObject();
+    w.keyValue("01", "standard push-pull active output driver, actively drives output to 0 or to 1");
+    w.keyValue("0Z", "pull-down only output driver, actively drives output to 0 or leaves output floating");
+    w.keyValue("Z1", "pull-up only output driver, actively drives output to 1 or leaves output floating");
+    w.endObject();
     w.key("usage");
-    w.value("To find port positions: look up the component by library and name, " +
+    w.value("To find component port layout: look up the component by library and name, " +
         "find the variant whose attribute values match those in the .circ file " +
         "(defaulting to default_attrs for any omitted attributes), then read " +
-        "port dx/dy offsets. Absolute port position = anchor_x + dx, anchor_y + dy.");
+        "port dx/dy offsets. Adjust offsets if standard_rotation=true and not facing East. " +
+        "Absolute port position = anchor_x + dx, anchor_y + dy.");
     w.endObject(); // _meta
 
+    HashSet<ComponentFactory> done = new HashSet<>();
     for (Library lib : builtin.getLibraries()) {
       String libName = lib.getDisplayName();
+      if (libName.equals("Mouse Tools"))
+        continue;
       w.key(libName);
       w.beginObject();
       for (Tool tool : lib.getTools()) {
         if (!(tool instanceof AddTool)) continue;
         ComponentFactory factory = ((AddTool) tool).getFactory();
+        if (!done.add(factory)) continue;
+        // if (!factory.getName().equals("AND Gate")) continue;
         try {
+          int a = w.linecount;
           processComponent(factory, w);
+          int b = w.linecount;
+          System.out.printf("Wrote %d lines of json for '%s'\n", b-a, factory.getName());
         } catch (Exception e) {
           System.err.println("WARNING: error processing " + factory.getName()
               + " in " + libName + ": " + e.getMessage());
@@ -153,6 +211,8 @@ public class ComponentListingExporter {
     }
 
     w.endObject(); // root
+    out.flush();
+    System.out.printf("Complete: wrote %d lines (%d bytes) of json\n", w.linecount, cos.getCount());
   }
 
   @SuppressWarnings("unchecked")
@@ -160,12 +220,16 @@ public class ComponentListingExporter {
     AttributeSet defaultAttrs = factory.createAttributeSet();
     List<Attribute<?>> attrList = defaultAttrs.getAttributes();
 
-    // Get ComponentListingFeature notes (if any)
+    // Get ComponentListingFeature notes (if any), and layout variant exclusion list
     Map<String, String> attrNotes = Collections.emptyMap();
-    Object clf = factory.getFeature(ComponentListingFeature.class, defaultAttrs);
-    if (clf instanceof ComponentListingFeature) {
-      Map<String, String> notes = ((ComponentListingFeature) clf).getAttributeNotes();
+    List<String> variantAttrExclusions = Collections.emptyList();
+    Object o = factory.getFeature(ComponentListingFeature.class, defaultAttrs);
+    if (o instanceof ComponentListingFeature) {
+      ComponentListingFeature clf = (ComponentListingFeature) o;
+      Map<String, String> notes = clf.getAttributeNotes(defaultAttrs);
       if (notes != null) attrNotes = notes;
+      List<String> excluded = clf.getLayoutAnalysisExcludedAttributes(defaultAttrs);
+      if (excluded != null) variantAttrExclusions = excluded;
     }
 
     // Detect FACING attribute
@@ -181,7 +245,7 @@ public class ComponentListingExporter {
       ai.description = attr.getDisplayName();
       ai.values = describeValues(attr);
       ai.note = attrNotes.get(attr.getName());
-      ai.defaultVal = defaultAttrs.getValue(attr);
+      ai.defaultVal = attrToXml(attr, defaultAttrs);
       ai.isFacing = (attr == facingAttr);
       attrs.add(ai);
     }
@@ -195,12 +259,8 @@ public class ComponentListingExporter {
       eastAttrs = cloneWithValue(defaultAttrs, facingAttr, "east");
     }
 
-    // Check standard rotation
-    boolean hasFacing = (facingAttr != null);
-    boolean standardRotation = false;
-    if (hasFacing) {
-      standardRotation = checkStandardRotation(factory, eastAttrs, facingAttr);
-    }
+    // Check rotation
+    String rotation = classifyRotation(factory, eastAttrs, facingAttr);
 
     // Determine anchor description from port at (0,0) facing east
     String anchor = findAnchor(factory, eastAttrs);
@@ -209,7 +269,7 @@ public class ComponentListingExporter {
     List<Object[]> defaultAttrPairs = new ArrayList<>();
     for (AttrInfo ai : attrs) {
       if (!ai.isFacing && ai.defaultVal != null) {
-        defaultAttrPairs.add(new Object[]{ ai.xmlName, ai.defaultVal.toString() });
+        defaultAttrPairs.add(new Object[]{ ai.xmlName, ai.defaultVal });
       }
     }
 
@@ -217,12 +277,18 @@ public class ComponentListingExporter {
     List<Attribute<?>> variantAttrList = new ArrayList<>(portAffecting);
     List<List<String>> variantValueSets = new ArrayList<>();
     for (Attribute<?> pa : variantAttrList) {
-      List<String> vals = getFiniteValues(pa);
-      if (vals == null || vals.isEmpty()) {
-        variantAttrList = Collections.emptyList(); // safety
-        break;
+      if (variantAttrExclusions.contains(pa.getName())) {
+        String v = attrToXml(pa, eastAttrs);
+        variantValueSets.add(List.of(v));
+      } else {
+        List<String> vals = getFiniteValues(pa);
+        if (vals == null || vals.isEmpty()) {
+          System.err.println("enumeration impossible?");
+          variantAttrList = Collections.emptyList(); // safety
+          break;
+        }
+        variantValueSets.add(vals);
       }
-      variantValueSets.add(vals);
     }
 
     List<List<String>> combos = buildCombos(variantValueSets);
@@ -230,9 +296,9 @@ public class ComponentListingExporter {
 
     // Determine facings to enumerate per combo
     List<Direction> facingsToEnumerate;
-    if (!hasFacing) {
+    if (rotation == ROTATION_NONE) {
       facingsToEnumerate = Collections.singletonList(null);
-    } else if (standardRotation) {
+    } else if (rotation != ROTATION_CUSTOM) {
       facingsToEnumerate = Collections.singletonList(Direction.EAST);
     } else {
       facingsToEnumerate = new ArrayList<>();
@@ -247,16 +313,16 @@ public class ComponentListingExporter {
     w.beginObject();
     w.keyValue("description", factory.getDisplayName());
     if (anchor != null) w.keyValue("anchor", anchor);
-    if (hasFacing) w.keyValue("standard_rotation", standardRotation);
+    w.keyValue("rotation", rotation);
 
-    // variable_attrs (port-affecting, excluding facing)
-    w.key("variable_attrs");
+    // layout_affecting_attrs (those that affect port positions, excluding facing)
+    w.key("layout_affecting_attrs");
     w.beginArray();
     for (Attribute<?> pa : variantAttrList) w.value(pa.getName());
     w.endArray();
 
-    // default_attrs
-    w.key("default_attrs");
+    // default_attr_values
+    w.key("default_attr_values");
     w.beginObject();
     for (Object[] pair : defaultAttrPairs) w.keyValue((String)pair[0], (String)pair[1]);
     w.endObject();
@@ -270,10 +336,10 @@ public class ComponentListingExporter {
       if (ai.values instanceof List) {
         w.key("values");
         w.beginArray();
-        for (Object v : (List<?>) ai.values) w.value(v.toString());
+        for (String v : (List<String>) ai.values) w.value(v);
         w.endArray();
       } else {
-        w.keyValue("values", ai.values.toString());
+        w.keyValue("values", (String)ai.values);
       }
       w.keyValue("description", ai.description);
       if (ai.note != null) w.keyValue("note", ai.note);
@@ -281,8 +347,8 @@ public class ComponentListingExporter {
     }
     w.endArray(); // attributes
 
-    // variants
-    w.key("variants");
+    // port_layouts
+    w.key("port_layouts");
     w.beginArray();
     for (List<String> combo : combos) {
       for (Direction facing : facingsToEnumerate) {
@@ -412,18 +478,36 @@ public class ComponentListingExporter {
   // Standard rotation check
   // ---------------------------------------------------------------------------
 
-  private static boolean checkStandardRotation(ComponentFactory factory,
+  private static final String ROTATION_STANDARD = "standard";
+  private static final String ROTATION_MIRROR = "mirrored";
+  private static final String ROTATION_CUSTOM = "custom";
+  private static final String ROTATION_NONE = "none";
+  private static String classifyRotation(ComponentFactory factory,
       AttributeSet eastAttrs, Attribute<Direction> facingAttr) {
+    if (facingAttr == null)
+      return ROTATION_NONE;
+    // System.out.println("checking rotation for " + factory.getName());
     List<PortInfo> eastPorts = getPortInfos(factory, eastAttrs);
-    if (eastPorts == null) return false;
+    if (eastPorts == null) {
+      System.out.println("ERR can't get ports?");
+      return ROTATION_STANDARD; // NONE?
+    }
+    if (eastPorts.isEmpty()) {
+      System.out.println("ERR no ports");
+      return ROTATION_STANDARD; // NONE?
+    }
+    boolean maybeStandard = true;
+    boolean maybeMirror = true;
 
     Direction[] others = { Direction.WEST, Direction.NORTH, Direction.SOUTH };
     for (Direction dir : others) {
+      // System.out.println("checking: " + dir);
       AttributeSet dirAttrs = cloneWithValue(eastAttrs, facingAttr, dir.toString());
       List<PortInfo> dirPorts = getPortInfos(factory, dirAttrs);
-      if (dirPorts == null) return false;
-      if (dirPorts.size() != eastPorts.size()) return false;
-      for (int i = 0; i < eastPorts.size(); i++) {
+      if (dirPorts == null) return ROTATION_CUSTOM;
+      if (dirPorts.size() != eastPorts.size()) return ROTATION_CUSTOM;
+
+      for (int i = 0; i < eastPorts.size() && maybeStandard; i++) {
         PortInfo ep = eastPorts.get(i);
         PortInfo dp = dirPorts.get(i);
         int expectedDx, expectedDy;
@@ -437,10 +521,36 @@ public class ComponentListingExporter {
           expectedDx = -ep.dy;
           expectedDy =  ep.dx;
         }
-        if (dp.dx != expectedDx || dp.dy != expectedDy) return false;
+        // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
+        maybeStandard &= (dp.dx == expectedDx && dp.dy == expectedDy);
+      }
+      for (int i = 0; i < eastPorts.size() && maybeMirror; i++) {
+        PortInfo ep = eastPorts.get(i);
+        PortInfo dp = dirPorts.get(i);
+        int expectedDx, expectedDy;
+        if (dir == Direction.WEST) {
+          expectedDx = -ep.dx;
+          expectedDy = -ep.dy * -1;
+        } else if (dir == Direction.NORTH) {
+          expectedDx =  ep.dy;
+          expectedDy = -ep.dx;
+        } else { // SOUTH
+          expectedDx = -ep.dy * -1;
+          expectedDy =  ep.dx;
+        }
+        // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
+        maybeMirror &= (dp.dx == expectedDx && dp.dy == expectedDy);
       }
     }
-    return true;
+    // System.out.printf("std=%s mirror=%s\n", maybeStandard?"maybe":"no", maybeMirror?"maybe":"no");
+    if (maybeStandard && maybeMirror)
+      return ROTATION_STANDARD; // either is fine
+    else if (maybeStandard)
+      return ROTATION_STANDARD;
+    else if (maybeMirror)
+      return ROTATION_MIRROR;
+    else
+      return ROTATION_CUSTOM;
   }
 
   // ---------------------------------------------------------------------------
@@ -572,10 +682,14 @@ public class ComponentListingExporter {
   // Utility
   // ---------------------------------------------------------------------------
 
+  private static <V> String attrToXml(Attribute<V> attr, AttributeSet attrs) {
+    return attr.toStandardString(attrs.getValue(attr));
+  }
+
   private static String attrsToString(AttributeSet attrs) {
     StringBuilder sb = new StringBuilder("{");
     for (Attribute<?> a : attrs.getAttributes()) {
-      Object v = attrs.getValue(a);
+      String v = attrToXml(a, attrs);
       if (v != null) sb.append(a.getName()).append("=").append(v).append(",");
     }
     sb.append("}");
@@ -590,7 +704,7 @@ public class ComponentListingExporter {
     String xmlName, description;
     Object values;  // List<String> or String
     String note;
-    Object defaultVal;
+    String defaultVal;
     boolean isFacing;
   }
 
@@ -609,6 +723,7 @@ public class ComponentListingExporter {
     private boolean needsComma = false;
     private boolean[] inArray;  // stack: true=array, false=object
     private int depth = 0;
+    public int linecount = 0;
 
     JsonWriter(PrintWriter out) {
       this.out = out;
@@ -622,6 +737,7 @@ public class ComponentListingExporter {
     private void comma() {
       if (needsComma) { out.println(","); needsComma = false; }
       else out.println();
+      linecount++;
     }
 
     void beginObject() {
@@ -635,6 +751,7 @@ public class ComponentListingExporter {
     void endObject() {
       indent--;
       out.println();
+      linecount++;
       indent();
       out.print("}");
       depth--;
@@ -650,7 +767,7 @@ public class ComponentListingExporter {
 
     void endArray() {
       indent--;
-      if (needsComma) { out.println(); indent(); }
+      if (needsComma) { out.println(); indent(); linecount++; }
       out.print("]");
       depth--;
       needsComma = true;
@@ -702,4 +819,27 @@ public class ComponentListingExporter {
                .replace("\t", "\\t");
     }
   }
+
+  private static class CountingOutputStream extends FilterOutputStream {
+    private long count = 0;
+
+    public CountingOutputStream(OutputStream out) {
+      super(out);
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+      out.write(b);
+      count++;
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+      out.write(b, off, len);
+      count += len;
+    }
+
+    public long getCount() { return count; }
+  }
+
 }
