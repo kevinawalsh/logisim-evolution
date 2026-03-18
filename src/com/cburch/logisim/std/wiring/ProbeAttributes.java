@@ -29,7 +29,6 @@
  */
 
 package com.cburch.logisim.std.wiring;
-import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.util.Arrays;
@@ -46,14 +45,9 @@ import com.cburch.logisim.instance.StdAttr;
 class ProbeAttributes extends AbstractAttributeSet {
   public static ProbeAttributes instance = new ProbeAttributes();
 
-  public static final Attribute<Object> LABEL_LOC = Attributes.forOption(
-      "labelloc", S.getter("stdLabelLocAttr"), new Object[] {
-          Direction.NORTH, Direction.SOUTH,
-          Direction.EAST, Direction.WEST }); // does not include center
-
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,
-        StdAttr.LABEL, LABEL_LOC, StdAttr.LABEL_FONT, });
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, });
 
   Direction facing = Direction.EAST;
   String label = "";
@@ -82,7 +76,7 @@ class ProbeAttributes extends AbstractAttributeSet {
       return (E) facing;
     if (attr == StdAttr.LABEL)
       return (E) label;
-    if (attr == LABEL_LOC || attr == StdAttr.LABEL_LOC) /* StdAttr.LABEL_LOC is used by Instance.java to avoid overlap */
+    if (attr == StdAttr.LABEL_EDGE_LOC)
       return (E) labelloc;
     if (attr == StdAttr.LABEL_FONT)
       return (E) labelfont;
@@ -99,7 +93,7 @@ class ProbeAttributes extends AbstractAttributeSet {
       facing = (Direction) value;
     else if (attr == StdAttr.LABEL)
       label = (String) value;
-    else if (attr == LABEL_LOC)
+    else if (attr == StdAttr.LABEL_EDGE_LOC)
       labelloc = (Direction) value;
     else if (attr == StdAttr.LABEL_FONT)
       labelfont = (Font) value;

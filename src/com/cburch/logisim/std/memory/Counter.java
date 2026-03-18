@@ -103,7 +103,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     setInstanceLogger(RegisterLogger.class);
     setKeyConfigurator(JoinedConfigurator.create(
           new BitWidthConfigurator(StdAttr.WIDTH),
-          new DirectionConfigurator(StdAttr.LABEL_LOC)));
+          new DirectionConfigurator(StdAttr.LABEL_EDGE_LOC)));
   }
 
   @Override
@@ -371,7 +371,7 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
       instance.recomputeBounds();
       configurePorts(instance);
       instance.computeLabelTextField(Instance.AVOID_SIDES);
-    } else if (attr == StdAttr.LABEL_LOC) {
+    } else if (attr == StdAttr.LABEL_EDGE_LOC) {
       instance.computeLabelTextField(Instance.AVOID_SIDES);
     }
   }

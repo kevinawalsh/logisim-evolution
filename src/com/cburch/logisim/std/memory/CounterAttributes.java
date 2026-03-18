@@ -44,7 +44,7 @@ class CounterAttributes extends AttributeSets.ArrayBacked {
     // constrained by WIDTH, so during xml file loading WiDTH must be set before them.
     super(new Attribute<?>[] { StdAttr.WIDTH, Counter.ATTR_INIT, 
       Counter.ATTR_MAX, Counter.ATTR_ON_GOAL, StdAttr.EDGE_TRIGGER,
-      StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_LOC, 
+      StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_EDGE_LOC,
       Register.ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE },
       new Object[] { BitWidth.create(8), 0, Integer.valueOf(0xFF),
         Counter.ON_GOAL_WRAP, StdAttr.TRIG_RISING, "",

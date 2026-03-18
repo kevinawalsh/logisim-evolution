@@ -167,7 +167,7 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
   public Probe() {
     super("Probe", S.getter("probeComponent"));
     setIconName("probe.gif");
-    setKeyConfigurator(new DirectionConfigurator(ProbeAttributes.LABEL_LOC));
+    setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_EDGE_LOC));
     setFacingAttribute(StdAttr.FACING);
     setInstanceLogger(ProbeLogger.class);
   }
@@ -198,7 +198,7 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    if (attr == StdAttr.LABEL_LOC || attr == ProbeAttributes.LABEL_LOC) {
+    if (attr == StdAttr.LABEL_EDGE_LOC) {
       instance.computeLabelTextField(Instance.AVOID_LEFT);
     } else if (attr == StdAttr.FACING || attr == RadixOption.ATTRIBUTE) {
       instance.recomputeBounds();

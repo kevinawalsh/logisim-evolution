@@ -74,7 +74,10 @@ class RomAttributes extends AbstractAttributeSet {
     value.addHexModelWeakListener(value, l);
     listenerRegistry.put(value, l);
   }
-
+  
+  // WARNING: The prefix of these lists before APPEARANCE must be identical. The
+  // list of possible attributes depends on APPEARANCE, so during xml file
+  // loading APPEARANCE must be set before the remaining attributes.
   private static List<Attribute<?>> ATTRIBUTES_CLASSIC = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
         Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,

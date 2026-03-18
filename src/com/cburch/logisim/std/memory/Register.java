@@ -154,7 +154,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
     super("Register", S.getter("registerComponent"));
     setKeyConfigurator(JoinedConfigurator.create(
           new BitWidthConfigurator(StdAttr.WIDTH),
-          new DirectionConfigurator(StdAttr.LABEL_LOC)));
+          new DirectionConfigurator(StdAttr.LABEL_EDGE_LOC)));
     setIconName("register.gif");
     setInstancePoker(RegisterPoker.class);
     setInstanceLogger(RegisterLogger.class);
@@ -339,7 +339,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
       instance.recomputeBounds();
       updatePorts(instance);
       instance.computeLabelTextField(Instance.AVOID_SIDES);
-    } else if (attr == StdAttr.LABEL_LOC) {
+    } else if (attr == StdAttr.LABEL_EDGE_LOC) {
       instance.computeLabelTextField(Instance.AVOID_SIDES);
     }
   }
@@ -353,7 +353,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
   private static final List<Attribute<?>> ATTRIBUTES = Arrays.asList(
       new Attribute<?>[] {
         StdAttr.WIDTH, ATTR_INIT, StdAttr.TRIGGER,
-        StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
         ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE });
 
 
@@ -362,7 +362,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
       Value initial = Value.createKnown(width, 0);
       AttributeOption trigger = StdAttr.TRIG_RISING;
       String label = "";
-      Direction labelLoc = Direction.NORTH;;
+      Object labelLoc = Direction.NORTH;;
       Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
       Color labelColor = Color.BLACK;
       boolean showInTab = true;
@@ -399,7 +399,7 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
         return (V) trigger;
       if (attr == StdAttr.LABEL)
         return (V) label;
-      if (attr == StdAttr.LABEL_LOC)
+      if (attr == StdAttr.LABEL_EDGE_LOC)
         return (V) labelLoc;
       if (attr == StdAttr.LABEL_FONT)
         return (V) labelFont;
@@ -424,8 +424,8 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
         trigger = (AttributeOption) value;
       } else if (attr == StdAttr.LABEL) {
         label = (String) value;
-      } else if (attr == StdAttr.LABEL_LOC) {
-        labelLoc = (Direction) value;
+      } else if (attr == StdAttr.LABEL_EDGE_LOC) {
+        labelLoc = value;
       } else if (attr == StdAttr.LABEL_FONT) {
         labelFont = (Font) value;
       } else if (attr == StdAttr.LABEL_COLOR) {

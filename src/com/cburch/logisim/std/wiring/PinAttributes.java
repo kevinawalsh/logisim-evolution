@@ -49,12 +49,12 @@ class PinAttributes extends ProbeAttributes {
   private static final List<Attribute<?>> INPIN_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
         StdAttr.WIDTH, Pin.ATTR_BEHAVIOR,
-        StdAttr.LABEL, LABEL_LOC, StdAttr.LABEL_FONT,
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT,
         RadixOption.ATTRIBUTE });
   private static final List<Attribute<?>> OUTPIN_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
         StdAttr.WIDTH, /*Pin.ATTR_BEHAVIOR, */
-        StdAttr.LABEL, LABEL_LOC, StdAttr.LABEL_FONT,
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT,
         RadixOption.ATTRIBUTE });
 
   BitWidth width = BitWidth.ONE;
