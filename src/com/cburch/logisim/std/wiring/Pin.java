@@ -628,7 +628,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(JoinedConfigurator.create(
           new BitWidthConfigurator(StdAttr.WIDTH),
-          new DirectionConfigurator(StdAttr.LABEL_LOC)));
+          new DirectionConfigurator(ProbeAttributes.LABEL_LOC)));
     setInstanceLogger(PinLogger.class);
     setInstancePoker(PinPoker.class);
   }
@@ -723,7 +723,8 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
     if (attr == ATTR_TYPE) {
       configurePorts(instance);
     } else if (attr == StdAttr.WIDTH || attr == StdAttr.FACING
-        || attr == StdAttr.LABEL_LOC || attr == RadixOption.ATTRIBUTE) {
+        || attr == StdAttr.LABEL_LOC || attr == ProbeAttributes.LABEL_LOC
+        || attr == RadixOption.ATTRIBUTE) {
       instance.recomputeBounds();
       instance.computeLabelTextField(Instance.AVOID_LEFT);
     } else if (attr == Pin.ATTR_BEHAVIOR) {

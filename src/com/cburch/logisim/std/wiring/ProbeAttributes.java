@@ -29,6 +29,7 @@
  */
 
 package com.cburch.logisim.std.wiring;
+import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ import java.util.List;
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
@@ -44,9 +46,14 @@ import com.cburch.logisim.instance.StdAttr;
 class ProbeAttributes extends AbstractAttributeSet {
   public static ProbeAttributes instance = new ProbeAttributes();
 
+  public static final Attribute<Object> LABEL_LOC = Attributes.forOption(
+      "labelloc", S.getter("stdLabelLocAttr"), new Object[] {
+          Direction.NORTH, Direction.SOUTH,
+          Direction.EAST, Direction.WEST }); // does not include center
+
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,
-        StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, });
+        StdAttr.LABEL, LABEL_LOC, StdAttr.LABEL_FONT, });
 
   Direction facing = Direction.EAST;
   String label = "";
@@ -75,7 +82,7 @@ class ProbeAttributes extends AbstractAttributeSet {
       return (E) facing;
     if (attr == StdAttr.LABEL)
       return (E) label;
-    if (attr == StdAttr.LABEL_LOC)
+    if (attr == LABEL_LOC || attr == StdAttr.LABEL_LOC) /* StdAttr.LABEL_LOC is used by Instance.java to avoid overlap */
       return (E) labelloc;
     if (attr == StdAttr.LABEL_FONT)
       return (E) labelfont;
@@ -92,7 +99,7 @@ class ProbeAttributes extends AbstractAttributeSet {
       facing = (Direction) value;
     else if (attr == StdAttr.LABEL)
       label = (String) value;
-    else if (attr == StdAttr.LABEL_LOC)
+    else if (attr == LABEL_LOC)
       labelloc = (Direction) value;
     else if (attr == StdAttr.LABEL_FONT)
       labelfont = (Font) value;
