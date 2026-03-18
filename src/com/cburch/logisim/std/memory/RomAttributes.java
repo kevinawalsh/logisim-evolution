@@ -75,10 +75,15 @@ class RomAttributes extends AbstractAttributeSet {
     listenerRegistry.put(value, l);
   }
 
-  private static List<Attribute<?>> ATTRIBUTES = Arrays
+  private static List<Attribute<?>> ATTRIBUTES_CLASSIC = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
         Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
         StdAttr.APPEARANCE, Rom.ATTR_PROPORTIONS });
+
+  private static List<Attribute<?>> ATTRIBUTES_ANSI = Arrays
+      .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
+        Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
+        StdAttr.APPEARANCE });
 
   // fixme: this isn't necessary since listener lists now have an owner
   // for each listener?
@@ -112,7 +117,7 @@ class RomAttributes extends AbstractAttributeSet {
 
   @Override
   public List<Attribute<?>> getAttributes() {
-    return ATTRIBUTES;
+    return Appearance == StdAttr.APPEAR_CLASSIC ? ATTRIBUTES_CLASSIC : ATTRIBUTES_ANSI;
   }
 
   @Override
@@ -158,8 +163,10 @@ class RomAttributes extends AbstractAttributeSet {
       Label = (String) value;
     else if (attr == StdAttr.LABEL_FONT)
       LabelFont = (Font) value;
-    else if (attr == StdAttr.APPEARANCE)
+    else if (attr == StdAttr.APPEARANCE) {
       Appearance = (AttributeOption) value;
+      fireAttributeListChanged();
+    }
     else if (attr == Rom.ATTR_PROPORTIONS)
       Proportions = (AttributeOption) value;
   }

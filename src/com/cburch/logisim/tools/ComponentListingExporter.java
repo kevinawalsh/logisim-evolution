@@ -193,6 +193,7 @@ public class ComponentListingExporter {
       for (Tool tool : lib.getTools()) {
         if (!(tool instanceof AddTool)) continue;
         ComponentFactory factory = ((AddTool) tool).getFactory();
+        if (!tool.getName().equals("ROM")) continue;
         if (!done.add(factory)) continue;
         try {
           int a = w.linecount;
@@ -239,7 +240,7 @@ public class ComponentListingExporter {
     List<AttrInfo> attrs = collectAllAttrInfos(factory, defaultAttrs, facingAttr, attrNotes);
 
     // Find port-affecting non-FACING attributes
-    List<Attribute<?>> portAffecting = findPortAffectingAttrs(factory, defaultAttrs, facingAttr);
+    List<Attribute<?>> portAffecting = findPortAffectingAttrs(clf, factory, defaultAttrs, attrs, facingAttr);
 
     // Get default port positions (facing=east if applicable)
     AttributeSet eastAttrs = defaultAttrs;
@@ -249,7 +250,9 @@ public class ComponentListingExporter {
 
     // Check rotation
     String rotation;
-    if (clf != null && clf.getCustomPortLayout(eastAttrs) != null)
+    if (facingAttr == null)
+      rotation = ROTATION_NONE;
+    else if (clf != null && clf.getCustomPortLayout(eastAttrs) != null)
       rotation = ROTATION_CUSTOM;
     else
       rotation = classifyRotation(factory, eastAttrs, facingAttr);
@@ -357,13 +360,18 @@ public class ComponentListingExporter {
           varAttrs = cloneWithValue(varAttrs, attr, combo.get(i));
           if (varAttrs == null) { comboFailed = true; break; }
         }
-        if (comboFailed) continue;
+        if (comboFailed) {
+          System.err.println("ERR: bad combo?");
+          continue;
+        }
 
         List<List<Map.Entry<String, Object>>> customPorts = 
           clf == null ? null : clf.getCustomPortLayout(varAttrs);
         List<PortInfo> ports = customPorts != null ? null : getPortInfos(factory, varAttrs);
-        if (customPorts == null && ports == null)
+        if (customPorts == null && ports == null) {
+          System.err.println("ERR: no ports?");
           continue;
+        }
 
         w.beginObject();
         if (facing != null) w.keyValue("facing", facing.toString());
@@ -593,9 +601,10 @@ public class ComponentListingExporter {
   // Port-affecting attribute detection
   // ---------------------------------------------------------------------------
 
-  private static List<Attribute<?>> findPortAffectingAttrs(
-      ComponentFactory factory, AttributeSet defaultAttrs,
+  private static List<Attribute<?>> findPortAffectingAttrs(ComponentListingFeature clf, 
+      ComponentFactory factory, AttributeSet defaultAttrs, List<AttrInfo> allAttrs,
       Attribute<Direction> facingAttr) {
+    // System.err.println("findPortAffectinAttrs for " + factory.getName());
 
     // Use east-facing as baseline (to avoid facing from confusing the check)
     AttributeSet baseAttrs = defaultAttrs;
@@ -604,22 +613,36 @@ public class ComponentListingExporter {
     }
     List<PortInfo> basePorts = getPortInfos(factory, baseAttrs);
     if (basePorts == null) return Collections.emptyList();
+    
+    // System.out.println("== base attrs ==");
+    // System.out.println(baseAttrs.dump());
+    // System.out.println("== variations ==");
 
+    List<String> extras = clf == null ? null : clf.getLayoutAnalysisIncludedAttributes(defaultAttrs);
     List<Attribute<?>> result = new ArrayList<>();
-    for (Attribute<?> attr : defaultAttrs.getAttributes()) {
-      if (attr == facingAttr) continue;
+    for (AttrInfo ai : allAttrs) { // defaultAttrs.getAttributes()
+      Attribute<?> attr = baseAttrs.getAttribute(ai.xmlName);
+      // System.out.println("try " + attr.getName());
+      if (attr == null || attr == facingAttr) continue;
+      if (extras != null && extras.contains(attr.getName())) {
+        result.add(attr);
+        continue;
+      }
       List<String> vals = getFiniteValues(attr);
       if (vals == null || vals.size() <= 1) continue;
       for (String val : vals) {
+        // System.out.println("try " + attr.getName() + "="+val);
         @SuppressWarnings("rawtypes")
         AttributeSet testAttrs = cloneWithValue(baseAttrs, (Attribute)attr, val);
         if (testAttrs == null) continue;
         List<PortInfo> testPorts = getPortInfos(factory, testAttrs);
         if (testPorts == null) continue;
         if (!portInfosEqual(basePorts, testPorts)) {
+          // System.out.println("differ");
           result.add(attr);
           break;
         }
+        // System.out.println("same");
       }
     }
     return result;
@@ -852,6 +875,7 @@ public class ComponentListingExporter {
       ((AbstractAttributeSet) copy).changeAttr((Attribute<Object>) attr, parsed);
       return copy;
     } catch (Exception e) {
+      System.err.println("ERR: Can't clone attribute set");
       return null;
     }
   }

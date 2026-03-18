@@ -59,10 +59,20 @@ public interface ComponentListingFeature {
   }
 
   /**
+   * Returns a list of attributes to be included from the enumeration during
+   * port layout analysis, alongside those found by automated checks.
+   */
+  default List<String> getLayoutAnalysisIncludedAttributes(AttributeSet attrs) {
+    return null;
+  }
+
+  /**
    * Returns a list of attributes to be excluded from the enumeration during
    * port layout analysis.
    */
-  List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs);
+  default List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+    return null;
+  }
 
   /**
    * Returns a list of json-like objects for the "ports" section of the

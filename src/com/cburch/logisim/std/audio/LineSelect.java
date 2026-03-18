@@ -367,7 +367,7 @@ public class LineSelect extends InstanceFactory {
       //   },
       //   {
       //     "name": "Input_",
-      //     "type": "in",
+      //     "type": "input",
       //     "count": "inputs",
       //     "first_index": 1,
       //     "first_dx": ...,
@@ -384,7 +384,7 @@ public class LineSelect extends InstanceFactory {
 
       ArrayList<Map.Entry<String, Object>> in0 = new ArrayList<>();
       in0.add(new AbstractMap.SimpleEntry<>("name", "Input_0"));
-      in0.add(new AbstractMap.SimpleEntry<>("type", "in"));
+      in0.add(new AbstractMap.SimpleEntry<>("type", "input"));
       if (facing == Direction.EAST) {
         in0.add(new AbstractMap.SimpleEntry<>("dx", appear == Plexers.SIZE_WIDE ? -30 : -20));
         in0.add(new AbstractMap.SimpleEntry<>("dy", "-10*min(1, floor(spacing*(inputs-1)/2))"));
@@ -392,7 +392,7 @@ public class LineSelect extends InstanceFactory {
 
       ArrayList<Map.Entry<String, Object>> inI = new ArrayList<>();
       inI.add(new AbstractMap.SimpleEntry<>("name", "Input_"));
-      inI.add(new AbstractMap.SimpleEntry<>("type", "in"));
+      inI.add(new AbstractMap.SimpleEntry<>("type", "input"));
       inI.add(new AbstractMap.SimpleEntry<>("count", "inputs-1"));
       inI.add(new AbstractMap.SimpleEntry<>("first_index", 1));
       if (facing == Direction.EAST) {

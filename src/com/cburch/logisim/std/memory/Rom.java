@@ -37,6 +37,11 @@ import java.awt.Window;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
@@ -44,6 +49,8 @@ import javax.swing.JLabel;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -55,12 +62,11 @@ import com.cburch.logisim.gui.hex.HexFile;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 
@@ -458,6 +464,81 @@ public class Rom extends Mem {
     for (int i = 1; i < dataLines; i++) {
       val = myState.getContents().get(addr+i);
       state.setPort(MEM_INPUTS+i-1, Value.createKnown(dataBits, val), DELAY);
+    }
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private static class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      String msg = "determines the count of Data ports: 4 ('quad'), 2 ('dual'), or 1 ('single')";
+      notes.put("line", msg);
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisIncludedAttributes(AttributeSet attrs) {
+      return List.of("appearance"); // this is missed by the simple search in ComponentListingExporder
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("dataWidth", "line");
+    }
+
+    @Override
+    public List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+      Object appear = attrs.getValue(StdAttr.APPEARANCE);
+      Object props = attrs.getValue(ATTR_PROPORTIONS);
+      int lines = Mem.lineSize(attrs);
+      // [
+      //   {
+      //     "name": "Address",
+      //     "type": "input",
+      //     "dx": 0,
+      //     "dy": 0
+      //   },
+      //   {
+      //     "name": "Data",
+      //     "type": "output",
+      //     "count": 4,
+      //     "first_dx": ...,
+      //     "first_dy": ...,
+      //     "step_dx": ...,
+      //     "step_dy": ...
+      //   }
+      // ]
+     
+      ArrayList<Map.Entry<String, Object>> abus = new ArrayList<>();
+      abus.add(new AbstractMap.SimpleEntry<>("name", "Address"));
+      abus.add(new AbstractMap.SimpleEntry<>("type", "input"));
+      abus.add(new AbstractMap.SimpleEntry<>("dx", 0));
+      abus.add(new AbstractMap.SimpleEntry<>("dy", 10));
+      ArrayList<Map.Entry<String, Object>> dbus = new ArrayList<>();
+      dbus.add(new AbstractMap.SimpleEntry<>("name", "Data"));
+      dbus.add(new AbstractMap.SimpleEntry<>("type", "output"));
+      dbus.add(new AbstractMap.SimpleEntry<>("count", "line"));
+      dbus.add(new AbstractMap.SimpleEntry<>("first_dx", SymbolWidth+40));
+      dbus.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+      if (appear == StdAttr.APPEAR_CLASSIC && props == TALL) {
+        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", SymbolWidth/2));
+      } else if (appear == StdAttr.APPEAR_CLASSIC && props == WIDE) {
+        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", "0 if line='quad' else 10"));
+      } else if (appear == StdAttr.APPEAR_CLASSIC) { // RECT
+        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", "60 + 10*floor(1/(1+dataWidth))"));
+      } else { // ANSI
+        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", "60 + 10*floor(1/(1+dataWidth))"));
+      }
+      dbus.add(new AbstractMap.SimpleEntry<>("step_dy", "10"));
+      return List.of(abus, dbus);
     }
   }
 
