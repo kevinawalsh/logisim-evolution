@@ -40,12 +40,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.ComponentListingFeature;
+import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
@@ -56,29 +60,12 @@ import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.std.Builtin;
+import com.cburch.logisim.tools.ToolTipMaker;
 
 /**
  * Exports a JSON file describing every component in Logisim's standard library:
  * port positions for all relevant attribute combinations, attribute value ranges,
  * and optional notes. Invoked via the -dump-components CLI flag.
- *
- * Coordinate system: port positions are (dx, dy) offsets from the component's
- * anchor point (the "loc" attribute in .circ XML). +dx is East (right), +dy is
- * South (down). Units are Logisim grid units (10 = 1 grid square).
- *
- * Rotation: for components with rotation="standard", variants list
- * facing=east port positions only. Derive other facings by rotating (dx,dy)
- * around the anchor (0,0):
- *   west:  (-dx, -dy)   [180 degrees]
- *   north: (dy,  -dx)   [CCW 90 degrees in screen coordinates]
- *   south: (-dy,  dx)   [CW  90 degrees in screen coordinates]
- * Rotation: for components with rotation="mirrored", variants list
- * facing=east port positions only. Derive north facing by rotating 90 degrees
- * CCW about anchor (0,0), and derive other facings by facings by mirroring (dx,dy)
- * over the x or y axis, or 
- *   west:  (-dx,  dy)   [Mirror east facing layout over y axis]
- *   north: (dy,  -dx)   [CCW 90 degrees in screen coordinates]
- *   south: (-dy, -dx)   [Mirror north facing layout over x axis]
  */
 public class ComponentListingExporter {
 
@@ -97,11 +84,6 @@ public class ComponentListingExporter {
         cos = new CountingOutputStream(new FileOutputStream(outputFile));
       }
       out = new PrintWriter(new OutputStreamWriter(cos, StandardCharsets.UTF_8));
-      // if (outputFile == null || outputFile.equals("-")) {
-      //   out = new PrintWriter(System.out);
-      // } else {
-      //   out = new PrintWriter(new FileWriter(outputFile));
-      // }
       try {
         buildListing(out, cos);
       } finally {
@@ -142,16 +124,27 @@ public class ComponentListingExporter {
     w.keyValue("north", "(dy, -dx)   [CCW 90 degrees in screen coordinates]");
     w.keyValue("south", "(-dy, dx)   [CW 90 degrees in screen coordinates]");
     w.endObject();
-    w.key("mirrored");
+    w.key("left-mirrored");
     w.beginObject();
     w.keyValue("description",
-        "For components with rotation='mirrored', port_layouts list facing=east layout of " +
+        "For components with rotation='left-mirrored', port_layouts list facing=east layout of " +
         "port positions only. Derive layouts for north facing by rotating (dx,dy) " +
         "around (0,0) by 90 CCW in screen coordinates. Derive layouts for west and " +
         "south facings by mirroring over the x or y axis:");
     w.keyValue("west",  "(-dx, dy)   [Mirror east facing layout over x axis]");
     w.keyValue("north", "(dy, -dx)   [CCW 90 degrees in screen coordinates]");
     w.keyValue("south", "(-dy, -dx)  [Mirror north facing layout over x axis]");
+    w.endObject();
+    w.key("right-mirrored");
+    w.beginObject();
+    w.keyValue("description",
+        "For components with rotation='right-mirrored', port_layouts list facing=east layout of " +
+        "port positions only. Derive layouts for south facing by rotating (dx,dy) " +
+        "around (0,0) by 90 CW in screen coordinates. Derive layouts for west and " +
+        "north facings by mirroring over the x or y axis:");
+    w.keyValue("west",  "(-dx, dy)   [Mirror east facing layout over x axis]");
+    w.keyValue("north", "(dy, dx)    [CCW 90 degrees in screen coordinates]");
+    w.keyValue("south", "(-dy, dx)   [Mirror north facing layout over x axis]");
     w.endObject();
     w.key("custom");
     w.beginObject();
@@ -176,11 +169,20 @@ public class ComponentListingExporter {
     w.keyValue("0Z", "pull-down only output driver, actively drives output to 0 or leaves output floating");
     w.keyValue("Z1", "pull-up only output driver, actively drives output to 1 or leaves output floating");
     w.endObject();
+    w.key("port_arrays");
+    w.value("Some port entries have a 'count' field, indicating a linear array of " +
+        "sequentially-numbered ports. Port names are formed by appending an integer " +
+        "index to the 'name' prefix, starting at 'first_index' (default 0). " +
+        "Port i (0-based within the array) is at: " +
+        "dx = first_dx + i*step_dx, dy = first_dy + i*step_dy. " +
+        "Example: name='in', count=4, first_dx=-40, first_dy=-30, step_dx=0, step_dy=20 " +
+        "→ in0 at (-40,-30), in1 at (-40,-10), in2 at (-40,10), in3 at (-40,30).");
     w.key("usage");
     w.value("To find component port layout: look up the component by library and name, " +
         "find the variant whose attribute values match those in the .circ file " +
-        "(defaulting to default_attrs for any omitted attributes), then read " +
-        "port dx/dy offsets. Adjust offsets if standard_rotation=true and not facing East. " +
+        "(defaulting to default_attr_values for any omitted attributes), then read " +
+        "port dx/dy offsets (expanding port arrays as described above). " +
+        "Apply rotation transform if rotation != 'custom' and facing != east. " +
         "Absolute port position = anchor_x + dx, anchor_y + dy.");
     w.endObject(); // _meta
 
@@ -195,7 +197,6 @@ public class ComponentListingExporter {
         if (!(tool instanceof AddTool)) continue;
         ComponentFactory factory = ((AddTool) tool).getFactory();
         if (!done.add(factory)) continue;
-        // if (!factory.getName().equals("AND Gate")) continue;
         try {
           int a = w.linecount;
           processComponent(factory, w);
@@ -377,12 +378,21 @@ public class ComponentListingExporter {
         }
         w.key("ports");
         w.beginArray();
-        for (PortInfo pi : ports) {
+        for (PortInfo pi : compressPorts(ports)) {
           w.beginObject();
           w.keyValue("name", pi.name);
           w.keyValue("type", pi.type);
-          w.keyValue("dx", pi.dx);
-          w.keyValue("dy", pi.dy);
+          if (pi.isArray) {
+            w.keyValue("count", pi.count);
+            if (pi.firstIndex != 0) w.keyValue("first_index", pi.firstIndex);
+            w.keyValue("first_dx", pi.dx);
+            w.keyValue("first_dy", pi.dy);
+            w.keyValue("step_dx", pi.stepDx);
+            w.keyValue("step_dy", pi.stepDy);
+          } else {
+            w.keyValue("dx", pi.dx);
+            w.keyValue("dy", pi.dy);
+          }
           w.endObject();
         }
         w.endArray(); // ports
@@ -402,11 +412,12 @@ public class ComponentListingExporter {
     try {
       Component comp = factory.createComponent(Location.create(0, 0), attrs);
       List<EndData> ends = comp.getEnds();
-      List<Port> ports = null;
-      if (comp instanceof InstanceComponent) {
-        Instance inst = ((InstanceComponent) comp).getInstance();
-        ports = inst.getPorts();
-      }
+      ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
+      // List<Port> ports = null;
+      // if (comp instanceof InstanceComponent) {
+      //   Instance inst = ((InstanceComponent) comp).getInstance();
+      //   ports = inst.getPorts();
+      // }
       List<PortInfo> result = new ArrayList<>();
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
@@ -414,9 +425,10 @@ public class ComponentListingExporter {
         pi.dx = end.getLocation().getX();
         pi.dy = end.getLocation().getY();
         pi.type = typeString(end.getType());
-        pi.name = (ports != null && i < ports.size())
-            ? tooltipOrDefault(ports.get(i), pi.type, i)
-            : defaultPortName(pi.type, i);
+        // pi.name = (ports != null && i < ports.size())
+        //     ? tooltipOrDefault(ports.get(i), pi.type, i)
+        //     : defaultPortName(pi.type, i);
+        pi.name = getNameFromToolTipOrDefault(tt, pi.dx, pi.dy, pi.type, i);
         result.add(pi);
       }
       return result;
@@ -428,20 +440,40 @@ public class ComponentListingExporter {
     }
   }
 
+  private static String getNameFromToolTipOrDefault(ToolTipMaker tt, int x, int y, String type, int index) {
+    String tip = tt == null ? null : tt.getToolTip(new ComponentUserEvent(null, x, y));
+    if (tip != null && !tip.isEmpty()) {
+      // EndData tooltips should have the form: "name: description"
+      // TODO: should include the descriptions in the json?
+      int idx = tip.indexOf(':');
+      if (idx > 0) {
+        String name = tip.substring(0, idx).trim().replaceAll("\\s+", "_");
+        if (!name.isEmpty())
+          return name;
+      } else if (!tip.equalsIgnoreCase("Input") && !tip.equalsIgnoreCase("Output") && !tip.equalsIgnoreCase("Bidir")
+        && !tip.equalsIgnoreCase("input") && !tip.equalsIgnoreCase("output") && !tip.equalsIgnoreCase("bidir")) {
+        String name = tip.trim().replaceAll("\\s+", "_");
+        if (!name.isEmpty())
+          return name;
+      }
+    }
+    return defaultPortName(type, index);
+  }
+
   private static String tooltipOrDefault(Port port, String type, int index) {
     String tip = port.getToolTip();
     if (tip != null && !tip.isEmpty()
-        && !tip.equals("Input") && !tip.equals("Output") && !tip.equals("Bidir")
-        && !tip.equals("input") && !tip.equals("output") && !tip.equals("bidir")) {
+        && !tip.equalsIgnoreCase("Input") && !tip.equalsIgnoreCase("Output") && !tip.equalsIgnoreCase("Bidir")
+        && !tip.equalsIgnoreCase("input") && !tip.equalsIgnoreCase("output") && !tip.equalsIgnoreCase("bidir")) {
       return tip;
     }
     return defaultPortName(type, index);
   }
 
   private static String defaultPortName(String type, int index) {
-    if ("output".equals(type)) return index == 0 ? "out" : "out" + index;
-    if ("input".equals(type))  return "in" + index;
-    return "port" + index;
+    if ("output".equals(type)) return index == 0 ? "OUT" : "OUT" + index;
+    if ("input".equals(type))  return "IN" + index;
+    return "BIDIR" + index;
   }
 
   private static String typeString(int type) {
@@ -454,17 +486,21 @@ public class ComponentListingExporter {
     try {
       Component comp = factory.createComponent(Location.create(0, 0), attrs);
       List<EndData> ends = comp.getEnds();
-      List<Port> ports = null;
-      if (comp instanceof InstanceComponent) {
-        ports = ((InstanceComponent) comp).getInstance().getPorts();
-      }
+      ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
+      // List<Port> ports = null;
+      // if (comp instanceof InstanceComponent) {
+      //   ports = ((InstanceComponent) comp).getInstance().getPorts();
+      // }
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
-        if (end.getLocation().getX() == 0 && end.getLocation().getY() == 0) {
+        int dx = end.getLocation().getX();
+        int dy = end.getLocation().getY();
+        if (dx == 0 && dy == 0) {
           String t = typeString(end.getType());
-          String name = (ports != null && i < ports.size())
-              ? tooltipOrDefault(ports.get(i), t, i)
-              : defaultPortName(t, i);
+          // String name = (ports != null && i < ports.size())
+          //     ? tooltipOrDefault(ports.get(i), t, i)
+          //     : defaultPortName(t, i);
+          String name = getNameFromToolTipOrDefault(tt, dx, dy, t, i);
           return t + " port (" + name + ")";
         }
       }
@@ -655,6 +691,113 @@ public class ComponentListingExporter {
   }
 
   // ---------------------------------------------------------------------------
+  // Port array compression
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Compresses a flat port list by replacing consecutive runs of linearly-spaced,
+   * sequentially-named ports with one or two array descriptors. A run qualifies when:
+   *   - all names match the pattern prefix+digits (same prefix and type)
+   *   - indices are consecutive integers
+   *   - positions form a strict linear progression (same step between each pair)
+   * If the full group fails but has an even count, the two halves are checked
+   * independently (handles components where a gap in the middle splits the ports).
+   * Non-qualifying ports are returned as-is (isArray=false).
+   */
+  private static List<PortInfo> compressPorts(List<PortInfo> ports) {
+    // Group ports by (prefix, type), preserving insertion order of first occurrence.
+    LinkedHashMap<String, List<PortInfo>> groups = new LinkedHashMap<>();
+    Set<PortInfo> consumed = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    for (PortInfo pi : ports) {
+      int split = pi.name.length();
+      while (split > 0 && Character.isDigit(pi.name.charAt(split - 1))) split--;
+      if (split == pi.name.length()) continue; // no trailing digits — individual
+      String prefix = pi.name.substring(0, split);
+      String key = prefix + "\0" + pi.type;
+      groups.computeIfAbsent(key, k -> new ArrayList<>()).add(pi);
+    }
+
+    // For each group, build 1 or 2 array descriptors (or none).
+    // triggerMap: maps the first port of each sub-array to the descriptor to emit there.
+    Map<PortInfo, PortInfo> triggerMap = new IdentityHashMap<>();
+    for (Map.Entry<String, List<PortInfo>> e : groups.entrySet()) {
+      List<PortInfo> g = e.getValue();
+      if (g.size() < 2) continue;
+      String prefix = e.getKey().substring(0, e.getKey().indexOf('\0'));
+
+      // Sort by numeric index
+      g.sort((a, b) -> Integer.compare(indexSuffix(a.name), indexSuffix(b.name)));
+
+      PortInfo single = tryBuildArray(g, prefix);
+      if (single != null) {
+        triggerMap.put(g.get(0), single);
+        consumed.addAll(g);
+      } else if (g.size() % 2 == 0) {
+        // Try splitting at N/2 to handle a gap in the middle
+        int half = g.size() / 2;
+        PortInfo first = tryBuildArray(g.subList(0, half), prefix);
+        PortInfo second = tryBuildArray(g.subList(half, g.size()), prefix);
+        if (first != null && second != null) {
+          triggerMap.put(g.get(0), first);
+          triggerMap.put(g.get(half), second);
+          consumed.addAll(g);
+        }
+      }
+    }
+
+    // Rebuild output in original port order.
+    // At each trigger port, emit the corresponding array descriptor.
+    // Other consumed ports are suppressed.
+    List<PortInfo> result = new ArrayList<>();
+    for (PortInfo pi : ports) {
+      if (!consumed.contains(pi)) {
+        result.add(pi);
+      } else {
+        PortInfo desc = triggerMap.get(pi);
+        if (desc != null) result.add(desc);
+        // else: non-trigger consumed port — suppressed
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Checks whether a sorted (by index) list of ports forms a valid linear array.
+   * Requires consecutive indices and linearly-spaced positions.
+   * Returns a PortInfo descriptor (isArray=true) if valid, null otherwise.
+   */
+  private static PortInfo tryBuildArray(List<PortInfo> g, String prefix) {
+    if (g.size() < 2) return null;
+    int firstIdx = indexSuffix(g.get(0).name);
+    for (int i = 1; i < g.size(); i++) {
+      if (indexSuffix(g.get(i).name) != firstIdx + i) return null;
+    }
+    int sdx = g.get(1).dx - g.get(0).dx;
+    int sdy = g.get(1).dy - g.get(0).dy;
+    for (int i = 1; i < g.size(); i++) {
+      if (g.get(i).dx - g.get(i-1).dx != sdx || g.get(i).dy - g.get(i-1).dy != sdy) return null;
+    }
+    PortInfo arr = new PortInfo();
+    arr.name = prefix;
+    arr.type = g.get(0).type;
+    arr.dx = g.get(0).dx;
+    arr.dy = g.get(0).dy;
+    arr.isArray = true;
+    arr.count = g.size();
+    arr.firstIndex = firstIdx;
+    arr.stepDx = sdx;
+    arr.stepDy = sdy;
+    return arr;
+  }
+
+  private static int indexSuffix(String name) {
+    int i = name.length();
+    while (i > 0 && Character.isDigit(name.charAt(i - 1))) i--;
+    return Integer.parseInt(name.substring(i));
+  }
+
+  // ---------------------------------------------------------------------------
   // AttributeSet cloning helpers
   // ---------------------------------------------------------------------------
 
@@ -730,6 +873,11 @@ public class ComponentListingExporter {
   private static class PortInfo {
     int dx, dy;
     String type, name;
+    // Array fields (isArray=true when this entry represents a linear run of ports)
+    boolean isArray = false;
+    int count;       // number of ports in the array
+    int firstIndex;  // index suffix of the first port (name is prefix)
+    int stepDx, stepDy; // position increment per successive index
   }
 
   // ---------------------------------------------------------------------------

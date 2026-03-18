@@ -227,11 +227,11 @@ public class Splitter extends ManagedComponent
         appendBuf(buf, bit_end.length - 1, beginString);
       switch (bits) {
       case 0:
-        return S.fmt("splitterSplit0Tip", buf.toString());
+        return S.fmt("splitterSplit0Tip", end, buf.toString());
       case 1:
-        return S.fmt("splitterSplit1Tip", buf.toString());
+        return S.fmt("splitterSplit1Tip", end, buf.toString());
       default:
-        return S.fmt("splitterSplitManyTip", buf.toString());
+        return S.fmt("splitterSplitManyTip", end, buf.toString());
       }
     } else {
       return null;
