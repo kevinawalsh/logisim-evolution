@@ -56,9 +56,6 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceComponent;
-import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.ToolTipMaker;
 
@@ -219,14 +216,14 @@ public class ComponentListingExporter {
   @SuppressWarnings("unchecked")
   private static void processComponent(ComponentFactory factory, JsonWriter w) {
     AttributeSet defaultAttrs = factory.createAttributeSet();
-    List<Attribute<?>> attrList = defaultAttrs.getAttributes();
 
     // Get ComponentListingFeature notes (if any), and layout variant exclusion list
     Map<String, String> attrNotes = Collections.emptyMap();
     List<String> variantAttrExclusions = Collections.emptyList();
     Object o = factory.getFeature(ComponentListingFeature.class, defaultAttrs);
+    ComponentListingFeature clf = null;
     if (o instanceof ComponentListingFeature) {
-      ComponentListingFeature clf = (ComponentListingFeature) o;
+      clf = (ComponentListingFeature) o;
       Map<String, String> notes = clf.getAttributeNotes(defaultAttrs);
       if (notes != null) attrNotes = notes;
       List<String> excluded = clf.getLayoutAnalysisExcludedAttributes(defaultAttrs);
@@ -238,18 +235,8 @@ public class ComponentListingExporter {
     Attribute<Direction> facingAttr = (facingAttrObj instanceof Attribute)
         ? (Attribute<Direction>) facingAttrObj : null;
 
-    // Get default attribute values description
-    List<AttrInfo> attrs = new ArrayList<>();
-    for (Attribute<?> attr : attrList) {
-      AttrInfo ai = new AttrInfo();
-      ai.xmlName = attr.getName();
-      ai.description = attr.getDisplayName();
-      ai.values = describeValues(attr);
-      ai.note = attrNotes.get(attr.getName());
-      ai.defaultVal = attrToXml(attr, defaultAttrs);
-      ai.isFacing = (attr == facingAttr);
-      attrs.add(ai);
-    }
+    // Collect all possible attributes via DFS (handles dynamic attr lists, e.g. negate attrs)
+    List<AttrInfo> attrs = collectAllAttrInfos(factory, defaultAttrs, facingAttr, attrNotes);
 
     // Find port-affecting non-FACING attributes
     List<Attribute<?>> portAffecting = findPortAffectingAttrs(factory, defaultAttrs, facingAttr);
@@ -261,7 +248,11 @@ public class ComponentListingExporter {
     }
 
     // Check rotation
-    String rotation = classifyRotation(factory, eastAttrs, facingAttr);
+    String rotation;
+    if (clf != null && clf.getCustomPortLayout(eastAttrs) != null)
+      rotation = ROTATION_CUSTOM;
+    else
+      rotation = classifyRotation(factory, eastAttrs, facingAttr);
 
     // Determine anchor description from port at (0,0) facing east
     String anchor = findAnchor(factory, eastAttrs);
@@ -368,32 +359,47 @@ public class ComponentListingExporter {
         }
         if (comboFailed) continue;
 
-        List<PortInfo> ports = getPortInfos(factory, varAttrs);
-        if (ports == null) continue;
+        List<List<Map.Entry<String, Object>>> customPorts = 
+          clf == null ? null : clf.getCustomPortLayout(varAttrs);
+        List<PortInfo> ports = customPorts != null ? null : getPortInfos(factory, varAttrs);
+        if (customPorts == null && ports == null)
+          continue;
 
         w.beginObject();
         if (facing != null) w.keyValue("facing", facing.toString());
         for (int i = 0; i < variantAttrList.size(); i++) {
+          if (variantAttrExclusions.contains(variantAttrList.get(i).getName()))
+            continue;
           w.keyValue(variantAttrList.get(i).getName(), combo.get(i));
         }
         w.key("ports");
         w.beginArray();
-        for (PortInfo pi : compressPorts(ports)) {
-          w.beginObject();
-          w.keyValue("name", pi.name);
-          w.keyValue("type", pi.type);
-          if (pi.isArray) {
-            w.keyValue("count", pi.count);
-            if (pi.firstIndex != 0) w.keyValue("first_index", pi.firstIndex);
-            w.keyValue("first_dx", pi.dx);
-            w.keyValue("first_dy", pi.dy);
-            w.keyValue("step_dx", pi.stepDx);
-            w.keyValue("step_dy", pi.stepDy);
-          } else {
-            w.keyValue("dx", pi.dx);
-            w.keyValue("dy", pi.dy);
+        if (customPorts != null) {
+          for (List<Map.Entry<String, Object>> obj : customPorts) {
+            w.beginObject();
+            for (Map.Entry<String, Object> kv : obj) {
+              w.keyValue(kv.getKey(), kv.getValue());
+            }
+            w.endObject();
           }
-          w.endObject();
+        } else {
+          for (PortInfo pi : compressPorts(ports)) {
+            w.beginObject();
+            w.keyValue("name", pi.name);
+            w.keyValue("type", pi.type);
+            if (pi.isArray) {
+              w.keyValue("count", pi.count);
+              if (pi.firstIndex != 0) w.keyValue("first_index", pi.firstIndex);
+              w.keyValue("first_dx", pi.dx);
+              w.keyValue("first_dy", pi.dy);
+              w.keyValue("step_dx", pi.stepDx);
+              w.keyValue("step_dy", pi.stepDy);
+            } else {
+              w.keyValue("dx", pi.dx);
+              w.keyValue("dy", pi.dy);
+            }
+            w.endObject();
+          }
         }
         w.endArray(); // ports
         w.endObject(); // variant
@@ -413,11 +419,6 @@ public class ComponentListingExporter {
       Component comp = factory.createComponent(Location.create(0, 0), attrs);
       List<EndData> ends = comp.getEnds();
       ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
-      // List<Port> ports = null;
-      // if (comp instanceof InstanceComponent) {
-      //   Instance inst = ((InstanceComponent) comp).getInstance();
-      //   ports = inst.getPorts();
-      // }
       List<PortInfo> result = new ArrayList<>();
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
@@ -425,9 +426,6 @@ public class ComponentListingExporter {
         pi.dx = end.getLocation().getX();
         pi.dy = end.getLocation().getY();
         pi.type = typeString(end.getType());
-        // pi.name = (ports != null && i < ports.size())
-        //     ? tooltipOrDefault(ports.get(i), pi.type, i)
-        //     : defaultPortName(pi.type, i);
         pi.name = getNameFromToolTipOrDefault(tt, pi.dx, pi.dy, pi.type, i);
         result.add(pi);
       }
@@ -460,16 +458,6 @@ public class ComponentListingExporter {
     return defaultPortName(type, index);
   }
 
-  private static String tooltipOrDefault(Port port, String type, int index) {
-    String tip = port.getToolTip();
-    if (tip != null && !tip.isEmpty()
-        && !tip.equalsIgnoreCase("Input") && !tip.equalsIgnoreCase("Output") && !tip.equalsIgnoreCase("Bidir")
-        && !tip.equalsIgnoreCase("input") && !tip.equalsIgnoreCase("output") && !tip.equalsIgnoreCase("bidir")) {
-      return tip;
-    }
-    return defaultPortName(type, index);
-  }
-
   private static String defaultPortName(String type, int index) {
     if ("output".equals(type)) return index == 0 ? "OUT" : "OUT" + index;
     if ("input".equals(type))  return "IN" + index;
@@ -487,19 +475,12 @@ public class ComponentListingExporter {
       Component comp = factory.createComponent(Location.create(0, 0), attrs);
       List<EndData> ends = comp.getEnds();
       ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
-      // List<Port> ports = null;
-      // if (comp instanceof InstanceComponent) {
-      //   ports = ((InstanceComponent) comp).getInstance().getPorts();
-      // }
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
         int dx = end.getLocation().getX();
         int dy = end.getLocation().getY();
         if (dx == 0 && dy == 0) {
           String t = typeString(end.getType());
-          // String name = (ports != null && i < ports.size())
-          //     ? tooltipOrDefault(ports.get(i), t, i)
-          //     : defaultPortName(t, i);
           String name = getNameFromToolTipOrDefault(tt, dx, dy, t, i);
           return t + " port (" + name + ")";
         }
@@ -657,6 +638,62 @@ public class ComponentListingExporter {
   // ---------------------------------------------------------------------------
   // Attribute value enumeration
   // ---------------------------------------------------------------------------
+
+  /**
+   * Collects all possible attributes for a component via DFS exploration.
+   * Handles dynamic attribute lists (e.g. AND gate negate attrs that appear only
+   * when input count is large enough). Exploits prefix-stability: changing attr[i]
+   * can only affect attrs[i+1..end], never attrs[0..i-1].
+   */
+  private static List<AttrInfo> collectAllAttrInfos(
+      ComponentFactory factory, AttributeSet defaultAttrs,
+      Attribute<Direction> facingAttr, Map<String, String> attrNotes) {
+    Map<String, AttrInfo> seen = new LinkedHashMap<>();
+    Set<String> seenSigs = new HashSet<>();
+    exploreAndCollectAttrs(factory, defaultAttrs, 0, facingAttr, attrNotes, seen, seenSigs);
+    return new ArrayList<>(seen.values());
+  }
+
+  private static void exploreAndCollectAttrs(
+      ComponentFactory factory, AttributeSet attrs, int depth,
+      Attribute<Direction> facingAttr, Map<String, String> attrNotes,
+      Map<String, AttrInfo> seen, Set<String> seenSigs) {
+    List<Attribute<?>> attrList = attrs.getAttributes();
+    if (depth >= attrList.size()) return;
+
+    // Signature: names of attrs from depth onward. Deduplicates identical suffixes.
+    StringBuilder sb = new StringBuilder();
+    for (int i = depth; i < attrList.size(); i++) sb.append(attrList.get(i).getName()).append('\0');
+    if (!seenSigs.add(sb.toString())) return;
+
+    // Record all attrs from depth onward; first-seen wins for defaultVal.
+    for (int i = depth; i < attrList.size(); i++) {
+      Attribute<?> attr = attrList.get(i);
+      String xmlName = attr.getName();
+      if (!seen.containsKey(xmlName)) {
+        AttrInfo ai = new AttrInfo();
+        ai.xmlName = xmlName;
+        ai.description = attr.getDisplayName();
+        ai.values = describeValues(attr);
+        ai.note = attrNotes.get(xmlName);
+        ai.defaultVal = attrToXml(attr, attrs);
+        ai.isFacing = (attr == facingAttr);
+        seen.put(xmlName, ai);
+      }
+    }
+
+    // Vary each attr at positions depth..end to discover new attr-list configurations.
+    for (int d = depth; d < attrList.size(); d++) {
+      Attribute<?> attr = attrList.get(d);
+      List<String> vals = getFiniteValues(attr);
+      if (vals == null) continue;
+      for (String val : vals) {
+        AttributeSet newAttrs = cloneWithValue(attrs, attr, val);
+        if (newAttrs == null) continue;
+        exploreAndCollectAttrs(factory, newAttrs, d + 1, facingAttr, attrNotes, seen, seenSigs);
+      }
+    }
+  }
 
   /** Returns a List<String> for LIST-domain attrs, or a hint String for others. */
   private static Object describeValues(Attribute<?> attr) {
@@ -965,7 +1002,31 @@ public class ComponentListingExporter {
       needsComma = true;
     }
 
+    void keyValue(String k, Object o) {
+      if (o instanceof Integer) {
+        keyValue(k, (int)(Integer)o);
+      } else {
+        keyValue(k, o.toString());
+      }
+    }
+
     void keyValue(String k, String v) {
+      try {
+        if (v.equals("true")) {
+          keyValue(k, true);
+          return;
+        }
+        if (v.equals("false")) {
+          keyValue(k, false);
+          return;
+        }
+        int i = Integer.parseInt(v);
+        if (v.equals(""+i)) {
+          keyValue(k, i);
+          return;
+        }
+      } catch (NumberFormatException ex) {
+      }
       key(k); out.print("\"" + escape(v) + "\""); needsComma = true;
     }
 

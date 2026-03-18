@@ -317,7 +317,7 @@ abstract class AbstractGate extends InstanceFactory implements ComponentListingF
   @Override
   public Map<String, String> getAttributeNotes(AttributeSet attrs) {
     HashMap<String, String> notes = new HashMap<>();
-    String msg = "when true, this in%d is shifted 10 units opposite the direction the component is facing.";
+    String msg = "when true, port in%d is shifted 10 units opposite the direction the component is facing.";
     notes.put("negate0", String.format(msg, 0));
     notes.put("negate1", String.format(msg, 1));
     for (int i = 2; i < 32; i++)

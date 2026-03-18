@@ -34,16 +34,22 @@ import static com.cburch.logisim.circuit.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.InputEvent;
-
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.comp.AbstractComponentFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
@@ -121,6 +127,8 @@ public class SplitterFactory extends AbstractComponentFactory {
             32, InputEvent.ALT_DOWN_MASK));
       return JoinedConfigurator.create(new IntegerConfigurator(
             SplitterAttributes.ATTR_FANOUT, 1, 32, 0), altConfig);
+    } else if (key == ComponentListingFeature.class) {
+      return new MyComponentListingFeature();
     }
     return super.getFeature(key, attrs);
   }
@@ -150,6 +158,127 @@ public class SplitterFactory extends AbstractComponentFactory {
     Graphics g = c.getGraphics();
     if (toolIcon != null) {
       toolIcon.paintIcon(c.getDestination(), g, x + 2, y + 2);
+    }
+  }
+
+  private static class MyComponentListingFeature implements ComponentListingFeature {
+    // @Override
+    // public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+    //   HashMap<String, String> notes = new HashMap<>();
+    //   String msg = "for all port layouts, multiply step_dx and step_dy by spacing";
+    //   notes.put("spacing", msg);
+    //   return notes;
+    // }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("spacing", "fanout");
+    }
+
+    @Override
+    public List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+      Object appear = attrs.getValue(SplitterAttributes.ATTR_APPEARANCE);
+      Object facing = attrs.getValue(StdAttr.FACING);
+
+      // [
+      //   {
+      //     "name": "bus",
+      //     "type": "inout",
+      //     "dx": 0,
+      //     "dy": 0
+      //   },
+      //   {
+      //     "name": "tap_",
+      //     "type": "inout",
+      //     "count": "fanout",
+      //     "first_index": 1,
+      //     "first_dx": ...,
+      //     "first_dy": ...,
+      //     "step_dx": ...,
+      //     "step_dy": ...
+      //   }
+      // ]
+      ArrayList<Map.Entry<String, Object>> bus = new ArrayList<>();
+      bus.add(new AbstractMap.SimpleEntry<>("name", "bus"));
+      bus.add(new AbstractMap.SimpleEntry<>("type", "inout"));
+      bus.add(new AbstractMap.SimpleEntry<>("dx", 0));
+      bus.add(new AbstractMap.SimpleEntry<>("dy", 0));
+
+      ArrayList<Map.Entry<String, Object>> taps = new ArrayList<>();
+      taps.add(new AbstractMap.SimpleEntry<>("name", "tap_"));
+      taps.add(new AbstractMap.SimpleEntry<>("type", "inout"));
+      taps.add(new AbstractMap.SimpleEntry<>("count", "fanout"));
+      taps.add(new AbstractMap.SimpleEntry<>("first_index", 1));
+      if (facing == Direction.EAST) {
+        if (appear == SplitterAttributes.APPEAR_LEFT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", 20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10 + spacing*(fanout-1)*10"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", 20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 10));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", 20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10*spacing*floor(fanout/2)"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        }
+      } else if (facing == Direction.WEST) {
+        if (appear == SplitterAttributes.APPEAR_LEFT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 10));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10 + spacing*(fanout-1)*10"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10*spacing*floor(fanout/2)"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        }
+      } else if (facing == Direction.NORTH) {
+        if (appear == SplitterAttributes.APPEAR_LEFT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -10));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", -20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10 + spacing*(fanout-1)*10"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", -20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10*spacing*floor((fanout-1)/2)"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", -20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        }
+      } else if (facing == Direction.SOUTH) {
+        if (appear == SplitterAttributes.APPEAR_LEFT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10 + spacing*(fanout-1)*10"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -10));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
+          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10*spacing*floor((fanout-1)/2)"));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 20));
+          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        }
+      }
+      return List.of(bus, taps);
     }
   }
 

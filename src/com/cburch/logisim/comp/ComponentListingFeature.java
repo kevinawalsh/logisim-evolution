@@ -54,12 +54,26 @@ public interface ComponentListingFeature {
    * into the "note" field of the corresponding attribute entry in the JSON
    * output. Return an empty map if no notes are needed.
    */
-  Map<String, String> getAttributeNotes(AttributeSet attrs);
+  default Map<String, String> getAttributeNotes(AttributeSet attrs) {
+    return null;
+  }
 
   /**
    * Returns a list of attributes to be excluded from the enumeration during
    * port layout analysis.
    */
   List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs);
+
+  /**
+   * Returns a list of json-like objects for the "ports" section of the
+   * port_layout for these attributes, or null if it should be generated
+   * automatically.
+   * A json-like object here means a list of key-value pairs, where the value
+   * can be a String or an Integer. No deeper json structure should be needed
+   * here.
+   */
+  default List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+    return null;
+  }
 
 }
