@@ -608,6 +608,55 @@ public class XmlProjectReader extends XmlReader {
           }
         }
       }
+      // As of version 5.1.1, Wiring/Pin, Memory/Register, and Memory/Counter disallow
+      // labelloc=center.
+      wiringLibName = findLibNameByDesc(root, "#Wiring");
+      if (wiringLibName != null) {
+        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+          for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = elt.getAttribute("lib");
+            String name = elt.getAttribute("name");
+            if (lib != null && name != null && lib.equals(wiringLibName) && 
+                name.equals("Pin")) {
+              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
+            }
+          }
+        }
+        for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
+          for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
+            String lib = elt.getAttribute("lib");
+            String name = elt.getAttribute("name");
+            if (lib != null && name != null && lib.equals(wiringLibName) && 
+                name.equals("Pin")) {
+              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
+            }
+          }
+        }
+      }
+      String memoryLibName = findLibNameByDesc(root, "#Memory");
+      if (memoryLibName != null) {
+        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+          for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
+            String lib = elt.getAttribute("lib");
+            String name = elt.getAttribute("name");
+            if (lib != null && name != null && lib.equals(memoryLibName) && 
+                (name.equals("Register") || name.equals("Counter"))) {
+              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
+            }
+          }
+        }
+        for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
+          for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
+            String lib = elt.getAttribute("lib");
+            String name = elt.getAttribute("name");
+            if (lib != null && name != null && lib.equals(memoryLibName) && 
+                (name.equals("Register") || name.equals("Counter"))) {
+              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
+            }
+          }
+        }
+      }
+
     }
 
   }
@@ -760,6 +809,19 @@ public class XmlProjectReader extends XmlReader {
     a.setAttribute("name", attrib);
     a.setAttribute("val", val);
     elt.insertBefore(a, end);
+  }
+
+  private void replaceAttributeValue(Document doc, Element elt, String attrib, String oldVal, String newVal) {
+    Node end = elt.getFirstChild();
+    for (Element attrElt : XmlIterator.forChildElements(elt, "a")) {
+      String name = attrElt.getAttribute("name");
+      String val = attrElt.getAttribute("val");
+      if (name != null && name.equals(attrib) && val != null && val.equals(oldVal)) {
+        attrElt.setAttribute("val", newVal);
+        return;
+      }
+      end = attrElt.getNextSibling();
+    }
   }
 
   private void relocateTools(Element src, Element dest,
