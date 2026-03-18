@@ -33,14 +33,19 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Ellipse2D;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import com.cburch.logisim.circuit.SplitterAttributes;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
-import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
@@ -136,7 +141,7 @@ public class LineSelect extends InstanceFactory {
       dy = 10*spacing;
     } else if (dir == Direction.WEST) {
       x = w;
-      y = -(-h/2-a + 10);
+      y = -(-h/2+a + 10);
       dx = 0;
       dy = -10*spacing;
     } else if (dir == Direction.NORTH) {
@@ -333,4 +338,86 @@ public class LineSelect extends InstanceFactory {
       state.queueForPropagation();
     }
   }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private static class MyComponentListingFeature implements ComponentListingFeature {
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("spacing", "inputs");
+    }
+
+    @Override
+    public List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+      Object appear = attrs.getValue(Plexers.ATTR_SIZE);
+      Object facing = attrs.getValue(StdAttr.FACING);
+
+      // [
+      //   {
+      //     "name": "OUT",
+      //     "type": "output",
+      //     "dx": 0,
+      //     "dy": 0
+      //   },
+      //   {
+      //     "name": "Input_",
+      //     "type": "in",
+      //     "count": "inputs",
+      //     "first_index": 1,
+      //     "first_dx": ...,
+      //     "first_dy": ...,
+      //     "step_dx": ...,
+      //     "step_dy": ...
+      //   }
+      // ]
+      ArrayList<Map.Entry<String, Object>> bus = new ArrayList<>();
+      bus.add(new AbstractMap.SimpleEntry<>("name", "OUT"));
+      bus.add(new AbstractMap.SimpleEntry<>("type", "output"));
+      bus.add(new AbstractMap.SimpleEntry<>("dx", 0));
+      bus.add(new AbstractMap.SimpleEntry<>("dy", 0));
+
+      ArrayList<Map.Entry<String, Object>> in0 = new ArrayList<>();
+      in0.add(new AbstractMap.SimpleEntry<>("name", "Input_0"));
+      in0.add(new AbstractMap.SimpleEntry<>("type", "in"));
+      if (facing == Direction.EAST) {
+        in0.add(new AbstractMap.SimpleEntry<>("dx", appear == Plexers.SIZE_WIDE ? -30 : -20));
+        in0.add(new AbstractMap.SimpleEntry<>("dy", "-10*min(1, floor(spacing*(inputs-1)/2))"));
+      }
+
+      ArrayList<Map.Entry<String, Object>> inI = new ArrayList<>();
+      inI.add(new AbstractMap.SimpleEntry<>("name", "Input_"));
+      inI.add(new AbstractMap.SimpleEntry<>("type", "in"));
+      inI.add(new AbstractMap.SimpleEntry<>("count", "inputs-1"));
+      inI.add(new AbstractMap.SimpleEntry<>("first_index", 1));
+      if (facing == Direction.EAST) {
+        inI.add(new AbstractMap.SimpleEntry<>("first_dx", appear == Plexers.SIZE_WIDE ? -30 : -20));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+        inI.add(new AbstractMap.SimpleEntry<>("first_dy", "10*min(1, ceil(spacing*(inputs-1)/2))-10*(inputs-2)*spacing"));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+      } else if (facing == Direction.WEST) {
+        inI.add(new AbstractMap.SimpleEntry<>("first_dx", appear == Plexers.SIZE_WIDE ? 30 : 20));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+        inI.add(new AbstractMap.SimpleEntry<>("first_dy", "-10*min(1, ceil(spacing*(inputs-1)/2))+10*(inputs-2)*spacing"));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dy", "-10*spacing"));
+      } else if (facing == Direction.NORTH) {
+        inI.add(new AbstractMap.SimpleEntry<>("first_dx", "10*min(1, ceil(spacing*(inputs-1)/2))-10*(inputs-2)*spacing"));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dx", "10*spacing"));
+        inI.add(new AbstractMap.SimpleEntry<>("first_dy", appear == Plexers.SIZE_WIDE ? 30 : 20));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+      } else if (facing == Direction.SOUTH) {
+        inI.add(new AbstractMap.SimpleEntry<>("first_dx", "-10*min(1, ceil(spacing*(inputs-1)/2))+10*(inputs-2)*spacing"));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
+        inI.add(new AbstractMap.SimpleEntry<>("first_dy", appear == Plexers.SIZE_WIDE ? -30 : -20));
+        inI.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+      }
+      return List.of(bus, in0, inI);
+    }
+  }
+
 }
