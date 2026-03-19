@@ -162,13 +162,14 @@ public class SplitterFactory extends AbstractComponentFactory {
   }
 
   private static class MyComponentListingFeature implements ComponentListingFeature {
-    // @Override
-    // public Map<String, String> getAttributeNotes(AttributeSet attrs) {
-    //   HashMap<String, String> notes = new HashMap<>();
-    //   String msg = "for all port layouts, multiply step_dx and step_dy by spacing";
-    //   notes.put("spacing", msg);
-    //   return notes;
-    // }
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("spacing", "used to determine stepDx or stepDy for tap ports.");
+      notes.put("fanout", "used to determine count of tap ports.");
+      notes.put("appear", "used to determine first_dx and first_dy offsets for tap ports.");
+      return notes;
+    }
 
     @Override
     public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {

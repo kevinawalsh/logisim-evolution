@@ -35,8 +35,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
-import java.util.AbstractMap;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -347,6 +346,14 @@ public class LineSelect extends InstanceFactory {
   }
 
   private static class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("spacing", "used to determine stepDx or stepDy for Input ports.");
+      notes.put("inputs", "used to determine count of Input ports.");
+      return notes;
+    }
 
     @Override
     public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {

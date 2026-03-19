@@ -313,14 +313,14 @@ public class ComponentListingExporter {
     if (anchor != null) w.keyValue("anchor", anchor);
     w.keyValue("rotation", rotation);
 
-    // layout_affecting_attrs (those that affect port positions, excluding facing)
-    w.key("layout_affecting_attrs");
+    // port_affecting_attrs (those that affect port positions, excluding facing)
+    w.key("port_affecting_attrs");
     w.array(variantAttrList, pa -> pa.getName());
 
     // default_attr_values
     w.key("default_attr_values");
     w.beginObject();
-    for (Object[] pair : defaultAttrPairs) w.keyValue((String)pair[0], (String)pair[1]);
+    for (Object[] pair : defaultAttrPairs) w.keyValueAsString((String)pair[0], (String)pair[1]);
     w.endObject();
 
     // attributes
@@ -333,9 +333,9 @@ public class ComponentListingExporter {
         @SuppressWarnings("rawtypes")
         List<Object> vals = (List<Object>)ai.values;
         w.key("values");
-        w.array(vals);
+        w.arrayAsStrings(vals);
       } else {
-        w.keyValue("values", (String)ai.values);
+        w.keyValueAsString("values", (String)ai.values);
       }
       w.keyValue("description", ai.description);
       if (ai.note != null) w.keyValue("note", ai.note);
@@ -701,6 +701,9 @@ public class ComponentListingExporter {
     if (!seenSigs.add(sb.toString())) return;
 
     // Record all attrs from depth onward; first-seen wins for defaultVal.
+    // For LIST-domain attrs already seen, merge (union) any new options into the existing list,
+    // so that attrs whose option set expands dynamically (e.g. Splitter bit_i as fanout grows)
+    // accumulate the full set of possible values across all DFS branches.
     for (int i = depth; i < attrList.size(); i++) {
       Attribute<?> attr = attrList.get(i);
       String xmlName = attr.getName();
@@ -713,6 +716,17 @@ public class ComponentListingExporter {
         ai.defaultVal = attrToXml(attr, attrs);
         ai.isFacing = (attr == facingAttr);
         seen.put(xmlName, ai);
+      } else {
+        // Merge LIST-domain options: union any newly-seen values into the existing list.
+        AttrInfo existing = seen.get(xmlName);
+        Object newVals = describeValues(attr);
+        if (existing.values instanceof List && newVals instanceof List) {
+          @SuppressWarnings("unchecked") List<String> existingList = (List<String>) existing.values;
+          @SuppressWarnings("unchecked") List<String> newList = (List<String>) newVals;
+          for (String v : newList) {
+            if (!existingList.contains(v)) existingList.add(v);
+          }
+        }
       }
     }
 
@@ -987,6 +1001,19 @@ public class ComponentListingExporter {
       needsComma = true;
     }
 
+    void arrayAsStrings(List<Object> vals) {
+      out.print("[");
+      needsComma = false;
+      for (Object v : vals) {
+        if (needsComma) out.print(", ");
+        else out.print(" ");
+        out.print("\"" + escape(v.toString()) + "\"");
+        needsComma = true;
+      }
+      out.print(" ]");
+      needsComma = true;
+    }
+
     void array(List<Object> vals) {
       out.print("[");
       needsComma = false;
@@ -1050,6 +1077,10 @@ public class ComponentListingExporter {
       if (inArray[depth - 1]) { comma(); indent(); }
       out.print(v);
       needsComma = true;
+    }
+
+    void keyValueAsString(String k, Object v) {
+      key(k); out.print("\"" + escape(v.toString()) + "\""); needsComma = true;
     }
 
     void keyValue(String k, Object v) {
