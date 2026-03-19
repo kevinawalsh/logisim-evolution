@@ -81,6 +81,10 @@ public class StdAttr {
       "labelloc", S.getter("stdLabelLocAttr"), new Object[] {
           LABEL_CENTER, Direction.NORTH, Direction.SOUTH,
           Direction.EAST, Direction.WEST });
+  public static final Attribute<Object> LABEL_EDGE_LOC = Attributes.forOption(
+      "labelloc", S.getter("stdLabelLocAttr"), new Object[] {
+          Direction.NORTH, Direction.SOUTH,
+          Direction.EAST, Direction.WEST });
 
   public static final AttributeOption APPEAR_CLASSIC = new AttributeOption(
       "classic", S.getter("stdClassicAppearance"));

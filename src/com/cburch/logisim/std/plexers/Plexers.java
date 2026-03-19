@@ -123,28 +123,26 @@ public class Plexers extends Library {
   public static final Attribute<Boolean> ATTR_TRISTATE = Attributes
       .forBoolean("tristate", S.getter("plexerThreeStateAttr"));
   public static final Object DEFAULT_TRISTATE = Boolean.FALSE;
+
   public static final AttributeOption DISABLED_FLOATING = new AttributeOption(
       "Z", S.getter("plexerDisabledFloating"));
-
   public static final AttributeOption DISABLED_ZERO = new AttributeOption(
       "0", S.getter("plexerDisabledZero"));
-
   public static final Attribute<AttributeOption> ATTR_DISABLED = Attributes
       .forOption("disabled", S.getter("plexerDisabledAttr"),
           new AttributeOption[] { DISABLED_FLOATING, DISABLED_ZERO });
+
   public static final Attribute<Boolean> ATTR_ENABLE = Attributes.forBoolean(
       "enable", S.getter("plexerEnableAttr"));
   public static final Object DEFAULT_ENABLE = Boolean.FALSE;
+
   static final AttributeOption SELECT_BOTTOM_LEFT = new AttributeOption("bl",
       S.getter("plexerSelectBottomLeftOption"));
-
   static final AttributeOption SELECT_TOP_RIGHT = new AttributeOption("tr",
       S.getter("plexerSelectTopRightOption"));
-
   static final Attribute<AttributeOption> ATTR_SELECT_LOC = Attributes
       .forOption("selloc", S.getter("plexerSelectLocAttr"),
-          new AttributeOption[] { SELECT_BOTTOM_LEFT,
-            SELECT_TOP_RIGHT });
+          new AttributeOption[] { SELECT_BOTTOM_LEFT, SELECT_TOP_RIGHT });
 
   protected static final int DELAY = 3;
 

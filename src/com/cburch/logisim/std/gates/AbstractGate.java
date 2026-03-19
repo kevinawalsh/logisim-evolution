@@ -67,7 +67,7 @@ import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
 
-abstract class AbstractGate extends InstanceFactory implements ComponentListingFeature {
+abstract class AbstractGate extends InstanceFactory {
   static Value pullOutput(Value value, Object outType) {
     if (outType == GateAttributes.OUTPUT_01) {
       return value;
@@ -313,33 +313,7 @@ abstract class AbstractGate extends InstanceFactory implements ComponentListingF
       return Location.create(-dx, dy);
     }
   }
-
-  @Override
-  public Map<String, String> getAttributeNotes(AttributeSet attrs) {
-    HashMap<String, String> notes = new HashMap<>();
-    String msg = "when true, port in%d is shifted 10 units opposite the direction the component is facing.";
-    notes.put("negate0", String.format(msg, 0));
-    notes.put("negate1", String.format(msg, 1));
-    for (int i = 2; i < 32; i++)
-      notes.put("negate"+i, "present iff inputs>"+i+"; " + String.format(msg, i));
-    return notes;
-  }
-
-  @Override
-  public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
-    ArrayList<String> excluded = new ArrayList<>();
-    for (int i = 0; i < 32; i++)
-      excluded.add("negate"+i);
-    return excluded;
-  }
   
-  @Override
-  public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return this;
-    return super.getFeature(key, attrs);
-  }
-
   @Override
   protected Object getInstanceFeature(final Instance instance, Object key) {
     if (key == WireRepair.class) {
@@ -657,6 +631,113 @@ abstract class AbstractGate extends InstanceFactory implements ComponentListingF
 
   protected boolean shouldRepairWire(Instance instance, WireRepairData data) {
     return false;
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      String msg = "when true, port in%d is shifted 10 units opposite the direction the component is facing.";
+      notes.put("negate0", String.format(msg, 0));
+      notes.put("negate1", String.format(msg, 1));
+      for (int i = 2; i < 32; i++)
+        notes.put("negate"+i, "present iff inputs>"+i+"; " + String.format(msg, i));
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      ArrayList<String> excluded = new ArrayList<>();
+      excluded.add("inputs");
+      for (int i = 0; i < 32; i++)
+        excluded.add("negate"+i);
+      return excluded;
+    }
+  
+    @Override
+    public String getLayoutRotation(AttributeSet attrs) {
+      return "left-mirrored";
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Object o = attrs.getValue(GateAttributes.ATTR_SIZE);
+      int size = 
+        o == GateAttributes.SIZE_NARROW ? 30 : 
+        o == GateAttributes.SIZE_MEDIUM ? 50 :
+        70;
+      
+      ComponentListingFeature.PortPosition out, in0, in1;
+
+      out = portAt("OUT", "output", 0, 0);
+
+      if (size == 70) {
+        // 2    -> spacing=4
+        // 3    -> spacing=3
+        // 4    -> spacing=2
+        // 5    -> spacing=1
+        // 6    -> spacing=1, gap=1
+        // 7    -> spacing=1
+        // 8    -> spacing=1, gap=1
+        // 9    -> spacing=1
+        // even -> spacing=1, gap=1
+        // odd  -> spacing=1
+        in0 = portsAt("in", "input", 0, "floor(inputs/2)",
+            -(size+bonusWidth),
+            "-((inputs-1)*stepDy+gap)/2, where gap=1 if inputs>5 and inputs is even, otherwise gap=0",
+            0,
+            "10*max(1, 9/inputs)");
+        in1 = portsAt("in", "input", "floor(inputs/2)", "ceil(inputs/2)",
+            -(size+bonusWidth),
+            "20 if inputs=2; 10 if inputs is odd; otherwise 0",
+            0,
+            "10*max(1, 9/inputs");
+      } else if (size == 50) {
+        // 2    -> spacing=4
+        // 3    -> spacing=2
+        // 4    -> spacing=1, gap=1
+        // 5    -> spacing=1
+        // even -> spacing=1, gap=1
+        // odd  -> spacing=1
+        in0 = portsAt("in", "input", 0, "floor(inputs/2)",
+            -(size+bonusWidth),
+            "-((inputs-1)*stepDy+gap)/2, where gap=1 if inputs>3 and inputs is even, otherwise gap=0",
+            0,
+            "10*max(1, 4/(inputs-1))");
+        in1 = portsAt("in", "input", "floor(inputs/2)", "ceil(inputs/2)",
+            -(size+bonusWidth),
+            "20 if inputs=2; 10 if inputs is odd; otherwise 0",
+            0,
+            "10*max(1, 4/(inputs-1))");
+      } else { // size=30
+        // 2    -> spacing=2
+        // 3    -> spacing=1
+        // 4    -> spacing=1, gap=1
+        // 5    -> spacing=1
+        // even -> spacing=1, gap=1
+        // odd  -> spacing=1
+        in0 = portsAt("in", "input", 0, "floor(inputs/2)",
+            -(size+bonusWidth),
+            "-((inputs-1)*stepDy+gap)/2, where gap=1 if inputs>3 and inputs is even, otherwise gap=0",
+            0,
+            "10*max(1, 1+2/inputs)");
+        in1 = portsAt("in", "input", "floor(inputs/2)", "ceil(inputs/2)",
+            -(size+bonusWidth),
+            "20 if inputs=2; 10 if inputs is odd; otherwise 0",
+            0,
+            "10*max(1, 1+2/inputs)");
+      }
+
+      return List.of(out, in0, in1);
+    }
   }
 
 }

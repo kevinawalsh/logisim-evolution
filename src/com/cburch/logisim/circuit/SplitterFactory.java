@@ -176,108 +176,84 @@ public class SplitterFactory extends AbstractComponentFactory {
     }
 
     @Override
-    public List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(SplitterAttributes.ATTR_APPEARANCE);
       Object facing = attrs.getValue(StdAttr.FACING);
 
-      // [
-      //   {
-      //     "name": "bus",
-      //     "type": "inout",
-      //     "dx": 0,
-      //     "dy": 0
-      //   },
-      //   {
-      //     "name": "tap_",
-      //     "type": "inout",
-      //     "count": "fanout",
-      //     "first_index": 1,
-      //     "first_dx": ...,
-      //     "first_dy": ...,
-      //     "step_dx": ...,
-      //     "step_dy": ...
-      //   }
-      // ]
-      ArrayList<Map.Entry<String, Object>> bus = new ArrayList<>();
-      bus.add(new AbstractMap.SimpleEntry<>("name", "bus"));
-      bus.add(new AbstractMap.SimpleEntry<>("type", "inout"));
-      bus.add(new AbstractMap.SimpleEntry<>("dx", 0));
-      bus.add(new AbstractMap.SimpleEntry<>("dy", 0));
+      ComponentListingFeature.PortPosition bus = portAt("bus", "inout", 0, 0);
 
-      ArrayList<Map.Entry<String, Object>> taps = new ArrayList<>();
-      taps.add(new AbstractMap.SimpleEntry<>("name", "tap_"));
-      taps.add(new AbstractMap.SimpleEntry<>("type", "inout"));
-      taps.add(new AbstractMap.SimpleEntry<>("count", "fanout"));
-      taps.add(new AbstractMap.SimpleEntry<>("first_index", 1));
+      Object fx = null, fy = null, sx = null, sy = null;
       if (facing == Direction.EAST) {
         if (appear == SplitterAttributes.APPEAR_LEFT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", 20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10 + spacing*(fanout-1)*10"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+          fx = 20;
+          sx = 0;
+          fy = "-10 + spacing*(fanout-1)*10";
+          sy = "10*spacing";
         } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", 20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 10));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+          fx = 20;
+          sx = 0;
+          fy = 10;
+          sy = "10*spacing";
         } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", 20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10*spacing*floor(fanout/2)"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+          fx = 20;
+          sx = 0;
+          fy = "-10*spacing*floor(fanout/2)";
+          sy = "10*spacing";
         }
       } else if (facing == Direction.WEST) {
         if (appear == SplitterAttributes.APPEAR_LEFT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 10));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+          fx = -20;
+          sx = 0;
+          fy = 10;
+          sy = "10*spacing";
         } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10 + spacing*(fanout-1)*10"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+          fx = -20;
+          sx = 0;
+          fy = "-10 + spacing*(fanout-1)*10";
+          sy = "10*spacing";
         } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", "-10*spacing*floor(fanout/2)"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+          fx = -20;
+          sx = 0;
+          fy = "-10*spacing*floor(fanout/2)";
+          sy = "10*spacing";
         }
       } else if (facing == Direction.NORTH) {
         if (appear == SplitterAttributes.APPEAR_LEFT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -10));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", -20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+          fx = -10;
+          sx = "-10*spacing";
+          fy = -20;
+          sy = 0;
         } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10 + spacing*(fanout-1)*10"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", -20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+          fx = "10 + spacing*(fanout-1)*10";
+          sx = "-10*spacing";
+          fy = -20;
+          sy = 0;
         } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10*spacing*floor((fanout-1)/2)"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", -20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+          fx = "10*spacing*floor((fanout-1)/2)";
+          sx = "-10*spacing";
+          fy = -20;
+          sy = 0;
         }
       } else if (facing == Direction.SOUTH) {
         if (appear == SplitterAttributes.APPEAR_LEFT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10 + spacing*(fanout-1)*10"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+          fx = "10 + spacing*(fanout-1)*10";
+          sx = "-10*spacing";
+          fy = 20;
+          sy = 0;
         } else if (appear == SplitterAttributes.APPEAR_RIGHT) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", -10));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+          fx = -10;
+          sx = "-10*spacing";
+          fy = 20;
+          sy = 0;
         } else if (appear == SplitterAttributes.APPEAR_CENTER || appear == SplitterAttributes.APPEAR_LEGACY) {
-          taps.add(new AbstractMap.SimpleEntry<>("first_dx", "10*spacing*floor((fanout-1)/2)"));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-          taps.add(new AbstractMap.SimpleEntry<>("first_dy", 20));
-          taps.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+          fx = "10*spacing*floor((fanout-1)/2)";
+          sx = "-10*spacing";
+          fy = 20;
+          sy = 0;
         }
       }
+      ComponentListingFeature.PortPosition taps
+        = portsAt("tap_", "inout", 1, "fanout", fx, fy, sx, sy);
       return List.of(bus, taps);
     }
   }

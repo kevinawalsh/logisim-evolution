@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
@@ -58,6 +59,8 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.ToolTipMaker;
+
+import static com.cburch.logisim.comp.ComponentListingFeature.PortPosition;
 
 /**
  * Exports a JSON file describing every component in Logisim's standard library:
@@ -193,13 +196,13 @@ public class ComponentListingExporter {
       for (Tool tool : lib.getTools()) {
         if (!(tool instanceof AddTool)) continue;
         ComponentFactory factory = ((AddTool) tool).getFactory();
-        if (!tool.getName().equals("ROM")) continue;
+        // if (!tool.getName().equals("ROM")) continue; // keep this comment for debugging
         if (!done.add(factory)) continue;
         try {
           int a = w.linecount;
           processComponent(factory, w);
           int b = w.linecount;
-          System.out.printf("Wrote %d lines of json for '%s'\n", b-a, factory.getName());
+          System.out.printf("Wrote %d lines of json for '%s/%s'\n", b-a, lib.getName(), factory.getName());
         } catch (Exception e) {
           System.err.println("WARNING: error processing " + factory.getName()
               + " in " + libName + ": " + e.getMessage());
@@ -249,12 +252,12 @@ public class ComponentListingExporter {
     }
 
     // Check rotation
-    String rotation;
+    String rotation = null;
     if (facingAttr == null)
       rotation = ROTATION_NONE;
-    else if (clf != null && clf.getCustomPortLayout(eastAttrs) != null)
-      rotation = ROTATION_CUSTOM;
-    else
+    if (rotation == null && clf != null)
+      rotation = clf.getLayoutRotation(eastAttrs);
+    if (rotation == null)
       rotation = classifyRotation(factory, eastAttrs, facingAttr);
 
     // Determine anchor description from port at (0,0) facing east
@@ -312,9 +315,7 @@ public class ComponentListingExporter {
 
     // layout_affecting_attrs (those that affect port positions, excluding facing)
     w.key("layout_affecting_attrs");
-    w.beginArray();
-    for (Attribute<?> pa : variantAttrList) w.value(pa.getName());
-    w.endArray();
+    w.array(variantAttrList, pa -> pa.getName());
 
     // default_attr_values
     w.key("default_attr_values");
@@ -329,10 +330,10 @@ public class ComponentListingExporter {
       w.beginObject();
       w.keyValue("name", ai.xmlName);
       if (ai.values instanceof List) {
+        @SuppressWarnings("rawtypes")
+        List<Object> vals = (List<Object>)ai.values;
         w.key("values");
-        w.beginArray();
-        for (String v : (List<String>) ai.values) w.value(v);
-        w.endArray();
+        w.array(vals);
       } else {
         w.keyValue("values", (String)ai.values);
       }
@@ -365,9 +366,9 @@ public class ComponentListingExporter {
           continue;
         }
 
-        List<List<Map.Entry<String, Object>>> customPorts = 
+        List<PortPosition> customPorts = 
           clf == null ? null : clf.getCustomPortLayout(varAttrs);
-        List<PortInfo> ports = customPorts != null ? null : getPortInfos(factory, varAttrs);
+        List<PortPosition> ports = customPorts != null ? null : getPortInfos(factory, varAttrs);
         if (customPorts == null && ports == null) {
           System.err.println("ERR: no ports?");
           continue;
@@ -383,31 +384,11 @@ public class ComponentListingExporter {
         w.key("ports");
         w.beginArray();
         if (customPorts != null) {
-          for (List<Map.Entry<String, Object>> obj : customPorts) {
-            w.beginObject();
-            for (Map.Entry<String, Object> kv : obj) {
-              w.keyValue(kv.getKey(), kv.getValue());
-            }
-            w.endObject();
-          }
+          for (PortPosition pi : customPorts)
+            toJson(pi, w);
         } else {
-          for (PortInfo pi : compressPorts(ports)) {
-            w.beginObject();
-            w.keyValue("name", pi.name);
-            w.keyValue("type", pi.type);
-            if (pi.isArray) {
-              w.keyValue("count", pi.count);
-              if (pi.firstIndex != 0) w.keyValue("first_index", pi.firstIndex);
-              w.keyValue("first_dx", pi.dx);
-              w.keyValue("first_dy", pi.dy);
-              w.keyValue("step_dx", pi.stepDx);
-              w.keyValue("step_dy", pi.stepDy);
-            } else {
-              w.keyValue("dx", pi.dx);
-              w.keyValue("dy", pi.dy);
-            }
-            w.endObject();
-          }
+          for (PortPosition pi : compressPorts(ports))
+            toJson(pi, w);
         }
         w.endArray(); // ports
         w.endObject(); // variant
@@ -418,23 +399,44 @@ public class ComponentListingExporter {
     w.endObject(); // component
   }
 
+  static void toJson(PortPosition pi, JsonWriter w) {
+    w.beginObject();
+    if (pi.isArray) {
+      w.keyValue("name", pi.name);
+      w.keyValue("type", pi.type);
+      w.keyValue("count", pi.count);
+      if (pi.firstIndex != null && !pi.firstIndex.toString().equals("0"))
+        w.keyValue("first_index", pi.firstIndex);
+      w.keyValue("first_dx", pi.dx);
+      w.keyValue("first_dy", pi.dy);
+      w.keyValue("step_dx", pi.stepDx);
+      w.keyValue("step_dy", pi.stepDy);
+    } else {
+      w.keyValue("name", pi.name);
+      w.keyValue("type", pi.type);
+      w.keyValue("dx", pi.dx);
+      w.keyValue("dy", pi.dy);
+    }
+    w.endObject();
+  }
+
   // ---------------------------------------------------------------------------
   // Port position helpers
   // ---------------------------------------------------------------------------
 
-  private static List<PortInfo> getPortInfos(ComponentFactory factory, AttributeSet attrs) {
+  private static List<PortPosition> getPortInfos(ComponentFactory factory, AttributeSet attrs) {
     try {
       Component comp = factory.createComponent(Location.create(0, 0), attrs);
       List<EndData> ends = comp.getEnds();
       ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
-      List<PortInfo> result = new ArrayList<>();
+      List<PortPosition> result = new ArrayList<>();
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
-        PortInfo pi = new PortInfo();
-        pi.dx = end.getLocation().getX();
-        pi.dy = end.getLocation().getY();
-        pi.type = typeString(end.getType());
-        pi.name = getNameFromToolTipOrDefault(tt, pi.dx, pi.dy, pi.type, i);
+        int dx = end.getLocation().getX();
+        int dy = end.getLocation().getY();
+        String type = typeString(end.getType());
+        String name = getNameFromToolTipOrDefault(tt, dx, dy, type, i);
+        PortPosition pi = new PortPosition(name, type, dx, dy);
         result.add(pi);
       }
       return result;
@@ -446,8 +448,17 @@ public class ComponentListingExporter {
     }
   }
 
-  private static String getNameFromToolTipOrDefault(ToolTipMaker tt, int x, int y, String type, int index) {
-    String tip = tt == null ? null : tt.getToolTip(new ComponentUserEvent(null, x, y));
+  private static String getNameFromToolTipOrDefault(ToolTipMaker tt, Object dx, Object dy, String type, int index) {
+    String tip = null;
+    if (tt != null) {
+      try {
+        int x = Integer.parseInt(dx.toString());
+        int y = Integer.parseInt(dy.toString());
+        tip = tt.getToolTip(new ComponentUserEvent(null, x, y));
+      } catch (NumberFormatException ex) {
+        ex.printStackTrace();
+      }
+    }
     if (tip != null && !tip.isEmpty()) {
       // EndData tooltips should have the form: "name: description"
       // TODO: should include the descriptions in the json?
@@ -513,7 +524,7 @@ public class ComponentListingExporter {
     if (facingAttr == null)
       return ROTATION_NONE;
     // System.out.println("checking rotation for " + factory.getName());
-    List<PortInfo> eastPorts = getPortInfos(factory, eastAttrs);
+    List<PortPosition> eastPorts = getPortInfos(factory, eastAttrs);
     if (eastPorts == null) {
       System.out.println("ERR can't get ports?");
       return ROTATION_STANDARD; // NONE?
@@ -530,60 +541,60 @@ public class ComponentListingExporter {
     for (Direction dir : others) {
       // System.out.println("checking: " + dir);
       AttributeSet dirAttrs = cloneWithValue(eastAttrs, facingAttr, dir.toString());
-      List<PortInfo> dirPorts = getPortInfos(factory, dirAttrs);
+      List<PortPosition> dirPorts = getPortInfos(factory, dirAttrs);
       if (dirPorts == null) return ROTATION_CUSTOM;
       if (dirPorts.size() != eastPorts.size()) return ROTATION_CUSTOM;
 
       for (int i = 0; i < eastPorts.size() && maybeStandard; i++) {
-        PortInfo ep = eastPorts.get(i);
-        PortInfo dp = dirPorts.get(i);
+        PortPosition ep = eastPorts.get(i);
+        PortPosition dp = dirPorts.get(i);
         int expectedDx, expectedDy;
         if (dir == Direction.WEST) {
-          expectedDx = -ep.dx;
-          expectedDy = -ep.dy;
+          expectedDx = -(Integer)ep.dx;
+          expectedDy = -(Integer)ep.dy;
         } else if (dir == Direction.NORTH) {
-          expectedDx =  ep.dy;
-          expectedDy = -ep.dx;
+          expectedDx =  (Integer)ep.dy;
+          expectedDy = -(Integer)ep.dx;
         } else { // SOUTH
-          expectedDx = -ep.dy;
-          expectedDy =  ep.dx;
+          expectedDx = -(Integer)ep.dy;
+          expectedDy =  (Integer)ep.dx;
         }
         // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
-        maybeStandard &= (dp.dx == expectedDx && dp.dy == expectedDy);
+        maybeStandard &= ((Integer)dp.dx == expectedDx && (Integer)dp.dy == expectedDy);
       }
       for (int i = 0; i < eastPorts.size() && maybeMirrorLeft; i++) {
-        PortInfo ep = eastPorts.get(i);
-        PortInfo dp = dirPorts.get(i);
+        PortPosition ep = eastPorts.get(i);
+        PortPosition dp = dirPorts.get(i);
         int expectedDx, expectedDy;
         if (dir == Direction.WEST) {
-          expectedDx = -ep.dx;
-          expectedDy = -ep.dy * -1;
+          expectedDx = -(Integer)ep.dx;
+          expectedDy = -(Integer)ep.dy * -1;
         } else if (dir == Direction.NORTH) {
-          expectedDx =  ep.dy;
-          expectedDy = -ep.dx;
+          expectedDx =  (Integer)ep.dy;
+          expectedDy = -(Integer)ep.dx;
         } else { // SOUTH
-          expectedDx = -ep.dy * -1;
-          expectedDy =  ep.dx;
+          expectedDx = -(Integer)ep.dy * -1;
+          expectedDy =  (Integer)ep.dx;
         }
         // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
-        maybeMirrorLeft &= (dp.dx == expectedDx && dp.dy == expectedDy);
+        maybeMirrorLeft &= ((Integer)dp.dx == expectedDx && (Integer)dp.dy == expectedDy);
       }
       for (int i = 0; i < eastPorts.size() && maybeMirrorRight; i++) {
-        PortInfo ep = eastPorts.get(i);
-        PortInfo dp = dirPorts.get(i);
+        PortPosition ep = eastPorts.get(i);
+        PortPosition dp = dirPorts.get(i);
         int expectedDx, expectedDy;
         if (dir == Direction.WEST) {
-          expectedDx = -ep.dx;
-          expectedDy = -ep.dy * -1;
+          expectedDx = -(Integer)ep.dx;
+          expectedDy = -(Integer)ep.dy * -1;
         } else if (dir == Direction.NORTH) {
-          expectedDx =  ep.dy * -1;
-          expectedDy = -ep.dx;
+          expectedDx =  (Integer)ep.dy * -1;
+          expectedDy = -(Integer)ep.dx;
         } else { // SOUTH
-          expectedDx = -ep.dy;
-          expectedDy =  ep.dx;
+          expectedDx = -(Integer)ep.dy;
+          expectedDy =  (Integer)ep.dx;
         }
         // System.out.printf("%d vs %d, %d vs %d\n", dp.dx, expectedDx, dp.dy, expectedDy);
-        maybeMirrorRight &= (dp.dx == expectedDx && dp.dy == expectedDy);
+        maybeMirrorRight &= ((Integer)dp.dx == expectedDx && (Integer)dp.dy == expectedDy);
       }
     }
     // System.out.printf("std=%s mirror=%s\n", maybeStandard?"maybe":"no", maybeMirror?"maybe":"no");
@@ -611,7 +622,7 @@ public class ComponentListingExporter {
     if (facingAttr != null) {
       baseAttrs = cloneWithValue(defaultAttrs, facingAttr, "east");
     }
-    List<PortInfo> basePorts = getPortInfos(factory, baseAttrs);
+    List<PortPosition> basePorts = getPortInfos(factory, baseAttrs);
     if (basePorts == null) return Collections.emptyList();
     
     // System.out.println("== base attrs ==");
@@ -635,7 +646,7 @@ public class ComponentListingExporter {
         @SuppressWarnings("rawtypes")
         AttributeSet testAttrs = cloneWithValue(baseAttrs, (Attribute)attr, val);
         if (testAttrs == null) continue;
-        List<PortInfo> testPorts = getPortInfos(factory, testAttrs);
+        List<PortPosition> testPorts = getPortInfos(factory, testAttrs);
         if (testPorts == null) continue;
         if (!portInfosEqual(basePorts, testPorts)) {
           // System.out.println("differ");
@@ -648,12 +659,12 @@ public class ComponentListingExporter {
     return result;
   }
 
-  private static boolean portInfosEqual(List<PortInfo> a, List<PortInfo> b) {
+  private static boolean portInfosEqual(List<PortPosition> a, List<PortPosition> b) {
     if (a.size() != b.size()) return false;
     for (int i = 0; i < a.size(); i++) {
-      if (a.get(i).dx != b.get(i).dx) return false;
-      if (a.get(i).dy != b.get(i).dy) return false;
-      if (!a.get(i).type.equals(b.get(i).type)) return false;
+      // Q: why do we not also compare names here? Maybe they don't matter?
+      if (!a.get(i).equalsExceptName(b.get(i)))
+          return false;
     }
     return true;
   }
@@ -764,12 +775,12 @@ public class ComponentListingExporter {
    * independently (handles components where a gap in the middle splits the ports).
    * Non-qualifying ports are returned as-is (isArray=false).
    */
-  private static List<PortInfo> compressPorts(List<PortInfo> ports) {
+  private static List<PortPosition> compressPorts(List<PortPosition> ports) {
     // Group ports by (prefix, type), preserving insertion order of first occurrence.
-    LinkedHashMap<String, List<PortInfo>> groups = new LinkedHashMap<>();
-    Set<PortInfo> consumed = Collections.newSetFromMap(new IdentityHashMap<>());
+    LinkedHashMap<String, List<PortPosition>> groups = new LinkedHashMap<>();
+    Set<PortPosition> consumed = Collections.newSetFromMap(new IdentityHashMap<>());
 
-    for (PortInfo pi : ports) {
+    for (PortPosition pi : ports) {
       int split = pi.name.length();
       while (split > 0 && Character.isDigit(pi.name.charAt(split - 1))) split--;
       if (split == pi.name.length()) continue; // no trailing digits — individual
@@ -780,24 +791,24 @@ public class ComponentListingExporter {
 
     // For each group, build 1 or 2 array descriptors (or none).
     // triggerMap: maps the first port of each sub-array to the descriptor to emit there.
-    Map<PortInfo, PortInfo> triggerMap = new IdentityHashMap<>();
-    for (Map.Entry<String, List<PortInfo>> e : groups.entrySet()) {
-      List<PortInfo> g = e.getValue();
+    Map<PortPosition, PortPosition> triggerMap = new IdentityHashMap<>();
+    for (Map.Entry<String, List<PortPosition>> e : groups.entrySet()) {
+      List<PortPosition> g = e.getValue();
       if (g.size() < 2) continue;
       String prefix = e.getKey().substring(0, e.getKey().indexOf('\0'));
 
       // Sort by numeric index
       g.sort((a, b) -> Integer.compare(indexSuffix(a.name), indexSuffix(b.name)));
 
-      PortInfo single = tryBuildArray(g, prefix);
+      PortPosition single = tryBuildArray(g, prefix);
       if (single != null) {
         triggerMap.put(g.get(0), single);
         consumed.addAll(g);
       } else if (g.size() % 2 == 0) {
         // Try splitting at N/2 to handle a gap in the middle
         int half = g.size() / 2;
-        PortInfo first = tryBuildArray(g.subList(0, half), prefix);
-        PortInfo second = tryBuildArray(g.subList(half, g.size()), prefix);
+        PortPosition first = tryBuildArray(g.subList(0, half), prefix);
+        PortPosition second = tryBuildArray(g.subList(half, g.size()), prefix);
         if (first != null && second != null) {
           triggerMap.put(g.get(0), first);
           triggerMap.put(g.get(half), second);
@@ -809,12 +820,12 @@ public class ComponentListingExporter {
     // Rebuild output in original port order.
     // At each trigger port, emit the corresponding array descriptor.
     // Other consumed ports are suppressed.
-    List<PortInfo> result = new ArrayList<>();
-    for (PortInfo pi : ports) {
+    List<PortPosition> result = new ArrayList<>();
+    for (PortPosition pi : ports) {
       if (!consumed.contains(pi)) {
         result.add(pi);
       } else {
-        PortInfo desc = triggerMap.get(pi);
+        PortPosition desc = triggerMap.get(pi);
         if (desc != null) result.add(desc);
         // else: non-trigger consumed port — suppressed
       }
@@ -825,29 +836,28 @@ public class ComponentListingExporter {
   /**
    * Checks whether a sorted (by index) list of ports forms a valid linear array.
    * Requires consecutive indices and linearly-spaced positions.
-   * Returns a PortInfo descriptor (isArray=true) if valid, null otherwise.
+   * Returns a PortPosition descriptor (isArray=true) if valid, null otherwise.
    */
-  private static PortInfo tryBuildArray(List<PortInfo> g, String prefix) {
+  private static PortPosition tryBuildArray(List<PortPosition> g, String prefix) {
     if (g.size() < 2) return null;
     int firstIdx = indexSuffix(g.get(0).name);
     for (int i = 1; i < g.size(); i++) {
       if (indexSuffix(g.get(i).name) != firstIdx + i) return null;
     }
-    int sdx = g.get(1).dx - g.get(0).dx;
-    int sdy = g.get(1).dy - g.get(0).dy;
+    int sdx = (Integer)g.get(1).dx - (Integer)g.get(0).dx;
+    int sdy = (Integer)g.get(1).dy - (Integer)g.get(0).dy;
     for (int i = 1; i < g.size(); i++) {
-      if (g.get(i).dx - g.get(i-1).dx != sdx || g.get(i).dy - g.get(i-1).dy != sdy) return null;
+      if ((Integer)g.get(i).dx - (Integer)g.get(i-1).dx != sdx || (Integer)g.get(i).dy - (Integer)g.get(i-1).dy != sdy) return null;
     }
-    PortInfo arr = new PortInfo();
-    arr.name = prefix;
-    arr.type = g.get(0).type;
-    arr.dx = g.get(0).dx;
-    arr.dy = g.get(0).dy;
-    arr.isArray = true;
-    arr.count = g.size();
-    arr.firstIndex = firstIdx;
-    arr.stepDx = sdx;
-    arr.stepDy = sdy;
+    PortPosition arr = new PortPosition(
+        prefix,
+        g.get(0).type,
+        firstIdx,
+        g.size(),
+        g.get(0).dx,
+        g.get(0).dy,
+        sdx,
+        sdy);
     return arr;
   }
 
@@ -875,7 +885,8 @@ public class ComponentListingExporter {
       ((AbstractAttributeSet) copy).changeAttr((Attribute<Object>) attr, parsed);
       return copy;
     } catch (Exception e) {
-      System.err.println("ERR: Can't clone attribute set");
+      System.err.println("ERR: Can't clone attribute set: " + e.getMessage());
+      e.printStackTrace();
       return null;
     }
   }
@@ -931,16 +942,6 @@ public class ComponentListingExporter {
     boolean isFacing;
   }
 
-  private static class PortInfo {
-    int dx, dy;
-    String type, name;
-    // Array fields (isArray=true when this entry represents a linear run of ports)
-    boolean isArray = false;
-    int count;       // number of ports in the array
-    int firstIndex;  // index suffix of the first port (name is prefix)
-    int stepDx, stepDy; // position increment per successive index
-  }
-
   // ---------------------------------------------------------------------------
   // Simple JSON writer
   // ---------------------------------------------------------------------------
@@ -986,6 +987,31 @@ public class ComponentListingExporter {
       needsComma = true;
     }
 
+    void array(List<Object> vals) {
+      out.print("[");
+      needsComma = false;
+      for (Object v : vals) {
+        if (needsComma) out.print(", ");
+        else out.print(" ");
+        out.print(toJson(v));
+        needsComma = true;
+      }
+      out.print(" ]");
+      needsComma = true;
+    }
+
+    <V> void array(List<V> vals, Function<V, Object> xform) {
+      out.print("[");
+      needsComma = false;
+      for (V v : vals) {
+        if (needsComma) out.print(", ");
+        out.print(toJson(xform.apply(v)));
+        needsComma = true;
+      }
+      out.print("]");
+      needsComma = true;
+    }
+
     void beginArray() {
       out.print("[");
       inArray[depth++] = true;
@@ -1008,9 +1034,9 @@ public class ComponentListingExporter {
       needsComma = false;
     }
 
-    void value(String v) {
+    void value(Object v) {
       if (inArray[depth - 1]) { comma(); indent(); }
-      out.print("\"" + escape(v) + "\"");
+      out.print(toJson(v));
       needsComma = true;
     }
 
@@ -1026,32 +1052,8 @@ public class ComponentListingExporter {
       needsComma = true;
     }
 
-    void keyValue(String k, Object o) {
-      if (o instanceof Integer) {
-        keyValue(k, (int)(Integer)o);
-      } else {
-        keyValue(k, o.toString());
-      }
-    }
-
-    void keyValue(String k, String v) {
-      try {
-        if (v.equals("true")) {
-          keyValue(k, true);
-          return;
-        }
-        if (v.equals("false")) {
-          keyValue(k, false);
-          return;
-        }
-        int i = Integer.parseInt(v);
-        if (v.equals(""+i)) {
-          keyValue(k, i);
-          return;
-        }
-      } catch (NumberFormatException ex) {
-      }
-      key(k); out.print("\"" + escape(v) + "\""); needsComma = true;
+    void keyValue(String k, Object v) {
+      key(k); out.print(toJson(v)); needsComma = true;
     }
 
     void keyValue(String k, boolean v) {
@@ -1060,6 +1062,21 @@ public class ComponentListingExporter {
 
     void keyValue(String k, int v) {
       key(k); out.print(v); needsComma = true;
+    }
+
+    static String toJson(Object v) {
+      String s = v.toString();
+      if ((v instanceof Integer
+            || v instanceof Boolean
+            || s.equals("true")
+            || s.equals("false")))
+        return s;
+      try {
+        int i = Integer.parseInt(s);
+        if (s.equals(""+i))
+          return s;
+      } catch (NumberFormatException ex) { }
+      return "\"" + escape(s) + "\"";
     }
 
     private static String escape(String s) {

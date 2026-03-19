@@ -224,6 +224,9 @@ public final class Instance implements Location.At {
         avoid = (avoid&0x10)|((avoid << 3)&0xf)|((avoid&0xf) >> 1);
     }
     Object labelLoc = getAttributeValue(StdAttr.LABEL_LOC);
+    if (labelLoc == null)
+      labelLoc = getAttributeValue(StdAttr.LABEL_EDGE_LOC);
+
 
     Bounds bds = getNominalBounds();
     int x = bds.getX() + bds.getWidth() / 2;

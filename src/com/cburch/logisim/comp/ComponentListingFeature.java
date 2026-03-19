@@ -74,16 +74,67 @@ public interface ComponentListingFeature {
     return null;
   }
 
+  default String getLayoutRotation(AttributeSet attrs) {
+    if (getCustomPortLayout(attrs) != null) return "custom";
+    else return null;
+  }
+
   /**
-   * Returns a list of json-like objects for the "ports" section of the
+   * Returns a list of port positions for the "ports" section of the
    * port_layout for these attributes, or null if it should be generated
    * automatically.
-   * A json-like object here means a list of key-value pairs, where the value
-   * can be a String or an Integer. No deeper json structure should be needed
-   * here.
    */
-  default List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+  default List<PortPosition> getCustomPortLayout(AttributeSet attrs) {
     return null;
+  }
+
+  public static class PortPosition {
+    public boolean isArray;
+    public final String name; // e.g. "Data"
+    public final String type; // "input", "output", "inout"
+    public final Object dx, dy; // String, Integer, or null if this is not a single port
+    public final Object firstIndex, count, stepDx, stepDy; // String, Integer, or null if this not an array of ports
+ 
+    public PortPosition(String n, String t, Object dx, Object dy) {
+      this.isArray = false;
+      this.name = n;
+      this.type = t;
+      this.dx = dx;
+      this.dy = dy;
+      this.firstIndex = this.count = this.stepDx = this.stepDy = null;
+    }
+
+    // NOTE: this duplicates ComponentListingExplorer.PortInfo, essentially
+    public PortPosition(String n, String t, Object i, Object c, Object fx, Object fy, Object sx, Object sy) {
+      this.isArray = true;
+      this.name = n;
+      this.type = t;
+      this.firstIndex = i;
+      this.count = c;
+      this.dx = fx;
+      this.dy = fy;
+      this.stepDx = sx;
+      this.stepDy = sy;
+    }
+
+    public boolean equalsExceptName(PortPosition other) {
+      if (!this.type.equals(other.type)) return false;
+      if (!this.dx.equals(other.dx)) return false;
+      if (!this.dy.equals(other.dy)) return false;
+      if (this.isArray != other.isArray) return false;
+      if (isArray && !this.firstIndex.equals(other.firstIndex)) return false;
+      if (isArray && !this.count.equals(other.count)) return false;
+      if (isArray && !this.stepDx.equals(other.stepDx)) return false;
+      if (isArray && !this.stepDy.equals(other.stepDy)) return false;
+      return true;
+    }
+  }
+
+  default PortPosition portAt(String n, String t, Object dx, Object dy) {
+    return new PortPosition(n, t, dx, dy);
+  }
+  default PortPosition portsAt(String n, String t, Object i, Object c, Object fx, Object fy, Object sx, Object sy) {
+    return new PortPosition(n, t, i, c, fx, fy, sx, sy);
   }
 
 }

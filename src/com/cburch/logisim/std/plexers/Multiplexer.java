@@ -31,11 +31,16 @@
 package com.cburch.logisim.std.plexers;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -391,5 +396,97 @@ public class Multiplexer extends InstanceFactory {
     ps[ps.length - 1].setToolTip(S.getter("multiplexerOutTip"));
 
     instance.setPorts(ps);
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("enable", "when false, the enable port is not available.");
+      notes.put("size", "determines offset of input, select, and enable ports from output port.");
+      notes.put("select", "when select=n, there are 2^n Input ports.");
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("enable", "size", "select");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Direction facing = attrs.getValue(StdAttr.FACING);
+      Object selloc = attrs.getValue(Plexers.ATTR_SELECT_LOC);
+      
+      ComponentListingFeature.PortPosition in, out, sel, en;
+
+      if (facing == Direction.EAST && selloc == Plexers.SELECT_BOTTOM_LEFT) {
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "-width/2", "max(20, 10*2^(select-1))");
+        en = portAt("Enable", "input", "-width/2+10", "max(20, 10*2^(select-1))");
+        in = portsAt("Input", "input", 0, "2^select",
+            "-width", "-10*2^(select-1)",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.EAST) { // Plexers.SELECT_TOP_RIGHT
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "-width/2", "-max(20, 10*2^(select-1)+(40-size)/2)");
+        en = portAt("Enable", "input", "-width/2+10", "-max(20, 10*2^(select-1)+(40-size)/2)");
+        in = portsAt("Input", "input", 0, "2^select",
+            "-width", "-10*2^(select-1)",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.WEST && selloc == Plexers.SELECT_BOTTOM_LEFT) {
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "width/2", "max(20, 10*2^(select-1))");
+        en = portAt("Enable", "input", "width/2-10", "max(20, 10*2^(select-1))");
+        in = portsAt("Input", "input", 0, "2^select",
+            "width", "-10*2^(select-1)",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.WEST) { // Plexers.SELECT_TOP_RIGHT
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "width/2", "-max(20, 10*2^(select-1)+(40-size)/2)");
+        en = portAt("Enable", "input", "width/2-10", "-max(20, 10*2^(select-1)+(40-size)/2)");
+        in = portsAt("Input", "input", 0, "2^select",
+            "width", "-10*2^(select-1)",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.NORTH && selloc == Plexers.SELECT_BOTTOM_LEFT) {
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "-max(20, 10*2^(select-1)+(40-size)/2)", "width/2");
+        en = portAt("Enable", "input", "-max(20, 10*2^(select-1)+(40-size)/2)", "width/2-10");
+        in = portsAt("Input", "input", 0, "2^select",
+            "-10*2^(select-1)", "width",
+            "20 if select=1, otherwise 10", 0);
+      } else if (facing == Direction.NORTH) { // Plexers.SELECT_TOP_RIGHT
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "max(20, 10*2^(select-1))", "width/2");
+        en = portAt("Enable", "input", "max(20, 10*2^(select-1))", "width/2-10");
+        in = portsAt("Input", "input", 0, "2^select",
+            "-10*2^(select-1)", "width",
+            "20 if select=1, otherwise 10", 0);
+      } else if (selloc == Plexers.SELECT_BOTTOM_LEFT) { // SOUTH
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "-max(20, 10*2^(select-1)+(40-size)/2)", "-width/2");
+        en = portAt("Enable", "input", "-max(20, 10*2^(select-1)+(40-size)/2)", "-width/210");
+        in = portsAt("Input", "input", 0, "2^select",
+            "-10*2^(select-1)", "-width",
+            "20 if select=1, otherwise 10", 0);
+      } else { // Plexers.SELECT_TOP_RIGHT, SOUTH
+        out = portAt("OUT", "output", 0, 0);
+        sel = portAt("Select", "input", "max(20, 10*2^(select-1))", "-width/2");
+        en = portAt("Enable", "input", "max(20, 10*2^(select-1))", "-width/2+10");
+        in = portsAt("Input", "input", 0, "2^select",
+            "-10*2^(select-1)", "-width",
+            "20 if select=1, otherwise 10", 0);
+      }
+
+      return List.of(out, in, sel, en);
+    }
   }
 }

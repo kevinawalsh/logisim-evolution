@@ -354,68 +354,55 @@ public class LineSelect extends InstanceFactory {
     }
 
     @Override
-    public List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(Plexers.ATTR_SIZE);
       Object facing = attrs.getValue(StdAttr.FACING);
 
-      // [
-      //   {
-      //     "name": "OUT",
-      //     "type": "output",
-      //     "dx": 0,
-      //     "dy": 0
-      //   },
-      //   {
-      //     "name": "Input_",
-      //     "type": "input",
-      //     "count": "inputs",
-      //     "first_index": 1,
-      //     "first_dx": ...,
-      //     "first_dy": ...,
-      //     "step_dx": ...,
-      //     "step_dy": ...
-      //   }
-      // ]
-      ArrayList<Map.Entry<String, Object>> bus = new ArrayList<>();
-      bus.add(new AbstractMap.SimpleEntry<>("name", "OUT"));
-      bus.add(new AbstractMap.SimpleEntry<>("type", "output"));
-      bus.add(new AbstractMap.SimpleEntry<>("dx", 0));
-      bus.add(new AbstractMap.SimpleEntry<>("dy", 0));
+      ComponentListingFeature.PortPosition bus = portAt("OUT", "output", 0, 0);
 
-      ArrayList<Map.Entry<String, Object>> in0 = new ArrayList<>();
-      in0.add(new AbstractMap.SimpleEntry<>("name", "Input_0"));
-      in0.add(new AbstractMap.SimpleEntry<>("type", "input"));
+      ComponentListingFeature.PortPosition in0, inI;
+      
       if (facing == Direction.EAST) {
-        in0.add(new AbstractMap.SimpleEntry<>("dx", appear == Plexers.SIZE_WIDE ? -30 : -20));
-        in0.add(new AbstractMap.SimpleEntry<>("dy", "-10*min(1, floor(spacing*(inputs-1)/2))"));
-      }
-
-      ArrayList<Map.Entry<String, Object>> inI = new ArrayList<>();
-      inI.add(new AbstractMap.SimpleEntry<>("name", "Input_"));
-      inI.add(new AbstractMap.SimpleEntry<>("type", "input"));
-      inI.add(new AbstractMap.SimpleEntry<>("count", "inputs-1"));
-      inI.add(new AbstractMap.SimpleEntry<>("first_index", 1));
-      if (facing == Direction.EAST) {
-        inI.add(new AbstractMap.SimpleEntry<>("first_dx", appear == Plexers.SIZE_WIDE ? -30 : -20));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-        inI.add(new AbstractMap.SimpleEntry<>("first_dy", "10*min(1, ceil(spacing*(inputs-1)/2))-10*(inputs-2)*spacing"));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dy", "10*spacing"));
+        in0 = portAt("Input_0", "input",
+            appear == Plexers.SIZE_WIDE ? -30 : -20, 
+            "-10*min(1, floor(spacing*(inputs-1)/2))");
       } else if (facing == Direction.WEST) {
-        inI.add(new AbstractMap.SimpleEntry<>("first_dx", appear == Plexers.SIZE_WIDE ? 30 : 20));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
-        inI.add(new AbstractMap.SimpleEntry<>("first_dy", "-10*min(1, ceil(spacing*(inputs-1)/2))+10*(inputs-2)*spacing"));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dy", "-10*spacing"));
+        in0 = portAt("Input_0", "input",
+            appear == Plexers.SIZE_WIDE ? 30 : 20, 
+            "10*min(1, floor(spacing*(inputs-1)/2))");
       } else if (facing == Direction.NORTH) {
-        inI.add(new AbstractMap.SimpleEntry<>("first_dx", "10*min(1, ceil(spacing*(inputs-1)/2))-10*(inputs-2)*spacing"));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dx", "10*spacing"));
-        inI.add(new AbstractMap.SimpleEntry<>("first_dy", appear == Plexers.SIZE_WIDE ? 30 : 20));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
-      } else if (facing == Direction.SOUTH) {
-        inI.add(new AbstractMap.SimpleEntry<>("first_dx", "-10*min(1, ceil(spacing*(inputs-1)/2))+10*(inputs-2)*spacing"));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dx", "-10*spacing"));
-        inI.add(new AbstractMap.SimpleEntry<>("first_dy", appear == Plexers.SIZE_WIDE ? -30 : -20));
-        inI.add(new AbstractMap.SimpleEntry<>("step_dy", 0));
+        in0 = portAt("Input_0", "input",
+            "-10*min(1, floor(spacing*(inputs-1)/2))",
+            appear == Plexers.SIZE_WIDE ? 30 : 20);
+      } else { // SOUTH
+        in0 = portAt("Input_0", "input",
+            "10*min(1, floor(spacing*(inputs-1)/2))",
+            appear == Plexers.SIZE_WIDE ? -30 : -20);
       }
+
+      Object fx, fy, sx, sy;
+      if (facing == Direction.EAST) {
+        fx = appear == Plexers.SIZE_WIDE ? -30 : -20;
+        sx = 0;
+        fy = "10*min(1, ceil(spacing*(inputs-1)/2))-10*(inputs-2)*spacing";
+        sy = "10*spacing";
+      } else if (facing == Direction.WEST) {
+        fx = appear == Plexers.SIZE_WIDE ? 30 : 20;
+        sx = 0;
+        fy = "-10*min(1, ceil(spacing*(inputs-1)/2))+10*(inputs-2)*spacing";
+        sy = "-10*spacing";
+      } else if (facing == Direction.NORTH) {
+        fx = "10*min(1, ceil(spacing*(inputs-1)/2))-10*(inputs-2)*spacing";
+        sx = "10*spacing";
+        fy = appear == Plexers.SIZE_WIDE ? 30 : 20;
+        sy = 0;
+      } else { // SOUTH
+        fx = "-10*min(1, ceil(spacing*(inputs-1)/2))+10*(inputs-2)*spacing";
+        sx = "-10*spacing";
+        fy = appear == Plexers.SIZE_WIDE ? -30 : -20;
+        sy = 0;
+      }
+      inI = portsAt("Input_", "input", 1, "inputs-1", fx, fy, sx, sy);
       return List.of(bus, in0, inI);
     }
   }

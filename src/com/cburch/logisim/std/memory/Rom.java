@@ -495,49 +495,29 @@ public class Rom extends Mem {
     }
 
     @Override
-    public List<List<Map.Entry<String, Object>>> getCustomPortLayout(AttributeSet attrs) {
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(StdAttr.APPEARANCE);
       Object props = attrs.getValue(ATTR_PROPORTIONS);
       int lines = Mem.lineSize(attrs);
-      // [
-      //   {
-      //     "name": "Address",
-      //     "type": "input",
-      //     "dx": 0,
-      //     "dy": 0
-      //   },
-      //   {
-      //     "name": "Data",
-      //     "type": "output",
-      //     "count": 4,
-      //     "first_dx": ...,
-      //     "first_dy": ...,
-      //     "step_dx": ...,
-      //     "step_dy": ...
-      //   }
-      // ]
-     
-      ArrayList<Map.Entry<String, Object>> abus = new ArrayList<>();
-      abus.add(new AbstractMap.SimpleEntry<>("name", "Address"));
-      abus.add(new AbstractMap.SimpleEntry<>("type", "input"));
-      abus.add(new AbstractMap.SimpleEntry<>("dx", 0));
-      abus.add(new AbstractMap.SimpleEntry<>("dy", 10));
-      ArrayList<Map.Entry<String, Object>> dbus = new ArrayList<>();
-      dbus.add(new AbstractMap.SimpleEntry<>("name", "Data"));
-      dbus.add(new AbstractMap.SimpleEntry<>("type", "output"));
-      dbus.add(new AbstractMap.SimpleEntry<>("count", "line"));
-      dbus.add(new AbstractMap.SimpleEntry<>("first_dx", SymbolWidth+40));
-      dbus.add(new AbstractMap.SimpleEntry<>("step_dx", 0));
+    
+      ComponentListingFeature.PortPosition abus, dbus;
+      abus = portAt("Address", "input", 0, 10);
+
+      Object fx, fy, sx, sy;
+      fx = SymbolWidth+40;
+      sx = 0;
       if (appear == StdAttr.APPEAR_CLASSIC && props == TALL) {
-        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", SymbolWidth/2));
+        fy = SymbolWidth/2;
       } else if (appear == StdAttr.APPEAR_CLASSIC && props == WIDE) {
-        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", "0 if line='quad' else 10"));
+        fy = "0 if line='quad' else 10";
       } else if (appear == StdAttr.APPEAR_CLASSIC) { // RECT
-        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", "60 + 10*floor(1/(1+dataWidth))"));
+        fy = "60 + 10*floor(1/(1+dataWidth))";
       } else { // ANSI
-        dbus.add(new AbstractMap.SimpleEntry<>("first_dy", "60 + 10*floor(1/(1+dataWidth))"));
+        fy = "60 + 10*floor(1/(1+dataWidth))";
       }
-      dbus.add(new AbstractMap.SimpleEntry<>("step_dy", "10"));
+      sy = 10;
+      dbus = portsAt("Data", "output", 0, "line", fx, fy, sx, sy);
+
       return List.of(abus, dbus);
     }
   }

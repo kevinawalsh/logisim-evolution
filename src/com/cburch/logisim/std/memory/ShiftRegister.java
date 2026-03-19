@@ -33,15 +33,21 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.data.Value;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -241,10 +247,12 @@ public class ShiftRegister extends InstanceFactory {
       g.drawLine(real_xpos + blockwidth + 5, real_ypos + 5, real_xpos
           + blockwidth + 5, real_ypos + height + 5);
       if (LastBlock) {
+        g.setColor(Color.RED);
         g.drawLine(real_xpos + 5, real_ypos + height + 5, real_xpos
             + blockwidth + 5, real_ypos + height + 5);
         g.drawLine(real_xpos + 5, real_ypos + height, real_xpos + 5,
             real_ypos + height + 5);
+        g.setColor(Color.BLACK);
       }
       if (nr_of_bits > 2) {
         g.drawLine(real_xpos + blockwidth + 5, real_ypos + 10,
@@ -252,10 +260,12 @@ public class ShiftRegister extends InstanceFactory {
         g.drawLine(real_xpos + blockwidth + 10, real_ypos + 10,
             real_xpos + blockwidth + 10, real_ypos + height + 10);
         if (LastBlock) {
+        g.setColor(Color.CYAN);
           g.drawLine(real_xpos + 10, real_ypos + height + 10,
               real_xpos + blockwidth + 10, real_ypos + height + 10);
           g.drawLine(real_xpos + 10, real_ypos + height + 5,
               real_xpos + 10, real_ypos + height + 10);
+        g.setColor(Color.BLACK);
         }
       }
     }
@@ -484,6 +494,71 @@ public class ShiftRegister extends InstanceFactory {
       if (i != CK) painter.drawPort(i);
     }
     painter.drawClock(CK, Direction.EAST);
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private static class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      String msg;
+      msg = "determines whether Load port and parallel Input and Output ports are present";
+      notes.put("parallel", msg);
+      msg = "when parallel=true, determines the count of Input and Output ports";
+      notes.put("length", msg);
+      return notes;
+    }
+    // @Override
+    // public List<String> getLayoutAnalysisIncludedAttributes(AttributeSet attrs) {
+    // }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("length");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Object appear = attrs.getValue(StdAttr.APPEARANCE);
+      boolean parallel = attrs.getValue(ATTR_LOAD).booleanValue();
+        
+      ComponentListingFeature.PortPosition shf, inp, clk, clr, out, lde, ldi, ldo;
+      if (appear == StdAttr.APPEAR_CLASSIC) {
+        shf = portAt("Shift", "input", 0, -10);
+        inp = portAt("Input", "input", 0, 0);
+        clk = portAt("Clock", "input", 0, 10);
+        clr = portAt("Clear", "input", 10, 20);
+        if (!parallel) {
+          out = portAt("Output", "output", 30, 0);
+          return List.of(inp, out, clk, shf, clr);
+        }
+        out = portAt("Output", "output", "20 + 10*length", 0);
+        lde = portAt("Load", "input", 10, -20);
+        ldi = portsAt("Input", "input", 0, "length", 20, -20, 10, 0);
+        ldo = portsAt("Output", "output", 0, "length", 20, 20, 10, 0);
+        return List.of(inp, out, clk, shf, clr, lde, ldi, ldo);
+      } else { // ANSI
+        clr = portAt("Clear", "input", 0, 20);
+        shf = portAt("Shift", "input", 0, 40);
+        clk = portAt("Clock", "input", 0, 50);
+        inp = portAt("Input", "input", 0, 80);
+        if (!parallel) {
+          out = portAt("Output", "output", SymbolWidth+20, 90);
+          return List.of(inp, out, clk, shf, clr);
+        }
+        lde = portAt("Load", "input", 0, 30);
+        ldi = portsAt("Input", "input", 0, "length", 0, 90, 0, 20);
+        ldo = portsAt("Output", "output", 0, "length", SymbolWidth+20, 90, 0, 20);
+        return List.of(inp, clk, shf, clr, lde, ldi, ldo);
+      }
+    }
   }
 
 }
