@@ -410,8 +410,8 @@ public class Multiplexer extends InstanceFactory {
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
       HashMap<String, String> notes = new HashMap<>();
-      notes.put("enable", "when false, the enable port is not available.");
-      notes.put("size", "determines offset of input, select, and enable ports from output port.");
+      notes.put("enable", "when false, the Enable port is not available.");
+      notes.put("size", "determines offset of Input, Select, and Enable ports from Output port.");
       notes.put("select", "when select=n, there are 2^n Input ports.");
       return notes;
     }

@@ -120,10 +120,12 @@ public class Plexers extends Library {
       .forBitWidth("select", S.getter("plexerSelectBitsAttr"), 1, 5);
   public static final Object DEFAULT_SELECT = BitWidth.create(1);
 
+  // FIXME: Confusing UI, is this the same as the output driver style, e.g 0Z, Z1, 01?
   public static final Attribute<Boolean> ATTR_TRISTATE = Attributes
       .forBoolean("tristate", S.getter("plexerThreeStateAttr"));
   public static final Object DEFAULT_TRISTATE = Boolean.FALSE;
 
+  // FIXME: Some of these options should sometimes be hidden, e.g. when ATTR_ENABLE=false
   public static final AttributeOption DISABLED_FLOATING = new AttributeOption(
       "Z", S.getter("plexerDisabledFloating"));
   public static final AttributeOption DISABLED_ZERO = new AttributeOption(

@@ -31,11 +31,16 @@
 package com.cburch.logisim.std.plexers;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -377,5 +382,59 @@ public class Demultiplexer extends InstanceFactory {
     ps[ps.length - 1].setToolTip(S.getter("demultiplexerInTip"));
 
     instance.setPorts(ps);
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("enable", "when false, the Enable port is not available.");
+      notes.put("select", "when select=n, there are 2^n Output ports.");
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("enable", "select");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Direction facing = attrs.getValue(StdAttr.FACING);
+      boolean e = (facing == Direction.EAST);
+      boolean w = (facing == Direction.WEST);
+      boolean n = (facing == Direction.NORTH);
+      boolean s = (facing == Direction.SOUTH);
+      Object selloc = attrs.getValue(Plexers.ATTR_SELECT_LOC);
+      boolean b = (selloc == Plexers.SELECT_BOTTOM_LEFT);
+      boolean r = (selloc == Plexers.SELECT_TOP_RIGHT);
+      
+      ComponentListingFeature.PortPosition inp, out, sel, en;
+
+      inp = portAt("Input", "input", 0, 0);
+      if (e || w) {
+        sel = portAt("Select", "input", (e?1:-1)*20, (b?"":"-")+"10*max(2, 2^(select-1))");
+        en = portAt("Enable", "input", (e?1:-1)*10, (b?"":"-")+"10*max(2, 2^(select-1))");
+        out = portsAt("Output", "output", 0, "2^select",
+            (e?"":"-")+"30 if select=1, otherwise "+(e?"":"-")+"40", "-10*2^(select-1)",
+            0, "20 if select=1, otherwise 10");
+      } else {
+        sel = portAt("Select", "input", (r?"":"-")+"10*max(2, 2^(select-1))", (s?1:-1)*20);
+        en = portAt("Enable", "input",  (r?"":"-")+"10*max(2, 2^(select-1))", (s?1:-1)*10);
+        out = portsAt("Output", "output", 0, "2^select",
+            "-10*2^(select-1)", (s?"":"-")+"30 if select=1, otherwise "+(s?"":"-")+"40",
+            "20 if select=1, otherwise 10", 0);
+      }
+
+      return List.of(inp, out, sel, en);
+    }
   }
 }

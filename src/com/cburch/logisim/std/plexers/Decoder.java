@@ -31,11 +31,16 @@
 package com.cburch.logisim.std.plexers;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -365,5 +370,81 @@ public class Decoder extends InstanceFactory {
       ps[outputs + 1].setToolTip(S.getter("decoderEnableTip"));
     }
     instance.setPorts(ps);
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("enable", "when false, the Enable port is not available.");
+      notes.put("select", "when select=n, there are 2^n Output ports.");
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("enable", "select");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Direction facing = attrs.getValue(StdAttr.FACING);
+      Object selloc = attrs.getValue(Plexers.ATTR_SELECT_LOC);
+      
+      ComponentListingFeature.PortPosition out, sel, en;
+
+      sel = portAt("Select", "input", 0, 0);
+      if (facing == Direction.EAST && selloc == Plexers.SELECT_BOTTOM_LEFT) {
+        en = portAt("Enable", "input", -10, 0);
+        out = portsAt("Output", "output", 0, "2^select",
+            "10 if select=1, otherwise 20", "-10*max(3, 2^select)",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.EAST) { // Plexers.SELECT_TOP_RIGHT
+        en = portAt("Enable", "input", -10, 0);
+        out = portsAt("Output", "output", 0, "2^select",
+            "10 if select=1, otherwise 20", "10 if select=1, otherwise 0",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.WEST && selloc == Plexers.SELECT_BOTTOM_LEFT) {
+        en = portAt("Enable", "input", 10, 0);
+        out = portsAt("Output", "output", 0, "2^select",
+            "-10 if select=1, otherwise -20", "-10*max(3, 2^select)",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.WEST) { // Plexers.SELECT_TOP_RIGHT
+        en = portAt("Enable", "input", 10, 0);
+        out = portsAt("Output", "output", 0, "2^select",
+            "-10 if select=1, otherwise -20", "10 if select=1, otherwise 0",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.NORTH && selloc == Plexers.SELECT_BOTTOM_LEFT) {
+        en = portAt("Enable", "input", 0, 10);
+        out = portsAt("Output", "output", 0, "2^select",
+            "10 if select=1, otherwise 0", "-10 if select=1, otherwise -20",
+            0, "20 if select=1, otherwise 10");
+      } else if (facing == Direction.NORTH) { // Plexers.SELECT_TOP_RIGHT
+        en = portAt("Enable", "input", 10, 0);
+        out = portsAt("Output", "output", 0, "2^select",
+            "-10*max(3, 2^select)", "-10 if select=1, otherwise -20",
+            "20 if select=1, otherwise 10", 0);
+      } else if (selloc == Plexers.SELECT_BOTTOM_LEFT) { // SOUTH
+        en = portAt("Enable", "input", 0, -10);
+        out = portsAt("Output", "output", 0, "2^select",
+            "10 if select=1, otherwise 0", "10 if select=1, otherwise 20",
+            0, "-20 if select=1, otherwise -10");
+      } else { // SOUTH, Plexers.SELECT_TOP_RIGHT
+        en = portAt("Enable", "input", 10, 0);
+        out = portsAt("Output", "output", 0, "2^select",
+            "-10*max(3, 2^select)", "10 if select=1, otherwise 20",
+            "20 if select=1, otherwise 10", 0);
+      }
+
+      return List.of(out, sel, en);
+    }
   }
 }
