@@ -695,9 +695,17 @@ public class ComponentListingExporter {
     List<Attribute<?>> attrList = attrs.getAttributes();
     if (depth >= attrList.size()) return;
 
-    // Signature: names of attrs from depth onward. Deduplicates identical suffixes.
+    // Signature: names of attrs from depth onward, plus the option-count for LIST-domain attrs.
+    // Including the option-count lets us distinguish states where the same attr name has a
+    // different set of options (e.g. Splitter bit_i expands as fanout grows), so the merge
+    // logic below gets a chance to run for each distinct domain size rather than being pruned.
     StringBuilder sb = new StringBuilder();
-    for (int i = depth; i < attrList.size(); i++) sb.append(attrList.get(i).getName()).append('\0');
+    for (int i = depth; i < attrList.size(); i++) {
+      Attribute<?> attr = attrList.get(i);
+      sb.append(attr.getName()).append('\0');
+      Attribute.Domain dom = attr.getDomain();
+      if (dom.kind == Attribute.Domain.Kind.LIST) sb.append(dom.options.length).append('\0');
+    }
     if (!seenSigs.add(sb.toString())) return;
 
     // Record all attrs from depth onward; first-seen wins for defaultVal.
