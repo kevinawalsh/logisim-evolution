@@ -202,7 +202,7 @@ public class ComponentListingExporter {
           int a = w.linecount;
           processComponent(factory, w);
           int b = w.linecount;
-          System.out.printf("Wrote %d lines of json for '%s/%s'\n", b-a, lib.getName(), factory.getName());
+          System.out.printf("Wrote %d lines of json for '%s:%s'\n", b-a, lib.getName(), factory.getName());
         } catch (Exception e) {
           System.err.println("WARNING: error processing " + factory.getName()
               + " in " + libName + ": " + e.getMessage());
