@@ -56,3 +56,6 @@ logback.xml
 
 # contact info file
 contact.txt
+
+# Component listings
+component-listing.json
