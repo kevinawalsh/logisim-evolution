@@ -79,7 +79,6 @@ public class ToolAttributeAction extends Action {
 
   @Override
   public void doIt(Project proj) {
-    System.out.println("doIt");
     // if (affectsAppearance()) {
     //   ActionTransaction xn = new ActionTransaction(true);
     //   xn.execute();
