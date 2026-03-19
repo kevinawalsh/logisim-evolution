@@ -34,8 +34,12 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.cburch.logisim.comp.ComponentData;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -168,27 +172,27 @@ public class DotMatrix extends InstanceFactory {
       S.getter("ioInputSelect"));
   static final AttributeOption INPUT_COLUMN = new AttributeOption("column",
       S.getter("ioInputColumn"));
-
   static final AttributeOption INPUT_ROW = new AttributeOption("row",
       S.getter("ioInputRow"));
-  static final AttributeOption SHAPE_CIRCLE = new AttributeOption("circle",
-      S.getter("ioShapeCircle"));
-
-  static final AttributeOption SHAPE_SQUARE = new AttributeOption("square",
-      S.getter("ioShapeSquare"));
   static final Attribute<AttributeOption> ATTR_INPUT_TYPE = Attributes
       .forOption("inputtype", S.getter("ioMatrixInput"),
           new AttributeOption[] { INPUT_COLUMN, INPUT_ROW,
             INPUT_SELECT });
+
+  static final AttributeOption SHAPE_CIRCLE = new AttributeOption("circle",
+      S.getter("ioShapeCircle"));
+  static final AttributeOption SHAPE_SQUARE = new AttributeOption("square",
+      S.getter("ioShapeSquare"));
+  static final Attribute<AttributeOption> ATTR_DOT_SHAPE = Attributes
+      .forOption("dotshape", S.getter("ioMatrixShape"),
+          new AttributeOption[] { SHAPE_CIRCLE, SHAPE_SQUARE });
+
   static final Attribute<Integer> ATTR_MATRIX_COLS = Attributes
       .forIntegerRange("matrixcols", S.getter("ioMatrixCols"), 1,
           Value.MAX_WIDTH);
   static final Attribute<Integer> ATTR_MATRIX_ROWS = Attributes
       .forIntegerRange("matrixrows", S.getter("ioMatrixRows"), 1,
           Value.MAX_WIDTH);
-  static final Attribute<AttributeOption> ATTR_DOT_SHAPE = Attributes
-      .forOption("dotshape", S.getter("ioMatrixShape"),
-          new AttributeOption[] { SHAPE_CIRCLE, SHAPE_SQUARE });
 
   static final Attribute<Integer> ATTR_PERSIST = new DurationAttribute(
       "persist", S.getter("ioMatrixPersistenceAttr"), 0,
@@ -331,22 +335,73 @@ public class DotMatrix extends InstanceFactory {
       ps = new Port[cols];
       for (int i = 0; i < cols; i++) {
         ps[i] = new Port(10 * i, 0, Port.INPUT, rows);
+        ps[i].setToolTip(S.getter("ioColumnInput", ""+i));
       }
     } else if (input == INPUT_ROW) {
       ps = new Port[rows];
       for (int i = 0; i < rows; i++) {
         ps[i] = new Port(0, 10 * i, Port.INPUT, cols);
+        ps[i].setToolTip(S.getter("ioRowInput", ""+i));
       }
     } else {
       if (rows <= 1) {
         ps = new Port[] { new Port(0, 0, Port.INPUT, cols) };
+        ps[0].setToolTip(S.getter("ioRowInput", "0"));
       } else if (cols <= 1) {
         ps = new Port[] { new Port(0, 0, Port.INPUT, rows) };
+        ps[0].setToolTip(S.getter("ioColumnInput", "0"));
       } else {
-        ps = new Port[] { new Port(0, 0, Port.INPUT, cols),
-          new Port(0, 10, Port.INPUT, rows) };
+        ps = new Port[] {
+          new Port(0, 0, Port.INPUT, cols),
+          new Port(0, 10, Port.INPUT, rows)
+        };
+        ps[0].setToolTip(S.getter("ioRowSelect"));
+        ps[1].setToolTip(S.getter("ioColumnSelect"));
       }
     }
     instance.setPorts(ps);
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("inputtype", "when inputtype='select' uses row layout when matrixcols=1 and uses column layout when matrixrows=1");
+      notes.put("matrixcols", "when inputtype='column', determines the count of Column ports.");
+      notes.put("matrixrows", "when inputtype='row', determines the count of Row ports.");
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("matrixcols", "matrixrows");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Object itype = attrs.getValue(ATTR_INPUT_TYPE);
+      if (itype == INPUT_COLUMN) {
+        ComponentListingFeature.PortPosition cols;
+        cols = portsAt("Column_", "input", 0, "matrixcols", 0, 0, 10, 0);
+        return List.of(cols);
+      } else if (itype == INPUT_ROW) {
+        ComponentListingFeature.PortPosition rows;
+        rows = portsAt("Row_", "input", 0, "matrixrows", 0, 0, 0, 10);
+        return List.of(rows);
+      } else { // INPUT_SELECT
+        ComponentListingFeature.PortPosition rs, cs;
+        rs = portAt("Row_Select", "input", 0, 0);
+        cs = portAt("Column_Select", "input", 0, 10);
+        return List.of(rs,cs);
+      }
+    }
   }
 }
