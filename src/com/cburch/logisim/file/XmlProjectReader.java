@@ -608,7 +608,10 @@ public class XmlProjectReader extends XmlReader {
           }
         }
       }
-      // As of version 5.1.1, Wiring/Pin, Memory/Register, and Memory/Counter disallow
+    }
+    
+    if (version.compareTo(LogisimVersion.get(5, 1, 2)) < 0) {
+      // As of version 5.1.2, Wiring/Pin, Memory/Register, and Memory/Counter disallow
       // labelloc=center.
       wiringLibName = findLibNameByDesc(root, "#Wiring");
       if (wiringLibName != null) {
@@ -656,7 +659,6 @@ public class XmlProjectReader extends XmlReader {
           }
         }
       }
-
     }
 
   }
