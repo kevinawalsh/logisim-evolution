@@ -30,6 +30,10 @@
 package com.cburch.logisim.std.io;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
@@ -37,6 +41,7 @@ import java.awt.event.MouseEvent;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -114,13 +119,11 @@ public class DipSwitch extends InstanceFactory {
     }
   }
 
+  // FIXME: this should never have been a BitWidth. It should be Integer.
   public static final int MAX_SWITCH = 32;
-
   public static final int MIN_SWITCH = 2;
-
   public static final Attribute<BitWidth> ATTR_SIZE = Attributes
-      .forBitWidth("number", S.getter("nrOfSwitch"),
-          MIN_SWITCH, MAX_SWITCH);
+      .forBitWidth("number", S.getter("nrOfSwitch"), MIN_SWITCH, MAX_SWITCH);
 
   public DipSwitch() {
     super("DipSwitch", S.getter("DipSwitchComponent"));
@@ -132,7 +135,7 @@ public class DipSwitch extends InstanceFactory {
     setFacingAttribute(StdAttr.FACING);
     setIconName("dipswitch.gif");
     setKeyConfigurator(JoinedConfigurator.create(
-          new BitWidthConfigurator(ATTR_SIZE),
+          new BitWidthConfigurator(ATTR_SIZE), // should be like common gate number of input, not bitwidth
           new DirectionConfigurator(StdAttr.LABEL_LOC)));
     setInstancePoker(Poker.class);
   }
@@ -266,6 +269,47 @@ public class DipSwitch extends InstanceFactory {
     for (int i = 0; i < pins.size; i++) {
       Value pinstate = (pins.BitSet(i)) ? Value.TRUE : Value.FALSE;
       state.setPort(i, pinstate, 1);
+    }
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("number", "determines the count of output ports, and their layout when facing=south.");
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("number");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      Direction facing = attrs.getValue(StdAttr.FACING);
+      
+      ComponentListingFeature.PortPosition out;
+
+      if (facing == Direction.EAST) {
+        out = portsAt("DIP", "output", 1, "number", 0, 10, 0, 10);
+      } else if (facing == Direction.WEST) {
+        out = portsAt("DIP", "output", 1, "number", 0, -10, 0, -10);
+      } else if (facing == Direction.NORTH) {
+        out = portsAt("DIP", "output", 1, "number", 10, 0, 10, 0);
+      } else { // SOUTH
+        out = portsAt("DIP", "output", 1, "number", "-10*number", 0, 10, 0);
+      }
+
+      return List.of(out);
     }
   }
 }
