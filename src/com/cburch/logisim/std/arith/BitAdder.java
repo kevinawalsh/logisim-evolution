@@ -32,7 +32,11 @@ package com.cburch.logisim.std.arith;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Graphics;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -183,5 +187,37 @@ public class BitAdder extends InstanceFactory {
 
     int delay = out.length * Adder.PER_DELAY;
     state.setPort(0, Value.create(out), delay);
+  }
+
+  @Override
+  public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == ComponentListingFeature.class)
+      return new MyComponentListingFeature();
+    return super.getFeature(key, attrs);
+  }
+
+  private class MyComponentListingFeature implements ComponentListingFeature {
+    
+    @Override
+    public Map<String, String> getAttributeNotes(AttributeSet attrs) {
+      HashMap<String, String> notes = new HashMap<>();
+      notes.put("inputs", "determines the count of input ports.");
+      return notes;
+    }
+
+    @Override
+    public List<String> getLayoutAnalysisExcludedAttributes(AttributeSet attrs) {
+      return List.of("inputs");
+    }
+
+    @Override
+    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      ComponentListingFeature.PortPosition out, inp;
+      out = portAt("Output", "output", 0, 0);
+      inp = portsAt("Input", "input", 0, "inputs",
+          -40, "10*floor(inputs/2)",
+          0, "-10 if inputs>2 otherwise -20");
+      return List.of(out, inp);
+    }
   }
 }
