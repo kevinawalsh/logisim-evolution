@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.comp;
+package com.cburch.logisim.access;
 
 import java.util.Map;
 import java.util.List;

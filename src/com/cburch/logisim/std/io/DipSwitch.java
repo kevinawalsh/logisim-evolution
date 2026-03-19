@@ -39,9 +39,9 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.access.ComponentListingFeature;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
-import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;

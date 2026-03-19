@@ -49,6 +49,7 @@ import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 
 import com.cburch.logisim.Main;
+import com.cburch.logisim.access.ComponentListingExporter;
 import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
@@ -59,7 +60,6 @@ import com.cburch.logisim.gui.menu.WindowManagers;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
-import com.cburch.logisim.tools.ComponentListingExporter;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.Errors;

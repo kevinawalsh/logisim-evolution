@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.tools;
+package com.cburch.logisim.access;
 
 import java.io.FileOutputStream;
 import java.io.FilterOutputStream;
@@ -47,9 +47,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import com.cburch.logisim.access.ComponentListingFeature;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
-import com.cburch.logisim.comp.ComponentListingFeature;
 import com.cburch.logisim.comp.ComponentUserEvent;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.data.AbstractAttributeSet;
@@ -58,9 +58,12 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.std.Builtin;
+import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.tools.ToolTipMaker;
 
-import static com.cburch.logisim.comp.ComponentListingFeature.PortPosition;
+import static com.cburch.logisim.access.ComponentListingFeature.PortPosition;
 
 /**
  * Exports a JSON file describing every component in Logisim's standard library:

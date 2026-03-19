@@ -40,7 +40,7 @@ import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
-import com.cburch.logisim.comp.ComponentListingFeature;
+import com.cburch.logisim.access.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;

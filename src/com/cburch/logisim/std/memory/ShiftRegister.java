@@ -33,14 +33,12 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.cburch.logisim.comp.ComponentListingFeature;
+import com.cburch.logisim.access.ComponentListingFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
