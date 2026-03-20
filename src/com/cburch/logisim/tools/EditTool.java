@@ -365,7 +365,7 @@ public final class EditTool extends Tool {
         && !Character.isISOControl(c)
         && !Character.isWhitespace(c)
         && e.getModifiersEx() == 0) {
-      search.beginSearch(canvas, String.valueOf(c), lastRawX, lastRawY);
+      search.beginSearch(canvas, c, lastRawX, lastRawY);
       e.consume();
       return;
     }

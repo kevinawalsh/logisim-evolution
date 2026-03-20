@@ -28,22 +28,26 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 import javax.swing.JPanel;
 
+import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.main.Canvas;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.Tool;
 
 /**
  * A floating popup panel added directly to the Canvas (like Callout) that
@@ -92,7 +96,9 @@ public class ComponentSearchPopup extends JPanel {
 
   // Search state
   private String searchText = "";
-  private List<AddTool> matches = Collections.emptyList();
+  private ArrayList<AddTool> allTools = new ArrayList<>();
+  private ArrayList<AddTool> matches = new ArrayList<>();
+  private HashMap<AddTool, String> displayNames = new HashMap<>();
   private int selectedIndex = 0;
   private int scrollOffset  = 0;
   private int windowSize    = MIN_VISIBLE; // max visible rows; set in showAt()
@@ -110,7 +116,7 @@ public class ComponentSearchPopup extends JPanel {
 
   // -----------------------------------------------------------------------
 
-  public ComponentSearchPopup(Canvas canvas, Consumer<AddTool> onSelect) {
+  public ComponentSearchPopup(Canvas canvas, char initialChar, Consumer<AddTool> onSelect) {
     this.canvas = canvas;
     setOpaque(false);
     setLayout(null);
@@ -152,6 +158,50 @@ public class ComponentSearchPopup extends JPanel {
     });
 
     addMouseWheelListener(e -> scroll(e.getWheelRotation() > 0 ? 1 : -1));
+
+    // find all relevant tools
+    String prefix = String.valueOf(initialChar);
+    LogisimFile file = canvas.getProject().getLogisimFile();
+    for (Tool tool : file.getToolsAndSublibraryTools()) {
+      if (tool instanceof AddTool) {
+        AddTool addTool = (AddTool) tool;
+        // prefix is one char, we only need to check tool name here, not lib name
+        if (addTool.getDisplayName().toLowerCase().startsWith(prefix.toLowerCase()))
+          allTools.add(addTool);
+      }
+    }
+
+    // If any of the tools have the same name, add suffix to disambiguate
+    HashMap<String, AddTool> rev = new HashMap<>();
+    for (AddTool tool : allTools) {
+      String name = tool.getDisplayName();
+      if (!rev.containsKey(name)) {
+        rev.put(name, tool);
+        displayNames.put(tool, name);
+      } else {
+        // name clash, append suffix
+        Library lib = canvas.getProject().getLogisimFile().findLibraryFor(tool.getFactory());
+        String newName = name + " in " + lib.getDisplayName();
+        rev.put(newName, tool);
+        displayNames.put(tool, newName);
+        // fixup the previous tool, if not already done
+        tool = rev.get(name);
+        rev.put(name, null);
+        if (tool != null) {
+          lib = canvas.getProject().getLogisimFile().findLibraryFor(tool.getFactory());
+          newName = tool.getDisplayName() + " in " + lib.getDisplayName();
+          rev.put(newName, tool);
+          displayNames.put(tool, newName);
+        }
+      }
+    }
+
+    Collections.sort(allTools,
+        (a, b) -> displayNames.get(a).compareToIgnoreCase(displayNames.get(b)));
+
+    searchText = prefix;
+    matches.addAll(allTools);
+    matchesUpdated();
   }
 
   // ----- public API -----
@@ -179,10 +229,42 @@ public class ComponentSearchPopup extends JPanel {
     canvas.repaint(x - 1, y - 1, w + 2, h + 2);
   }
 
+  /** Tab completion. */
+  public String tabComplete() {
+    if (matches.isEmpty())
+      return searchText;
+    // Longest common prefix of all match display names (case-insensitive,
+    // but stored in the case of the first match)
+    String first = displayNames.get(matches.get(0));
+    int len = first.length();
+    for (int i = 1; i < matches.size(); i++) {
+      String name = displayNames.get(matches.get(i));
+      int j = 0;
+      while (j < len && j < name.length()
+          && Character.toLowerCase(first.charAt(j)) == Character.toLowerCase(name.charAt(j)))
+        j++;
+      len = j;
+    }
+    String extended = first.substring(0, len);
+    if (extended.length() > searchText.length()) {
+      searchText = extended;
+      matchesUpdated();
+    }
+    return searchText;
+  }
+
   /** Replace the current matches list and search text; update display. */
-  public void updateSearch(String text, List<AddTool> newMatches) {
+  public void updateSearch(String text) {
     searchText = text;
-    matches = newMatches;
+    matches.clear();
+    for (AddTool tool : allTools) {
+      if (displayNames.get(tool).toLowerCase().startsWith(searchText.toLowerCase()))
+        matches.add(tool);
+    }
+    matchesUpdated();
+  }
+  
+  private void matchesUpdated() {
     if (matches.isEmpty()) {
       selectedIndex = 0;
       scrollOffset  = 0;
@@ -285,7 +367,7 @@ public class ComponentSearchPopup extends JPanel {
     for (int i = 0; i < visibleCount; i++) {
       int idx = scrollOffset + i;
       g.setColor(idx == selectedIndex ? SELECT_FG : ITEM_FG);
-      g.drawString(matches.get(idx).getDisplayName(), PADDING_X, y + PADDING_Y + fontAscent);
+      g.drawString(displayNames.get(matches.get(idx)), PADDING_X, y + PADDING_Y + fontAscent);
       y += rowH;
     }
 
@@ -446,7 +528,7 @@ public class ComponentSearchPopup extends JPanel {
         maxW = Math.max(maxW, fm.stringWidth(S.get("componentSearchNoMatch")) + PADDING_X * 2 + 4);
       } else {
         for (AddTool tool : matches) {
-          int tw = fm.stringWidth("\u00bb " + tool.getDisplayName() + "_") + PADDING_X * 2 + 4;
+          int tw = fm.stringWidth("\u00bb " + displayNames.get(tool) + "_") + PADDING_X * 2 + 4;
           if (tw > maxW) maxW = tw;
         }
       }

@@ -31,11 +31,7 @@
 package com.cburch.logisim.tools;
 
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.generic.ComponentSearchPopup;
 import com.cburch.logisim.gui.main.Canvas;
 
@@ -50,12 +46,12 @@ final class ComponentSearch {
     return searchPopup != null;
   }
 
-  public void beginSearch(Canvas canvas, String s, int x, int y) {
+  public void beginSearch(Canvas canvas, char initialChar, int x, int y) {
     if (isActive())
       return;
-    searchText = s;
-    searchPopup = new ComponentSearchPopup(canvas, tool -> dismissSearch(canvas, tool));
-    updateSearch(canvas);
+    searchText = String.valueOf(initialChar);
+    searchPopup = new ComponentSearchPopup(canvas, initialChar,
+        tool -> dismissSearch(canvas, tool));
     searchPopup.showAt(x, y);
   }
 
@@ -77,7 +73,7 @@ final class ComponentSearch {
           if (searchText.isEmpty())
             cancelSearch();
           else
-            updateSearch(canvas);
+            searchPopup.updateSearch(searchText);
         }
         e.consume();
         return;
@@ -90,7 +86,7 @@ final class ComponentSearch {
         e.consume();
         return;
       case KeyEvent.VK_TAB:
-        tabComplete(canvas);
+        searchText = searchPopup.tabComplete();
         e.consume();
         return;
       case KeyEvent.VK_ENTER:
@@ -111,57 +107,11 @@ final class ComponentSearch {
     char c = e.getKeyChar();
     if (c != KeyEvent.CHAR_UNDEFINED && !Character.isISOControl(c)) {
       searchText += c;
-      updateSearch(canvas);
+      searchPopup.updateSearch(searchText);
       e.consume();
     }
   }
 
-  private void updateSearch(Canvas canvas) {
-    List<AddTool> results = getMatchingTools(canvas);
-    searchPopup.updateSearch(searchText, results);
-  }
-
-  private List<AddTool> getMatchingTools(Canvas canvas) {
-    String prefix = searchText.toLowerCase();
-    LogisimFile file = canvas.getProject().getLogisimFile();
-    List<AddTool> results = new ArrayList<>();
-    for (Tool tool : file.getToolsAndSublibraryTools()) {
-      if (tool instanceof AddTool) {
-        AddTool addTool = (AddTool) tool;
-        if (addTool.getDisplayName().toLowerCase().startsWith(prefix))
-          results.add(addTool);
-      }
-    }
-    Collections.sort(results,
-        (a, b) -> a.getDisplayName().compareToIgnoreCase(b.getDisplayName()));
-    return results;
-  }
-
-  private void tabComplete(Canvas canvas) {
-    // TODO: consider using the currently selected row from popup,
-    // instead of longest prefix?
-    List<AddTool> results = getMatchingTools(canvas);
-    if (results.isEmpty())
-      return;
-    // Longest common prefix of all match display names (case-insensitive,
-    // but stored in the case of the first match)
-    String first = results.get(0).getDisplayName();
-    int len = first.length();
-    for (int i = 1; i < results.size(); i++) {
-      String name = results.get(i).getDisplayName();
-      int j = 0;
-      while (j < len && j < name.length()
-          && Character.toLowerCase(first.charAt(j)) == Character.toLowerCase(name.charAt(j)))
-        j++;
-      len = j;
-    }
-    String extended = first.substring(0, len);
-    if (extended.length() > searchText.length()) {
-      searchText = extended;
-      updateSearch(canvas);
-    }
-  }
-  
   private void selectCurrentResult(Canvas canvas) {
     dismissSearch(canvas, searchPopup.getSelectedTool());
   }
