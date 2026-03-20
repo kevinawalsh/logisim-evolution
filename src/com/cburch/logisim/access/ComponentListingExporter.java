@@ -78,23 +78,13 @@ public class ComponentListingExporter {
   private static final int MAX_ENUM_RANGE = 32;
 
   public static void run(String outputFile) {
+    if (outputFile.equals("-"))
+      outputFile = null;
     try {
-      PrintWriter out;
-      CountingOutputStream cos;
-      if (outputFile == null || outputFile.equals("-")) {
-        cos = new CountingOutputStream(System.out);
-      } else {
-        cos = new CountingOutputStream(new FileOutputStream(outputFile));
-      }
-      out = new PrintWriter(new OutputStreamWriter(cos, StandardCharsets.UTF_8));
-      try {
-        buildListing(out, cos);
-      } finally {
-        out.flush();
-        if (outputFile != null && !outputFile.equals("-"))
-          out.close();
-      }
-      if (outputFile != null && !outputFile.equals("-"))
+      JsonWriter out = new JsonWriter(outputFile);
+      buildListing(out);
+      out.close();
+      if (outputFile != null)
         System.err.printf("Component listing written to: %s\n", outputFile);
     } catch (IOException e) {
       System.err.println("Error writing component listing: " + e.getMessage());
@@ -102,9 +92,8 @@ public class ComponentListingExporter {
     }
   }
 
-  private static void buildListing(PrintWriter out, CountingOutputStream cos) {
+  private static void buildListing(JsonWriter w) {
     Builtin builtin = new Builtin();
-    JsonWriter w = new JsonWriter(out);
     w.beginObject();
     w.key("_meta");
     w.beginObject();
@@ -172,16 +161,16 @@ public class ComponentListingExporter {
     w.keyValue("0Z", "pull-down only output driver, actively drives output to 0 or leaves output floating");
     w.keyValue("Z1", "pull-up only output driver, actively drives output to 1 or leaves output floating");
     w.endObject();
-    w.key("port_arrays");
-    w.value("Some port entries have a 'count' field, indicating a linear array of " +
+    w.keyValue("port_arrays", 
+        "Some port entries have a 'count' field, indicating a linear array of " +
         "sequentially-numbered ports. Port names are formed by appending an integer " +
         "index to the 'name' prefix, starting at 'first_index' (default 0). " +
         "Port i (0-based within the array) is at: " +
         "dx = first_dx + i*step_dx, dy = first_dy + i*step_dy. " +
         "Example: name='in', count=4, first_dx=-40, first_dy=-30, step_dx=0, step_dy=20 " +
         "→ in0 at (-40,-30), in1 at (-40,-10), in2 at (-40,10), in3 at (-40,30).");
-    w.key("usage");
-    w.value("To find component port layout: look up the component by library and name, " +
+    w.keyValue("usage",
+        "To find component port layout: look up the component by library and name, " +
         "find the variant whose attribute values match those in the .circ file " +
         "(defaulting to default_attr_values for any omitted attributes), then read " +
         "port dx/dy offsets (expanding port arrays as described above). " +
@@ -205,7 +194,7 @@ public class ComponentListingExporter {
           int a = w.linecount;
           processComponent(factory, w);
           int b = w.linecount;
-          System.out.printf("Wrote %d lines of json for '%s:%s'\n", b-a, lib.getName(), factory.getName());
+          System.err.printf("Wrote %d lines of json for '%s:%s'\n", b-a, lib.getName(), factory.getName());
         } catch (Exception e) {
           System.err.println("WARNING: error processing " + factory.getName()
               + " in " + libName + ": " + e.getMessage());
@@ -216,8 +205,7 @@ public class ComponentListingExporter {
     }
 
     w.endObject(); // root
-    out.flush();
-    System.out.printf("Complete: wrote %d lines (%d bytes) of json\n", w.linecount, cos.getCount());
+    System.err.printf("Complete: wrote %d lines (%d bytes) of json\n", w.linecount, w.bytecount);
   }
 
   @SuppressWarnings("unchecked")
@@ -317,13 +305,12 @@ public class ComponentListingExporter {
     w.keyValue("rotation", rotation);
 
     // port_affecting_attrs (those that affect port positions, excluding facing)
-    w.key("port_affecting_attrs");
-    w.array(variantAttrList, pa -> pa.getName());
+    w.keyArray("port_affecting_attrs", variantAttrList, pa -> pa.getName());
 
     // default_attr_values
     w.key("default_attr_values");
     w.beginObject();
-    for (Object[] pair : defaultAttrPairs) w.keyValueAsString((String)pair[0], (String)pair[1]);
+    for (Object[] pair : defaultAttrPairs) w.keyValue((String)pair[0], (String)pair[1]);
     w.endObject();
 
     // attributes
@@ -334,11 +321,10 @@ public class ComponentListingExporter {
       w.keyValue("name", ai.xmlName);
       if (ai.values instanceof List) {
         @SuppressWarnings("rawtypes")
-        List<Object> vals = (List<Object>)ai.values;
-        w.key("values");
-        w.arrayAsStrings(vals);
+        List<String> vals = (List<String>)ai.values;
+        w.keyArray("values", vals);
       } else {
-        w.keyValueAsString("values", (String)ai.values);
+        w.keyValue("values", (String)ai.values);
       }
       w.keyValue("description", ai.description);
       if (ai.note != null) w.keyValue("note", ai.note);
@@ -407,18 +393,18 @@ public class ComponentListingExporter {
     if (pi.isArray) {
       w.keyValue("name", pi.name);
       w.keyValue("type", pi.type);
-      w.keyValue("count", pi.count);
+      w.keyValueAsPrimitive("count", pi.count);
       if (pi.firstIndex != null && !pi.firstIndex.toString().equals("0"))
-        w.keyValue("first_index", pi.firstIndex);
-      w.keyValue("first_dx", pi.dx);
-      w.keyValue("first_dy", pi.dy);
-      w.keyValue("step_dx", pi.stepDx);
-      w.keyValue("step_dy", pi.stepDy);
+        w.keyValueAsPrimitive("first_index", pi.firstIndex);
+      w.keyValueAsPrimitive("first_dx", pi.dx);
+      w.keyValueAsPrimitive("first_dy", pi.dy);
+      w.keyValueAsPrimitive("step_dx", pi.stepDx);
+      w.keyValueAsPrimitive("step_dy", pi.stepDy);
     } else {
       w.keyValue("name", pi.name);
       w.keyValue("type", pi.type);
-      w.keyValue("dx", pi.dx);
-      w.keyValue("dy", pi.dy);
+      w.keyValueAsPrimitive("dx", pi.dx);
+      w.keyValueAsPrimitive("dy", pi.dy);
     }
     w.endObject();
   }
@@ -967,190 +953,5 @@ public class ComponentListingExporter {
     boolean isFacing;
   }
 
-  // ---------------------------------------------------------------------------
-  // Simple JSON writer
-  // ---------------------------------------------------------------------------
-
-  private static class JsonWriter {
-    private final PrintWriter out;
-    private int indent = 0;
-    private boolean needsComma = false;
-    private boolean[] inArray;  // stack: true=array, false=object
-    private int depth = 0;
-    public int linecount = 0;
-
-    JsonWriter(PrintWriter out) {
-      this.out = out;
-      this.inArray = new boolean[64];
-    }
-
-    private void indent() {
-      for (int i = 0; i < indent; i++) out.print("  ");
-    }
-
-    private void comma() {
-      if (needsComma) { out.println(","); needsComma = false; }
-      else out.println();
-      linecount++;
-    }
-
-    void beginObject() {
-      if (depth > 0) { comma(); indent(); }
-      out.print("{");
-      inArray[depth++] = false;
-      indent++;
-      needsComma = false;
-    }
-
-    void endObject() {
-      indent--;
-      out.println();
-      linecount++;
-      indent();
-      out.print("}");
-      depth--;
-      needsComma = true;
-    }
-
-    void arrayAsStrings(List<Object> vals) {
-      out.print("[");
-      needsComma = false;
-      for (Object v : vals) {
-        if (needsComma) out.print(", ");
-        else out.print(" ");
-        out.print("\"" + escape(v.toString()) + "\"");
-        needsComma = true;
-      }
-      out.print(" ]");
-      needsComma = true;
-    }
-
-    void array(List<Object> vals) {
-      out.print("[");
-      needsComma = false;
-      for (Object v : vals) {
-        if (needsComma) out.print(", ");
-        else out.print(" ");
-        out.print(toJson(v));
-        needsComma = true;
-      }
-      out.print(" ]");
-      needsComma = true;
-    }
-
-    <V> void array(List<V> vals, Function<V, Object> xform) {
-      out.print("[");
-      needsComma = false;
-      for (V v : vals) {
-        if (needsComma) out.print(", ");
-        out.print(toJson(xform.apply(v)));
-        needsComma = true;
-      }
-      out.print("]");
-      needsComma = true;
-    }
-
-    void beginArray() {
-      out.print("[");
-      inArray[depth++] = true;
-      indent++;
-      needsComma = false;
-    }
-
-    void endArray() {
-      indent--;
-      if (needsComma) { out.println(); indent(); linecount++; }
-      out.print("]");
-      depth--;
-      needsComma = true;
-    }
-
-    void key(String k) {
-      comma();
-      indent();
-      out.print("\"" + escape(k) + "\": ");
-      needsComma = false;
-    }
-
-    void value(Object v) {
-      if (inArray[depth - 1]) { comma(); indent(); }
-      out.print(toJson(v));
-      needsComma = true;
-    }
-
-    void value(boolean v) {
-      if (inArray[depth - 1]) { comma(); indent(); }
-      out.print(v);
-      needsComma = true;
-    }
-
-    void value(int v) {
-      if (inArray[depth - 1]) { comma(); indent(); }
-      out.print(v);
-      needsComma = true;
-    }
-
-    void keyValueAsString(String k, Object v) {
-      key(k); out.print("\"" + escape(v.toString()) + "\""); needsComma = true;
-    }
-
-    void keyValue(String k, Object v) {
-      key(k); out.print(toJson(v)); needsComma = true;
-    }
-
-    void keyValue(String k, boolean v) {
-      key(k); out.print(v); needsComma = true;
-    }
-
-    void keyValue(String k, int v) {
-      key(k); out.print(v); needsComma = true;
-    }
-
-    static String toJson(Object v) {
-      String s = v.toString();
-      if ((v instanceof Integer
-            || v instanceof Boolean
-            || s.equals("true")
-            || s.equals("false")))
-        return s;
-      try {
-        int i = Integer.parseInt(s);
-        if (s.equals(""+i))
-          return s;
-      } catch (NumberFormatException ex) { }
-      return "\"" + escape(s) + "\"";
-    }
-
-    private static String escape(String s) {
-      if (s == null) return "";
-      return s.replace("\\", "\\\\")
-               .replace("\"", "\\\"")
-               .replace("\n", "\\n")
-               .replace("\r", "\\r")
-               .replace("\t", "\\t");
-    }
-  }
-
-  private static class CountingOutputStream extends FilterOutputStream {
-    private long count = 0;
-
-    public CountingOutputStream(OutputStream out) {
-      super(out);
-    }
-
-    @Override
-    public void write(int b) throws IOException {
-      out.write(b);
-      count++;
-    }
-
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-      out.write(b, off, len);
-      count += len;
-    }
-
-    public long getCount() { return count; }
-  }
 
 }
