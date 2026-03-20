@@ -441,7 +441,7 @@ public class Debug {
     if (cleaned) return;
     cleaned = true;
 
-    System.out.println("cleaning up...");
+    // System.out.println("cleaning up...");
     try { System.err.flush(); } catch (Exception e) { }
     try { System.out.flush(); } catch (Exception e) { }
     
