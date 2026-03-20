@@ -170,6 +170,10 @@ public class Startup {
     
     Debug.init();
 
+    // If headless requested, force awt to throw if touched
+    if (Main.headless)
+      System.setProperty("java.awt.headless", "true");
+
     if (GraphicsEnvironment.isHeadless() && !Main.headless)
       fail(S.get("argHeadlessError"));
 

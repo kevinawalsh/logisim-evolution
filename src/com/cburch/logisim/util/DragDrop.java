@@ -56,6 +56,8 @@ import java.awt.event.HierarchyListener;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 
+import com.cburch.logisim.Main;
+
 public class DragDrop {
 
   public final DataFlavor dataFlavor;
@@ -114,6 +116,8 @@ public class DragDrop {
   }
 
   public static DataFlavor uuidTokenFlavor(String tag) {
+    if (Main.headless)
+      return null;
     try {
       String mimetype = String.format("application/x-logisim-%s-token;class=java.lang.String", tag);
       return new DataFlavor(mimetype);
@@ -235,10 +239,15 @@ public class DragDrop {
   private static final DragImageAnimator animator;
 
   static {
-    animator = new DragImageAnimator();
-    source = DragSource.getDefaultDragSource();
-    source.addDragSourceListener(animator);
-    source.addDragSourceMotionListener(animator);
+    if (Main.headless) {
+      animator = null;
+      source = null;
+    } else {
+      animator = new DragImageAnimator();
+      source = DragSource.getDefaultDragSource();
+      source.addDragSourceListener(animator);
+      source.addDragSourceMotionListener(animator);
+    }
   }
 
   // If a Transferable component implements Ghost, it will be painted near the
