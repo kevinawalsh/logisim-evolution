@@ -122,6 +122,11 @@ public class Transistor extends InstanceFactory {
   }
 
   @Override
+  public boolean HasThreeStateDrivers(AttributeSet attrs) {
+    return true; // output is conditionally driven based on gate signal
+  }
+
+  @Override
   protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
     updatePorts(instance);

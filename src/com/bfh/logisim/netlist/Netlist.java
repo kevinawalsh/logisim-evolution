@@ -281,9 +281,35 @@ public class Netlist {
         continue;
       if (comp.getFactory().HDLIgnore())
         continue;
-			if (comp.getFactory().HasThreeStateDrivers(comp.getAttributeSet()))
+      if (comp.getFactory() instanceof Pin) {
+        // For purposes of HDL, Pin never generates floating values, regardless of
+        // attributes. So we skip the check below.
+        //
+        // Output pins always pass whatever is received from the connected bus up to
+        // the parent. If that bus has a driver, the value will presumably be
+        // non-floating. If the connected bus has no driver, that will be detected
+        // by the HDL synthesis and flagged as an error. If there is no connected
+        // bus, the Pin HDL generator will detect and raise an error.
+        //
+        // Input pins always pass whatever is received from the parent down into the
+        // circuit. If the parent has a connected bus with a driver, the value will
+        // presumably be non-floating. If the parent has an undriven connected bus,
+        // that will be detected by the HDL synthesis and flagged as an error. If
+        // the parent has no connected bus, the Pin HDL generator will either detect
+        // and raise an error (for simple or tristate mode), or substitute a pull
+        // value (for pullup or pulldown mode).
+        //
+        // FIXME: Perhaps Netlist should detect buses with no drivers, omit them,
+        // and treat the port as if it were unconnected. In some cases this would
+        // simply allow for earlier/better error reporting (output pins, input pins
+        // in simple or tristate mode). In other cases, this would allow for
+        // substituting the pull value. Currently, pull values are used by HDL when
+        // the port is entirely disconnected, but in logisim syntehsis, they are
+        // also used when the port is connected to an undriven bus.
+      } else if (comp.getFactory().HasThreeStateDrivers(comp.getAttributeSet())) {
         return drcFail(comp, "component has tri-state output drivers or is configured "
             + "to allow floating outputs, features typically not supported for FPGA synthesis.");
+      }
       for (EndData end : comp.getEnds())
         if (end.getWidth().getWidth() > 0 && end.isBidir())
           return drcFail(comp, "component has a bidirectional port, a feature not yet supported.");

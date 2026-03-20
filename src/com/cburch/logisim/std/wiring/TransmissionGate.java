@@ -101,6 +101,11 @@ public class TransmissionGate extends InstanceFactory {
   }
 
   @Override
+  public boolean HasThreeStateDrivers(AttributeSet attrs) {
+    return true; // output is conditionally driven based on gate signals
+  }
+
+  @Override
   protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
     updatePorts(instance);

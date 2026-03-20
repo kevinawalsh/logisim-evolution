@@ -134,6 +134,32 @@ public interface ComponentFactory extends AttributeDefaultProvider {
     return getOffsetBounds(attrs); // Note: this is incorrect for Text
   }
 
+  // HasThreeStateOutputs() returns true if a component has an OUTPUT_ONLY port
+  // but actually implements tristate behavior, i.e. drives a value onto that
+  // port only sometimes and leaves it floating other times. The attributes
+  // parameter is needed because behavior can depend on attribute values.
+  //
+  // This function, used by bfh hdl generation code, and by access.Connectivity,
+  // is conceivably overly-conservative. If a component had multiple outputs but
+  // only some of them were tri-state, this function can't distinguish between
+  // them, so it must return true if *any* ports have tristate behavior. And the
+  // HDL synthesis code rejects any component that declares it has tri-state
+  // drivers, regardless of whether those specific ports are actually connected
+  // to an network. These limitations don't really matter yet in practice:
+  // - All known components with tri-state output behavior use that behavior for
+  //   *all* of their output ports. Often there is only one output port.
+  // - For HDL, there doesn't seem to be much purpose to having such a component
+  //   if none of the outputs are connected, so rejecting the circuit is
+  //   probably okay.
+  // Components known to have tri-state drivers at time of writing:
+  //  - all gates except PLA (output driver attribute)
+  //  - PortIO
+  //  - ControlledBuffer
+  //  - Pin (tri-state behavior attribute)
+  //  - RAM
+  //  - Multiplexor, Demultiplexor, Decoder, PriorityEncoder, 
+  //  - Transistor, TransmissionGate
+  //  - LineSelect
   public boolean HasThreeStateDrivers(AttributeSet attrs);
 
   // default public List<Attribute<?>> getNonVolatileSimulationAttributes(Component comp) { return null; }

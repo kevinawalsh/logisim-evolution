@@ -103,6 +103,13 @@ public class PortIO extends InstanceFactory {
   }
 
   @Override
+  public boolean HasThreeStateDrivers(AttributeSet attrs) {
+    String dir = attrs.getValue(ATTR_DIR);
+    // for INOUT cases, output ports conditionally driven based on external signals
+    return dir == INOUT_1 || dir == INOUT_N;
+  }
+
+  @Override
   protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
     updatePorts(instance);

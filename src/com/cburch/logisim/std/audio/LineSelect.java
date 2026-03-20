@@ -100,6 +100,11 @@ public class LineSelect extends InstanceFactory {
   }
 
   @Override
+  public boolean HasThreeStateDrivers(AttributeSet attrs) {
+    return attrs.getValue(ATTR_DEFAULTVAL) == DEFAULT_UND; // floating when no valid selection
+  }
+
+  @Override
   protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
     updatePorts(instance);

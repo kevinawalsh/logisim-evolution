@@ -721,6 +721,12 @@ public class Ram extends Mem {
   }
 
   @Override
+  public boolean HasThreeStateDrivers(AttributeSet attrs) {
+    boolean separate = isSeparate(attrs);
+    return separate; // data output bus is conditionally driven based on output-enable signal
+  }
+
+  @Override
   public void propagate(InstanceState state) {
     AttributeSet attrs = state.getAttributeSet();
     RamState myState = (RamState) getState(state);

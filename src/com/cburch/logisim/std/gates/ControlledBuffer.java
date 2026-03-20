@@ -100,6 +100,11 @@ class ControlledBuffer extends InstanceFactory {
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
   }
 
+  @Override
+  public boolean HasThreeStateDrivers(AttributeSet attrs) {
+    return true; // output is conditionally driven based on control signal
+  }
+
   //
   // methods for instances
   //
