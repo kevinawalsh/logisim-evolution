@@ -390,10 +390,10 @@ public class PinBindings {
 
   public Int3 widthFor(NetlistComponent comp) {
     if (comp.hiddenPort == null) {
-      // Top-level input or output port.
+      // Top-level input or output port. Bidirectional is supported here.
       int w = comp.original.getEnd(0).getWidth().getWidth();
-      boolean i = comp.original.getEnd(0).isOutput(); // output to circuit, input from board
-      boolean o = comp.original.getEnd(0).isInput(); // input to circuit, output from board
+      boolean i = comp.original.getEnd(0).canOutput(); // output to circuit, input from board
+      boolean o = comp.original.getEnd(0).canInput(); // input to circuit, output from board
       Int3 compWidth = new Int3();
       if (i && o)
         compWidth.inout = w;

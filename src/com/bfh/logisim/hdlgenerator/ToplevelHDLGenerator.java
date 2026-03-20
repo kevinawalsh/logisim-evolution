@@ -298,9 +298,9 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       offset = 0;
       srcwidth = shadow.original.getEnd(0).getWidth().getWidth();
       // note: these next two are reversed intentionally, b/c OutputPin has an
-      // EndData configured as an input srcwidth.r.t. logisim circuit, and vice versa
-      isInput = shadow.original.getEnd(0).isOutput();
-      isOutput = shadow.original.getEnd(0).isInput();
+      // EndData configured as an input src w.r.t. logisim circuit, and vice versa
+      isInput = shadow.original.getEnd(0).canOutput();
+      isOutput = shadow.original.getEnd(0).canInput();
       if (isInput)
         inputPinPullDir = pullDirection(shadow);
     } else {

@@ -114,8 +114,7 @@ public class Splitter extends ManagedComponent
     int dy = parms.getEndToEndDeltaY();
 
     EndData[] ends = new EndData[fanout + 1];
-    ends[0] = new EndData(origin, BitWidth.create(bit_end.length),
-        EndData.INPUT_OUTPUT);
+    ends[0] = new EndData(origin, BitWidth.create(bit_end.length), EndData.INPUT_OUTPUT);
     for (int i = 0; i < fanout; i++) {
       ends[i + 1] = new EndData(Location.create(x, y),
           BitWidth.create(end_width[i + 1]), EndData.INPUT_OUTPUT);

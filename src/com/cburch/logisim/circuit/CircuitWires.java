@@ -231,9 +231,8 @@ public class CircuitWires {
         System.out.printf("missing end for %s at %s\n", comp, loc);
       // Special case: Pin is treated as a sink, because it needs notifications
       // of any changes to inputs in order to set the UI color propertly.
-      isSink = (e.getType() == EndData.INPUT_ONLY)
-          || (comp.getFactory() instanceof Pin);
-      isBidirectional = (e.getType() == EndData.INPUT_OUTPUT);
+      isSink = e.isInputOnly() || (comp.getFactory() instanceof Pin);
+      isBidirectional = e.isBidir();
       drivenValue = null;
     }
 
@@ -846,7 +845,7 @@ public class CircuitWires {
     // of a component
     for (Component comp : components) {
       for (EndData e : comp.getEnds()) {
-        if (e.getType() == EndData.INPUT_ONLY)
+        if (e.isInputOnly())
           continue;
         Location loc = e.getLocation();
         WireBundle b = ret.getBundleAt(loc);

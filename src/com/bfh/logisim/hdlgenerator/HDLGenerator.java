@@ -716,7 +716,7 @@ public class HDLGenerator extends HDLSupport {
       // those ones be open. We do a sanity check unless p.index is out of
       // bounds (e.g. UNCONNECTED).
       if (p.index >= 0 && p.index < comp.original.getEnds().size()
-          && comp.original.getEnd(p.index).isOutput() && p.defaultValue != null) {
+          && comp.original.getEnd(p.index).canOutput() && p.defaultValue != null) {
         _err.AddSevereWarning("INTERNAL ERROR: ignoring default value for "
             + "output pin '%s' of '%s' in circuit '%s'.",
             p.name, hdlModuleName, _nets.circName());

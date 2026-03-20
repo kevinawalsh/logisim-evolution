@@ -285,7 +285,7 @@ public class Netlist {
         return drcFail(comp, "component has tri-state output drivers or is configured "
             + "to allow floating outputs, features typically not supported for FPGA synthesis.");
       for (EndData end : comp.getEnds())
-        if (end.getWidth().getWidth() > 0 && (end.isInput() && end.isOutput()))
+        if (end.getWidth().getWidth() > 0 && end.isBidir())
           return drcFail(comp, "component has a bidirectional port, a feature not yet supported.");
     }
 
@@ -342,9 +342,9 @@ public class Netlist {
         return drcFail(comp, "component depends on circuit state, so may appear only in top level circuit.");
       else if (comp.getFactory() instanceof Clock) 
         clocks.add(shadow);
-      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isOutput())
+      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isOutputOnly())
         inpins.add(shadow);
-      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isInput())
+      else if (comp.getFactory() instanceof Pin && comp.getEnd(0).isInputOnly())
         outpins.add(shadow);
       else if (comp.getFactory() instanceof DynamicClock) {
         if (isTop && dynClock == null)
@@ -533,7 +533,7 @@ public class Netlist {
     // Make a CopperTrace for every component output port.
     for (Component comp : circ.getNonWires())
       for (EndData end : comp.getEnds())
-        if (end.isOutput())
+        if (end.canOutput()) // same as isOutputOnly, since we don't support bidir yet
           traces.add(new CopperTrace(end.getLocation()));
 
     // Make a Net for each set of touching CopperTraces.
@@ -594,7 +594,7 @@ public class Netlist {
       if (!(comp.getFactory() instanceof Pin))
         continue;
       EndData end = comp.getEnd(0);
-      if (!end.isOutput())
+      if (!end.canOutput()) // same as isOutputOnly, since we don't support bidir yet
         continue;
       Net net = netAt.get(end.getLocation());
       if (net == null || net.name != null)
@@ -606,7 +606,7 @@ public class Netlist {
       if (!(comp.getFactory() instanceof Pin))
         continue;
       EndData end = comp.getEnd(0);
-      if (!end.isInput())
+      if (!end.canInput()) // same as isInputOnly, since we don't support bidir yet
         continue;
       Net net = netAt.get(end.getLocation());
       if (net == null || net.name != null)
@@ -642,7 +642,7 @@ public class Netlist {
           continue;
         Location pt = end.getLocation();
         Net net = netAt.get(pt);
-        if (end.isInput()) {
+        if (end.isInputOnly()) { // same as canInput, since we don't support bidir yet
           if (net != null)
             net.addSink(comp, idx);
           else {
@@ -860,7 +860,7 @@ public class Netlist {
         if (!(sink.comp.getFactory() instanceof Pin))
           continue;
         EndData end = sink.comp.getEnd(0);
-        if (!end.isInput())
+        if (!end.isInputOnly()) // same as canInput, since we don't support bidir yet
           continue;
         Path parentpath = path.parent();
         Netlist parent = netlists.get(parentpath);

@@ -86,11 +86,23 @@ public class EndData {
     return exclusive;
   }
 
-  public boolean isInput() {
-    return (i_o & INPUT_ONLY) != 0;
+  public boolean canInput() {
+    return (i_o == INPUT_ONLY) || (i_o == INPUT_OUTPUT);
   }
 
-  public boolean isOutput() {
-    return (i_o & OUTPUT_ONLY) != 0;
+  public boolean canOutput() {
+    return (i_o == OUTPUT_ONLY) || (i_o == INPUT_OUTPUT);
+  }
+
+  public boolean isInputOnly() {
+    return (i_o == INPUT_ONLY);
+  }
+
+  public boolean isOutputOnly() {
+    return (i_o == OUTPUT_ONLY);
+  }
+
+  public boolean isBidir() {
+    return (i_o == INPUT_OUTPUT);
   }
 }

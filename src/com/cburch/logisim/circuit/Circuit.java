@@ -149,9 +149,9 @@ public class Circuit implements AttributeDefaultProvider {
     }
   }
 
-  public static boolean isInput(Component comp) {
-    return comp.getEnd(0).getType() != EndData.INPUT_ONLY;
-  }
+  // public static boolean isInput(Component comp) {
+  //   return comp.getEnd(0).getType() != EndData.INPUT_ONLY;
+  // }
 
   private MyComponentListener myComponentListener = new MyComponentListener();
   private CircuitAppearance appearance;

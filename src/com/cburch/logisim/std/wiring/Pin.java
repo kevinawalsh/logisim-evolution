@@ -712,7 +712,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
   public String getHDLNamePrefix(Component comp) {
     // return "Pin";
     int w = comp.getEnd(0).getWidth().getWidth();
-    if (comp.getEnd(0).isOutput())
+    if (comp.getEnd(0).canOutput())
       return w > 1 ? "InputBus" : "Input";
     else
       return w > 1 ? "OutputBus" : "Output";

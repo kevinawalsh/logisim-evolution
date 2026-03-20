@@ -69,7 +69,7 @@ public class CircuitHDLGenerator extends HDLGenerator {
         continue;
       String label = HDLSupport.deriveHdlPathName(pin);
       EndData end = pin.getEnd(0);
-      if (end.isInput()) // note: if data goes into Pin component, then port is an output
+      if (end.canInput()) // note: if data goes into Pin component, then port is an output
         outPorts.add(label, end.getWidth().getWidth(), -1, null);
       else
         inPorts.add(label, end.getWidth().getWidth(), -1, null);
