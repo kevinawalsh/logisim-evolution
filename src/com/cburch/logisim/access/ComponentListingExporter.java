@@ -30,13 +30,7 @@
 
 package com.cburch.logisim.access;
 
-import java.io.FileOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,7 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 import com.cburch.logisim.access.ComponentListingFeature;
 import com.cburch.logisim.comp.Component;
@@ -77,7 +70,7 @@ public class ComponentListingExporter {
   // range known (gate inputs 2-32).
   private static final int MAX_ENUM_RANGE = 32;
 
-  public static void run(String outputFile) {
+  public static void exportTo(String outputFile) {
     if (outputFile.equals("-"))
       outputFile = null;
     try {
@@ -415,16 +408,15 @@ public class ComponentListingExporter {
 
   private static List<PortPosition> getPortInfos(ComponentFactory factory, AttributeSet attrs) {
     try {
-      Component comp = factory.createComponent(Location.create(0, 0), attrs);
+      Component comp = factory.createComponent(Location.ORIGIN, attrs);
       List<EndData> ends = comp.getEnds();
-      ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
       List<PortPosition> result = new ArrayList<>();
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
         int dx = end.getLocation().getX();
         int dy = end.getLocation().getY();
         String type = typeString(end.getType());
-        String name = getNameFromToolTipOrDefault(tt, dx, dy, type, i);
+        String name = getNameFromToolTipOrDefault(comp, i);
         PortPosition pi = new PortPosition(name, type, dx, dy);
         result.add(pi);
       }
@@ -437,16 +429,15 @@ public class ComponentListingExporter {
     }
   }
 
-  private static String getNameFromToolTipOrDefault(ToolTipMaker tt, Object dx, Object dy, String type, int index) {
+  static String getNameFromToolTipOrDefault(Component comp, int endIndex) {
+    EndData end = comp.getEnds().get(endIndex);
+    String type = typeString(end.getType());
     String tip = null;
+    ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
     if (tt != null) {
-      try {
-        int x = Integer.parseInt(dx.toString());
-        int y = Integer.parseInt(dy.toString());
-        tip = tt.getToolTip(new ComponentUserEvent(null, x, y));
-      } catch (NumberFormatException ex) {
-        ex.printStackTrace();
-      }
+      int x = end.getLocation().getX();
+      int y = end.getLocation().getY();
+      tip = tt.getToolTip(new ComponentUserEvent(null, x, y));
     }
     if (tip != null && !tip.isEmpty()) {
       // EndData tooltips should have the form: "name: description"
@@ -463,7 +454,7 @@ public class ComponentListingExporter {
           return name;
       }
     }
-    return defaultPortName(type, index);
+    return defaultPortName(type, endIndex);
   }
 
   private static String defaultPortName(String type, int index) {
@@ -480,16 +471,13 @@ public class ComponentListingExporter {
 
   private static String findAnchor(ComponentFactory factory, AttributeSet attrs) {
     try {
-      Component comp = factory.createComponent(Location.create(0, 0), attrs);
+      Component comp = factory.createComponent(Location.ORIGIN, attrs);
       List<EndData> ends = comp.getEnds();
-      ToolTipMaker tt = (ToolTipMaker)comp.getFeature(ToolTipMaker.class);
       for (int i = 0; i < ends.size(); i++) {
         EndData end = ends.get(i);
-        int dx = end.getLocation().getX();
-        int dy = end.getLocation().getY();
-        if (dx == 0 && dy == 0) {
+        if (end.getLocation().equals(Location.ORIGIN)) {
           String t = typeString(end.getType());
-          String name = getNameFromToolTipOrDefault(tt, dx, dy, t, i);
+          String name = getNameFromToolTipOrDefault(comp, i);
           return t + " port (" + name + ")";
         }
       }

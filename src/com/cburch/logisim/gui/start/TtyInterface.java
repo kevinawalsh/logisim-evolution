@@ -51,9 +51,6 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.file.FileStatistics;
-import com.cburch.logisim.file.LoadCanceledByUser;
-import com.cburch.logisim.file.LoadFailedException;
-import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.hex.HexFile;
 import com.cburch.logisim.gui.log.Loggable;
@@ -325,23 +322,7 @@ public class TtyInterface {
 
   public static void run(Startup args) {
     File fileToOpen = args.getFilesToOpen().get(0);
-    Loader loader = new Loader(null);
-    LogisimFile.FileWithSimulations file;
-    try {
-      file = loader.openLogisimFile(fileToOpen, args.getSubstitutions());
-    } catch (LoadCanceledByUser e) {
-      System.out.println(S.fmt("ttyLoadCanceled", fileToOpen.getName()));
-      System.exit(-1);
-      return;
-    } catch (LoadFailedException e) {
-      System.out.println(S.fmt("ttyLoadError", fileToOpen.getName()));
-      System.exit(-1);
-      return;
-    } catch (Throwable t) {
-      t.printStackTrace();
-      System.exit(-1);
-      return;
-    }
+    LogisimFile.FileWithSimulations file = args.headlessOpen(fileToOpen);
 
     int ret = 0;
     if (args.headlessList) {

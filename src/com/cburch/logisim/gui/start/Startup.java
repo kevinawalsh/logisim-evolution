@@ -50,9 +50,11 @@ import javax.swing.UIManager;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.access.ComponentListingExporter;
+import com.cburch.logisim.access.Connectivity;
 import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
+import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.main.Print;
 import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
@@ -70,9 +72,10 @@ public class Startup {
   private static final int ONEPARAM = 1;
   private static final int TWOPARAM = 2;
   private static final int HEADLESS = 4;
-  private static final int NEEDFILE = 8;
+  private static final int NEEDFILES = 8;
+  private static final int NEED1FILE = 16;
 
-  private static final int NUMPARAMS = 3;
+  private static final int NUMPARAMS = 3; // mask to extract ONEPARAM|TWOPARAM as int
   
   private static HashMap<String, Integer> options = new HashMap<>();
   static {
@@ -91,14 +94,15 @@ public class Startup {
 
     options.put("--version", HEADLESS);
     options.put("--help", HEADLESS);
-    options.put("--list", HEADLESS | NEEDFILE);
+    options.put("--list", HEADLESS | NEED1FILE);
     options.put("--pretty", 0);
-    options.put("--png", HEADLESS | ONEPARAM | NEEDFILE);
-    options.put("--tty", HEADLESS | ONEPARAM | NEEDFILE);
+    options.put("--png", HEADLESS | ONEPARAM | NEED1FILE);
+    options.put("--tty", HEADLESS | ONEPARAM | NEED1FILE);
     options.put("--circuit", HEADLESS | ONEPARAM);
     options.put("--load", HEADLESS | ONEPARAM);
 
     options.put("--generate-component-listing", HEADLESS | ONEPARAM);
+    options.put("--generate-netlist", HEADLESS | ONEPARAM | NEED1FILE);
 
     options.put("--verbose", 0);
     options.put("-v", 0);
@@ -222,7 +226,9 @@ public class Startup {
       String param0 = n >= 1 ? args[i+1] : null;
       String param1 = n >= 2 ? args[i+2] : null;
       i += n;
-      if ((o & NEEDFILE) != 0 && ret.filesToOpen.isEmpty())
+      if ((o & NEED1FILE) != 0 && ret.filesToOpen.size() != 1)
+        fail(S.fmt("argMissingOneFile", arg));
+      if ((o & NEEDFILES) != 0 && ret.filesToOpen.isEmpty())
         fail(S.fmt("argMissingFiles", arg));
       if (arg.startsWith("--"))
         arg = arg.substring(1);
@@ -404,11 +410,19 @@ public class Startup {
           fail(S.get("argQuestaOptionError"));
       } else if (arg.equals("-generate-component-listing")) {
         ret.doComponentListing = true;
-        ret.componentListingOutfile = param0;
+        ret.generateOutfile = param0;
+      } else if (arg.equals("-generate-netlist")) {
+        ret.doNetlist = true;
+        ret.generateOutfile = param0;
       } else if (arg.equals("-help") || arg.equals("-?")) {
         // already handled above
       }
     }
+
+    // third pass: check remaining errors
+    if ((ret.doNetlist && ret.doTty) || (ret.doNetlist && ret.doComponentListing) ||
+        ret.doComponentListing && ret.doTty)
+      fail(S.get("tooManyHeadless"));
 
     return ret;
   }
@@ -479,7 +493,9 @@ public class Startup {
   private boolean initialized = false;
   private SplashScreen monitor = null;
   private boolean doComponentListing = false;
-  private String componentListingOutfile;
+  private boolean doNetlist = false;
+  private String generateOutfile;
+  private boolean doTty= false;
 
   private ArrayList<File> filesToPrint = new ArrayList<>();
 
@@ -542,8 +558,12 @@ public class Startup {
     if (Main.headless) {
       try {
         if (doComponentListing)
-          ComponentListingExporter.run(componentListingOutfile);
-        else
+          ComponentListingExporter.exportTo(generateOutfile);
+        else if (doNetlist)
+          Connectivity.exportTo(generateOutfile,
+              headlessOpen(filesToOpen.get(0)),
+              circuitToTest);
+        else if (doTty)
           TtyInterface.run(this);
         System.exit(0);
       } catch (Exception t) {
@@ -690,5 +710,23 @@ public class Startup {
       catch (Throwable t) { }
     }
     System.exit(1);
+  }
+
+  public LogisimFile.FileWithSimulations headlessOpen(File fileToOpen) {
+    Loader loader = new Loader(null);
+    LogisimFile.FileWithSimulations file = null;
+    try {
+      file = loader.openLogisimFile(fileToOpen, getSubstitutions());
+    } catch (LoadCanceledByUser e) {
+      System.out.println(S.fmt("headlessLoadCancel", fileToOpen.getName()));
+      System.exit(-1);
+    } catch (LoadFailedException e) {
+      System.out.println(S.fmt("headlessLoadError", fileToOpen.getName()));
+      System.exit(-1);
+    } catch (Throwable t) {
+      t.printStackTrace();
+      System.exit(-1);
+    }
+    return file;
   }
 }
