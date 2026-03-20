@@ -171,7 +171,7 @@ public class Connectivity {
     Net(CopperTrace c) { copper = c; }
 
     void write(int id, PrintWriter out) {
-      if (id != 0)
+      if (id > 1)
         out.println();
       String msg;
       if (incompatibleWidths)
@@ -181,7 +181,7 @@ public class Connectivity {
       else if (width == 0)
         msg = "width indeterminate";
       else
-        msg = "["+width+"-bit]";
+        msg = ""+width+"-bit";
       out.printf("net n%d [%s]\n", id, msg);
       for (ComponentEnd c : connections)
         out.printf("  %s\n", c);
