@@ -348,7 +348,6 @@ public class TtyInterface {
       else
         System.out.printf("*  Project '%s' contains %d circuits.\n", fileName, n);
     }
-    File fileToOpen = args.getFilesToOpen().get(0);
     for (Circuit c : file.file.getCircuits()) {
       System.out.println((args.headlessPretty ? "   - " : "") + c);
     }

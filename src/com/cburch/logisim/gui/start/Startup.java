@@ -236,6 +236,7 @@ public class Startup {
         arg = arg.substring(1);
       if (arg.equals("-tty")) {
         ret.headlessTty = true;
+        ret.doTty = true;
         String[] fmts = param0.split(",");
         if (fmts.length == 0)
           fail(S.get("ttyFormatError"));
@@ -302,12 +303,14 @@ public class Startup {
         }
       } else if (arg.equals("-png")) {
         ret.headlessPng = true;
+        ret.doTty = true;
         String[] circuits = param0.split(",");
         if (circuits.length == 0)
           fail(S.get("pngArgError"));
         ret.headlessPngCircuits = circuits;
       } else if (arg.equals("-list")) {
         ret.headlessList = true;
+        ret.doTty = true;
       } else if (arg.equals("-pretty")) {
         ret.headlessPretty = true;
       } else if (arg.equals("-sub")) {
@@ -429,9 +432,12 @@ public class Startup {
     }
 
     // third pass: check remaining errors
-    if ((ret.doNetlist && ret.doTty) || (ret.doNetlist && ret.doComponentListing) ||
-        (ret.doComponentListing && ret.doTty) ||
-        (ret.doPinout && (ret.doNetlist || ret.doTty || ret.doComponentListing)))
+    int n = 0;
+    if (ret.doComponentListing) n++;
+    if (ret.doNetlist) n++;
+    if (ret.doPinout) n++;
+    if (ret.doTty) n++;
+    if (n > 1)
       fail(S.get("tooManyHeadless"));
 
     return ret;
@@ -485,6 +491,7 @@ public class Startup {
   }
 
   // based on command line
+  private boolean doTty = false;
   boolean headlessTty, headlessPng, headlessList, headlessPretty;
   String headlessPngCircuits[];
   private File templFile = null;
@@ -505,7 +512,6 @@ public class Startup {
   private boolean doComponentListing = false;
   private boolean doNetlist = false;
   private String generateOutfile;
-  private boolean doTty= false;
   private boolean doPinout = false;
   private String pinoutSpec;
 
@@ -577,7 +583,7 @@ public class Startup {
           Connectivity.exportTo(generateOutfile,
               headlessOpen(filesToOpen.get(0)),
               circuitToTest);
-        else if (doTty)
+        else // headlessTty, headlessPng, etc.
           TtyInterface.run(this);
         System.exit(0);
       } catch (Exception t) {
