@@ -51,6 +51,7 @@ import javax.swing.UIManager;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.access.ComponentListingExporter;
 import com.cburch.logisim.access.Connectivity;
+import com.cburch.logisim.access.PinoutExporter;
 import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
@@ -103,6 +104,7 @@ public class Startup {
 
     options.put("--generate-component-listing", HEADLESS | ONEPARAM);
     options.put("--generate-netlist", HEADLESS | ONEPARAM | NEED1FILE);
+    options.put("--pinout", HEADLESS | ONEPARAM);
 
     options.put("--verbose", 0);
     options.put("-v", 0);
@@ -416,6 +418,11 @@ public class Startup {
       } else if (arg.equals("-generate-netlist")) {
         ret.doNetlist = true;
         ret.generateOutfile = param0;
+      } else if (arg.equals("-pinout")) {
+        ret.doPinout = true;
+        ret.pinoutSpec = param0;
+        if (ret.filesToOpen.size() > 1)
+          fail(S.fmt("argMultipleFiles", arg));
       } else if (arg.equals("-help") || arg.equals("-?")) {
         // already handled above
       }
@@ -423,7 +430,8 @@ public class Startup {
 
     // third pass: check remaining errors
     if ((ret.doNetlist && ret.doTty) || (ret.doNetlist && ret.doComponentListing) ||
-        ret.doComponentListing && ret.doTty)
+        (ret.doComponentListing && ret.doTty) ||
+        (ret.doPinout && (ret.doNetlist || ret.doTty || ret.doComponentListing)))
       fail(S.get("tooManyHeadless"));
 
     return ret;
@@ -498,6 +506,8 @@ public class Startup {
   private boolean doNetlist = false;
   private String generateOutfile;
   private boolean doTty= false;
+  private boolean doPinout = false;
+  private String pinoutSpec;
 
   private ArrayList<File> filesToPrint = new ArrayList<>();
 
@@ -561,6 +571,8 @@ public class Startup {
       try {
         if (doComponentListing)
           ComponentListingExporter.exportTo(generateOutfile, this);
+        else if (doPinout)
+          PinoutExporter.exportTo(pinoutSpec, this);
         else if (doNetlist)
           Connectivity.exportTo(generateOutfile,
               headlessOpen(filesToOpen.get(0)),
