@@ -424,10 +424,10 @@ public class SubcircuitFactory extends InstanceFactory {
       pins2[j] = portLoc.getValue();
     }
     if (pins2.length != pins.length) {
-      System.out.printf("pin size mismatch: %d vs %d\n", pins2.length, pins.length);
+      System.err.printf("pin size mismatch: %d vs %d\n", pins2.length, pins.length);
     } else for (int i = 0; i < pins.length; i++) {
       if (pins2[i] != pins[i])
-        System.out.printf("pin[%d] mismatch: %s vs %s\n", i, pins2[i], pins[i]);
+        System.err.printf("pin[%d] mismatch: %s vs %s\n", i, pins2[i], pins[i]);
     }
     // END OF SANITY CHECK
 

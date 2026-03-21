@@ -50,6 +50,8 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.file.LogisimFile;
+import com.cburch.logisim.gui.start.Startup;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
@@ -70,12 +72,20 @@ public class ComponentListingExporter {
   // range known (gate inputs 2-32).
   private static final int MAX_ENUM_RANGE = 32;
 
-  public static void exportTo(String outputFile) {
+  public static void exportTo(String outputFile, Startup startup) {
+    boolean showBuiltin = startup.getFilesToOpen().isEmpty();
+    List<Library> libraries;
+    if (showBuiltin) {
+      libraries = new Builtin().getLibraries();
+    } else {
+      LogisimFile.FileWithSimulations file = startup.headlessOpen(startup.getFilesToOpen().get(0));
+      libraries = List.of(file.file);
+    }
     if (outputFile.equals("-"))
       outputFile = null;
     try {
       JsonWriter out = new JsonWriter(outputFile);
-      buildListing(out);
+      buildListing(out, libraries, showBuiltin);
       out.close();
       if (outputFile != null)
         System.err.printf("Component listing written to: %s\n", outputFile);
@@ -85,8 +95,7 @@ public class ComponentListingExporter {
     }
   }
 
-  private static void buildListing(JsonWriter w) {
-    Builtin builtin = new Builtin();
+  private static void buildListing(JsonWriter w, List<Library> libraries, boolean showBuiltin) {
     w.beginObject();
     w.key("_meta");
     w.beginObject();
@@ -172,16 +181,17 @@ public class ComponentListingExporter {
     w.endObject(); // _meta
 
     HashSet<ComponentFactory> done = new HashSet<>();
-    for (Library lib : builtin.getLibraries()) {
+    for (Library lib : libraries) {
       String libName = lib.getDisplayName();
-      if (libName.equals("Mouse Tools"))
+      if (showBuiltin && libName.equals("Mouse Tools"))
         continue;
       w.key(libName);
       w.beginObject();
       for (Tool tool : lib.getTools()) {
         if (!(tool instanceof AddTool)) continue;
+        if (showBuiltin != tool.isBuiltin())
+          continue;
         ComponentFactory factory = ((AddTool) tool).getFactory();
-        // if (!tool.getName().equals("ROM")) continue; // keep this comment for debugging
         if (!done.add(factory)) continue;
         try {
           int a = w.linecount;
@@ -297,8 +307,12 @@ public class ComponentListingExporter {
     if (anchor != null) w.keyValue("anchor", anchor);
     w.keyValue("rotation", rotation);
 
-    // port_affecting_attrs (those that affect port positions, excluding facing)
-    w.keyArray("port_affecting_attrs", variantAttrList, pa -> pa.getName());
+    // port_affecting_attrs (those that affect port positions, including facing)
+    List<Attribute<?>> vaPlusFacing = new ArrayList<>();
+    if (facingAttr != null)
+      vaPlusFacing.add(facingAttr);
+    vaPlusFacing.addAll(variantAttrList);
+    w.keyArray("port_affecting_attrs", vaPlusFacing, pa -> pa.getName());
 
     // default_attr_values
     w.key("default_attr_values");
@@ -507,8 +521,7 @@ public class ComponentListingExporter {
       return ROTATION_STANDARD; // NONE?
     }
     if (eastPorts.isEmpty()) {
-      System.out.println("ERR no ports");
-      return ROTATION_STANDARD; // NONE?
+      return ROTATION_STANDARD; // Some components have no ports
     }
     boolean maybeStandard = true;
     boolean maybeMirrorLeft = true;
@@ -519,8 +532,12 @@ public class ComponentListingExporter {
       // System.out.println("checking: " + dir);
       AttributeSet dirAttrs = cloneWithValue(eastAttrs, facingAttr, dir.toString());
       List<PortPosition> dirPorts = getPortInfos(factory, dirAttrs);
-      if (dirPorts == null) return ROTATION_CUSTOM;
-      if (dirPorts.size() != eastPorts.size()) return ROTATION_CUSTOM;
+      if (dirPorts == null)
+        return ROTATION_CUSTOM;
+      if (dirPorts.size() != eastPorts.size()) {
+        System.err.println("Warning: port count changed on rotation: " + factory.getName());
+        return ROTATION_CUSTOM;
+      }
 
       for (int i = 0; i < eastPorts.size() && maybeStandard; i++) {
         PortPosition ep = eastPorts.get(i);

@@ -411,6 +411,8 @@ public class Startup {
       } else if (arg.equals("-generate-component-listing")) {
         ret.doComponentListing = true;
         ret.generateOutfile = param0;
+        if (ret.filesToOpen.size() > 1)
+          fail(S.fmt("argMultipleFiles", arg));
       } else if (arg.equals("-generate-netlist")) {
         ret.doNetlist = true;
         ret.generateOutfile = param0;
@@ -523,7 +525,7 @@ public class Startup {
     }
   }
 
-  List<File> getFilesToOpen() {
+  public List<File> getFilesToOpen() {
     return filesToOpen;
   }
 
@@ -558,7 +560,7 @@ public class Startup {
     if (Main.headless) {
       try {
         if (doComponentListing)
-          ComponentListingExporter.exportTo(generateOutfile);
+          ComponentListingExporter.exportTo(generateOutfile, this);
         else if (doNetlist)
           Connectivity.exportTo(generateOutfile,
               headlessOpen(filesToOpen.get(0)),

@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.LinkedHashMap;
 import java.util.TreeMap;
 
 import com.cburch.draw.model.CanvasModelEvent;
@@ -223,13 +224,14 @@ public class CircuitAppearance extends Drawing {
     return getBounds(true);
   }
 
-  public SortedMap<Location, Instance> getPortOffsets(Direction facing) {
+  public LinkedHashMap<Location, Instance> getPortOffsets(Direction facing) {
     Location anchor = null;
     Direction defaultFacing = Direction.EAST;
-    List<AppearancePort> ports = new ArrayList<AppearancePort>();
+    // Find all ports, and sort according to their location in the default facing
+    SortedMap<Location, AppearancePort> ports = new TreeMap<>();
     for (CanvasObject shape : getObjectsFromBottom()) {
       if (shape instanceof AppearancePort) {
-        ports.add((AppearancePort) shape);
+        ports.put(((AppearancePort)shape).getLocation(), (AppearancePort)shape);
       } else if (shape instanceof AppearanceAnchor) {
         AppearanceAnchor o = (AppearanceAnchor) shape;
         anchor = o.getLocation();
@@ -237,8 +239,8 @@ public class CircuitAppearance extends Drawing {
       }
     }
 
-    SortedMap<Location, Instance> ret = new TreeMap<Location, Instance>();
-    for (AppearancePort port : ports) {
+    LinkedHashMap<Location, Instance> ret = new LinkedHashMap<>();
+    for (AppearancePort port : ports.values()) {
       Location loc = port.getLocation();
       if (anchor != null) {
         loc = loc.translate(-anchor.getX(), -anchor.getY());
