@@ -39,7 +39,7 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
@@ -274,12 +274,12 @@ public class DipSwitch extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private class MyComponentListingFeature implements ComponentListingFeature {
+  private class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -294,10 +294,10 @@ public class DipSwitch extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Direction facing = attrs.getValue(StdAttr.FACING);
       
-      ComponentListingFeature.PortPosition out;
+      InventoryFeature.PortPosition out;
 
       if (facing == Direction.EAST) {
         out = portsAt("DIP", "output", 1, "number", 0, 10, 0, 10);

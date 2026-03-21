@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -191,12 +191,12 @@ public class BitAdder extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private class MyComponentListingFeature implements ComponentListingFeature {
+  private class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -211,8 +211,8 @@ public class BitAdder extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
-      ComponentListingFeature.PortPosition out, inp;
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+      InventoryFeature.PortPosition out, inp;
       out = portAt("Output", "output", 0, 0);
       inp = portsAt("Input", "input", 0, "inputs",
           -40, "10*floor(inputs/2)",

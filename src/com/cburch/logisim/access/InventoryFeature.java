@@ -44,9 +44,9 @@ import com.cburch.logisim.data.AttributeSet;
  *
  * Usage: override getFeature(Object key, AttributeSet attrs) in the factory
  * and return an implementation of this interface when key ==
- * ComponentListingFeature.class.
+ * InventoryFeature.class.
  */
-public interface ComponentListingFeature {
+public interface InventoryFeature {
 
   /**
    * Returns extra annotation notes for specific attributes, keyed by the
@@ -104,7 +104,6 @@ public interface ComponentListingFeature {
       this.firstIndex = this.count = this.stepDx = this.stepDy = null;
     }
 
-    // NOTE: this duplicates ComponentListingExplorer.PortInfo, essentially
     public PortPosition(String n, String t, Object i, Object c, Object fx, Object fy, Object sx, Object sy) {
       this.isArray = true;
       this.name = n;

@@ -40,7 +40,7 @@ import java.awt.Graphics2D;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
@@ -386,12 +386,12 @@ public class Demultiplexer extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private class MyComponentListingFeature implements ComponentListingFeature {
+  private class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -407,7 +407,7 @@ public class Demultiplexer extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Direction facing = attrs.getValue(StdAttr.FACING);
       boolean e = (facing == Direction.EAST);
       boolean w = (facing == Direction.WEST);
@@ -417,7 +417,7 @@ public class Demultiplexer extends InstanceFactory {
       boolean b = (selloc == Plexers.SELECT_BOTTOM_LEFT);
       boolean r = (selloc == Plexers.SELECT_TOP_RIGHT);
       
-      ComponentListingFeature.PortPosition inp, out, sel, en;
+      InventoryFeature.PortPosition inp, out, sel, en;
 
       inp = portAt("Input", "input", 0, 0);
       if (e || w) {

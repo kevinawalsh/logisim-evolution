@@ -40,7 +40,7 @@ import java.util.Map;
 import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.comp.AbstractComponentFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -125,8 +125,8 @@ public class SplitterFactory extends AbstractComponentFactory {
             32, InputEvent.ALT_DOWN_MASK));
       return JoinedConfigurator.create(new IntegerConfigurator(
             SplitterAttributes.ATTR_FANOUT, 1, 32, 0), altConfig);
-    } else if (key == ComponentListingFeature.class) {
-      return new MyComponentListingFeature();
+    } else if (key == InventoryFeature.class) {
+      return new MyInventoryFeature();
     }
     return super.getFeature(key, attrs);
   }
@@ -159,7 +159,7 @@ public class SplitterFactory extends AbstractComponentFactory {
     }
   }
 
-  private static class MyComponentListingFeature implements ComponentListingFeature {
+  private static class MyInventoryFeature implements InventoryFeature {
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
       HashMap<String, String> notes = new HashMap<>();
@@ -175,11 +175,11 @@ public class SplitterFactory extends AbstractComponentFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(SplitterAttributes.ATTR_APPEARANCE);
       Object facing = attrs.getValue(StdAttr.FACING);
 
-      ComponentListingFeature.PortPosition bus = portAt("bus", "inout", 0, 0);
+      InventoryFeature.PortPosition bus = portAt("bus", "inout", 0, 0);
 
       Object fx = null, fy = null, sx = null, sy = null;
       if (facing == Direction.EAST) {
@@ -251,7 +251,7 @@ public class SplitterFactory extends AbstractComponentFactory {
           sy = 0;
         }
       }
-      ComponentListingFeature.PortPosition taps
+      InventoryFeature.PortPosition taps
         = portsAt("tap_", "inout", 1, "fanout", fx, fy, sx, sy);
       return List.of(bus, taps);
     }

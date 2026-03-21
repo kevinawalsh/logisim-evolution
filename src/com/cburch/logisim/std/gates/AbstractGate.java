@@ -40,7 +40,7 @@ import java.util.Map;
 import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.analyze.model.Expression;
 import com.cburch.logisim.analyze.model.Expressions;
 import com.cburch.logisim.circuit.ExpressionComputer;
@@ -635,12 +635,12 @@ abstract class AbstractGate extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private class MyComponentListingFeature implements ComponentListingFeature {
+  private class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -668,14 +668,14 @@ abstract class AbstractGate extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object o = attrs.getValue(GateAttributes.ATTR_SIZE);
       int size = 
         o == GateAttributes.SIZE_NARROW ? 30 : 
         o == GateAttributes.SIZE_MEDIUM ? 50 :
         70;
       
-      ComponentListingFeature.PortPosition out, in0, in1;
+      InventoryFeature.PortPosition out, in0, in1;
 
       out = portAt("OUT", "output", 0, 0);
 

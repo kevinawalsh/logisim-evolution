@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.circuit.SplitterAttributes;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -345,12 +345,12 @@ public class LineSelect extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private static class MyComponentListingFeature implements ComponentListingFeature {
+  private static class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -366,13 +366,13 @@ public class LineSelect extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(Plexers.ATTR_SIZE);
       Object facing = attrs.getValue(StdAttr.FACING);
 
-      ComponentListingFeature.PortPosition bus = portAt("OUT", "output", 0, 0);
+      InventoryFeature.PortPosition bus = portAt("OUT", "output", 0, 0);
 
-      ComponentListingFeature.PortPosition in0, inI;
+      InventoryFeature.PortPosition in0, inI;
       
       if (facing == Direction.EAST) {
         in0 = portAt("Input_0", "input",

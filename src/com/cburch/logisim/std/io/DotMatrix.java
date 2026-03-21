@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -364,12 +364,12 @@ public class DotMatrix extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private class MyComponentListingFeature implements ComponentListingFeature {
+  private class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -386,18 +386,18 @@ public class DotMatrix extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object itype = attrs.getValue(ATTR_INPUT_TYPE);
       if (itype == INPUT_COLUMN) {
-        ComponentListingFeature.PortPosition cols;
+        InventoryFeature.PortPosition cols;
         cols = portsAt("Column_", "input", 0, "matrixcols", 0, 0, 10, 0);
         return List.of(cols);
       } else if (itype == INPUT_ROW) {
-        ComponentListingFeature.PortPosition rows;
+        InventoryFeature.PortPosition rows;
         rows = portsAt("Row_", "input", 0, "matrixrows", 0, 0, 0, 10);
         return List.of(rows);
       } else { // INPUT_SELECT
-        ComponentListingFeature.PortPosition rs, cs;
+        InventoryFeature.PortPosition rs, cs;
         rs = portAt("Row_Select", "input", 0, 0);
         cs = portAt("Column_Select", "input", 0, 10);
         return List.of(rs,cs);

@@ -202,11 +202,11 @@ public class Connectivity {
       EndData end = comp.getEnds().get(endIndex);
       String libName = lib.getName();
       String compName = comp.getFactory().getName();
-      String portName = ComponentListingExporter.getNameFromToolTipOrDefault(comp, endIndex);
+      String portName = Inventory.getNameFromToolTipOrDefault(comp, endIndex);
       Location loc = comp.getLocation();
       Location portLoc = end.getLocation().translate(-loc.x, -loc.y);
       String portDir = end.isInputOnly() ? "in" : end.isOutputOnly() ? "out" : "bidir";
-      return String.format("'%s:%s'@%s .%s@%s [%s]", libName, compName, loc, portName, portLoc, portDir);
+      return String.format("[%s][%s]@%s .%s@%s [%s]", libName, compName, loc, portName, portLoc, portDir);
     }
   }
 

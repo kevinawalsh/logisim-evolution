@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
@@ -496,12 +496,12 @@ public class ShiftRegister extends InstanceFactory {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private static class MyComponentListingFeature implements ComponentListingFeature {
+  private static class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -523,11 +523,11 @@ public class ShiftRegister extends InstanceFactory {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(StdAttr.APPEARANCE);
       boolean parallel = attrs.getValue(ATTR_LOAD).booleanValue();
         
-      ComponentListingFeature.PortPosition shf, inp, clk, clr, out, lde, ldi, ldo;
+      InventoryFeature.PortPosition shf, inp, clk, clr, out, lde, ldi, ldo;
       if (appear == StdAttr.APPEAR_CLASSIC) {
         shf = portAt("Shift", "input", 0, -10);
         inp = portAt("Input", "input", 0, 0);

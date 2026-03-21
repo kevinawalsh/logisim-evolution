@@ -46,7 +46,7 @@ import java.util.StringTokenizer;
 import javax.swing.JLabel;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.cburch.logisim.access.ComponentListingFeature;
+import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
@@ -467,12 +467,12 @@ public class Rom extends Mem {
 
   @Override
   public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentListingFeature.class)
-      return new MyComponentListingFeature();
+    if (key == InventoryFeature.class)
+      return new MyInventoryFeature();
     return super.getFeature(key, attrs);
   }
 
-  private static class MyComponentListingFeature implements ComponentListingFeature {
+  private static class MyInventoryFeature implements InventoryFeature {
     
     @Override
     public Map<String, String> getAttributeNotes(AttributeSet attrs) {
@@ -484,7 +484,7 @@ public class Rom extends Mem {
 
     @Override
     public List<String> getLayoutAnalysisIncludedAttributes(AttributeSet attrs) {
-      return List.of("appearance"); // this is missed by the simple search in ComponentListingExporder
+      return List.of("appearance"); // this is missed by the simple search in InventoryExporder
     }
 
     @Override
@@ -493,12 +493,12 @@ public class Rom extends Mem {
     }
 
     @Override
-    public List<ComponentListingFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
+    public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object appear = attrs.getValue(StdAttr.APPEARANCE);
       Object props = attrs.getValue(ATTR_PROPORTIONS);
       int lines = Mem.lineSize(attrs);
     
-      ComponentListingFeature.PortPosition abus, dbus;
+      InventoryFeature.PortPosition abus, dbus;
       abus = portAt("Address", "input", 0, 10);
 
       Object fx, fy, sx, sy;

@@ -228,7 +228,7 @@ public class PinoutExporter {
     System.out.println("Ports:");
     for (int i = 0; i < ends.size(); i++) {
       EndData end = ends.get(i);
-      String portName = ComponentListingExporter.getNameFromToolTipOrDefault(comp, i);
+      String portName = Inventory.getNameFromToolTipOrDefault(comp, i);
       String dir = typeString(end.getType());
       int bits = end.getWidth().getWidth();
       int px = end.getLocation().getX();

@@ -49,7 +49,7 @@ import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 
 import com.cburch.logisim.Main;
-import com.cburch.logisim.access.ComponentListingExporter;
+import com.cburch.logisim.access.Inventory;
 import com.cburch.logisim.access.Connectivity;
 import com.cburch.logisim.access.PinoutExporter;
 import com.cburch.logisim.file.LoadCanceledByUser;
@@ -102,8 +102,8 @@ public class Startup {
     options.put("--circuit", HEADLESS | ONEPARAM);
     options.put("--load", HEADLESS | ONEPARAM);
 
-    options.put("--generate-component-listing", HEADLESS | ONEPARAM);
-    options.put("--generate-netlist", HEADLESS | ONEPARAM | NEED1FILE);
+    options.put("--inventory", HEADLESS);
+    options.put("--netlist", HEADLESS | NEED1FILE);
     options.put("--pinout", HEADLESS | ONEPARAM);
 
     options.put("--verbose", 0);
@@ -413,14 +413,14 @@ public class Startup {
           AppPreferences.QUESTA_VALIDATION.set(false);
         else
           fail(S.get("argQuestaOptionError"));
-      } else if (arg.equals("-generate-component-listing")) {
-        ret.doComponentListing = true;
-        ret.generateOutfile = param0;
+      } else if (arg.equals("-inventory")) {
+        ret.doInventory = true;
+        ret.generateOutfile = "-"; // param0;
         if (ret.filesToOpen.size() > 1)
           fail(S.fmt("argMultipleFiles", arg));
       } else if (arg.equals("-generate-netlist")) {
         ret.doNetlist = true;
-        ret.generateOutfile = param0;
+        ret.generateOutfile = "-"; // param0;
       } else if (arg.equals("-pinout")) {
         ret.doPinout = true;
         ret.pinoutSpec = param0;
@@ -433,7 +433,7 @@ public class Startup {
 
     // third pass: check remaining errors
     int n = 0;
-    if (ret.doComponentListing) n++;
+    if (ret.doInventory) n++;
     if (ret.doNetlist) n++;
     if (ret.doPinout) n++;
     if (ret.doTty) n++;
@@ -444,34 +444,22 @@ public class Startup {
   }
 
   private static void printUsage() {
-    System.err.println(S.fmt("argUsage", Startup.class.getName())); // OK
-    System.err.println(); // OK
-    System.err.println(S.get("argGUIOptionHeader")); // OK
-    System.err.println("   " + S.get("argNoSplashOption")); // OK
-    System.err.println("   " + S.get("argGeometryOption")); // OK
-    System.err.println("   " + S.get("argEmptyOption")); // OK
-    System.err.println("   " + S.get("argPlainOption")); // OK
-    System.err.println("   " + S.get("argTemplateOption")); // OK
-    System.err.println("   " + S.get("argGatesOption")); // OK
-    System.err.println("   " + S.get("argLocaleOption")); // OK
-    System.err.println("   " + S.get("argAccentsOption")); // OK
-    System.err.println("   " + S.get("argClearOption")); // OK
-    System.err.println("   " + S.get("argQuestaOption")); // OK
-    System.err.println("   " + S.get("argSubOption")); // OK
-    System.err.println("   " + S.get("argTestOption")); // OK
-    System.err.println(); // OK
-    System.err.println(S.get("argTTYOptionHeader")); // OK
-    System.err.println("   " + S.get("argVersionOption")); // OK
-    System.err.println("   " + S.get("argHelpOption")); // OK
-    System.err.println("   " + S.get("argListOption")); // OK
-    System.err.println("   " + S.get("argPngOption")); // OK
-    System.err.println("   " + S.get("argPngsOption")); // OK
-    System.err.println("   " + S.get("argTtyOption")); // OK
-    System.err.println("   " + S.get("argCircuitOption")); // OK
-    System.err.println("   " + S.get("argLoadOption")); // OK
-    System.err.println("   " + S.get("argDebugOption")); // OK
-    System.err.println("   " + S.get("argVerboseOption")); // OK
-    System.err.println("   " + S.get("argVVerboseOption")); // OK
+    System.out.println(S.fmt("argUsage", Startup.class.getName()));
+    for (int i = 1; ; i++) {
+      String key = "argUsage" + i;
+      String msg = S.get(key);
+      if (msg.equals(key))
+        break;
+      if (!msg.startsWith("-") && !msg.startsWith(" ")) {
+        // header
+        System.out.println();
+        System.out.println(msg);
+      } else {
+        if (msg.startsWith(" "))
+          System.out.print(" "); // leading slash kills one space
+        System.out.println("  " + msg);
+      }
+    }
     System.exit(0);
   }
 
@@ -509,7 +497,7 @@ public class Startup {
   // from other sources
   private boolean initialized = false;
   private SplashScreen monitor = null;
-  private boolean doComponentListing = false;
+  private boolean doInventory = false;
   private boolean doNetlist = false;
   private String generateOutfile;
   private boolean doPinout = false;
@@ -575,8 +563,8 @@ public class Startup {
   public void run() {
     if (Main.headless) {
       try {
-        if (doComponentListing)
-          ComponentListingExporter.exportTo(generateOutfile, this);
+        if (doInventory)
+          Inventory.exportTo(generateOutfile, this);
         else if (doPinout)
           PinoutExporter.exportTo(pinoutSpec, this);
         else if (doNetlist)

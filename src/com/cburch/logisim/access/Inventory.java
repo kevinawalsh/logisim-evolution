@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cburch.logisim.access.ComponentListingFeature;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.comp.ComponentUserEvent;
@@ -58,14 +57,14 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.tools.ToolTipMaker;
 
-import static com.cburch.logisim.access.ComponentListingFeature.PortPosition;
+import static com.cburch.logisim.access.InventoryFeature.PortPosition;
 
 /**
  * Exports a JSON file describing every component in Logisim's standard library:
  * port positions for all relevant attribute combinations, attribute value ranges,
  * and optional notes. Invoked via the -dump-components CLI flag.
  */
-public class ComponentListingExporter {
+public class Inventory {
 
   // Maximum INT_RANGE size to enumerate during port-affecting attribute detection.
   // Ranges larger than this are not varied. 32 covers the largest port-affecting
@@ -215,13 +214,13 @@ public class ComponentListingExporter {
   private static void processComponent(ComponentFactory factory, JsonWriter w) {
     AttributeSet defaultAttrs = factory.createAttributeSet();
 
-    // Get ComponentListingFeature notes (if any), and layout variant exclusion list
+    // Get InventoryFeature notes (if any), and layout variant exclusion list
     Map<String, String> attrNotes = Collections.emptyMap();
     List<String> variantAttrExclusions = Collections.emptyList();
-    Object o = factory.getFeature(ComponentListingFeature.class, defaultAttrs);
-    ComponentListingFeature clf = null;
-    if (o instanceof ComponentListingFeature) {
-      clf = (ComponentListingFeature) o;
+    Object o = factory.getFeature(InventoryFeature.class, defaultAttrs);
+    InventoryFeature clf = null;
+    if (o instanceof InventoryFeature) {
+      clf = (InventoryFeature) o;
       Map<String, String> notes = clf.getAttributeNotes(defaultAttrs);
       if (notes != null) attrNotes = notes;
       List<String> excluded = clf.getLayoutAnalysisExcludedAttributes(defaultAttrs);
@@ -606,7 +605,7 @@ public class ComponentListingExporter {
   // Port-affecting attribute detection
   // ---------------------------------------------------------------------------
 
-  private static List<Attribute<?>> findPortAffectingAttrs(ComponentListingFeature clf, 
+  private static List<Attribute<?>> findPortAffectingAttrs(InventoryFeature clf, 
       ComponentFactory factory, AttributeSet defaultAttrs, List<AttrInfo> allAttrs,
       Attribute<Direction> facingAttr) {
     // System.err.println("findPortAffectinAttrs for " + factory.getName());
