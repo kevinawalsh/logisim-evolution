@@ -10,70 +10,45 @@
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/text.gif">
+<h1><img class="big" src="/logisim-evolution/icons/text.gif">
 <em>Text Tool</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Mouse Tools</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0 Beta 1</td></tr>
-</table></p>
+<p>Found in <a href="index.html">Mouse Tools</a></p>
 
-<h2>Behavior</h2>
+<p>Use Text Tool to add and edit free-form text comments to a circuit, or to
+create or edit labels associated with components.</p>
 
-<p>The Text Tool can add free-form text comments to a circuit, or create and
-edit labels associated with components. Most components in the built-in
-libraries support labels, though some do not.</p>
+<h2>Adding and Editing Component Labels</h2>
 
-<p>For components that can take a label but have none assigned to it currently,
-click anywhere within the component to add a label. If there is already
-a label, click with the label to edit it.</p>
+<ul>
+  <li><p><b>Add a label:</b> Click a component to add a label, which will stay with
+    the component as it is moved or copied. Some components don't support this
+    feature, but most built-in components can have a label attached.</p></li>
+  <li><p><b>Edit a label:</b> If a component already has a label, click the label
+    or anywhere on the component to edit it. The lower left panel can also be
+    used to edit the label text, font, position, and other settings.</p></li>
+</ul>
 
-<p>Click any blank area of the canvas to add a new text comment, or click an
-existing text comment to edit it.</p>
+<h2>Adding Free-Form Text Comments</h2>
 
-<h2>Attributes</h2>
+<ul>
+  <li><p>Click any blank area of the background to add a new text comment, or
+    click an existing text comment to edit it. These are intended for
+    documenting your circuits. Text comments can have multiple lines, and can be
+    styled with colors and other attributes. Unlike labels, comments aren't
+    attached to a component. </p></li>
+  <li><p>Hold <span class="key">shift</span> to enforce snap-to-grid when adding
+    new text comments. Normally, text comments are not required to be aligned to
+    the grid the way most components are.</p></li>
+</ul>
 
-<p>When editing a label for a component, that component's attributes are
-displayed.</p>
-
-Text comments have the following attributes:
-
-<dl>
-
-<dt>Text</dt>
-<dd>The text appearing in the comment. This can be edited by changing the
-attribute in the attribute table, or using the <a class="icon"
-href="text.html"><img src="/logisim-evolution/icons/text.gif"> Text Tool</a> directly the
-canvas.</dd>
-
-<dt>Font</dt>
-<dd>The font used for the comment.</dd>
-
-<dt>Horizontal Alignment</dt>
-<dd>Controls the horizontal alignment, as well as where the text appears relative to
-the origin (i.e. where the mouse was clicked when creating the comment).  "Left"
-uses left-alignment, and positions the text so its left edge is at the origin.
-"Right" uses right-alignment, and positions the text so its right edge is at the
-origin. "Center" horizontally centers each line, and positions the text
-horizontally so the center is at the origin.</dd>
-
-<dt>Vertical Alignment</dt>
-<dd>Controls the where the text appears relative to the origin (i.e. where the
-mouse was clicked when creating the comment). "Base" positions the text so the
-origin is at the baseline of the first line of text. "Top" positions the text so
-the origin is at the top of first line of the text. "Bottom" positions the text
-so the origin is at the bottom of the first line of text. "Center" centers the
-first line of text vertically at the origin.
-NOTE: For legacy reasons, when
-there are multiple lines of text, vertical alignment is relative to the
-<i>first</i> line of text, never to the last line or to the entire block of
-text. </dd>
-
-</dl>
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+<blockquote class="hint"> Tip: When TextTool is active, the attribute panel at
+  the lower left shows the default options that are used when creating new text
+  comments, including font, foreground and background colors, alignment, and
+  format (plain, wrapped, or styled). You can edit these defaults, and Logisim
+  will remember your preferences. See <a href="../decor/comment.html">
+    Comment</a> for details.
+</blockquote>
 
 </body>
 </html>

@@ -811,9 +811,9 @@
   },
   {
     "id": 136,
-    "title": "Cutter Tool",
+    "title": "Wire Cutter",
     "url": "/logisim-evolution/en/libs/mouse/cutter.html",
-    "text": "Cutter Tool\nFound in Mouse Tools\nThe Cutter Tool is for breaking or removing wire segments or entire wire nets.\nRemove one segment: Click on a wire segment to remove just that one\nstraight wire segment.\nRemove entire wiring net: Hold shift and\nclick a wire segment to remove an entire wire net. The wire segment that was\nclicked, along with all other segments connected to it, recursively, are\nremoved.\nRemove sections: Click and drag in an blank area of the canvas to\nselect a rectangular region in red. Any portions of wires passing through the\nselected region are removed."
+    "text": "Wire Cutter\nFound in Mouse Tools\nWire Cutter is for breaking or removing wire segments or entire wire nets.\nRemove one segment: Click on a wire segment to remove just that one\nstraight wire segment.\nRemove entire wiring net: Hold shift and\nclick a wire segment to remove an entire wire net. The wire segment that was\nclicked, along with all other segments connected to it, recursively, are\nremoved.\nRemove sections: Click and drag in an blank area of the canvas to\nselect a rectangular region in red. Any portions of wires passing through the\nselected region are removed."
   },
   {
     "id": 137,
@@ -849,7 +849,7 @@
     "id": 142,
     "title": "Text Tool",
     "url": "/logisim-evolution/en/libs/mouse/text.html",
-    "text": "Text Tool\nLibrary:\nMouse Tools\nIntroduced:\n2.0 Beta 1\nBehavior\nThe Text Tool can add free-form text comments to a circuit, or create and\nedit labels associated with components. Most components in the built-in\nlibraries support labels, though some do not.\nFor components that can take a label but have none assigned to it currently,\nclick anywhere within the component to add a label. If there is already\na label, click with the label to edit it.\nClick any blank area of the canvas to add a new text comment, or click an\nexisting text comment to edit it.\nAttributes\nWhen editing a label for a component, that component's attributes are\ndisplayed.\nText comments have the following attributes:\nText\nThe text appearing in the comment. This can be edited by changing the\nattribute in the attribute table, or using the\nText Tool directly the\ncanvas.\nFont\nThe font used for the comment.\nHorizontal Alignment\nControls the horizontal alignment, as well as where the text appears relative to\nthe origin (i.e. where the mouse was clicked when creating the comment).\n\"Left\"\nuses left-alignment, and positions the text so its left edge is at the origin.\n\"Right\" uses right-alignment, and positions the text so its right edge is at the\norigin. \"Center\" horizontally centers each line, and positions the text\nhorizontally so the center is at the origin.\nVertical Alignment\nControls the where the text appears relative to the origin (i.e. where the\nmouse was clicked when creating the comment). \"Base\" positions the text so the\norigin is at the baseline of the first line of text. \"Top\" positions the text so\nthe origin is at the top of first line of the text. \"Bottom\" positions the text\nso the origin is at the bottom of the first line of text. \"Center\" centers the\nfirst line of text vertically at the origin.\nNOTE: For legacy reasons, when\nthere are multiple lines of text, vertical alignment is relative to the\nfirst line of text, never to the last line or to the entire block of\ntext."
+    "text": "Text Tool\nFound in Mouse Tools\nUse Text Tool to add and edit free-form text comments to a circuit, or to\ncreate or edit labels associated with components.\nAdding and Editing Component Labels\nAdd a label: Click a component to add a label, which will stay with\nthe component as it is moved or copied. Some components don't support this\nfeature, but most built-in components can have a label attached.\nEdit a label: If a component already has a label, click the label\nor anywhere on the component to edit it. The lower left panel can also be\nused to edit the label text, font, position, and other settings.\nAdding Free-Form Text Comments\nClick any blank area of the background to add a new text comment, or\nclick an existing text comment to edit it. These are intended for\ndocumenting your circuits. Text comments can have multiple lines, and can be\nstyled with colors and other attributes. Unlike labels, comments aren't\nattached to a component.\nHold shift to enforce snap-to-grid when adding\nnew text comments. Normally, text comments are not required to be aligned to\nthe grid the way most components are.\nTip: When TextTool is active, the attribute panel at\nthe lower left shows the default options that are used when creating new text\ncomments, including font, foreground and background colors, alignment, and\nformat (plain, wrapped, or styled). You can edit these defaults, and Logisim\nwill remember your preferences. See\nComment for details."
   },
   {
     "id": 143,
@@ -951,7 +951,7 @@
     "id": 159,
     "title": "CutterTool",
     "url": "/logisim-evolution/en/quickhelp/tools/CutterTool.html",
-    "text": "Cutter Tool\nSnip away wire segments and wire nets.\nSee also: Reference\nClick a wire\nremove one straight wire segment\nShift-Click a wire\nremove entire connected wire net\nClick-drag the background\nRemove parts of wires passing through region"
+    "text": "Wire Cutter\nSnip away wire segments and wire nets.\nSee also: Reference\nClick a wire\nremove one straight wire segment\nShift-Click a wire\nremove entire connected wire net\nClick-drag the background\nRemove parts of wires passing through region"
   },
   {
     "id": 160,
@@ -967,6 +967,12 @@
   },
   {
     "id": 162,
+    "title": "TextTool",
+    "url": "/logisim-evolution/en/quickhelp/tools/TextTool.html",
+    "text": "Text Tool\nEdit component labels, or add free-form text comments.\nSee also: Reference\nClick a component\nadd or edit the component's label\nClick background\nadd text comment; hold shift for snap-to-grid\nClick a comment\nedit the comment"
+  },
+  {
+    "id": 163,
     "title": "WiringTool",
     "url": "/logisim-evolution/en/quickhelp/tools/WiringTool.html",
     "text": "Wiring Tool\nAdd or rearrange wires.\nSee also: Reference\nClick-drag background\ndraw a wire\nClick-drag a wire\nchange wires or draw new wires\nSpace\nadd corner point while drawing\nDelete\nremove a corner point while drawing\nEscape\ncancel drawing"
