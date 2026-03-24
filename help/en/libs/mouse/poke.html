@@ -27,11 +27,6 @@ prod other components to change state or perform actions.</p>
 
 <p>Many components respond to being poked:
 <ul>
-  <li>Poke a wire or bus segment to see the value it carries, and hilight the
-    entire connected set of wire segments. For a bus, poke again (or
-    hit <span class="key">Space</span>, <span class="key">Tab</span>
-    or <span class="key">Enter</span>, to cycle through display in hex, signed
-    decimal, and other encodings.</li>
   <li>Poke a
     <a href="../io/button.html"><img class="p16" src="/logisim-evolution/icons/button.gif"> Button</a>,
     <a href="../io/dipswitch.html"><img class="p16" src="/logisim-evolution/icons/dipswitch.gif"> DipSwitch</a>, or
@@ -48,6 +43,17 @@ prod other components to change state or perform actions.</p>
   <li>Poke a
     <a href="../wiring/clock.html"><img class="p16" src="/logisim-evolution/icons/clock.gif"> Clock</a>,
     repeatedly, to make it tick.</li>
+  <li><video class="nonicon" src="poke-wire.mp4" style="float: right; border: 1px solid gray; margin: 1em;" autoplay loop muted playsinline></video>
+    Poke a wire or bus segment to see the value it carries, and hilight the
+    entire connected set of wire segments. For a bus, poke again (or
+    hit <span class="key">Space</span>, <span class="key">Tab</span>
+    or <span class="key">Enter</span>, to cycle through display in hex, signed
+    decimal, and other encodings.
+<blockquote class="hint" style="overflow: hidden;">Hint: When poking a bus wire,
+  you can configure which encodings are shown first </b> &mdash; binary, signed
+  decimal, unsigned decimal, octal, hexadecimal &mdash; by going to
+  <a href="../../guide/prefs/layout.html">Layout preferences</a>.</blockquote>
+  </li>
   <li> Poke an
     <a href="../../guide/subcirc/"><img class="p16" src="/logisim-evolution/icons/subcirc.gif"> Embedded Subcircuit</a>
     (double-click the magnifying glass <img align="center" src="/logisim-evolution/icons/magnifier.png">
@@ -58,11 +64,6 @@ prod other components to change state or perform actions.</p>
     <a href="../decor/markdown.html"><img class="p16" src="/logisim-evolution/icons/markdownish.png"> styled text block comments</a>
     to open the URL in a browser.</li>
 </ul>
-
-<blockquote class="hint">Hint: When poking a bus wire, you can configure which
-  encodings are shown first </b> &mdash; binary, signed decimal, unsigned
-  decimal, octal, hexadecimal &mdash; by going to
-  <a href="../../guide/prefs/layout.html">Layout preferences</a>.</blockquote>
 
 <p>For some pokable components, like
 multi-bit <a href="../mem/register.html"><img class="p16" src="/logisim-evolution/icons/register.gif"> Registers</a>,
@@ -88,7 +89,7 @@ one-bit input pins.</p>
 
 <h2>Editing While Using Poke Tool</h2>
 
-<blockquote class="warning">Caution: Poke is for interaction, not editing. While the poke
+<blockquote class="warning">Note: Poke is for <b>interaction, not editing</b>. While the poke
 tool is active, you can't move components, draw wires, drag-to-select
 components, or do most other editing-related actions. Those require the
 <a href="edit.html"><img class="p16" src="/logisim-evolution/icons/edit.gif"> Edit Tool</a>.</blockquote>
