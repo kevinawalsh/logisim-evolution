@@ -17,25 +17,29 @@
 
 <p>The Wiring Tool is for creating and rearranging wires. It behaves similarly
 to the <a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif"> Edit Tool</a>,
-except it only adds new wires and modifies existing wires, and it does not
-handle selection or adding new components.</p>
+except it only adds and modifies wires. It does not do selection, and can't add new components.</p>
+
+<h3>Drawing Wires with Wiring Tool</h3>
 
 <ul>
 <li><p><img class="nonicon" src="multi-wire-anim.gif" style="float: right; border: 1px solid gray;">
 Clicking and dragging anywhere on the canvas will create a new wire or modify an
-existing wire segment. All wires in Logisim are either horizontal or vertical,
-never diagonal, but logisim will create an "L" shaped sequence of wire segments
-if you drag diagonally. You can control the orientation of the "L" with mouse
-movement: if the drag starts horizontally, the first segement will be
-horizontal, for example.</p>
+existing wire segment. Wires in Logisim are made of straight segments, are
+either horizontal or vertical, never diagonal. When drawing wires, Wiring Tool
+creates an "L" shaped sequence of wire segments if you drag diagonally. You can
+control the orientation of the "L" with mouse movement: if the drag starts
+horizontally, the first segement will be horizontal, for example.</p>
 
-<blockquote class="hint"> Tip: <b>Press <span class="key">Space</span> while
-dragging to bend a wire's path.</b>. You can do this repeatedly to make a
-complicated zig-zag path for the wire by pressing <span class="key">Space</span>
-at each place the wire should turn a corner. <b>Press <span class="key">Backspace</span>
-while dragging to straighten a wire's path</b>. Each <span class="key">Backspace</span>
-will remove a corner point, resulting in fewer turns and a more direct path.
-<b>Press <span class="key">Escape</span> to cancel wire drawing.</b>
+<blockquote class="hint"> Tip: Use the keyboard to make zig-zag wire paths.
+  <ul>
+    <li><b>Press <span class="key">Space</span> while dragging to bend a wire's
+      path.</b> You can do this repeatedly to make a complicated zig-zag path
+      for the wire by pressing <span class="key">Space</span> at each place the
+      wire should turn a corner.</li>
+    <li><b>Press <span class="key">Backspace</span> while dragging to straighten
+      a wire's path.</b> Each <span class="key">Backspace</span> will remove a
+      corner point, resulting in fewer turns and a more direct path.</li>
+    <li><b>Press <span class="key">Escape</span> to cancel wire drawing.</b></li>
 </blockquote>
 
 <li><p><img class="nonicon" src="multi-wire-extend-anim.gif" style="float: right; border: 1px solid gray;">
@@ -50,30 +54,13 @@ wire.</p></li>
 input or output.</p>
 </ul>
 
+<!--
 <p>Some components draw short stubs near the points to which wires can connect,
 such as the <a href="../gates/common.html">OR gate</a> and <a
 href="../gates/controlled.html">controlled buffer</a>. Logisim will silently
 correct attempts to create wires that slightly overshoot the stub's
-end.</p></li>
-
-<h2>Attributes</h2>
-
-<p>The wiring tool does not itself have attributes, but the wire segments that
-it creates do.</p>
-
-<dl>
-
-<dt>Direction</dt>
-<dd>Indicates whether the wire segment is horizontal or vertical.
-The value of this attribute cannot be changed.</dd>
-
-<dt>Length</dt>
-<dd>Indicates how many pixels long the wire is.
-The value of this attribute cannot be changed.</dd>
-
-</dl>
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+end.</p>
+-->
 
 </body>
 </html>
