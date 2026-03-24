@@ -28,7 +28,7 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.std.base;
+package com.cburch.logisim.std.mouse;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.util.Arrays;
@@ -44,10 +44,10 @@ import com.cburch.logisim.tools.TextTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.tools.WiringTool;
 
-public class Base extends Library {
+public class MouseTools extends Library {
   private final List<Tool> tools;
 
-  public Base() {
+  public MouseTools() {
     PokeTool poke = new PokeTool();
     WiringTool wiring = new WiringTool();
     SelectTool select = new SelectTool();
@@ -73,12 +73,12 @@ public class Base extends Library {
 
   @Override
   public String getDisplayName() {
-    return S.get("baseLibrary");
+    return S.get("mouseToolsLibrary");
   }
 
   @Override
   public String getName() {
-    return "Base";
+    return "Base"; // for legacy reasons, this lib is called "Base"
   }
 
   @Override

@@ -38,7 +38,7 @@ import java.util.List;
 import com.bfh.logisim.library.BFHPraktika;
 import com.cburch.logisim.std.arith.Arithmetic;
 import com.cburch.logisim.std.audio.Audio;
-import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.mouse.MouseTools;
 import com.cburch.logisim.std.decor.Decor;
 import com.cburch.logisim.std.ext.Ext;
 import com.cburch.logisim.std.gates.Gates;
@@ -54,14 +54,14 @@ public class Builtin extends Library {
   private List<Library> libraries = null;
 
   public Builtin() {
-    libraries = Arrays.asList(new Library[] { new Base(), new Gates(),
+    libraries = Arrays.asList(new Library[] { new MouseTools(), new Gates(),
       new Wiring(), new Analog(), new Plexers(), new Arithmetic(), new Memory(),
       new Io(), new Audio(), new BFHPraktika(), new Ext(), new Decor() });
   }
 
   public static boolean isBuiltinLibrary(Class<? extends Library> libClass) {
     return libClass == Builtin.class
-        || libClass == Base.class
+        || libClass == MouseTools.class
         || libClass == Gates.class
         || libClass == Wiring.class
         || libClass == Analog.class

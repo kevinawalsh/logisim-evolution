@@ -53,9 +53,9 @@ import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
-import com.cburch.logisim.std.base.Base;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.std.mouse.MouseTools;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
@@ -261,8 +261,8 @@ class ToolboxManip implements ProjectExplorer.Listener {
       proj.setTool(lastSelected);
     } else {
       for (Library sub : proj.getLogisimFile().getLibraries()) {
-        if (sub instanceof Base) {
-          Tool tool = ((Base)sub).getTool("Edit Tool");
+        if (sub instanceof MouseTools) {
+          Tool tool = ((MouseTools)sub).getTool("Edit Tool");
           if (tool != null) {
             proj.setTool(tool);
             break;

@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.file.LogisimFile;
-import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.mouse.MouseTools;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.CollectionUtil;
@@ -60,7 +60,7 @@ public class ProjectExplorerLibraryNode
       children.add(new ProjectExplorerToolNode(model, item, this));
     }
     for (Library item : lib.getLibraries()) {
-      if (item instanceof Base)
+      if (item instanceof MouseTools)
         continue;
       if (item instanceof Library && ancestorContainsLibrary((Library)item))
         continue; // hide libraries already shown in an ancestor
@@ -103,7 +103,7 @@ public class ProjectExplorerLibraryNode
     ArrayList<Object> v = new ArrayList<>();
     v.addAll(value.getTools());
     for (Library item : value.getLibraries()) {
-      if (item instanceof Base)
+      if (item instanceof MouseTools)
         continue;
       if (item instanceof Library && ancestorContainsLibrary((Library)item))
         continue; // hide libraries already shown in an ancestor
@@ -180,7 +180,7 @@ public class ProjectExplorerLibraryNode
         return i;
     }
     for (Library item : value.getLibraries()) {
-      if (item instanceof Base)
+      if (item instanceof MouseTools)
         continue;
       if (item instanceof Library && ancestorContainsLibrary((Library)item))
         continue; // hide libraries already shown in an ancestor

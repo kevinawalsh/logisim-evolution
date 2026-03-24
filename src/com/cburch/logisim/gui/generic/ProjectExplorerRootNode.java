@@ -31,22 +31,22 @@
 package com.cburch.logisim.gui.generic;
 
 import com.cburch.logisim.tools.Library;
-import com.cburch.logisim.std.base.Base;
+import com.cburch.logisim.std.mouse.MouseTools;
 
 public class ProjectExplorerRootNode extends ProjectExplorerModel.Node<String> {
 
-  private static Base getBaseLib(Library projLib) {
+  private static MouseTools getMouseTools(Library projLib) {
     for (Library lib : projLib.getLibraries())
-      if (lib instanceof Base)
-        return (Base)lib;
+      if (lib instanceof MouseTools)
+        return (MouseTools)lib;
     return null;
   }
 
   ProjectExplorerRootNode(ProjectExplorerModel model, Library lib) {
     super(model, "root", null); // object is irrelevant, but should not be null
-    Base base = getBaseLib(lib);
-    if (base != null) // should always be non-null
-      children.add(new ProjectExplorerLibraryNode(model, base, this));
+    MouseTools mouseTools = getMouseTools(lib);
+    if (mouseTools != null) // should always be non-null
+      children.add(new ProjectExplorerLibraryNode(model, mouseTools, this));
     children.add(new ProjectExplorerLibraryNode(model, lib, this));
   }
 

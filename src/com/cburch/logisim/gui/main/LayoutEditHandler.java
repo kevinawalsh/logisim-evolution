@@ -41,9 +41,9 @@ import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.ProjectCircuitActions;
 import com.cburch.logisim.gui.menu.ProjectLibraryActions;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.std.base.Base;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
+import com.cburch.logisim.std.mouse.MouseTools;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
@@ -316,9 +316,9 @@ public class LayoutEditHandler extends EditHandler
 
   private static void selectSelectTool(Project proj) {
     for (Library sub : proj.getLogisimFile().getLibraries()) {
-      if (sub instanceof Base) {
-        Base base = (Base) sub;
-        Tool tool = base.getTool("Edit Tool");
+      if (sub instanceof MouseTools) {
+        MouseTools lib = (MouseTools) sub;
+        Tool tool = lib.getTool("Edit Tool");
         if (tool != null)
           proj.setTool(tool);
       }
