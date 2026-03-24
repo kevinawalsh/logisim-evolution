@@ -813,7 +813,7 @@
     "id": 136,
     "title": "Cutter Tool",
     "url": "/logisim-evolution/en/libs/mouse/cutter.html",
-    "text": "Cutter Tool\nLibrary:\nMouse Tools\nIntroduced:\n4.0.3 HC\nBehavior\nThe cutter tool is for removing wire segments or entire wire paths.\nClicking on a wire segment will remove just that wire segment.\nHolding shift while clicking on a wire segment\nwill remove that wire segment along with all other segments connected to it,\nrecursively. This removes an entire path.\nClicking and dragging in an blank area of the canvas will select a\nrectangular region in red. Any portions of wires passing through this box will\nbe removed.\nAttributes\nNone."
+    "text": "Cutter Tool\nFound in Mouse Tools\nThe Cutter Tool is for breaking or removing wire segments or entire wire nets.\nRemove one segment: Click on a wire segment to remove just that one\nstraight wire segment.\nRemove entire wiring net: Hold shift and\nclick a wire segment to remove an entire wire net. The wire segment that was\nclicked, along with all other segments connected to it, recursively, are\nremoved.\nRemove sections: Click and drag in an blank area of the canvas to\nselect a rectangular region in red. Any portions of wires passing through the\nselected region are removed."
   },
   {
     "id": 137,
@@ -949,18 +949,24 @@
   },
   {
     "id": 159,
+    "title": "CutterTool",
+    "url": "/logisim-evolution/en/quickhelp/tools/CutterTool.html",
+    "text": "Cutter Tool\nSnip away wire segments and wire nets.\nSee also: Reference\nClick a wire\nremove one straight wire segment\nShift-Click a wire\nremove entire connected wire net\nClick-drag the background\nRemove parts of wires passing through region"
+  },
+  {
+    "id": 160,
     "title": "EditTool",
     "url": "/logisim-evolution/en/quickhelp/tools/EditTool.html",
     "text": "Edit Tool\nMove, select, and rearrange components and wires.\nSee also: Reference\nAdding Components\nType anything\ninsert that component\nDrawing Wires\nClick-drag a port\ndraw a wire from the port\nClick-drag a wire\nchange wires or draw new wires\nAlt or Option + click-drag a wire\nmove a wire segment\nAlt or Option + click-drag background\ndraw new wires\nSpace while drawing a wire\nadd a corner point\nBackspace/delete while drawing a wire\nremove a corner point\nSelecting and Moving Stuff\nClick something\nselect it\nClick-drag the background\nselect area\nShift + click something\nadd or remove it from selection\nShift + Click-drag the background\nadd area to selection\nClick-drag selected things\nmove them & tries to preserve connections\nShift + Click-drag selected things\nmove, don't preserve connections, and always snap to grid\nShortcuts\nBackspace/Delete\ndelete selected things\nUp/Down/Left/Right\nrotate selected things, if possible\nInsert\nduplicate selected things"
   },
   {
-    "id": 160,
+    "id": 161,
     "title": "PokeTool",
     "url": "/logisim-evolution/en/quickhelp/tools/PokeTool.html",
     "text": "Poke Tool\nInteract with circuit using mouse and keyboard.\nSee also: Reference\ntype any key\npoke all components with that label\nclick a wire\nreveal value; repeat or space for more\nclick a clock\nmake it tick\nclick a button\nchange its value\nclick 1-bit pin\ntoggle its value\nclick n-bit pin, then type\nchange its value\nclick 1-bit register\nchange its state\nclick n-bit register, then type\nchange its state\ndouble-click subcircuit spyglass\nview inner simulation"
   },
   {
-    "id": 161,
+    "id": 162,
     "title": "WiringTool",
     "url": "/logisim-evolution/en/quickhelp/tools/WiringTool.html",
     "text": "Wiring Tool\nAdd or rearrange wires.\nSee also: Reference\nClick-drag background\ndraw a wire\nClick-drag a wire\nchange wires or draw new wires\nSpace\nadd corner point while drawing\nDelete\nremove a corner point while drawing\nEscape\ncancel drawing"

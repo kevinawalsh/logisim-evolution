@@ -4,43 +4,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="/logisim-evolution/sidebar.js"></script>
-<title>Cutter Tool</title>
+<title>Wire Cutter</title>
 <link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
 </head>
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/cutter16.png">
-<em>Cutter Tool</em></h1>
+<h1><img class="big" src="/logisim-evolution/icons/cutter16.png">
+<em>Wire Cutter</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Mouse Tools</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>4.0.3 HC</td></tr>
-</table></p>
+<p>Found in <a href="index.html">Mouse Tools</a></p>
 
-<h2>Behavior</h2>
-
-<p>The cutter tool is for removing wire segments or entire wire paths.</p>
+<p>Wire Cutter is for breaking or removing wire segments or entire wire nets.</p>
 
 <ul>
 <li><p><img class="nonicon" src="cutter-anim.gif" style="float: right; border: 1px solid gray;">
-Clicking on a wire segment will remove just that wire segment.<p></li>
+<b>Remove one segment:</b> Click on a wire segment to remove just that one
+straight wire segment.<p></li>
 
-<li><p>Holding <span class="key">shift</span> while clicking on a wire segment
-will remove that wire segment along with all other segments connected to it,
-recursively. This removes an entire path.<p></li>
+<li><b>Remove entire wiring net:</b> <p>Hold <span class="key">shift</span> and
+click a wire segment to remove an entire wire net. The wire segment that was
+clicked, along with all other segments connected to it, recursively, are
+removed.<p></li>
 
-<li><p>Clicking and dragging in an blank area of the canvas will select a
-rectangular region in red. Any portions of wires passing through this box will
-be removed.</p></li>
+<li><b>Remove sections:</b> <p>Click and drag in an blank area of the canvas to
+select a rectangular region in red. Any portions of wires passing through the
+selected region are removed.</p></li>
 </ul>
-
-<h2>Attributes</h2>
-
-<p>None.</p>
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>
