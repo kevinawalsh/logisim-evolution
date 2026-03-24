@@ -35,11 +35,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
@@ -201,23 +202,49 @@ public class HelpTabContent extends JPanel {
   }
 
   private static String wrapHtml(String body) {
+    // We'd like <p> class "trg" to be small-caps, but Swing's html renderer can't do text-transform
+    // or font-variant. So we resort to this hack, replacing <p class="trg">...</p> with upper-case.
+    body = Pattern.compile("(?i)(<p\\s+class=\"trg\">)(.*?)(</p>)")
+      .matcher(body)
+      .replaceAll(m -> m.group(1) + m.group(2).toUpperCase() + m.group(3));
+
     Font font = UIManager.getFont("Label.font");
     Color fg = UIManager.getColor("Label.foreground");
+    Color fg2 = UIManager.getColor("Label.disabledForeground");
+    Color bg = UIManager.getColor("Label.background");
+    Color rule = bg != null && fg2 != null
+      ? new Color(
+          (fg2.getRed()   + bg.getRed())   / 2,
+          (fg2.getGreen() + bg.getGreen()) / 2,
+          (fg2.getBlue()  + bg.getBlue())  / 2)
+      : new Color(180, 180, 180);
+
     String fontFamily = font != null ? font.getFamily() : "sans-serif";
     int fontSize = font != null ? font.getSize() : 10;
+    int midPt = Math.max(fontSize - 1, 8);
+    int smallPt = Math.max(fontSize - 2, 7);
+
     String color = fg != null
-        ? String.format("#%02x%02x%02x", fg.getRed(), fg.getGreen(), fg.getBlue())
-        : "#000000";
+      ? String.format("#%02x%02x%02x", fg.getRed(), fg.getGreen(), fg.getBlue())
+      : "#131314";
+    String muted = fg2 != null
+      ? String.format("#%02x%02x%02x", fg2.getRed(), fg2.getGreen(), fg2.getBlue())
+      : "#888888";
+    String rulec = String.format("#%02x%02x%02x", rule.getRed(), rule.getGreen(), rule.getBlue());
+
     return "<html><head><style>"
-        + "body{font-family:" + fontFamily + ";font-size:" + fontSize + "pt;"
-        + "color:" + color + ";margin:6px}"
-        + "p{margin:2px 0}"
-        + "ul{margin:2px 0;padding-left:10px}"
-        + "li{margin:0;padding:0}"
-        + "a{color:#4A8EDB}"
-        + "</style></head><body>"
-        + body
-        + "</body></html>";
+      + "body{font-family:" + fontFamily + ";font-size:" + fontSize + "pt;color:" + color + ";margin:6px}"
+      + "h1{font-size:" + fontSize + "pt;font-weight:bold;margin:0 0 2px 0}"
+      + "h2{font-size:" + midPt + "pt;font-weight:normal;color:" + muted + ";margin:0 0 2px 0}"
+      + "h3{font-size:" + smallPt + "pt;font-weight:bold;border-top:1px solid " + rulec + ";margin:5px 0 0 0;padding-top:4px}"
+      + "a{color:#4A8EDB;text-decoration:none}"
+      + "p{margin:0 0 4px 0}"
+      + "p.ref{font-size:" + smallPt + "pt;margin: 0 0 4px 0}"
+      + "p.trg{font-size:" + smallPt + "pt;color:" + muted + ";margin:4px 0 0 0}"
+      + "p.act{font-size:" + midPt + "pt;color:" + color + ";margin:0}"
+      + "</style></head><body>"
+      + body
+      + "</body></html>";
   }
 
 }
