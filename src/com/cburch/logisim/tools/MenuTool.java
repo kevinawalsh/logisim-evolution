@@ -302,6 +302,7 @@ public final class MenuTool extends Tool {
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {
     Graphics2D g = c.getGraphics();
+    g.setColor(Color.BLACK);
     g.fillRect(x + 2, y + 1, 9, 2);
     g.drawRect(x + 2, y + 3, 15, 12);
     g.setColor(Color.lightGray);
