@@ -57,38 +57,25 @@ public class Io extends Library {
   static final Color DEFAULT_BACKGROUND = new Color(255, 255, 255, 0);
 
   private static FactoryDescription[] DESCRIPTIONS = {
+    // simple input
     new FactoryDescription("Button", S.getter("buttonComponent"),
         "button.gif", "Button"),
     new FactoryDescription("DipSwitch",
         S.getter("dipswitchComponent"), "dipswitch.gif",
         "DipSwitch"),
-    new FactoryDescription("Joystick",
-        S.getter("joystickComponent"), "joystick.gif",
-        "Joystick"),
-    new FactoryDescription("Keyboard",
-        S.getter("keyboardComponent"), "keyboard.gif",
-        "Keyboard"),
+    // simple output
     new FactoryDescription("LED", S.getter("ledComponent"),
         "led.gif", "Led"),
-    new FactoryDescription("PortIO", S.getter("pioComponent"),
-        "pio.gif", "PortIO"),
     new FactoryDescription("RGBLED", S.getter("RGBledComponent"),
         "rgbled.gif", "RGBLed"),
+    // fancier output
     new FactoryDescription("7-Segment Display",
         S.getter("sevenSegmentComponent"), "7seg.gif",
         "SevenSegment"),
     new FactoryDescription("Hex Digit Display",
         S.getter("hexDigitComponent"), "hexdig.gif",
         "HexDigit"),
-    new FactoryDescription("DotMatrix",
-        S.getter("dotMatrixComponent"), "dotmat.gif",
-        "DotMatrix"),
-    new FactoryDescription("TTY", S.getter("ttyComponent"),
-        "tty.gif", "Tty"),
-    new FactoryDescription("FileViewer", S.getter("fileViewerComponent"),
-        "fileviewer.gif", "FileViewer"),
-    new FactoryDescription("Slideshow", S.getter("slideShowComponent"),
-        "slideshow.gif", "Slideshow"),
+    // retro skeuomorphic
     new FactoryDescription("Meter", S.getter("meterComponent"),
         "meter.png", "Meter"),
     new FactoryDescription("Slider", S.getter("sliderComponent"),
@@ -97,6 +84,28 @@ public class Io extends Library {
         "dial.png", "Dial"),
     new FactoryDescription("Scope", S.getter("scopeComponent"),
         "scope.png", "Scope"),
+    new FactoryDescription("Joystick",
+        S.getter("joystickComponent"), "joystick.gif",
+        "Joystick"),
+    // terminal
+    new FactoryDescription("Keyboard",
+        S.getter("keyboardComponent"), "keyboard.gif",
+        "Keyboard"),
+    new FactoryDescription("TTY", S.getter("ttyComponent"),
+        "tty.gif", "Tty"),
+    // fpga
+    new FactoryDescription("PortIO", S.getter("pioComponent"),
+        "pio.gif", "PortIO"),
+    // debugging and visuals
+    new FactoryDescription("FileViewer", S.getter("fileViewerComponent"),
+        "fileviewer.gif", "FileViewer"),
+    new FactoryDescription("Slideshow", S.getter("slideShowComponent"),
+        "slideshow.gif", "Slideshow"),
+    // graphics
+    new FactoryDescription("DotMatrix",
+        S.getter("dotMatrixComponent"), "dotmat.gif",
+        "DotMatrix"),
+    /* Video will be last */
   };
 
   private List<Tool> tools = null;
