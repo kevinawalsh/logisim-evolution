@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# publish-docs.py — copy help/ to docs/, copy icons, and substitute placeholders in sidebar.js.
+# publish-docs.py — copy help/ to docs/  and substitute placeholders in sidebar.js.
 #
 # Usage: python3 scripts/publish-docs.py
 #
