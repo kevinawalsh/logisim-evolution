@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Wiring Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body>
+
+<h1><img src="/logisim-evolution/icons/wiring.gif">
+<em>Wiring Tool</em></h1>
+
+<p>Found in <a href="index.html">Mouse Tools</a></p>
+
+<p>The Wiring Tool is for creating and rearranging wires. It behaves similarly
+to the <a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif"> Edit Tool</a>,
+except it only adds and modifies wires. It does not do selection, and can't add new components.</p>
+
+<h3>Drawing Wires with Wiring Tool</h3>
+
+<ul>
+<li><p><img class="nonicon" src="multi-wire-anim.gif" style="float: right; border: 1px solid gray;">
+Clicking and dragging anywhere on the canvas will create a new wire or modify an
+existing wire segment. Wires in Logisim are made of straight segments, are
+either horizontal or vertical, never diagonal. When drawing wires, Wiring Tool
+creates an "L" shaped sequence of wire segments if you drag diagonally. You can
+control the orientation of the "L" with mouse movement: if the drag starts
+horizontally, the first segement will be horizontal, for example.</p>
+
+<blockquote class="hint"> Tip: Use the keyboard to make zig-zag wire paths.
+  <ul>
+    <li><b>Press <span class="key">Space</span> while dragging to bend a wire's
+      path.</b> You can do this repeatedly to make a complicated zig-zag path
+      for the wire by pressing <span class="key">Space</span> at each place the
+      wire should turn a corner.</li>
+    <li><b>Press <span class="key">Backspace</span> while dragging to straighten
+      a wire's path.</b> Each <span class="key">Backspace</span> will remove a
+      corner point, resulting in fewer turns and a more direct path.</li>
+    <li><b>Press <span class="key">Escape</span> to cancel wire drawing.</b></li>
+</blockquote>
+
+<li><p><img class="nonicon" src="multi-wire-extend-anim.gif" style="float: right; border: 1px solid gray;">
+Click and drag the end of a wire to shorten or extend it, or click and drag
+the middle of a wire segment and drag along the wire to open a gap and reroute a
+wire.</p></li>
+
+<li><p>Click and drag on a blank area of the canvas to start a completely new
+wire.</p></li>
+
+<li><p>Hover over the wiring point of a component to see a description of that
+input or output.</p>
+</ul>
+
+<!--
+<p>Some components draw short stubs near the points to which wires can connect,
+such as the <a href="../gates/common.html">OR gate</a> and <a
+href="../gates/controlled.html">controlled buffer</a>. Logisim will silently
+correct attempts to create wires that slightly overshoot the stub's
+end.</p>
+-->
+
+</body>
+</html>

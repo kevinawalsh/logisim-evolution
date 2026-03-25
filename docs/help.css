@@ -1,6 +1,11 @@
 body {
   padding: 20px 15px;
   font-family: Arial, Helvetica, sans-serif;
+  background-color: #fff;
+}
+
+#main {
+  max-width: 900px;
 }
 
 a {
@@ -70,6 +75,12 @@ blockquote.plain {
   background: none;
 }
 
+h1 img {
+  vertical-align: middle;
+  width: 32px;
+  height: 32px;
+}
+
 img.icon {
     width: 16;
     height: 16;
@@ -107,4 +118,40 @@ dt {
 
 dd {
 
+}
+
+table.liblisting {
+    border-collapse: collapse;
+    margin: 8px 0;
+}
+table.liblisting th {
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: left;
+    padding: 16px 0 4px;
+}
+table.liblisting td {
+    padding: 2px 4px;
+    vertical-align: middle;
+}
+table.liblisting td:first-child {
+    text-align: right;
+    padding-right: 6px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+table.liblisting img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+video {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+img.p16 {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
 }

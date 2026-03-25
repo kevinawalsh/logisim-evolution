@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Menu Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body>
+
+<h1><img class="big" src="/logisim-evolution/icons/menu.gif">
+<em>Menu Tool</em></h1>
+
+<p>Found in <a href="index.html">Mouse Tools</a></p>
+
+<p>Menu Tool gets activated when right-clicking within the circuit, or
+left-clicking with <span class="key">Control</span> held. This brings up a
+context-sensitive pop-up menu with actions relevent to whatever was clicked.</p>
+
+<blockquote class="warning">By default, the Move Tool is not visible in the
+toolbar, because it usually gets invoked by right-click or control-click. You
+can add it to project's toolbar by right-clicking the toolbar, or change the
+mouse-click behavior by going to
+<a href="../../guide/opts/index.html">Project &gt; Options</a> then
+<a href="../../guide/opts/toolbar.html">Mouse Options</a>.</blockquote>
+
+<p>The contents of the pop-up menu depends on what was clicked.
+
+<ul>
+
+<li><p>Most components show cut, copy, paste, delete, rotate, and similar
+actions.</p></li>
+
+<li><p>Subcircuit components have "View Inner Simulation..." and "View Circuit
+Design..." options. Both of these show the inner circuit represented by the
+component, they differ only in how the inner circuit's simulation is configured.
+<ul>
+<li><p>For "View Inner Simulation...", the inner circuit's simulation works like
+a window into the outer circuit's current state. You can probe wires, or even
+edit the circuit. But you can't change the value of the inner circuit's input
+pins, because those are tied to, and determined by, the outer circuit.</p></li>
+<li><p>For "View Circuit Design...", the inner circuit's simulation is a new,
+independent simulation. You can probe wires, or change the value of input pins,
+without having any affect on other simulations.</p></li>
+</ul>
+</li>
+
+</body>
+</html>

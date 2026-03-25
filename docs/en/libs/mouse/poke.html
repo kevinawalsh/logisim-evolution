@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Poke Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body>
+
+<h1><img src="/logisim-evolution/icons/poke.gif"> <em>Poke Tool</em></h1>
+
+<p>Found in <a href="index.html">Mouse Tools</a></p>
+
+<p>The Poke Tool is for interacting with a circuit: use the mouse and keyboard
+to probe values, change inputs, edit values stored in registers and memory, and
+prod other components to change state or perform actions.</p>
+
+<video src="/logisim-evolution/img-libs/interaction.mp4" autoplay loop muted playsinline></video>
+
+<p><a class="logisim-link" onclick="live(event, this)"
+  href="/logisim-evolution/live?file=interaction.circ"
+  data-examples-path="logisim features &rarr; input and poke tool">Live Circuit:
+  Interaction using input and poke tool</a></p>
+
+<p>Many components respond to being poked:
+<ul>
+  <li>Poke a
+    <a href="../io/button.html"><img class="p16" src="/logisim-evolution/icons/button.gif"> Button</a>,
+    <a href="../io/dipswitch.html"><img class="p16" src="/logisim-evolution/icons/dipswitch.gif"> DipSwitch</a>, or
+    <a href="../io/joystick.html"><img class="p16" src="/logisim-evolution/icons/joystick.gif"> Joystick</a>
+    to change it's value.</li>
+  <li>Poke a binary
+    <a href="../wiring/pin.html"><img class="p16" src="/logisim-evolution/icons/pinInput.gif"> Input Pin</a>
+    to toggle its value, or poke a decimal or hex input pin then type enter new
+    values.</li>
+  <li> Poke a 
+    <a href="../mem/register.html"><img class="p16" src="/logisim-evolution/icons/register.gif"> Register</a>,
+    <a href="../mem/counter.html"><img class="p16" src="/logisim-evolution/icons/counter.gif"> Counter</a>,
+    or other <a href="../mem/">memory component</a> then type to modify the values stored within.</li>
+  <li>Poke a
+    <a href="../wiring/clock.html"><img class="p16" src="/logisim-evolution/icons/clock.gif"> Clock</a>,
+    repeatedly, to make it tick.</li>
+  <li><video class="nonicon" src="poke-wire.mp4" style="float: right; border: 1px solid gray; margin: 1em;" autoplay loop muted playsinline></video>
+    Poke a wire or bus segment to see the value it carries, and hilight the
+    entire connected set of wire segments. For a bus, poke again (or
+    hit <span class="key">Space</span>, <span class="key">Tab</span>
+    or <span class="key">Enter</span>, to cycle through display in hex, signed
+    decimal, and other encodings.
+<blockquote class="hint" style="overflow: hidden;">Hint: When poking a bus wire,
+  you can configure which encodings are shown first </b> &mdash; binary, signed
+  decimal, unsigned decimal, octal, hexadecimal &mdash; by going to
+  <a href="../../guide/prefs/layout.html">Layout preferences</a>.</blockquote>
+  </li>
+  <li> Poke an
+    <a href="../../guide/subcirc/"><img class="p16" src="/logisim-evolution/icons/subcirc.gif"> Embedded Subcircuit</a>
+    (double-click the magnifying glass <img align="center" src="/logisim-evolution/img-libs/magnifier.png">
+    that appears) to open and inspect its internal circuit.</li>
+  <li>Poke a
+    <a href="../decor/hyperlink.html"><img class="p16" src="/logisim-evolution/icons/hyperlink.png">  Hyperlink</a>
+    component, or links in
+    <a href="../decor/markdown.html"><img class="p16" src="/logisim-evolution/icons/markdownish.png"> styled text block comments</a>
+    to open the URL in a browser.</li>
+</ul>
+
+<p>For some pokable components, like
+multi-bit <a href="../mem/register.html"><img class="p16" src="/logisim-evolution/icons/register.gif"> Registers</a>,
+hex or multi-bit <a href="../wiring/pin.html"><img class="p16" src="/logisim-evolution/icons/pinInput.gif"> Input Pins</a>, 
+the mouse and keyboard must be used in combination: poke the component to select
+it, then type to enter hex or other data.
+
+<h2>Easy Keyboard Hotkeys</h2>
+
+<p>Poking things with the mouse can be tiresome, especially for circuits with
+several inputs or buttons. You can enable easy keyboard interaction in your
+circuits: just label any component with a one-letter name. Then, when using the
+poke tool, typing the letter will poke that named component, just as if you had
+clicked it. This only works if you haven't already selected some component that
+expects keyboard input. Case does not matter here, 'a' and 'A' are treated the
+same.</p>
+
+<img src="/logisim-evolution/img-libs/poke-hotkeys.png" style="display: block; margin: 0 auto; max-width: 100%;">
+
+<p>You can even name several components with the same hotkey, typing it will
+poke them all. This kind of keyboard interaction is most useful with buttons and
+one-bit input pins.</p>
+
+<h2>Editing While Using Poke Tool</h2>
+
+<blockquote class="warning">Note: Poke is for <b>interaction, not editing</b>. While the poke
+tool is active, you can't move components, draw wires, drag-to-select
+components, or do most other editing-related actions. Those require the
+<a href="edit.html"><img class="p16" src="/logisim-evolution/icons/edit.gif"> Edit Tool</a>.</blockquote>
+
+<p>There are some exceptions. When you poke a component, its properties are
+shown in the lower left panel, and you can still edit properties there while
+still keeping the poke tool active. If you paste some previously-copied
+components while the poke tool is active, Logisim automatically switches to the
+<a href="edit.html"><img class="p16" src="/logisim-evolution/icons/edit.gif"> Edit Tool</a>
+so you can place the pasted components.
+
+</body>
+</html>

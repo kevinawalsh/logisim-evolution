@@ -46,21 +46,33 @@ ul.sidecontent > li > ul > li.lib > ul > li {
 
 .sidebar {
     height: 100%;
-    /* width: 0; */
     width: 200px;
     position: fixed;
     z-index: 2;
     top: 0;
     left: 0;
     background-color: white;
-    /* overflow-x: hidden; */
-    overflow-y: auto;
-    overflow-x: scroll;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     transition: 0.5s;
-    padding-top: 30px;
-    padding-left: 15px;
     color: black;
     font-size: 14px;
+}
+
+.sidebar-header {
+    flex-shrink: 0;
+    background-color: white;
+    border-bottom: 1px solid #ddd;
+}
+
+.sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: scroll;
+    padding-top: 10px;
+    padding-left: 15px;
+    padding-bottom: 10px;
 }
 
 .sidebar li img {
@@ -98,11 +110,11 @@ ul.sidecontent > li > ul > li.lib > ul > li {
 }
 
 .sidebar .btn {
-    position: absolute;
-    top: 0;
-    right: 5px;
     font-size: 36px;
-    margin-left: 50px;
+    display: block;
+    text-align: right;
+    padding-right: 5px;
+    line-height: 1;
 }
 
 .menu {
@@ -255,6 +267,6 @@ body {
 
 /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
 @media screen and (max-height: 450px) {
-    .sidebar {padding-top: 15px;}
+    .sidebar-body {padding-top: 8px;}
     .sidebar a {font-size: 18px;}
 }

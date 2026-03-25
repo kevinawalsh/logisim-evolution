@@ -11,9 +11,9 @@
 </style>
 </head>
 
-<body bgcolor="FFFFFF">
+<body>
 
-<h1><em>Tool and Library Reference</em></h1>
+<h1>Tool and Library Reference</h1>
 
 <div class="callouts">
 <img src="diagram.png"/>
@@ -36,226 +36,233 @@ selecting with single-click, then clicking to place it.</li></ul>
 <li class="callouts--left">
 <b>Standard and Custom Libraries</b> of components to build your circuits. Click
 to select, then click to place in your circuit.
-<p class="tip">Tip: Go to Project &gt; Load Library to add more libraries.</li></ul>
+<p class="tip">Tip: Go to <b>Project &gt; Load Library</b> to add more libraries.</li></ul>
 
 </div>
 
-<!--
-<p>Logisim libraries hold components you can click and place into your circuits.
-Libraries are shown in the left navigation panel. Logisim comes with several
-built-in libraries, but you can load additional external libraries from a Java
-JAR file or even load a Logisim ".circ" file as a library to use its circuits in
-your own. </p>
+<h2>Mouse Tools</h2>
 
-<blockquote class="hint">Hint: <b>Set the default properties of a component</b> by
-    changing them while it is still in the library, before placing it in your
-    circuit, Logisim remembers those properties for next time you place another
-    of that component.
-</blockquote>
+<p>By default the toolbar includes most of these mouse tools. These tools are
+visible only in the toolbar, when
+<a href="../guide/opts/toolbar.html">customizing the toolbar</a>, or in
+<a href="../guide/opts/mouse.html">mouse options</a> when creating custom
+shortcuts.</p>
 
-<p>The toolbar holds commonly used components, along with tools for editing and
-interacting with circuits. You can customize the toolbar by right-clicking it.
+<table class="liblisting">
 
-<blockquote class="hint">Hint: <b>Drag tools into the toolbar</b> from any library for quick
-    access. You can even drag multiple copies of a component to the toolbar and
-    give each different default properties.
-</blockquote>
--->
-
-<p>Tools and components available for the toolbar and in Logisim's built-in
-libraries are documented below. </p>
-<!-- include link to adding libraries, and to customizing toolbar -->
-
-<table>
-
-<tr><td colspan="2"><font size="+1"><b>Mouse Tools for Toolbar</b></font> &mdash; for
-editing and interacting with circuits</td></tr>
-<tr><td align="right"><a href="base/poke.html"><img class="icon" src="/logisim-evolution/icons/poke.gif"></a></td>
+<tr><td><a href="base/poke.html"><img src="/logisim-evolution/icons/poke.gif"></a></td>
 	<td><a href="base/poke.html">Poke Tool</a> &mdash; interact with running simulation</td></tr>
-<tr><td align="right"><a href="base/edit.html"><img class="icon" src="/logisim-evolution/icons/edit.gif"></a></td>
-    <td><a href="base/edit.html">Multi-Tool</a> &mdash; select and move components, or draw and edit wires</td></tr>
-<tr><td align="right"><a href="base/wiring.html"><img class="icon" src="/logisim-evolution/icons/wiring.gif"></a></td>
+<tr><td><a href="base/edit.html"><img src="/logisim-evolution/icons/edit.gif"></a></td>
+    <td><a href="base/edit.html">Edit Tool</a> &mdash; select and move components, or draw and edit wires</td></tr>
+<tr><td><a href="base/wiring.html"><img src="/logisim-evolution/icons/wiring.gif"></a></td>
 	<td><a href="base/wiring.html">Wiring Tool</a> &mdash; draw and edit wires only</td></tr>
-<tr><td align="right"><a href="base/cutter.html"><img class="icon" src="/logisim-evolution/icons/cutter16.png"></a></td>
+<tr><td><a href="base/cutter.html"><img src="/logisim-evolution/icons/cutter16.png"></a></td>
 	<td><a href="base/cutter.html">Wire Cutter</a> &mdash; delete wires or cut portions of wires </td></tr>
-<tr><td align="right"><a href="base/text.html"><img class="icon" src="/logisim-evolution/icons/text.gif"></a></td>
+<tr><td><a href="base/text.html"><img src="/logisim-evolution/icons/text.gif"></a></td>
 	<td><a href="base/text.html">Text Tool</a> &mdash; add text boxes, or edit labels on components</td></tr>
-
-<tr><td colspan=2 style="padding-left: 20px;"><i>The Move and Popup
-            tools are less useful so aren't included in the toolbar by default. You can customize the toolbar to add them.</i></td></tr>
-<tr><td align="right"><a href="base/select.html"><img class="icon" src="/logisim-evolution/icons/move.gif"></a></td>
-    <td><a href="base/select.html">Move Tool</a>&mdash; select and move components only</td> </tr>
-<tr><td align="right"><a href="base/menu.html"><img class="icon" src="/logisim-evolution/icons/menu.gif"></a></td>
+<tr><td><a href="base/move.html"><img src="/logisim-evolution/icons/move.gif"></a></td>
+    <td><a href="base/move.html">Move Tool</a>&mdash; move and select components only</td> </tr>
+<tr><td><a href="base/menu.html"><img src="/logisim-evolution/icons/menu.gif"></a></td>
 	<td><a href="base/menu.html">Popup Menu Tool</a> &mdash; bring up the right-click context menu, as an alternative to right-clicking</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Wiring library</b></font> &mdash; Basic elements needed for most circuits</td></tr>
-<tr><td align="right"><a href="wiring/splitter.html"><img class="icon" src="/logisim-evolution/icons/splitter.gif"></a></td>
-	<td><a href="wiring/splitter.html">Splitter</a> &mdash; join or split wires into buses</td></tr>
-<tr><td align="right"><a href="wiring/pin.html">
-	<img class="icon" src="/logisim-evolution/icons/pinInput.gif">
-	<img class="icon" src="/logisim-evolution/icons/pinOutput.gif"></a></td>
-	<td><a href="wiring/pin.html">Pin</a> &mdash; input to and output from a circuit</td></tr>
-<tr><td align="right"><a href="wiring/probe.html"><img class="icon" src="/logisim-evolution/icons/probe.gif"></a></td>
+</table>
+
+<h2>Component Libraries</h2>
+
+<p>Logisim comes with the following built-in components, visible in the left
+sidebar of each project. These can also appear in the toolbar. You can add
+additional libraries to your project using <b>Project &gt; Load Library</b>,
+including third-party libraries found online, and you can even write your own
+<a href="../guide/jar/library.html">custom jar or circ libraries</a>.</p>
+
+<table class="liblisting">
+
+<tr><th colspan="2">Wiring library &mdash; Basic elements needed for most circuits</th></tr>
+<tr><td><a href="wiring/splitter.html"><img src="/logisim-evolution/icons/splitter.gif"></a></td>
+    <td><a href="wiring/splitter.html">Split/Join Signals</a> &mdash; join signals into buses, or split busses into separate signals</td></tr>
+<tr><td><a href="wiring/pin.html"><img src="/logisim-evolution/icons/pinInput.gif"> <img src="/logisim-evolution/icons/pinOutput.gif"></a></td>
+    <td><a href="wiring/pin.html">Pin</a> &mdash; input to and output from a circuit</td></tr>
+<tr><td><a href="wiring/probe.html"><img src="/logisim-evolution/icons/probe.gif"></a></td>
 	<td><a href="wiring/probe.html">Probe</a> &mdash; display values on wires</td></tr>
-<tr><td align="right"><a href="wiring/tunnel.html"><img class="icon" src="/logisim-evolution/icons/tunnel.gif"></a></td>
+<tr><td><a href="wiring/tunnel.html"><img src="/logisim-evolution/icons/tunnel.gif"></a></td>
 	<td><a href="wiring/tunnel.html">Tunnel</a> &mdash; make connections without drawing wires</td></tr>
-<tr><td align="right"><a href="wiring/clock.html"><img class="icon" src="/logisim-evolution/icons/clock.gif"></a></td>
+<tr><td><a href="wiring/clock.html"><img src="/logisim-evolution/icons/clock.gif"></a></td>
 	<td><a href="wiring/clock.html">Clock</a> &mdash; oscillates between zero and one</td></tr>
-<tr><td align="right"><a href="wiring/constant.html">
-	<img class="icon" src="/logisim-evolution/icons/constant0.gif">
-	<img class="icon" src="/logisim-evolution/icons/constant.gif"></a></td>
+<tr><td><a href="wiring/constant.html"><img src="/logisim-evolution/icons/constant0.gif"> <img src="/logisim-evolution/icons/constant.gif"></a></td>
 	<td><a href="wiring/constant.html">Constant</a> &mdash; like an input, but with a fixed value</td></tr>
-<tr><td align="right"><a href="wiring/extender.html"><img class="icon" src="/logisim-evolution/icons/extender.gif"></a></td>
+<tr><td><a href="wiring/extender.html"><img src="/logisim-evolution/icons/extender.gif"></a></td>
 	<td><a href="wiring/extender.html">Bit Extender</a> &mdash; zero-extend or sign-extend binary numbers</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Gates library</b></font> &mdash; Primitive combinational components</td></tr>
-<tr><td align="right"><a href="gates/not.html"><img class="icon" src="/logisim-evolution/icons/notGate.gif"></a></td>
+<tr><th colspan="2">Gates Library &mdash; Primitive combinational components</td></tr>
+<tr><td><a href="gates/not.html"><img src="/logisim-evolution/icons/notGate.gif"></a></td>
 	<td><a href="gates/not.html">NOT Gate</a> &mdash; inverts a signal</td></tr>
-<tr><td align="right"><a href="gates/buffer.html"><img class="icon" src="/logisim-evolution/icons/bufferGate.gif"></a></td>
+<tr><td><a href="gates/buffer.html"><img src="/logisim-evolution/icons/bufferGate.gif"></a></td>
 	<td><a href="gates/buffer.html">Buffer</a> &mdash; does nothing, no-op</td></tr>
-<tr><td align="right"><a href="gates/common.html"><img class="icon" src="/logisim-evolution/icons/andGate.gif">
-	<img class="icon" src="/logisim-evolution/icons/orGate.gif">
-	<img class="icon" src="/logisim-evolution/icons/nandGate.gif">
-	<img class="icon" src="/logisim-evolution/icons/norGate.gif">
-	<img class="icon" src="/logisim-evolution/icons/xorGate.gif">
-	<img class="icon" src="/logisim-evolution/icons/xnorGate.gif"></a></td>
+<tr><td><a href="gates/common.html"><img src="/logisim-evolution/icons/andGate.gif"> <img src="/logisim-evolution/icons/orGate.gif">
+	<img src="/logisim-evolution/icons/nandGate.gif"> <img src="/logisim-evolution/icons/norGate.gif">
+	<img src="/logisim-evolution/icons/xorGate.gif"> <img src="/logisim-evolution/icons/xnorGate.gif"></a></td>
 	<td><a href="gates/common.html">AND, OR, NAND, NOR, XOR, XNOR Gates</a> &mdash; common logic operations</td></tr>
-<tr><td align="right"><a href="gates/parity.html">
-	<img class="icon" src="/logisim-evolution/icons/parityOddGate.gif">
-	<img class="icon" src="/logisim-evolution/icons/parityEvenGate.gif"></a></td>
+<tr><td><a href="gates/parity.html"><img src="/logisim-evolution/icons/parityOddGate.gif"> <img src="/logisim-evolution/icons/parityEvenGate.gif"></a></td>
 	<td><a href="gates/parity.html">Odd Parity, Even Parity</a> &mdash; parity operations</td></tr>
-<tr><td align="right"><a href="gates/controlled.html">
-	<img class="icon" src="/logisim-evolution/icons/controlledBuffer.gif">
-	<img class="icon" src="/logisim-evolution/icons/controlledInverter.gif"></a></td>
+<tr><td><a href="gates/controlled.html"><img src="/logisim-evolution/icons/controlledBuffer.gif"> <img src="/logisim-evolution/icons/controlledInverter.gif"></a></td>
 	<td><a href="gates/controlled.html">Tri-state Buffer, Tri-state Inverter</a> &mdash; gates with three possible outputs</td></tr>
-<tr><td align="right"><a href="gates/pla.html">
-	<img class="icon" src="/logisim-evolution/icons/pla.gif"></a></td>
+<tr><td><a href="gates/pla.html"><img src="/logisim-evolution/icons/pla.gif"></a></td>
 	<td><a href="gates/pla.html">PLA</a> &mdash; Programmable Logic Array</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Plexers library</b></font> &mdash; controlling and selecting groups of signals</td></tr>
-<tr><td align="right"><a href="plexers/mux.html"><img class="icon" src="/logisim-evolution/icons/multiplexer.gif"></a></td>
+<tr><th colspan="2">Plexers Library &mdash; controlling and selecting groups of signals</td></tr>
+<tr><td><a href="plexers/mux.html"><img src="/logisim-evolution/icons/multiplexer.gif"></a></td>
 	<td><a href="plexers/mux.html">Multiplexer</a> &mdash; select one value from of a group of wires</td></tr>
-<tr><td align="right"><a href="plexers/demux.html"><img class="icon" src="/logisim-evolution/icons/demultiplexer.gif"></a></td>
+<tr><td><a href="plexers/demux.html"><img src="/logisim-evolution/icons/demultiplexer.gif"></a></td>
 	<td><a href="plexers/demux.html">Demultiplexer</a> &mdash; send a value to one of a group of wires</td></tr>
-<tr><td align="right"><a href="plexers/decoder.html"><img class="icon" src="/logisim-evolution/icons/decoder.gif"></a></td>
+<tr><td><a href="plexers/decoder.html"><img src="/logisim-evolution/icons/decoder.gif"></a></td>
 	<td><a href="plexers/decoder.html">Decoder</a> &mdash; enable one out of a group of wires</td></tr>
-<tr><td align="right"><a href="plexers/priencoder.html"><img class="icon" src="/logisim-evolution/icons/priencod.gif"></a></td>
+<tr><td><a href="plexers/priencoder.html"><img src="/logisim-evolution/icons/priencod.gif"></a></td>
 	<td><a href="plexers/priencoder.html">Priority Encoder</a> &mdash; check which wire among a group is enabled</td></tr>
-<tr><td align="right"><a href="plexers/selector.html"><img class="icon" src="/logisim-evolution/icons/bitSelector.gif"></a></td>
+<tr><td><a href="plexers/selector.html"><img src="/logisim-evolution/icons/bitSelector.gif"></a></td>
 	<td><a href="plexers/selector.html">Bit Selector</a> &mdash; select one bit from a bus</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Arithmetic library</b></font> &mdash; computing with binary numbers</td></tr>
-<tr><td align="right"><a href="arith/adder.html"><img class="icon" src="/logisim-evolution/icons/adder.gif"></a></td>
+<tr><th colspan="2">Arithmetic Library &mdash; computing with binary numbers</td></tr>
+<tr><td><a href="arith/adder.html"><img src="/logisim-evolution/icons/adder.gif"></a></td>
 	<td><a href="arith/adder.html">Adder</a> &mdash; add binary numbers</td></tr>
-<tr><td align="right"><a href="arith/subtractor.html"><img class="icon" src="/logisim-evolution/icons/subtractor.gif"></a></td>
+<tr><td><a href="arith/subtractor.html"><img src="/logisim-evolution/icons/subtractor.gif"></a></td>
 	<td><a href="arith/subtractor.html">Subtractor</a> &mdash; subtract binary numbers</td></tr>
-<tr><td align="right"><a href="arith/multiplier.html"><img class="icon" src="/logisim-evolution/icons/multiplier.gif"></a></td>
+<tr><td><a href="arith/multiplier.html"><img src="/logisim-evolution/icons/multiplier.gif"></a></td>
 	<td><a href="arith/multiplier.html">Multiplier</a> &mdash; multiply binary numbers</td></tr>
-<tr><td align="right"><a href="arith/divider.html"><img class="icon" src="/logisim-evolution/icons/divider.gif"></a></td>
+<tr><td><a href="arith/divider.html"><img src="/logisim-evolution/icons/divider.gif"></a></td>
 	<td><a href="arith/divider.html">Divider</a> &mdash; divide binary numbers</td></tr>
-<tr><td align="right"><a href="arith/negator.html"><img class="icon" src="/logisim-evolution/icons/negator.gif"></a></td>
+<tr><td><a href="arith/negator.html"><img src="/logisim-evolution/icons/negator.gif"></a></td>
 	<td><a href="arith/negator.html">Negator</a> &mdash; negate two's complement binary numbers</td></tr>
-<tr><td align="right"><a href="arith/comparator.html"><img class="icon" src="/logisim-evolution/icons/comparator.gif"></a></td>
+<tr><td><a href="arith/comparator.html"><img src="/logisim-evolution/icons/comparator.gif"></a></td>
 	<td><a href="arith/comparator.html">Comparator</a> &mdash; compare binary numbers</td></tr>
-<tr><td align="right"><a href="arith/shifter.html"><img class="icon" src="/logisim-evolution/icons/shifter.gif"></a></td>
+<tr><td><a href="arith/shifter.html"><img src="/logisim-evolution/icons/shifter.gif"></a></td>
 	<td><a href="arith/shifter.html">Shifter</a> &mdash; shift binary patterns left or right</td></tr>
-<tr><td align="right"><a href="arith/bitadder.html"><img class="icon" src="/logisim-evolution/icons/bitadder.gif"></a></td>
+<tr><td><a href="arith/bitadder.html"><img src="/logisim-evolution/icons/bitadder.gif"></a></td>
 	<td><a href="arith/bitadder.html">Bit Adder</a> &mdash; count the enabled bits in a bus value</td></tr>
-<tr><td align="right"><a href="arith/bitfinder.html"><img class="icon" src="/logisim-evolution/icons/bitfindr.gif"></a></td>
+<tr><td><a href="arith/bitfinder.html"><img src="/logisim-evolution/icons/bitfindr.gif"></a></td>
 	<td><a href="arith/bitfinder.html">Bit Finder</a> &mdash; search for a bit in a bus value</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Memory library</b></font> &mdash; storing data</td></tr>
-<tr><td align="right"><a href="mem/flipflops.html">
-	<img class="icon" src="/logisim-evolution/icons/dFlipFlop.gif">
-	<img class="icon" src="/logisim-evolution/icons/tFlipFlop.gif">
-	<img class="icon" src="/logisim-evolution/icons/jkFlipFlop.gif">
-	<img class="icon" src="/logisim-evolution/icons/srFlipFlop.gif"></a></td>
+<tr><th colspan="2">Memory Library &mdash; storing data</td></tr>
+<tr><td><a href="mem/flipflops.html"><img src="/logisim-evolution/icons/dFlipFlop.gif"> <img src="/logisim-evolution/icons/tFlipFlop.gif">
+	<img src="/logisim-evolution/icons/jkFlipFlop.gif"> <img src="/logisim-evolution/icons/srFlipFlop.gif"></a></td>
 	<td><a href="mem/flipflops.html">D, T, J-K, S-R Flip-Flops</a> &mdash; store a single-bit</td></tr>
-<tr><td align="right"><a href="mem/register.html"><img class="icon" src="/logisim-evolution/icons/register.gif"></a></td>
+<tr><td><a href="mem/register.html"><img src="/logisim-evolution/icons/register.gif"></a></td>
 	<td><a href="mem/register.html">Register</a> &mdash; store multiple bits</td></tr>
-<tr><td align="right"><a href="mem/counter.html"><img class="icon" src="/logisim-evolution/icons/counter.gif"></a></td>
+<tr><td><a href="mem/counter.html"><img src="/logisim-evolution/icons/counter.gif"></a></td>
 	<td><a href="mem/counter.html">Counter</a> &mdash; store, increment, and decrement a number </td></tr>
-<tr><td align="right"><a href="mem/shiftreg.html"><img class="icon" src="/logisim-evolution/icons/shiftreg.gif"></a></td>
+<tr><td><a href="mem/shiftreg.html"><img src="/logisim-evolution/icons/shiftreg.gif"></a></td>
 	<td><a href="mem/shiftreg.html">Shift Register</a> &mdash; store and shift a bit pattern</td></tr>
-<tr><td align="right"><a href="mem/random.html"><img class="icon" src="/logisim-evolution/icons/random.gif"></a></td>
+<tr><td><a href="mem/random.html"><img src="/logisim-evolution/icons/random.gif"></a></td>
 	<td><a href="mem/random.html">Random Generator</a> &mdash; generate random numbers</td></tr>
-<tr><td align="right"><a href="mem/ram.html"><img class="icon" src="/logisim-evolution/icons/ram.gif"></a></td>
+<tr><td><a href="mem/ram.html"><img src="/logisim-evolution/icons/ram.gif"></a></td>
 	<td><a href="mem/ram.html">RAM</a> &mdash; random-access memory</td></tr>
-<tr><td align="right"><a href="mem/rom.html"><img class="icon" src="/logisim-evolution/icons/rom.gif"></a></td>
+<tr><td><a href="mem/rom.html"><img src="/logisim-evolution/icons/rom.gif"></a></td>
 	<td><a href="mem/rom.html">ROM</a> &mdash; read-only memory</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Input/Output library</b></font> &mdash; user interaction</td></tr>
-<tr><td align="right"><a href="io/button.html"><img class="icon" src="/logisim-evolution/icons/button.gif"></a></td>
+<tr><th colspan="2">Input/Output Library &mdash; user interaction</td></tr>
+<tr><td><a href="io/button.html"><img src="/logisim-evolution/icons/button.gif"></a></td>
 	<td><a href="io/button.html">Button</a> &mdash; a push-button for user input</td></tr>
-<tr><td align="right"><a href="io/dipswitch.html"><img class="icon" src="/logisim-evolution/icons/dipswitch.gif"></a></td>
+<tr><td><a href="io/dipswitch.html"><img src="/logisim-evolution/icons/dipswitch.gif"></a></td>
 	<td><a href="io/dipswitch.html">DIP Switch</a> &mdash; a row of small switches for user input</td></tr>
-<tr><td align="right"><a href="io/joystick.html"><img class="icon" src="/logisim-evolution/icons/joystick.gif"></a></td>
-	<td><a href="io/joystick.html">Joystick</a> &mdash; arcade-style joystick for x,y user input</td></tr>
-<tr><td align="right"><a href="io/keyboard.html"><img class="icon" src="/logisim-evolution/icons/keyboard.gif"></a></td>
-	<td><a href="io/keyboard.html">Keyboard</a> &mdash; ascii text user input</td></tr>
-<tr><td align="right"><a href="io/led.html"><img class="icon" src="/logisim-evolution/icons/led.gif"></a></td>
+<tr><td><a href="io/led.html"><img src="/logisim-evolution/icons/led.gif"></a></td>
 	<td><a href="io/led.html">LED</a> &mdash; single-bit output as a colored light</td></tr>
-<tr><td align="right"><a href="io/portio.html"><img class="icon" src="/logisim-evolution/icons/pio.gif"></a></td>
-	<td><a href="io/portio.html">Port I/O</a> &mdash; bi-directional input/output (useful for FPGAs)</td></tr>
-<tr><td align="right"><a href="io/rgbled.html"><img class="icon" src="/logisim-evolution/icons/rgbled.gif"></a></td>
+<tr><td><a href="io/rgbled.html"><img src="/logisim-evolution/icons/rgbled.gif"></a></td>
 	<td><a href="io/rgbled.html">RGBLED</a> &mdash; three-bit output as a multi-colored light</td></tr>
-<tr><td align="right"><a href="io/7seg.html"><img class="icon" src="/logisim-evolution/icons/7seg.gif"></a></td>
+<tr><td><a href="io/7seg.html"><img src="/logisim-evolution/icons/7seg.gif"></a></td>
 	<td><a href="io/7seg.html">7-Segment Display</a> &mdash; display numbers or patterns</td></tr>
-<tr><td align="right"><a href="io/hexdig.html"><img class="icon" src="/logisim-evolution/icons/hexdig.gif"></a></td>
+<tr><td><a href="io/hexdig.html"><img src="/logisim-evolution/icons/hexdig.gif"></a></td>
 	<td><a href="io/hexdig.html">Hex Digit Display</a> &mdash; display 4-bit data as a hex digit</td></tr>
-<tr><td align="right"><a href="io/dotmat.html"><img class="icon" src="/logisim-evolution/icons/dotmat.gif"></a></td>
-	<td><a href="io/dotmat.html">LED Matrix</a> &mdash; a grid of 1-bit lights</td></tr>
-<tr><td align="right"><a href="io/tty.html"><img class="icon" src="/logisim-evolution/icons/tty.gif"></a></td>
+<tr><td><a href="io/meter.html"><img src="/logisim-evolution/icons/meter.png"></a></td>
+	<td><a href="io/meter.html">Meter</a> &mdash; displays a value on a analog-style meter or dial gauge</td></tr>
+<tr><td><a href="io/slider.html"><img src="/logisim-evolution/icons/slider.png"></a></td>
+	<td><a href="io/slider.html">Slider</a> &mdash; user input using a linear or log-scale slider</td></tr>
+<tr><td><a href="io/dial.html"><img src="/logisim-evolution/icons/dial.png"></a></td>
+	<td><a href="io/dial.html">Dial</a> &mdash; user input using a linear or log-scale dial</td></tr>
+<tr><td><a href="io/scope.html"><img src="/logisim-evolution/icons/scope.png"></a></td>
+	<td><a href="io/scope.html">Dial</a> &mdash; output to an oscilloscope-style display</td></tr>
+<tr><td><a href="io/joystick.html"><img src="/logisim-evolution/icons/joystick.gif"></a></td>
+	<td><a href="io/joystick.html">Joystick</a> &mdash; arcade-style joystick for x,y user input</td></tr>
+<tr><td><a href="io/keyboard.html"><img src="/logisim-evolution/icons/keyboard.gif"></a></td>
+	<td><a href="io/keyboard.html">Keyboard</a> &mdash; ascii text user input</td></tr>
+<tr><td><a href="io/tty.html"><img src="/logisim-evolution/icons/tty.gif"></a></td>
 	<td><a href="io/tty.html">TTY</a> &mdash; display ascii text</td></tr>
-<tr><td align="right"><a href="io/fileviewer.html"><img class="icon" src="/logisim-evolution/icons/fileviewer.gif"></a></td>
+<tr><td><a href="io/portio.html"><img src="/logisim-evolution/icons/pio.gif"></a></td>
+	<td><a href="io/portio.html">Port I/O</a> &mdash; bi-directional input/output (useful for FPGAs)</td></tr>
+<tr><td><a href="io/fileviewer.html"><img src="/logisim-evolution/icons/fileviewer.gif"></a></td>
 	<td><a href="io/fileviewer.html">File Viewer</a> &mdash; display lines from a file</td></tr>
-<tr><td align="right"><a href="io/slideshow.html"><img class="icon" src="/logisim-evolution/icons/slideshow.gif"></a></td>
+<tr><td><a href="io/slideshow.html"><img src="/logisim-evolution/icons/slideshow.gif"></a></td>
 	<td><a href="io/slideshow.html">Slideshow</a> &mdash; chooses and displays an image depending on a control signal</td></tr>
-<tr><td align="right"><a href="io/rgbvideo.html"><img class="icon" src="/logisim-evolution/icons/rgbvideo.png"></a></td>
+<tr><td><a href="io/dotmat.html"><img src="/logisim-evolution/icons/dotmat.gif"></a></td>
+	<td><a href="io/dotmat.html">LED Matrix</a> &mdash; a grid of 1-bit lights</td></tr>
+<tr><td><a href="io/rgbvideo.html"><img src="/logisim-evolution/icons/rgbvideo.png"></a></td>
 	<td><a href="io/rgbvideo.html">RGB Video</a> &mdash; full-color video output</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Analog library</b></font> &mdash; simplistic non-digital components</td></tr>
-<!-- todo: include notice here? see analog/index.html -->
-<tr><td align="right"><a href="analog/const01.html">
-	<img class="icon" src="/logisim-evolution/icons/power.gif">
-	<img class="icon" src="/logisim-evolution/icons/ground.gif"></a></td>
+<tr><th colspan="2">Analog Library &mdash; simplistic non-digital components</td></tr>
+<tr><td><a href="analog/const01.html"><img src="/logisim-evolution/icons/power.gif"> <img src="/logisim-evolution/icons/ground.gif"></a></td>
 	<td><a href="analog/const01.html">Power, Ground</a> &mdash; signal source and sink</td></tr>
-<tr><td align="right"><a href="analog/transistor.html">
-	<img class="icon" src="/logisim-evolution/icons/trans0.gif">
-	<img class="icon" src="/logisim-evolution/icons/trans1.gif"></a></td>
+<tr><td><a href="analog/transistor.html"><img src="/logisim-evolution/icons/trans0.gif"> <img src="/logisim-evolution/icons/trans1.gif"></a></td>
 	<td><a href="analog/transistor.html">Transistor</a> &mdash; simplified PNP and NPN transistors</td></tr>
-<tr><td align="right"><a href="analog/transmission.html"><img class="icon" src="/logisim-evolution/icons/transmis.gif"></a></td>
+<tr><td><a href="analog/transmission.html"><img src="/logisim-evolution/icons/transmis.gif"></a></td>
 	<td><a href="analog/transmission.html">Transmission Gate</a> &mdash; block or transmit a signal</td></tr>
-<tr><td align="right"><a href="analog/pull.html"><img class="icon" src="/logisim-evolution/icons/pullshap.gif"></a></td>
+<tr><td><a href="analog/pull.html"><img src="/logisim-evolution/icons/pullshap.gif"></a></td>
 	<td><a href="analog/pull.html">Pull Resistor</a> &mdash; weakly pull signal to a default value</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Audio library</b></font> &mdash; digital audio</td></tr>
-<tr><td align="right"><a href="audio/octave.html"><img class="icon" src="/logisim-evolution/icons/octave.gif"></a></td>
+<tr><th colspan="2">Audio Library &mdash; digital audio</td></tr>
+<tr><td><a href="audio/octave.html"><img src="/logisim-evolution/icons/octave.gif"></a></td>
 	<td><a href="audio/octave.html">Octave</a> &mdash; a simulated piano keyboard for generating audio</td></tr>
-<tr><td align="right"><a href="audio/pcmsink.html"><img class="icon" src="/logisim-evolution/icons/midisink.gif"></a></td>
+<tr><td><a href="audio/pcmsink.html"><img src="/logisim-evolution/icons/midisink.gif"></a></td>
 	<td><a href="audio/pcmsink.html">PCM Sink</a> &mdash; converts circuit-generated PCM data to audio output</td></tr>
-<tr><td align="right"><a href="audio/midisink.html"><img class="icon" src="/logisim-evolution/icons/midisink.gif"></a></td>
+<tr><td><a href="audio/midisink.html"><img src="/logisim-evolution/icons/midisink.gif"></a></td>
 	<td><a href="audio/midisink.html">MIDI Sink</a> &mdash; converts circuit-generated MIDI data to audio output</td></tr>
-<tr><td align="right"><a href="audio/midiinput.html"><img class="icon" src="/logisim-evolution/icons/midiin.gif"></a></td>
+<tr><td><a href="audio/midiinput.html"><img src="/logisim-evolution/icons/midiin.gif"></a></td>
 	<td><a href="audio/midiinput.html">MIDI Input</a> &mdash; connects an external source of MIDI data to a Logisim circuit</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>BFH mega functions</b></font> &mdash; miscellaneous advanced components</td></tr>
-<tr><td align="right"><a href="bfh/dynclock.html"><img class="icon" src="/logisim-evolution/icons/dynclock.gif"></a></td>
+<tr><td><a href="audio/saturatingadder.html"><img src="/logisim-evolution/icons/saturatingadder.png"></a></td>
+	<td><a href="audio/saturatingadder.html">Saturating Adder</a> &mdash; addition using scaled, saturating, or normalized arithmetic</td></tr>
+<tr><td><a href="audio/saturatingsubtractor.html"><img src="/logisim-evolution/icons/saturatingsubtractor.png"></a></td>
+	<td><a href="audio/saturatingsubtractor.html">Saturating Subtraction</a> &mdash; subtraction using scaled, saturating, or normalized arithmetic</td></tr>
+<tr><td><a href="audio/saturatingnegator.html"><img src="/logisim-evolution/icons/saturatingnegator.png"></a></td>
+	<td><a href="audio/saturatingnegator.html">Saturating Negator</a> &mdash; negation using scaled, saturating, or normalized arithmetic</td></tr>
+<tr><td><a href="audio/saturatingmultiplier.html"><img src="/logisim-evolution/icons/saturatingmultiplier.png"></a></td>
+	<td><a href="audio/saturatingmultiplier.html">Saturating Multiplier</a> &mdash; multiplication using scaled, saturating, or normalized arithmetic</td></tr>
+<tr><td><a href="audio/saturatingdivider.html"><img src="/logisim-evolution/icons/saturatingdivider.png"></a></td>
+	<td><a href="audio/saturatingdivider.html">Saturating Divider</a> &mdash; division using scaled, saturating, or normalized arithmetic</td></tr>
+<tr><td><a href="audio/requantizer.html"><img src="/logisim-evolution/icons/fitrange.png"></a></td>
+	<td><a href="audio/requantizer.html">Requantizer</a> &mdash; scale and normalize values</td></tr>
+<tr><td><a href="audio/linearmap.html"><img src="/logisim-evolution/icons/fitrange.png"></a></td>
+	<td><a href="audio/linearmap.html">Linear Map</a> &mdash; shift values between preset ranges</td></tr>
+<tr><td><a href="audio/scaledmath.html"><img src="/logisim-evolution/icons/scaledmath.png"></a></td>
+	<td><a href="audio/scaledmath.html">Scaled Math &amp; Trig</a> &mdash; evaluate mathematicaal and trigonometric expressions with scaled arithmetic</td></tr>
+<tr><td><a href="audio/lineselect.html"><img src="/logisim-evolution/icons/lineselect.png"></a></td>
+    <td><a href="audio/lineselect.html">Line Select</a> &mdash; select or mix values from among multiple inputs</td></tr>
+
+<tr><th colspan="2">BFH mega functions &mdash; miscellaneous advanced components</td></tr>
+<tr><td><a href="bfh/dynclock.html"><img src="/logisim-evolution/icons/dynclock.gif"></a></td>
 	<td><a href="bfh/dynclock.html">Dynamic Clock Control</a> &mdash; control FPGA clock speed dynamically</td></tr>
-<tr><td align="right"><a href="bfh/bin2bcd.html"><img class="icon" src="/logisim-evolution/icons/subcirc.gif"></a></td>
+<tr><td><a href="bfh/bin2bcd.html"><img src="/logisim-evolution/icons/subcirc.gif"></a></td>
 	<td><a href="bfh/bin2bcd.html">Bin2BCD</a> &mdash; binary to binary-coded-decimal conveter</td></tr>
-<tr><td align="right"><a href="bfh/bcd2seven.html"><img class="icon" src="/logisim-evolution/icons/subcirc.gif"></a></td>
+<tr><td><a href="bfh/bcd2seven.html"><img src="/logisim-evolution/icons/subcirc.gif"></a></td>
 	<td><a href="bfh/bcd2seven.html">BCD2SevenSegment</a> &mdash; 4-bit binary-coded-decimal to seven-segment adapter</td></tr>
-<tr><td align="right"><a href="bfh/hex2seven.html"><img class="icon" src="/logisim-evolution/icons/subcirc.gif"></a></td>
+<tr><td><a href="bfh/hex2seven.html"><img src="/logisim-evolution/icons/subcirc.gif"></a></td>
 	<td><a href="bfh/hex2seven.html">Hex2SevenSegment</a> &mdash; 4-bit hex to seven-segment adapter</td></tr>
 
-<tr><td colspan="2"><br><font size="+1"><b>Decor library</b></font> &mdash; decorative elements</td></tr>
-<tr><td align="right"><a href="decor/comment.html"><img class="icon" src="/logisim-evolution/icons/comment.png"></a></td>
-	<td><a href="decor/comment.html">Comment</a> &mdash; add plain or styled text blocks</td></tr>
-<tr><td align="right"><a href="decor/callout.html"><img class="icon" src="/logisim-evolution/icons/callout.png"></a></td>
+<tr><th colspan="2">External I/O &mdash; a portal to the world outside the simulation</td></tr>
+<tr><td><a href="ext/serialin.html"><img src="/logisim-evolution/icons/serial-in.png"></a></td>
+	<td><a href="ext/serialin.html">Serial Input</a> &mdash; get realtime data from USB and other serial devices</td></tr>
+<tr><td><a href="ext/httpin.html"><img src="/logisim-evolution/icons/http-in.png"></a></td>
+	<td><a href="ext/httpin.html">Http Input</a> &mdash; get realtime data from the web</td></tr>
+<tr><td><a href="ext/rtc.html"><img src="/logisim-evolution/icons/rtc.png"></a></td>
+	<td><a href="ext/rtc.html">Real Time Clock</a> &mdash; get realtime time and date data</td></tr>
+
+<tr><th colspan="2">Decor Library &mdash; decorative elements</td></tr>
+<tr><td><a href="decor/comment.html"><img src="/logisim-evolution/icons/comment.png">
+    <img src="/logisim-evolution/icons/wrappedText.png"> <img src="/logisim-evolution/icons/markdownish.png"></a></td>
+	<td><a href="decor/comment.html">Plain &amp; Styled Comment</a> &mdash; add text blocks to comment a circuit</td></tr>
+<tr><td><a href="decor/callout.html"><img src="/logisim-evolution/icons/callout.png"></a></td>
 	<td><a href="decor/callout.html">Callout Tool</a> &mdash; add callouts for highlighting specific features of a circuit</td></tr>
-<tr><td align="right"><a href="decor/image.html"><img class="icon" src="/logisim-evolution/icons/image.gif"></a></td>
+<tr><td><a href="decor/image.html"><img src="/logisim-evolution/icons/image.gif"></a></td>
 	<td><a href="decor/image.html">Image Tool</a> &mdash; add images to document your circuit</td></tr>
+<tr><td><a href="decor/hyperlink.html"><img src="/logisim-evolution/icons/hyperlink.png"></a></td>
+	<td><a href="decor/hyperlink.html">Hyperlink</a> &mdash; add a button linking to a web page</td></tr>
 
 </table>
 

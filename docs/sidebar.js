@@ -1,6 +1,6 @@
 const _h = window.location.hostname;
-// const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
-const isApp = (_h === '127.0.0.1' || _h === '[::1]');
+const isApp = (_h === '127.0.0.1' || _h === 'localhost' || _h === '[::1]');
+// const isApp = (_h === '127.0.0.1' || _h === '[::1]');
 
 // window location should be "/logisim-evolution/en/..." or similar
 let parts = window.location.pathname.split('/');
@@ -198,7 +198,8 @@ function live(e, el) {
 
 function showLiveInfo(el, appNotRunning) {
   const params = new URL(el.href).searchParams;
-  const name = escapeHTML((params.get('file') || '').replace(/\.circ$/, ''));
+  const name = el.dataset.examplesPath
+    || escapeHTML((params.get('file') || '').replace(/\.circ$/, ''));
 
   const old = document.getElementById('logisim-live-info');
   if (old) old.remove();
@@ -245,7 +246,7 @@ window.onload = function() {
   if (!isApp) {
     const banner = document.createElement('div');
     banner.id = 'logisim-banner';
-    banner.innerHTML = 'Logisim-Evolution documentation, version 5.1.1-HC.'
+    banner.innerHTML = 'Logisim-Evolution documentation, version 5.1.2-HC.'
       + ' <a href="https://github.com/kevinawalsh/logisim-evolution">Source on GitHub</a>.';
     document.body.prepend(banner);
   }
@@ -298,44 +299,57 @@ window.onload = function() {
     });
 
         const body = document.body.innerHTML;
-        document.body.innerHTML = 
+        document.body.innerHTML =
         '<div id="myCollapsedBar" class="collapsedbar">'
         + '<a href="javascript:void(0)" title="Open Menu" class="menu" onclick="openNav()"></a>'
         + '</div>'
         + '<div id="mySidebar" class="sidebar">'
-        + '<a href="javascript:void(0)" id="closebtn" class="btn" onclick="closeNav()">&lt</a>'
+        + '<div class="sidebar-header">'
+        + '<a href="javascript:void(0)" id="closebtn" class="btn" onclick="closeNav()">&lt;</a>'
+        + '</div>'
+        + '<div id="sidebarBody" class="sidebar-body">'
         + tempDiv.innerHTML
+        + '</div>'
         + '</div>'
         + '<div id="search"></div>'
         + '<div id="main">' + body + ' </div>';
 
         let fs = localStorage.getItem("sidebar");
         if (fs === "closed")
-        closeNav()
+            closeNav();
 
-        let sidebar = document.getElementById("mySidebar"); // document.querySelector(".sidebar");
+        let sidebarBody = document.getElementById("sidebarBody");
         let top = localStorage.getItem("sidebar-scroll");
         if (top)
-        sidebar.scrollTop = parseInt(top, 10);
-        highlightCurrentPage();
+            sidebarBody.scrollTop = parseInt(top, 10);
+        highlightCurrentPage(); // fresh page load: scroll sidebar to active item
 
         window.addEventListener("beforeunload", () => {
-          localStorage.setItem("sidebar-scroll", sidebar.scrollTop);
+            localStorage.setItem("sidebar-scroll", sidebarBody.scrollTop);
         });
+
+        history.replaceState({ url: window.location.href }, document.title);
+        setupSPANav();
 
   }
 
-  function highlightCurrentPage() {
+  // scrollMode: 'center' = scroll to center (fresh loads / deep links)
+  //             'visible' = scroll only if not already visible (main-body SPA nav)
+  //             'none'    = no scroll (sidebar link clicks)
+  function highlightCurrentPage(scrollMode = 'center') {
     const currentPath = normalizePath(window.location.pathname);
-    const sidebar = document.getElementById("mySidebar");
-    if (!sidebar) return;
+    const sidebarBody = document.getElementById("sidebarBody");
+    if (!sidebarBody) return;
+
+    // Remove previous highlight
+    sidebarBody.querySelectorAll(".sidebar-current").forEach(el => el.classList.remove("sidebar-current"));
 
     // Find the anchor whose href path matches the current page
-    const links = sidebar.querySelectorAll("a");
+    const links = sidebarBody.querySelectorAll("a");
     let active = null;
     for (const link of links) {
-      const url = new URL(link.href);
-      if (normalizePath(url.pathname) === currentPath) {
+      const linkUrl = new URL(link.href);
+      if (normalizePath(linkUrl.pathname) === currentPath) {
         active = link;
         break;
       }
@@ -345,11 +359,17 @@ window.onload = function() {
     // Highlight it
     active.classList.add("sidebar-current");
 
-    // Scroll the sidebar so the link is visible, roughly centered
-    const sidebarRect = sidebar.getBoundingClientRect();
-    const linkRect = active.getBoundingClientRect();
-    const offset = linkRect.top - sidebarRect.top - (sidebar.clientHeight / 2);
-    sidebar.scrollTop = sidebar.scrollTop + offset;
+    if (scrollMode === 'center') {
+      // Fresh page load / deep link: center the active item
+      const sbRect = sidebarBody.getBoundingClientRect();
+      const linkRect = active.getBoundingClientRect();
+      const offset = linkRect.top - sbRect.top - (sidebarBody.clientHeight / 2);
+      sidebarBody.scrollTop = sidebarBody.scrollTop + offset;
+    } else if (scrollMode === 'visible') {
+      // Main-body SPA nav: scroll just enough to reveal the item if it's off-screen
+      active.scrollIntoView({ block: 'nearest' });
+    }
+    // 'none': leave sidebar scroll position completely unchanged
   }
 
   function normalizePath(path) {
@@ -358,6 +378,68 @@ window.onload = function() {
     if (!path.endsWith("/") && !path.includes("."))
       return path + "/";                           // "somedir" -> "somedir/"
     return path;                                     // "somedir/" or "tutor-gates.html" unchanged
+  }
+
+  function navigateTo(url, addToHistory, sidebarScroll = 'visible') {
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error("fetch failed"); return r.text(); })
+      .then(html => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Resolve relative URLs (href, src) against the fetched page's location
+        const base = new URL(url, window.location.href);
+        doc.querySelectorAll('[href]').forEach(el => {
+          const h = el.getAttribute('href');
+          if (h && !h.startsWith('javascript:') && !h.match(/^[a-z]+:/))
+            try { el.setAttribute('href', new URL(h, base).href); } catch(e) {}
+        });
+        doc.querySelectorAll('[src]').forEach(el => {
+          const s = el.getAttribute('src');
+          if (s && !s.match(/^[a-z]+:/))
+            try { el.setAttribute('src', new URL(s, base).href); } catch(e) {}
+        });
+        const main = document.getElementById('main');
+        if (main) main.innerHTML = doc.body.innerHTML;
+        if (addToHistory)
+          history.pushState({ url }, doc.title || document.title, url);
+        document.title = doc.title || document.title;
+        // Scroll main content to top, or to fragment if present
+        const hash = new URL(url, window.location.href).hash;
+        if (hash) {
+          const target = document.getElementById(hash.slice(1));
+          if (target) { target.scrollIntoView(); }
+        } else {
+          window.scrollTo(0, 0);
+        }
+        highlightCurrentPage(sidebarScroll);
+      })
+      .catch(() => { window.location.href = url; }); // fallback to normal navigation
+  }
+
+  function setupSPANav() {
+    function shouldIntercept(a) {
+      if (!a.href || a.origin !== window.location.origin) return false;
+      if (a.target && a.target !== '_self') return false;
+      if (a.hasAttribute('download')) return false;
+      // Must be within the same language subtree
+      if (!a.pathname.startsWith('/logisim-evolution/' + lang + '/')) return false;
+      // Don't intercept pure same-page fragment links
+      if (a.pathname === window.location.pathname && a.hash && !a.search) return false;
+      return true;
+    }
+
+    document.addEventListener('click', e => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      const a = e.target.closest('a');
+      if (!a || !shouldIntercept(a)) return;
+      e.preventDefault();
+      const fromSidebar = !!a.closest('#sidebarBody');
+      navigateTo(a.href, true, fromSidebar ? 'none' : 'visible');
+    });
+
+    window.addEventListener('popstate', e => {
+      const url = (e.state && e.state.url) || window.location.href;
+      navigateTo(url, false);
+    });
   }
 
   function restoreSearchState() {

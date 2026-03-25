@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Move Tool</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body>
+
+<h1><img class="big" src="/logisim-evolution/icons/move.gif">
+<em>Move Tool</em></h1>
+
+<p>Found in <a href="index.html">Mouse Tools</a></p>
+
+<p>Move Tool allows you to select and rearrange existing components and wires.
+It behaves similarly to the
+<a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif" /> Edit Tool</a>,
+except that it can't add new wire segments or directly modify existing wires,
+and doesn't have a type-to-search feature for adding new components. It is
+mostly useful only for selecting and moving things already in a circuit.</p>
+
+<blockquote class="warning">By default, the Move Tool is not visible in the
+toolbar, because the
+<a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif" /> Edit Tool</a>
+can do all the same things, and more. You can add Move Tool to a project's
+toolbar by right-clicking the toolbar, or by going to 
+<a href="../../guide/opts/index.html">Project &gt; Options</a> then
+<a href="../../guide/opts/toolbar.html">Toolbar Options</a>.
+</blockquote>
+
+<h3>Selecting and Moving Components and Wire Segments</h3>
+
+<ul>
+<li><p><img class="nonicon" src="multi-select-anim.gif" style="float: right; border: 1px solid gray;">
+<b>Select items:</b> A plain click on wire or a component, without dragging,
+will select the component or one wire segment. Holding
+<span class="key">shift</span> while clicking an item will add it to the
+selection (or, if it was already selected, remove it from the selection). After
+selecting items, familiar actions like cut, copy, delete, and duplicate all
+work. See <a href="../../guide/menu/edit.html">Edit menu</a> for
+details.</p></li>
+
+<li><p><b>Select area:</b> Click then drag on the background grid to begin a
+rectangular selection. All components that are <i>fully</i> contained by the
+rectangle will be selected. Holding <span class="key">shift</span> while
+making a rectanglar selection will add the new elements to the selection if
+they were not there already, or will remove them if they were.</p></li>
+
+<li><p><b>Move things:</b> Clicking and dragging a currently-selected component
+or wire segment will begin moving everything selected. By default, Logisim will
+attempt to fix wires so that existing connections are not lost during the move.
+If you're performing a move where you do not want to keep the connections, press
+<span class="key">shift</span> during the move and when releasing the mouse
+button. If you want to change this behavior, go to Project &gt; Options, select
+the Canvas tab, and uncheck the <q>Keep Connections When Moving</q> box; with
+that option unchecked, <span class="key">shift</span> key behavior is reversed:
+wires are not reconnected unless the <span class="key">shift</span> key is
+held.</p>
+
+<blockquote class="hint">Tip: When moving one or more <a href="../decor">Decorative
+components</a>, without any other items, the normal <i>snap-to-grid</i> behavior
+is not enfoced: these components have no wires or ports, so they may be placed
+anywhere on the canvas. If you want to align them nicely to the grid, hold the
+<span class="key">shift</span> key while moving them. For all other components,
+<i>snap-to-grid</i> is required, so <span class="key">shift</span> affects only
+wire re-connection behavior.</blockquote>
+
+</li>
+<!-- <blockquote>Note: <b>Dragging a selection containing wires</b> can sometimes
+lead to surprises. If you drag a selection including some wires on top of some
+other wires, all wires are merged, and the newly-merged wires are added the
+selection.  As a result, if you then drag the selection a second time, the wires
+previously at the location will not be left behind. This behavior is in keeping
+with the rule in Logisim that wires never overlap. And it does not normally
+constitute a major problem: Logisim will draw the full selection in the midst of
+dropping, and you should not drop it until you are
+    sure it is in the correct location.</blockquote>
+-->
+
+</ul>
+
+<h3>Editing Components</h3>
+
+<p>When components are selected, there are several ways to edit them:
+
+<ul>
+
+<li><b>Cut, copy, delete, or duplicate</b> items using familiar shortcuts. See
+  <a href="../../guide/menu/edit.html">Edit menu</a> for details. You can also
+use <span class="key">Delete</span> or <span class="key">Delete</span> to
+delete, or the <span class="key">Insert</span> key to duplicate the selected
+items.</li>
+
+<li><b>Rotate components</b> using the arrow keys 
+<span class="key">Up</span>
+<span class="key">Down</span>
+<span class="key">Left</span>
+<span class="key">Right</span>. This 
+changes the `Facing' attribute for all components in the selection (components
+that can't be rotated are skipped).</p></li>
+
+<li><p>When a component is selected, you can edit its attributes in the lower
+left panel. With multiple components selected, attributes shared by all are
+shown in that panel. Each attribute shows a value if all components share that
+same value, or is left blank otherwise. Changing these attributes affects all
+selected components.</p></li>
+
+<blockquote class="hint">Tip: Many components also respond to hotkeys to change
+their attributes when they are selected. For example, select one or a few gates,
+then type a number &mdash; this changes the number of inputs for each gate. Or
+hold <span class="key">Alt</span> or <span class="key">Option</span> and type a
+number to change the `Bit Width' of their inputs and outputs. See each
+component's reference page for details on how they respond to
+hotkeys.</blockquote>
+
+<!-- <li><p><b>Remove components and wires</b> using 
+<span class="key">Delete</span> or
+<span class="key">Backspace</span> keys.
+These will delete everything selected from the circuit.</p></li>
+
+<li><p><b>Duplicate components and wires</b> using the
+<span class="key">Insert</span> key. This will create a duplicate of all
+currently-selected wires and components. </p></li> -->
+
+</ul>
+
+<p><b>Ghosts</b> or <b>floating selections</b>: When duplicating or
+pasting components, Logisim does not immediately place the new components into
+the circuit; instead, the selection will be a collection of "ghosts" hovering
+above the circuit. These are dropped into the circuit as soon as they are either
+deselected or dragged to another location.</p>
+
+</body>
+</html>
