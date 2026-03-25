@@ -71,7 +71,7 @@ public class Icons {
     g2.dispose();
   }
 
-  private static final String path = "resources/logisim/icons";
+  private static final String path = "help/icons"; // previously: "resources/logisim/icons"
 
   private Icons() {
   }

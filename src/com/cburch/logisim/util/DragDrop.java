@@ -281,31 +281,55 @@ public class DragDrop {
     }
   }
 
+  // Set -Dlogisim.disableDragOverlay=true to disable the drag ghost image,
+  // which may help diagnose DnD crashes on macOS (CDropTarget.draggingUpdated:
+  // doAWTRunLoopImpl crash). The overlay is an always-on-top JFrame that moves
+  // with the cursor; its native window movement may trigger re-entrant mouse
+  // event delivery inside doAWTRunLoopImpl.
+  public static final boolean DISABLE_DRAG_OVERLAY =
+      Boolean.getBoolean("logisim.disableDragOverlay");
+
   private static class DragImageAnimator extends DragSourceAdapter
     implements DragSourceMotionListener {
     DragImageOverlay overlay = new DragImageOverlay();
+    int moveCount = 0;
     @Override
     public void dragEnter(DragSourceDragEvent e) {
       Object t = e.getDragSourceContext().getTransferable();
-      if (t instanceof Ghost) {
+      boolean isGhost = t instanceof Ghost;
+      System.err.printf("[DnD-DEBUG] DragImageAnimator.dragEnter: isGhost=%b disableOverlay=%b thread=%s%n",
+          isGhost, DISABLE_DRAG_OVERLAY, Thread.currentThread().getName());
+      moveCount = 0;
+      if (isGhost && !DISABLE_DRAG_OVERLAY) {
         Ghost g = (Ghost)t;
         overlay.ghost = g;
         Dimension d = g.getSize();
         overlay.setBounds(0, 0, d.width, d.height);
-        overlay.setLocation(e.getX() + 10, e.getY() + 10); 
+        overlay.setLocation(e.getX() + 10, e.getY() + 10);
         overlay.setVisible(true);
+        System.err.printf("[DnD-DEBUG] DragImageAnimator: overlay shown at (%d,%d) size=%s%n",
+            e.getX()+10, e.getY()+10, d);
       } else {
         overlay.setVisible(false);
       }
     }
     @Override
     public void dragMouseMoved(DragSourceDragEvent e) {
-      overlay.setLocation(e.getX() + 10, e.getY() + 10); 
+      if (overlay.isVisible()) {
+        overlay.setLocation(e.getX() + 10, e.getY() + 10);
+        if (++moveCount % 20 == 1) {
+          System.err.printf("[DnD-DEBUG] DragImageAnimator.dragMouseMoved #%d: overlay moving to (%d,%d) thread=%s%n",
+              moveCount, e.getX()+10, e.getY()+10, Thread.currentThread().getName());
+        }
+      }
     }
     @Override
     public void dragDropEnd(DragSourceDropEvent e) {
+      System.err.printf("[DnD-DEBUG] DragImageAnimator.dragDropEnd: overlayVisible=%b thread=%s%n",
+          overlay.isVisible(), Thread.currentThread().getName());
       overlay.setVisible(false);
       overlay.ghost = null;
+      moveCount = 0;
     }
   }
 
