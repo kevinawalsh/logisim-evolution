@@ -445,7 +445,7 @@ public final class EditTool extends Tool {
     updateLocation(canvas, e);
   }
   
-  private static final Icon toolIcon = Icons.getIcon("select.gif");
+  private static final Icon toolIcon = Icons.getIcon("edit.gif");
 
   @Override
   public void paintIcon(ComponentDrawContext c, int x, int y) {

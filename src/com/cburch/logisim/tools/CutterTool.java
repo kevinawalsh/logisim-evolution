@@ -67,7 +67,7 @@ import com.cburch.logisim.util.StringGetter;
 
 public final class CutterTool extends Tool {
 
-  private static final String CUTTER_CURSOR_PATH = "resources/logisim/icons/cutter%d%s.png";
+  private static final String CUTTER_CURSOR_PATH = "help/icons/cutter%d%s.png";
   private static Cursor selectCursor = null; // lazily loaded
   private static final Cursor rectSelectCursor = Cursor
       .getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);

@@ -22,6 +22,15 @@ except that it can't add new wire segments or directly modify existing wires,
 and doesn't have a type-to-search feature for adding new components. It is
 mostly useful only for selecting and moving things already in a circuit.</p>
 
+<blockquote class="warning">By default, the Move Tool is not visible in the
+toolbar, because the
+<a class="icon" href="edit.html"><img src="/logisim-evolution/icons/edit.gif" /> Edit Tool</a>
+can do all the same things, and more. You can add Move Tool to a project's
+toolbar by right-clicking the toolbar, or by going to 
+<a href="../../guide/opts/index.html">Project &gt; Options</a> then
+<a href="../../guide/opts/toolbar.html">Toolbar Options</a>.
+</blockquote>
+
 <h3>Selecting and Moving Components and Wire Segments</h3>
 
 <ul>
@@ -51,7 +60,7 @@ that option unchecked, <span class="key">shift</span> key behavior is reversed:
 wires are not reconnected unless the <span class="key">shift</span> key is
 held.</p>
 
-<blockquote class="hint"> Tip: When moving one or more <a href="../decor">Decorative
+<blockquote class="hint">Tip: When moving one or more <a href="../decor">Decorative
 components</a>, without any other items, the normal <i>snap-to-grid</i> behavior
 is not enfoced: these components have no wires or ports, so they may be placed
 anywhere on the canvas. If you want to align them nicely to the grid, hold the
@@ -99,7 +108,7 @@ shown in that panel. Each attribute shows a value if all components share that
 same value, or is left blank otherwise. Changing these attributes affects all
 selected components.</p></li>
 
-<blockquote class="hint"> Tip: Many components also respond to hotkeys to change
+<blockquote class="hint">Tip: Many components also respond to hotkeys to change
 their attributes when they are selected. For example, select one or a few gates,
 then type a number &mdash; this changes the number of inputs for each gate. Or
 hold <span class="key">Alt</span> or <span class="key">Option</span> and type a

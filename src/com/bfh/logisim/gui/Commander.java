@@ -1319,7 +1319,7 @@ public class Commander extends JFrame
   }
 
   static ImageIcon getIcon(String name) {
-    String path ="resources/logisim/icons/" + name;
+    String path ="help/icons/" + name;
     java.net.URL url = BindingsDialog.class.getClassLoader().getResource(path);
     return url == null ? null : new ImageIcon(url);
   }
