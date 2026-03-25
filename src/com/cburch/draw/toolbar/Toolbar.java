@@ -458,6 +458,7 @@ public class Toolbar extends JPanel {
 		this.curPressed = null;
     // this.flavorMap = new FlavorMap();
     this.dropTarget = new DropTarget(this, DnDConstants.ACTION_LINK, mainPanelListener, true /* , flavorMap */);
+    this.dropTarget.setActive(false); // EXPERIMENT: does removing DnD from toolbar prevent crash?
 
 		setPosition(Direction.NORTH); // default, will be overwritten with user prefs
 

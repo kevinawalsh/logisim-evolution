@@ -516,7 +516,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     }
 
     private final DataFlavor[] supportedFlavors = new DataFlavor[] {
-        AddTool.dnd.dataFlavor,
+        Tool.dnd.dataFlavor,
         Library.dnd.dataFlavor,
         LayoutClipboard.forCircuit.dnd.dataFlavor,
         LayoutClipboard.forVhdl.dnd.dataFlavor,
@@ -533,6 +533,8 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     
     @Override
     public boolean canImport(TransferSupport support) {
+      System.err.printf("[DnD-DEBUG] ProjectExplorer(id=%x).canImport: thread=%s%n",
+          System.identityHashCode(ProjectExplorer.this), Thread.currentThread().getName());
       // Accept toolbar item drops even in showAll mode: dropping a toolbar item here
       // signals "remove from toolbar" (the actual removal happens in the source's exportDone).
       if (TOOLBAR_INDEX_FLAVOR != null && support.isDrop()
@@ -547,13 +549,15 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         if (flavor == null)
           return false;
         boolean isTool, isLocal;
-        isTool = (flavor == AddTool.dnd.dataFlavor
+        isTool = (flavor == Tool.dnd.dataFlavor
             || flavor == LayoutClipboard.forCircuit.dnd.dataFlavor
             || flavor == LayoutClipboard.forVhdl.dnd.dataFlavor);
-        if (flavor == AddTool.dnd.dataFlavor) {
-          // drag import of JVM-local AddTool
-          AddTool incoming = (AddTool)support.getTransferable().getTransferData(flavor);
-          ComponentFactory fact = incoming.getFactory();
+        if (flavor == Tool.dnd.dataFlavor) {
+          // drag import of JVM-local Tool
+          Tool incoming = (Tool)support.getTransferable().getTransferData(flavor);
+          if (!(incoming instanceof AddTool))
+            return false; // only AddTool can be imported into a project (i.e. no mouse tools)
+          ComponentFactory fact = ((AddTool)incoming).getFactory();
           if (!(fact instanceof SubcircuitFactory || fact instanceof VhdlEntity))
             return false; // only Circuit and Vhdl can be imported into a project
           isLocal = proj.getLogisimFile().getTools().contains(incoming);
@@ -621,7 +625,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
         DataFlavor flavor = supportedFlavor(support);
         if (flavor == null)
           return false;
-        boolean isTool = (flavor == AddTool.dnd.dataFlavor
+        boolean isTool = (flavor == Tool.dnd.dataFlavor
             || flavor == LayoutClipboard.forCircuit.dnd.dataFlavor
             || flavor == LayoutClipboard.forVhdl.dnd.dataFlavor);
         int newIdx = insertionIndex(support, isTool);
@@ -629,10 +633,12 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           return false; // bad drop target
         boolean isMove = support.isDrop() && support.getDropAction() == MOVE;
 
-        if (isMove && flavor == AddTool.dnd.dataFlavor) {
+        if (isMove && flavor == Tool.dnd.dataFlavor) {
           // drag import of JVM-local AddTool
-          AddTool incoming = (AddTool)support.getTransferable().getTransferData(flavor);
-          ComponentFactory fact = incoming.getFactory();
+          Tool incoming = (Tool)support.getTransferable().getTransferData(flavor);
+          if (!(incoming instanceof AddTool))
+            return false; // only AddTool can be imported into a project (i.e. no mouse tools)
+          ComponentFactory fact = ((AddTool)incoming).getFactory();
           if (!(fact instanceof SubcircuitFactory || fact instanceof VhdlEntity))
             return false; // only Circuit and Vhdl can be imported into a project
 
@@ -640,7 +646,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           // System.out.println("import tool " + incoming + " at " + newIdx + " vs " + oldIdx);
           if (oldIdx >= 0) {
             // System.out.printf("move circuit or vhdl from %d to %d\n", oldIdx, newIdx);
-            return listener.moveRequested(incoming, newIdx);
+            return listener.moveRequested((AddTool)incoming, newIdx);
           } else {
             // System.out.printf("bad move circuit or vhdl to %d\n", newIdx);
             return false;
