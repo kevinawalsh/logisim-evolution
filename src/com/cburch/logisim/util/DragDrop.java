@@ -30,21 +30,14 @@
 
 package com.cburch.logisim.util;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 // import java.awt.dnd.DragSourceEvent;
 // import java.awt.dnd.DragSourceListener;
-import java.awt.Component;
-import java.awt.Container;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -57,17 +50,11 @@ import java.awt.dnd.DragSourceAdapter;
 import java.awt.dnd.DragSourceDragEvent;
 import java.awt.dnd.DragSourceDropEvent;
 import java.awt.dnd.DragSourceMotionListener;
-import java.awt.dnd.DropTarget;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 
-import java.awt.image.BufferedImage;
-
 import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JRootPane;
-import javax.swing.RootPaneContainer;
-import javax.swing.SwingUtilities;
+import javax.swing.JFrame;
 
 import com.cburch.logisim.Main;
 
@@ -235,33 +222,13 @@ public class DragDrop {
   public static class Handler<T extends Transferable> extends DragSourceAdapter implements DragGestureListener {
     T t;
 
-    public Handler(T t) { this.t = t; System.out.println("*** HERE ***"); }
+    public Handler(T t) { this.t = t; }
 
     @Override
     public void dragGestureRecognized(DragGestureEvent e) {
-      Cursor cursor = null;
-      System.err.println("[DnD-DEBUG] Handler.dragGestureRecognized: t="+t);
-      if (t instanceof Ghost) {
+      Cursor cursor = null; // move cursor?
+      if (t instanceof Ghost)
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-        System.out.println("USE_NATIVE_DRAG_IMAGE="+USE_NATIVE_DRAG_IMAGE +", DISABLE_DRAG_OVERLAY="+DISABLE_DRAG_OVERLAY);
-        if (USE_NATIVE_DRAG_IMAGE && !DISABLE_DRAG_OVERLAY) {
-          // On macOS (and modern Windows), the JVM supports native drag images.
-          // AppKit moves the image with the cursor automatically, so no Java work
-          // is needed in dragMouseMoved — which avoids the macOS JVM crash where
-          // doAWTRunLoopImpl re-entrantly delivers mouseDragged during draggingUpdated:.
-          Ghost g = (Ghost) t;
-          Dimension d = g.getSize();
-          BufferedImage img = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_ARGB);
-          Graphics2D gfx = img.createGraphics();
-          try {
-            g.paintDragImage(null, gfx, d);
-          } finally {
-            gfx.dispose();
-          }
-          e.getDragSource().startDrag(e, cursor, img, new Point(10, 10), t, this);
-          return;
-        }
-      }
       e.getDragSource().startDrag(e, cursor, t, this);
     }
 
@@ -284,10 +251,9 @@ public class DragDrop {
   }
 
   // If a Transferable component implements Ghost, it will be painted near the
-  // mouse during a drag. On platforms where DragSource.isDragImageSupported()
-  // is true (macOS, modern Windows), we pass the image to startDrag() and the
-  // OS handles it natively. On other platforms (Linux), we fall back to a
-  // glass-pane overlay painted on whichever Java window is under the cursor.
+  // mouse in an overlay as it is being dragged. We need to do our own animation
+  // here because DragSource does not support drag Image on Linux (or mac or
+  // windows?).
   public interface Ghost {
     // For a JComponent, these defaults work fine, or override them to customize
     // the drag image.
@@ -299,189 +265,47 @@ public class DragDrop {
   }
 
 
-  // On macOS, using any top-level window (JFrame, JWindow) for the drag overlay
-  // causes a JVM crash: CDropTarget.draggingUpdated: calls doAWTRunLoopImpl,
-  // which re-entrantly delivers a mouseDragged to the overlay's AWTView,
-  // crashing at deliverJavaMouseEvent+1840. Fix: paint the ghost image on the
-  // glass pane of whichever Java window is under the cursor instead of using
-  // a separate native window.
-  public static final boolean DISABLE_DRAG_OVERLAY =
-      Boolean.getBoolean("logisim.disableDragOverlay");
-
-  // Experiment 2: At first drag move, disable ALL active DropTargets in ALL
-  // windows (to test if any CDropTarget.draggingUpdated: call triggers the crash).
-  // Re-enables them on dragDropEnd. Note: drops will not work while this is active.
-  public static final boolean EXPERIMENT2_DISABLE_ALL_DROPTARGETS =
-      Boolean.getBoolean("logisim.experiment2");
-
-  // On macOS and modern Windows JDKs, DragSource supports native drag images:
-  // the JVM passes the image to AppKit/Win32 which moves it with the cursor
-  // automatically. When true, we use startDrag(Cursor,Image,...) and skip the
-  // glass-pane fallback entirely, so dragMouseMoved does nothing — which avoids
-  // the macOS JVM crash (doAWTRunLoopImpl re-entering deliverJavaMouseEvent).
-  public static final boolean USE_NATIVE_DRAG_IMAGE =
-      !Main.headless && DragSource.isDragImageSupported();
-
-  // Transparent glass pane overlay for showing the drag ghost image.
-  private static class GhostGlassPane extends JPanel {
-    private Ghost ghost;
-    private int ghostX, ghostY;
-
-    GhostGlassPane(Ghost ghost) {
-      this.ghost = ghost;
-      setOpaque(false);
-      setLayout(null);
-    }
-
-    void setGhostPosition(int x, int y) {
-      ghostX = x;
-      ghostY = y;
-      repaint();
-    }
-
-    @Override
-    public void paintComponent(Graphics g) {
-      if (ghost == null) return;
-      Dimension d = ghost.getSize();
-      Graphics2D g2 = (Graphics2D) g.create(ghostX, ghostY, d.width, d.height);
-      try {
-        ghost.paintDragImage(this, g2, d);
-      } finally {
-        g2.dispose();
-      }
+  private static class DragImageOverlay extends JFrame {
+    Ghost ghost;
+    private DragImageOverlay() {
+      setUndecorated(true);
+      setBackground(new Color(1.0f, 1.0f, 1.0f, 0.0f));
+      setContentPane(new JComponent() {
+        @Override
+        public void paintComponent(Graphics g) {
+          if (ghost != null)
+            ghost.paintDragImage(this, g, getSize());
+        }
+      });
+      setAlwaysOnTop(true);
     }
   }
 
   private static class DragImageAnimator extends DragSourceAdapter
     implements DragSourceMotionListener {
-    private Ghost ghost = null;
-    private JRootPane currentRootPane = null;
-    private Component savedGlassPane = null;
-    private boolean savedGlassPaneVisible;
-    private GhostGlassPane activeGlassPane = null;
-    int moveCount = 0;
-    private final List<DropTarget> disabledTargets = new ArrayList<>();
-
-    private void ensureGhost(DragSourceDragEvent e) {
-      if (ghost == null && !DISABLE_DRAG_OVERLAY && !USE_NATIVE_DRAG_IMAGE) {
-        System.out.println("ghost="+ghost+" USE_NATIVE_DRAG_IMAGE="+USE_NATIVE_DRAG_IMAGE +", DISABLE_DRAG_OVERLAY="+DISABLE_DRAG_OVERLAY);
-        Object t = e.getDragSourceContext().getTransferable();
-        if (t instanceof Ghost) ghost = (Ghost) t;
-      }
-    }
-
-    // Experiment 2: disable every active DropTarget in every window so that
-    // CDropTarget.draggingUpdated: is never called during this drag.
-    private void disableAllDropTargets() {
-      disabledTargets.clear();
-      for (Window w : Window.getWindows()) {
-        collectAndDisable(w);
-      }
-      System.err.printf("[DnD-DEBUG] Experiment2: disabled %d DropTargets across all windows%n",
-          disabledTargets.size());
-    }
-
-    private void collectAndDisable(Container c) {
-      DropTarget dt = c.getDropTarget();
-      if (dt != null && dt.isActive()) {
-        dt.setActive(false);
-        disabledTargets.add(dt);
-      }
-      for (Component child : c.getComponents()) {
-        if (child instanceof Container)
-          collectAndDisable((Container) child);
-      }
-    }
-
-    private void reEnableAllDropTargets() {
-      for (DropTarget dt : disabledTargets)
-        dt.setActive(true);
-      System.err.printf("[DnD-DEBUG] Experiment2: re-enabled %d DropTargets%n",
-          disabledTargets.size());
-      disabledTargets.clear();
-    }
-
+    DragImageOverlay overlay = new DragImageOverlay();
     @Override
     public void dragEnter(DragSourceDragEvent e) {
-      ensureGhost(e);
-      System.err.printf("[DnD-DEBUG] DragImageAnimator.dragEnter: hasGhost=%b thread=%s%n",
-          ghost != null, Thread.currentThread().getName());
-      moveCount = 0;
+      Object t = e.getDragSourceContext().getTransferable();
+      if (t instanceof Ghost) {
+        Ghost g = (Ghost)t;
+        overlay.ghost = g;
+        Dimension d = g.getSize();
+        overlay.setBounds(0, 0, d.width, d.height);
+        overlay.setLocation(e.getX() + 10, e.getY() + 10); 
+        overlay.setVisible(true);
+      } else {
+        overlay.setVisible(false);
+      }
     }
-
     @Override
     public void dragMouseMoved(DragSourceDragEvent e) {
-      ensureGhost(e);
-      if (EXPERIMENT2_DISABLE_ALL_DROPTARGETS && moveCount == 0)
-        disableAllDropTargets();
-      int sx = e.getX(), sy = e.getY();
-      if (++moveCount % 20 == 1)
-        System.err.printf("[DnD-DEBUG] DragImageAnimator.dragMouseMoved #%d: (%d,%d) thread=%s%n",
-            moveCount, sx, sy, Thread.currentThread().getName());
-      if (ghost == null) return;
-      updateGhostPosition(sx, sy);
+      overlay.setLocation(e.getX() + 10, e.getY() + 10); 
     }
-
     @Override
     public void dragDropEnd(DragSourceDropEvent e) {
-      System.err.printf("[DnD-DEBUG] DragImageAnimator.dragDropEnd: hasGhost=%b thread=%s%n",
-          ghost != null, Thread.currentThread().getName());
-      if (EXPERIMENT2_DISABLE_ALL_DROPTARGETS)
-        reEnableAllDropTargets();
-      removeFromCurrentRootPane();
-      ghost = null;
-      moveCount = 0;
-    }
-
-    private void updateGhostPosition(int sx, int sy) {
-      JRootPane rp = findRootPaneAt(sx, sy);
-      if (rp != currentRootPane) {
-        removeFromCurrentRootPane();
-        if (rp != null) installOnRootPane(rp);
-        currentRootPane = rp;
-      }
-      if (activeGlassPane != null) {
-        Point p = new Point(sx, sy);
-        try {
-          SwingUtilities.convertPointFromScreen(p, currentRootPane);
-        } catch (Exception ex) { return; }
-        activeGlassPane.setGhostPosition(p.x + 10, p.y + 10);
-      }
-    }
-
-    private void installOnRootPane(JRootPane rp) {
-      savedGlassPane = rp.getGlassPane();
-      savedGlassPaneVisible = savedGlassPane.isVisible();
-      activeGlassPane = new GhostGlassPane(ghost);
-      rp.setGlassPane(activeGlassPane);
-      activeGlassPane.setVisible(true);
-    }
-
-    private void removeFromCurrentRootPane() {
-      if (currentRootPane != null && savedGlassPane != null) {
-        try {
-          currentRootPane.setGlassPane(savedGlassPane);
-          savedGlassPane.setVisible(savedGlassPaneVisible);
-        } catch (Exception ex) { /* ignore if window is gone */ }
-      }
-      activeGlassPane = null;
-      savedGlassPane = null;
-      currentRootPane = null;
-    }
-
-    private static JRootPane findRootPaneAt(int sx, int sy) {
-      // Iterate in reverse: more recently created (typically front) windows first.
-      Window[] windows = Window.getWindows();
-      for (int i = windows.length - 1; i >= 0; i--) {
-        Window w = windows[i];
-        if (!w.isShowing() || !(w instanceof RootPaneContainer)) continue;
-        try {
-          Rectangle bounds = new Rectangle(w.getLocationOnScreen(), w.getSize());
-          if (bounds.contains(sx, sy))
-            return ((RootPaneContainer) w).getRootPane();
-        } catch (Exception ex) { /* ignore */ }
-      }
-      return null;
+      overlay.setVisible(false);
+      overlay.ghost = null;
     }
   }
 

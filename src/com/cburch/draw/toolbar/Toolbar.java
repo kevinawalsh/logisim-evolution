@@ -125,77 +125,36 @@ public class Toolbar extends JPanel {
 	
   private class OverflowDropTargetListener implements DropTargetListener {
 
-    // On macOS, calling getTransferData() (or isDataFlavorSupported()) on a
-    // DropTargetDragEvent in dragOver() for a cross-window drag queries the
-    // macOS pasteboard synchronously, which runs doAWTRunLoopImpl re-entrantly.
-    // While that nested loop runs, a pending mouseDragged event is delivered,
-    // which crashes. Fix: run checkDrag only in dragEnter; in dragOver, just
-    // re-accept/re-reject using the cached result without accessing flavor data.
-    private boolean dragValid = false;
-    private int cachedDragAction = DnDConstants.ACTION_NONE;
-
     void checkDrag(DropTargetDragEvent e) {
       // todo: be careful about drag and drop between projects
       try {
-        if (overflowWindow != null && model.supportsDragDrop()) {
-          if (checkIntraToolbarMove(e)) {
-            overflowPanel.setDropCursor(e.getLocation());
-            dragValid = true;
-            cachedDragAction = DnDConstants.ACTION_MOVE;
-            return;
-          }
-          if (checkIntraProjectAddition(e)) {
-            overflowPanel.setDropCursor(e.getLocation());
-            dragValid = true;
-            cachedDragAction = DnDConstants.ACTION_LINK;
-            return;
-          }
+        if (overflowWindow != null && model.supportsDragDrop()
+            && (checkIntraToolbarMove(e) || checkIntraProjectAddition(e))) {
+          overflowPanel.setDropCursor(e.getLocation());
+          return;
         }
       } catch (Throwable t) {
         Debug.error("drag-and-drop failure", t);
       }
-      dragValid = false;
-      cachedDragAction = DnDConstants.ACTION_NONE;
       overflowPanel.setDropCursor(null);
       mainPanel.setDropCursor(null);
       e.rejectDrag();
     }
 
-    int dragOverCount = 0;
-
     @Override
     public void dragEnter(DropTargetDragEvent e) {
       overflowWindowCloseTimer.stop();
-      dragValid = false;
-      dragOverCount = 0;
-      System.err.printf("[DnD-DEBUG] Toolbar.Overflow.dragEnter: thread=%s%n",
-          Thread.currentThread().getName());
       checkDrag(e);
-      System.err.printf("[DnD-DEBUG] Toolbar.Overflow.dragEnter: dragValid=%b action=%d%n",
-          dragValid, cachedDragAction);
     }
 
     @Override
     public void dragOver(DropTargetDragEvent e) {
       overflowWindowCloseTimer.stop();
-      if (++dragOverCount % 20 == 1) {
-        System.err.printf("[DnD-DEBUG] Toolbar.Overflow.dragOver #%d: dragValid=%b thread=%s%n",
-            dragOverCount, dragValid, Thread.currentThread().getName());
-      }
-      if (!dragValid) {
-        e.rejectDrag();
-        return;
-      }
-      overflowPanel.setDropCursor(e.getLocation());
-      e.acceptDrag(cachedDragAction);
+      checkDrag(e);
     }
 
     @Override
     public void dragExit(DropTargetEvent e)  {
-      System.err.printf("[DnD-DEBUG] Toolbar.Overflow.dragExit: dragOverCount=%d thread=%s%n",
-          dragOverCount, Thread.currentThread().getName());
-      dragValid = false;
-      cachedDragAction = DnDConstants.ACTION_NONE;
       overflowPanel.setDropCursor(null);
       overflowWindowCloseTimer.restart();
     }
@@ -289,16 +248,6 @@ public class Toolbar extends JPanel {
 
 
   private class MainPanelListener implements MouseListener, ToolbarModelListener, DropTargetListener {
-
-    // On macOS, calling getTransferData() (or isDataFlavorSupported()) on a
-    // DropTargetDragEvent in dragOver() for a cross-window drag queries the
-    // macOS pasteboard synchronously, which runs doAWTRunLoopImpl re-entrantly.
-    // While that nested loop runs, a pending mouseDragged event is delivered,
-    // which crashes. Fix: run checkDrag only in dragEnter; in dragOver, just
-    // re-accept/re-reject using the cached result without accessing flavor data.
-    private boolean dragValid = false;
-    private int cachedDragAction = DnDConstants.ACTION_NONE;
-
     @Override
 		public void toolbarAppearanceChanged(ToolbarModelEvent event) {
 			repaint();
@@ -312,68 +261,36 @@ public class Toolbar extends JPanel {
     void checkDrag(DropTargetDragEvent e) {
       // todo: be careful about drag and drop between projects
       try {
-        if (model.supportsDragDrop()) {
-          if (checkIntraToolbarMove(e)) {
-            mainPanel.setDropCursor(e.getLocation());
-            dragValid = true;
-            cachedDragAction = DnDConstants.ACTION_MOVE;
-            return;
-          }
-          if (checkIntraProjectAddition(e)) {
-            mainPanel.setDropCursor(e.getLocation());
-            dragValid = true;
-            cachedDragAction = DnDConstants.ACTION_LINK;
-            return;
-          }
+        if (model.supportsDragDrop()
+            && (checkIntraToolbarMove(e) || checkIntraProjectAddition(e))) {
+          mainPanel.setDropCursor(e.getLocation());
+          return;
         }
       } catch (Throwable t) {
         Debug.error("drag-and-drop failure", t);
       }
-      dragValid = false;
-      cachedDragAction = DnDConstants.ACTION_NONE;
       mainPanel.setDropCursor(null);
       e.rejectDrag();
     }
 
-    int dragOverCount = 0;
-
     @Override
     public void dragEnter(DropTargetDragEvent e) {
       overflowWindowCloseTimer.stop();
-      dragValid = false;
-      dragOverCount = 0;
-      System.err.printf("[DnD-DEBUG] Toolbar.MainPanel.dragEnter: thread=%s%n",
-          Thread.currentThread().getName());
-      checkDrag(e);
-      System.err.printf("[DnD-DEBUG] Toolbar.MainPanel.dragEnter: dragValid=%b action=%d%n",
-          dragValid, cachedDragAction);
-      if (dragValid && numVisible != buttons.length && overflowWindow == null) {
+      if (numVisible != buttons.length && overflowWindow == null) {
         overflowButton.setSelected(true); // note: popup may already be open (e.g. if dragging from popup)
         showOverflowWindow();
       }
+      checkDrag(e);
     }
 
     @Override
     public void dragOver(DropTargetDragEvent e) {
       overflowWindowCloseTimer.stop();
-      if (++dragOverCount % 20 == 1) {
-        System.err.printf("[DnD-DEBUG] Toolbar.MainPanel.dragOver #%d: dragValid=%b thread=%s%n",
-            dragOverCount, dragValid, Thread.currentThread().getName());
-      }
-      if (!dragValid) {
-        e.rejectDrag();
-        return;
-      }
-      mainPanel.setDropCursor(e.getLocation());
-      e.acceptDrag(cachedDragAction);
+      checkDrag(e);
     }
 
     @Override
     public void dragExit(DropTargetEvent e) {
-      System.err.printf("[DnD-DEBUG] Toolbar.MainPanel.dragExit: dragOverCount=%d thread=%s%n",
-          dragOverCount, Thread.currentThread().getName());
-      dragValid = false;
-      cachedDragAction = DnDConstants.ACTION_NONE;
       mainPanel.setDropCursor(null);
       overflowWindowCloseTimer.restart();
     }
@@ -458,7 +375,6 @@ public class Toolbar extends JPanel {
 		this.curPressed = null;
     // this.flavorMap = new FlavorMap();
     this.dropTarget = new DropTarget(this, DnDConstants.ACTION_LINK, mainPanelListener, true /* , flavorMap */);
-    this.dropTarget.setActive(false); // EXPERIMENT: does removing DnD from toolbar prevent crash?
 
 		setPosition(Direction.NORTH); // default, will be overwritten with user prefs
 

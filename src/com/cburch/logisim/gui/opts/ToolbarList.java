@@ -122,8 +122,6 @@ class ToolbarList extends JList {
     @Override
     public boolean canImport(TransferSupport support) {
       if (!support.isDrop()) return false;
-      System.err.printf("[DnD-DEBUG] ToolbarList.canImport: thread=%s%n",
-          Thread.currentThread().getName());
       // Internal reorder: toolbar item dropped back onto the toolbar list
       if (TOOLBAR_INDEX_FLAVOR != null
           && support.isDataFlavorSupported(TOOLBAR_INDEX_FLAVOR)) {

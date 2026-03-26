@@ -533,8 +533,6 @@ public class ProjectExplorer extends JTree implements LocaleListener {
     
     @Override
     public boolean canImport(TransferSupport support) {
-      System.err.printf("[DnD-DEBUG] ProjectExplorer(id=%x).canImport: thread=%s%n",
-          System.identityHashCode(ProjectExplorer.this), Thread.currentThread().getName());
       // Accept toolbar item drops even in showAll mode: dropping a toolbar item here
       // signals "remove from toolbar" (the actual removal happens in the source's exportDone).
       if (TOOLBAR_INDEX_FLAVOR != null && support.isDrop()
