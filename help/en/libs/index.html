@@ -6,8 +6,148 @@
 <script src="/logisim-evolution/sidebar.js"></script>
 <title>Tool and Library Reference</title>
 <link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
-<link rel="stylesheet" href="callouts.css">
 <style>
+.callouts {
+    position: relative;
+    display: inline-block;
+    border: 1px solid #eee;
+}
+
+.container, .container *, .callouts ul *::before, .callouts ul *::after {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.callouts ul {
+    list-style-type: none;
+    position: absolute;
+    display: inline-block;
+    margin: 0px;
+    padding-inline-start: 0px;
+    --callout-color: #FDE; /* override in html */
+    top: 50px; /* override in html to position callout */
+    left: 50px; /* override in html to position callout */
+    max-width: 500px; /* override in html if desired */
+}
+
+.callouts li {
+    display: inline-block;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    padding: 10px;
+    background-color: var(--callout-color);
+    box-shadow: 0 0 10px hsl(from var(--callout-color) h 100% 20%);
+}
+
+.callouts li .tip::before {
+    content: "Tip: ";
+    font-weight: bold;
+    font-style: italic;
+}
+.callouts li .tip {
+    margin: 5px 0 0 0;
+    color: hsl(from var(--callout-color) h 100% 25%);
+}
+
+/* TOP */
+.callouts--top::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 23px;
+    top: -42px;
+    border: 10px solid transparent;
+    border-bottom: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--top::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 25px;
+    top: -32px;
+    border: 8px solid transparent;
+    border-bottom: 25px solid var(--callout-color);
+    z-index: 3;
+}
+
+/* BOTTOM */
+.callouts--bottom::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 23px;
+    bottom: -42px;
+    border: 10px solid transparent;
+    border-top: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--bottom::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: 25px;
+    bottom: -31px;
+    border: 8px solid transparent;
+    border-top: 24px solid var(--callout-color);
+    z-index: 3;
+}
+
+/* LEFT */
+.callouts--left::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: -42px;
+    top: 18px;
+    border: 10px solid transparent;
+    border-right: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--left::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    left: -31px;
+    top: 20px;
+    border: 8px solid transparent;
+    border-right: 24px solid var(--callout-color);
+    z-index: 3;
+}
+
+/* RIGHT */
+.callouts--right::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    right: -42px;
+    top: 18px;
+    border: 10px solid transparent;
+    border-left: 32px solid hsl(from var(--callout-color) h 100% 20% / 40%);
+    z-index: 2;
+}
+.callouts--right::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    right: -31px;
+    top: 20px;
+    border: 8px solid transparent;
+    border-left: 24px solid var(--callout-color);
+    z-index: 3;
+}
 </style>
 </head>
 
@@ -16,37 +156,42 @@
 <h1>Tool and Library Reference</h1>
 
 <div class="callouts">
-<img src="diagram.png"/>
+<img src="diagram.png" style="filter: drop-shadow(2px 2px gray);">
 
-<ul style="top: 75px; left: 270px; --callout-color: #EFC;">
+<ul style="top: 75px; left: 240px; --callout-color: #EFC;">
 <li class="callouts--top">
 <b>Toolbar</b> for quick access.  Use these to edit or interact with your
 circuit, or to add your favorite components.
 <p class="tip">Right-click or drag items to customize toolbar for each
 project.</li></ul>
 
-<ul style="top: 180px; left: 270px; --callout-color: #FCB;">
+<ul style="top: 180px; left: 240px; --callout-color: #FCB;">
 <li class="callouts--left">
 <b>Circuit List</b> for your project.  Double-click to open a circuit. Or,
 single-click to place one as a sub-circuit within another.
 <p class="tip">A circuit can be embedded as a sub-circuit within another, by
 selecting with single-click, then clicking to place it.</li></ul>
 
-<ul style="top: 320px; left: 270px; --callout-color: #BCF;">
+<ul style="top: 300px; left: 240px; --callout-color: #BCF;">
 <li class="callouts--left">
 <b>Standard and Custom Libraries</b> of components to build your circuits. Click
 to select, then click to place in your circuit.
 <p class="tip">Tip: Go to <b>Project &gt; Load Library</b> to add more libraries.</li></ul>
 
+<ul style="top: 400px; left: 240px; --callout-color: #D0F2F0;">
+<li class="callouts--left">
+<b>Properties</b> to configure tools and components in the circuit. Also try the
+<b>quick help</b> panel for reference.</li></ul>
+
 </div>
 
 <h2>Mouse Tools</h2>
 
-<p>By default the toolbar includes most of these mouse tools. These tools are
-visible only in the toolbar, when
+<p>The toolbar includes most mouse tools by default. All are
+also visible in <b>Project &gt; Options</b> when
 <a href="../guide/opts/toolbar.html">customizing the toolbar</a>, or in
 <a href="../guide/opts/mouse.html">mouse options</a> when creating custom
-shortcuts.</p>
+keyboard shortcuts.</p>
 
 <table class="liblisting">
 
@@ -73,7 +218,8 @@ shortcuts.</p>
 sidebar of each project. These can also appear in the toolbar. You can add
 additional libraries to your project using <b>Project &gt; Load Library</b>,
 including third-party libraries found online, and you can even write your own
-<a href="../guide/jar/library.html">custom jar or circ libraries</a>.</p>
+<a href="../guide/jar/library.html">custom jar library</a> or use import one project file into another to be used as a 
+<a href="../guide/jar/library.html">custom .circ library</a>.</p>
 
 <table class="liblisting">
 
