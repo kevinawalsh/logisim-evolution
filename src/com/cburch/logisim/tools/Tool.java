@@ -142,6 +142,12 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
   JDragLabel dragLabel;
   private class JDragLabel extends JLabel {
     public void publicPaintComponent(Graphics g) { paintComponent(g); }
+    @Override
+    public Dimension getPreferredSize() {
+      // JLabel text runs up to the right edge; add a little padding
+      Dimension d = super.getPreferredSize();
+      return new Dimension(d.width + 4, d.height);
+    }
   }
 
   private JDragLabel getDragLabel() {
