@@ -17,6 +17,7 @@ src/com/cburch/logisim/gui/start/MacOsAdapter.java
 depcache/
 java-runtime/
 LogisimFPGASettings.xml
+help/*/contents.json
 
 # additional libraries
 !libs/*.jar
