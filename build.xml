@@ -61,6 +61,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
 
     <target name="clean" depends="cleanjars">
         <delete dir="bin/"/>
+        <delete dir="depcache/"/>
     </target>
 
     <target name="cleanjars">
