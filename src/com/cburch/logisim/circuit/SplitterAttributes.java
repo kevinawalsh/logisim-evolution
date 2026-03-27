@@ -141,7 +141,7 @@ public class SplitterAttributes extends AbstractAttributeSet {
       if (value < 0) {
         return S.get("splitterBitNone");
       } else {
-        String ret = "" + value;
+        String ret = S.fmt("splitterTapNum", "" + (value+1));
         Direction noteDir;
         if (value == 0) {
           noteDir = isVertical ? Direction.NORTH : Direction.EAST;
