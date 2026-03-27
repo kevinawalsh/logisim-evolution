@@ -425,6 +425,79 @@ public class MemContents implements HexModel {
     } while (count > 0); // (dp <= dstPageEnd || di <= dstEndOffs)
   }
 
+  // Note: The xml writing code previously used getDefaultAttributeValue() then
+  // equals() to check whether it is necessary to write an attribute value into
+  // the xml. So I wanted to implement equals() [and hashCode() to go with it,
+  // as recommended] so that the default memory contents (all zeros) could be
+  // omitted. But equals() is also called other places, at least:
+  //  - when moving components (part of the checks to see if state should be
+  //    transfered over)
+  //  - when checking if the selection attribute set need to be recalculated
+  //  - during xml reading
+  // It's unclear whether a potentially expensive operation is
+  // justified in all of those cases.
+  // So for now, we don't override equals() [or hashcode()] and instead
+  // make a targeted change to the xml writing code. It now calls a new
+  // function, hasDefaultAttributeValue(), which Rom now overrides to check
+  // for the all zeros case.
+  boolean isAllZeros() {
+    int n = pages.length;
+    for (int i = 0; i < n; i++) {
+      Page a = pages[i];
+      if (a == null)
+        continue;
+      int len = a.getLength();
+      for (int j = 0; j < len; j++) {
+        if ((a.get(j) & mask) != 0)
+          return false;
+      }
+    }
+    return true;
+  }
+  /*
+  @Override
+  public boolean equals(Object o) {
+    System.out.println("comparing mem contents");
+    if (this == o)
+      return true;
+    Thread.dumpStack();
+    if (!(o instanceof MemContents))
+      return false;
+    MemContents other = (MemContents) o;
+    if (width != other.width || addrBits != other.addrBits)
+      return false;
+    int n = pages.length;
+    for (int i = 0; i < n; i++) {
+      Page a = pages[i];
+      Page b = other.pages[i];
+      if (a == null && b == null)
+        continue;
+      int len = (a != null ? a : b).getLength();
+      for (int j = 0; j < len; j++) {
+        int va = (a == null ? 0 : a.get(j)) & mask;
+        int vb = (b == null ? 0 : b.get(j)) & mask;
+        if (va != vb)
+          return false;
+      }
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    System.out.println("hashing mem contents");
+    Thread.dumpStack();
+    int h = addrBits * 31 + width;
+    for (Page page : pages) {
+      if (page == null)
+        continue;
+      for (int j = 0, n = page.getLength(); j < n; j++)
+        h = h * 31 + (page.get(j) & mask);
+    }
+    return h;
+  }
+  */
+
   public void setDimensions(int addrBits, int width) {
     if (addrBits == this.addrBits && width == this.width)
       return;

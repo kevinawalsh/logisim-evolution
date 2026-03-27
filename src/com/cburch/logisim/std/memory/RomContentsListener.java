@@ -132,6 +132,7 @@ class RomContentsListener implements HexModelListener {
 
   public void bytesChanged(HexModel source, long start, long numBytes,
       int[] oldValues) {
+    System.out.println("bytesChanged");
     if (enabled && proj != null && oldValues != null) {
       // this change needs to be logged in the undo log
       int[] newValues = new int[oldValues.length];

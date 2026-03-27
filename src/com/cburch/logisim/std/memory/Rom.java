@@ -46,6 +46,7 @@ import java.util.StringTokenizer;
 import javax.swing.JLabel;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
@@ -518,6 +519,15 @@ public class Rom extends Mem {
 
       return List.of(abus, dbus);
     }
+  }
+
+  @Override
+  public boolean hasDefaultAttributeValue(AttributeSet attrs, Attribute<?> attr, LogisimVersion ver) {
+    if (attr == CONTENTS_ATTR) {
+      MemContents contents = attrs.getValue(CONTENTS_ATTR);
+      return contents.isAllZeros();
+    }
+    else return super.hasDefaultAttributeValue(attrs, attr, ver);
   }
 
 }

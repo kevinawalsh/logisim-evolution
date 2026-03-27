@@ -32,16 +32,16 @@ package com.cburch.logisim.std.memory;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
-import java.util.WeakHashMap;
 
 import com.cburch.logisim.data.AbstractAttributeSet;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.WeakIdentityHashMap;
 
 class RomAttributes extends AbstractAttributeSet {
 
@@ -67,12 +67,12 @@ class RomAttributes extends AbstractAttributeSet {
   }
 
   static void register(MemContents value, Project proj) {
-    if (proj == null || listenerRegistry.containsKey(value)) {
+    if (proj == null) //  || listenerRegistry.containsKey(value)) {
       return;
-    }
+    // }
     RomContentsListener l = new RomContentsListener(proj);
     value.addHexModelWeakListener(value, l);
-    listenerRegistry.put(value, l);
+    // listenerRegistry.put(value, l);
   }
   
   // WARNING: The prefix of these lists before APPEARANCE must be identical. The
@@ -90,9 +90,9 @@ class RomAttributes extends AbstractAttributeSet {
 
   // fixme: this isn't necessary since listener lists now have an owner
   // for each listener?
-  private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
+  // private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
 
-  private static WeakHashMap<MemContents, HexFrame> windowRegistry = new WeakHashMap<MemContents, HexFrame>();
+  private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
   private BitWidth addrBits = BitWidth.create(8);
   private BitWidth dataBits = BitWidth.create(8);
   private MemContents contents;

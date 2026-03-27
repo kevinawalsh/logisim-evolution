@@ -36,4 +36,14 @@ public interface AttributeDefaultProvider {
   public Object getDefaultAttributeValue(Attribute<?> attr, LogisimVersion ver);
 
   public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver);
+
+  default public boolean hasDefaultAttributeValue(AttributeSet attrs, Attribute<?> attr, LogisimVersion ver) {
+    Object val = attrs.getValue(attr);
+    Object dflt = getDefaultAttributeValue(attr, ver);
+    if (val == null && dflt == null)
+      return true;
+    if (val == null || dflt == null)
+      return false;
+    return dflt.equals(val);
+  }
 }

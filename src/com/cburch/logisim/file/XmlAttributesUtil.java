@@ -29,7 +29,6 @@
  */
 
 package com.cburch.logisim.file;
-import static com.cburch.logisim.file.Strings.S;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -51,21 +50,21 @@ public class XmlAttributesUtil {
     for (Attribute<?> attrBase : attrs.getAttributes()) {
       @SuppressWarnings("unchecked")
       Attribute<Object> attr = (Attribute<Object>) attrBase;
+      if (!attrs.isToSave(attr))
+        continue;
+      if (source != null && source.hasDefaultAttributeValue(attrs, attr, ver))
+        continue;
       Object val = attrs.getValue(attr);
-      if (attrs.isToSave(attr) && val != null) {
-        Object dflt = source == null
-            ? null : source.getDefaultAttributeValue(attr, ver);
-        if (dflt == null || !dflt.equals(val)) {
-          Element a = doc.createElement("a");
-          a.setAttribute("name", attr.getName());
-          String value = attr.toStandardStringRelative(val, outFilepath);
-          if (value.indexOf("\n") >= 0)
-            a.appendChild(doc.createTextNode(value));
-          else
-            a.setAttribute("val", value);
-          elt.appendChild(a);
-        }
-      }
+      if (val == null)
+        continue;
+      Element a = doc.createElement("a");
+      a.setAttribute("name", attr.getName());
+      String value = attr.toStandardStringRelative(val, outFilepath);
+      if (value.indexOf("\n") >= 0)
+        a.appendChild(doc.createTextNode(value));
+      else
+        a.setAttribute("val", value);
+      elt.appendChild(a);
     }
   }
 

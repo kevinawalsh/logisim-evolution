@@ -283,6 +283,11 @@ public class AddTool extends Tool {
   }
 
   @Override
+  public boolean hasDefaultAttributeValue(AttributeSet attrs, Attribute<?> attr, LogisimVersion ver) {
+    return getFactory().hasDefaultAttributeValue(attrs, attr, ver);
+  }
+
+  @Override
   public String getDescription() {
     String ret;
     FactoryDescription desc = description;

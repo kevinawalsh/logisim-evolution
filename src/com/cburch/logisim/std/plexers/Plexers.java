@@ -34,6 +34,7 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Graphics;
 import java.util.List;
 
+import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.Attributes;
@@ -137,6 +138,27 @@ public class Plexers extends Library {
   public static final Attribute<Boolean> ATTR_ENABLE = Attributes.forBoolean(
       "enable", S.getter("plexerEnableAttr"));
   public static final Object DEFAULT_ENABLE = Boolean.FALSE;
+
+  public static Boolean valueForEnableIfMissing(LogisimVersion ver) {
+    // Files from ver < 2.6.4: if missing attribute, should default to FALSE
+    //   These versions used attr_enable=FALSE by default, and did not save FALSE attribute.
+    //
+    // Files from 2.6.4 <= ver < 2.13.5: if missing attribute, should default to TRUE
+    //   These versions used attr_enable=TRUE by default, and did not save TRUE attribute.
+    //
+    // Files from ver == 2.13.5: if missing attribute, should default to TRUE
+    //   This versions it is unknown what attr_enable value was used by default, but they did not save TRUE attribute.
+    //
+    // Files from 2.13.5 < ver < 5.1.3: if missing attribute, should default to TRUE
+    //   These versions used attr_enable=FALSE by default, but they did not save TRUE attribute,
+    //   because somebody forgot to update this method.
+    //
+    // Files from 5.1.3 <= ver: if missing attribute, should default to FALSE
+    //   These versions use attr_enable=FALSE by default, and do not save FALSE attribute.
+    boolean at_or_after_2_6_4 = ver.compareTo(LogisimVersion.get(2, 6, 4)) >= 0;
+    boolean before_5_1_3 = ver.compareTo(LogisimVersion.get(5, 1, 3)) < 0;
+    return Boolean.valueOf(at_or_after_2_6_4 && before_5_1_3);
+  }
 
   static final AttributeOption SELECT_BOTTOM_LEFT = new AttributeOption("bl",
       S.getter("plexerSelectBottomLeftOption"));
