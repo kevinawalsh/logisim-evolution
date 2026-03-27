@@ -79,18 +79,12 @@ h1 img {
   vertical-align: middle;
   width: 32px;
   height: 32px;
+  border: none;
 }
 
 img.icon {
     width: 16;
     height: 16;
-    border: none;
-    align: center;
-}
-
-img.big {
-    width: 32;
-    height: 32;
     border: none;
     align: center;
 }

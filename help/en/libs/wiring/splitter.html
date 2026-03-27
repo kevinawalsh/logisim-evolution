@@ -4,44 +4,88 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="/logisim-evolution/sidebar.js"></script>
-<title>Splitter</title>
+<title>Split/Join Signals (a.k.a. "Splitter")</title>
 <link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
 </head>
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/splitter.gif">
-<em>Splitter</em></h1>
+<h1><img src="/logisim-evolution/icons/splitter.gif"> <em>Split/Join Signals (a.k.a. "Splitter")</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0 Beta 1 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/splitter.png" width="24" height="44"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
 
-<h2>Behavior</h2>
+<img src="splitters.png">
 
-<p>The splitter creates a correspondence between a multi-bit value and several
-separate subsets of those bits. Despite its name, it can either
-split a multi-bit value into component parts, or it can combine
-component parts into a multi-bit value; or it can do both at once.
-A more complete description of splitters is found in the '<a
-href="../../guide/bundles/splitting.html">Splitters</a>' section of the
-<em>User's Guide</em>.</p>
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=splitters.circ">Live Circuit: Splitters</a></li>
+</ul>
 
-<p>Logisim treats splitters specially when propagating values within a
-circuit: Whereas all other components have a computed delay for purposes
-of simulating their behavior, values propagate through splitters (as
-well as wires) instantaneously.</p>
+<p>The Split/Join Signals component, or <b>"splitter"</b> for short, is used to
+join or split signals and buses. A splitter is very flexible in how it can be
+used:
+<ul>
 
-<p class="aside"><strong>Note:</strong> The term <em>splitter</em> is a non-standard
-term, which is unique to Logisim as far as I know. I am unaware of any
-standard term for such a concept; the only term I have heard used is
-<em>bus ripper</em>, but this term is unnecessarily violent for my
-tastes.</p>
+<li><p><b>Split a bus:</b> It can split a single <em>n</em>-bit bus into <em>n</em>
+individual 1-bit signals.</p></li>
+
+<li><p><b>Join signals:</b> It can do the opposite, joining <em>n</em>
+individual 1-bit signals, into a single <em>n</em>-bit bus.</p></li>
+
+<li><p><b>Merge or partition equal-sized buses:</b> It can split an 12-bit bus into
+three 4-bit buses, or four 3-bit buses, or two 6-bit buses, or other similar
+combinations, or do the opposite, merging multiple smaller buses into one larger
+bus.</p></li>
+
+<li><p><b>Merge or re-partition unequal-sized buses and signals:</b> You can mix
+and match different width buses. For example, it can merge a 4-bit bus, two
+2-bit buses, a 3-bit bus, and a 1-bit wire, all together to form a single 12-bit
+bus, or it can do the the opposite, splitting the 12-bit bus into smaller
+unequal sized buses and signals.<p></li>
+
+<li><p><b>Pull signals out of a bus:</b> A common use case is "tapping" into a
+bus to pull out one or more bits. Given an 8-bit bus, a splitter can be used to
+extract just bit number 7 (the left, most significant bit), or just bit number 0
+(the right, least significant bit), or just bits 3, 2, 1, and 0 (the bottom
+half), or any other combination of bits.</p></li>
+
+<img src="splitters-odd.png">
+
+<p><img class="nonicon" src="splitter-taps.png" style="float: right; border: 1px solid gray;">
+Each splitter has a <em>combined end</em>, and one or more <em>taps</em>. The
+Fan Out property controls how many taps there are. The bit-width property
+controls the width of combined end, and also controls how many bits are
+available for the taps. Other properties allow you to assign each bit from the
+combined end to one of the taps. Or, you can select "None" for a bit to indicate
+that bit isn't used by any of the taps.
+
+<p class="warning"><b>Note:</b> Each bit can only be assigned to one tap. So the
+combined end has "all the bits" in the splitter. And the taps, taken together,
+can't have duplicate copies of any of those bits. But there is no requirement
+that the taps, taken together, cover all the bits: there can be bits "missing"
+from the taps. And some taps can be empty, carrying no signals at all, if you
+want.</p>
+
+<p class="hint"><b>Tip:</b> The combined end, and the taps, have no specific
+direction. In fact, you can mix and match directions freely, even within the
+same splitter or the same port of a splitter. You can arrange for some signals
+to flow into certain taps (or parts of a tap) and out (part of) the combined
+end, while having other signals flowing into (other parts of) the combined end
+and out of other (or other parts of) some taps.</p>
+
+<p>Logisim's simulation engine treats splitters specially when propagating
+values within a circuit. Unlike all other components, splitters have no "delay"
+or direction. Essentially, the simulator internally decomposes all buses and
+splitters into an equivalent arrangement of individual 1-bit wires.</p>
+
+<p class="aside"><strong>Note:</strong> The term <em>splitter</em> is a
+non-standard term, unique to Logisim as far as I know. I am unaware of any
+standard term for such a concept. Sometimes they are called a "breakout
+harness", "bus breakout", or just "breakout". In automotive wiring, and some
+other electronics, it might be called a "wiring harness" or "cable harness",
+though a wiring harness often has taps scattered along its length and might have
+more than one connectors at each end, rather than a single distinct "combined
+end".</p>
 
 <h2>Pins</h2>
 
