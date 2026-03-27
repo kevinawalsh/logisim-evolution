@@ -39,6 +39,7 @@ import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.SplitterFactory;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.AddTool;
@@ -68,7 +69,7 @@ public class Wiring extends Library {
       public boolean isFactoryLoaded() { return true; }
     };
   private static FactoryDescription OUTPUT_PIN_DESCRIPTION = 
-    new FactoryDescription("PinForOutput",
+    new FactoryDescription("OutputPin",
         S.getter("pinComponentOutput"), (Icon)null, "Pin") {
       @Override
       public ComponentFactory getFactoryFromLibrary(Class<? extends Library> libClass) {
@@ -112,6 +113,19 @@ public class Wiring extends Library {
           if (attr == StdAttr.FACING) return Direction.WEST;
           if (attr == StdAttr.LABEL_EDGE_LOC) return Direction.EAST;
           return super.getDefaultAttributeValue(attr, ver);
+        }
+        @Override
+        public boolean hasDefaultAttributeValue(AttributeSet attrs, Attribute<?> attr, LogisimVersion ver) {
+          if (attr == StdAttr.FACING || attr == StdAttr.LABEL_EDGE_LOC) {
+            Object val = attrs.getValue(attr);
+            Object dflt = getDefaultAttributeValue(attr, ver);
+            if (val == null && dflt == null)
+              return true;
+            if (val == null || dflt == null)
+              return false;
+            return dflt.equals(val);
+          }
+          return super.hasDefaultAttributeValue(attrs, attr, ver);
         }
       });
       ret.add(new AddTool(Wiring.class, Probe.FACTORY));
