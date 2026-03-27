@@ -202,7 +202,7 @@ public class LogFrame extends LFrame.SubWindowWithSimulation {
       new ChronoPanel(this),
       // new TablePanel(this), // todo: fix table panel
       // new FilePanel(this), // todo: rethink file writer in light of signal rewriting
-      new SettingsPanel(this),
+      new LogOptionsPanel(this),
     };
     tabbedPane = new JTabbedPane();
     // tabbedPane.setFont(new Font("Dialog", Font.BOLD, 9));

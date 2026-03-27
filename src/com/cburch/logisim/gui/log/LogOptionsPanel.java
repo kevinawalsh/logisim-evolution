@@ -72,7 +72,7 @@ import javax.swing.plaf.basic.BasicComboBoxEditor;
 
 import com.cburch.logisim.comp.Component;
 
-class SettingsPanel extends LogPanel
+class LogOptionsPanel extends LogPanel
   implements ActionListener, ChangeListener, Model.Listener {
 
   // [ ] Stop-motion mode [ time_scale: 5ms ]
@@ -151,7 +151,7 @@ class SettingsPanel extends LogPanel
   JScrollPane pane;
 
   // todo: tooltips?
-  SettingsPanel(LogFrame frame) {
+  LogOptionsPanel(LogFrame frame) {
     super(frame);
 
     // top left has button
