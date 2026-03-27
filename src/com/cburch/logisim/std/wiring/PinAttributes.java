@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cburch.logisim.circuit.RadixOption;
+import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
@@ -41,7 +42,7 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 
 class PinAttributes extends ProbeAttributes {
-  public static PinAttributes instance = new PinAttributes();
+  // public static PinAttributes instance = new PinAttributes(); // WHY ???
 
   // WARNING: The prefix of these lists before TYPE must be identical. The list of possible
   // attributes depends on TYPE, so during xml file loading TYPE must be set before the
@@ -60,6 +61,7 @@ class PinAttributes extends ProbeAttributes {
   BitWidth width = BitWidth.ONE;
   AttributeOption type = Pin.INPUT;
   AttributeOption behavior = Pin.SIMPLE;
+  boolean typeReadOnly; // used for AddTool/FactoryDescription in Wiring library
 
   public PinAttributes() { }
 
@@ -111,4 +113,35 @@ class PinAttributes extends ProbeAttributes {
       super.updateAttr(attr, value);
     }
   }
+
+  @Override
+  public void setReadOnly(Attribute<?> attr, boolean value) {
+    if (attr == Pin.ATTR_TYPE)
+      typeReadOnly = value;
+    else
+      super.setReadOnly(attr, value);
+  }
+
+  @Override
+  public boolean isReadOnly(Attribute<?> attr) {
+    if (attr == Pin.ATTR_TYPE)
+      return typeReadOnly;
+    else
+      return super.isReadOnly(attr);
+  }
+
+  @Override
+  public boolean isToSave(Attribute<?> attr) {
+    if (attr == Pin.ATTR_TYPE)
+      return !typeReadOnly;
+    else
+      return super.isToSave(attr);
+  }
+
+  @Override
+  protected void copyInto(AbstractAttributeSet dest) {
+    // read-only flag is not copied when a clone is made
+    ((PinAttributes)dest).typeReadOnly = false;
+  }
+
 }

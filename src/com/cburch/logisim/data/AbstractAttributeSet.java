@@ -59,7 +59,7 @@ public abstract class AbstractAttributeSet implements Cloneable, AttributeSet {
     } catch (CloneNotSupportedException ex) {
       throw new UnsupportedOperationException("AbstractAttributeSet.clone");
     }
-    // old listeners don't want to listen to clone instead?!?
+    // listeners for this set are not interested in changes to clone
     ret.listeners = null;
     this.copyInto(ret);
     return ret;

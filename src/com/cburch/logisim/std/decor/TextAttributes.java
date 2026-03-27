@@ -108,11 +108,6 @@ class TextAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  protected void copyInto(AbstractAttributeSet destObj) {
-    ; // nothing to do
-  }
-
-  @Override
   public List<Attribute<?>> getAttributes() {
     return isMarkdownish() ? ATTRIBUTES_MARKDOWNISH :
       isWrapping() ? ATTRIBUTES_AUTO_WRAPPING : ATTRIBUTES_MANUAL_WRAPPING;
@@ -254,6 +249,12 @@ class TextAttributes extends AbstractAttributeSet {
       return !formatReadOnly;
     else
       return super.isToSave(attr);
+  }
+
+  @Override
+  protected void copyInto(AbstractAttributeSet dest) {
+    // read-only flag is not copied when a clone is made
+    ((TextAttributes)dest).formatReadOnly = false;
   }
 
   // public static normalize(String str) {

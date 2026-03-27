@@ -71,6 +71,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 
 import com.cburch.logisim.util.Errors;
@@ -686,6 +687,22 @@ public class AttrTable extends JPanel implements LocaleListener {
     title.setVerticalAlignment(SwingConstants.CENTER);
     tableModel = new TableModelAdapter(parent, NULL_ATTR_MODEL);
     table = new JTable(tableModel) {
+      @Override
+      public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+        Component c = super.prepareRenderer(renderer, row, column);
+        if (!isCellSelected(row, column)) {
+          int modelRow = convertRowIndexToModel(row);
+          if (!tableModel.attrModel.isRowValueEditable(modelRow)) {
+            c.setForeground(new Color(0x3355AA));
+            c.setBackground(new Color(0xEEEEEE));
+          } else {
+            c.setForeground(getForeground());
+            c.setBackground(Color.WHITE);
+          }
+        }
+        return c;
+      }
+
       @Override
       public String getToolTipText(MouseEvent e) {
         String tip = null;

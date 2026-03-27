@@ -953,4 +953,16 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
       return value;
   }
 
+  @Override
+  public final Object getFeature(Object key, AttributeSet attrs) {
+    if (key == TOOL_TIP) {
+      AttributeOption type = attrs.getValue(ATTR_TYPE);
+      if (type == INPUT)
+        return S.get("pinComponentInput");
+      else
+        return S.get("pinComponentOutput");
+    }
+    return super.getFeature(key, attrs);
+  }
+
 }
