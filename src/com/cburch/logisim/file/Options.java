@@ -31,13 +31,15 @@
 package com.cburch.logisim.file;
 import static com.cburch.logisim.file.Strings.S;
 
+import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.AttributeDefaultProvider;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Attributes;
 
-public class Options {
+public class Options implements AttributeDefaultProvider {
   public static final AttributeOption GATE_UNDEFINED_IGNORE = new AttributeOption(
       "ignore", S.getter("gateUndefinedIgnore"));
   public static final AttributeOption GATE_UNDEFINED_ERROR = new AttributeOption(
@@ -81,6 +83,22 @@ public class Options {
 
   public AttributeSet getAttributeSet() {
     return attrs;
+  }
+
+  @Override
+  public Object getDefaultAttributeValue(Attribute<?> attr, LogisimVersion ver) {
+    for (int i = 0; i < ATTRIBUTES.length; i++)
+      if (ATTRIBUTES[i] == attr)
+        return DEFAULTS[i];
+    return null;
+  }
+
+  @Override
+  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+    for (int i = 0; i < ATTRIBUTES.length; i++)
+      if (!DEFAULTS[i].equals(attrs.getValue(ATTRIBUTES[i])))
+        return false;
+    return true;
   }
 
   public MouseMappings getMouseMappings() {

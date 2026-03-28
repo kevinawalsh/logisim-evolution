@@ -81,6 +81,7 @@ public class XmlProjectReader extends XmlReader {
 
     private void initMouseMappings(Element elt) {
       MouseMappings map = file.getOptions().getMouseMappings();
+      map.clear();
       for (Element sub_elt : XmlIterator.forChildElements(elt, "tool")) {
         Tool tool;
         try {
@@ -203,6 +204,7 @@ public class XmlProjectReader extends XmlReader {
       }
 
       // third, process the other child elements
+      boolean useDefaultMappings = true;
       for (Element sub_elt : XmlIterator.forChildElements(elt)) {
         String name = sub_elt.getTagName();
 
@@ -220,6 +222,7 @@ public class XmlProjectReader extends XmlReader {
           }
           break;
         case "mappings":
+          useDefaultMappings = false;
           initMouseMappings(sub_elt);
           break;
         case "toolbar":
@@ -240,6 +243,8 @@ public class XmlProjectReader extends XmlReader {
               "Invalid node in logisim file: " + name);
         }
       }
+      if (useDefaultMappings)
+        file.getOptions().getMouseMappings().reset();
 
       // fourth, execute a transaction that initializes all the circuits
       XmlCircuitReader builder = new XmlCircuitReader(this, circuitsData);

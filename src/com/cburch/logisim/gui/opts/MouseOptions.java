@@ -201,7 +201,7 @@ public class MouseOptions extends SettingsPanel {
       int newKey = getSelectedKey();
       MouseMappings mm = getOptions().getMouseMappings();
       if (editingKey != null && editingKey.intValue() != newKey)
-        mm.setToolFor(editingKey, null);
+        mm.setToolFor(editingKey.intValue(), null);
       getProject().doAction(OptionsActions.setMapping(mm, newKey, curTool.cloneTool()));
       dispose();
     }
@@ -335,12 +335,7 @@ public class MouseOptions extends SettingsPanel {
         S.get("mouseResetConfirm"), S.get("mouseResetTitle"),
         JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
     if (confirm != JOptionPane.YES_OPTION) return;
-    MouseMappings mm = getOptions().getMouseMappings();
-    for (Integer k : new ArrayList<>(mm.getMappedModifiers()))
-      mm.setToolFor(k, null);
-    mm.setToolFor(InputEvent.CTRL_DOWN_MASK | InputEvent.BUTTON1_DOWN_MASK, MenuTool.SINGLETON);
-    mm.setToolFor(InputEvent.BUTTON2_DOWN_MASK, MenuTool.SINGLETON);
-    mm.setToolFor(InputEvent.BUTTON3_DOWN_MASK, MenuTool.SINGLETON);
+    getOptions().getMouseMappings().reset();
   }
 
   @Override

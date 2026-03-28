@@ -41,10 +41,10 @@ import com.cburch.logisim.tools.Tool;
 class OptionsActions {
   private static class RemoveMapping extends Action {
     MouseMappings mm;
-    Integer mods;
+    int mods;
     Tool oldtool;
 
-    RemoveMapping(MouseMappings mm, Integer mods) {
+    RemoveMapping(MouseMappings mm, int mods) {
       this.mm = mm;
       this.mods = mods;
     }

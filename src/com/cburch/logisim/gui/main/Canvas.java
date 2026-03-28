@@ -115,7 +115,7 @@ public class Canvas extends JPanel
         return null;
       }
 
-      Tool ret = mappings.getToolFor(e);
+      Tool ret = mappings.getToolFor(e.getModifiersEx());
       if (ret == null) {
         return proj.getTool();
       } else {

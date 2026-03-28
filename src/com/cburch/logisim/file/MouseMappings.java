@@ -30,13 +30,14 @@
 
 package com.cburch.logisim.file;
 
-import java.awt.event.MouseEvent;
+import java.awt.event.InputEvent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.AttributeSets;
+import com.cburch.logisim.tools.MenuTool;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.WeakList;
@@ -47,7 +48,7 @@ public class MouseMappings {
   }
 
   private HashMap<Integer, Tool> map;
-  private int cache_mods;
+  private int cache_mods; // FIXME: this really isn't necessary, is it?
   private Tool cache_tool;
 
   public MouseMappings() {
@@ -58,12 +59,37 @@ public class MouseMappings {
   public void addMouseMappingsWeakListener(Object owner, MouseMappingsListener l) { listeners.add(owner, l); }
   public void removeMouseMappingsWeakListener(Object owner, MouseMappingsListener l) { listeners.remove(owner, l); }
   private void fireMouseMappingsChanged() { for (MouseMappingsListener l : listeners) l.mouseMappingsChanged(); }
+  
+  public void clear() {
+    cache_mods = -1;
+    map.clear();
+  }
+
+  private static final int DEFAULT_MENU_MODS[] = {
+    InputEvent.CTRL_DOWN_MASK | InputEvent.BUTTON1_DOWN_MASK,
+    InputEvent.BUTTON2_DOWN_MASK, 
+    InputEvent.BUTTON3_DOWN_MASK,
+  };
+
+  public void reset() {
+    clear();
+    for (int mods : DEFAULT_MENU_MODS)
+      setToolFor(mods, MenuTool.SINGLETON);
+  }
+
+  public boolean isAllDefaultValues() {
+    if (map.size() != 3)
+      return false;
+    for (int mods : DEFAULT_MENU_MODS)
+      if (map.get(Integer.valueOf(mods)) != MenuTool.SINGLETON)
+        return false;
+    return true;
+  }
 
   public void copyFrom(MouseMappings other, LogisimFile file) {
     if (this == other)
       return;
-    cache_mods = -1;
-    this.map.clear();
+    this.clear();
     for (Integer mods : other.map.keySet()) {
       Tool srcTool = other.map.get(mods);
       Tool dstTool = file.findEquivalentTool(srcTool);
@@ -81,9 +107,6 @@ public class MouseMappings {
     return map.keySet();
   }
 
-  //
-  // query methods
-  //
   public Map<Integer, Tool> getMappings() {
     return map;
   }
@@ -99,24 +122,6 @@ public class MouseMappings {
     }
   }
 
-  public Tool getToolFor(Integer mods) {
-    if (mods.intValue() == cache_mods) {
-      return cache_tool;
-    } else {
-      Tool ret = map.get(mods);
-      cache_mods = mods.intValue();
-      cache_tool = ret;
-      return ret;
-    }
-  }
-
-  public Tool getToolFor(MouseEvent e) {
-    return getToolFor(e.getModifiersEx());
-  }
-
-  //
-  // package-protected methods
-  //
   void replaceAll(Map<Tool, Tool> toolMap) {
     boolean changed = false;
     for (Map.Entry<Integer, Tool> entry : map.entrySet()) {
@@ -168,25 +173,6 @@ public class MouseMappings {
       if (old != tool)
         fireMouseMappingsChanged();
     }
-  }
-
-  public void setToolFor(Integer mods, Tool tool) {
-    if (mods.intValue() == cache_mods)
-      cache_mods = -1;
-
-    if (tool == null) {
-      Object old = map.remove(mods);
-      if (old != null)
-        fireMouseMappingsChanged();
-    } else {
-      Object old = map.put(mods, tool);
-      if (old != tool)
-        fireMouseMappingsChanged();
-    }
-  }
-
-  public void setToolFor(MouseEvent e, Tool tool) {
-    setToolFor(e.getModifiersEx(), tool);
   }
 
   public boolean usesToolFromSource(Tool query) {

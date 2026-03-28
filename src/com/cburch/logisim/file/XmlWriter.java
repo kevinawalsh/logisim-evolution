@@ -503,9 +503,13 @@ public class XmlWriter {
       ret.appendChild(mainElt);
     }
 
-    ret.appendChild(fromOptions());
-    ret.appendChild(fromMouseMappings());
-    ret.appendChild(fromToolbarData());
+    Element e;
+    if ((e = fromOptions()) != null)
+      ret.appendChild(e);
+    if ((e = fromMouseMappings()) != null)
+      ret.appendChild(e);
+    if ((e = fromToolbarData()) != null)
+      ret.appendChild(e);
 
     for (Circuit circ : file.getCircuits()) {
       ret.appendChild(fromCircuit(circ, file.findToolFor(circ)));
@@ -619,9 +623,11 @@ public class XmlWriter {
     return ret;
   }
 
-  Element fromMouseMappings() {
-    Element elt = doc.createElement("mappings");
+  private Element fromMouseMappings() {
     MouseMappings map = file.getOptions().getMouseMappings();
+    if (map.isAllDefaultValues())
+      return null;
+    Element elt = doc.createElement("mappings");
     for (Map.Entry<Integer, Tool> entry : map.getMappings().entrySet()) {
       Integer mods = entry.getKey();
       Tool tool = entry.getValue();
@@ -633,9 +639,11 @@ public class XmlWriter {
     return elt;
   }
 
-  Element fromOptions() {
+  private Element fromOptions() {
+    if (!file.getOptions().isAllDefaultValues(file.getOptions().getAttributeSet(), Main.VERSION))
+      return null;
     Element elt = doc.createElement("options");
-    addAttributeSetContent(elt, file.getOptions().getAttributeSet(), null);
+    addAttributeSetContent(elt, file.getOptions().getAttributeSet(), file.getOptions());
     return elt;
   }
 
@@ -663,7 +671,7 @@ public class XmlWriter {
     return elt;
   }
 
-  Element fromToolbarData() {
+  private Element fromToolbarData() {
     Element elt = doc.createElement("toolbar");
     ToolbarData toolbar = file.getOptions().getToolbarData();
     for (Tool tool : toolbar.getContents()) {
