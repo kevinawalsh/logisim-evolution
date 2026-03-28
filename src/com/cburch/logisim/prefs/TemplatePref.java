@@ -175,7 +175,7 @@ public class TemplatePref {
   private Template getPlainTemplate() {
     if (plainTemplate == null) {
       ClassLoader ld = Startup.class.getClassLoader();
-      InputStream in = ld.getResourceAsStream("resources/logisim/default.templ");
+      InputStream in = ld.getResourceAsStream("resources/logisim/default-template.circ");
       if (in == null) {
         plainTemplate = getEmptyTemplate();
       } else {
