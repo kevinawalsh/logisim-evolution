@@ -726,7 +726,8 @@ public class Circuit implements AttributeDefaultProvider {
     return getName();
   }
   
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // Circuit should save its attributes to xml.
     return false;
   }
 

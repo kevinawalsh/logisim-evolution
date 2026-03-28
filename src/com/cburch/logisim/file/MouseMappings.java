@@ -77,7 +77,8 @@ public class MouseMappings {
       setToolFor(mods, MenuTool.SINGLETON);
   }
 
-  public boolean isAllDefaultValues() {
+  public boolean shouldOmitAllAttributesFromXml() {
+    // We omit the entire mappings block in xml if everything is set to the defaults.
     if (map.size() != 3)
       return false;
     for (int mods : DEFAULT_MENU_MODS)

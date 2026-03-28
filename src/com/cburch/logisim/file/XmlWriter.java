@@ -625,7 +625,7 @@ public class XmlWriter {
 
   private Element fromMouseMappings() {
     MouseMappings map = file.getOptions().getMouseMappings();
-    if (map.isAllDefaultValues())
+    if (map.shouldOmitAllAttributesFromXml())
       return null;
     Element elt = doc.createElement("mappings");
     for (Map.Entry<Integer, Tool> entry : map.getMappings().entrySet()) {
@@ -640,7 +640,7 @@ public class XmlWriter {
   }
 
   private Element fromOptions() {
-    if (!file.getOptions().isAllDefaultValues(file.getOptions().getAttributeSet(), Main.VERSION))
+    if (!file.getOptions().shouldOmitAllAttributesFromXml(file.getOptions().getAttributeSet(), Main.VERSION))
       return null;
     Element elt = doc.createElement("options");
     addAttributeSetContent(elt, file.getOptions().getAttributeSet(), file.getOptions());

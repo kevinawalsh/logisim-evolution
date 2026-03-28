@@ -189,7 +189,8 @@ public final class EditTool extends Tool {
   }
 
   @Override
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // EditTool has no meaningful attributes to save to xml.
     return true;
   }
 

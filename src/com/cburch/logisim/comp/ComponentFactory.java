@@ -166,8 +166,6 @@ public interface ComponentFactory extends AttributeDefaultProvider {
   default public AttributeSet getNonVolatileSimulationState(Component comp, CircuitState state) { return null; }
   default public void setNonVolatileSimulationState(Component comp, CircuitState state, AttributeSet attrs) { }
 
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver);
-
   public void paintIcon(ComponentDrawContext context, int x, int y, AttributeSet attrs);
 
 }

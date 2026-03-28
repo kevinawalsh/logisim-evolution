@@ -257,7 +257,7 @@ public class XmlReader {
         return;
 
       boolean setDefaults = defaults != null
-          && !defaults.isAllDefaultValues(attrs, sourceVersion);
+          && !defaults.shouldOmitAllAttributesFromXml(attrs, sourceVersion);
       // We need to process this in order, and we have to refetch the
       // attribute list each time because it may change as we iterate
       // (as it will for a splitter).

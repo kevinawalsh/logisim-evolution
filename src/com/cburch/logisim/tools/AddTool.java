@@ -117,7 +117,7 @@ public class AddTool extends Tool {
     this.factory = base.factory;
     this.bounds = base.bounds;
     this.shouldSnap = base.shouldSnap;
-    if (base.isAllDefaultValues(base.attrs, null))
+    if (base.shouldOmitAllAttributesFromXml(base.attrs, null))
       this.attrs = new FactoryAttributes((FactoryAttributes)base.attrs);
     else
       this.attrs = (AttributeSet) base.attrs.clone();
@@ -343,7 +343,11 @@ public class AddTool extends Tool {
   }
 
   @Override
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // If the attributes in question are just FactoryAttributes and the factory isn't yet loaded,
+    // then skip the whole set to avoid loading the factory. The attributes would by definition be
+    // the defaults, since FactoryAttributes is just a transparent pass-through to the underlying
+    // factory itself and the factory isn't yet loaded so nothing could have changed.
     return this.attrs == attrs && attrs instanceof FactoryAttributes
         && !((FactoryAttributes) attrs).isFactoryInstantiated();
   }

@@ -96,7 +96,8 @@ public abstract class Tool implements AttributeDefaultProvider, DragDrop.Support
 
   public abstract String getName();
 
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // Most tools should save their attributes to xml.
     return false;
   }
 

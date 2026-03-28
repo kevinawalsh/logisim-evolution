@@ -98,7 +98,8 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     return false;
   }
 
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // For components generally, don't skip the attributes en masse when encoding to xml.
     return false;
   }
 

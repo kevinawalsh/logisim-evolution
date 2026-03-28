@@ -94,7 +94,8 @@ public class Options implements AttributeDefaultProvider {
   }
 
   @Override
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // We omit the entire options block in xml if everything is set to the defaults.
     for (int i = 0; i < ATTRIBUTES.length; i++)
       if (!DEFAULTS[i].equals(attrs.getValue(ATTRIBUTES[i])))
         return false;

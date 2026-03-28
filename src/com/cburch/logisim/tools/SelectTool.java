@@ -390,7 +390,9 @@ public final class SelectTool extends Tool {
   }
 
   @Override
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver) {
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver) {
+    // SelectTool has no meaningful attributes to save to xml. All the attributes it has are
+    // transient, computed from the current selection.
     return true;
   }
 

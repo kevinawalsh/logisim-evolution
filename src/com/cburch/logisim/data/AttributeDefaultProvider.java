@@ -33,10 +33,24 @@ package com.cburch.logisim.data;
 import com.cburch.logisim.LogisimVersion;
 
 public interface AttributeDefaultProvider {
+  
+  // Determines what attribute value to use when parsing a file created with the given version, if
+  // the file didn't include a value for the attribute. Normally, this would be whatever the default
+  // value would have been for that version. But in a few versions of logisim, accidentally the default value was
+  // always written to xml and some non-default value was skipped instead. This should return
+  // whichever value was omitted when writing to the xml.
   public Object getDefaultAttributeValue(Attribute<?> attr, LogisimVersion ver);
 
-  public boolean isAllDefaultValues(AttributeSet attrs, LogisimVersion ver);
+  // This is used to decide if an entire set of attributes should be skipped when writing to xml.
+  // There are two relevant cases:
+  // - If all the values are the defaults and would have been omitted anyway; returning true in this
+  //   case is merely a slight optimization, letting the xml code skip the whole set instead of
+  //   checking then skipping' each attribute individually.
+  // - If the values are transient and should never be written to xml regardless of their values,
+  //   e.g. as for SelectTool.
+  public boolean shouldOmitAllAttributesFromXml(AttributeSet attrs, LogisimVersion ver);
 
+  // Decide whether an individual attribute should be omitted when writing to xml.
   default public boolean hasDefaultAttributeValue(AttributeSet attrs, Attribute<?> attr, LogisimVersion ver) {
     Object val = attrs.getValue(attr);
     Object dflt = getDefaultAttributeValue(attr, ver);

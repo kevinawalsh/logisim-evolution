@@ -45,7 +45,7 @@ public class XmlAttributesUtil {
     if (attrs == null)
       return;
     LogisimVersion ver = Main.VERSION;
-    if (source != null && source.isAllDefaultValues(attrs, ver))
+    if (source != null && source.shouldOmitAllAttributesFromXml(attrs, ver))
       return;
     for (Attribute<?> attrBase : attrs.getAttributes()) {
       @SuppressWarnings("unchecked")
