@@ -1,6 +1,9 @@
 
 todo
 
+# Circuit backup files
+**/*.autosave
+
 # Java Files
 com/bfh
 com/cburch
