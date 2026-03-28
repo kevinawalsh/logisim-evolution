@@ -524,6 +524,8 @@ public class Ram extends Mem {
       return 90 + enables * 10;
   }
 
+  // FIXME: it is not clear why this registry (and the similar one in RomAttributes.java) could not
+  // be eliminated, and instead reference the HexFrame from a member variable in MemContents.
   private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
   static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
     synchronized (windowRegistry) {

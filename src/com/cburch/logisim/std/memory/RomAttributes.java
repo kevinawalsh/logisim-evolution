@@ -45,6 +45,9 @@ import com.cburch.logisim.util.WeakIdentityHashMap;
 
 class RomAttributes extends AbstractAttributeSet {
 
+  // FIXME: it is not clear why this registry (and the similar one in Ram.java) could not be
+  // eliminated, and instead reference the HexFrame from a member variable in MemContents.
+  private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
   static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
     synchronized (windowRegistry) {
       HexFrame ret = windowRegistry.get(value);
@@ -92,7 +95,6 @@ class RomAttributes extends AbstractAttributeSet {
   // for each listener?
   // private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
 
-  private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
   private BitWidth addrBits = BitWidth.create(8);
   private BitWidth dataBits = BitWidth.create(8);
   private MemContents contents;
