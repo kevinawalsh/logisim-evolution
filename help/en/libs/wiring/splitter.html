@@ -21,7 +21,7 @@
     <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=splitters.circ">Live Circuit: Splitters</a></li>
 </ul>
 
-<p>The Split/Join Signals component, or <b>"splitter"</b> for short, is used to
+<p>The Split/Join Signals component, or <i>Splitter</i> for short, is used to
 join or split signals and buses. A splitter is very flexible in how it can be
 used:
 <ul>
@@ -51,20 +51,31 @@ half), or any other combination of bits.</p></li>
 
 <img src="splitters-odd.png">
 
+</ul>
+
+<h2>Ports</h2>
+
+<p>Each splitter has a <em>combined end</em>, and one or more <em>taps</em>. The
+<i>Fan Out</i> property controls how many taps there are. Taps are numbered 1 to M. The
+<i>Combined Bit Width</i> property controls the width of combined end, and also controls how
+many bits are available for the taps. Bits are numbrered 0 to N-1. Other
+properties allow you to assign each bit (0 to N-1) from the combined end to one
+of the taps (1 to M). Or, you can select "None" for a bit to indicate that bit
+isn't used by any of the taps.</p>
+
 <p><img class="nonicon" src="splitter-taps.png" style="float: right; border: 1px solid gray;">
-Each splitter has a <em>combined end</em>, and one or more <em>taps</em>. The
-Fan Out property controls how many taps there are. The bit-width property
-controls the width of combined end, and also controls how many bits are
-available for the taps. Other properties allow you to assign each bit from the
-combined end to one of the taps. Or, you can select "None" for a bit to indicate
-that bit isn't used by any of the taps.
+In the image at right, there are 8 bits and 8 taps. Tap 1, at the top, carries
+bit 0. Tap 2, second from the top, carries bits 3, 2, and 1. The next two taps
+carry no bits. Bit 6 is carried by the bottom-most tap, Tap 8. The numbers drawn
+next to each tap show which bits are carried by that tap.</p>
 
 <p class="warning"><b>Note:</b> Each bit can only be assigned to one tap. So the
-combined end has "all the bits" in the splitter. And the taps, taken together,
-can't have duplicate copies of any of those bits. But there is no requirement
-that the taps, taken together, cover all the bits: there can be bits "missing"
-from the taps. And some taps can be empty, carrying no signals at all, if you
-want.</p>
+combined end has "all the bits" in the splitter (all 8 bits in the image at
+right). And the taps, taken together, can't have duplicate copies of any of
+those bits. In other words, each bit number drawn on the symbol can only appear
+at most once. But there is no requirement that the taps, taken together, cover
+all the bits: there can be bits "missing" from the taps. And some taps can be
+empty, carrying no signals at all, if you want. These are shown in gray.</p>
 
 <p class="hint"><b>Tip:</b> The combined end, and the taps, have no specific
 direction. In fact, you can mix and match directions freely, even within the
@@ -87,86 +98,72 @@ though a wiring harness often has taps scattered along its length and might have
 more than one connectors at each end, rather than a single distinct "combined
 end".</p>
 
-<h2>Pins</h2>
+<h2>Keyboard Shortcuts</h2>
 
-<p>To distinguish the several connecting points for a splitter, we refer
-to the single connecting point one side as its <em>combined end</em>,
-and we refer to the multiple connecting points on the other side as its
-<em>split ends</em>.</p>
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property for a splitter.
 
-<dl>
+<li><b>Typing a number (1-32)</b> changes the <i>Combined Bit Width</i> property
+for a splitter, controlling the number of bits available at the combined end and
+the number of bits available for the taps.
 
-<dt>Combined end (input/output bit width matches Bit Width In attribute)</dt>
-<dd><p>A value holding all of the bits traveling through the splitter.</p></dd>
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b> changes
+the <i>Fan Out</i> property for a splitter, controlling how many taps are present.
+</ul>
 
-<dt>Split ends (input/output, bit width computed based on Bit <var>x</var> attributes)</td>
-<dd><p>The number of split ends is specified in the Fan Out attribute, and
-each split end has an index that is at least 0 and less than the Fan Out
-attribute. For each split end, all bits for which Bit <var>x</var>
-refers to its index travels through that split end; the order of these
-bits is the same as their order within the combined end.</p></dd>
-
-</dl>
-
-<h2>Attributes</h2>
-
-<p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Fan Out</q> attribute,
-Alt-0 through Alt-9 alter both the <q>Fan Out</q> and <q>Bit Width In</q> attributes,
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+<h2>Properties</h2>
 
 <dl>
 
 <dt>Facing</dt>
-<dd><p>The location of the split ends relative to the combined end.</p></dd>
+<dd><p>The direction the taps are pointing.</p></dd>
 
 <dt>Fan Out</dt>
-<dd><p>The number of split ends.</p></dd>
+<dd><p>The number of taps.</p></dd>
 
-<dt>Bit Width In</dt>
+<dt>Combined Bit Width</dt>
 <dd><p>The bit width of the combined end.</p></dd>
 
 <dt>Appearance</dt>
-<dd><p>Supports different ways of depicting the splitter in the circuit.
-The <q>Left-handed</q> option (the default) draws a spine going left from the
-combined end, with a labeled line coming from the spine for each split end.
-The <q>Right-handed</q> option is the same except the spine goes right (if you're
-facing according to the Facing attribute).
-The <q>Centered</q> option centers the spine so it goes in roughly equal directions
-left and right.
-And the <q>Legacy</q> option draws diagonal lines to each split end, without labels;
-this option is primarily for compatibility with versions
-older than 2.7.0, when this was the only option for splitter appearance.</p></dd>
+<dd><p>Supports different ways of depicting the splitter in the circuit. If a
+splitter is facing East, then:
+<ul>
+<li><i>Left-handed</i> (the default) draws a spine going left from the
+combined end, with taps arranged perpendicular to the spine.
+<li><i>Right-handed</i> is similar, but with the spine going to the right relative
+to the combined end.
+<li><i>Centered</i> draws a shorter spine, roughly balanced left to rigght, and
+with a mix of diagonal and perpendicular taps. Bit numbers are shown on the
+taps. This option is primarily for compatibility with older versions of Logisim.
+</ul>
+</dd>
 
 <dt>Spacing</td>
-<dd><p>Controls how far appart the split end pins are placed.</p></dd>
+<dd><p>Controls how far appart the tap pins are placed.</p></dd>
 
 <dt>Bit <var>x</var></dt>
-<dd><p>The index of the split end to which bit <var>x</var> of the combined
-end corresponds. The split ends are indexed starting from 0 at the top
-(for a splitter facing east or west) or from 0 at the left/west (for a
-splitter facing north or south). A bit can be specified to correspond to
-none of the split ends. There is no way for a bit to correspond to
-multiple split ends.</p>
+<dd><p>Controls which tap bit <var>x</var> is connected to, or can be set to
+"None" if bit <var>x</var> is not to be used by the taps. Taps are numbered
+start from 1 at the top (for a splitter facing east or west) or from 1 at the
+left/west (for a splitter facing north or south). Note: There is no way for a
+bit to be connected to multiple taps.</p>
 
-<p>Sometimes you can avoid twiddling each individual Bit <var>x</var> attribute
-by bringing up the pop-up menu for a splitter (usually by right-clicking or
-control-clicking it). The pop-up menu includes options labeled Distribute Ascending
-and Distribute Descending. The Distribute Ascending option distributes the bits
-so that each split end receives the same number of bits, starting from end 0.
-(If the number of split ends doesn't divide exactly into the number of bits,
+<p>As a convenience, the popup menu for a splitter can be used to reset all of
+the <i>Bit x</i> properties simultaneously. Right click (or Control-Click) a
+splitter to bring up the popup menu.
+Choose <b>Distribute Ascending</b> to distribute the bits
+so that each tap receives the same number of bits, starting from tap 1.
+(If the number of taps doesn't divide exactly into the number of bits,
 then the bits are distributed as evenly as possible.)
-Distribute Descending does the same but starts from the highest-numbered end.</p></dd>
+Choose <b>Distribute Descending</b> to do the same, but starting from the highest-numbered tap.</p></dd>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - splitters do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>
