@@ -31,10 +31,10 @@ value of its input. A slideshow might have a 3-bit input, used to select one of
 <h2>Pins</h2>
 
 <p>There is only one input pin, on the west edge, with bit width determined by
-the 'Address Bit Width' attribute. This input is used to select the
+the 'Address Bit Width' property. This input is used to select the
 image to be displayed.
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <dl>
 
@@ -48,9 +48,9 @@ image to be displayed.
 <dd>The size of the displayed image, in pixels.</d>
 
 <dt>Image Fit</dt>
-<dd>This attribute has no effect if the images exactly fit the specified width and height
+<dd>This property has no effect if the images exactly fit the specified width and height
     for the component, or if it can be naturally scaled to fit without changing
-    the aspect ratio. For images that don't fit nicely, this attribute
+    the aspect ratio. For images that don't fit nicely, this property
     controls how the images are fit into the display area: "scale to fit"
     will maintain the aspect ratio but scale the image as large as possible
     while still fiting entirely within the boundary, 

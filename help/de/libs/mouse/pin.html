@@ -25,7 +25,7 @@
 <h2>Verhalten</h2>
 
 <p>A pin is an output or an input to a circuit, depending on the value
-of its Output? attribute. In drawing a pin, Logisim represents output
+of its Output? property. In drawing a pin, Logisim represents output
 pins using a circle or rounded rectangle, and input pins are represented
 using squares or rectangles. In either case, the individual bits of the
 value being sent or received is displayed within the component (except
@@ -49,15 +49,15 @@ tied to the pins within the subcircuit layout.</p>
 <p>A pin component has only one pin, which will be an input to the
 component if the pin is an output pin, and it will be an output to the
 component if the pin is an input pin.  In either case, its bit width
-matches the Data Bits attribute, and its location is specified by the
-Facing attribute.</p>
+matches the Data Bits property, and its location is specified by the
+Facing property.</p>
 
-<h2>Attribute</h2>
+<h2>Property</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute,
-the arrow keys alter its <q>Facing</q> attribute,
-and Alt with an arrow key alters its <q>Label Location</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
+the arrow keys alter its <q>Facing</q> property,
+and Alt with an arrow key alters its <q>Label Location</q> property.</p>
 
 <dl>
 
@@ -75,13 +75,13 @@ as its interface within the circuit will be an output, and vice versa.)</dd>
 <dt>Three-state?</dt>
 <dd>For an input pin, this configures whether the user can 
 instruct the pin to emit unspecified (i.e., floating) values.
-The attribute deals with the user interface only; it does not have
+The property deals with the user interface only; it does not have
 any effect on how the pin behaves when the circuit layout is used as a
 subcircuit.
-For an output pin, the attribute has no effect.</dd>
+For an output pin, the property has no effect.</dd>
 
 <dt>Pull Behavior</dt>
-<dd>For an input pin, the attribute specifies how floating values should
+<dd>For an input pin, the property specifies how floating values should
 be treated when received as an input, perhaps from a circuit using the
 layout as a subcircuit. With "unchanged," the floating values are sent
 into the layout as floating values; with "pull up," they are converted
@@ -102,7 +102,7 @@ circuit layout.</dd>
 
 <h2>Verhalten des Schaltwerkzeugs</h2>
 
-<p>Clicking an output pin has no effect, although the pin's attributes
+<p>Clicking an output pin has no effect, although the pin's properties
 will be displayed.</p>
 
 <p>Clicking an input pin will toggle the bit that is clicked. If it is a

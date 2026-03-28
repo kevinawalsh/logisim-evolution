@@ -45,19 +45,19 @@ its input.</p>
 
 <dl>
 
-<dt>West edge (input, bit width according to Data Bits attribute)</dt>
+<dt>West edge (input, bit width according to Data Bits property)</dt>
 <dd>The component's input.</dd>
 
-<dt>East edge (output, bit width according to Data Bits attribute)</dt>
+<dt>East edge (output, bit width according to Data Bits property)</dt>
 <dd>The output, whose value is the complement of the input value.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 
@@ -78,9 +78,9 @@ When "0/floating" is selected, the component will output a floating X value
 whenever it would normally output a 1. Similarly, when "floating/1" is selected,
 the component will output a floating X value whenever it would normally output
 a 0. The floating output options allow for wired-or and wired-and connections,
-as illustrated below: At left, the Not Gates' Output Value attributes are floating/1
+as illustrated below: At left, the Not Gates' Output Value properties are floating/1
 and the resistor pulls to 0, giving wired-or behavior; at right, the Not Gates'
-Output Value attributes are 0/floating and the resistor pulls to 1, giving
+Output Value properties are 0/floating and the resistor pulls to 1, giving
 wired-and behavior.
 <center><img src="/logisim-evolution/img-libs/wand-wor-not.png" width="220" height="91"></center></dd> 
 
@@ -97,7 +97,7 @@ wired-and behavior.
 <p>None.</p>
 
 <h2>FPGA Synthesis</h2><p>All basic gates support VHDL and Verilog synthesis.
-Floating outputs (selected with 'Output Value' attribute) are not supported for
+Floating outputs (selected with 'Output Value' property) are not supported for
 synthesis.</p>
 
 <p><a href="../index.html">Up to <em>Library Reference</em></a></p>

@@ -41,6 +41,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.gui.generic.QuickHelp;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.Icons;
 import com.cburch.logisim.util.StringGetter;
@@ -90,7 +91,11 @@ public abstract class AbstractComponentFactory implements ComponentFactory {
     return getDisplayGetter().toString();
   }
 
+  @Override
   public Object getFeature(Object key, AttributeSet attrs) {
+    if (key == QUICK_HELP) {
+      return QuickHelp.load(getClass());
+    }
     return null;
   }
 

@@ -27,7 +27,7 @@
 
 <p>The counter holds a single value, whose value is emitted on the output
 <var>Q</var>. Each time the clock input (diagrammed with a triangle on the
-component's south edge) triggers according to its Trigger attribute,
+component's south edge) triggers according to its Trigger property,
 the value in the counter may update based on
 the two inputs on the component's west edge: The upper input is called
 <var>load</var> and the lower is called <var>count</var>, and they are
@@ -48,7 +48,7 @@ interpreted as follows.</p>
 </tbody></table></center>
 
 <p>The range of counting can be configured using the Maximum
-Value attribute. When the counter reaches this value, the next
+Value property. When the counter reaches this value, the next
 increment wraps the counter back to 0; and if it is at 0,
 then a decrement will wrap the counter around back to its maximum value.</p>
 
@@ -67,7 +67,7 @@ is 1, the value is pinned to 0, regardless of the clock input.</p>
 
 <dl>
 
-<dt>East edge, labeled <var>Q</var> (output, bit width matches Data Bits attribute)</dt>
+<dt>East edge, labeled <var>Q</var> (output, bit width matches Data Bits property)</dt>
 <dd>Outputs the value currently stored by the counter.</dd>
 
 <dt>East edge, lower pin (output, bit width 1)</dt>
@@ -83,7 +83,7 @@ trigger - or, if the <var>count</var> input happens to be 1, the counter's
 value will decrement.</dd>
 
 <dt>West edge, middle pin labeled <var>D</var>
-  (input, bit with matches Data Bits attribute)</dt>
+  (input, bit with matches Data Bits property)</dt>
 <dd>Data: When the clock triggers while <var>load</var> is 1
 and <var>count</var> is 0, the counter's value changes to the value found at
 this input.</dd>
@@ -95,7 +95,7 @@ input happens to also be 1.</dd>
 
 <dt>South edge, indicated with a triangle (input, bit width 1)
 <dd>Clock: At the instant that this is triggered as specified by the Trigger
-attribute, the counter updates as indicated by the <var>load</var> and
+property, the counter updates as indicated by the <var>load</var> and
 <var>count</var> inputs.</dd>
 
 <dt>South edge, labeled 0 (input, bit width 1)
@@ -107,10 +107,10 @@ value. As long as this is 1, the other inputs have no effect.</dd>
 </dl>
 
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property.</p>
 
 <dl>
 
@@ -130,7 +130,7 @@ or decrement beyond 0. Four possible actions are supported:
 <dd>The counter's value remains at the maximum (or 0 if decrementing)</dd>
 <dt>Continue counting</dt>
 <dd>The counter continues incrementing/decrementing, keeping the number of bits
-as provided by the Data Bits attribute</dd>
+as provided by the Data Bits property</dd>
 <dt>Load next value</dt>
 <dd>The next value is loaded from the D input.</dd>
 </dl></dd>

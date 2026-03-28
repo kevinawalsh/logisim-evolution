@@ -86,7 +86,7 @@ But if there are more than two specified inputs, the XOR gate will emit
 will emit 1 if there are an odd number of 1 inputs.
 The XNOR gate will emit 1 only when there is <em>not</em> exactly one 1
 input, while the Even Parity gate will emit 1 if there are an even
-number of 1 inputs. The XOR and XNOR gates include an attribute titled
+number of 1 inputs. The XOR and XNOR gates include a property titled
 Multiple-Input Behavior that allow them to be configured to use the
 Odd Parity and Even Parity behavior.</p>
 
@@ -106,15 +106,15 @@ whether you want a side dish of mashed potatoes, carrots, peas, or cole
 slaw will only accept one choice, not three, whatever some authorities
 may tell you. (I must admit, though, that I have not subjected this
 statement to a rigorous test.) You can configure the XOR and XNOR gates
-to use parity by changing its <q>Multiple-Input Behavior</q> attribute.</p>
+to use parity by changing its <q>Multiple-Input Behavior</q> property.</p>
 
 <h2>Pins (assuming component faces east)</h2>
 
 <dl>
 
-<dt>West edge (inputs, bit width according to Data Bits attribute)</dt>
+<dt>West edge (inputs, bit width according to Data Bits property)</dt>
 <dd><p>The inputs into the component. There will be as many of these as
-specified in the Number of Inputs attribute.</p>
+specified in the Number of Inputs property.</p>
 
 <p>Note that if you are using shaped gates, the west side of XOR and
 XNOR gates will be curved. Nonetheless, the input pins are in a line.
@@ -123,18 +123,18 @@ stub, it will silently assume that you did not mean to overshoot it. In
 "printer view", these stubs will not be drawn unless they are connected
 to wires.</p></dd>
 
-<dt>East edge (output, bit width according to Data Bits attribute)</dt>
+<dt>East edge (output, bit width according to Data Bits property)</dt>
 <dd><p>The gate's output, whose value is computed based on the current
 inputs as described above.</p></dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Number of Inputs</q> attribute,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute,
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+the digits '0' through '9' alter its <q>Number of Inputs</q> property,
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 
@@ -147,7 +147,7 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 <dt>Gate Size</dt>
 <dd>Determines whether to draw a wider or narrower version of the
 component. This does not affect the number of inputs, which is specified
-by the Number of Inputs attribute; however, if the number of inputs exceeds 3 (for a
+by the Number of Inputs property; however, if the number of inputs exceeds 3 (for a
 narrow component) or 5 (for a wide component), then the gate will
 be drawn with "wings" to be able to accommodate the number of inputs
 requested.</dd>

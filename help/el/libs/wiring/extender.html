@@ -37,23 +37,23 @@ input that determines the identity of these other bits.</p>
 
 <dl>
 
-<dt>West edge (input, bit width from Bit Width In attribute)</dt>
+<dt>West edge (input, bit width from Bit Width In property)</dt>
 <dd><p>The multi-bit input whose value is to be transformed.</p></dd>
 
-<dt>East edge (output, bit width from Bit Width Out attribute)</dt>
+<dt>East edge (output, bit width from Bit Width Out property)</dt>
 <dd><p>The computed output.</p></dd>
 
 <dt>North edge (input, bit width 1)</dt>
 <dd><p>Specifies what the additional bits in the output should be.
-This pin is available only when the Extension Type attribute is <q>Input.</q></p></dd>
+This pin is available only when the Extension Type property is <q>Input.</q></p></dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits 0 through 9 alter the <q>Bit Width In</q> attribute
-and Alt-0 through Alt-9 alter its <q>Bit Width Out</q> attribute.</p>
+the digits 0 through 9 alter the <q>Bit Width In</q> property
+and Alt-0 through Alt-9 alter its <q>Bit Width Out</q> property.</p>
 
 <dl>
 
@@ -65,7 +65,7 @@ and Alt-0 through Alt-9 alter its <q>Bit Width Out</q> attribute.</p>
 
 <dt>Extension Type</dt>
 <dd>Assuming the output bit width exceeds the input bit width,
-this attribute configures what the additional output bits should be.
+this property configures what the additional output bits should be.
 If <q>Zero</q> or <q>One,</q> the additional bits are 0 or 1 accordingly.
 If <q>Sign,</q> the additional bits are taken to match the highest-order bit in the input.
 And if <q>Input,</q> the component has a second input on its north side whose one-bit value is used for the additional bits.</dd>

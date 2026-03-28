@@ -36,7 +36,7 @@ equivalent to a Demultiplexer with a constant '1' as its input.</p>
 <dd>The outputs are numbered starting with 0 on the north. Each output
 will be 1 if its number matches the value currently received through the
 select input on the south; otherwise, its value will be either zero or
-floating, depending on the value of the Three-State? attribute.
+floating, depending on the value of the Three-State? property.
 If the select input contains any unspecified bits, then all outputs are
 floating.</dd>
 
@@ -44,17 +44,17 @@ floating.</dd>
 <dd>Enable (optional): When 0, all outputs consist of all floating bits (or zeros),
 regardless of the select input.</dd>
 
-<dt>South edge, right side indicated by gray circle (input, bit width matches Select Bits attribute)</dt>
+<dt>South edge, right side indicated by gray circle (input, bit width matches Select Bits property)</dt>
 <dd>Select input: The value of this input determines which of the
 outputs is 1.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '1' through '4' alter its <q>Select Bits</q> attribute
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+the digits '1' through '4' alter its <q>Select Bits</q> property
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 

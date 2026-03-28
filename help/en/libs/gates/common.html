@@ -41,16 +41,16 @@
 several inputs, combines these using the rules of Boolean logic, and outputs the
 result.</p>
 
-<p>Gates can take up to 32 input bits (see <i>Number of Inputs</i> attribute).
+<p>Gates can take up to 32 input bits (see <i>Number of Inputs</i> property).
 All inputs are combined using the usual rules of Boolean logic to produce a
-single output result. Use the <i>Data Bits</i> attribute to allow a gate to
+single output result. Use the <i>Data Bits</i> property to allow a gate to
 operate on multiple bits simultaneously.</p>
 
 <p><b>XOR &amp; XNOR Multiple-Input Behavior</b> Multi-input XOR and XNOR gates
 can be confusing. Normally, XOR outputs a 1 when an <i>odd number of inputs</i> are
 1, and XNOR does the opposite. This "parity" behavior is most typical. For XOR
 and XNOR gates with more than two inputs, the <b><i>multiple-input
-behavior</i></b> attribute allows for a different, less common behavior, where
+behavior</i></b> property allows for a different, less common behavior, where
 XOR outputs a 1 when <i>exactly one input</i> is a 1, and XNOR does the opposite.</p>
 
 <ul>
@@ -157,7 +157,7 @@ the <i>Data Bits</i> property for the selected gate or gates.
 </ul>
 
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 Common multiple-input logic gates, AND, OR, NAND, NOR, XOR, XNOR, support these properties:
 
@@ -213,14 +213,12 @@ and left-to-right if facing north or south.</dd>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - the common gates do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2>
 <p>All common gates support VHDL and Verilog synthesis. Floating outputs
-(selected with <i>Output Value</i> attribute) are not supported for
+(selected with <i>Output Value</i> property) are not supported for
 synthesis.</p>
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

@@ -31,8 +31,8 @@
 
 <p>The RAM component, easily the most complex component in Logisim's
 built-in libraries, stores up to 16,777,216 values (specified in the Address
-Bit Width attribute), each of which can include up to to 32 bits
-(specified in the Data Bit Width attribute). The circuit can load and
+Bit Width property), each of which can include up to to 32 bits
+(specified in the Data Bit Width property). The circuit can load and
 store values in RAM, either one at a time, in pairs, or four at a time. Also, the user can modify individual values
 interactively via the Poke Tool, or the user can edit, export, or import the
 contents via the Menu Tool.</p>
@@ -44,7 +44,7 @@ dark highlight and white text.</p>
 
 
 <p>The RAM component supports two different interfaces, depending on the
-Databus implementation attribute.</p>
+Databus implementation property.</p>
 
 <dl>
 
@@ -59,7 +59,7 @@ directions on a single bus wire, you will need to use a <a
     href="../basic/controlled.html"><img class="icon"
 src="/logisim-evolution/icons/controlledBuffer.gif"> Tri-State Buffer</a>, as illustrated in the
 example below, or other components that support floating outputs (e.g.
-components that have an 'Output Value' attribute with support for floating
+components that have an 'Output Value' property with support for floating
 outputs).
 </p>
 
@@ -79,7 +79,7 @@ every cycle. The <var>S</var> control port controls whether data is stored.
 
 <h2>Single, Dual, and Quad Lines Modes</h2>
 
-<p>Logisim RAM has a 'Line Size' attribute that controls how many locations
+<p>Logisim RAM has a 'Line Size' property that controls how many locations
 ("lines") of memory are accessed at a time. Setting 'Line Size' to 'Single' is
 the simplest case: at most one location is accessed during each clock cycle, and
 there is one databus labeled <var>D</var> (either a single bidirectional port,
@@ -128,33 +128,33 @@ href="../../guide/mem/importexport.html">Memory Import/Export Format</a> in the
 
 <dl>
 
-<dt><var>A</var> on west edge (input, bit width matches Address Bit Width attribute)</dt>
+<dt><var>A</var> on west edge (input, bit width matches Address Bit Width property)</dt>
 <dd>Selects which of the values in memory is currently being accessed by the
 circuit. In 'Dual' and 'Quad' line mode, the address <var>A</var> must be a
 multiple of 2 or 4, respectively, and two or four consecutive addresses are
 accessed starting at address <var>A</var>.</dd>
 
-<dt><var>D</var> on west edge (input, bit width matches Data Bit Width attribute)</dt>
+<dt><var>D</var> on west edge (input, bit width matches Data Bit Width property)</dt>
 <dd>This input is present only if "separate data buses" is selected
-for the Databus implementation attribute. When a store is requested (via the clock changing
+for the Databus implementation property. When a store is requested (via the clock changing
 from 0 to 1 while <em>S</em> is 1 and <em>S0</em> if present is also 1), the
 value found at this port is stored into memory at the currently selected address.</dd>
 
-<dt><var>1</var> on west edge (input, bit width matches Data Bit Width attribute)</dt>
+<dt><var>1</var> on west edge (input, bit width matches Data Bit Width property)</dt>
 <dd>This input is present only if "Dual" or "Quad" line mode is selected and
-"separate data buses" is selected for the Databus implementation attribute. When a store
+"separate data buses" is selected for the Databus implementation property. When a store
 is requested (via the clock changing from 0 to 1 while <em>S1</em> is 1), the
 value found at port <em>1</em>is stored into memory at <var>A+1</var>, i.e. 1
 location beyond the currently selected address.</dd>
 
-<dt><var>2</var> and <var>3</var> on west edge (inputs, bit width matches Data Bit Width attribute)</dt>
+<dt><var>2</var> and <var>3</var> on west edge (inputs, bit width matches Data Bit Width property)</dt>
 <dd>These inputs are present only if "Quad" line mode is selected and
-"separate data buses" is selected for the Databus implementation attribute. They behave
+"separate data buses" is selected for the Databus implementation property. They behave
 similarly to the <var>1</var> input, but using control signals <em>S2</em> and
 <em>S3</em>, respectively, and addresses <var>A+2</var> and <var>A+3</var>,
 respectively.</dd>
 
-<dt><var>D</var> on east edge (input/output or output, bit width matches Data Bit Width attribute)</dt>
+<dt><var>D</var> on east edge (input/output or output, bit width matches Data Bit Width property)</dt>
 <dd>If <var>L</var> is 1 or floating (or if the <var>L</var> input is not
 present), then the RAM component emits the value found at the currently selected
 address on this port, unless the address is mis-aligned in which case an error
@@ -163,7 +163,7 @@ port, the value read from this port is stored whenever a store is
 requested.</dd>
 
 <dt><var>1</var>, <var>2</var>, <var>3</var> on east edge (inputs/outputs or
-outputs, bit width matches Data Bit Width attribute)</dt> <dd>These ports are
+outputs, bit width matches Data Bit Width property)</dt> <dd>These ports are
 present only if "Dual" or "Quad" line mode is selected. They each behave
 similarl to the <var>D</var> input/output or output port, but using addresses
 <var>A+1</var>,  <var>A+2</var>, and <var>A+3</var>, respectively.</dt>
@@ -181,7 +181,7 @@ lines. Address <var>A+i</var> is only written when both <var>S</var> and
 <dt>triangle on west edge (input, bit width 1)</dt>
 <dd>Clock input: Controls the timing of store requests.
 When <var>S</var> is 1, and the clock input rises from 0 to 1 (or is triggered
-according to the 'Trigger' attribute) while <var>S</var> is 1 (and some of the
+according to the 'Trigger' property) while <var>S</var> is 1 (and some of the
 <var>Si</var> inputs, if present, are also 1), then the value at the data input
 bus(es) is immediately written into the currently selected address. Note that
 the clock has no effect on load actions: loads happen asynchronously and
@@ -195,11 +195,11 @@ those data ports.
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Address Bit Width</q> attribute
-and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> attribute.</p>
+the digits '0' through '9' alter its <q>Address Bit Width</q> property
+and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> property.</p>
 
 <dl>
 

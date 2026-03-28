@@ -38,31 +38,31 @@ spelling.)</p>
 
 <dl>
 
-<dt>West edge (input, bit width matches Data Bits attribute)</dt>
+<dt>West edge (input, bit width matches Data Bits property)</dt>
 <dd>The value to be routed to one of the outputs on the east edge.</dd>
 
 <dt>East edge, variable number (outputs, bit width matches Data Bits
-attribute)</dt>
+property)</dt>
 <dd>The outputs are numbered starting with 0 on the north. An output
 will match the west input if its number matches the value currently
 received through the select input on the south; otherwise, its value
 will be either all-zeroes or all-floating, depending on the value of
-the Three-State? attribute.
+the Three-State? property.
 If the select input contains any unspecified bits, then all outputs are
 floating.</dd>
 
-<dt>South edge (input, bit width matches Select Bits attribute)</dt>
+<dt>South edge (input, bit width matches Select Bits property)</dt>
 <dd>Select input: The value of this input determines to which output on
 the east edge to route the value received on the west edge.</dd>
 
 </dl>
 
-<h2>Attribute</h2>
+<h2>Property</h2>
 
 <p>When the component is selected or being added,
-the digits '1' through '4' alter its <q>Select Bits</q> attribute,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute,
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+the digits '1' through '4' alter its <q>Select Bits</q> property,
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 

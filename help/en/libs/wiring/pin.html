@@ -24,7 +24,7 @@
 <h2>Behavior</h2>
 
 <p>A pin serves as an output from a circuit or as an input to a circuit, depending on the value
-of its 'Type' attribute. Logisim represents output
+of its 'Type' property. Logisim represents output
 pins using a circle or rounded rectangle, and input pins are represented
 using squares or rectangles. In either case, the individual bits of the
 value being sent or received is displayed within the component (except
@@ -51,15 +51,15 @@ circuit in which this layout is embedded) and outputting that value to the
 connected wire. Conversely, when the Pin's type is set to 'output' the pin takes
 input from the connected wire and outputs it to the screen for the user to see
 (or to some other circuit in which thhis layout is embedded). In either case,
-its bit width matches the Data Bits attribute, and its location depends on the
-Facing attribute.</p>
+its bit width matches the Data Bits property, and its location depends on the
+Facing property.</p>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute,
-the arrow keys alter its <q>Facing</q> attribute,
-and Alt with an arrow key alters its <q>Label Location</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
+the arrow keys alter its <q>Facing</q> property,
+and Alt with an arrow key alters its <q>Label Location</q> property.</p>
 
 <dl>
 
@@ -75,7 +75,7 @@ to output values from the circuit.</dd>
 
 <dt>Behavior</dt>
 <dd>Controls how an input pin behaves in several special cases, mostly involving
-error and unknown values. Output pins do not have a Behavior attribute, as they
+error and unknown values. Output pins do not have a Behavior property, as they
 work the same in all circumstances: whatever value is carried by the connected
 wire is shown to the user and passed up to any parent circuit, and if no wire is
 connected, an 'X' is used instead to indicate a floating value. For input pins,
@@ -119,7 +119,7 @@ pins).</dd>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>Clicking an output pin has no effect, although the pin's attributes
+<p>Clicking an output pin has no effect, although the pin's properties
 will be displayed.</p>
 
 <p>Clicking an input pin will toggle the bit that is clicked or, when the

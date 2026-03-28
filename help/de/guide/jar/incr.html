@@ -67,7 +67,7 @@
 <pre>
 package com.cburch.gray;
 
-import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Property;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -83,21 +83,21 @@ class GrayIncrementer extends InstanceFactory {
     /* Beachten Sie, daß es keine Instanyvariablen gibt. Es wird nur eine Instanz dieser
      * Klasse erzeugt, die alle Instanzen des Bauelements verwaltet. Alle
      * Informationen die mit individuellen Instanzen zusammenhängen, sollten durch 
-     * Attribute behandelt werden. Für den GrayIncrementer besitzt jede Instanz eine Bitbreite
+     * Property behandelt werden. Für den GrayIncrementer besitzt jede Instanz eine Bitbreite
      * mit der gearbeitet wird, daher gibt es ein entsprechendes Attribut. */
 
     / ** Der Konstruktor konfiguriert die Fabrik. */
     GrayIncrementer() {
         super("Gray Code Incrementer");
         
-        /* Auf diese Weise können die Attribute des GrayIncrementers initialisiert werden. Hier
+        /* Auf diese Weise können die Property des GrayIncrementers initialisiert werden. Hier
          * haben wir nur ein Attribut - die Bitbreite - deren Vorgabe
          * 4 ist. Die Klasse StdAttr definiert zahlreiche gebräuchliche 
-         * Attribute, einschließlcih der Bitbreite. wenn möglich
-         * empfiehlt es sich, die Attribute aus StdAttr zu verwenden: Ein Anwender kann dann mehrere
-         * Bauelemente (selbst aus verschiedenen Bibliotheken) mit gemeinsamen Attributen auswählen,
+         * Property, einschließlcih der Bitbreite. wenn möglich
+         * empfiehlt es sich, die Property aus StdAttr zu verwenden: Ein Anwender kann dann mehrere
+         * Bauelemente (selbst aus verschiedenen Bibliotheken) mit gemeinsamen Propertyn auswählen,
          * und dann diese dann gleichzeitig verändern. */
-        setAttributes(new Attribute[] { StdAttr.WIDTH },
+        setProperties(new Property[] { StdAttr.WIDTH },
                 new Object[] { BitWidth.create(4) });
         
         /* Die "offset bounds" bezeichnen die Lage des umgrenzenden Rechtecks

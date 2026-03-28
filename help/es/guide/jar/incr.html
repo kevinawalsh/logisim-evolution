@@ -94,7 +94,7 @@ in sequence.</p>
 <pre>
 package com.cburch.gray;
 
-import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Property;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -110,21 +110,21 @@ class GrayIncrementer extends InstanceFactory {
     /* Note that there are no instance variables. There is only one instance of
      * this class created, which manages all instances of the component. Any
      * information associated with individual instances should be handled
-     * through attributes. For GrayIncrementer, each instance has a "bit width"
-     * that it works with, and so we'll have an attribute. */
+     * through properties. For GrayIncrementer, each instance has a "bit width"
+     * that it works with, and so we'll have a property. */
 
     /** The constructor configures the factory. */
     GrayIncrementer() {
         super("Gray Code Incrementer");
         
-        /* This is how we can set up the attributes for GrayIncrementers. In
-         * this case, there is just one attribute - the width - whose default
+        /* This is how we can set up the properties for GrayIncrementers. In
+         * this case, there is just one property - the width - whose default
          * is 4. The StdAttr class defines several commonly occurring
-         * attributes, including one for "bit width." It's best to use those
-         * StdAttr attributes when appropriate: A user can then select several
-         * components (even from differing factories) with the same attribute
+         * properties, including one for "bit width." It's best to use those
+         * StdAttr properties when appropriate: A user can then select several
+         * components (even from differing factories) with the same property
          * and modify them all at once. */
-        setAttributes(new Attribute[] { StdAttr.WIDTH },
+        setProperties(new Property[] { StdAttr.WIDTH },
                 new Object[] { BitWidth.create(4) });
         
         /* The "offset bounds" is the location of the bounding rectangle
@@ -139,7 +139,7 @@ class GrayIncrementer extends InstanceFactory {
          * component. Each port object says where to find the port relative to
          * the component's anchor location, then whether the port is an
          * input/output/both, and finally the expected bit width for the port.
-         * The bit width can be a constant (like 1) or an attribute (as here).
+         * The bit width can be a constant (like 1) or a property (as here).
          */
         setPorts(new Port[] {
                 new Port(-30, 0, Port.INPUT, StdAttr.WIDTH),
