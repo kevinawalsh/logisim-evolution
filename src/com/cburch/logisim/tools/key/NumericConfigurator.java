@@ -89,13 +89,13 @@ public abstract class NumericConfigurator<V>
   }
 
   public KeyConfigurationResult keyEventReceived(KeyConfigurationEvent event) {
-    KeyEvent e = event.getKeyEvent();
     // Using KEY_TYPED with ALT_DOWN_MASK is problematic on MacOS. For example,
     // MacOS treats Option+4 as the cents symbol, so e.getKeyChar() would return
     // the unicode for cents, rather than the character '4' in that case. This
     // problem occurs for all digits and probably many characters too. So we use
     // KEY_PRESSED here instead, and manually handle the SHIFT modifier.
     if (event.getType() == KeyConfigurationEvent.KEY_PRESSED) {
+      KeyEvent e = event.getKeyEvent();
       int eventMods = e.getModifiersEx();
       char key = (char)e.getKeyCode();
       if ((eventMods & InputEvent.SHIFT_DOWN_MASK) != 0 && 'A' <= key && key <= 'Z') {

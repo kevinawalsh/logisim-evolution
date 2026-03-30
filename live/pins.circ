@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project source="5.1.3-HC" version="1.0">
+  This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
+
+  <lib desc="#Base" name="0"/>
+  <lib desc="#Wiring" name="1">
+    <tool name="Constant">
+      <a name="value" val="0x1"/>
+    </tool>
+  </lib>
+  <lib desc="#Gates" name="2"/>
+  <lib desc="#Plexers" name="3"/>
+  <lib desc="#Arithmetic" name="4"/>
+  <lib desc="#Memory" name="5"/>
+  <lib desc="#I/O" name="6"/>
+  <lib desc="#Analog" name="7"/>
+  <lib desc="#Audio" name="8"/>
+  <lib desc="#BFH-Praktika" name="9"/>
+  <lib desc="#External I/O" name="10"/>
+  <lib desc="#Decor" name="11"/>
+  <main name="main"/>
+  <options/>
+  <toolbar>
+    <tool lib="0" name="Poke Tool"/>
+    <tool lib="0" name="Edit Tool"/>
+    <tool lib="0" name="Wiring Tool"/>
+    <tool lib="0" name="Cutter Tool"/>
+    <tool lib="0" name="Text Tool"/>
+    <tool lib="11" name="Callout"/>
+    <tool lib="11" name="Image"/>
+    <sep/>
+    <tool lib="1" name="Pin"/>
+    <tool lib="1" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </tool>
+    <tool lib="2" name="NOT Gate"/>
+    <tool lib="2" name="AND Gate"/>
+    <tool lib="2" name="OR Gate"/>
+    <tool lib="2" name="XOR Gate"/>
+    <tool lib="2" name="NAND Gate"/>
+    <tool lib="2" name="NOR Gate"/>
+  </toolbar>
+  <circuit name="main">
+    <comp lib="1" loc="(150,40)" name="Pin">
+      <a name="label" val="A"/>
+    </comp>
+    <comp lib="1" loc="(150,80)" name="Pin">
+      <a name="label" val="B"/>
+    </comp>
+    <comp lib="1" loc="(240,60)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="F"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(320,290)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(370,320)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(380,40)" name="Pin">
+      <a name="label" val="P"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(450,40)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="Q"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="4"/>
+    </comp>
+    <comp lib="1" loc="(660,40)" name="Pin">
+      <a name="radix" val="16"/>
+      <a name="width" val="12"/>
+    </comp>
+    <comp lib="1" loc="(680,40)" name="Splitter">
+      <a name="bit10" val="3"/>
+      <a name="bit11" val="3"/>
+      <a name="bit3" val="2"/>
+      <a name="bit4" val="3"/>
+      <a name="bit5" val="3"/>
+      <a name="bit6" val="3"/>
+      <a name="bit7" val="3"/>
+      <a name="bit8" val="3"/>
+      <a name="bit9" val="3"/>
+      <a name="facing" val="south"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="12"/>
+      <a name="spacing" val="3"/>
+    </comp>
+    <comp lib="1" loc="(690,70)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="labelloc" val="east"/>
+      <a name="radix" val="16"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(70,290)" name="Pin"/>
+    <comp lib="1" loc="(70,360)" name="Pin"/>
+    <comp lib="1" loc="(720,70)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="2"/>
+    </comp>
+    <comp lib="1" loc="(750,70)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(780,70)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="11" loc="(100,70)" name="Callout">
+      <a name="background" val="#ace8b5b5"/>
+      <a name="dx" val="15"/>
+      <a name="dy" val="-14"/>
+      <a name="halign" val="right"/>
+      <a name="text">1-bit input
+pins</a>
+    </comp>
+    <comp lib="11" loc="(250,390)" name="Image">
+      <a name="image">PNG:
+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
+IgAAAABJRU5ErkJggg==</a>
+    </comp>
+    <comp lib="11" loc="(251,362)" name="Callout">
+      <a name="background" val="#f7ff0a2c"/>
+      <a name="dx" val="-35"/>
+      <a name="dy" val="-34"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="diagram of inner circuit"/>
+      <a name="textwidth" val="290"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(260,90)" name="Callout">
+      <a name="background" val="#e3a5e8b5"/>
+      <a name="dx" val="-6"/>
+      <a name="dy" val="-11"/>
+      <a name="halign" val="center"/>
+      <a name="text">1-bit output
+pin</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(360,70)" name="Callout">
+      <a name="background" val="#ace8b5b5"/>
+      <a name="dx" val="-6"/>
+      <a name="dy" val="-11"/>
+      <a name="halign" val="center"/>
+      <a name="text">4-bit input
+pin</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(460,70)" name="Callout">
+      <a name="background" val="#e3a5e8b5"/>
+      <a name="dx" val="10"/>
+      <a name="dy" val="-10"/>
+      <a name="halign" val="center"/>
+      <a name="text">4-bit output
+pin</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(48,243)" name="Text">
+      <a name="text" val="outer circuit, with inner subcircuit"/>
+    </comp>
+    <comp lib="11" loc="(600,70)" name="Callout">
+      <a name="background" val="#ace8b5b5"/>
+      <a name="dx" val="30"/>
+      <a name="dy" val="-15"/>
+      <a name="halign" val="center"/>
+      <a name="text">12-bit input pin
+(hexadecimal display)</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(690,120)" name="Callout">
+      <a name="background" val="#e3a5e8b5"/>
+      <a name="dx" val="2"/>
+      <a name="dy" val="-23"/>
+      <a name="halign" val="center"/>
+      <a name="text">8 bit output
+pin (hex)</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(810,120)" name="Callout">
+      <a name="background" val="#e3a5e8b5"/>
+      <a name="dx" val="-54"/>
+      <a name="dy" val="-26"/>
+      <a name="halign" val="center"/>
+      <a name="text">2-bit and 1-bit output
+pins (binary display)</a>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="2" loc="(130,320)" name="OR Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(130,360)" name="NOT Gate"/>
+    <comp lib="2" loc="(220,60)" name="AND Gate"/>
+    <comp lib="2" loc="(340,320)" name="NOT Gate"/>
+    <comp lib="2" loc="(430,40)" name="NOT Gate">
+      <a name="width" val="4"/>
+    </comp>
+    <comp loc="(270,310)" name="inner"/>
+    <wire from="(130,320)" to="(170,320)"/>
+    <wire from="(130,360)" to="(150,360)"/>
+    <wire from="(150,280)" to="(150,310)"/>
+    <wire from="(150,310)" to="(170,310)"/>
+    <wire from="(150,330)" to="(150,360)"/>
+    <wire from="(150,330)" to="(170,330)"/>
+    <wire from="(150,40)" to="(170,40)"/>
+    <wire from="(150,80)" to="(170,80)"/>
+    <wire from="(220,60)" to="(240,60)"/>
+    <wire from="(270,310)" to="(300,310)"/>
+    <wire from="(270,320)" to="(310,320)"/>
+    <wire from="(300,290)" to="(300,310)"/>
+    <wire from="(300,290)" to="(320,290)"/>
+    <wire from="(340,320)" to="(370,320)"/>
+    <wire from="(380,40)" to="(400,40)"/>
+    <wire from="(430,40)" to="(450,40)"/>
+    <wire from="(660,40)" to="(680,40)"/>
+    <wire from="(690,60)" to="(690,70)"/>
+    <wire from="(70,290)" to="(90,290)"/>
+    <wire from="(70,360)" to="(90,360)"/>
+    <wire from="(720,60)" to="(720,70)"/>
+    <wire from="(750,60)" to="(750,70)"/>
+    <wire from="(780,60)" to="(780,70)"/>
+    <wire from="(90,280)" to="(150,280)"/>
+    <wire from="(90,280)" to="(90,290)"/>
+    <wire from="(90,290)" to="(90,310)"/>
+    <wire from="(90,310)" to="(100,310)"/>
+    <wire from="(90,330)" to="(100,330)"/>
+    <wire from="(90,330)" to="(90,360)"/>
+    <wire from="(90,360)" to="(100,360)"/>
+  </circuit>
+  <circuit name="inner">
+    <comp lib="1" loc="(170,100)" name="Pin">
+      <a name="label" val="A"/>
+    </comp>
+    <comp lib="1" loc="(170,150)" name="Pin">
+      <a name="label" val="B"/>
+    </comp>
+    <comp lib="1" loc="(170,200)" name="Pin">
+      <a name="label" val="C"/>
+    </comp>
+    <comp lib="1" loc="(380,120)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="P"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(380,180)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="Q"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="text">inner circuit: takes three 1-bit inputs, A, B, and C, and produces two 1-bit outputs, P and Q,
+where P = A * B, and Q = B ^ C.</a>
+    </comp>
+    <comp lib="2" loc="(280,120)" name="AND Gate"/>
+    <comp lib="2" loc="(350,180)" name="XOR Gate"/>
+    <wire from="(170,100)" to="(230,100)"/>
+    <wire from="(170,150)" to="(200,150)"/>
+    <wire from="(170,200)" to="(290,200)"/>
+    <wire from="(200,140)" to="(200,150)"/>
+    <wire from="(200,140)" to="(230,140)"/>
+    <wire from="(200,150)" to="(200,160)"/>
+    <wire from="(200,160)" to="(290,160)"/>
+    <wire from="(280,120)" to="(380,120)"/>
+    <wire from="(350,180)" to="(380,180)"/>
+  </circuit>
+</project>

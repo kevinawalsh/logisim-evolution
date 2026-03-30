@@ -47,7 +47,6 @@ import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
-import com.cburch.logisim.gui.generic.QuickHelp;
 import com.cburch.logisim.gui.log.Loggable;
 import com.cburch.logisim.tools.Pokable;
 import com.cburch.logisim.tools.key.KeyConfigurator;

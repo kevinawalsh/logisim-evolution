@@ -167,4 +167,20 @@ public class Direction implements AttributeOptionInterface {
   public String toVerticalDisplayString() {
     return vert.toString();
   }
+
+  // Duplicate these from KeyEvent, to avoid pulling awt in too early or in headless mode.
+  private static final int VK_LEFT = 37;
+  private static final int VK_UP = 38;
+  private static final int VK_RIGHT = 39;
+  private static final int VK_DOWN = 40;
+
+  public static Direction fromKeyCode(int keyCode) {
+    switch (keyCode) {
+      case VK_UP: return NORTH;
+      case VK_DOWN: return SOUTH;
+      case VK_LEFT: return WEST;
+      case VK_RIGHT: return EAST;
+      default: return null;
+    }
+  }
 }

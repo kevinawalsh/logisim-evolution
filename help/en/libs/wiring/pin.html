@@ -10,49 +10,71 @@
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/pinInput.gif"><img src="/logisim-evolution/icons/pinOutput.gif"><em>Pin</em></h1>
+<h1><img src="/logisim-evolution/icons/pinInput.gif"> <img src="/logisim-evolution/icons/pinOutput.gif"> <em>Input &amp; Output Pin</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0 Beta 1 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/pin.png" width="101" height="51"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
 
-<h2>Behavior</h2>
+<img src="pin-demo.png">
 
-<p>A pin serves as an output from a circuit or as an input to a circuit, depending on the value
-of its 'Type' property. Logisim represents output
-pins using a circle or rounded rectangle, and input pins are represented
-using squares or rectangles. In either case, the individual bits of the
-value being sent or received is displayed within the component (except
-in printer view, when the bit width is shown instead).</p>
+<p>Pins act as inputs to, or outputs from, a circuit. Input pins have squared
+corners, output pins are rounded.
 
-<p>A pin is a convenient component for interacting with a circuit, and
-beginning Logisim users need not use them in any other way. But a
-user building a circuit using several subcircuits (as described in the
-`<a href="../../guide/subcirc/index.html">Subcircuits</a>' section of
-the <em>User's Guide</em>) will use pins also
-to specify the interface between an outer
-circuit and the subcircuits it contains. In particular, a circuit layout's pin
-components define the pins that appear on the subcircuit component when
-the layout is used within another circuit. In such a circuit, the values
-sent and received to those locations on the subcircuit component are
-tied to the pins within the subcircuit layout.</p>
+<p><b>Pins are interactive:</b> you can poke an input pins to change the value they send
+into your circuit, and output pins can't be poked but instead always display the
+value coming from your circuit, or if there is no value to display, output pins
+show a 'z', the standard notation for "floating" or "no specific value". When
+used interactively, a 1-bit input pin behaves much like a
+<a href="../io/button.html">Button</a>, and a 1-bit output pin behaves similarly to an
+<a href="../io/led.html">LED</a>. Unlike Buttons and LEDs, the colors of pins
+can't be customized. But pins can carry multiple bits, and display their values
+numerically in your choice of format (binary, signed decimial, hexadecimal,
+etc.), features not available for Button and LED.
 
-<h2>Pins</h2>
+<p><b>Pins enable subcircuits:</b> When one circuit is embedded as a <a
+href="../../guide/subcirc/">subcircuit</a>within another, pins are how values
+traverse between the outer and the inner circuits. The outer circuit sends data
+into the inner circuit's input pins, and inner circuit's output pins feed data
+back to the outer circuit. No other component has this ability: a Button inside
+the inner circuit, for example, can't be poked or driven by signals from the
+outer circuit, and an LED inside the inner circuit can't affect or be seen from
+the outer circuit. (But see
+<a href="../../guide/subcirc/">dynamic subcircuit appearance</a> for an advanced
+technique allowing more flexibility when designing subcircuits.)</p>
 
-<p>A pin component has only one pin. Counterintuitively, when the Pin
-component's type is set to 'input', the pin will actually be an output&mdash;
-the Pin component in this case is taking input from the user (or from some other
-circuit in which this layout is embedded) and outputting that value to the
-connected wire. Conversely, when the Pin's type is set to 'output' the pin takes
-input from the connected wire and outputs it to the screen for the user to see
-(or to some other circuit in which thhis layout is embedded). In either case,
-its bit width matches the Data Bits property, and its location depends on the
-Facing property.</p>
+<img src="pin-subcirc.png">
+
+<h2>Appearance</h2>
+
+<p>Normally, 1-bit pins show color-coded binary values, '0' or '1'. Pins show 'z' to
+indicate a floating value (for example, if an output pin isn't connected to a
+wire, or is connected to a wire that doesn't carry any value). In cases of
+errors, pins become red, and output pins show 'E'.
+
+<p>Multi-bit pins show values in numeric form, but don't show colors. They can
+be configured to show binary, hexadecimal, octal, signed decimal, or unsigned
+decimal. The symbols 'z' and 'E' are also used to indicate floating values and
+errors for multi-bit pins.</p>
+
+<p>In printer view, or when exporting to image format, pins normally display
+their Bit Width, instead of showing a value.</p>
+
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b> changes the <i>Label Location</i> property.</li>
+
+<li><b>Typing a number (1-32)</b> changes the <i>Fan Out</i> property for a
+splitter, controlling how many taps are present.</li>
+
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b> 
+changes <b>both</b> the <i>Fan Out</i> <b>and</b> the <i>Combined Bit Width</i>
+property, controlling the number of bits available at the combined end and the
+number of bits available for the taps, and making enough taps so there is one
+for each bit.</li>
+</ul>
+
 
 <h2>Properties</h2>
 

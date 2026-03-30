@@ -401,6 +401,7 @@ public final class SelectTool extends Tool {
     if (state == MOVING && e.getKeyCode() == KeyEvent.VK_SHIFT) {
       handleMoveDrag(canvas, curDx, curDy, e.getModifiersEx());
     } else {
+      Direction dir = null;
       switch (e.getKeyCode()) {
         case KeyEvent.VK_BACK_SPACE:
         case KeyEvent.VK_DELETE:
@@ -416,21 +417,12 @@ public final class SelectTool extends Tool {
           e.consume();
           break;
         case KeyEvent.VK_UP:
-          if (e.getModifiersEx() == 0)
-            attemptReface(canvas, Direction.NORTH, e);
-          break;
         case KeyEvent.VK_DOWN:
-          if (e.getModifiersEx() == 0)
-            attemptReface(canvas, Direction.SOUTH, e);
-          break;
         case KeyEvent.VK_LEFT:
-          if (e.getModifiersEx() == 0)
-            attemptReface(canvas, Direction.WEST, e);
-          break;
         case KeyEvent.VK_RIGHT:
-          if (e.getModifiersEx() == 0)
-            attemptReface(canvas, Direction.EAST, e);
-          break;
+          if (!attemptReface(canvas, e))
+            processKeyEvent(canvas, e, KeyConfigurationEvent.KEY_PRESSED);
+          break; 
         default:
           processKeyEvent(canvas, e, KeyConfigurationEvent.KEY_PRESSED);
       }
@@ -782,25 +774,30 @@ public final class SelectTool extends Tool {
     return ret;
   }
 
-  private void attemptReface(Canvas canvas, final Direction facing, KeyEvent e) {
-    if (e.getModifiersEx() == 0) {
-      final Circuit circuit = canvas.getCircuit();
-      final Selection sel = canvas.getSelection();
-      SetAttributeAction act = new SetAttributeAction(circuit,
-          S.getter("selectionRefaceAction"));
-      for (Component comp : sel.getComponents()) {
-        if (!(comp instanceof Wire)) {
-          Attribute<Direction> attr = getFacingAttribute(comp);
-          if (attr != null) {
-            act.set(comp, attr, facing);
-          }
+  private boolean attemptReface(Canvas canvas, KeyEvent e) {
+    if (e.getModifiersEx() != 0)
+      return false;
+    final Direction facing = Direction.fromKeyCode(e.getKeyCode());
+    if (facing == null)
+      return false;
+    final Circuit circuit = canvas.getCircuit();
+    final Selection sel = canvas.getSelection();
+    SetAttributeAction act = new SetAttributeAction(circuit,
+        S.getter("selectionRefaceAction"));
+    for (Component comp : sel.getComponents()) {
+      if (!(comp instanceof Wire)) {
+        Attribute<Direction> attr = getFacingAttribute(comp);
+        if (attr != null) {
+          act.set(comp, attr, facing);
         }
       }
-      if (!act.isEmpty()) {
-        canvas.getProject().doAction(act);
-        e.consume();
-      }
     }
+    if (!act.isEmpty()) {
+      canvas.getProject().doAction(act);
+      e.consume();
+      return true;
+    }
+    return false;
   }
 
 }
