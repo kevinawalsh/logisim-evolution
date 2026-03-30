@@ -19,6 +19,11 @@
 <p>Pins act as inputs to, or outputs from, a circuit. Input pins have squared
 corners, output pins are rounded.
 
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=pins.circ">Live Circuit: Pins</a></li>
+</ul>
+
 <p><b>Pins are interactive:</b> you can poke an input pins to change the value they send
 into your circuit, and output pins can't be poked but instead always display the
 value coming from your circuit, or if there is no value to display, output pins
@@ -56,113 +61,164 @@ decimal. The symbols 'z' and 'E' are also used to indicate floating values and
 errors for multi-bit pins.</p>
 
 <p>In printer view, or when exporting to image format, pins normally display
-their Bit Width, instead of showing a value.</p>
+their width, instead of showing a value.</p>
+
+<h2>Interaction</h2>
+
+<p>Input pins are interactive components. For a standalone or top-level circuit,
+use the <a href="../mouse/poke.html"><img
+src="/logisim-evolution/icons/poke.gif"> Poke Tool</a> to change the value of an
+input pin: each poke with toggle between '0' and '1', or if the <i>Radix</i> is
+not binary, poke will cycle through the possible values or open an input box to
+enter a value.
+
+<p>When viewing the state of a subcircuit, part of some larger circuit simulation,
+input pins values are "tied" to the outer circuit, so the poke
+tool can't change the values.
+
+<p class="warning">When viewing an "inner" simulation, if you poke an input pin,
+a notice will appear warning that the pins are "tied," or linked, to the outer
+circuit and can't be changed. The notice window also gives you the chance to
+break this link by creating a new standalone simulation where you will be able
+to modify the input pin values. See
+<a href="../../guide/subcirc/debug.html">debugging subcircuits</a> for more
+info.</p>
+
+<h2>Advanced Input Behaviors</h2>
+
+<p>When the <i>Behavior</i> property for an input pin is set to <b><i>Simple</i></b>
+(the default), the pin will normally send either a '0' or '1' into a circuit, at
+all times (or, for a multi-bit input, a pattern of zeros and ones). But this
+isn't quite true.
+<ul>
+<li>For a top-level, standalone simulation: yes, the poke tool toggles the input
+pin value between '0' and '1', with no other choices.
+<li>But when acting as a subcircuit, the value of the input pin comes from the
+outer circuit, and this value could be something other than '0' or '1'.
+</ul>
+<p>An outer circuit might have a mistake causing an error signal to appear at
+the input pin. Or, a wire in the outer circuit that connects to the input pin
+might not be driven by any components, leaving the value floating, with a 'z'
+value appearing at the input pin. As a special case: if the outer circuit
+doesn't have <b>any</b> connections to the pin, logisim uses a default value of
+'0' for the pin.  In other words, a <i>Simple</i> input pin will pass along a
+floating value from a connected wire in an outer circuit, but will never
+"create" a floating value via the poke tool or because there is no connected
+wire in the outer circuit.
+
+<p class="warning">This special case for <i>Simple</i> &mdash; using '0' for the
+value of a completely-unconnected subcircuit input pin &mdash; can be confusing,
+and can lead to subtle mistakes. If you accidentally miswire the outer circuit,
+or forget to connect something to the subcircuit input, you may not notice the
+mistake, as it will be treated as if it were '0'. This behavior is also
+inconsistent with reality. The advanced behaviors (described below) are a better
+option, and this special case was probably not the best idea. Nevertheless, the
+special case is retained for backwards compatibility with older logisim
+circuits.</p>
+
+<p>The <i>Behavior</i> property allows other options than the <i>Simple</i>
+behavior described above:
+<ul>
+<li><b><i>Tri-State</i></b> behavior: The poke tool toggles between '0', '1',
+and 'z' (floating). And there is no special case: a tri-state input within a
+subcircuit takes on whatever value the outer circuit gives it, whether that is
+'0' or '1' (normal cases), 'E' (error cases), or 'z' (floating, when the pin is
+unconnected, or is connected to a wire that doesn't carry a value).
+<li><b><i>Pull-Down</i></b> behavior: Poke behaves like the <i>Simple</i>
+behavior, but when used in a subcircuit, all 'z' values are converted to '0'. 
+<li><b><i>Pull-Up</i></b> behavior: Similar, but 'z' values are converted to '1'.
+</ul>
+
+<p>These three options match more closely the behavior of FPGA devices and other physical circuits.
 
 <h2>Keyboard Shortcuts</h2>
 
+<p>When using Poke Tool: If an input pin has a single-character label, type that
+character to poke the pin and change it's value.</p>
+
+<p>When using Edit Tool:</p>
 <ul>
 <li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
 
-<li><b>Arrow keys while holding the option key (⌥) or Alt key</b> changes the <i>Label Location</i> property.</li>
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b>
+change the <i>Label Location</i> property.</li>
 
-<li><b>Typing a number (1-32)</b> changes the <i>Fan Out</i> property for a
-splitter, controlling how many taps are present.</li>
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b>
+changes the <i>Data Bits</i> property.</li>
 
-<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b> 
-changes <b>both</b> the <i>Fan Out</i> <b>and</b> the <i>Combined Bit Width</i>
-property, controlling the number of bits available at the combined end and the
-number of bits available for the taps, and making enough taps so there is one
-for each bit.</li>
 </ul>
 
-
 <h2>Properties</h2>
-
-<p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
-the arrow keys alter its <q>Facing</q> property,
-and Alt with an arrow key alters its <q>Label Location</q> property.</p>
 
 <dl>
 
 <dt>Facing</dt>
-<dd>The side of the component where its input/output pin should be.</dd>
+<dd>The side where the port should be. By default, input pins face east, output pins face west.</dd>
 
 <dt>Type</dt>
-<dd>Specifies whether the component is used to input values into the circuit, or
-to output values from the circuit.</dd>
+<dd>Whether pin accepts input (from user, or from an outer circuit in which this
+circuit is embedded as a subcircuit), or displays, or conveys output (to the
+user, or to an outer circuit in which this circuit is embedded as a subcircuit).
+</dd>
 
 <dt>Data Bits</dt>
 <dd>The number of bits for the value that the pin handles.</dd>
 
-<dt>Behavior</dt>
-<dd>Controls how an input pin behaves in several special cases, mostly involving
-error and unknown values. Output pins do not have a Behavior property, as they
-work the same in all circumstances: whatever value is carried by the connected
-wire is shown to the user and passed up to any parent circuit, and if no wire is
-connected, an 'X' is used instead to indicate a floating value. For input pins,
-several behaviors are available:
-<ul><li><b>Simple</b>. In most cases "Simple" behavior should be sufficient. 
-    For an input controled by the user, the user can select either zero or one
-    (or any combination of zeros and ones for a multi-bit input pin). For an
-    input controlled by a parent circuit, whatever value the parent sends (0, 1,
-    E, or X, or some combination of them) is passed to the circuit, or zero is
-    used if the parent does not have a wire connected to that pin. Note that
-    with "Simple" behavior, an input pin will never create a new floating value
-    (X) or error value (E), though it can passes them along from a parent
-    circuit.</li>
-    <li><b>Tri-State</b>. This behavior is nearly identical to "Simple"
-    behavior, except that for input pins controlled by the user, the user can
-    additional select "X" to indicate a floating input.</li>
-    <li><b>Pull Down</b> and <b>Pull Up</b>. This behavior is nearly identical
-    to "Simple" behavior, except that for input pins controlled by a parent
-    circuit: if the parent circuit attempts to send an unknown value (X) to this
-    pin, it will be converted automatically to either zero (for Pull Down) or one (for Pull
-    Up) before being sent into the circuit. Note that this does not affect the
-    parent circuit in any way&mdash;the parent circuit wire will still show X,
-    while the subcircuit will receive a zero or one.</li>
+<dt>Behavior (only present for input pins)</dt>
+<dd>Controls how an input pin handles floating values.
+<ul>
+    <li><b>Simple</b>: Poke tool toggles between '0' and '1', or patterns of
+    them. When used in a subcircuit, unconnected pins will default to '0', but
+    otherwise pass along whatever value the connected wire carries.
+    <li><b>Tri-State</b>: Poke tool toggles between '0', '1', and 'z', or
+    patterns of them. When used in a subcircuit, unconnected pins are floating
+    ('z'), and otherwise pass along whatever value the connected wire carries in
+    the outer circuit.
+    <li><b>Pull Down</b> and <b>Pull Up</b>: Poke tool toggles between '0' and
+    '1', or patterns of them. When used in a subcircuit, unconnected pins or
+    floating values on a connected wire in the outer circuit are converted to
+    either '0' (for pull down) or '1' (for pull up), and otherwise pass along
+    whatever value the connected wire carries. This does not affect the outer
+    circuit.
 </ul>
 </dd>
 
 <dt>Label</dt>
-<dd>The text within the label associated with the component.</dd>
+<dd>Text to be associated with the component.</dd>
 
 <dt>Label Location</dt>
-<dd>The location of the label relative to the component.</dd>
+<dd>Location of the label relative to the component.</dd>
 
 <dt>Label Font</dt>
-<dd>The font with which to render the label.</dd>
+<dd>Font for the label.</dd>
 
 <dt>Radix</dt>
-<dd>The number base used for displaying values (and entering values for input
-pins).</dd>
+<dd>The number base used for displaying values, and for entering values for input
+pins.</dd>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>Clicking an output pin has no effect, although the pin's properties
-will be displayed.</p>
+<p>Clicking an input pin with the poke tool will change the value it contains.
+<ul>
+<li>For 1-bit pins or when <i>Radix</i> is <i>Binary</i>: clicks toggle the bit it contains, or click then
+type '0' or '1'. If using <i>Tri-State</i> behavior, then 'z' is also allowed.
+<li>If <i>Radix</i> is <i>Hexadecimal</i>: clicks cycle through '0' to 'F'. Or
+click then type a hex digit. If using <i>Tri-State</i> behavior, then 'z' is
+also allowed (in hex, 'z' is treated like binary 'zzzz', that is, four floating
+values).
+<li>If <i>Radix</i> is <i>Octal</i>: clicks cycle through '0' to '7'. Or
+click then type an octal digit. If using <i>Tri-State</i> behavior, then 'z' is
+also allowed (in octal, 'z' is treated like binary 'zzz', that is, three floating
+values).
+<li>If <i>Radix</i> is <i>Signed Decimal</i> or <i>Unsigned Decimal</i>: clicks
+open a dialog box where you can type a number.
+</u.>
 
-<p>Clicking an input pin will toggle the bit that is clicked or, when the
-'Radix' is set to something other than binary, iterate through different
-possible values. The keyboard can also be used to enter values using the Poke
-tool.</p>
-
-<p>When viewing the state of a subcircuit
-as described in the `<a href="../../guide/subcirc/debug.html">Debugging
-Subcircuits</a>' of the <em>User's Guide</em>,
-the value of each input pin is tied ("pinned") to whatever value the subcircuit
-is receiving from the containing parent circuit. Manually change the value of
-the input pin break this link between the subcircuit's state and the containing
-circuit's state, essentially creating a new isolated simulation of just this one
-circuit, independent from any parent circuit. In this situation, any attempting
-to change the input pin's value using the Poke Tool will cause Logisim to warn
-the user and confirm whether breaking this link is actually desired.</p>
+<p>Output pins do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>
