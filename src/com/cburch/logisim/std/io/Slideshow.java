@@ -146,7 +146,7 @@ public class Slideshow extends InstanceFactory {
   }
 
   public Slideshow() {
-    super("Slideshow", S.getter("ioSlideshowComponent"));
+    super("Slideshow", S.getter("slideShowComponent"));
     setKeyConfigurator(new BitWidthConfigurator(ATTR_WIDTH, 1, 30));
     setIconName("slideshow.gif");
     setPorts(new Port[] { new Port(0, 0, Port.INPUT, ATTR_WIDTH) });

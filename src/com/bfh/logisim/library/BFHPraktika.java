@@ -40,16 +40,16 @@ import com.cburch.logisim.tools.Tool;
 public class BFHPraktika extends Library {
   private static FactoryDescription[] DESCRIPTIONS = {
     new FactoryDescription("Dynamic_Clock_Control",
-        S.getter("DynamicClockControl"), "",
+        S.getter("Dynamic Clock Control"), "",
         "DynamicClock"), 
     new FactoryDescription("Binairy_to_BCD_converter",
-        S.getter("Bin2BCD"), "",
+        S.getter("Binary to BCD"), "",
         "bin2bcd"), 
     new FactoryDescription("BCD_to_7_Segment_decoder",
-        S.getter("BCD2SevenSegment"), "",
+        S.getter("BCD to 7-Segment"), "",
         "bcd2sevenseg"),
     new FactoryDescription("Hex_to_7_Segment_decoder",
-        S.getter("Hex2SevenSegment"), "",
+        S.getter("Hex to 7-Segment"), "",
         "hex2sevenseg"),
   };
 
