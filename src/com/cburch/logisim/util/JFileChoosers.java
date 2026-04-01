@@ -30,11 +30,16 @@
 
 package com.cburch.logisim.util;
 
+import java.awt.Component;
+import java.awt.FileDialog;
+import java.awt.Frame;
 import java.io.File;
 import java.io.IOException;
 
 import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileFilter;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class JFileChoosers {
@@ -66,6 +71,91 @@ public class JFileChoosers {
     }
   }
 
+  // On macOS, use java.awt.FileDialog instead of JFileChooser so we get the
+  // native NSOpenPanel/NSSavePanel. This fixes keyboard navigation (letter
+  // prefix jumping, Enter to open directories, arrow keys past filtered files)
+  // and gives the dialog a modern macOS appearance. The tradeoff is that there
+  // is no filter-type dropdown; the active filter still restricts visible files
+  // but the user cannot switch filter types mid-dialog.
+  // showDialog(Component, String) is intentionally not overridden here; those
+  // four call sites (missing-library picker, backup recovery, export image,
+  // print export) keep the Swing fallback.
+  private static class MacOSNativeFileChooser extends JFileChooser {
+    private static final long serialVersionUID = 1L;
+
+    MacOSNativeFileChooser() {
+      super();
+    }
+
+    MacOSNativeFileChooser(File initSelected) {
+      super(initSelected);
+    }
+
+    private static Frame findParentFrame(Component parent) {
+      for (Component c = parent; c != null; c = c.getParent()) {
+        if (c instanceof Frame) return (Frame) c;
+      }
+      return null;
+    }
+
+    private int showNativeDialog(Component parent, int mode) {
+      Frame frame = findParentFrame(parent);
+      String title = getDialogTitle();
+      FileDialog fd = new FileDialog(frame, title != null ? title : "", mode);
+
+      File currentDir = getCurrentDirectory();
+      if (currentDir != null)
+        fd.setDirectory(currentDir.getAbsolutePath());
+
+      File selectedFile = super.getSelectedFile();
+      if (selectedFile != null && !selectedFile.isDirectory())
+        fd.setFile(selectedFile.getName());
+
+      FileFilter ff = getFileFilter();
+      if (ff != null)
+        fd.setFilenameFilter((dir, name) -> ff.accept(new File(dir, name)));
+
+      boolean dirMode = (getFileSelectionMode() == JFileChooser.DIRECTORIES_ONLY);
+      if (dirMode)
+        System.setProperty("apple.awt.fileDialogForDirectories", "true");
+      try {
+        fd.setVisible(true);
+      } finally {
+        if (dirMode)
+          System.clearProperty("apple.awt.fileDialogForDirectories");
+      }
+
+      String resultDir = fd.getDirectory();
+      String resultFile = fd.getFile();
+      if (resultFile == null)
+        return CANCEL_OPTION;
+
+      File result = new File(resultDir, resultFile);
+      setCurrentDirectory(result.getParentFile());
+      JFileChoosers.currentDirectory = resultDir;
+      setSelectedFile(result);
+      return APPROVE_OPTION;
+    }
+
+    @Override
+    public int showOpenDialog(Component parent) {
+      return showNativeDialog(parent, FileDialog.LOAD);
+    }
+
+    @Override
+    public int showSaveDialog(Component parent) {
+      return showNativeDialog(parent, FileDialog.SAVE);
+    }
+  }
+
+  private static JFileChooser newChooser() {
+    return Main.MacOS ? new MacOSNativeFileChooser() : new LogisimFileChooser();
+  }
+
+  private static JFileChooser newChooser(File initSelected) {
+    return Main.MacOS ? new MacOSNativeFileChooser(initSelected) : new LogisimFileChooser(initSelected);
+  }
+
   public static JFileChooser create() {
     RuntimeException first = null;
     for (int i = 0; i < PROP_NAMES.length; i++) {
@@ -81,11 +171,11 @@ public class JFileChoosers {
           dirname = System.getProperty(prop);
         }
         if (dirname.equals("")) {
-          return new LogisimFileChooser();
+          return newChooser();
         } else {
           File dir = new File(dirname);
           if (dir.canRead()) {
-            return new LogisimFileChooser(dir);
+            return newChooser(dir);
           }
         }
       } catch (RuntimeException t) {
@@ -104,7 +194,7 @@ public class JFileChoosers {
       return create();
     } else {
       try {
-        return new LogisimFileChooser(openDirectory);
+        return newChooser(openDirectory);
       } catch (RuntimeException t) {
         if (t.getCause() instanceof IOException) {
           try {
