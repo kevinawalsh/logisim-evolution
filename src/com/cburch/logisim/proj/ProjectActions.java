@@ -282,10 +282,6 @@ public class ProjectActions {
         S.get("openAutoBackupDiscardOption"),
         S.get("openAutoBackupReplaceOption"),
         S.get("openAutoBackupKeepOption"), };
-      if (parent instanceof SplashScreen) {
-        ((SplashScreen)parent).close();
-        parent = null;
-      }
       int result = JOptionPane.showOptionDialog(parent, message,
           S.get("openAutoBackupFoundTitle"), 0,
           JOptionPane.QUESTION_MESSAGE, null, options,

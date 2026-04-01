@@ -31,11 +31,15 @@
 package com.cburch.logisim.gui.start;
 import static com.cburch.logisim.gui.start.Strings.S;
 
+import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -45,6 +49,24 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 public class SplashScreen extends JWindow implements ActionListener {
+
+  public static SplashScreen monitor; // only non-null while visible
+
+  public static SplashScreen begin() {
+    monitor = new SplashScreen();
+    monitor.setVisible(true);
+    // Auto-close splash whenever any other window opens (e.g. error dialogs).
+    Toolkit.getDefaultToolkit().addAWTEventListener(monitor.closeOnOtherWindow,
+        AWTEvent.WINDOW_EVENT_MASK);
+    return monitor;
+  }
+
+  public static void end() {
+    if (monitor != null) {
+      monitor.close();
+      monitor = null;
+    }
+  }
 
   private static class Marker {
     int count;
@@ -84,12 +106,16 @@ public class SplashScreen extends JWindow implements ActionListener {
       new Marker(2383, S.get("progressProjectCreate")),
       new Marker(2519, S.get("progressFrameCreate")), };
   boolean inClose = false; // for avoiding mutual recursion
+  AWTEventListener closeOnOtherWindow = event -> {
+    if (event.getID() == WindowEvent.WINDOW_OPENED && event.getSource() != this)
+      end();
+  };
   JProgressBar progress = new JProgressBar(0, PROGRESS_MAX);
   JButton close = new JButton(S.get("startupCloseButton"));
   JButton cancel = new JButton(S.get("startupQuitButton"));
   long startTime = System.currentTimeMillis();
 
-  public SplashScreen() {
+  private SplashScreen() {
     setName("Welcome to Logisim Evolution");
     JPanel imagePanel = About.getImagePanel();
     imagePanel.setBorder(null);
@@ -128,6 +154,7 @@ public class SplashScreen extends JWindow implements ActionListener {
     if (inClose)
       return;
     inClose = true;
+    Toolkit.getDefaultToolkit().removeAWTEventListener(closeOnOtherWindow);
     setVisible(false);
     inClose = false;
     if (PRINT_TIMES)

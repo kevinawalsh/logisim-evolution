@@ -585,8 +585,7 @@ public class Startup {
     // I loaded a large file.)
     if (showSplash) {
       try {
-        monitor = new SplashScreen();
-        monitor.setVisible(true);
+        monitor = SplashScreen.begin();
       } catch (Exception t) {
         monitor = null;
         showSplash = false;
@@ -641,7 +640,7 @@ public class Startup {
     // check for stray auto-backup files
     if (!Main.headless) {
       try {
-        SwingUtilities.invokeAndWait(() -> Loader.checkForAutoBackups(monitor));
+        SwingUtilities.invokeAndWait(() -> Loader.checkForAutoBackups());
       } catch (Exception e) {
         e.printStackTrace();
       }

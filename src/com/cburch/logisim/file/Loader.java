@@ -216,7 +216,7 @@ public class Loader implements LibraryLoader {
     return bak;
   }
 
-  public static void checkForAutoBackups(SplashScreen monitor) {
+  public static void checkForAutoBackups() {
     File home = new File(System.getProperty("user.home"));
     File save = new File(home, ".logisim-backups");
     if (!save.exists() || !save.isDirectory())
@@ -225,9 +225,6 @@ public class Loader implements LibraryLoader {
     int n = backups == null ? 0 : backups.length;
     if (n == 0)
       return;
-    if (monitor != null) {
-      monitor.close();
-    }
     String message = S.fmt("autobackupFilesFoundMessage", n, save);
     String[] options = {
       S.get("autobackupFilesDiscardOption"),
