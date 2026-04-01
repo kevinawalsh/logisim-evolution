@@ -126,7 +126,7 @@ public class DipSwitch extends InstanceFactory {
       .forBitWidth("number", S.getter("nrOfSwitch"), MIN_SWITCH, MAX_SWITCH);
 
   public DipSwitch() {
-    super("DipSwitch", S.get("dipswitchComponent"));
+    super("DipSwitch", S.getter("dipswitchComponent"));
     int dipSize = 8;
     setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC,
       StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_SIZE },

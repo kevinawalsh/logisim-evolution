@@ -361,11 +361,15 @@ public final class EditTool extends Tool {
     }
     char c = e.getKeyChar();
     // Start search on any letter when nothing is selected and not wiring
-    if (current != wiring && canvas.getSelection().isEmpty()
+    if (canvas.getSelection().isEmpty()
         && c != KeyEvent.CHAR_UNDEFINED
         && !Character.isISOControl(c)
         && !Character.isWhitespace(c)
-        && e.getModifiersEx() == 0) {
+        && (e.getModifiersEx() & ~KeyEvent.SHIFT_DOWN_MASK) == 0) {
+      // Allowable chars:
+      //   a-z, A-Z, 0-9
+      //   punctuation, emoji, etc.
+      //   but: no whitespace, and only if not holding alt/meta/control/option
       search.beginSearch(canvas, c, lastRawX, lastRawY);
       e.consume();
       return;

@@ -41,6 +41,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
+import java.awt.font.TextAttribute;
+import java.text.AttributedString;
 import javax.swing.JPanel;
 
 import com.cburch.logisim.file.LogisimFile;
@@ -97,7 +99,7 @@ public class ComponentSearchPopup extends JPanel {
   // Search state
   private String searchText = "";
   private ArrayList<AddTool> allTools = new ArrayList<>();
-  private ArrayList<AddTool> matches = new ArrayList<>();
+  private ArrayList<Match> matches = new ArrayList<>();
   private HashMap<AddTool, String> displayNames = new HashMap<>();
   private int selectedIndex = 0;
   private int scrollOffset  = 0;
@@ -114,8 +116,18 @@ public class ComponentSearchPopup extends JPanel {
   private int headerH;  // height of the header row
   private int rowH;     // height of each item row
 
+  private static class Match {
+    final AddTool tool;
+    final int start; // index within displayNames.get(tool) where match was made
+    Match(AddTool t, int s) {
+      tool = t; start = s;
+    }
+  }
+
+
   // -----------------------------------------------------------------------
 
+  // initialChar should not be whitespace, but anything else is okay
   public ComponentSearchPopup(Canvas canvas, char initialChar, Consumer<AddTool> onSelect) {
     this.canvas = canvas;
     setOpaque(false);
@@ -130,7 +142,7 @@ public class ComponentSearchPopup extends JPanel {
         } else if (hit == ROW_DOWN_IND) {
           scroll(1);
         } else if (hit >= 0 && hit < matches.size()) {
-          onSelect.accept(matches.get(hit));
+          onSelect.accept(matches.get(hit).tool);
         }
       }
       @Override
@@ -162,12 +174,16 @@ public class ComponentSearchPopup extends JPanel {
     // find all relevant tools
     String prefix = String.valueOf(initialChar);
     LogisimFile file = canvas.getProject().getLogisimFile();
+    HashMap<AddTool, Match> allMatches = new HashMap<>();
     for (Tool tool : file.getToolsAndSublibraryTools()) {
       if (tool instanceof AddTool) {
         AddTool addTool = (AddTool) tool;
-        // prefix is one char, we only need to check tool name here, not lib name
-        if (addTool.getDisplayName().toLowerCase().startsWith(prefix.toLowerCase()))
+        // prefix is one char, we only check tool name here, not lib name suffix
+        Match m = keywordMatch(addTool, prefix);
+        if (m != null) {
           allTools.add(addTool);
+          allMatches.put(addTool, m);
+        }
       }
     }
 
@@ -200,7 +216,8 @@ public class ComponentSearchPopup extends JPanel {
         (a, b) -> displayNames.get(a).compareToIgnoreCase(displayNames.get(b)));
 
     searchText = prefix;
-    matches.addAll(allTools);
+    for (AddTool tool : allTools)
+      matches.add(allMatches.get(tool));
     matchesUpdated();
   }
 
@@ -235,17 +252,19 @@ public class ComponentSearchPopup extends JPanel {
       return searchText;
     // Longest common prefix of all match display names (case-insensitive,
     // but stored in the case of the first match)
-    String first = displayNames.get(matches.get(0));
-    int len = first.length();
+    Match m = matches.get(0);
+    String lcp = displayNames.get(m.tool).substring(m.start);
+    int len = lcp.length();
     for (int i = 1; i < matches.size(); i++) {
-      String name = displayNames.get(matches.get(i));
+      m = matches.get(i);
+      String hit = displayNames.get(m.tool).substring(m.start);
       int j = 0;
-      while (j < len && j < name.length()
-          && Character.toLowerCase(first.charAt(j)) == Character.toLowerCase(name.charAt(j)))
+      while (j < len && j < hit.length()
+          && Character.toLowerCase(lcp.charAt(j)) == Character.toLowerCase(hit.charAt(j)))
         j++;
       len = j;
     }
-    String extended = first.substring(0, len);
+    String extended = lcp.substring(0, len);
     if (extended.length() > searchText.length()) {
       searchText = extended;
       matchesUpdated();
@@ -258,8 +277,9 @@ public class ComponentSearchPopup extends JPanel {
     searchText = text;
     matches.clear();
     for (AddTool tool : allTools) {
-      if (displayNames.get(tool).toLowerCase().startsWith(searchText.toLowerCase()))
-        matches.add(tool);
+      Match m = keywordMatch(tool, searchText);
+      if (m != null)
+        matches.add(m);
     }
     matchesUpdated();
   }
@@ -289,7 +309,7 @@ public class ComponentSearchPopup extends JPanel {
   /** Return the currently highlighted AddTool, or null if none. */
   public AddTool getSelectedTool() {
     if (selectedIndex >= 0 && selectedIndex < matches.size())
-      return matches.get(selectedIndex);
+      return matches.get(selectedIndex).tool;
     return null;
   }
 
@@ -364,10 +384,15 @@ public class ComponentSearchPopup extends JPanel {
     y += INDICATOR_H;
 
     // Item rows
+    int prefixLen = searchText.length();
     for (int i = 0; i < visibleCount; i++) {
       int idx = scrollOffset + i;
       g.setColor(idx == selectedIndex ? SELECT_FG : ITEM_FG);
-      g.drawString(displayNames.get(matches.get(idx)), PADDING_X, y + PADDING_Y + fontAscent);
+      Match m = matches.get(idx);
+      AttributedString as = new AttributedString(displayNames.get(m.tool));
+      as.addAttribute(TextAttribute.FONT, g.getFont());
+      as.addAttribute(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON, m.start, m.start + prefixLen);
+      g.drawString(as.getIterator(), PADDING_X, y + PADDING_Y + fontAscent);
       y += rowH;
     }
 
@@ -527,8 +552,8 @@ public class ComponentSearchPopup extends JPanel {
       if (matches.isEmpty()) {
         maxW = Math.max(maxW, fm.stringWidth(S.get("componentSearchNoMatch")) + PADDING_X * 2 + 4);
       } else {
-        for (AddTool tool : matches) {
-          int tw = fm.stringWidth("\u00bb " + displayNames.get(tool) + "_") + PADDING_X * 2 + 4;
+        for (Match m : matches) {
+          int tw = fm.stringWidth("\u00bb " + displayNames.get(m.tool) + "_") + PADDING_X * 2 + 4;
           if (tw > maxW) maxW = tw;
         }
       }
@@ -546,5 +571,57 @@ public class ComponentSearchPopup extends JPanel {
     // If flipped, keep the bottom edge anchored near the cursor
     if (flipped && getParent() != null)
       setLocation(getX(), anchorY - totalH - 4);
+  }
+
+  static boolean isLetter(char c) { return ('a' <= c && c <= 'z'); }
+  static boolean isDigit(char c) { return ('0' <= c && c <= '9'); }
+
+  /**
+   * Check if prefix matches at any position in the tool's displayname that
+   * isn't inside the middle of a word. A "word" here is a sequence of [0-9], or
+   * a sequence of [A-Za-z]. The match must start within the tool name,
+   * excluding any "in lib-x" suffix, since the presence of those suffixes is
+   * not consistent across entries. So you can't start typing "audio" or
+   * "wiring" for * example to get all the audio or wiring components. But you
+   * can type "bar in lib-x" to match "foo bar" component with an "in lib-x"
+   * suffix.
+   */
+  private Match keywordMatch(AddTool tool, String prefix) {
+    prefix = prefix.toLowerCase();
+    String toolName = tool.getDisplayName();
+    String fullName = displayNames.get(tool);
+    String corpus;
+    if (fullName == null) // only occurs during beginSearch, when prefix is initialChar
+      corpus = toolName.toLowerCase();
+    else
+      corpus = fullName.toLowerCase();
+    // toolName = "Saturating Adder"
+    // fullName = "Saturating Adder in Audio"
+    // fullName = "Saturating Adder in MyProject-With-Unlucky-Named-Circuit"
+    // prefix = "adder in M"
+    // 1. position i shouldn't go past fullName.length-prefix.length, it can't possibly
+    //    match after that point.
+    // 2. otherwise, position i can go up to end of toolName, with match flowing into suffix, but
+    //    don't allow i above toolName, since it would then just be matching the library name.
+    //    (or isn't that ok?)
+    int i = 0;
+    int n = Math.min(toolName.length(), corpus.length() - prefix.length() + 1);
+    // int n = fullName.length() - prefix.length() + 1;
+    while (i < n) {
+      if (corpus.startsWith(prefix, i)) {
+        return new Match(tool, i);
+      }
+      char c = corpus.charAt(i);
+      if (isLetter(c)) {
+        do { i++; }
+        while (i < n && isLetter(corpus.charAt(i)));
+      } else if (isDigit(c)) {
+        do { i++; }
+        while (i < n && isDigit(corpus.charAt(i)));
+      } else {
+        i++;
+      }
+    }
+    return null;
   }
 }
