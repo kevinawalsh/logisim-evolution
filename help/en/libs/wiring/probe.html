@@ -18,37 +18,42 @@
 by showing the value carried by some wire or output from some other component.
 Probes do not affect the functioning of a circuit in any way.
 
-<p>As a convenience, a probe automatically adjusts it's bit width to match
-whatever it is connected to.</p>
+<img src="probes.png">
 
-<h2>Pins</h2>
+<h2>Ports</h2>
 
-<p>A probe component has only one pin, which acts as an input to
-the probe. The width that this pin accepts is adaptive: The probe will
-adapt to inputs of any width.</p>
+<p>Each probe has a single input port. The signal at this port is displayed by
+the probe. As a convenience, a probe automatically adjusts the width of it's
+port to match whatever it is connected to.</p>
+
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b>
+change the <i>Label Location</i> property.</li>
+
+</ul>
 
 <h2>Properties</h2>
-
-<p>When the component is selected or being added,
-the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 
 <dt>Facing</dt>
-<dd>The side of the component where its input pin should be.</dd>
+<dd>The side where the port should be.</dd>
 
 <dt>Label</dt>
-<dd>The text within the label associated with the component.</dd>
+<dd>Text to be associated with the component.</dd>
 
 <dt>Label Location</dt>
-<dd>The location of the label relative to the component.</dd>
+<dd>Location of the label relative to the component.</dd>
 
 <dt>Label Font</dt>
-<dd>The font with which to render the label.</dd>
+<dd>Font for the label.</dd>
 
 <dt>Radix</dt>
-<dd>The base (for example, binary, decimal, or hexadecimal) in which
-the value is displayed.</dd>
+<dd>The number base used for displaying values.</dd>
 
 </dl>
 
