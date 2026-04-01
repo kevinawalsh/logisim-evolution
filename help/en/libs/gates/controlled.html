@@ -4,13 +4,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="/logisim-evolution/sidebar.js"></script>
-<title>Controlled Buffer/Inverter</title>
+<title>Tri-State Buffer &amp; Inverter</title>
 <link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
 </head>
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/controlledBuffer.gif"> <img src="/logisim-evolution/icons/controlledInverter.gif"> <em>Controlled Buffer/Inverter</em></h1>
+<h1><img src="/logisim-evolution/icons/controlledBuffer.gif"> <img src="/logisim-evolution/icons/controlledInverter.gif"> <em>Tri-State Buffer &amp; Tri-State Inverter</em></h1>
 
 <p><table>
 <tr><td><strong>Library:</strong></td>
@@ -23,7 +23,7 @@
 
 <h2>Behavior</h2>
 
-<p>The tri-state buffer and tri-state inverter, often called <em>controlled
+<p>The tri-state buffer and tri-state inverter, sometimes called <em>controlled
 buffers/inverters</em>, each have a one-bit "control"
 input pin on the south side. The value at this control pin affects how
 the component behaves:</p>
@@ -43,7 +43,7 @@ error value.</li>
 
 </ul>
 
-<p>Controlled buffers can be useful when you have a wire (often called a
+<p>Tri-state buffers can be useful when you have a wire (often called a
 <em>shared bus</em>) whose value should match the output of one of several
 components, each of which is independently controllable by some control signal.
 By placing a tri-state buffer between each component
