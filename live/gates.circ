@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project source="5.1.1-HC" version="1.0">
+<project source="5.1.3-HC" version="1.0">
   This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
 
   <lib desc="#Base" name="0">
     <tool name="Text Tool">
-      <a name="background" val="#ffffff00"/>
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="foreground" val="#000000"/>
-      <a name="format" val="plain"/>
       <a name="halign" val="center"/>
-      <a name="style" val=""/>
-      <a name="text" val="text"/>
       <a name="valign" val="base"/>
     </tool>
   </lib>
@@ -25,22 +19,9 @@
       <a name="table" val=""/>
     </tool>
   </lib>
-  <lib desc="#Plexers" name="3">
-    <tool name="Multiplexer">
-      <a name="enable" val="false"/>
-    </tool>
-    <tool name="Demultiplexer">
-      <a name="enable" val="false"/>
-    </tool>
-  </lib>
+  <lib desc="#Plexers" name="3"/>
   <lib desc="#Arithmetic" name="4"/>
-  <lib desc="#Memory" name="5">
-    <tool name="ROM">
-      <a name="contents">addr/data: 8 8
-0
-</a>
-    </tool>
-  </lib>
+  <lib desc="#Memory" name="5"/>
   <lib desc="#I/O" name="6"/>
   <lib desc="#Analog" name="7"/>
   <lib desc="#Audio" name="8"/>
@@ -48,30 +29,14 @@
   <lib desc="#External I/O" name="10"/>
   <lib desc="#Decor" name="11"/>
   <main name="Common Gates - Basics"/>
-  <options>
-    <a name="gateUndefined" val="ignore"/>
-    <a name="simlimit" val="1000"/>
-    <a name="simrand" val="0"/>
-    <a name="simsmooth" val="50"/>
-  </options>
-  <mappings>
-    <tool lib="0" map="Button2" name="Menu Tool"/>
-    <tool lib="0" map="Button3" name="Menu Tool"/>
-    <tool lib="0" map="Ctrl Button1" name="Menu Tool"/>
-  </mappings>
+  <options/>
   <toolbar>
     <tool lib="0" name="Poke Tool"/>
     <tool lib="0" name="Edit Tool"/>
     <tool lib="0" name="Wiring Tool"/>
     <tool lib="0" name="Cutter Tool"/>
     <tool lib="0" name="Text Tool">
-      <a name="background" val="#ffffff00"/>
-      <a name="font" val="SansSerif plain 12"/>
-      <a name="foreground" val="#000000"/>
-      <a name="format" val="plain"/>
       <a name="halign" val="center"/>
-      <a name="style" val=""/>
-      <a name="text" val="text"/>
       <a name="valign" val="base"/>
     </tool>
     <tool lib="11" name="Callout"/>
@@ -2305,5 +2270,160 @@ inputs are ignored</a>
     <wire from="(90,620)" to="(100,620)"/>
     <wire from="(90,660)" to="(100,660)"/>
     <wire from="(90,660)" to="(90,700)"/>
+  </circuit>
+  <circuit name="Multi-bit Gates">
+    <comp lib="1" loc="(140,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(170,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(200,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(230,110)" name="Pin">
+      <a name="label" val="EightBitInput"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(230,210)" name="Pin">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(230,250)" name="Pin">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(230,340)" name="Pin">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(230,380)" name="Pin">
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(230,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(270,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(280,570)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+    </comp>
+    <comp lib="1" loc="(300,110)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="label" val="EightBitOutput"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(300,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(320,230)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(320,360)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(330,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="1" loc="(360,470)" name="Pin">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="11" loc="(30,10)" name="Text">
+      <a name="background" val="#ff856263"/>
+      <a name="format" val="markdownish"/>
+      <a name="text">Multi-bit gates can help simplify your circuits.
+For example, here's an **8-bit NOT gate**. It looks exactly like a regular NOT gate, but the "data size"  property 
+is set to 8 in the properties panel at the lower left of the window. Try it! Use the poke tool to change the input.</a>
+      <a name="textwidth" val="500"/>
+    </comp>
+    <comp lib="11" loc="(30,140)" name="Text">
+      <a name="background" val="#ff856263"/>
+      <a name="format" val="markdownish"/>
+      <a name="text">Similarly, here is a **8-bit two-input XOR gate**. It is really eight separate two-input XOR gates, each 
+working on one pair of input bits to produce one bit of output.</a>
+      <a name="textwidth" val="500"/>
+    </comp>
+    <comp lib="11" loc="(30,270)" name="Text">
+      <a name="background" val="#ff856263"/>
+      <a name="format" val="markdownish"/>
+      <a name="text">Multi-bit gates can help simplify your circuits.
+For example, you can do an eight-way pair-wise 
+"equality" comparison using a single XNOR gate to compute 8 results!</a>
+      <a name="textwidth" val="500"/>
+    </comp>
+    <comp lib="11" loc="(30,400)" name="Text">
+      <a name="background" val="#99a1ff49"/>
+      <a name="format" val="markdownish"/>
+      <a name="text">By contrast, here is a 1-bit eight-input OR gate. This is just a single OR operation
+computed across all the inputs to produce a single bit of output.</a>
+      <a name="textwidth" val="500"/>
+    </comp>
+    <comp lib="2" loc="(250,560)" name="OR Gate">
+      <a name="facing" val="south"/>
+      <a name="inputs" val="8"/>
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="2" loc="(280,110)" name="NOT Gate">
+      <a name="size" val="20"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="2" loc="(300,230)" name="XOR Gate">
+      <a name="size" val="30"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="2" loc="(300,360)" name="XNOR Gate">
+      <a name="size" val="30"/>
+      <a name="width" val="8"/>
+    </comp>
+    <wire from="(140,470)" to="(140,520)"/>
+    <wire from="(140,520)" to="(210,520)"/>
+    <wire from="(170,470)" to="(170,510)"/>
+    <wire from="(170,510)" to="(220,510)"/>
+    <wire from="(200,470)" to="(200,500)"/>
+    <wire from="(200,500)" to="(230,500)"/>
+    <wire from="(210,520)" to="(210,530)"/>
+    <wire from="(220,510)" to="(220,530)"/>
+    <wire from="(230,110)" to="(260,110)"/>
+    <wire from="(230,210)" to="(240,210)"/>
+    <wire from="(230,250)" to="(240,250)"/>
+    <wire from="(230,340)" to="(240,340)"/>
+    <wire from="(230,380)" to="(240,380)"/>
+    <wire from="(230,470)" to="(230,490)"/>
+    <wire from="(230,490)" to="(240,490)"/>
+    <wire from="(230,500)" to="(230,530)"/>
+    <wire from="(240,210)" to="(240,220)"/>
+    <wire from="(240,220)" to="(260,220)"/>
+    <wire from="(240,240)" to="(240,250)"/>
+    <wire from="(240,240)" to="(260,240)"/>
+    <wire from="(240,340)" to="(240,350)"/>
+    <wire from="(240,350)" to="(250,350)"/>
+    <wire from="(240,370)" to="(240,380)"/>
+    <wire from="(240,370)" to="(250,370)"/>
+    <wire from="(240,490)" to="(240,530)"/>
+    <wire from="(250,560)" to="(250,570)"/>
+    <wire from="(250,570)" to="(280,570)"/>
+    <wire from="(260,490)" to="(260,530)"/>
+    <wire from="(260,490)" to="(270,490)"/>
+    <wire from="(270,470)" to="(270,490)"/>
+    <wire from="(270,500)" to="(270,530)"/>
+    <wire from="(270,500)" to="(300,500)"/>
+    <wire from="(280,110)" to="(300,110)"/>
+    <wire from="(280,510)" to="(280,530)"/>
+    <wire from="(280,510)" to="(330,510)"/>
+    <wire from="(290,520)" to="(290,530)"/>
+    <wire from="(290,520)" to="(360,520)"/>
+    <wire from="(300,230)" to="(320,230)"/>
+    <wire from="(300,360)" to="(320,360)"/>
+    <wire from="(300,470)" to="(300,500)"/>
+    <wire from="(330,470)" to="(330,510)"/>
+    <wire from="(360,470)" to="(360,520)"/>
   </circuit>
 </project>
