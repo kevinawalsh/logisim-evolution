@@ -74,7 +74,7 @@ public class hex2sevenseg extends InstanceFactory {
 		ps[Segment_E].setToolTip(S.getter("Segment_E"));
 		ps[Segment_F].setToolTip(S.getter("Segment_F"));
 		ps[Segment_G].setToolTip(S.getter("Segment_G"));
-		ps[Hexin].setToolTip(S.getter("Hex Value"));
+		ps[Hexin].setToolTip(S.getter("Value: Integer to be displayed in hex"));
 		setPorts(ps);
 	}
 	

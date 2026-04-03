@@ -42,7 +42,7 @@ public class BFHPraktika extends Library {
     new FactoryDescription("Dynamic_Clock_Control",
         S.getter("Dynamic Clock Control"), "",
         "DynamicClock"), 
-    new FactoryDescription("Binairy_to_BCD_converter",
+    new FactoryDescription("Binary_to_BCD_converter",
         S.getter("Binary to BCD"), "",
         "bin2bcd"), 
     new FactoryDescription("BCD_to_7_Segment_decoder",

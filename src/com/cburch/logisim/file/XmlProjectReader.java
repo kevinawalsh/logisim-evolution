@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -402,6 +403,10 @@ public class XmlProjectReader extends XmlReader {
     }
 
     if (version.compareTo(LogisimVersion.get(2, 6, 3)) < 0) {
+      // As of version 2.6.3, circuit attributes names have changed:
+      //   label -> clabel
+      //   labelup -> clabelup
+      //   labelfont -> clabelfont
       for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
         for (Element attrElt : XmlIterator.forChildElements(circElt, "a")) {
           String name = attrElt.getAttribute("name");
@@ -410,8 +415,9 @@ public class XmlProjectReader extends XmlReader {
           }
         }
       }
-
+      // As of version 2.6.3, #Base is split into #Base and #Wiring
       repairForWiringLibrary(doc, root);
+      // As of version 2.6.3, #Legacy is gone
       repairByEradicatingLibrary(doc, root, "Legacy", "#Legacy");
     }
 
@@ -421,29 +427,19 @@ public class XmlProjectReader extends XmlReader {
       // on many components. Add StdAttr.APPEAR_CLASSIC on each subcircuit
       // and instances of FlipFlops, Registers, Counters, RAM, ROM, and
       // Shift Registers.
-      String memLibName = findLibNameByDesc(root, "#Memory");
       for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
         setDefaultAttribute(doc, circElt, "appearance", "classic");
-        if (memLibName != null) {
-          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = compElt.getAttribute("lib");
-            String name = compElt.getAttribute("name");
-            if (lib == null || name == null || !lib.equals(memLibName))
-              continue;
-            if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop")
-                || name.equals("T Flip-Flop") || name.equals("D Flip-Flop")
-                || name.equals("RAM") || name.equals("ROM")
-                || name.equals("Register") || name.equals("Shift Register")
-                || name.equals("Counter") || name.equals("Random")) {
-              setDefaultAttribute(doc, compElt, "appearance", "classic");
-            }
+      }
+      repairComponentsAndTools(doc, root, "#Memory",
+          "J-K Flip-Flop|S-R Flip-Flop|T Flip-Flop|D Flip-Flop"
+          +"|RAM|ROM|Register|Shift Register|Counter|Random",
+          (elt, name) -> {
+            setDefaultAttribute(doc, elt, "appearance", "classic");
             if (name.equals("J-K Flip-Flop") || name.equals("S-R Flip-Flop")
                 || name.equals("T Flip-Flop") || name.equals("D Flip-Flop")) {
-              setDefaultAttribute(doc, compElt, "enable", "true");
+              setDefaultAttribute(doc, elt, "enable", "true");
             }
-          }
-        }
-      }
+          });
     }
 
     // As of version 4.0.0-HC, the #TCL library is gone.
@@ -538,19 +534,9 @@ public class XmlProjectReader extends XmlReader {
       // As of version 5.0.5, Audio#PCMSink trigger defaults to TRIG_RISING, but
       // earlier versions used TRIG_FALLING as default. So earlier files without
       // explicit trigger attribute need TRIG_FALLING added.
-      String audioLibName = findLibNameByDesc(root, "#Audio");
-      if (audioLibName != null) {
-        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = compElt.getAttribute("lib");
-            String name = compElt.getAttribute("name");
-            if (lib == null || name == null || !lib.equals(audioLibName))
-              continue;
-            if (name.equals("PCMSink"))
-              setDefaultAttribute(doc, compElt, "trigger", "falling");
-          }
-        }
-      }
+      repairComponentsAndTools(doc, root, "#Audio", "PCMSink",
+          (elt, name) ->
+          setDefaultAttribute(doc, elt, "trigger", "falling"));
     }
 
     if (version.compareTo(LogisimVersion.get(5, 1, 0)) < 0) {
@@ -562,28 +548,19 @@ public class XmlProjectReader extends XmlReader {
       //   Callout:
       //     previously used: center, base, 40, 40
       //     now defaults to: left, center-overall, implied margin, -40, -40, margin:4px;
-      String baseLibName = findLibNameByDesc(root, "#Base");
-      if (baseLibName != null) {
-        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-          for (Element compElt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = compElt.getAttribute("lib");
-            String name = compElt.getAttribute("name");
-            if (lib == null || name == null || !lib.equals(baseLibName))
-              continue;
+      repairComponentsAndTools(doc, root, "#Base", "Text|Callout",
+          (elt, name) -> {
             if (name.equals("Text")) {
-              setDefaultAttribute(doc, compElt, "halign", "center");
-              setDefaultAttribute(doc, compElt, "valign", "base");
+              setDefaultAttribute(doc, elt, "halign", "center");
+              setDefaultAttribute(doc, elt, "valign", "base");
             } else if (name.equals("Callout")) {
-              setDefaultAttribute(doc, compElt, "halign", "center");
-              setDefaultAttribute(doc, compElt, "valign", "base");
-              setDefaultAttribute(doc, compElt, "dx", "40");
-              setDefaultAttribute(doc, compElt, "dy", "40");
-              setDefaultAttribute(doc, compElt, "style", "margin: 4px;");
+              setDefaultAttribute(doc, elt, "halign", "center");
+              setDefaultAttribute(doc, elt, "valign", "base");
+              setDefaultAttribute(doc, elt, "dx", "40");
+              setDefaultAttribute(doc, elt, "dy", "40");
+              setDefaultAttribute(doc, elt, "style", "margin: 4px;");
             }
-          }
-        }
-      }
-      
+          });
       // As of version 5.1.0, a new Decor builtin library has been added.
       addBuiltinLibrariesIfMissing(doc, root, "#Decor");
     }
@@ -593,79 +570,68 @@ public class XmlProjectReader extends XmlReader {
       // to the new Decor library.
       String baseLibName = findLibNameByDesc(root, "#Base");
       String decorLibName = findLibNameByDesc(root, "#Decor");
-      if (baseLibName != null && decorLibName != null) {
-        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-          for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = elt.getAttribute("lib");
-            String name = elt.getAttribute("name");
-            if (lib != null && name != null && lib.equals(baseLibName) && 
-                (name.equals("Image") || name.equals("Callout") || name.equals("Text")))
-              elt.setAttribute("lib", decorLibName);
-          }
-        }
-        for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
-          for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
-            String lib = elt.getAttribute("lib");
-            String name = elt.getAttribute("name");
-            if (lib != null && name != null && lib.equals(baseLibName) && 
-                (name.equals("Image") || name.equals("Callout") || name.equals("Text")))
-              elt.setAttribute("lib", decorLibName);
-          }
-        }
+      if (decorLibName != null) {
+        repairComponentsAndTools(doc, root, "#Base", "Image|Callout|Text",
+            (elt, name) -> elt.setAttribute("lib", decorLibName));
       }
     }
     
     if (version.compareTo(LogisimVersion.get(5, 1, 2)) < 0) {
       // As of version 5.1.2, Wiring/Pin, Memory/Register, and Memory/Counter disallow
       // labelloc=center.
-      wiringLibName = findLibNameByDesc(root, "#Wiring");
-      if (wiringLibName != null) {
-        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-          for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = elt.getAttribute("lib");
-            String name = elt.getAttribute("name");
-            if (lib != null && name != null && lib.equals(wiringLibName) && 
-                name.equals("Pin")) {
-              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
-            }
-          }
-        }
-        for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
-          for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
-            String lib = elt.getAttribute("lib");
-            String name = elt.getAttribute("name");
-            if (lib != null && name != null && lib.equals(wiringLibName) && 
-                name.equals("Pin")) {
-              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
-            }
-          }
-        }
-      }
-      String memoryLibName = findLibNameByDesc(root, "#Memory");
-      if (memoryLibName != null) {
-        for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
-          for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
-            String lib = elt.getAttribute("lib");
-            String name = elt.getAttribute("name");
-            if (lib != null && name != null && lib.equals(memoryLibName) && 
-                (name.equals("Register") || name.equals("Counter"))) {
-              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
-            }
-          }
-        }
-        for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
-          for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
-            String lib = elt.getAttribute("lib");
-            String name = elt.getAttribute("name");
-            if (lib != null && name != null && lib.equals(memoryLibName) && 
-                (name.equals("Register") || name.equals("Counter"))) {
-              replaceAttributeValue(doc, elt, "labelloc", "center", "north");
-            }
-          }
-        }
-      }
+      repairComponentsAndTools(doc, root, "#Wiring", "Pin",
+          (elt, name) -> 
+              replaceAttributeValue(doc, elt, "labelloc", "center", "north"));
+      repairComponentsAndTools(doc, root, "#Memory", "Register|Counter",
+          (elt, name) -> 
+              replaceAttributeValue(doc, elt, "labelloc", "center", "north"));
     }
 
+    if (version.compareTo(LogisimVersion.get(5, 1, 4)) < 0) {
+      // As of version 5.1.4, some bfh library component strings in xml are modified:
+      //   Binairy_to_BCD_converter --> Binary_to_BCD_converter
+      //    ... binvalue --> width
+      repairComponentsAndTools(doc, root, "#BFH-Praktika", "Binairy_to_BCD_converter",
+          (elt, name) ->  {
+            elt.setAttribute("name", "Binary_to_BCD_converter");
+            replaceAttributeName(doc, elt, "binvalue", "width");
+          });
+    }
+
+  }
+
+  @FunctionalInterface
+  private interface ComponentRepairer {
+    public void repair(Element elt /* from circuit or toolbar */, String name);
+  }
+
+  // Repairs each matching "comp" in a "circuit" and "tool" in the "toolbar"
+  private void repairComponentsAndTools(Document doc, Element root,
+      String libDesc /* e.g. "#Memory" */,
+      String compNames /* pipe-separated list */, ComponentRepairer visitor) {
+
+    String libName = findLibNameByDesc(root, libDesc);
+    if (libName == null)
+      return;
+
+    HashSet<String> nameSet = new HashSet<>(Arrays.asList(compNames.split(",")));
+
+    for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
+      for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
+        String lib = elt.getAttribute("lib");
+        String name = elt.getAttribute("name");
+        if (lib != null && name != null && lib.equals(libName) && nameSet.contains(name))
+          visitor.repair(elt, name);
+      }
+    }
+    for (Element toolbar : XmlIterator.forChildElements(root, "toolbar")) {
+      for (Element elt : XmlIterator.forChildElements(toolbar, "tool")) {
+        String lib = elt.getAttribute("lib");
+        String name = elt.getAttribute("name");
+        if (lib != null && name != null && lib.equals(libName) && nameSet.contains(name))
+          visitor.repair(elt, name);
+      }
+    }
   }
 
   private void repairForImageAndCalloutComponents(Document doc, Element root) {
@@ -825,6 +791,18 @@ public class XmlProjectReader extends XmlReader {
       String val = attrElt.getAttribute("val");
       if (name != null && name.equals(attrib) && val != null && val.equals(oldVal)) {
         attrElt.setAttribute("val", newVal);
+        return;
+      }
+      end = attrElt.getNextSibling();
+    }
+  }
+
+  private void replaceAttributeName(Document doc, Element elt, String oldName, String newName) {
+    Node end = elt.getFirstChild();
+    for (Element attrElt : XmlIterator.forChildElements(elt, "a")) {
+      String name = attrElt.getAttribute("name");
+      if (name != null && name.equals(oldName)) {
+        attrElt.setAttribute("name", newName);
         return;
       }
       end = attrElt.getNextSibling();

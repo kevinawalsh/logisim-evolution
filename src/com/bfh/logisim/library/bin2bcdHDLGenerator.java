@@ -62,7 +62,7 @@ public class bin2bcdHDLGenerator extends HDLGenerator {
   }
   
   private static String deriveHDLName(AttributeSet attrs) {
-    return "Binairy_to_BCD_converter_" + numPorts(attrs) + "_bcd_ports";
+    return "Binary_to_BCD_converter_" + numPorts(attrs) + "_bcd_ports";
 	}
 	
 	@Override

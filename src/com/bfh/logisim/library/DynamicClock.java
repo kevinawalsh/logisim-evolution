@@ -62,7 +62,7 @@ public class DynamicClock extends InstanceFactory {
 		setIconName("dynclock.gif");
 		Port[] ps = new Port[1];
 		ps[SPEED] = new Port(-30, 30, Port.INPUT, WIDTH_ATTR);
-                ps[SPEED].setToolTip(S.getter("CountReset: Reset value for tick counter (higher numbers make slower clocks)"));
+    ps[SPEED].setToolTip(S.getter("CountReset: Reset value for tick counter (higher numbers make slower clocks)"));
 		setPorts(ps);
 	}
 	
