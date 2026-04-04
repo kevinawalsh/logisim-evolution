@@ -568,7 +568,6 @@ public class XmlProjectReader extends XmlReader {
     if (version.compareTo(LogisimVersion.get(5, 1, 1)) < 0) {
       // As of version 5.1.1, base/Text, base/Callout, and base/Image have moved
       // to the new Decor library.
-      String baseLibName = findLibNameByDesc(root, "#Base");
       String decorLibName = findLibNameByDesc(root, "#Decor");
       if (decorLibName != null) {
         repairComponentsAndTools(doc, root, "#Base", "Image|Callout|Text",
@@ -614,7 +613,7 @@ public class XmlProjectReader extends XmlReader {
     if (libName == null)
       return;
 
-    HashSet<String> nameSet = new HashSet<>(Arrays.asList(compNames.split(",")));
+    HashSet<String> nameSet = new HashSet<>(Arrays.asList(compNames.split("\\|")));
 
     for (Element circElt : XmlIterator.forChildElements(root, "circuit")) {
       for (Element elt : XmlIterator.forChildElements(circElt, "comp")) {
