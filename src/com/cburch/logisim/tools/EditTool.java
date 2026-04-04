@@ -365,6 +365,7 @@ public final class EditTool extends Tool {
         && c != KeyEvent.CHAR_UNDEFINED
         && !Character.isISOControl(c)
         && !Character.isWhitespace(c)
+        && c != '>' && c != '<' // these are used for controlling clock tick rate
         && (e.getModifiersEx() & ~KeyEvent.SHIFT_DOWN_MASK) == 0) {
       // Allowable chars:
       //   a-z, A-Z, 0-9
