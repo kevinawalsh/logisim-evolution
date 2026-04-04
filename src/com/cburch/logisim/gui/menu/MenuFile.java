@@ -118,6 +118,7 @@ class MenuFile extends Menu implements ActionListener {
 
     "logisim features > multi-bit gates          : gates.circ : Multi-bit Gates",
     "logisim features > splitters                : splitters.circ : main",
+    "logisim features > tunnels                  : bounce.circ : main",
     "logisim features > dynamic conditions       : DynamicConditions.circ : main",
     "logisim features > in-circuit slideshow     : FilesAndImages.circ : main",
     "logisim features > in-circuit file viewer   : FilesAndImages.circ : main",
@@ -127,6 +128,7 @@ class MenuFile extends Menu implements ActionListener {
 
     "miscellaneous > ideal relay                 : IdealRelay.circ : main",
     "miscellaneous > invaders game               : invaders.circ : main",
+    "miscellaneous > bouncing ball               : bounce.circ : main",
 
   };
 
