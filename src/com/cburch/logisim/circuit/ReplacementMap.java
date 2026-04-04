@@ -32,13 +32,13 @@ package com.cburch.logisim.circuit;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.cburch.logisim.comp.Component;
 
@@ -55,6 +55,28 @@ public class ReplacementMap {
   private boolean frozen; // prevents further changes to mappings
   private HashMap<Component, HashSet<Component>> map;
   private HashMap<Component, HashSet<Component>> inverse;
+
+  // For the affected circuit, there are three mutually disjoint sets:
+  // - some components unaffected by this ReplacementMap
+  // - zero or more oldComponents that were previously in this circuit
+  //   but will no longer be due to the actions of this ReplacementMap
+  // - zero or more newComponents that were not previously in this
+  //   circuit but are going to be due to the actions of of this ReplacementMap
+  // In other words:
+  //  circuit before ReplacementMap = oldComps + unaffectedComps
+  //  circuit after ReplacementMap =             unaffectedComps + newComps
+  // And there are 3 scenarios:
+  // 1. a1 --> b1, b2, ...      // old a replaced by new b1, b2, ...
+  //    a1... <-- b1            // new b1 replaces old a1... [inverse relation]
+  //    a1... <-- b2            // new b2 replaces old a1... [inverse relation]
+  //             ...
+  // 2. a1 --> { }              // old a1 replaced by nothing, i.e. a1 was simply deleted
+  //                            // inverse relation doesn't have any entry here
+  // 3. { } <-- b1              // new b1 replaces nothing, i.e. b1 was added from thin air
+  //                            // map doesn't have any entry for this
+  // And an invariant:
+  //   Whenever map[a] = { ... b ... }
+  //   Whenever inverse[b] = { ... a ... }
 
   // map: oldComponent --> {new components that replace oldComponent}
   // inverse: newComponent --> {old components that newComponent replaced}
@@ -75,6 +97,74 @@ public class ReplacementMap {
     newSet.add(newComp);
     map.put(oldComp, newSet);
     inverse.put(newComp, oldSet);
+    sanityCheck("1-to-1 constructor");
+  }
+
+  void sanityCheck(String title) {
+    Set<Component> oldComps = map.keySet();
+    Set<Component> newComps = inverse.keySet();
+    Set<Component> intersection = new HashSet<>(oldComps);
+    intersection.retainAll(newComps);
+    if (!intersection.isEmpty()) {
+      System.err.println("In " + title);
+      System.err.printf("ERR: %d components are both old and new\n", intersection.size());
+      for (Component comp : intersection) 
+        System.err.printf("     %s is both old and new\n", comp);
+    }
+    Set<Component> allBs = new HashSet<>();
+    for (Component oldComp : map.keySet()) {
+      HashSet<Component> bs = map.get(oldComp);
+      allBs.addAll(bs);
+    }
+    // allBs should be newComps
+    allBs.removeAll(newComps);
+    if (!allBs.isEmpty()) {
+      System.err.println("In " + title);
+      System.err.printf("ERR: %d components replace old things, but aren't new?\n", allBs.size());
+      for (Component comp : allBs) 
+        System.err.printf("     %s replaces an old but isn't new\n", comp);
+    }
+    Set<Component> allAs = new HashSet<>();
+    for (Component newComp : inverse.keySet()) {
+      HashSet<Component> as = inverse.get(newComp);
+      allAs.addAll(as);
+    }
+    // allAs should be oldComps
+    allAs.removeAll(oldComps);
+    if (!allAs.isEmpty()) {
+      System.err.println("In " + title);
+      System.err.printf("ERR: %d components replaced by new things, but aren't old?\n", allAs.size());
+      for (Component comp : allAs) 
+        System.err.printf("     %s replaced by a new but isn't old\n", comp);
+    }
+    // Whenever map[a]={...b...} then inverse[b]={...a...}
+    for (Component a : map.keySet()) {
+      HashSet<Component> bs = map.get(a);
+      for (Component b : bs) {
+        HashSet<Component> as = inverse.get(b);
+        if (as == null) {
+          System.err.println("In " + title);
+          System.err.printf("ERR: a replaced by b, but b missing from inverse map: %s %s\n", a, b);
+        } else if (!as.contains(a)) {
+          System.err.println("In " + title);
+          System.err.printf("ERR: a replaced by b, but b doesn't replace a: %s %s\n", a, b);
+        }
+      }
+    }
+    // vice versa: Whenever inverse[b]={...a...} then map[a]={...b...}
+    for (Component b : inverse.keySet()) {
+      HashSet<Component> as = inverse.get(b);
+      for (Component a : as) {
+        HashSet<Component> bs = map.get(a);
+        if (as == null) {
+          System.err.println("In " + title);
+          System.err.printf("ERR: b replaces a, but a missing from map: %s %s\n", a, b);
+        } else if (!as.contains(a)) {
+          System.err.println("In " + title);
+          System.err.printf("ERR: b replaces a, but a isn't replaced by b: %s %s\n", a, b);
+        }
+      }
+    }
   }
 
   // private constructor with pre-built maps
@@ -88,32 +178,120 @@ public class ReplacementMap {
   public void add(Component comp) {
     if (frozen)
       throw new IllegalStateException("cannot change map after frozen");
-    inverse.put(comp, new HashSet<Component>(3));
+    HashSet<Component> oldSet = inverse.put(comp, new HashSet<Component>(3));
+    if (oldSet != null) {
+      System.err.println("Internal error: duplicate component in add()");
+      Thread.dumpStack();
+    }
   }
 
-  // compose (math-style) two relations: a-->b  b-->c  becomes a-->c
+  // compose (math-style) two relations:
+  //    a-->b  b-->c  becomes a-->c
+  //    c<--b  b<--a  becomes c<--a
   void append(ReplacementMap next) {
+    // Sanity: anything removed by this should not be present in next
+    for (Component a: this.map.keySet()) {
+      if (next.map.get(a) != null) {
+        System.err.println("a removed twice: " + a);
+        Thread.dumpStack();
+      }
+      if (next.inverse.get(a) != null) {
+        System.err.println("a removed, then re-added: " + a);
+      }
+    }
+    // Sanity: anything added by this, should not be also added by next
+    for (Component b: next.inverse.keySet()) {
+      if (this.inverse.get(b) != null) {
+        System.err.println("b added twice: " + b);
+        Thread.dumpStack();
+      }
+    }
+
+    // Step 1: Handle cases where next deletes b outright, or replaces b by c1...
     for (Map.Entry<Component, HashSet<Component>> e : next.map.entrySet()) {
       Component b = e.getKey();
       HashSet<Component> cs = e.getValue(); // what b is replaced by
+      // Four possible scenarios:
+      // this          next
+      // a1... <-- b   b --> c1...  //  1: a1... replaced by b, then b replaced by c1...
+      // no preimage   b --> c1...  //  2: b unaffected, then b replaced by c1...
+      // a1... <-- b   b --> { }    //  3: a1... replaced by b, then b deleted
+      // no preimage   b --> { }    //  4: b unaffected, then b deleted
       HashSet<Component> as = this.inverse.remove(b); // what was replaced to get b
-      if (as == null) { // b pre-existed replacements so
-        as = new HashSet<Component>(3); // we say it replaces itself.
+      // For cases 1 and 3, we just removed the preimage, so b is no longer in this.inverse
+      // What about cases where we are doing multiple loops?
+      // Example:
+      // this          next
+      // a1 <--> b1    b1,b2 <--> c
+      // a2 <--> b2
+      // First iteration is for b1 --> c
+      // - case 1, bWasPreviouslyUnaffected=false (because inverse[b1] exists)
+      // - inverse[b1]          removed entry
+      // - map[a1]={c}          removed b1 from set, added c instead
+      // - inverse[c]={a1}      created a new inverse entry for c
+      // Second iteration is for b2 --> c
+      // - case 1, bWasPreviouslyUnaffected=false (because inverse[b2] exists)
+      // - inverse[b2]          removed entry
+      // - map[a2]={c}          removed b2 from set, added c instead
+      // - inverse[c]={a1,a2}   found inverse entry for c, added a2
+      // [this all seems correct]
+      // Is it possible to encounter the same b multiple times and get confused?
+      // No: because we iterate over b in next.map keyset, so the b are unique.
+      boolean bWasPreviouslyUnaffected = false;
+      if (as == null) { // no preimage: b was unaffected by this ReplacementMap (case 2, 4)
+        as = new HashSet<Component>(3); // fake entry: we say b replaces itself.
         as.add(b);
+        // FIXME: just handle these cases here, fully, don't add a fake entry and fall to below
+        bWasPreviouslyUnaffected = true;
       }
-
+      // With the fake entry for as, we now have:
+      // this          next
+      // a1... <-- b   b --> c1...  //  1: a1... replaced by b, then b replaced by c1...
+      //     b <-- b   b --> c1...  //  2: b unaffected, then b replaced by c1...
+      // a1... <-- b   b --> { }    //  3: a1... replaced by b, then b deleted
+      //     b <-- b   b --> { }    //  4: b unaffected, then b deleted
       for (Component a : as) {
         HashSet<Component> aDst = this.map.get(a);
-        if (aDst == null) { // should happen when b pre-existed only
+        if (aDst == null) { // should happen in the "no preimage" cases (case 2, 4)
+          // in those, b was unaffected, so it shouldn't be in either map or inverse
+          if (!bWasPreviouslyUnaffected)
+            System.err.println("huh? b replaced a, but a isn't in map?");
+          if (a != b)
+            System.err.println("huh? b != a?");
           aDst = new HashSet<Component>(cs.size());
           this.map.put(a, aDst);
+          // Here a==b so we just added b --> {} to the map, and next will
+          // try to remove b from the set (will be nop, since it's empty), then
+          // add all of cs, so we end up with map containing: b --> cs
+          // [this seems correct]
+        } else {
+          // should happen in cases where b was new (case 1, 3)
+          if (bWasPreviouslyUnaffected)
+            System.err.println("huh? b was unaffected, but b was in the map?");
+          // inverse[b]={...a...} means b... replaced a...
+          // map[a]=aDst means a... were replaced by something (should be b...)
+          if (!aDst.contains(b))
+            System.err.println("huh? b replaced a, but a not replaced by b?");
+          // Next we will change map[a] to remove b and add cs,
+          // so we end up with map containing: a --> ...cs...
+          // [this seems correct]
+          // and our inverse isn't yet fixed:
+          //   inverse still has: a... <-- b
+          //   but needs instead: a... <-- c
         }
         aDst.remove(b);
         aDst.addAll(cs);
       }
 
+      // This adds inverse: a... <-- c
       for (Component c : cs) {
-        HashSet<Component> cSrc = this.inverse.get(c); // should always be null
+        // Intially, this.inverse won't have any entry for c, since c was newly added
+        // by next ReplacementMap. But if next has b1 --> {c} and b2 --> {c}, for example,
+        // and this.inverse has {a1, a2} <-- b1 and {a3, a4} <-- b2, then
+        // on first iteration, we add {a1,a2} <-- c to this.inverse,
+        // and on second iteration, we find c is already prresent in this.inverse,
+        // and just expand it to be {a1,a2,a3,a4} <-- c.
+        HashSet<Component> cSrc = this.inverse.get(c);
         if (cSrc == null) {
           cSrc = new HashSet<Component>(as.size());
           this.inverse.put(c, cSrc);
@@ -122,17 +300,29 @@ public class ReplacementMap {
       }
     }
 
+    // Step 2: Handle cases where next adds c from thin air
     for (Map.Entry<Component, HashSet<Component>> e : next.inverse.entrySet()) {
       Component c = e.getKey();
+      // Four possible scenarios:
+      // this          next
+      //               b... <-- c  //  1: something happens, then c replaces b...
+      //                               (already handled above, c will be in this.inverse)
+      //               {  } <-- c  //  2: something happens, then c added from thin air
+      //                               (not yet handled, c will not be in this.inverse)
       if (!inverse.containsKey(c)) {
+        // case 2: next added c from thin air
         HashSet<Component> bs = e.getValue();
         if (!bs.isEmpty()) {
+          // FIXME: We are seeing this error in practice
           System.err.println("Internal error: component replaced but not represented");
           Thread.dumpStack();
         }
+        // Add { } <-- c to this.inverse
+        // [this seems correct]
         inverse.put(c, new HashSet<Component>(3));
       }
     }
+    sanityCheck("append");
   }
 
   void freeze() {
@@ -224,7 +414,11 @@ public class ReplacementMap {
   public void remove(Component a) {
     if (frozen)
       throw new IllegalStateException("cannot change map after frozen");
-    map.put(a, new HashSet<Component>(3));
+    HashSet<Component> oldSet = map.put(a, new HashSet<Component>(3));
+    if (oldSet != null) {
+      System.err.println("Internal error: duplicate component in remove()");
+      Thread.dumpStack();
+    }
   }
 
   // makes a relation for a one-to-one relation a-->b replacing a with b
