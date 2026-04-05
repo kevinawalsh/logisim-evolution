@@ -547,7 +547,7 @@ public class Project {
       fireEvent(new ProjectEvent(ProjectEvent.REDO_START, this, action));
 
       // Redo the action
-      action.doIt(this);
+      action.redo(this);
       file.setDirty(isFileDirty());
 
       // Complete the redo
