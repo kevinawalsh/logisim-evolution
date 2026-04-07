@@ -55,14 +55,17 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 //    possibly other things.
 class CircuitMutatorImpl implements CircuitMutator {
 
+  final CircuitTransaction owner;
   private ArrayList<CircuitChange> log = new ArrayList<>();
   private HashMap<Circuit, ReplacementMap> replacements = new HashMap<>();
   private HashSet<Circuit> modified = new HashSet<>();
 
-  public CircuitMutatorImpl() { }
+  CircuitMutatorImpl(CircuitTransaction xn) {
+    owner = xn;
+  }
 
   public void add(Circuit circuit, Component comp) {
-    modified.add(circuit);
+    markModified(circuit);
     log.add(CircuitChange.add(circuit, comp));
 
     getMap(circuit).appendAddition(comp);
@@ -107,11 +110,24 @@ class CircuitMutatorImpl implements CircuitMutator {
 
   void markModified(Circuit circuit) {
     modified.add(circuit);
+    // Sanity check: circuit should have been locked by us
+    CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
+    if (circMutator != this) {
+      System.out.println("*** Circuit Lock Bug Diagnostics ***");
+      System.out.println("This thread: " + Thread.currentThread());
+      System.out.println("  executing transaction:" + owner);
+      System.out.println("  with mutator: " + this);
+      System.out.println("attempted to illegally modify");
+      System.out.println("  non-locked circuit: " + circuit.getName());
+      System.out.println("  with mutator: " + circMutator);
+      Thread.dumpStack();
+      // FIXME: perhaps throw (before adding to modified set)?
+    }
   }
 
   public void remove(Circuit circuit, Component comp) {
     if (circuit.contains(comp)) {
-      modified.add(circuit);
+      markModified(circuit);
       log.add(CircuitChange.remove(circuit, comp));
 
       getMap(circuit).appendRemoval(comp);
@@ -127,7 +143,7 @@ class CircuitMutatorImpl implements CircuitMutator {
   public void applyReplacements(Circuit circuit, ReplacementMap repl) {
     ArrayList<Component> added = new ArrayList<>();
     if (!repl.isEmpty()) {
-      modified.add(circuit);
+      markModified(circuit);
       log.add(CircuitChange.replace(circuit, repl));
 
       repl.freeze();
@@ -160,7 +176,7 @@ class CircuitMutatorImpl implements CircuitMutator {
 
   public void set(Circuit circuit, Component comp, Attribute<?> attr, Object newValue) {
     if (circuit.contains(comp)) {
-      modified.add(circuit);
+      markModified(circuit);
       @SuppressWarnings("unchecked")
       Attribute<Object> a = (Attribute<Object>) attr;
       AttributeSet attrs = comp.getAttributeSet();

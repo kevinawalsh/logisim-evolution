@@ -33,9 +33,8 @@ import static com.cburch.logisim.circuit.Strings.S;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.Set;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
@@ -125,29 +124,22 @@ public final class CircuitMutation extends CircuitTransaction {
   }
 
   @Override
-  protected Map<Circuit, Integer> getAccessedCircuits() {
-    HashMap<Circuit, Integer> accessMap = new HashMap<>();
+  protected Set<Circuit> getAccessedCircuits() {
+    HashSet<Circuit> access = new HashSet<>();
     HashSet<Object> supercircsDone = new HashSet<>();
     // HashSet<VhdlEntity> vhdlDone = new HashSet<>();
     // HashSet<ComponentFactory> siblingsDone = new HashSet<>();
     for (CircuitChange change : changes) {
       Circuit circ = change.getCircuit();
       VhdlContent vhdl = change.getVhdl();
-      // note: if circ is null, change converns VhdlContent, which doesn't have
-      // a lock yet.
+      // note: if circ is null, change concerns vhdl, which doesn't have a lock yet.
       if (circ != null)
-        accessMap.put(circ, READ_WRITE);
+        access.add(circ);
 
-      if (vhdl != null &&
-          change.concernsSupercircuit() && supercircsDone.add(vhdl)) {
-        for (Circuit supercirc : vhdl.getEntityFactory().getCircuitsUsingThis())
-          accessMap.put(supercirc, READ_WRITE);
-      }
-      if (circ != null &&
-          change.concernsSupercircuit() && supercircsDone.add(circ)) {
-        for (Circuit supercirc : circ.getCircuitsUsingThis())
-          accessMap.put(supercirc, READ_WRITE);
-      }
+      if (vhdl != null && change.concernsSupercircuit() && supercircsDone.add(vhdl))
+          access.addAll(vhdl.getEntityFactory().getCircuitsUsingThis());
+      if (circ != null && change.concernsSupercircuit() && supercircsDone.add(circ))
+        access.addAll(circ.getCircuitsUsingThis());
 
       // if (change.concernsSiblingComponents()) {
       //   System.out.println("processing change that concerns siblings.. nvm");
@@ -158,23 +150,19 @@ public final class CircuitMutation extends CircuitTransaction {
       //       Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
       //       boolean isFirstForCirc = supercircsDone.add(sibling);
       //       if (isFirstForCirc) {
-      //         for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
-      //           accessMap.put(supercirc, READ_WRITE);
-      //         }
+      //         access.addAll(sibling.getCircuitsUsingThis());
       //       }
       //     } else if (factory instanceof VhdlEntity) {
       //       VhdlEntity sibling = (VhdlEntity)factory;
       //       boolean isFirstForVhdl = vhdlDone.add(sibling);
       //       if (isFirstForVhdl) {
-      //         for (Circuit supercirc : sibling.getCircuitsUsingThis()) {
-      //           accessMap.put(supercirc, READ_WRITE);
-      //         }
+      //          access.addAll(sibling.getCircuitsUsingThis());
       //       }
       //     }
       //   }
       // }
     }
-    return accessMap;
+    return access;
   }
 
   public boolean isEmpty() {

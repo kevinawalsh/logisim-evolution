@@ -32,6 +32,7 @@ package com.cburch.logisim.circuit;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 import com.cburch.logisim.circuit.appear.CircuitPins;
@@ -53,7 +54,7 @@ import com.cburch.logisim.circuit.appear.CircuitPins;
 //   run(mutator) - Makes changes using the provided CircuitMutator object.
 //
 // And this class provides:
-// execute() - carries out the transaction..
+// execute() - carries out the transaction, in phases:
 //   1. Creates a mutator.
 //   2. Locks all accessed circuits, in a stable serial order.
 //   3. Calls run(mutator) to make changes.
@@ -70,80 +71,120 @@ import com.cburch.logisim.circuit.appear.CircuitPins;
 //   8. Unlocks all circuits.
 //   9. Returns the result object.
 public abstract class CircuitTransaction {
-  // public static final Integer READ_ONLY = 1; // never used
-  public static final Integer READ_WRITE = 2;
+
+  private static final ThreadLocal<CircuitMutatorImpl>
+    activeMutatorForThisThread = new ThreadLocal<>();
 
   public final CircuitTransactionResult execute() {
-    CircuitMutatorImpl mutator = new CircuitMutatorImpl();
-    Map<Circuit, Lock> locks = CircuitLocker.acquireLocks(this, mutator);
+    // xn phase 0 - setup and sanity check for nested transaction
+    CircuitTransactionResult result;
+    CircuitMutatorImpl mutator = activeMutatorForThisThread.get();
+    if (mutator != null) {
+      diagnostics(mutator);
+      throw new IllegalStateException("attempt to execute nested transactions");
+    }
+    Map<Circuit, Lock> locks = null;
     try {
+
+      // xn phase 1
+      mutator = new CircuitMutatorImpl(this);
+      activeMutatorForThisThread.set(mutator);
+
+      // xn phase 2
+      locks = CircuitLocker.acquireLocks(this, mutator);
+
       try {
+        // xn phase 3
         this.run(mutator);
       } catch (CircuitLocker.LockException e) {
-        System.out.println("*** Circuit Lock Bug Diagnostics ***");
-        System.out.println("This thread: " + Thread.currentThread());
-        System.out.println("owns " + locks.size() + " locks, as follows:");
-        for (Map.Entry<Circuit, Lock> entry : locks.entrySet()) {
-          Circuit circuit = entry.getKey();
-          Lock lock = entry.getValue();
-          System.out.printf("  circuit \"%s\" [lock serial: %d] with lock %s\n",
-              circuit.getName(), circuit.getLocker().getSerialNumber(), lock);
-        }
-        System.out.println("attempted to access without a lock:");
-        System.out.printf("  circuit \"%s\" [lock serial: %d/%d]\n",
-            e.getCircuit().getName(), e.getSerialNumber(),
-            e.getCircuit().getLocker().getSerialNumber());
-        System.out.println("  owned by thread: " + e.getMutatingThread());
-        System.out.println("  with mutator: " + e.getCircuitMutator());
+        diagnostics(e, locks, mutator);
         throw e;
       }
 
       // TODO: remove stale appearance dynamic elements here instead
       // of in Circuit.mutatorRemove() ?
 
+      // Sanity check: any circuit modified by us should have been locked by us.
+      Collection<Circuit> modified = mutator.getModifiedCircuits();
+      for (Circuit circuit : modified) {
+        CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
+        if (circMutator == mutator) {
+          System.out.println("*** Circuit Lock Bug Diagnostics ***");
+          System.out.println("This thread: " + Thread.currentThread());
+          System.out.println("  executing transaction:" + this);
+          System.out.println("  with mutator: " + mutator);
+          System.out.println("attempted to illegally modify");
+          System.out.println("  non-locked circuit:" + circuit.getName());
+          System.out.println("  with mutator: " + circMutator);
+          Thread.dumpStack();
+        }
+      }
+
+      // xn phase 4
       // Let the port locations of each subcircuit's appearance be
       // updated to reflect the changes - this needs to happen before
       // wires are repaired because it could lead to some wires being
       // split
-      Collection<Circuit> modified = mutator.getModifiedCircuits();
       for (Circuit circuit : modified) {
-        CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
-        if (circMutator == mutator) { // FIXME: is this ever false? when?
-          ReplacementMap repl = mutator.getReplacementMap(circuit);
-          if (repl != null) {
-            CircuitPins pins = circuit.getAppearance().getCircuitPins();
-            pins.transactionCompleted(repl);
-          }
+        ReplacementMap repl = mutator.getReplacementMap(circuit);
+        if (repl != null) {
+          CircuitPins pins = circuit.getAppearance().getCircuitPins();
+          pins.transactionCompleted(repl);
         }
       }
 
+      // xn phase 5
       // Now go through each affected circuit and repair its wires
       for (Circuit circuit : modified) {
-        CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
-        if (circMutator == mutator) { // FIXME: is this ever false? when?
-          RepairWireHelper.repairWires(circuit, mutator);
-        } else {
-          System.err.println("HUH?");
-          // this is a transaction executed within a transaction -
-          // wait to repair wires until overall transaction is done
-          // FIXME: where does that happen?
-          // FIXME: ??? why are there transactions within transactions... seems unsafe, no?
-          circMutator.markModified(circuit);
-        }
+        RepairWireHelper.repairWires(circuit, mutator);
       }
 
-      CircuitTransactionResult result;
+      // xn phase 6
       result = new CircuitTransactionResult(mutator);
+
+      // xn phase 7
       for (Circuit circuit : result.getModifiedCircuits()) {
         circuit.fireEvent(CircuitEvent.TRANSACTION_DONE, result);
       }
-      return result;
+
     } finally {
-      CircuitLocker.releaseLocks(locks);
+      // xn phase 8
+      if (locks != null)
+        CircuitLocker.releaseLocks(locks);
+      activeMutatorForThisThread.remove();
     }
+    // xn phase 9
+    return result;
+  }
+  
+  private void diagnostics(CircuitMutatorImpl mutator) {
+    System.out.println("*** Circuit Lock Bug Diagnostics ***");
+    System.out.println("This thread: " + Thread.currentThread());
+    System.out.println("  executing transaction:" + mutator.owner);
+    System.out.println("  with mutator: " + mutator);
+    System.out.println("attempted to illegally execute");
+    System.out.println("  nested transaction:" + this);
   }
 
-  protected abstract Map<Circuit, Integer> getAccessedCircuits();
+  private void diagnostics(CircuitLocker.LockException e, Map<Circuit, Lock> locks, CircuitMutator mutator) {
+    System.out.println("*** Circuit Lock Bug Diagnostics ***");
+    System.out.println("This thread: " + Thread.currentThread());
+    System.out.println("owns " + locks.size() + " locks, as follows:");
+    for (Map.Entry<Circuit, Lock> entry : locks.entrySet()) {
+      Circuit circuit = entry.getKey();
+      Lock lock = entry.getValue();
+      System.out.printf("  circuit \"%s\" [lock serial: %d] with lock %s\n",
+          circuit.getName(), circuit.getLocker().getSerialNumber(), lock);
+    }
+    System.out.println("attempted to access without a lock:");
+    System.out.printf("  circuit \"%s\" [lock serial: %d/%d]\n",
+        e.getCircuit().getName(), e.getSerialNumber(),
+        e.getCircuit().getLocker().getSerialNumber());
+    System.out.println("  owned by thread: " + e.getMutatingThread());
+    System.out.println("  with mutator: " + e.getCircuitMutator());
+  }
+
+  protected abstract Set<Circuit> getAccessedCircuits();
 
   protected abstract void run(CircuitMutator mutator);
 

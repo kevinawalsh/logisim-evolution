@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -49,14 +50,13 @@ public class CircuitLocker {
   }
 
   static Map<Circuit, Lock> acquireLocks(CircuitTransaction xn, CircuitMutatorImpl mutator) {
-    Map<Circuit, Integer> requests = xn.getAccessedCircuits();
+    Set<Circuit> requests = xn.getAccessedCircuits();
     Map<Circuit, Lock> circuitLocks = new HashMap<Circuit, Lock>();
     // Acquire locks in serial-number order to avoid deadlock
-    Circuit[] lockOrder = requests.keySet().toArray(new Circuit[0]);
+    Circuit[] lockOrder = requests.toArray(new Circuit[0]);
     Arrays.sort(lockOrder, new CircuitComparator());
     try {
       for (Circuit circ : lockOrder) {
-        Integer access = requests.get(circ);
         CircuitLocker locker = circ.getLocker();
         Thread curThread = Thread.currentThread();
         if (locker.mutatingThread == curThread) {

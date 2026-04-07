@@ -31,11 +31,13 @@
 package com.cburch.logisim.file;
 import static com.cburch.logisim.file.Strings.S;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
+import java.util.Set;
 
 import org.w3c.dom.Element;
 
@@ -299,10 +301,10 @@ public class XmlCircuitReader extends CircuitTransaction {
   }
 
   @Override
-  protected Map<Circuit, Integer> getAccessedCircuits() {
-    HashMap<Circuit, Integer> access = new HashMap<Circuit, Integer>();
+  protected Set<Circuit> getAccessedCircuits() {
+    HashSet<Circuit> access = new HashSet<>();
     for (XmlReader.CircuitData data : circuitsData) {
-      access.put(data.circuit, READ_WRITE);
+      access.add(data.circuit);
     }
     return access;
   }

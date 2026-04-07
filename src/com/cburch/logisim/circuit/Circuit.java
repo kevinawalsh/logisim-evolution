@@ -34,10 +34,10 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,6 +80,7 @@ import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.WeakList;
 
 public class Circuit implements AttributeDefaultProvider {
+
   private class EndChangedTransaction extends CircuitTransaction {
     private Component comp;
     private Map<Location, EndData> toRemove;
@@ -93,8 +94,8 @@ public class Circuit implements AttributeDefaultProvider {
     }
 
     @Override
-    protected Map<Circuit, Integer> getAccessedCircuits() {
-      return Collections.singletonMap(Circuit.this, READ_WRITE);
+    protected Set<Circuit> getAccessedCircuits() {
+      return Collections.singleton(Circuit.this);
     }
 
     @Override

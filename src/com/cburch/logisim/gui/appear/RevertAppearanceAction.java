@@ -31,9 +31,9 @@
 package com.cburch.logisim.gui.appear;
 import static com.cburch.logisim.gui.main.Strings.S;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.cburch.draw.model.CanvasObject;
 import com.cburch.logisim.circuit.Circuit;
@@ -56,12 +56,8 @@ public class RevertAppearanceAction extends Action {
     }
 
     @Override
-    protected Map<Circuit, Integer> getAccessedCircuits() {
-      Map<Circuit, Integer> accessMap = new HashMap<>();
-      for (Circuit supercirc : circuit.getCircuitsUsingThis()) {
-        accessMap.put(supercirc, READ_WRITE);
-      }
-      return accessMap;
+    protected Set<Circuit> getAccessedCircuits() {
+      return new HashSet<>(circuit.getCircuitsUsingThis());
     }
 
     @Override

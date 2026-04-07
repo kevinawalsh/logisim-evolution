@@ -33,8 +33,10 @@ package com.cburch.logisim.std.hdl;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.hdl.HdlModelListener;
@@ -307,14 +309,10 @@ public class VhdlEntityAttributes extends AbstractAttributeSet {
         vhdlEntity = (VhdlEntity)vhdlInstance.getFactory();
       }
       @Override
-      protected Map<Circuit, Integer> getAccessedCircuits() {
+      protected Set<Circuit> getAccessedCircuits() {
         // note: this is overkill by far... this transaction only touches one
         // circuit, but sadly we don't know which one.
-        Map<Circuit, Integer> accessMap = new HashMap<Circuit, Integer>();
-        for (Circuit supercirc : vhdlEntity.getCircuitsUsingThis()) {
-          accessMap.put(supercirc, READ_WRITE);
-        }
-        return accessMap;
+        return new HashSet<>(vhdlEntity.getCircuitsUsingThis());
       }
       @Override
       protected void run(CircuitMutator mutator) {
