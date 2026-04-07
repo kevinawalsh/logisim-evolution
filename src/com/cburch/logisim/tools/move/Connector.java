@@ -127,8 +127,7 @@ class Connector {
       }
     }
     if (bestResult == null) { // should only happen for no connections
-      bestResult = new MoveResult(req, new ReplacementMap(), impossible,
-          0);
+      bestResult = new MoveResult(req, new ReplacementMap(), impossible, 0);
     } else {
       bestResult.addUnsatisfiedConnections(impossible);
     }
@@ -287,14 +286,15 @@ class Connector {
       for (Wire w : conn.getWirePath()) {
         Location nextLoc = w.getOtherEnd(pathLoc);
         if (found) { // existing wire will be removed
-          repl.remove(w);
+          repl.removeWire(w);
           avoid.unmarkWire(w, nextLoc, unmarkable);
         } else if (w.nominallyContains(loc0)) { // wires after this will be removed
           found = true;
           if (!loc0.equals(nextLoc)) {
             avoid.unmarkWire(w, nextLoc, unmarkable);
             Wire shortenedWire = Wire.create(pathLoc, loc0);
-            repl.replace(w, shortenedWire);
+            // 1 wire is replaced by 1 new, different wire
+            repl.replaceWire(w, shortenedWire);
             avoid.markWire(shortenedWire, 0, 0);
           }
         }
@@ -304,10 +304,11 @@ class Connector {
     while (pathIt.hasNext()) {
       Location loc1 = pathIt.next();
       Wire newWire = Wire.create(loc0, loc1);
-      repl.add(newWire);
+      repl.addWire(newWire);
       avoid.markWire(newWire, 0, 0);
       loc0 = loc1;
     }
+    // FIXME: this didn't add relations between removed and added wires?
   }
 
   private static ArrayList<ConnectionData> pruneImpossible(

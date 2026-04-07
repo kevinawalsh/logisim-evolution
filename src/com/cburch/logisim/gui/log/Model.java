@@ -431,9 +431,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       if (repl == null || repl.isEmpty())
         return;
       // look for new pins, etc., that are not simply replacing old pins
-      for (Component comp : repl.getAdditions()) {
-        if (!repl.getReplacedBy(comp).isEmpty())
-          continue;
+      for (Component comp : repl.getFreshNonWireAdditions()) {
         // if (mode == STEP && containsAnyClock(comp))
         //   setMode(CLOCK, granularity);
         SignalInfo item = makeIfDefaultComponent(comp);

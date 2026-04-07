@@ -36,14 +36,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 
-class WireRepair extends CircuitTransaction {
+class RepairWireHelper {
 
   private static class MergeSets {
     private final HashMap<Wire, ArrayList<Wire>> map = new HashMap<>();
@@ -86,13 +85,7 @@ class WireRepair extends CircuitTransaction {
     }
   }
 
-  private Circuit circuit;
-
-  public WireRepair(Circuit circuit) {
-    this.circuit = circuit;
-  }
-
-  private void doMerges(CircuitMutator mutator) {
+  private static void doMerges(Circuit circuit, CircuitMutator mutator) {
     MergeSets sets = new MergeSets();
     for (Location loc : circuit.wires.points.getAllLocations()) {
       //Collection<?> at = circuit.getComponentsByPortLocation(loc);
@@ -123,19 +116,21 @@ class WireRepair extends CircuitTransaction {
         Location e0 = locs.get(0);
         Location e1 = locs.get(locs.size() - 1);
         Wire wnew = Wire.create(e0, e1);
-        Collection<Wire> wset = Collections.singleton(wnew);
 
-        for (Wire w : mergeSet) {
-          if (!w.equals(wset)) {
-            repl.put(w, wset);
-          }
-        }
+        mergeSet.remove(wnew); // don't bother recording wnew --> wnew
+
+        // N>=1 wires are removed, replaced with a single (possibly existing) wire.
+        // Note: the new wire may possibly be .equal() to some existing wire.
+        // But none of these wires are .equal() to other wires in repl, otherwise
+        // they would be part of the same mergeSet.
+        for (Wire wold : mergeSet)
+          repl.replaceWire(wold, wnew);
       }
     }
-    mutator.replace(circuit, repl);
+    mutator.applyReplacements(circuit, repl);
   }
 
-  private void doMergeSet(ArrayList<Wire> mergeSet,
+  private static void doMergeSet(Circuit circuit, ArrayList<Wire> mergeSet,
       ReplacementMap replacements, Set<Location> allLocs) {
     TreeSet<Location> ends = new TreeSet<>();
     for (Wire w : mergeSet) {
@@ -171,17 +166,17 @@ class WireRepair extends CircuitTransaction {
     }
 
     for (Wire w : mergeSet) {
-      ArrayList<Component> wRepl = new ArrayList<>(2);
+      ArrayList<Wire> wRepl = new ArrayList<>(2);
       for (Wire w2 : mergeResult) {
         if (w2.overlaps(w, false)) {
           wRepl.add(w2);
         }
       }
-      replacements.put(w, wRepl);
+      replacements.replaceWire(w, wRepl);
     }
   }
 
-  private void doOverlaps(CircuitMutator mutator) {
+  private static void doOverlaps(Circuit circuit, CircuitMutator mutator) {
     HashMap<Location, ArrayList<Wire>> wirePoints = new HashMap<>();
     for (Wire w : circuit.getWires()) {
       for (Location loc : w) {
@@ -212,12 +207,12 @@ class WireRepair extends CircuitTransaction {
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
     for (ArrayList<Wire> mergeSet : mergeSets.getMergeSets()) {
       if (mergeSet.size() > 1)
-        doMergeSet(mergeSet, replacements, allLocs);
+        doMergeSet(circuit, mergeSet, replacements, allLocs);
     }
-    mutator.replace(circuit, replacements);
+    mutator.applyReplacements(circuit, replacements);
   }
 
-  private void doSplits(CircuitMutator mutator) {
+  private static void doSplits(Circuit circuit, CircuitMutator mutator) {
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
     ReplacementMap repl = new ReplacementMap();
     for (Wire w : circuit.getWires()) {
@@ -240,21 +235,18 @@ class WireRepair extends CircuitTransaction {
           subs.add(Wire.create(e0, e1));
           e0 = e1;
         }
-        repl.put(w, subs);
+        // A single wire is removed, replaced with a N>1 new wires.
+        // Note: the new wires are not .equal() to each other or the removed wire.
+        // But some of them could be .equal() to other wires in repl?
+        repl.replaceWire(w, subs);
       }
     }
-    mutator.replace(circuit, repl);
+    mutator.applyReplacements(circuit, repl);
   }
 
-  @Override
-  protected Map<Circuit, Integer> getAccessedCircuits() {
-    return Collections.singletonMap(circuit, READ_WRITE);
-  }
-
-  @Override
-  protected void run(CircuitMutator mutator) {
-    doMerges(mutator);
-    doOverlaps(mutator);
-    doSplits(mutator);
+  public static void repairWires(Circuit circuit, CircuitMutator mutator) {
+    doMerges(circuit, mutator);
+    doOverlaps(circuit, mutator);
+    doSplits(circuit, mutator);
   }
 }

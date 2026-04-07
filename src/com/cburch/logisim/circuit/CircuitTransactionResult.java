@@ -32,9 +32,11 @@ package com.cburch.logisim.circuit;
 
 import java.util.Collection;
 
-// fixme: can this simply be replaced by CircuitMutator/CircuitMutatorImpl ?
+// CircuitTransactionResult is a read-only summary of the results of a completed CircuitTransaction.
+// It is implemented as a thing wrapper around the CircuitMutator/CircuitMutatorImpl which was used
+// to execute the transaction, since that object has all the relevant info.
 public class CircuitTransactionResult {
-  private CircuitMutatorImpl mutator;
+  private final CircuitMutatorImpl mutator;
 
   CircuitTransactionResult(CircuitMutatorImpl mutator) {
     this.mutator = mutator;

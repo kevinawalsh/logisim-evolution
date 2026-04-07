@@ -135,10 +135,10 @@ public final class CircuitState /* implements ComponentData */ {
         ReplacementMap map = event.getResult().getReplacementMap(circuit);
         if (map == null)
           return;
-        for (Component comp : map.getRemovals()) {
+        for (Component comp : map.getNonWireRemovals()) {
           // Retain state iff comp was replaced by one component that is
           // (probably) a "moved" version of the original component.
-          Component repl = getUniqueReplacementFor(map, comp);
+          Component repl = map.getNonWireReplacementFor(comp);
           if (comp.getFactory() instanceof SubcircuitFactory)
             xferSubcircuitState(map, comp, repl);
           else
@@ -247,17 +247,6 @@ public final class CircuitState /* implements ComponentData */ {
       AttributeSet pa = a.getAttributeSet();
       AttributeSet pb = b.getAttributeSet();
       return AttributeSet.indistinguishable(pa, pb);
-    }
-
-    // If map shows that comp was replaced by exactly one new component, then
-    // return that replacement. Otherwise return null.
-    private Component getUniqueReplacementFor(ReplacementMap map,
-        Component comp) {
-      Collection<Component> repls = map.getReplacementsFor(comp);
-      if (repls.size() != 1)
-        return null;
-      else
-        return repls.iterator().next();
     }
 
   }

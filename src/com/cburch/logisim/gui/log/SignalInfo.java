@@ -170,24 +170,19 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
         Component c = path[i];
 
         ReplacementMap repl = event.getResult().getReplacementMap(t);
-        if (repl.isEmpty())
-          continue; // no changes at all to circuit at this level
-
-        if (!repl.getRemovals().contains(c))
+        // if (repl.isEmpty())
+        //   continue; // no changes at all to circuit at this level
+        if (!repl.wasNonWireRemoved(c))
           continue; // changes at this level don't affect our path
        
-        Component cNew = null;
-        Collection<Component> newComps = repl.getReplacementsFor(c);
-        for (Component c2 : newComps) {
-          if (c2 == c || c2.getFactory() == c.getFactory()) {
-            cNew = c2;
-            break;
-          }
-        }
+        Component cNew = repl.getNonWireReplacementFor(c);
         if (cNew == c) {
-          // component replaced by itself (strange...?)
+          // component replaced by itself (should never happen)
           continue;
-        } else if (cNew != null) {
+        } else if (cNew.getFactory() == c.getFactory()) {
+          // FIXME - check getFactory().getClass() instead? Are there every
+          // multiple instances of the Factory for some kinds of components?
+          
           // component replaced by alternate version (e.g. moved location)
           changed = true;
           path[i].getAttributeSet().removeAttributeWeakListener(null, this);

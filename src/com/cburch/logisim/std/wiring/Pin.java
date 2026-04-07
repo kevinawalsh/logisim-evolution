@@ -623,7 +623,7 @@ public class Pin extends InstanceFactory implements DynamicValueProvider {
 
   private static final Color ICON_WIDTH_COLOR = Value.WIDTH_ERROR_COLOR.darker();
 
-  public Pin() {
+  private Pin() {
     super("Pin", S.getter("pinComponent"));
     setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(JoinedConfigurator.create(

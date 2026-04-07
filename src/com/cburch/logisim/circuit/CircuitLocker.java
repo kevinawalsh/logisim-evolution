@@ -48,8 +48,7 @@ public class CircuitLocker {
     }
   }
 
-  static Map<Circuit, Lock> acquireLocks(CircuitTransaction xn,
-      CircuitMutatorImpl mutator) {
+  static Map<Circuit, Lock> acquireLocks(CircuitTransaction xn, CircuitMutatorImpl mutator) {
     Map<Circuit, Integer> requests = xn.getAccessedCircuits();
     Map<Circuit, Lock> circuitLocks = new HashMap<Circuit, Lock>();
     // Acquire locks in serial-number order to avoid deadlock
@@ -59,25 +58,16 @@ public class CircuitLocker {
       for (Circuit circ : lockOrder) {
         Integer access = requests.get(circ);
         CircuitLocker locker = circ.getLocker();
-        // if (access == CircuitTransaction.READ_ONLY) {
-        //   Lock lock = locker.circuitLock.readLock();
-        //   lock.lock();
-        //   circuitLocks.put(circ, lock);
-        // } else if (access == CircuitTransaction.READ_WRITE) {
-          Thread curThread = Thread.currentThread();
-          if (locker.mutatingThread == curThread) {
-            ; // nothing to do - thread already has lock
-          } else {
-            Lock lock = locker.circuitLock.writeLock();
-            lock.lock();
-            circuitLocks.put(circ, lock);
-            locker.mutatingThread = Thread.currentThread();
-            if (mutator == null) {
-              mutator = new CircuitMutatorImpl();
-            }
-            locker.mutatingMutator = mutator;
-          }
-        // }
+        Thread curThread = Thread.currentThread();
+        if (locker.mutatingThread == curThread) {
+          ; // nothing to do - thread already has lock
+        } else {
+          Lock lock = locker.circuitLock.writeLock();
+          lock.lock();
+          circuitLocks.put(circ, lock);
+          locker.mutatingThread = Thread.currentThread();
+          locker.mutatingMutator = mutator;
+        }
       }
     } catch (RuntimeException t) {
       releaseLocks(circuitLocks);
@@ -102,35 +92,39 @@ public class CircuitLocker {
 
   private static AtomicInteger NEXT_SERIAL_NUMBER = new AtomicInteger(0);
   private int serialNumber;
-
   private ReadWriteLock circuitLock;
-
   private transient Thread mutatingThread;
-
   private CircuitMutatorImpl mutatingMutator;
+  private Circuit circuit;
 
-  CircuitLocker() {
+  CircuitLocker(Circuit circ) {
     serialNumber = NEXT_SERIAL_NUMBER.getAndIncrement();
     circuitLock = new ReentrantReadWriteLock();
     mutatingThread = null;
     mutatingMutator = null;
+    circuit = circ;
   }
 
   public int getSerialNumber() {
     return serialNumber;
   }
 
-  void checkForWritePermission(String operationName, Circuit circuit) {
+  void checkForWritePermission(String operationName) {
     if (mutatingThread != Thread.currentThread()) {
       throw new LockException(operationName + " outside transaction",
           circuit, serialNumber, mutatingThread, mutatingMutator);
     }
   }
 
-  void execute(CircuitTransaction xn) {
+  void runOrExecute(CircuitTransaction xn) {
     if (mutatingThread == Thread.currentThread()) {
+      // This thread is already executing within a transaction. Just run the
+      // body of xn as part of the existing transaction.
       xn.run(mutatingMutator);
     } else {
+      // There is no current transaction, or some other thread is executing a
+      // transaction. Execute xn as a new, separate transaction, including
+      // waiting to aquire locks, etc.
       xn.execute();
     }
   }

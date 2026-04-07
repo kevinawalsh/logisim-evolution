@@ -34,22 +34,13 @@ import static com.cburch.logisim.gui.main.Strings.S;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.tools.FactoryAttributes;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitAttributes;
-import com.cburch.logisim.circuit.CircuitMutator;
-import com.cburch.logisim.circuit.CircuitTransaction;
-import com.cburch.logisim.circuit.SubcircuitFactory;
-import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.comp.ComponentFactory;
 
 public class ToolAttributeAction extends Action {
   public static Action create(KeyConfigurationResult results) {
@@ -58,8 +49,7 @@ public class ToolAttributeAction extends Action {
 
   public static Action create(Tool tool, Attribute<?> attr, Object value) {
     AttributeSet attrs = tool.getAttributeSet();
-    KeyConfigurationEvent e = new KeyConfigurationEvent(0, attrs, null,
-        null);
+    KeyConfigurationEvent e = new KeyConfigurationEvent(0, attrs, null, null);
     KeyConfigurationResult r = new KeyConfigurationResult(e, attr, value);
     return new ToolAttributeAction(r);
   }
@@ -79,44 +69,13 @@ public class ToolAttributeAction extends Action {
 
   @Override
   public void doIt(Project proj) {
-    // if (affectsAppearance()) {
-    //   ActionTransaction xn = new ActionTransaction(true);
-    //   xn.execute();
-    // } else {
-      execute(true);
-    // }
+    execute(true);
   }
 
   @Override
   public void undo(Project proj) {
-    System.out.println("undo");
-    // if (affectsAppearance()) {
-    //   System.out.println("wrong direction??");
-    //   ActionTransaction xn = new ActionTransaction(true); // FIXME: false??
-    //   xn.execute();
-    // } else {
-      execute(false);
-    // }
+    execute(false);
   }
-
-  // boolean affectsAppearance() {
-  //   AttributeSet attrs = config.getEvent().getAttributeSet();
-  //   if (attrs instanceof FactoryAttributes) {
-  //     ComponentFactory factory = ((FactoryAttributes)attrs).getFactory();
-  //     if (factory instanceof SubcircuitFactory) {
-  //       for (Attribute<?> attr : config.getAttributeValues().keySet()) {
-  //         if (attr == CircuitAttributes.CIRCUIT_APPEARANCE)
-  //           return true;
-  //       }
-  //     } else if (factory instanceof VhdlEntity) {
-  //       for (Attribute<?> attr : config.getAttributeValues().keySet()) {
-  //         if (attr == StdAttr.APPEARANCE)
-  //           return true;
-  //       }
-  //     }
-  //   }
-  //   return false;
-  // }
 
   private void execute(boolean forward) {
     if (forward) {
@@ -140,36 +99,5 @@ public class ToolAttributeAction extends Action {
       }
     }
   }
-
-  // private class ActionTransaction extends CircuitTransaction {
-  //   private boolean forward;
-  //   ActionTransaction(boolean forward) { this.forward = forward; }
-
-  //   @Override
-  //   protected Map<Circuit, Integer> getAccessedCircuits() {
-  //     Map<Circuit, Integer> accessMap = new HashMap<>();
-  //     AttributeSet attrs = config.getEvent().getAttributeSet();
-  //     if (attrs instanceof FactoryAttributes) {
-  //       ComponentFactory factory = ((FactoryAttributes)attrs).getFactory();
-  //       if (factory instanceof SubcircuitFactory) {
-  //         Circuit circuit = ((SubcircuitFactory)factory).getSubcircuit();
-  //         for (Circuit supercirc : circuit.getCircuitsUsingThis()) {
-  //           accessMap.put(supercirc, READ_WRITE);
-  //         }
-  //       } else if (factory instanceof VhdlEntity) {
-  //         VhdlEntity vhdl = (VhdlEntity)factory;
-  //         for (Circuit supercirc : vhdl.getCircuitsUsingThis()) {
-  //           accessMap.put(supercirc, READ_WRITE);
-  //         }
-  //       }
-  //     }
-  //     return accessMap;
-  //   }
-
-  //   @Override
-  //   protected void run(CircuitMutator mutator) {
-  //     ToolAttributeAction.this.execute(forward);
-  //   }
-  // }
 
 }

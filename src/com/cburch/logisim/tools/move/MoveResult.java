@@ -81,17 +81,11 @@ public class MoveResult {
   }
 
   public Collection<Wire> getWiresToAdd() {
-    @SuppressWarnings("unchecked")
-    Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
+    Collection<Wire> ret = replacements.getWireAdditions();
+    if (replacements.getAllAdditions().size() != ret.size())
+      System.err.println("MISMATCH - old code would have returned garbage here?");
     return ret;
   }
-
- //  public Collection<Wire> getWiresToRemove() {
- //    ... this looks like a typo, and isn't used anywhere anyway
- //    @SuppressWarnings("unchecked")
- //    Collection<Wire> ret = (Collection<Wire>) replacements.getAdditions();
- //    return ret;
- //  }
 
   public void print(PrintStream out) {
     out.print("MoveResult: ");

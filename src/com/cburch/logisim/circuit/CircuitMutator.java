@@ -34,21 +34,15 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.std.hdl.VhdlContent;
 
-// fixme: CircuitMutatorImpl is the one and only implementation of this
+// CircuitTransactions shouldn't generally call methods to modify a circuit
+// directly. Instead, all mutations should be done through these helpers.
+// Note: CircuitMutatorImpl is the only implementation of this interface.
 public interface CircuitMutator {
   public void add(Circuit circuit, Component comp);
-
   public void remove(Circuit circuit, Component comp);
-
-  public void replace(Circuit circuit, Component oldComponent,
-      Component newComponent);
-
-  public void replace(Circuit circuit, ReplacementMap replacements);
-
-  public void set(Circuit circuit, Component comp, Attribute<?> attr,
-      Object value);
-
+  public void replace(Circuit circuit, Component oldComponent, Component newComponent);
+  public void applyReplacements(Circuit circuit, ReplacementMap replacements);
+  public void set(Circuit circuit, Component comp, Attribute<?> attr, Object value);
   public void setForCircuit(Circuit circuit, Attribute<?> attr, Object value);
-
   public void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object value);
 }

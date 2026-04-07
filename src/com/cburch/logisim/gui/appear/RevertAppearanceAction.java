@@ -90,13 +90,14 @@ public class RevertAppearanceAction extends Action {
   }
 
   @Override
-  public String getName() {
-    return S.get("revertAppearanceAction");
-  }
-
-  @Override
   public void undo(Project proj) {
     ActionTransaction xn = new ActionTransaction(false);
     xn.execute();
   }
+
+  @Override
+  public String getName() {
+    return S.get("revertAppearanceAction");
+  }
+
 }

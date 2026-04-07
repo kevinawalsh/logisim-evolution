@@ -38,12 +38,65 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.std.hdl.VhdlContent;
 
+// This is a general purpose CircuitMutation that is used by a variety of
+// clients to modify circuits. Clients include: wiring tool, edit tool,
+// selection tools, text tool, the "analysis" circuit builder, and many others.
+//
+// Typical client usage:
+//   CircuitMutation xn = new CircuitMutation(someCircuit);
+//   xn.add(componentA);
+//   xn.remove(componentB);
+//   xn.remove(componentC);
+//   xn.replace(componentOld, componentNew);
+//   xn.set(componentA, StdAttr.LABEL, "Hello World");
+//   xn.execute()
+//
+// A list of changes is maintained. Each helper method like xn.add(),
+// xn.remove(), and xn.set(), does not modify the circuit but insteaad appends a
+// new CircuitChange to the list.
+//
+// During xn.execute(), implemented by CircuitTransaction, the list is used for:
+//  - getAccessedCircuits(): to determine the full set of affected circuits
+//  - run(): to carry out each change, in sequential order
+//
+// Notes:
+//
+//  - We keep a CircuitChange list. But so does CircuitMutatorImpl. As we
+//    execute each change in our list, a corresponding entry is made in the
+//    mutator's change list. This seems strangely redundant. On the other hand
+//    (a) the mutator's change list captures old attribute values when changing
+//    component or circuit attributes so it can operate in reverse, whereas we
+//    don't capture the old attribute values and only operate as a forward
+//    transaction, and (b) is used by other CircuitTransaction subclasses that
+//    don't necessarily use CircuitChange like we do here.
+//
+//  - run() seems to be able to handle CircuitChange objects that modify
+//    diffferent circuits. But all helper except .change() create CircuitChange
+//    objects that modify the same primary circuit. And .change() is called only
+//    when creating a reverse transaction, using its own CircuitChange list
+//    which should closely mirror our own CircuitChange list. However, it could
+//    be that this multi-circuit capability is used for the reverse transaction
+//    for other CircuitTransaction subclassess, if those touch multiple
+//    circuits.
+//
+//  - Many CircuitChange objects are meant to add, remove, or replace components
+//    and wires, and these effects are not done immediately but instead
+//    accumulated into a ReplacementMap, before applying them to a circuit in a
+//    batch. Why? This batching is interrupted, i.e. flushed, via
+//    mutator.applyReplacements(), whenever we change the target circuit (but
+//    see multi-circuit note above), or whenever one of the CircuitChanges is a
+//    SET (to change a component attribute) or SET_FOR_CIRCUIT (to change a
+//    circuit attribute) type. And, when flushed to the underlying mutator, our
+//    replacement map containing the next batch of changes, is both applied to
+//    the circuit, then also composed with another per-circuit replacement
+//    within the underlying mutator. The reason for our batching, as a second
+//    layer, isn't clear. Was it some kind of optimization?
+//
 public final class CircuitMutation extends CircuitTransaction {
   private Circuit primaryCircuit;
   private VhdlContent primaryVhdl;
@@ -137,7 +190,7 @@ public final class CircuitMutation extends CircuitTransaction {
   }
 
   public void replace(Component oldComp, Component newComp) {
-    ReplacementMap repl = new ReplacementMap(oldComp, newComp);
+    ReplacementMap repl = ReplacementMap.forReplacement(oldComp, newComp);
     changes.add(CircuitChange.replace(primaryCircuit, repl));
   }
 
@@ -156,7 +209,7 @@ public final class CircuitMutation extends CircuitTransaction {
       Circuit circ = change.getCircuit();
       if (circ != curCircuit) {
         if (curCircuit != null) {
-          mutator.replace(curCircuit, curReplacements);
+          mutator.applyReplacements(curCircuit, curReplacements);
         }
         curCircuit = circ;
         curReplacements = new ReplacementMap();
@@ -164,7 +217,7 @@ public final class CircuitMutation extends CircuitTransaction {
       change.execute(mutator, curReplacements);
     }
     if (curCircuit != null) {
-      mutator.replace(curCircuit, curReplacements);
+      mutator.applyReplacements(curCircuit, curReplacements);
     }
   }
 

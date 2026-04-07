@@ -344,7 +344,7 @@ public final class SelectTool extends Tool {
         MoveResult result = gesture.findResult(dx, dy);
         if (result != null) {
           HashSet<Component> ret = new HashSet<Component>(sel);
-          ret.addAll(result.getReplacementMap().getRemovals());
+          ret.addAll(result.getReplacementMap().getAllRemovals());
           return ret;
         }
       }

@@ -39,7 +39,15 @@ import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.hdl.VhdlEntity;
 
-class CircuitChange {
+// CircuitChange is used by CircuitMutatorImpl so it can record a log of all
+// changes done to a circuit during a CircuitTrasnsaction's execute (and run)
+// methods. The log is used to make the reverse transaction for undo operations.
+//
+// CircuitChange is *also* used by CircuitMutation (the general-purpose, generic
+// CircuitTransaction subclass) as a way to record a set of intended changes to
+// a circuit, before actually carrying them out during transaction execution.
+//
+final class CircuitChange {
   public static CircuitChange add(Circuit circuit, Component comp) {
     return new CircuitChange(circuit, ADD, comp);
   }
@@ -95,14 +103,14 @@ class CircuitChange {
   }
 
   // static final int CLEAR = 0;
-  static final int ADD = 1;
-  static final int ADD_ALL = 2;
-  static final int REMOVE = 3;
-  static final int REMOVE_ALL = 4;
-  static final int REPLACE = 5;
-  static final int SET = 6;
-  static final int SET_FOR_CIRCUIT = 7;
-  static final int SET_FOR_VHDL = 8;
+  private static final int ADD = 1;
+  private static final int ADD_ALL = 2;
+  private static final int REMOVE = 3;
+  private static final int REMOVE_ALL = 4;
+  private static final int REPLACE = 5;
+  private static final int SET = 6;
+  private static final int SET_FOR_CIRCUIT = 7;
+  private static final int SET_FOR_VHDL = 8;
 
   private Circuit circuit;
   private VhdlContent vhdl;
@@ -157,11 +165,11 @@ class CircuitChange {
       return false;
     case REPLACE:
       ReplacementMap repl = (ReplacementMap) newValue;
-      for (Component comp : repl.getRemovals()) {
+      for (Component comp : repl.getNonWireRemovals()) {
         if (comp.getFactory() instanceof Pin)
           return true;
       }
-      for (Component comp : repl.getAdditions()) {
+      for (Component comp : repl.getNonWireAdditions()) {
         if (comp.getFactory() instanceof Pin)
           return true;
       }
@@ -211,41 +219,41 @@ class CircuitChange {
     case ADD:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
-      prevReplacements.add(comp);
+      prevReplacements.appendAddition(comp); // FIXME: now appends, but should it?
       break;
     case ADD_ALL:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
       for (Component comp : comps)
-        prevReplacements.add(comp);
+        prevReplacements.appendAddition(comp); // FIXME: now appends, but should it?
       break;
     case REMOVE:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
-      prevReplacements.remove(comp);
+      prevReplacements.appendRemoval(comp); // FIXME: now appends, but should it?
       break;
     case REMOVE_ALL:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
       for (Component comp : comps)
-        prevReplacements.remove(comp);
+        prevReplacements.appendRemoval(comp); // FIXME: now appends, but should it?
       break;
     case REPLACE:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
-      prevReplacements.append((ReplacementMap) newValue);
+      prevReplacements.appendReplacements((ReplacementMap) newValue);
       break;
     case SET:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
-      mutator.replace(circuit, prevReplacements);
+      mutator.applyReplacements(circuit, prevReplacements);
       prevReplacements.reset();
       mutator.set(circuit, comp, attr, newValue);
       break;
     case SET_FOR_CIRCUIT:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
-      mutator.replace(circuit, prevReplacements);
+      mutator.applyReplacements(circuit, prevReplacements);
       prevReplacements.reset();
       mutator.setForCircuit(circuit, attr, newValue);
       break;
@@ -300,8 +308,7 @@ class CircuitChange {
     case SET_FOR_VHDL:
       return CircuitChange.setForVhdl(vhdl, attr, newValue, oldValue);
     case REPLACE:
-      return CircuitChange.replace(circuit,
-          ((ReplacementMap) newValue).getInverseMap());
+      return CircuitChange.replace(circuit, ((ReplacementMap) newValue).getInverseMap());
     default:
       throw new IllegalArgumentException("unknown change type " + type);
     }

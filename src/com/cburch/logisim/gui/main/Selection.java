@@ -97,7 +97,7 @@ public class Selection {
         ArrayList<Component> oldAnchored;
         oldAnchored = new ArrayList<Component>(getComponents());
         for (Component comp : oldAnchored) {
-          Collection<Component> replacedBy = repl.getReplacementsFor(comp);
+          Collection<Component> replacedBy = repl.getSelectionUpdatesFor(comp);
           if (replacedBy != null) {
             change = true;
             selected.remove(comp);
@@ -134,9 +134,14 @@ public class Selection {
         SelectionSave save = savedSelections.get(event.getOldData());
         savedSelections.put((Action) event.getData(), save);
       } else if (type == ProjectEvent.UNDO_COMPLETE) {
+        // NOTE: after undo finishes, restore saved selection
+        // (which was captured before the xn originally ran)
         Action act = (Action) event.getData();
         restore(savedSelections.get(act));
       } else if (type == ProjectEvent.REDO_START) {
+        // NOTE: before redo starts, restore saved selection
+        // (which was captured before the xn originally ran), so the xn redo can
+        // then modify selection in the same way it did the first time the xn ran
         Action act = (Action) event.getData();
         restore(savedSelections.get(act));
       }

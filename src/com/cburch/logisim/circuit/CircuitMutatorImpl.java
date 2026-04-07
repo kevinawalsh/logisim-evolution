@@ -41,8 +41,20 @@ import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.std.hdl.VhdlContent;
 
-// fixme: this is the one and only implementation of CircuitMutator
+// CircuitTransactions shouldn't generally call methods to modify a circuit
+// directly. Instead, all mutations should be done through these helpers.
+// Note: this is the only implementation of the CircuitMutator interface.
+//
+// This class:
+//  - Keeps a list of modified circuits.
+//  - Keeps a CircuitChange list for each circuit, an ordered log edits, so we
+//    can build a reverse transaction for undo operations.
+//  - Builds a ReplacementMap for each circuit, used upon transaction completion
+//    to: (a) update UI selections after a transaction, (b) transfer circuit
+//    simulation state to replacement components, (c) update gui.log, and
+//    possibly other things.
 class CircuitMutatorImpl implements CircuitMutator {
+
   private ArrayList<CircuitChange> log = new ArrayList<>();
   private HashMap<Circuit, ReplacementMap> replacements = new HashMap<>();
   private HashSet<Circuit> modified = new HashSet<>();
@@ -53,9 +65,7 @@ class CircuitMutatorImpl implements CircuitMutator {
     modified.add(circuit);
     log.add(CircuitChange.add(circuit, comp));
 
-    ReplacementMap repl = new ReplacementMap();
-    repl.add(comp);
-    getMap(circuit).append(repl);
+    getMap(circuit).appendAddition(comp);
 
     circuit.mutatorAdd(comp);
   }
@@ -104,46 +114,51 @@ class CircuitMutatorImpl implements CircuitMutator {
       modified.add(circuit);
       log.add(CircuitChange.remove(circuit, comp));
 
-      ReplacementMap repl = new ReplacementMap();
-      repl.remove(comp);
-      getMap(circuit).append(repl);
+      getMap(circuit).appendRemoval(comp);
 
       circuit.mutatorRemove(comp);
     }
   }
 
   public void replace(Circuit circuit, Component prev, Component next) {
-    replace(circuit, new ReplacementMap(prev, next));
+    applyReplacements(circuit, ReplacementMap.forReplacement(prev, next));
   }
 
-  public void replace(Circuit circuit, ReplacementMap repl) {
+  public void applyReplacements(Circuit circuit, ReplacementMap repl) {
     ArrayList<Component> added = new ArrayList<>();
     if (!repl.isEmpty()) {
       modified.add(circuit);
       log.add(CircuitChange.replace(circuit, repl));
 
       repl.freeze();
-      getMap(circuit).append(repl);
+      getMap(circuit).appendReplacements(repl);
 
-      for (Component c : repl.getRemovals()) {
-        Collection<Component> replacements = repl.getReplacementsFor(c);
-        if (replacements != null && replacements.size() == 1) {
-          Component r = replacements.iterator().next();
-          circuit.mutatorReplace(c, r);
-          added.add(r);
-        } else {
+      for (Component c : repl.getAllRemovals()) {
+        // case 1: c is a wire... call mutatorRemove(c); next loop handles any replacement(s)
+        // case 2: non-wire c replaced by r... call mutatorReplace(c, r)
+        //         and skip mutatorAdd(r) in the loop below
+        // case 3: non-wire c removed outright... call mutatorRemove(c)
+        // note: a non-wire c will always have zero or one replacement
+        if (c instanceof Wire) { // case 1
           circuit.mutatorRemove(c);
+        } else {
+          Component r = repl.getNonWireReplacementFor(c);
+          if (r != null) { // case 2
+            circuit.mutatorReplaceNonWire(c, r);
+            added.add(r); // 
+          } else { // case 3
+            circuit.mutatorRemove(c);
+          }
         }
       }
-      for (Component c : repl.getAdditions()) {
+      for (Component c : repl.getAllAdditions()) {
         if (!added.contains(c))
           circuit.mutatorAdd(c);
       }
     }
   }
 
-  public void set(Circuit circuit, Component comp, Attribute<?> attr,
-      Object newValue) {
+  public void set(Circuit circuit, Component comp, Attribute<?> attr, Object newValue) {
     if (circuit.contains(comp)) {
       modified.add(circuit);
       @SuppressWarnings("unchecked")

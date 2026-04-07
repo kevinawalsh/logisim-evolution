@@ -91,7 +91,7 @@ public class CircuitPins {
     Set<Instance> adds = new HashSet<Instance>();
     Set<Instance> removes = new HashSet<Instance>();
     Map<Instance, Instance> replaces = new HashMap<Instance, Instance>();
-    for (Component comp : repl.getAdditions()) {
+    for (Component comp : repl.getNonWireAdditions()) { // FIXME: only really need Pin
       if (comp.getFactory() instanceof Pin) {
         Instance in = Instance.getInstanceFor(comp);
         boolean added = pins.add(in);
@@ -102,18 +102,17 @@ public class CircuitPins {
         }
       }
     }
-    for (Component comp : repl.getRemovals()) {
+    for (Component comp : repl.getNonWireRemovals()) { // FIXME: only really need Pin
       if (comp.getFactory() instanceof Pin) {
         Instance in = Instance.getInstanceFor(comp);
         boolean removed = pins.remove(in);
         if (removed) {
           comp.removeComponentWeakListener(null, myComponentListener);
           in.getAttributeSet().removeAttributeWeakListener(null, myComponentListener);
-          Collection<Component> rs = repl.getReplacementsFor(comp);
-          if (rs.isEmpty()) {
+          Component r = repl.getNonWireReplacementFor(comp);
+          if (r == null) {
             removes.add(in);
           } else {
-            Component r = rs.iterator().next();
             Instance rin = Instance.getInstanceFor(r);
             adds.remove(rin);
             replaces.put(in, rin);

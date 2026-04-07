@@ -292,6 +292,9 @@
     <comp lib="11" loc="(157,172)" name="Text">
       <a name="text" val="seconds"/>
     </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="text" val="Tick the clock (or turn on auto-ticks) to see this demo."/>
+    </comp>
     <comp lib="11" loc="(427,38)" name="Text">
       <a name="text" val="hours"/>
     </comp>
@@ -444,6 +447,7 @@
     <wire from="(440,420)" to="(450,420)"/>
     <wire from="(460,130)" to="(460,140)"/>
     <wire from="(460,530)" to="(460,600)"/>
+    <wire from="(470,290)" to="(470,300)"/>
     <wire from="(470,430)" to="(470,470)"/>
     <wire from="(470,470)" to="(480,470)"/>
     <wire from="(490,410)" to="(510,410)"/>
@@ -464,6 +468,7 @@
     <wire from="(70,380)" to="(70,400)"/>
     <wire from="(700,160)" to="(710,160)"/>
     <wire from="(740,130)" to="(740,140)"/>
+    <wire from="(740,290)" to="(740,300)"/>
     <wire from="(80,370)" to="(140,370)"/>
     <wire from="(80,700)" to="(90,700)"/>
     <wire from="(80,720)" to="(90,720)"/>

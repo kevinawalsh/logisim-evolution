@@ -121,13 +121,12 @@ public class Circuit implements AttributeDefaultProvider {
     }
 
     public void endChanged(ComponentEvent e) {
-      locker.checkForWritePermission("ends changed", Circuit.this);
+      locker.checkForWritePermission("ends changed");
       Component comp = e.getSource();
       HashMap<Location, EndData> toRemove = toMap(e.getOldData());
       HashMap<Location, EndData> toAdd = toMap(e.getData());
-      EndChangedTransaction xn = new EndChangedTransaction(comp,
-          toRemove, toAdd);
-      locker.execute(xn);
+      EndChangedTransaction xn = new EndChangedTransaction(comp, toRemove, toAdd);
+      locker.runOrExecute(xn);
       fireEvent(CircuitEvent.ACTION_INVALIDATE, comp);
     }
 
@@ -172,7 +171,7 @@ public class Circuit implements AttributeDefaultProvider {
     staticAttrs = new CircuitAttributes(this, name);
     appearance = new CircuitAppearance(this);
     subcircuitFactory = new SubcircuitFactory(this);
-    locker = new CircuitLocker();
+    locker = new CircuitLocker(this);
     circuitsUsingThis = new WeakHashMap<Component, Circuit>();
     logiFile = file;
 
@@ -576,7 +575,7 @@ public class Circuit implements AttributeDefaultProvider {
 
   void mutatorAdd(Component c) {
 
-    locker.checkForWritePermission("add", this);
+    locker.checkForWritePermission("add");
 
     if (c instanceof Wire) {
       Wire w = (Wire) c;
@@ -630,12 +629,11 @@ public class Circuit implements AttributeDefaultProvider {
   // position. This causes trouble for DynamicElement and DynamicCondition
   // shapes that depend on the old component c. For those cases, we try hader
   // to update rather than simply remove-then-add.
-  void mutatorReplace(Component c, Component r) {
+  void mutatorReplaceNonWire(Component c, Component r) {
     ComponentFactory factory = c.getFactory();
     ComponentFactory factory2 = r.getFactory();
     if (factory == factory2 && (factory instanceof SubcircuitFactory)) {
-      locker.checkForWritePermission("remove", this);
-      locker.checkForWritePermission("add", this);
+      locker.checkForWritePermission("replace");
       // remove c, but update dynamic shapes instead of removing them
       wires.remove(c);
       comps.remove(c);
@@ -653,12 +651,12 @@ public class Circuit implements AttributeDefaultProvider {
       subcirc.getSubcircuit().circuitsUsingThis.put(r, this);
       r.addComponentWeakListener(null, myComponentListener);
       fireEvent(CircuitEvent.ACTION_ADD, r);
-    } else if (factory == factory2
+    } else if (factory == factory2 // FIXME: possibly check factory.getClass() equality instead? Are
+                                   // there multiple factories for some component types?
         && ((factory instanceof DynamicElementProvider || factory instanceof DynamicValueProvider))
         && c instanceof InstanceComponent
         && r instanceof InstanceComponent) {
-      locker.checkForWritePermission("remove", this);
-      locker.checkForWritePermission("add", this);
+      locker.checkForWritePermission("replace");
       // remove c, but update dynamic shapes instead of removing them
       wires.remove(c);
       comps.remove(c);
@@ -681,7 +679,7 @@ public class Circuit implements AttributeDefaultProvider {
 
   void mutatorRemove(Component c) {
 
-    locker.checkForWritePermission("remove", this);
+    locker.checkForWritePermission("remove");
 
     if (c instanceof Wire) {
       wires.remove(c);

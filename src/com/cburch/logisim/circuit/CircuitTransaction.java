@@ -36,6 +36,39 @@ import java.util.concurrent.locks.Lock;
 
 import com.cburch.logisim.circuit.appear.CircuitPins;
 
+// CircuitTransaction is the base class for the transaction mechanism, which attempts to ensure
+// concurrency-safe multi-threaded access and modifications to circuits.
+//
+// Primary (general purpose) subclass:
+//  - CircuitMutation: used for most edits to a circuit from user and other triggers
+// Other known (more specialized) subclasses:
+//  - XmlCircuitReader: used after xml parsing loading
+//  - VhdlUpdatedTransaction: unknown
+//  - RevertAppearanceAction.ActionTransaction: reverts circuit appearance upon menu trigger
+//  - CanvasActionAdapter.ActionTransaction: updates circuit appearance upon drawing updates
+//  - Circuit.EndsChangedTransaction: unclear
+//
+// Each subclass provides:
+//   getAccessedCircuits() - Specifies which circuits the xn accesses.
+//   run(mutator) - Makes changes using the provided CircuitMutator object.
+//
+// And this class provides:
+// execute() - carries out the transaction..
+//   1. Creates a mutator.
+//   2. Locks all accessed circuits, in a stable serial order.
+//   3. Calls run(mutator) to make changes.
+//   4. Updates appearance of each modified circuit.
+//   5. Repairs wires in each affected circuit.
+//   6. Creates a result object summarizing all mutations.
+//      - list of modified circuits, and ReplacementMap for each one
+//      - ability to create the reverse transaction
+//   7. Fires TRANSACTION_DONE events
+//      - Selection updates the UI selection state
+//      - Circuit transfers simulation state to replacement components
+//      - gui.log updates tracked signals
+//      - etc.
+//   8. Unlocks all circuits.
+//   9. Returns the result object.
 public abstract class CircuitTransaction {
   // public static final Integer READ_ONLY = 1; // never used
   public static final Integer READ_WRITE = 2;
@@ -43,7 +76,6 @@ public abstract class CircuitTransaction {
   public final CircuitTransactionResult execute() {
     CircuitMutatorImpl mutator = new CircuitMutatorImpl();
     Map<Circuit, Lock> locks = CircuitLocker.acquireLocks(this, mutator);
-    CircuitTransactionResult result;
     try {
       try {
         this.run(mutator);
@@ -76,10 +108,10 @@ public abstract class CircuitTransaction {
       Collection<Circuit> modified = mutator.getModifiedCircuits();
       for (Circuit circuit : modified) {
         CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
-        if (circMutator == mutator) {
-          CircuitPins pins = circuit.getAppearance().getCircuitPins();
+        if (circMutator == mutator) { // FIXME: is this ever false? when?
           ReplacementMap repl = mutator.getReplacementMap(circuit);
           if (repl != null) {
+            CircuitPins pins = circuit.getAppearance().getCircuitPins();
             pins.transactionCompleted(repl);
           }
         }
@@ -88,24 +120,27 @@ public abstract class CircuitTransaction {
       // Now go through each affected circuit and repair its wires
       for (Circuit circuit : modified) {
         CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
-        if (circMutator == mutator) {
-          WireRepair repair = new WireRepair(circuit);
-          repair.run(mutator);
+        if (circMutator == mutator) { // FIXME: is this ever false? when?
+          RepairWireHelper.repairWires(circuit, mutator);
         } else {
+          System.err.println("HUH?");
           // this is a transaction executed within a transaction -
           // wait to repair wires until overall transaction is done
+          // FIXME: where does that happen?
+          // FIXME: ??? why are there transactions within transactions... seems unsafe, no?
           circMutator.markModified(circuit);
         }
       }
 
+      CircuitTransactionResult result;
       result = new CircuitTransactionResult(mutator);
       for (Circuit circuit : result.getModifiedCircuits()) {
         circuit.fireEvent(CircuitEvent.TRANSACTION_DONE, result);
       }
+      return result;
     } finally {
       CircuitLocker.releaseLocks(locks);
     }
-    return result;
   }
 
   protected abstract Map<Circuit, Integer> getAccessedCircuits();
