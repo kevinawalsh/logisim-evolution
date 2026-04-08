@@ -108,14 +108,15 @@ public abstract class CircuitTransaction {
       Collection<Circuit> modified = mutator.getModifiedCircuits();
       for (Circuit circuit : modified) {
         CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
-        if (circMutator == mutator) {
-          System.out.println("*** Circuit Lock Bug Diagnostics ***");
-          System.out.println("This thread: " + Thread.currentThread());
-          System.out.println("  executing transaction:" + this);
-          System.out.println("  with mutator: " + mutator);
-          System.out.println("attempted to illegally modify");
-          System.out.println("  non-locked circuit:" + circuit.getName());
-          System.out.println("  with mutator: " + circMutator);
+        if (circMutator != mutator) {
+          System.err.println("*** Circuit Lock Bug Diagnostics ***");
+          System.err.println("This thread: " + Thread.currentThread());
+          System.err.println("  executing transaction: " + this);
+          System.err.println("  with mutator: " + mutator);
+          System.err.println("  accessing circuits: " + this.getAccessedCircuits());
+          System.err.println("attempted to illegally modify");
+          System.err.println("  non-locked circuit: " + circuit.getName());
+          System.err.println("  with mutator: " + circMutator);
           Thread.dumpStack();
         }
       }
@@ -158,30 +159,30 @@ public abstract class CircuitTransaction {
   }
   
   private void diagnostics(CircuitMutatorImpl mutator) {
-    System.out.println("*** Circuit Lock Bug Diagnostics ***");
-    System.out.println("This thread: " + Thread.currentThread());
-    System.out.println("  executing transaction:" + mutator.owner);
-    System.out.println("  with mutator: " + mutator);
-    System.out.println("attempted to illegally execute");
-    System.out.println("  nested transaction:" + this);
+    System.err.println("*** Circuit Lock Bug Diagnostics ***");
+    System.err.println("This thread: " + Thread.currentThread());
+    System.err.println("  executing transaction:" + mutator.owner);
+    System.err.println("  with mutator: " + mutator);
+    System.err.println("attempted to illegally execute");
+    System.err.println("  nested transaction:" + this);
   }
 
   private void diagnostics(CircuitLocker.LockException e, Map<Circuit, Lock> locks, CircuitMutator mutator) {
-    System.out.println("*** Circuit Lock Bug Diagnostics ***");
-    System.out.println("This thread: " + Thread.currentThread());
-    System.out.println("owns " + locks.size() + " locks, as follows:");
+    System.err.println("*** Circuit Lock Bug Diagnostics ***");
+    System.err.println("This thread: " + Thread.currentThread());
+    System.err.println("owns " + locks.size() + " locks, as follows:");
     for (Map.Entry<Circuit, Lock> entry : locks.entrySet()) {
       Circuit circuit = entry.getKey();
       Lock lock = entry.getValue();
-      System.out.printf("  circuit \"%s\" [lock serial: %d] with lock %s\n",
+      System.err.printf("  circuit \"%s\" [lock serial: %d] with lock %s\n",
           circuit.getName(), circuit.getLocker().getSerialNumber(), lock);
     }
-    System.out.println("attempted to access without a lock:");
-    System.out.printf("  circuit \"%s\" [lock serial: %d/%d]\n",
+    System.err.println("attempted to access without a lock:");
+    System.err.printf("  circuit \"%s\" [lock serial: %d/%d]\n",
         e.getCircuit().getName(), e.getSerialNumber(),
         e.getCircuit().getLocker().getSerialNumber());
-    System.out.println("  owned by thread: " + e.getMutatingThread());
-    System.out.println("  with mutator: " + e.getCircuitMutator());
+    System.err.println("  owned by thread: " + e.getMutatingThread());
+    System.err.println("  with mutator: " + e.getCircuitMutator());
   }
 
   protected abstract Set<Circuit> getAccessedCircuits();

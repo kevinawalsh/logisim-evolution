@@ -113,13 +113,14 @@ class CircuitMutatorImpl implements CircuitMutator {
     // Sanity check: circuit should have been locked by us
     CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
     if (circMutator != this) {
-      System.out.println("*** Circuit Lock Bug Diagnostics ***");
-      System.out.println("This thread: " + Thread.currentThread());
-      System.out.println("  executing transaction:" + owner);
-      System.out.println("  with mutator: " + this);
-      System.out.println("attempted to illegally modify");
-      System.out.println("  non-locked circuit: " + circuit.getName());
-      System.out.println("  with mutator: " + circMutator);
+      System.err.println("*** Circuit Lock Bug Diagnostics ***");
+      System.err.println("This thread: " + Thread.currentThread());
+      System.err.println("  executing transaction:" + owner);
+      System.err.println("  with mutator: " + this);
+      System.err.println("  accessing circuits: " + owner.getAccessedCircuits());
+      System.err.println("attempted to illegally modify");
+      System.err.println("  non-locked circuit: " + circuit.getName());
+      System.err.println("  with mutator: " + circMutator);
       Thread.dumpStack();
       // FIXME: perhaps throw (before adding to modified set)?
     }
