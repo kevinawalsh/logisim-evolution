@@ -144,10 +144,9 @@ class CircuitMutatorImpl implements CircuitMutator {
     ArrayList<Component> added = new ArrayList<>();
     if (!repl.isEmpty()) {
       markModified(circuit);
-      log.add(CircuitChange.replace(circuit, repl));
-
       repl.freeze();
-      getMap(circuit).appendReplacements(repl);
+      log.add(CircuitChange.replaceMultiple(circuit, repl));
+      getMap(circuit).appendMultiple(repl);
 
       for (Component c : repl.getAllRemovals()) {
         // case 1: c is a wire... call mutatorRemove(c); next loop handles any replacement(s)

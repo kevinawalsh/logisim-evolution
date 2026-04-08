@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -124,7 +125,7 @@ class RepairWireHelper {
         // But none of these wires are .equal() to other wires in repl, otherwise
         // they would be part of the same mergeSet.
         for (Wire wold : mergeSet)
-          repl.replaceWire(wold, wnew);
+          repl.appendReplacement(wold, wnew);
       }
     }
     mutator.applyReplacements(circuit, repl);
@@ -166,13 +167,13 @@ class RepairWireHelper {
     }
 
     for (Wire w : mergeSet) {
-      ArrayList<Wire> wRepl = new ArrayList<>(2);
+      HashSet<Wire> wRepl = new HashSet<>();
       for (Wire w2 : mergeResult) {
         if (w2.overlaps(w, false)) {
           wRepl.add(w2);
         }
       }
-      replacements.replaceWire(w, wRepl);
+      replacements.appendReplacements(w, wRepl);
     }
   }
 
@@ -230,7 +231,7 @@ class RepairWireHelper {
         splits.add(w1);
         Collections.sort(splits);
         Location e0 = w0;
-        ArrayList<Wire> subs = new ArrayList<>(splits.size());
+        HashSet<Wire> subs = new HashSet<>();
         for (Location e1 : splits) {
           subs.add(Wire.create(e0, e1));
           e0 = e1;
@@ -238,7 +239,7 @@ class RepairWireHelper {
         // A single wire is removed, replaced with a N>1 new wires.
         // Note: the new wires are not .equal() to each other or the removed wire.
         // But some of them could be .equal() to other wires in repl?
-        repl.replaceWire(w, subs);
+        repl.appendReplacements(w, subs);
       }
     }
     mutator.applyReplacements(circuit, repl);

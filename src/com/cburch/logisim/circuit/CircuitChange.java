@@ -66,7 +66,8 @@ final class CircuitChange {
     return new CircuitChange(circuit, REMOVE_ALL, comps);
   }
 
-  public static CircuitChange replace(Circuit circuit, ReplacementMap replMap) {
+  public static CircuitChange replaceMultiple(Circuit circuit, ReplacementMap replMap) {
+    replMap.freeze();
     return new CircuitChange(circuit, REPLACE, null, null, null, replMap);
   }
 
@@ -214,7 +215,7 @@ final class CircuitChange {
   //   }
   // }
 
-  void execute(CircuitMutator mutator, ReplacementMap prevReplacements) {
+  ReplacementMap execute_(CircuitMutator mutator, ReplacementMap prevReplacements) {
     switch (type) {
     case ADD:
       if (circuit == null)
@@ -241,20 +242,20 @@ final class CircuitChange {
     case REPLACE:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
-      prevReplacements.appendReplacements((ReplacementMap) newValue);
+      prevReplacements.appendMultiple((ReplacementMap) newValue);
       break;
     case SET:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
       mutator.applyReplacements(circuit, prevReplacements);
-      prevReplacements.reset();
+      prevReplacements = new ReplacementMap();
       mutator.set(circuit, comp, attr, newValue);
       break;
     case SET_FOR_CIRCUIT:
       if (circuit == null)
         throw new IllegalArgumentException("null circuit with change type " + type);
       mutator.applyReplacements(circuit, prevReplacements);
-      prevReplacements.reset();
+      prevReplacements = new ReplacementMap();
       mutator.setForCircuit(circuit, attr, newValue);
       break;
     case SET_FOR_VHDL:
@@ -265,6 +266,7 @@ final class CircuitChange {
     default:
       throw new IllegalArgumentException("unknown change type " + type);
     }
+    return prevReplacements;
   }
 
   public Attribute<?> getAttribute() {
@@ -308,7 +310,7 @@ final class CircuitChange {
     case SET_FOR_VHDL:
       return CircuitChange.setForVhdl(vhdl, attr, newValue, oldValue);
     case REPLACE:
-      return CircuitChange.replace(circuit, ((ReplacementMap) newValue).getInverseMap());
+      return CircuitChange.replaceMultiple(circuit, ((ReplacementMap) newValue).getInverseMap());
     default:
       throw new IllegalArgumentException("unknown change type " + type);
     }

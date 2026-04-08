@@ -39,63 +39,90 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.cburch.logisim.comp.Component;
 
-// When a circuit change is finished (CircuitEvent.TRANSACTION_DONE), the effects on
-// the circuit will be summarized in a ReplacementMap, detailing:
-//  1. each non-wire component removed from circuit outright, without being replaced
-//  2. each non-wire component added to the circuit outright, without replacing anything
-//  3. each non-wire component replaced in the circuit by a different component
-//  4. a set of wires removed
-//  5. a set of wires added
-//  6. a map indicating how wire selections should change after the transaction
+// When a circuit change is finished (CircuitEvent.TRANSACTION_DONE), the
+// effects on the circuit will be summarized in a ReplacementMap, detailing:
+//  1. removals: non-wire components removed outright, without being replaced
+//  2. additions: non-wire components added outright, without replacing anything
+//  3. replacements: a pair of like components, one removed, the other added to replace it
+//  4. wire removals: wires removed, either outright or replaced with (an)other wire(s)
+//  5. wire additions: wires added, either outright or replacing (an)other wire(s)
+//  6. a best-effort map indicating how wire selections should change after the transaction
 //
-// For 1, 2, and 3, the Component objects are all unique, under reference
-// equality at least, and likely under Object.equals() as well since no known
+// For 1, 2, and 3, the Component objects are normally all unique under
+// reference equality, and likely under Object.equals() as well since no known
 // non-wire Components override Object.equals(). To be specific, any non-wire
-// Component c will be at most one of:
+// Component c will normally be at most one of:
 //   - removed outright (and not replaced),
 //   - added outright (and not replacing),
 //   - replaced by some other Component
 //   - replacing some other Component
+// We check these invariants, and warn if they fail. But ReplacementMap doesn't
+// rely on any of these invariants, and it isn't known if any clients rely on
+// these invariants. Strong invariants (which we don't check) are that the same
+// properties hold over time, e.g. that a non-wire component, once marked for
+// removal within a ReplacementMap, should never again appear in any later
+// operation of that same ReplacementMap.
 //
 // For case 3, replacements (e.g. Component a replaced by Component b), we also
-// check (and warn if it fails) an additional invariant, that a and b have the
-// same Factory. The only code creating a --> b replacement pairs is Selection,
-// which is triggered the user moves some selected components through a dx, dy
+// check (and warn for) an additional invariant, that a and b have the same
+// Factory. The only code creating a --> b replacement pairs is Selection, which
+// is triggered when the user moves some selected components through a dx, dy
 // translation. Selection will create b in that case by calling
 // a.getFactory().createComponent(...). So far as I know, all existing factories
 // implement that call in a way that returns a component with the same factory
 // object.
 //
-// For 4, 5, and 6, Wire objects are NOT unique. Wire overrides Object.equals(),
-// and Wire.create() caches objects and may return the same reference multiple
-// times. So a single Wire object may appear in multiple circuits, or be removed
-// from a circuit then later added, etc. And the wire-repair and wire connection
-// code doesn't seem particularly careful about deduplicating wires during their
-// manipulations, sometimes causing a Wire object to be removed from a circuit
-// then added again during the same transaction, or sometimes the same Wire
-// object might be added multiple times, or multiple Wire objects that are
-// .equals() might all be added, etc.
+// For 4 and 5 we maintain an invariant:
+//  - the added wires and removed wire sets are disjoint, under .equals.
+// Generally, Wire objects are NOT unique, because Wire overrides
+// Object.equals(), and Wire.create() caches objects and may return the same
+// reference multiple times. This means a single Wire object may appear in
+// multiple circuits, or be removed from a circuit then later added, etc. And
+// the wire-repair and wire connection code may not always be careful about
+// deduplicating wires during their manipulations, sometimes causing a Wire
+// object to be removed from a circuit then added again during the same
+// transaction, or sometimes the same Wire object might be added multiple times,
+// or added even though it is already in the circuit. Or multiple Wire objects
+// that are .equals() might all be added, etc. So a wire might be in the
+// ReplacementMap, marked for addition, yet already exist in the circuit. We
+// allow all of these, as they should be harmless: CircuitWires de-duplicates
+// wires ultimately (I hope).
 //
 // For case 6, we maintain only a forward-transaction mapping describing how
 // wire selection state changes, since the selection code keeps a
 // pre-transaction snapshot that it can restore in the reverse direction. The
-// mapping is: Wire -> Set<Wire>, where w0 -> {w1, w2, ...} means simply that
-// if w0 was in the selection before the transaction, then w1, w2, ..., should
-// be added to the selection after the transaction.
-// FIXME:
-//  - Does it mean w1, w2, ... were just added?
-//    No, some may have already existed, I think.
-//  - Does it mean w0 should be removed from the selection?
-//    I'm not sure.
-//  - Does it guarantee that w1, w2, ... will be in the circuit?
-//    Probably yes?
-//  - Does it mean w0 has been removed from the circuit?
-//    Maybe?
+// mapping is: Wire --> Set<Wire>, where w0 --> {w1, w2, ...} means that if w0
+// was in the selection before the transaction, then after the transaction it
+// should be removed then w1, w2, ..., should be added to the selection instead.
 //
-// 
+//  Q: Does it mean w1, w2, ... were just added to the circuit?
+//  A: No, some may have already existed in the circuit.
+//
+//  Q: Does it mean w0 should be removed from the selection?
+//  A: Yes, unless w0 appears in the set on the right side (which is allowed).
+//
+//  Q: Should w0 be removed from the circuit? Should w1, w2, ... be added to it?
+//  A: No, these may or may not be in the addedWires or removedWires sets.
+//   (FIXME: verify this)
+//    
+//  Q: Does it guarantee that w1, w2, ... will be in the circuit?
+//  A: Maybe? (FIXME: verify this)
+//
+//  Q: Does it mean w0 will not be in the circuit?
+//  A: Probably not? (FIXME: verify this)
+//
+// After construction, all changes to a ReplacementMap are cumulative with an
+// "append" or "compose" style semantics. So a sequence like add(x), remove(x)
+// get composed into a simpler sequence. For a non-wire x, it becomes a no-op: x
+// wasn't in the circuit before, was then added, then removed, so it isn't in
+// the circuit after. For a wire, it becomes remove(x): x may or may not have
+// been in the circuit before, was then added (possibly a no-op, if it was
+// already in the circuit), then removed, so it needs to be removed (which may
+// be a harmless no-op).
 
 public class ReplacementMap {
 
@@ -104,15 +131,19 @@ public class ReplacementMap {
   // 1: non-wire Component a removed outright: removed[a] = null
   // 2: non-wire Component b added outright: added[b] = null
   // 3: non-wire Component a replaced by b: removed[a] = b and added[b] = a
+  // Invariant: a reference appears at most once across both of these maps.
+  // Invariant: non-null pairs in each map are "like" components.
   private IdentityHashMap<Component, Component> removed = new IdentityHashMap<>();
   private IdentityHashMap<Component, Component> added = new IdentityHashMap<>();
   
   // 4: Wires removed
   // 5: Wires added
+  // Invariant: these sets are disjoint under Wire.equals()
   private HashSet<Wire> removedWires = new HashSet<>();
   private HashSet<Wire> addedWires = new HashSet<>();
   
   // 6: Wire selection changes
+  // Invariant: practically none... this is best-effort only.
   private HashMap<Wire, HashSet<Wire>> wireSelectionChanges = new HashMap<>();
 
   // Create an empty ReplacementMap
@@ -144,7 +175,19 @@ public class ReplacementMap {
       throw new IllegalArgumentException("should have same factory: " + a.getFactory() + " != " + b.getFactory());
     ReplacementMap r = new ReplacementMap();
     if (a instanceof Wire) {
-      r.replaceWire((Wire)a, (Wire)b);
+      if (a != b) {
+        // a --> b means "remove a, then add b"
+        r.removedWires.add((Wire)a);
+        r.addedWires.add((Wire)b);
+      } else {
+        // b --> b means "remove b, then add b"; for wires this composes to only "add b"
+        r.addedWires.add((Wire)b);
+      }
+      // Either way, record the effect on wire selections:
+      // if wire a was selected before xn, then after xn, b should be selected instead.
+      HashSet<Wire> sel = new HashSet<>();
+      sel.add((Wire)b);
+      r.wireSelectionChanges.put((Wire)a, sel);
     } else {
       if (a == b)
         throw new IllegalArgumentException("replacing component with itself");
@@ -154,7 +197,8 @@ public class ReplacementMap {
     return r;
   }
 
-  // Append change saying component b is now added outright
+  // Append change saying component b is now added outright.
+  // Same effect as: appendMultiple(ReplacementMap.forAddition(b))
   public void appendAddition(Component b) {
     if (frozen)
       throw new IllegalStateException("cannot change frozen map");
@@ -165,230 +209,256 @@ public class ReplacementMap {
       if (removed.containsKey(b)) {
         Component c = removed.remove(b);
         if (c != null) {
-          System.err.printf("WARN: b was replaced by c, then b was re-added: b=%s c=%s\n", b, c);
+          System.err.printf("Invariant violated: b was replaced by c, then b was re-added: b=%s c=%s\n", b, c);
           added.put(c, null); // I guess change c <-- b so it says c is added outright
         }
       }
-      Component a = added.put(b, null);
+      Component a = added.put(b, null); // b added outright
       if (a != null) {
-        System.err.printf("WARN: a replaced by b, then b added outright: a=%s b=%s\n", a, b);
-        removed.put(a, null); // I guess a gets removed outright?
+        System.err.printf("Invariant violated: a replaced by b, then b re-added: a=%s b=%s\n", a, b);
+        removed.put(a, null); // I guess a gets removed outright, instead of replaced?
       }
     }
   }
 
-  // Append change saying component b is removed outright
-  public void appendRemoval(Component b) {
+  // Append change saying component a is removed outright.
+  // Same effect as: appendMultiple(ReplacementMap.forRemoval(a))
+  public void appendRemoval(Component a) {
     if (frozen)
       throw new IllegalStateException("cannot change frozen map");
-    if (b instanceof Wire) {
-      addedWires.remove((Wire)b); // wire is no longer added
-      removedWires.add((Wire)b);
+    if (a instanceof Wire) {
+      addedWires.remove((Wire)a); // wire is no longer added
+      removedWires.add((Wire)a); // wire is removed instead
+      // FIXME: Maybe remove a from wireSelectionChanges? Test out what seems best for selection UI?
     } else {
-      if (added.containsKey(b)) {
-        Component a = added.remove(b);
-        if (a != null) { // a was replaced by b, then b removed outright
-          removed.put(a, null); // change a --> b so it says a is removed outright 
-        } else { // b was added outright, then b removed outright
-          // nothing more to do, code below will ensure b is removed outright
+      if (added.containsKey(a)) { // a was added
+        Component a0 = added.remove(a); // a is no longer added
+        if (a0 != null) { // a0 was replaced by a, then a removed outright
+          removed.put(a0, null); // change a0 --> a so it says a0 is removed outright 
+        } else { // a was added outright, then a removed outright
+          // nothing more to do: we already updated so a is no longer added
+          // note: we do NOT keep a record of a being removed... the
+          // add(a), remove(a) sequence collapses to a no-op.
         }
-      }
-      if (removed.containsKey(b)) {
-        Component c = removed.put(b, null);
-        if (c != null) {
-          System.err.printf("WARN: b replaced by c, then b removed outright: b=%s c=%s\n", b, c);
-          added.put(c, null); // I guess change c <-- b  so it say c is added outright
+      } else if (removed.containsKey(a)) {
+        Component b = removed.get(a);
+        if (b != null) {
+          System.err.printf("Invariant violated: a replaced by b, then a removed outright: a=%s b=%s\n", a, b);
+          // leave it alone, a is already removed (though replaced by b, not outright)
         } else {
-          System.err.printf("WARN: b removed outright, then b removed outright again: b=%s c=%s\n", b, c);
+          System.err.printf("Invariant violated: a removed outright, then a removed outright again: a=%s\n", a);
+          // leave it alone, a is already removed outright
         }
       } else {
-        removed.put(b, null);
+        removed.put(a, null); // a is removed outright
       }
     }
   }
-  
-  // Modify ReplacementMap to say that wire a is removed.
-  // Note: a can be added/removed multiple times.
-  public void removeWire(Wire a) {
-    if (frozen)
-      throw new IllegalStateException("cannot change frozen map");
-    // addedWires.remove(a); // do NOT undo previous addition?
-    removedWires.add(a);
-  }
 
-  // Modify ReplacementMap to say that wire b is added.
-  // Note: a can be added/removed multiple times.
-  public void addWire(Wire a) {
+  // Append change saying component a is replaced by like component b.
+  // Same effect as: appendMultiple(ReplacementMap.forReplacement(a, b))
+  public void appendReplacement(Component a, Component b) {
     if (frozen)
       throw new IllegalStateException("cannot change frozen map");
-    // removedWires.remove(a); // do NOT undo previous removal?
-    addedWires.add(a);
-  }
-
-  // Modify ReplacementMap to say that wire a is removed, wire b is added, and
-  // wire selections that contained a should be modified to now contain b.
-  // Note: a==b is allowed, and either can be added/removed multiple times.
-  public void replaceWire(Wire a, Wire b) {
-    if (frozen)
-      throw new IllegalStateException("cannot change frozen map");
-    // addedWires.remove(a); // do NOT undo previous addition?
-    removedWires.add(a);
-    // removedWires.remove(b); // do NOT undo previous removal?
-    addedWires.add(b);
-    HashSet<Wire> sel = wireSelectionChanges.get(a);
-    if (sel == null) {
-      sel = new HashSet<>();
-      wireSelectionChanges.put(a, sel);
+    if (a.getFactory() != b.getFactory())
+      throw new IllegalArgumentException("should have same factory: " + a.getFactory() + " != " + b.getFactory());
+    if (a instanceof Wire) {
+      // NOTE: this if/else isn't needed, the if-case should work in both cases due to the order of operations
+      if (a != b) {
+        // a --> b means "remove a, then add b"
+        addedWires.remove((Wire)a);   // a is no longer added (if it was)
+        removedWires.add((Wire)a);    // instead, now a is removed
+        // FIXME: Maybe remove a from wireSelectionChanges? Test out what seems best for selection UI?
+        removedWires.remove((Wire)b); // b is no longer removed (if it was)
+        addedWires.add((Wire)b);      // instead, now b is added
+      } else {
+        // b --> b means "remove b, then add b"; for wires this composes to only "add b"
+        removedWires.remove((Wire)b); // b is no longer removed (if it was)
+        addedWires.add((Wire)b);      // instead, now b is added
+      }
+      // Either way, record the effect on wire selections, composing with current changes.
+      for (Map.Entry<Wire, HashSet<Wire>> e : wireSelectionChanges.entrySet()) {
+        Wire w0 = e.getKey();
+        HashSet<Wire> ws = e.getValue();
+        if (ws.contains(a)) {
+          // We already have w0 --> ws={ ... a ... } meaning
+          // if w0 is selected before xn, then after xn, { ... a ... } is selected instead.
+          // Now a got replaced by b, so selection would move to { ... b ...} now.
+          ws.remove((Wire)a);
+          ws.add((Wire)b);
+        }
+      }
+      HashSet<Wire> ws = wireSelectionChanges.get((Wire)a);
+      if (ws != null) {
+        // We already have a --> ws={...}, and this causes a to be dropped from
+        // the selection, so now replacing a with b doesn't affect the selection
+        // (unless a appears within ws, but that case was already handled in
+        // above loop)
+      } else {
+        // We don't have anything for a yet, but now a got replaced by b, so
+        // selection would move with that change.
+        ws = new HashSet<>();
+        ws.add((Wire)b);
+        wireSelectionChanges.put((Wire)a, ws);
+      }
+    } else {
+      if (a == b)
+        throw new IllegalArgumentException("replacing component with itself");
+      if (added.containsKey(a)) { // a was previously added
+        Component a0 = added.remove(a); // a is no longer added
+        if (a0 != null) { // a0 was replaced by a, now a replaced by b: collapses to a0 replaced by b
+          removed.put(a0, b);  // update: a0's replacement changes from a to b
+          Component a1 = added.put(b, a0); // b is added as replacement for a0
+          if (a1 != null) {
+            System.err.printf("Invariant violated: b already added, replacing a1, while collapsing chain: a=%s a0=%s b=%s a1=%s\n", a, a0, b, a1);
+            // b <-- a1 was present, we just set a0 --> a --> b (collapsed to a0 --> b)
+            // So now we have both a1 --> b and a0 --> b, with b appearing twice.
+            // Let's change a1 to be removed outright, I guess?
+            removed.put(a1, null); // replaces a1 --> b with a1 --> null
+          }
+        } else { // a was added outright, now replaced by b: net is b added outright
+          Component a1 = added.put(b, null); // b added outright
+          if (a1 != null) {
+            System.err.printf("Invariant violated: b already added, replacing a1, while recording replacement: a=%s b=%s, a1=%s\n", a, b, a1);
+            // b <-- a1 was present, we are handling b <-- a after a <-- null (collapsed to b <-- null)
+            // So now we have a1 --> b but also b <-- null, with b appearing inconsistently
+            // Let's change a1 to be removed outright, I guess?
+            removed.put(a1, null); // replaces a1 --> b with a1 --> null
+          }
+        }
+      } else if (removed.containsKey(a)) { // a was already removed: error
+        Component b0 = removed.get(a);
+        if (b0 != null) {
+          System.err.printf("Invariant violated: a already replaced by b0, now a replaced by b: a=%s b0=%s b=%s\n", a, b0, b);
+          // a --> b0 was present, but now we wanted a --> b, which isn't possible.
+          // I guess just add b outright?
+          appendAddition(b);
+        } else {
+          System.err.printf("Invariant violated: a already removed outright, now a replaced by b: a=%s b=%s\n", a, b);
+          // a --> null was present, but now we wanted a --> b, which isn't possible.
+          // I guess just add b outright?
+          appendAddition(b);
+        }
+      } else { // a not previously mentioned: simple replacement
+        removed.put(a, b);
+        Component a1 = added.put(b, a);
+        if (a1 != null) {
+          System.err.printf("Invariant violated: b already added while recording replacement: a=%s b=%s a1=%s\n", a, b, a1);
+          // b <-- a1 was present, we just set b <-- a
+          // So now we have a1 --> b but a --> b, with b appearing twice.
+          // Let's change a1 to be removed outright, I guess?
+          removed.put(a1, null); // replaces a1 --> b with a1 --> null
+        }
+      }
     }
-    sel.add(b);
   }
 
-  // Modify ReplacementMap to say that wire a is removed, wires bs are added, and
-  // wire selections that contained a should be modified to now contain all bs.
-  // Note: a in bs is allowed, and any of the wires can be added/removed multiple times.
-  public void replaceWire(Wire a, Collection<Wire> bs) {
+  // Append change saying wire a is replaced by a set of wires b. This is a
+  // special case multiple-replacement version of appendReplacement(a, b), which
+  // is not necessarily the same as appending/composing multiple replacements in
+  // sequence.
+  // Note: a can appear among bs, and bs can be empty.
+  public void appendReplacements(Wire a, Set<Wire> bs) {
     if (frozen)
       throw new IllegalStateException("cannot change frozen map");
-    for (Wire b : bs)
-      replaceWire(a, b);
-  }
-  
-  // Clear everything
-  public void reset() {
-    frozen = false; // FIXME: well this seems dangerous
-    added.clear();
-    removed.clear();
-    addedWires.clear();
-    removedWires.clear();
-    wireSelectionChanges.clear();
-  }
-
-  private void mapNonWire(Component a, Component b) {
-    if (a != null && mentionsNonWire(a))
-      System.err.println("ERR: invariant violated: a=" + a);
-    if (b != null && mentionsNonWire(b))
-      System.err.println("ERR: invariant violated: b=" + b);
-    if (a == b)
-      System.err.println("ERR: invariant violated: a=b=" + a);
-    if (a != null)
-      removed.put(a, b);
-    if (b != null)
-      added.put(b, a);
+    // NOTE: this if/else isn't needed, the if-case should work in both cases due to the order of operations
+    if (!bs.contains(a)) {
+      // a --> bs={...} (with a not in bs) means "remove a, then add all bs"
+      addedWires.remove(a);    // a is no longer added (if it was)
+      removedWires.add(a);     // instead, now a is removed
+      // FIXME: Maybe remove a from wireSelectionChanges? Test out what seems best for selection UI?
+      removedWires.removeAll(bs); // bs are no longer removed (if any were)
+      addedWires.addAll(bs);      // instead, now bs are added
+    } else {
+      // a --> bs={a,...} means "remove a, then add a,b1,..."; for wires this composes to only "add a,b1,..."
+      removedWires.removeAll(bs); // bs are no longer removed (if any were)
+      addedWires.addAll(bs);      // instead, now bs are added
+    }
+    // Either way, record the effect on wire selections, composing with current changes.
+    for (Map.Entry<Wire, HashSet<Wire>> e : wireSelectionChanges.entrySet()) {
+      Wire w0 = e.getKey();
+      HashSet<Wire> ws = e.getValue();
+      if (ws.contains(a)) {
+        // We already have w0 --> ws={ ... a ... } meaning
+        // if w0 is selected before xn, then after xn, { ... a ... } is selected instead.
+        // Now a got replaced by bs, so selection would move to { ... bs ...} now.
+        ws.remove(a);
+        ws.addAll(bs);
+      }
+    }
+    HashSet<Wire> ws = wireSelectionChanges.get(a);
+    if (ws != null) {
+      // We already have a --> ws={...}, and this causes a to be dropped from
+      // the selection, so now replacing a with b doesn't affect the selection
+      // (unless a appears within ws, but that case was already handled in
+      // above loop)
+    } else {
+      // We don't have anything for a yet, but now a got replaced by bs, so
+      // selection would move with that change.
+      ws = new HashSet<>();
+      ws.addAll(bs);
+      wireSelectionChanges.put(a, ws);
+    }
   }
 
   // Compose this ReplacementMap with next ReplacementMap.
-  void appendReplacements(ReplacementMap next) {
+  void appendMultiple(ReplacementMap next) {
     if (frozen)
       throw new IllegalStateException("cannot change frozen map");
-    // For non-wires:
-    // 1. DONE a --> b then b --> c ... becomes a --> c (c should not appear in this)
-    // 2. DONE a --> b then b removed ... becomes a removed
-    // 3. DONE a --> b then nothing ... stays a --> b (a and b should not appear in next)
-    // 4. DONE b added then b --> c ... becomes c added
-    // 5. DONE b added then b removed ... becomes no-op
-    // 6. DONE b added then nothing ... stays b added (b should not appear in next)
-    // 7. DONE a removed then anything ... stays a removed (a should not appear in next)
-    // 8. DONE nothing then b --> c ... stays b --> c (b and c should not appear in this)
-    // 9. DONE nothing then c added  ... stays c added (c should not appear in this)
-    // 10. DONE nothing then b removed ... stays b removed (b should not appear in this)
-    ReplacementMap r = new ReplacementMap();
-    for (Map.Entry<Component, Component> e : added.entrySet()) {
-      Component b = e.getKey();
-      Component a = e.getValue();
-      Component c = next.removed.get(b);
-      if (a != null && c != null) { // case 1
-        if (this.mentionsNonWire(c))
-          System.err.println("ERR: case 1 invariant violated: c=" + c);
-        r.mapNonWire(a, c);
-      } else if (a != null && next.removed.containsKey(b)) { // case 2
-        r.mapNonWire(a, null);
-      } else if (a != null) { // case 3
-        if (next.mentionsNonWire(a))
-          System.err.println("ERR: case 3 invariant violated: a=" + a);
-        if (next.mentionsNonWire(b))
-          System.err.println("ERR: case 3 invariant violated: b=" + b);
-        r.mapNonWire(a, b);
-      } else if (c != null) {  // case 4
-        r.mapNonWire(null, c);
-      } else if (next.removed.containsKey(b)) { // case 5
-        // no-op 
-      } else { // case 6
-        if (next.mentionsNonWire(b))
-          System.err.println("ERR: case 6 invariant violated: b=" + b);
-        r.mapNonWire(null, b);
-      }
-    }
-    for (Map.Entry<Component, Component> e : removed.entrySet()) {
-      if (e.getValue() != null) continue;
-      // case 7
-      Component a = e.getKey();
-      if (next.mentionsNonWire(a))
-        System.err.println("ERR: case 7 invariant violated: a=" + a);
-      r.mapNonWire(a, null);
+    // Note: next will normally be locked here... client's do that already
+
+    // For non-wires: call the appropriate appendX() methods, in any order.
+    for (Map.Entry<Component, Component> e : next.removed.entrySet()) {
+      Component a = e.getKey(), b = e.getValue();
+      if (b == null) appendRemoval(a); // next: a --> null
+      else appendReplacement(a, b); // next: a --> b
     }
     for (Map.Entry<Component, Component> e : next.added.entrySet()) {
-      Component c = e.getKey();
-      Component b = e.getValue();
-      if (b != null && !this.added.containsKey(b)) { // case 8
-        if (this.mentionsNonWire(b))
-          System.err.println("ERR: case 8 invariant violated: b=" + b);
-        if (this.mentionsNonWire(c))
-          System.err.println("ERR: case 8 invariant violated: c=" + c);
-        r.mapNonWire(b, c);
-      } else if (!this.added.containsKey(b)) { // case 9
-        if (this.mentionsNonWire(c))
-          System.err.println("ERR: case 9 invariant violated: c=" + c);
-        r.mapNonWire(null, c);
-      }
+      Component b = e.getKey(), a = e.getValue();
+      if (a == null) appendAddition(b); // next: b <-- null
+      // else: already handled in above loop // next: b <-- a
     }
-    for (Map.Entry<Component, Component> e : next.removed.entrySet()) {
-      if (e.getValue() != null) continue;
-      Component b = e.getKey();
-      if (!this.added.containsKey(b)) { // case 10
-        if (this.mentionsNonWire(b))
-          System.err.println("ERR: case 10 invariant violated: b=" + b);
-        r.mapNonWire(b, null);
-      }
-    }
-    // FIXME: how do we compose wires?
-    // For wires:
-    // - All wires added in both sets, just merge them.
-    // - All wires removed in both sets, just merge them.
-    // - Merge wireSelectionChanges.
-    r.addedWires.addAll(this.addedWires);
-    r.addedWires.addAll(next.addedWires);
-    r.removedWires.addAll(this.removedWires);
-    r.removedWires.addAll(next.removedWires);
+
+    // For wires, we can bulk-merge the sets from next, which are disjoint
+    addedWires.removeAll(next.removedWires); // wires are no longer added
+    removedWires.addAll(next.removedWires); // wires are removed instead
+    // FIXME: Maybe remove wires from wireSelectionChanges? Test out what seems best for selection UI?
+    removedWires.removeAll(next.addedWires); // wires are no longer removed
+    addedWires.addAll(next.addedWires); // wires are added instead
+    
+    // For wire selection changes, we need to compose the maps.
     for (Map.Entry<Wire, HashSet<Wire>> e : this.wireSelectionChanges.entrySet()) {
       Wire w0 = e.getKey();
       HashSet<Wire> ws = e.getValue();
-      HashSet<Wire> sel = r.wireSelectionChanges.get(w0);
-      if (sel == null) {
-        sel = new HashSet<>();
-        wireSelectionChanges.put(w0, sel);
-      }
-      sel.addAll(ws);
+      // We already have w0 --> ws={w1, ...}
+      HashSet<Wire> wsUpdated = new HashSet<>();
       for (Wire w1 : ws) {
-        HashSet<Wire> ws2 = next.wireSelectionChanges.get(w1);
-        if (ws2 != null)
-          sel.addAll(ws2);
+        HashSet<Wire> wsNext = next.wireSelectionChanges.get(w1);
+        if (wsNext != null) {
+          // next has w1 --> wsNext={...}
+          wsUpdated.addAll(wsNext); // we will get w0 --> { ... } + wsNext
+        } else {
+          // next doesn't mention w1
+         wsUpdated.add(w1); // we will keep w0 --> { ... w1 ... }
+        }
       }
+      e.setValue(wsUpdated);
     }
     for (Map.Entry<Wire, HashSet<Wire>> e : next.wireSelectionChanges.entrySet()) {
-      Wire w0 = e.getKey();
-      HashSet<Wire> ws = e.getValue();
-      HashSet<Wire> sel = r.wireSelectionChanges.get(w0);
-      if (sel == null) {
-        sel = new HashSet<>();
-        wireSelectionChanges.put(w0, sel);
+      Wire w1 = e.getKey();
+      HashSet<Wire> wsNext = e.getValue();
+      HashSet<Wire> ws = this.wireSelectionChanges.get(w1);
+      if (ws != null) {
+        // Next has w1 --> wsNext={...}
+        // We have w1 --> ws={...}, and this causes w1 to be dropped from selection,
+        // so next's data is not applicable (unless w1 appears within ws, but
+        // that case was already handled in above loop).
+      } else {
+        // Next has w1 --> wsNext={...}
+        // We don't have anything for w1 yet, so we should adopt next's data here.
+        wireSelectionChanges.put(w1, new HashSet<>(wsNext));
       }
-      sel.addAll(ws);
     }
-    this.removed = r.removed;
-    this.added = r.added;
-    this.removedWires = r.removedWires;
-    this.addedWires = r.addedWires;
-    this.wireSelectionChanges = r.wireSelectionChanges;
   }
 
   // Prevent any further changes
@@ -399,11 +469,11 @@ public class ReplacementMap {
   // Get an inverse map with opposite additions, removals, and replacements, but
   // an empty wireSelectionChanges.
   ReplacementMap getInverseMap() {
-    if (!frozen)
-      System.err.println("ERR? not frozen but getting inverse");
+    // if (!frozen)
+    //   System.err.println("ERR? not frozen but getting inverse");
     frozen = true;
 
-    // No need to copy most sets, this and inv will both be frozen
+    // No need to copy most sets, this and inv are both frozen
     ReplacementMap inv = new ReplacementMap();
     inv.frozen = true;
     inv.removed = this.added;
@@ -425,7 +495,8 @@ public class ReplacementMap {
     return inv;
   }
 
-  // Checks if this ReplacementMap is empty
+  // Checks if this ReplacementMap has no effect on the circuit (ignores
+  // wire selection changes).
   public boolean isEmpty() {
     return added.isEmpty() && removed.isEmpty()
       && addedWires.isEmpty() && removedWires.isEmpty();
@@ -506,7 +577,7 @@ public class ReplacementMap {
 
   public void print(PrintStream out) {
     out.printf("  removing %d wires and %d non-wires, adding %d wires and %d non-wires\n",
-        addedWires.size(), added.size(), removedWires.size(), removed.size());
+        removedWires.size(), removed.size(), addedWires.size(), added.size());
     System.out.println(removed.isEmpty() && removedWires.isEmpty()
         ? "  removals: none" : "  removals:");
     for (Map.Entry<Component, Component> e : removed.entrySet()) {

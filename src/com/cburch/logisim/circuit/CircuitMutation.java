@@ -179,13 +179,13 @@ public final class CircuitMutation extends CircuitTransaction {
 
   public void replace(Component oldComp, Component newComp) {
     ReplacementMap repl = ReplacementMap.forReplacement(oldComp, newComp);
-    changes.add(CircuitChange.replace(primaryCircuit, repl));
+    changes.add(CircuitChange.replaceMultiple(primaryCircuit, repl));
   }
 
-  public void replace(ReplacementMap replacements) {
+  public void replaceMultiple(ReplacementMap replacements) {
     if (!replacements.isEmpty()) {
       replacements.freeze();
-      changes.add(CircuitChange.replace(primaryCircuit, replacements));
+      changes.add(CircuitChange.replaceMultiple(primaryCircuit, replacements));
     }
   }
 
@@ -202,7 +202,7 @@ public final class CircuitMutation extends CircuitTransaction {
         curCircuit = circ;
         curReplacements = new ReplacementMap();
       }
-      change.execute(mutator, curReplacements);
+      curReplacements = change.execute_(mutator, curReplacements);
     }
     if (curCircuit != null) {
       mutator.applyReplacements(curCircuit, curReplacements);

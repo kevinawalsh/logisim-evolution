@@ -286,7 +286,7 @@ class Connector {
       for (Wire w : conn.getWirePath()) {
         Location nextLoc = w.getOtherEnd(pathLoc);
         if (found) { // existing wire will be removed
-          repl.removeWire(w);
+          repl.appendRemoval(w);
           avoid.unmarkWire(w, nextLoc, unmarkable);
         } else if (w.nominallyContains(loc0)) { // wires after this will be removed
           found = true;
@@ -294,7 +294,7 @@ class Connector {
             avoid.unmarkWire(w, nextLoc, unmarkable);
             Wire shortenedWire = Wire.create(pathLoc, loc0);
             // 1 wire is replaced by 1 new, different wire
-            repl.replaceWire(w, shortenedWire);
+            repl.appendReplacement(w, shortenedWire);
             avoid.markWire(shortenedWire, 0, 0);
           }
         }
@@ -304,7 +304,7 @@ class Connector {
     while (pathIt.hasNext()) {
       Location loc1 = pathIt.next();
       Wire newWire = Wire.create(loc0, loc1);
-      repl.addWire(newWire);
+      repl.appendAddition(newWire);
       avoid.markWire(newWire, 0, 0);
       loc0 = loc1;
     }

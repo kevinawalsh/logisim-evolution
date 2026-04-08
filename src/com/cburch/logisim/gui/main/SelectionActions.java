@@ -790,7 +790,7 @@ public class SelectionActions {
     protected void doIt(Project proj, Circuit circ, CircuitMutation xn) {
       sel.translateHelper(xn, dx, dy);
       if (replacements != null)
-        xn.replace(replacements);
+        xn.replaceMultiple(replacements);
     }
 
     @Override
