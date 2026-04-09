@@ -86,11 +86,35 @@ class RepairWireHelper {
     }
   }
 
+  // Within current circuit, find chains of parallel, sequentially-connected
+  // wires, and merge them into a single equivalent wire. The circuit is updated
+  // with the changes. For example:
+  //
+  //   o---w1---o------w2------o--w3--o------------w4------------o
+  //
+  // gets merged into:
+  //
+  //   o--------------------------wnew---------------------------o
+  //
+  // Note: Intermediate points where wires connect must have no other component
+  // connections. For example, this is not a single chain:
+  //
+  //   o---w1---o------w2------o--w3--o------------w4------------o
+  //                           |
+  //                           o
+  //
+  // Also note: A chain may double back on itself. It is still merged, using the
+  // two most distant points for the ends of the new wire.
   private static void doMerges(Circuit circuit, CircuitMutator mutator) {
     MergeSets sets = new MergeSets();
+    // Within current circuit, find all points where:
+    //   - some wire ends
+    //   - exactly two components have ends there
+    //   - both are wires
+    //   - and both are parallel to each other
+    // and mark those as part of the same chain.
     for (Location loc : circuit.wires.points.getAllLocations()) {
-      //Collection<?> at = circuit.getComponentsByPortLocation(loc);
-      Collection<?> at = circuit.wires.points.getComponents(loc); // same thing
+      Collection<?> at = circuit.wires.points.getComponents(loc);
       if (at.size() == 2) {
         Iterator<?> atit = at.iterator();
         Object at0 = atit.next();
@@ -105,34 +129,52 @@ class RepairWireHelper {
       }
     }
 
+    // For each chain, replace all the wires in the chain with one new wire.
     ReplacementMap repl = new ReplacementMap();
     for (ArrayList<Wire> mergeSet : sets.getMergeSets()) {
-      if (mergeSet.size() > 1) {
-        ArrayList<Location> locs = new ArrayList<>(2 * mergeSet.size());
-        for (Wire w : mergeSet) {
-          locs.add(w.getEnd0());
-          locs.add(w.getEnd1());
-        }
-        Collections.sort(locs);
-        Location e0 = locs.get(0);
-        Location e1 = locs.get(locs.size() - 1);
-        Wire wnew = Wire.create(e0, e1);
-
-        mergeSet.remove(wnew); // don't bother recording wnew --> wnew
-
-        // N>=1 wires are removed, replaced with a single (possibly existing) wire.
-        // Note: the new wire may possibly be .equal() to some existing wire.
-        // But none of these wires are .equal() to other wires in repl, otherwise
-        // they would be part of the same mergeSet.
-        for (Wire wold : mergeSet)
-          repl.appendReplacement(wold, wnew);
+      // FIXME: if mergeSet kept track of largest and smallest point, would not
+      // need to sort here. Also, code here uses ArrayList, other code uses
+      // TreeSet for sorting... not sure why.
+      ArrayList<Location> locs = new ArrayList<>(2 * mergeSet.size());
+      for (Wire w : mergeSet) {
+        locs.add(w.getEnd0());
+        locs.add(w.getEnd1());
       }
+      Collections.sort(locs);
+      Location e0 = locs.get(0);
+      Location e1 = locs.get(locs.size() - 1);
+      Wire wnew = Wire.create(e0, e1);
+
+      // N>=1 wires are removed, replaced with a single (possibly existing) wire.
+      // Note: none of these wires are .equal() to each other (because they came
+      // from circuit, which doesn't have duplicates), and none are .equal() to
+      // other wires in repl, which are either old (from circuit) or new (and
+      // necessarily different, coming from a different mergeSet).
+      // If wnew existed previously, then the code here is:
+      //  - removing all the other wires (skipping wnew)
+      //  - adding the new wire repeatedly (which does nothing, since it already
+      //    exists),
+      //  - and moving any old wire selection to wnew instead
+      // But if wnew did not exist previously, then the code here is :
+      //  - removing all the wires,
+      //  - adding the new wire repeatedly (only the first addition matters)
+      //  - and moving any old wire selection to wnew instead
+      mergeSet.remove(wnew); // don't bother recording wnew --> wnew, I guess? FIXME Does it matter?
+      for (Wire wold : mergeSet)
+        repl.appendReplacement(wold, wnew);
+      // Note: repl is using append-style semantics, but because none of the
+      // wires are .equal(), this is equivalent to simultaneous replacements.
     }
     mutator.applyReplacements(circuit, repl);
   }
 
+  // Helper: Merges a set of parallel, overlapping wires into a chain of wires
+  // broken only at midpoints where some other component is touching.
   private static void doMergeSet(Circuit circuit, ArrayList<Wire> mergeSet,
       ReplacementMap replacements, Set<Location> allLocs) {
+    // FIXME: if mergeSet kept track of largest and smallest point, would not
+    // need to sort here. Also, code here uses TreeSort, other code uses
+    // ArrayList for sorting... not sure why.
     TreeSet<Location> ends = new TreeSet<>();
     for (Wire w : mergeSet) {
       ends.add(w.getEnd0());
@@ -140,13 +182,21 @@ class RepairWireHelper {
     }
     Wire whole = Wire.create(ends.first(), ends.last());
 
+    // whole is a (possibly existing) wire spanning an entire set of overlapping
+    // parallel wires. But it may pass through locations where there are other
+    // components connecting too, in which case whole needs to be split at those
+    // midpoints.
+
     TreeSet<Location> mids = new TreeSet<>();
     mids.add(whole.getEnd0());
     mids.add(whole.getEnd1());
     for (Location loc : whole) {
+      // whole passes through loc, check if we need to split here
       if (allLocs.contains(loc)) {
-        for (Component comp : circuit.getComponentsByPortLocation(loc)) {
+        for (Component comp : circuit.wires.points.getComponents(loc)) {
+          // whole touches loc, and comp has an end there too
           if (!mergeSet.contains(comp)) {
+            // comp isn't one of the merging wires, so yes, need to split here
             mids.add(loc);
             break;
           }
@@ -154,6 +204,7 @@ class RepairWireHelper {
       }
     }
 
+    // Create a set of wires spanning whole, split at each identified midpoint.
     ArrayList<Wire> mergeResult = new ArrayList<>();
     if (mids.size() == 2) {
       mergeResult.add(whole);
@@ -166,21 +217,48 @@ class RepairWireHelper {
       }
     }
 
+    // For each of the wires we are trying to merge...
     for (Wire w : mergeSet) {
+      // Figure out which of the new wires it gets replaced by...
       HashSet<Wire> wRepl = new HashSet<>();
       for (Wire w2 : mergeResult) {
         if (w2.overlaps(w, false)) {
           wRepl.add(w2);
         }
       }
+      // Replace one old wire with some subset of the new (possibly existing) wires
       replacements.appendReplacements(w, wRepl);
+      // Note: repl is using append-style semantics, but I don't think it
+      // matters here... none of the old wires are .equals() to each other,
+      // because they all came from the circuit, which does not have duplicates.
+      // And the new wires may or may not be equal to some old wires, but if
+      // they are, we keep the w --> w replacements, so I think the
+      // append-semantics is harmles. Maybe.
     }
   }
 
+  // Within current circuit, find sets of parallel, overlapping wires, and merge
+  // them into a single equivalent wire. The circuit is updated with the
+  // changes. For example:
+  //
+  //   o--------w1--------o
+  //               o------w2------o
+  //             o--w3--o
+  //         o------------w4------------o
+  //
+  // gets merged into:
+  //
+  //   o--------------wnew--------------o
+  //
+  // Note: there won't be points where exactly 2 wires meet (they would have
+  // been merged already by doMerges(), but I think there could be points where
+  // 3 or more wires meet.
   private static void doOverlaps(Circuit circuit, CircuitMutator mutator) {
+    // For each location, determine all wires ending at or passing through that location.
     HashMap<Location, ArrayList<Wire>> wirePoints = new HashMap<>();
     for (Wire w : circuit.getWires()) {
       for (Location loc : w) {
+        // w ends at or passes through loc
         ArrayList<Wire> locWires = wirePoints.get(loc);
         if (locWires == null) {
           locWires = new ArrayList<>(3);
@@ -190,14 +268,17 @@ class RepairWireHelper {
       }
     }
 
+    // Find sets where 2 or more wires pass through or end at some common location...
     MergeSets mergeSets = new MergeSets();
     for (ArrayList<Wire> locWires : wirePoints.values()) {
       if (locWires.size() > 1) {
+        // for each pair w0, w1 in such a set...
         for (int i = 0, n = locWires.size(); i < n; i++) {
           Wire w0 = locWires.get(i);
           for (int j = i + 1; j < n; j++) {
             Wire w1 = locWires.get(j);
-            if (w0.overlaps(w1, false))
+            // ... if they are parallel and overlapping, mark as part of the same chain
+            if (w0.overlaps(w1, false /*don't include ends*/)) // FIXME: why exclude ends?
               mergeSets.merge(w0, w1);
           }
         }
@@ -207,21 +288,42 @@ class RepairWireHelper {
     ReplacementMap replacements = new ReplacementMap();
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
     for (ArrayList<Wire> mergeSet : mergeSets.getMergeSets()) {
-      if (mergeSet.size() > 1)
-        doMergeSet(circuit, mergeSet, replacements, allLocs);
+      doMergeSet(circuit, mergeSet, replacements, allLocs);
     }
     mutator.applyReplacements(circuit, replacements);
   }
 
+  // Within current, find and split wires that pass through locations where
+  // other components have ends. The circuit is updated with the changes. For
+  // example:
+  //
+  //              _|_  Buffer           _|___|_  Multiplexer
+  //              \ /                   \_____/
+  //   o----?------?----------w------------?-----------o
+  //        |
+  //        otherwire
+  //
+  // the long wire gets split into for wires:
+  //
+  //              _|_  Buffer           _|___|_  Multiplexer
+  //              \ /                   \_____/
+  //   o-w1-o--w2--o----------w3-----------o----w4-----o
+  //        |
+  //        w2
+  //
   private static void doSplits(Circuit circuit, CircuitMutator mutator) {
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
     ReplacementMap repl = new ReplacementMap();
+    // For each wire
     for (Wire w : circuit.getWires()) {
       Location w0 = w.getEnd0();
       Location w1 = w.getEnd1();
+      // Find all split points
       ArrayList<Location> splits = null;
       for (Location loc : allLocs) {
         if (w.nominallyContains(loc) && !loc.equals(w0) && !loc.equals(w1)) {
+          // something is at loc, and loc is in the middle of wire w,
+          // so w needs to split
           if (splits == null)
             splits = new ArrayList<>();
           splits.add(loc);

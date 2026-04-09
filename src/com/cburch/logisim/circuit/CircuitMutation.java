@@ -226,4 +226,13 @@ public final class CircuitMutation extends CircuitTransaction {
       name = S.getter("unknownChangeAction");
     return new CircuitAction(name, this);
   }
+
+  @Override
+  public void dump() {
+    super.dump();
+    int n = changes.size();
+    System.out.println(" xn makes " + n + " changes");
+    for (int i = 0; i < n; i++)
+      System.out.println("   change["+i+"]: " + changes.get(i));
+  }
 }

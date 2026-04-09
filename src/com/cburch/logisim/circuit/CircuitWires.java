@@ -540,7 +540,7 @@ public class CircuitWires {
   }
 
   // Elements of the circuit, organized by type.
-  private HashSet<Wire> wires = new HashSet<>(); // Components of type Wire
+  private HashSet<Wire> wires = new HashSet<>(); // Components of type Wire, de-deduplicated using Wire.equals()
   private HashSet<Splitter> splitters = new HashSet<>(); // Components of type Splitter
   private HashSet<Component> tunnels = new HashSet<>(); // Components having Tunnel factory
   private HashSet<Component> pulls = new HashSet<>(); // Components having PullResistor factory

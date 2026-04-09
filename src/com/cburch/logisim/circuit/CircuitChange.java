@@ -326,7 +326,7 @@ final class CircuitChange {
     case ADD_ALL: return "ADD_ALL " + comps.size() + " comps";
     case REMOVE: return "REMOVE " + comp;
     case REMOVE_ALL: return "REMOVE_ALL " + comps.size() + " comps";
-    case REPLACE: return "REPLACE ...";
+    case REPLACE: return "REPLACE " + newValue;
     case SET: return "SET " + attr + " = " + newValue +" from " + oldValue;
     case SET_FOR_CIRCUIT: return "SET_FOR_CIRCUIT " + attr + " = " + newValue +" from " + oldValue;
     case SET_FOR_VHDL: return "SET_FOR_VHDL " + attr + " = " + newValue +" from " + oldValue;

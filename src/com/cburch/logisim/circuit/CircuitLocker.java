@@ -111,8 +111,7 @@ public class CircuitLocker {
 
   void checkForWritePermission(String operationName) {
     if (mutatingThread != Thread.currentThread()) {
-      throw new LockException(operationName + " outside transaction",
-          circuit, serialNumber, mutatingThread, mutatingMutator);
+      throw new LockException(operationName + " outside transaction", this);
     }
   }
 
@@ -142,16 +141,12 @@ public class CircuitLocker {
     private int serialNumber;
     private transient Thread mutatingThread;
     private CircuitMutatorImpl mutatingMutator;
-    public LockException(String msg,
-        Circuit circ,
-        int serial,
-        Thread thread,
-        CircuitMutatorImpl mutator) {
+    public LockException(String msg, CircuitLocker locker) {
       super(msg);
-      circuit = circ;
-      serialNumber = serial;
-      mutatingThread = thread;
-      mutatingMutator = mutator;
+      circuit = locker.circuit;
+      serialNumber = locker.serialNumber;
+      mutatingThread = locker.mutatingThread;
+      mutatingMutator = locker.mutatingMutator;
     }
     public Circuit getCircuit() { return circuit; }
     public int getSerialNumber() { return serialNumber; }

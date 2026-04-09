@@ -90,7 +90,7 @@ import com.cburch.logisim.comp.Component;
 // that are .equals() might all be added, etc. So a wire might be in the
 // ReplacementMap, marked for addition, yet already exist in the circuit. We
 // allow all of these, as they should be harmless: CircuitWires de-duplicates
-// wires ultimately (I hope).
+// wires ultimately.
 //
 // For case 6, we maintain only a forward-transaction mapping describing how
 // wire selection state changes, since the selection code keeps a
@@ -578,7 +578,7 @@ public class ReplacementMap {
   public void print(PrintStream out) {
     out.printf("  removing %d wires and %d non-wires, adding %d wires and %d non-wires\n",
         removedWires.size(), removed.size(), addedWires.size(), added.size());
-    System.out.println(removed.isEmpty() && removedWires.isEmpty()
+    out.println(removed.isEmpty() && removedWires.isEmpty()
         ? "  removals: none" : "  removals:");
     for (Map.Entry<Component, Component> e : removed.entrySet()) {
       out.println("    " + e.getKey());
@@ -591,7 +591,7 @@ public class ReplacementMap {
       if (sel != null)
         out.println("      ... replaced in selection by " + sel.size() + " wires");
     }
-    System.out.println(added.isEmpty() && addedWires.isEmpty()
+    out.println(added.isEmpty() && addedWires.isEmpty()
         ? "  additions: none" : "  additions:");
     for (Map.Entry<Component, Component> e : added.entrySet()) {
       out.println("    " + e.getKey());

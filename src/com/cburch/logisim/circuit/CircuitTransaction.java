@@ -76,6 +76,10 @@ public abstract class CircuitTransaction {
     activeMutatorForThisThread = new ThreadLocal<>();
 
   public final CircuitTransactionResult execute() {
+
+    System.out.println("executing: " + this);
+    dump();
+
     // xn phase 0 - setup and sanity check for nested transaction
     CircuitTransactionResult result;
     CircuitMutatorImpl mutator = activeMutatorForThisThread.get();
@@ -109,15 +113,8 @@ public abstract class CircuitTransaction {
       for (Circuit circuit : modified) {
         CircuitMutatorImpl circMutator = circuit.getLocker().getMutator();
         if (circMutator != mutator) {
-          System.err.println("*** Circuit Lock Bug Diagnostics ***");
-          System.err.println("This thread: " + Thread.currentThread());
-          System.err.println("  executing transaction: " + this);
-          System.err.println("  with mutator: " + mutator);
-          System.err.println("  accessing circuits: " + this.getAccessedCircuits());
-          System.err.println("attempted to illegally modify");
-          System.err.println("  non-locked circuit: " + circuit.getName());
-          System.err.println("  with mutator: " + circMutator);
-          Thread.dumpStack();
+          diagnostics(new CircuitLocker.LockException("illegal modification", circuit.getLocker()),
+              locks, mutator);
         }
       }
 
@@ -137,11 +134,13 @@ public abstract class CircuitTransaction {
       // xn phase 5
       // Now go through each affected circuit and repair its wires
       for (Circuit circuit : modified) {
-        RepairWireHelper.repairWires(circuit, mutator);
+        // RepairWireHelper.repairWires(circuit, mutator);
       }
 
       // xn phase 6
       result = new CircuitTransactionResult(mutator);
+
+      System.out.println("xn result = " + result);
 
       // xn phase 7
       for (Circuit circuit : result.getModifiedCircuits()) {
@@ -189,4 +188,7 @@ public abstract class CircuitTransaction {
 
   protected abstract void run(CircuitMutator mutator);
 
+  public void dump() {
+    System.out.println(" xn accesses circuits: " + getAccessedCircuits());
+  }
 }
