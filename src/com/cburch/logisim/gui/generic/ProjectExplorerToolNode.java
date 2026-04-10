@@ -55,7 +55,8 @@ public class ProjectExplorerToolNode extends ProjectExplorerModel.Node<Tool>
   public ProjectExplorerToolNode(ProjectExplorerModel model, Tool tool, ProjectExplorerModel.Node<?> parent) {
     super(model, tool, parent);
     if (tool instanceof AddTool) {
-      Object factory = ((AddTool) tool).getFactory();
+      // force load = false, to avoid triggering source load for all tools on startup
+      Object factory = ((AddTool) tool).getFactory(false);
       if (factory instanceof SubcircuitFactory) {
         circuit = ((SubcircuitFactory) factory).getSubcircuit();
         circuit.addCircuitWeakListener(null, this);
