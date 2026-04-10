@@ -35,7 +35,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -46,42 +45,65 @@ import com.cburch.logisim.data.Location;
 
 class RepairWireHelper {
 
-  private static class MergeSets {
-    private final HashMap<Wire, ArrayList<Wire>> map = new HashMap<>();
+  // A clump is a set of two or more parallel and internally-connected wires,
+  // e.g. connected end-to-end in a chain (which might double back on itself),
+  // and/or overlapping (partially or fully).
+  private static class Clump {
+    final HashSet<Wire> wires = new HashSet<>();
+    Location e0, e1;
 
-    Collection<ArrayList<Wire>> getMergeSets() {
-      IdentityHashMap<ArrayList<Wire>, Boolean> lists;
-      lists = new IdentityHashMap<>();
-      for (ArrayList<Wire> list : map.values()) {
-        lists.put(list, Boolean.TRUE);
-      }
-      return lists.keySet();
+    Clump(Wire w0, Wire w1) {
+      e0 = w0.getEnd0();
+      e1 = w1.getEnd1();
+      add(w0);
+      add(w1);
     }
 
+    int size() {
+      return wires.size();
+    }
+
+    void add(Wire w) {
+      wires.add(w);
+      if (w.e0.compareTo(e0) < 0) e0 = w.e0;
+      if (w.e1.compareTo(e1) > 0) e1 = w.e1;
+    }
+
+    void addAll(Clump other) {
+      wires.addAll(other.wires);
+      if (other.e0.compareTo(e0) < 0) e0 = other.e0;
+      if (other.e1.compareTo(e1) < 0) e1 = other.e1;
+    }
+  }
+
+  private static class Clumpifier {
+    final ArrayList<Clump> clumps = new ArrayList<>();
+    final HashMap<Wire, Clump> map = new HashMap<>();
+
     void merge(Wire a, Wire b) {
-      ArrayList<Wire> set0 = map.get(a);
-      ArrayList<Wire> set1 = map.get(b);
-      if (set0 == null && set1 == null) {
-        set0 = new ArrayList<>(2);
-        set0.add(a);
-        set0.add(b);
-        map.put(a, set0);
-        map.put(b, set0);
-      } else if (set0 == null && set1 != null) {
-        set1.add(a);
-        map.put(a, set1);
-      } else if (set0 != null && set1 == null) {
-        set0.add(b);
-        map.put(b, set0);
-      } else if (set0 != set1) { // neither is null, and they are different
-        if (set0.size() > set1.size()) { // ensure set1 is the larger
-          ArrayList<Wire> temp = set0;
-          set0 = set1;
-          set1 = temp;
-        }
-        set1.addAll(set0);
-        for (Wire w : set0) {
-          map.put(w, set1);
+      Clump cA = map.get(a);
+      Clump cB = map.get(b);
+      if (cA == null && cB == null) {
+        cA = cB = new Clump(a, b);
+        map.put(a, cA);
+        map.put(b, cB);
+      } else if (cA == null && cB != null) {
+        cB.add(a);
+        map.put(a, cB);
+      } else if (cA != null && cB == null) {
+        cA.add(b);
+        map.put(b, cA);
+      } else if (cA != cB) { // neither is null, and they are different
+        if (cA.size() < cB.size()) {
+          // merge A (smaller) into B (larger)
+          cB.addAll(cA);
+          for (Wire w : cA.wires)
+            map.put(w, cB);
+        } else {
+          // merge B (smaller) into A (larger)
+          cA.addAll(cB);
+          for (Wire w : cB.wires)
+            map.put(w, cA);
         }
       }
     }
@@ -113,7 +135,7 @@ class RepairWireHelper {
   // Also note: A chain may double back on itself. It is still merged, using the
   // two most distant points for the ends of the new wire.
   private static void doMerges(Circuit circuit, CircuitMutator mutator) {
-    MergeSets sets = new MergeSets();
+    Clumpifier repair = new Clumpifier();
     // Within current circuit, find all points where:
     //   - some wire ends
     //   - exactly two components have ends there
@@ -129,69 +151,48 @@ class RepairWireHelper {
         if (at0 instanceof Wire && at1 instanceof Wire) {
           Wire w0 = (Wire) at0;
           Wire w1 = (Wire) at1;
-          if (w0.isParallel(w1)) {
-            sets.merge(w0, w1);
-          }
+          if (w0.isParallel(w1))
+            repair.merge(w0, w1);
         }
       }
     }
 
     // For each chain, replace all the wires in the chain with one new wire.
-    for (ArrayList<Wire> mergeSet : sets.getMergeSets()) {
-      // FIXME: if mergeSet kept track of largest and smallest point, would not
-      // need to sort here. Also, code here uses ArrayList, other code uses
-      // TreeSet for sorting... not sure why.
-      ArrayList<Location> locs = new ArrayList<>(2 * mergeSet.size());
-      for (Wire w : mergeSet) {
-        locs.add(w.getEnd0());
-        locs.add(w.getEnd1());
-      }
-      Collections.sort(locs);
-      Location e0 = locs.get(0);
-      Location e1 = locs.get(locs.size() - 1);
-      Wire wnew = Wire.create(e0, e1);
-
-      // N>=1 wires are removed, replaced with a single (possibly existing) wire.
-      // Note: none of these wires are .equal() to each other (because they came
-      // from circuit, which doesn't have duplicates), and none are .equal() to
-      // other wires in repl, which are either old (from circuit) or new (and
-      // necessarily different, coming from a different mergeSet).
+    for (Clump clump : repair.clumps) {
+      Wire wnew = Wire.create(clump.e0, clump.e1);
+      // N>=1 wires are removed, replaced with a single (possibly existing)
+      // wire. Note: none of these wires are .equal() to each other (because
+      // they came from circuit, which doesn't have duplicates), and none are
+      // .equal() to other wires in other clumps, which are either old (from
+      // circuit) or new (and necessarily different, coming from a different
+      // clump).
       // If wnew existed previously, or even if not, the code here is:
       //  - removing all the wires (possibly including wnew)
       //  - adding the new wire repeatedly (only the first addition matters)
       //  - and moving any old wire selection to wnew instead
-      mutator.repairWires(circuit, mergeSet, Collections.singletonList(wnew));
+      mutator.repairWires(circuit, clump.wires, Collections.singletonList(wnew));
     }
   }
 
   // Helper: Merges a set of parallel, overlapping wires into a chain of wires
   // broken only at midpoints where some other component is touching.
-  private static void doMergeAndSplit(Circuit circuit, ArrayList<Wire> mergeSet,
+  private static void doMergeAndSplit(Circuit circuit, Clump clump,
       CircuitMutator mutator, Set<Location> allLocs) {
-    // FIXME: if mergeSet kept track of largest and smallest point, would not
-    // need to sort here. Also, code here uses TreeSort, other code uses
-    // ArrayList for sorting... not sure why.
-    TreeSet<Location> ends = new TreeSet<>();
-    for (Wire w : mergeSet) {
-      ends.add(w.getEnd0());
-      ends.add(w.getEnd1());
-    }
-    Wire whole = Wire.create(ends.first(), ends.last());
 
-    // whole is a (possibly existing) wire spanning an entire set of overlapping
-    // parallel wires. But it may pass through locations where there are other
-    // components connecting too, in which case whole needs to be split at those
-    // midpoints.
+    // make a (possibly existing) wire spanning the entire clump of wires.
+    Wire whole = Wire.create(clump.e0, clump.e1);
 
+    // But whole may pass through locations where there are other components
+    // connecting too, in which case it needs to be split at those midpoints.
     TreeSet<Location> mids = new TreeSet<>();
-    mids.add(whole.getEnd0());
-    mids.add(whole.getEnd1());
+    mids.add(whole.e0);
+    mids.add(whole.e1);
     for (Location loc : whole) {
       // whole passes through loc, check if we need to split here
       if (allLocs.contains(loc)) {
         for (Component comp : circuit.wires.points.getComponents(loc)) {
           // whole touches loc, and comp has an end there too
-          if (!mergeSet.contains(comp)) {
+          if (!(comp instanceof Wire) || !clump.wires.contains((Wire)comp)) {
             // comp isn't one of the merging wires, so yes, need to split here
             mids.add(loc);
             break;
@@ -201,27 +202,25 @@ class RepairWireHelper {
     }
 
     // Create a set of wires spanning whole, split at each identified midpoint.
-    ArrayList<Wire> mergeResult = new ArrayList<>();
+    ArrayList<Wire> pieces = new ArrayList<>();
     if (mids.size() == 2) {
-      mergeResult.add(whole);
+      pieces.add(whole);
     } else {
       Location e0 = null;
       for (Location e1 : mids) {
         if (e0 != null)
-          mergeResult.add(Wire.create(e0, e1));
+          pieces.add(Wire.create(e0, e1));
         e0 = e1;
       }
     }
 
     // For each of the wires we are trying to merge...
-    for (Wire w : mergeSet) {
+    for (Wire w : clump.wires) {
       // Figure out which of the new wires it gets replaced by...
       HashSet<Wire> wRepl = new HashSet<>();
-      for (Wire w2 : mergeResult) {
-        if (w2.overlaps(w, false)) {
+      for (Wire w2 : pieces)
+        if (w2.overlaps(w, false))
           wRepl.add(w2);
-        }
-      }
       // Replace one old wire with some subset of the new (possibly existing) wires
       // Note: we don't check for it, but this could be doing a 1-to-1
       // replacement of a wire with itself.
@@ -267,7 +266,7 @@ class RepairWireHelper {
     }
 
     // Find sets where 2 or more wires pass through or end at some common location...
-    MergeSets mergeSets = new MergeSets();
+    Clumpifier repair = new Clumpifier();
     for (ArrayList<Wire> locWires : wirePoints.values()) {
       if (locWires.size() > 1) {
         // for each pair w0, w1 in such a set...
@@ -277,16 +276,15 @@ class RepairWireHelper {
             Wire w1 = locWires.get(j);
             // ... if they are parallel and overlapping, mark as part of the same chain
             if (w0.overlaps(w1, false /*don't include ends*/)) // FIXME: why exclude ends?
-              mergeSets.merge(w0, w1);
+              repair.merge(w0, w1);
           }
         }
       }
     }
 
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
-    for (ArrayList<Wire> mergeSet : mergeSets.getMergeSets()) {
-      doMergeAndSplit(circuit, mergeSet, mutator, allLocs);
-    }
+    for (Clump clump : repair.clumps)
+      doMergeAndSplit(circuit, clump, mutator, allLocs);
   }
 
   // Within current, find and split wires that pass through locations where
@@ -312,12 +310,10 @@ class RepairWireHelper {
     HashMap<Wire, HashSet<Wire>> plan = new HashMap<>();
     // For each wire
     for (Wire w : circuit.getWires()) {
-      Location w0 = w.getEnd0();
-      Location w1 = w.getEnd1();
       // Find all split points
       ArrayList<Location> splits = null;
       for (Location loc : allLocs) {
-        if (w.nominallyContains(loc) && !loc.equals(w0) && !loc.equals(w1)) {
+        if (w.nominallyContains(loc) && !loc.equals(w.e0) && !loc.equals(w.e1)) {
           // something is at loc, and loc is in the middle of wire w,
           // so w needs to split
           if (splits == null)
@@ -326,9 +322,9 @@ class RepairWireHelper {
         }
       }
       if (splits != null) {
-        splits.add(w1);
+        splits.add(w.e1);
         Collections.sort(splits);
-        Location e0 = w0;
+        Location e0 = w.e0;
         HashSet<Wire> subs = new HashSet<>();
         for (Location e1 : splits) {
           subs.add(Wire.create(e0, e1));

@@ -517,9 +517,10 @@ public class Circuit implements AttributeDefaultProvider {
     return logiFile.getName();
   }
 
-  public Collection<? extends Component> getSplitCauses(Location loc) {
-    return wires.points.getSplitCauses(loc);
-  }
+  // Never used...
+  // public Collection<? extends Component> getSplitCauses(Location loc) {
+  //   return wires.points.getSplitCauses(loc);
+  // }
 
   public Set<Location> getAllLocations() {
     return wires.points.getAllLocations();

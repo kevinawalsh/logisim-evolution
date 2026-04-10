@@ -115,7 +115,7 @@ public final class Wire
 
   private static final Cache<Wire> cache = new Cache<>();
 
-  final Location e0, e1;
+  public final Location e0, e1;
   final boolean is_x_equal;
 
   private Wire(boolean is_x_equal, Location e0, Location e1) {

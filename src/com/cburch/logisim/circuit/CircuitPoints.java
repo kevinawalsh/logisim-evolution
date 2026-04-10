@@ -215,9 +215,10 @@ class CircuitPoints {
     return find(loc, false);
   }
 
-  Collection<? extends Component> getSplitCauses(Location loc) {
-    return getComponents(loc);
-  }
+  // Never used...
+  // Collection<? extends Component> getSplitCauses(Location loc) {
+  //   return getComponents(loc);
+  // }
 
   Set<Location> getAllLocations() {
     return map.keySet();
