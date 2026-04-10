@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.tools.move;
 
-import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
 class ConnectorThread extends UniquelyNamedThread {
@@ -101,8 +100,7 @@ class ConnectorThread extends UniquelyNamedThread {
       } catch (Exception t) {
         t.printStackTrace();
         if (wasOverride) {
-          MoveResult result = new MoveResult(req,
-              new ReplacementMap(),
+          MoveResult result = new MoveResult(req, new ConnectionPlan(),
               req.getMoveGesture().getConnections(), 0);
           req.getMoveGesture().notifyResult(req, result);
         }

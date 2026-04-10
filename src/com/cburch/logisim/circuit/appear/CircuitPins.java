@@ -37,7 +37,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.cburch.logisim.circuit.ReplacementMap;
+import com.cburch.logisim.circuit.ReplacementLog;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentEvent;
 import com.cburch.logisim.comp.ComponentListener;
@@ -86,7 +86,7 @@ public class CircuitPins {
     return new ArrayList<Instance>(pins);
   }
 
-  public void transactionCompleted(ReplacementMap repl) {
+  public void transactionCompleted(ReplacementLog repl) {
     // determine the changes
     Set<Instance> adds = new HashSet<Instance>();
     Set<Instance> removes = new HashSet<Instance>();
@@ -111,7 +111,7 @@ public class CircuitPins {
           in.getAttributeSet().removeAttributeWeakListener(null, myComponentListener);
           Component r = repl.getNonWireReplacementFor(comp);
           if (r == null) {
-            removes.add(in);
+            semoves.add(in);
           } else {
             Instance rin = Instance.getInstanceFor(r);
             adds.remove(rin);

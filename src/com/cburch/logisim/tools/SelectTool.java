@@ -49,7 +49,6 @@ import javax.swing.Icon;
 
 import com.cburch.logisim.LogisimVersion;
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -69,6 +68,7 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.key.KeyConfigurationEvent;
 import com.cburch.logisim.tools.key.KeyConfigurationResult;
 import com.cburch.logisim.tools.key.KeyConfigurator;
+import com.cburch.logisim.tools.move.ConnectionPlan;
 import com.cburch.logisim.tools.move.MoveGesture;
 import com.cburch.logisim.tools.move.MoveRequestListener;
 import com.cburch.logisim.tools.move.MoveResult;
@@ -344,7 +344,7 @@ public final class SelectTool extends Tool {
         MoveResult result = gesture.findResult(dx, dy);
         if (result != null) {
           HashSet<Component> ret = new HashSet<Component>(sel);
-          ret.addAll(result.getReplacementMap().getAllRemovals());
+          ret.addAll(result.getConnectionPlan().wiresToRemove);
           return ret;
         }
       }
@@ -606,7 +606,7 @@ public final class SelectTool extends Tool {
         } else {
           boolean connect = shouldConnect(canvas, e.getModifiersEx());
           drawConnections = false;
-          ReplacementMap repl;
+          ConnectionPlan plan;
           if (connect) {
             MoveGesture gesture = moveGesture;
             if (gesture == null) {
@@ -615,16 +615,15 @@ public final class SelectTool extends Tool {
                   canvas.getCircuit(),
                   canvas.getSelection().getAnchoredComponents());
             }
-            canvas.setErrorMessage(new ComputingMessage(dx, dy),
-                COLOR_COMPUTING);
+            canvas.setErrorMessage(new ComputingMessage(dx, dy), COLOR_COMPUTING);
             MoveResult result = gesture.forceRequest(dx, dy);
             clearCanvasMessage(canvas, dx, dy);
-            repl = result.getReplacementMap();
+            plan = result.getConnectionPlan();
           } else {
-            repl = null;
+            plan = null;
           }
           Selection sel = proj.getSelection();
-          proj.doAction(SelectionActions.translate(sel, dx, dy, repl));
+          proj.doAction(SelectionActions.translate(sel, dx, dy, plan));
         }
       }
       moveGesture = null;

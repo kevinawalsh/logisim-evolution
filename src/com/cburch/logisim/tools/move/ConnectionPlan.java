@@ -28,42 +28,17 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.logisim.circuit;
+package com.cburch.logisim.tools.move;
 
-import java.util.Collection;
+import java.util.ArrayList;
 
-// CircuitTransactionResult is a read-only summary of the results of a completed CircuitTransaction.
-// It is implemented as a thing wrapper around the CircuitMutator/CircuitMutatorImpl which was used
-// to execute the transaction, since that object has all the relevant info.
-public class CircuitTransactionResult {
-  private final CircuitMutatorImpl mutator;
+import com.cburch.logisim.circuit.Wire;
 
-  CircuitTransactionResult(CircuitMutatorImpl mutator) {
-    this.mutator = mutator;
-  }
+public class ConnectionPlan {
 
-  public Collection<Circuit> getModifiedCircuits() {
-    return mutator.getModifiedCircuits();
-  }
+  final ArrayList<Wire> wiresToRemove = new ArrayList<>();
+  final ArrayList<Wire> wiresToAdd = new ArrayList<>();
 
-  public ReplacementLog getReplacementLog(Circuit circuit) {
-    ReplacementLog ret = mutator.getReplacementLog(circuit);
-    return ret == null ? new ReplacementLog() : ret;
-  }
+  public ConnectionPlan() { }
 
-  public CircuitTransaction getReverseTransaction() {
-    return mutator.getReverseTransaction();
-  }
-
-  public String toString() {
-    String s = "CircuitTransactionResult affecting...";
-    for (Circuit c : getModifiedCircuits()) {
-      s += "\n    - circuit " + c + " with replacements...";
-      s += "\n" + getReplacementLog(c);
-      s += "\n      and changes...";
-      for (CircuitChange cc : mutator.getChangeLogFor(c))
-        s += "\n" + cc;
-    }
-    return s;
-  }
 }

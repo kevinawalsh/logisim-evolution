@@ -34,6 +34,8 @@ import static com.cburch.logisim.circuit.Strings.S;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.cburch.logisim.comp.Component;
@@ -43,11 +45,11 @@ import com.cburch.logisim.util.StringGetter;
 import com.cburch.logisim.std.hdl.VhdlContent;
 
 // This is a general purpose CircuitMutation that is used by a variety of
-// clients to modify circuits. Clients include: wiring tool, edit tool,
+// clients to modify circuits or vhdl. Clients include: wiring tool, edit tool,
 // selection tools, text tool, the "analysis" circuit builder, and many others.
 //
 // Typical client usage:
-//   CircuitMutation xn = new CircuitMutation(someCircuit);
+//   CircuitMutation xn = new CircuitMutation.forCircuit(someCircuit);
 //   xn.add(componentA);
 //   xn.remove(componentB);
 //   xn.remove(componentC);
@@ -55,184 +57,155 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 //   xn.set(componentA, StdAttr.LABEL, "Hello World");
 //   xn.execute()
 //
-// A list of changes is maintained. Each helper method like xn.add(),
-// xn.remove(), and xn.set(), does not modify the circuit but insteaad appends a
-// new CircuitChange to the list.
+// Note: Class is misnamed...
+//   CircuitMutation - used for any set of changes to circuit(s) and vhdl(s)
+//   CircuitMutation.forCircuit - convenience subclass for a single circuit
+//   CircuitMutation.forVhdl - convenience subclass for a single vhdl
+//
+// A list of *planned* changes is maintained. Each helper method like xn.add(),
+// xn.remove(), and xn.set(), does not modify the circuit but instead appends a
+// new CircuitChange to the plan.
 //
 // During xn.execute(), implemented by CircuitTransaction, the list is used for:
 //  - getAccessedCircuits(): to determine the full set of affected circuits
-//  - run(): to carry out each change, in sequential order
+//  - run(): to carry out each change in the plan, in sequential order
 //
 // Notes:
+//  - The plan here is not the full set of changes performed during the
+//    transaction... a transaction also does wire repairs, and might do some
+//    other cleanup for appearance, etc. The plan here is not directly used for
+//    undo.
 //
-//  - We keep a CircuitChange list. But so does CircuitMutatorImpl. As we
-//    execute each change in our list, a corresponding entry is made in the
-//    mutator's change list. This seems strangely redundant. On the other hand
-//    (a) the mutator's change list captures old attribute values when changing
-//    component or circuit attributes so it can operate in reverse, whereas we
-//    don't capture the old attribute values and only operate as a forward
-//    transaction, and (b) is used by other CircuitTransaction subclasses that
-//    don't necessarily use CircuitChange like we do here.
-//
-//  - run() seems to be able to handle CircuitChange objects that modify
-//    diffferent circuits. But all helper except .change() create CircuitChange
-//    objects that modify the same primary circuit. And .change() is called only
-//    when creating a reverse transaction, using its own CircuitChange list
-//    which should closely mirror our own CircuitChange list. However, it could
-//    be that this multi-circuit capability is used for the reverse transaction
-//    for other CircuitTransaction subclassess, if those touch multiple
-//    circuits.
-//
-//  - Many CircuitChange objects are meant to add, remove, or replace components
-//    and wires, and these effects are not done immediately but instead
-//    accumulated into a ReplacementMap, before applying them to a circuit in a
-//    batch. Why? This batching is interrupted, i.e. flushed, via
-//    mutator.applyReplacements(), whenever we change the target circuit (but
-//    see multi-circuit note above), or whenever one of the CircuitChanges is a
-//    SET (to change a component attribute) or SET_FOR_CIRCUIT (to change a
-//    circuit attribute) type. And, when flushed to the underlying mutator, our
-//    replacement map containing the next batch of changes, is both applied to
-//    the circuit, then also composed with another per-circuit replacement
-//    within the underlying mutator. The reason for our batching, as a second
-//    layer, isn't clear. Was it some kind of optimization?
-//
-public final class CircuitMutation extends CircuitTransaction {
-  private Circuit primaryCircuit;
-  private VhdlContent primaryVhdl;
-  private ArrayList<CircuitChange> changes = new ArrayList<>();
+//  - CircuitMutatorImpl, used in CircuitTransaction.execute(), keeps a change log, a
+//    second list of CircuitChange objects, built as each change is applied.
+//    That list is comprehensive, and includes changes made via wire repairs,
+//    and changes made via mutator methods like like mutator.add(circ, comp).
+//    That list is authoritative, used for undo, and is built even for other
+//    subclasses of CircuitTransaction besides this one.
 
-  CircuitMutation() { }
+public class CircuitMutation extends CircuitTransaction {
+  protected ArrayList<CircuitChange> plan = new ArrayList<>();
 
-  public CircuitMutation(Circuit circuit) {
-    primaryCircuit = circuit;
+  public void addToPlan(CircuitChange change) {
+    if (change != null)
+      plan.add(change);
   }
 
-  public CircuitMutation(VhdlContent vhdl) {
-    primaryVhdl = vhdl;
-  }
-
-  public void add(Component comp) {
-    changes.add(CircuitChange.add(primaryCircuit, comp));
-  }
-
-  public void addAll(Collection<? extends Component> comps) {
-    changes.add(CircuitChange.addAll(primaryCircuit, new ArrayList<Component>(comps)));
-  }
-
-  void change(CircuitChange change) {
-    changes.add(change);
+  public boolean isEmpty() {
+    return plan.isEmpty();
   }
 
   @Override
   protected Set<Circuit> getAccessedCircuits() {
     HashSet<Circuit> access = new HashSet<>();
     HashSet<Object> supercircsDone = new HashSet<>();
-    // HashSet<VhdlEntity> vhdlDone = new HashSet<>();
-    // HashSet<ComponentFactory> siblingsDone = new HashSet<>();
-    for (CircuitChange change : changes) {
-      Circuit circ = change.getCircuit();
-      VhdlContent vhdl = change.getVhdl();
+    // HashSet<VhdlEntity> vhdlDone = new HashSet<>(); // no vhdl locks yet
+    for (CircuitChange change : plan) {
+      Circuit circ = change.circuit;
+      VhdlContent vhdl = change.vhdl;
       // note: if circ is null, change concerns vhdl, which doesn't have a lock yet.
       if (circ != null)
         access.add(circ);
-
       if (vhdl != null && change.concernsSupercircuit() && supercircsDone.add(vhdl))
           access.addAll(vhdl.getEntityFactory().getCircuitsUsingThis());
       if (circ != null && change.concernsSupercircuit() && supercircsDone.add(circ))
         access.addAll(circ.getCircuitsUsingThis());
-
-      // if (change.concernsSiblingComponents()) {
-      //   System.out.println("processing change that concerns siblings.. nvm");
-      //   ComponentFactory factory = change.getComponent().getFactory();
-      //   boolean isFirstForSibling = siblingsDone.add(factory);
-      //   if (isFirstForSibling) {
-      //     if (factory instanceof SubcircuitFactory) {
-      //       Circuit sibling = ((SubcircuitFactory)factory).getSubcircuit();
-      //       boolean isFirstForCirc = supercircsDone.add(sibling);
-      //       if (isFirstForCirc) {
-      //         access.addAll(sibling.getCircuitsUsingThis());
-      //       }
-      //     } else if (factory instanceof VhdlEntity) {
-      //       VhdlEntity sibling = (VhdlEntity)factory;
-      //       boolean isFirstForVhdl = vhdlDone.add(sibling);
-      //       if (isFirstForVhdl) {
-      //          access.addAll(sibling.getCircuitsUsingThis());
-      //       }
-      //     }
-      //   }
-      // }
     }
     return access;
   }
 
-  public boolean isEmpty() {
-    return changes.isEmpty();
-  }
-
-  public void remove(Component comp) {
-    changes.add(CircuitChange.remove(primaryCircuit, comp));
-  }
-
-  public void removeAll(Collection<? extends Component> comps) {
-    changes.add(CircuitChange.removeAll(primaryCircuit, new ArrayList<Component>(comps)));
-  }
-
-  public void replace(Component oldComp, Component newComp) {
-    ReplacementMap repl = ReplacementMap.forReplacement(oldComp, newComp);
-    changes.add(CircuitChange.replaceMultiple(primaryCircuit, repl));
-  }
-
-  public void replaceMultiple(ReplacementMap replacements) {
-    if (!replacements.isEmpty()) {
-      replacements.freeze();
-      changes.add(CircuitChange.replaceMultiple(primaryCircuit, replacements));
-    }
-  }
-
   @Override
   protected void run(CircuitMutator mutator) {
-    Circuit curCircuit = null;
-    ReplacementMap curReplacements = null;
-    for (CircuitChange change : changes) {
-      Circuit circ = change.getCircuit();
-      if (circ != curCircuit) {
-        if (curCircuit != null) {
-          mutator.applyReplacements(curCircuit, curReplacements);
-        }
-        curCircuit = circ;
-        curReplacements = new ReplacementMap();
-      }
-      curReplacements = change.execute_(mutator, curReplacements);
-    }
-    if (curCircuit != null) {
-      mutator.applyReplacements(curCircuit, curReplacements);
-    }
+    for (CircuitChange change : plan)
+      mutator.applyChange(change);
   }
-
-  public void set(Component comp, Attribute<?> attr, Object value) {
-    changes.add(CircuitChange.set(primaryCircuit, comp, attr, value));
-  }
-
-  public void setForCircuit(Attribute<?> attr, Object value) {
-    changes.add(CircuitChange.setForCircuit(primaryCircuit, attr, value));
-  }
-
-  public void setForVhdl(Attribute<?> attr, Object value) {
-    changes.add(CircuitChange.setForVhdl(primaryVhdl, attr, value));
-  }
-
+  
   public Action toAction(StringGetter name) {
     if (name == null)
       name = S.getter("unknownChangeAction");
     return new CircuitAction(name, this);
   }
 
+  // convenience subclass for modifying a single circuit
+  static CircuitMutation forCircuit(Circuit circuit) {
+    return new CircuitMutationForCircuit(circuit);
+  }
+  static class CircuitMutationForCircuit extends CircuitMutation {
+    private Circuit primaryCircuit;
+    public CircuitMutationForCircuit(Circuit circuit) {
+      primaryCircuit = circuit;
+    }
+
+    // convenience methods: same as addToPlan(new CircuitChange.FOO(circuit, ...)
+    public void add(Component comp) {
+      plan.add(new CircuitChange.ADD(primaryCircuit, comp));
+    }
+    public void addAll(Collection<Component> comps) {
+      plan.add(new CircuitChange.ADD_ALL(primaryCircuit, comps));
+    }
+    public void remove(Component comp) {
+      plan.add(new CircuitChange.REMOVE(primaryCircuit, comp));
+    }
+    public void removeAll(Collection<Component> comps) {
+      plan.add(new CircuitChange.REMOVE_ALL(primaryCircuit, comps));
+    }
+    public void replacePairs(Map<Component, Component> pairs) {
+      plan.add(new CircuitChange.REPLACE_PAIRS(primaryCircuit, pairs));
+    }
+    public void replacePairs(List<Component> oldComps, List<Component> newComps) {
+      plan.add(new CircuitChange.REPLACE_PAIRS(primaryCircuit, oldComps, newComps));
+    }
+    public void repairWires(Collection<Wire> oldWires, Collection<Wire> newWires) {
+      plan.add(new CircuitChange.REPAIR_WIRES(primaryCircuit, oldWires, newWires));
+    }
+    public void set(Component comp, Attribute<?> attr, Object value) {
+      plan.add(new CircuitChange.SET_COMP_ATTR(primaryCircuit, comp, attr, value));
+    }
+    public void setForCircuit(Attribute<?> attr, Object value) {
+      plan.add(new CircuitChange.SET_CIRC_ATTR(primaryCircuit, attr, value));
+    }
+
+    @Override
+    public void dump() {
+      super.dump();
+      int n = plan.size();
+      System.out.println(" xn plan of " + n + " changes to circuit " + primaryCircuit.getName());
+      for (int i = 0; i < n; i++)
+        System.out.println("   planned_change["+i+"]: " + plan.get(i));
+    }
+  }
+  
+  // convenience subclass for modifying a single vhdl
+  static CircuitMutation forVhdl(VhdlContent vhdl) {
+    return new CircuitMutationForVhdl(vhdl);
+  }
+  static class CircuitMutationForVhdl extends CircuitMutation {
+    private VhdlContent primaryVhdl;
+    public CircuitMutationForVhdl(VhdlContent vhdl) {
+      primaryVhdl = vhdl;
+    }
+
+    // convenience methods: same as addToPlan(new CircuitChange.FOO(vhdl, ...)
+    public void setForVhdl(Attribute<?> attr, Object value) {
+      plan.add(new CircuitChange.SET_VHDL_ATTR(primaryVhdl, attr, value));
+    }
+
+    @Override
+    public void dump() {
+      super.dump();
+      int n = plan.size();
+      System.out.println(" xn plan of " + n + " changes to vhdl " + primaryVhdl.getName());
+      for (int i = 0; i < n; i++)
+        System.out.println("   planned_change["+i+"]: " + plan.get(i));
+    }
+  }
+
   @Override
   public void dump() {
     super.dump();
-    int n = changes.size();
-    System.out.println(" xn makes " + n + " changes");
+    int n = plan.size();
+    System.out.println(" xn plan of " + n + " changes");
     for (int i = 0; i < n; i++)
-      System.out.println("   change["+i+"]: " + changes.get(i));
+      System.out.println("   planned_change["+i+"]: " + plan.get(i));
   }
 }

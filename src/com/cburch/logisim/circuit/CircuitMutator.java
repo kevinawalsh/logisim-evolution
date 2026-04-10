@@ -30,6 +30,10 @@
 
 package com.cburch.logisim.circuit;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.std.hdl.VhdlContent;
@@ -38,11 +42,38 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 // directly. Instead, all mutations should be done through these helpers.
 // Note: CircuitMutatorImpl is the only implementation of this interface.
 public interface CircuitMutator {
-  public void add(Circuit circuit, Component comp);
-  public void remove(Circuit circuit, Component comp);
-  public void replace(Circuit circuit, Component oldComponent, Component newComponent);
-  public void applyReplacements(Circuit circuit, ReplacementMap replacements);
-  public void set(Circuit circuit, Component comp, Attribute<?> attr, Object value);
-  public void setForCircuit(Circuit circuit, Attribute<?> attr, Object value);
-  public void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object value);
+
+  public void applyChange(CircuitChange change);
+
+  // convenience methods: same as applyChange(new CircuitChange...)
+  public void add(Circuit circuit, Component comp) {
+    applyChange(new CircuitChange.ADD(circuit, comp));
+  }
+  public void addAll(Circuit circuit, Collection<Component> comps) {
+    applyChange(new CircuitChange.ADD_ALL(circuit, comps));
+  }
+  public void remove(Circuit circuit, Component comp) {
+    applyChange(new CircuitChange.REMOVE(circuit, comp));
+  }
+  public void removeAll(Circuit circuit, Collection<Component> comps) {
+    applyChange(new CircuitChange.REMOVE_ALL(circuit, comps));
+  }
+  public void replacePairs(Circuit circuit, Map<Component, Component> pairs) {
+    applyChange(new CircuitChange.REPLACE_PAIRS(circuit, pairs));
+  }
+  public void replacePairs(Circuit circuit, List<Component> oldComps, List<Component> newComps) {
+    applyChange(new CircuitChange.REPLACE_PAIRS(circuit, oldComps, newComps));
+  }
+  public void repairWires(Circuit circuit, Collection<Wire> oldWires, Collection<Wire> newWires) {
+    applyChange(new CircuitChange.REPAIR_WIRES(circuit, oldWires, newWires));
+  }
+  public void set(Circuit circuit, Component comp, Attribute<?> attr, Object value) {
+    applyChange(new CircuitChange.SET_COMP_ATTR(circuit, comp, attr, value));
+  }
+  public void setForCircuit(Circuit circuit, Attribute<?> attr, Object value) {
+    applyChange(new CircuitChange.SET_CIRC_ATTR(circuit, attr, value));
+  }
+  public void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object value) {
+    applyChange(new CircuitChange.SET_VHDL_ATTR(vhdl, attr, value));
+  }
 }

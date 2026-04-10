@@ -40,9 +40,8 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.RadixOption;
-import com.cburch.logisim.circuit.ReplacementMap;
+import com.cburch.logisim.circuit.ReplacementLog;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
@@ -427,10 +426,8 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     int action = event.getAction();
     if (action == CircuitEvent.TRANSACTION_DONE) {
       Circuit circ = circuitState.getCircuit();
-      ReplacementMap repl = event.getResult().getReplacementMap(circ);
-      if (repl == null || repl.isEmpty())
-        return;
-      // look for new pins, etc., that are not simply replacing old pins
+      ReplacementLog repl = event.getResult().getReplacementLog(circ);
+      // look for new pins, etc., that are not simply replacing old like things
       for (Component comp : repl.getFreshNonWireAdditions()) {
         // if (mode == STEP && containsAnyClock(comp))
         //   setMode(CLOCK, granularity);

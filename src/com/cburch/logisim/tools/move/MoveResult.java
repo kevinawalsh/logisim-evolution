@@ -34,23 +34,22 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Location;
 
 public class MoveResult {
-  private ReplacementMap replacements;
+  private ConnectionPlan plan;
   private Collection<ConnectionData> unsatisfiedConnections;
   private Collection<Location> unconnectedLocations;
   private int totalDistance;
 
-  public MoveResult(MoveRequest request, ReplacementMap replacements,
+  public MoveResult(MoveRequest request, ConnectionPlan plan,
       Collection<ConnectionData> unsatisfiedConnections, int totalDistance) {
-    this.replacements = replacements;
+    this.plan = plan;
     this.unsatisfiedConnections = unsatisfiedConnections;
     this.totalDistance = totalDistance;
 
-    ArrayList<Location> unconnected = new ArrayList<Location>();
+    ArrayList<Location> unconnected = new ArrayList<>();
     for (ConnectionData conn : unsatisfiedConnections) {
       unconnected.add(conn.getLocation());
     }
@@ -64,8 +63,8 @@ public class MoveResult {
     }
   }
 
-  public ReplacementMap getReplacementMap() {
-    return replacements;
+  public ConnectionPlan getConnectionPlan() {
+    return plan;
   }
 
   int getTotalDistance() {

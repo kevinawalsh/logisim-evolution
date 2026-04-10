@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
-import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
@@ -127,7 +126,7 @@ class Connector {
       }
     }
     if (bestResult == null) { // should only happen for no connections
-      bestResult = new MoveResult(req, new ReplacementMap(), impossible, 0);
+      bestResult = new MoveResult(req, new ConnectionPlan(), impossible, 0);
     } else {
       bestResult.addUnsatisfiedConnections(impossible);
     }
@@ -276,7 +275,7 @@ class Connector {
   }
 
   private static void processPath(ArrayList<Location> path,
-      ConnectionData conn, AvoidanceMap avoid, ReplacementMap repl,
+      ConnectionData conn, AvoidanceMap avoid, ConnectionPlan plan,
       Set<Location> unmarkable) {
     Iterator<Location> pathIt = path.iterator();
     Location loc0 = pathIt.next();
@@ -286,7 +285,7 @@ class Connector {
       for (Wire w : conn.getWirePath()) {
         Location nextLoc = w.getOtherEnd(pathLoc);
         if (found) { // existing wire will be removed
-          repl.appendRemoval(w);
+          plan.wiresToRemove.add(w);
           avoid.unmarkWire(w, nextLoc, unmarkable);
         } else if (w.nominallyContains(loc0)) { // wires after this will be removed
           found = true;
@@ -294,7 +293,8 @@ class Connector {
             avoid.unmarkWire(w, nextLoc, unmarkable);
             Wire shortenedWire = Wire.create(pathLoc, loc0);
             // 1 wire is replaced by 1 new, different wire
-            repl.appendReplacement(w, shortenedWire);
+            plan.wiresToRemove.add(w);
+            plan.wiresToAdd(shortenedWire);
             avoid.markWire(shortenedWire, 0, 0);
           }
         }
@@ -304,11 +304,10 @@ class Connector {
     while (pathIt.hasNext()) {
       Location loc1 = pathIt.next();
       Wire newWire = Wire.create(loc0, loc1);
-      repl.appendAddition(newWire);
+      plan.wiresToAdd.add(newWire);
       avoid.markWire(newWire, 0, 0);
       loc0 = loc1;
     }
-    // FIXME: this didn't add relations between removed and added wires?
   }
 
   private static ArrayList<ConnectionData> pruneImpossible(
@@ -370,7 +369,8 @@ class Connector {
     AvoidanceMap avoid = gesture.getFixedAvoidanceMap().cloneMap();
     avoid.markAll(gesture.getSelected(), dx, dy);
 
-    ReplacementMap replacements = new ReplacementMap();
+    ConnectionPlan plan = new ConnectionPlan(); // FIXME: Do we want to separate the replacements,
+                                                // one for each connection?
     ArrayList<ConnectionData> unconnected = new ArrayList<ConnectionData>();
     int totalDistance = 0;
     for (ConnectionData conn : connects) {
@@ -387,14 +387,14 @@ class Connector {
       if (n != null) { // normal case - a path was found
         totalDistance += n.getDistance();
         ArrayList<Location> path = convertToPath(n);
-        processPath(path, conn, avoid, replacements, connPathLocs);
+        processPath(path, conn, avoid, plan, connPathLocs);
       } else if (ConnectorThread.isOverrideRequested()) {
         return null; // search was aborted: return null to indicate this
       } else {
         unconnected.add(conn);
       }
     }
-    return new MoveResult(req, replacements, unconnected, totalDistance);
+    return new MoveResult(req, plan, unconnected, totalDistance);
   }
 
   private static final int MAX_SECONDS = 10;

@@ -37,8 +37,9 @@ import java.util.concurrent.locks.Lock;
 
 import com.cburch.logisim.circuit.appear.CircuitPins;
 
-// CircuitTransaction is the base class for the transaction mechanism, which attempts to ensure
-// concurrency-safe multi-threaded access and modifications to circuits.
+// CircuitTransaction is the base class for the transaction mechanism, which
+// attempts to ensure concurrency-safe multi-threaded modification of circuits,
+// and are used as part of the broader UI undo/redo mechanism.
 //
 // Primary (general purpose) subclass:
 //  - CircuitMutation: used for most edits to a circuit from user and other triggers
@@ -55,13 +56,13 @@ import com.cburch.logisim.circuit.appear.CircuitPins;
 //
 // And this class provides:
 // execute() - carries out the transaction, in phases:
-//   1. Creates a mutator.
-//   2. Locks all accessed circuits, in a stable serial order.
+//   1. Creates a mutator, which will capture changes.
+//   2. Locks all accessed circuits, in a common serial order.
 //   3. Calls run(mutator) to make changes.
 //   4. Updates appearance of each modified circuit.
 //   5. Repairs wires in each affected circuit.
-//   6. Creates a result object summarizing all mutations.
-//      - list of modified circuits, and ReplacementMap for each one
+//   6. Creates a result object summarizing changes.
+//      - list of modified circuits, and ReplacementLog for each one
 //      - ability to create the reverse transaction
 //   7. Fires TRANSACTION_DONE events
 //      - Selection updates the UI selection state
@@ -124,7 +125,7 @@ public abstract class CircuitTransaction {
       // wires are repaired because it could lead to some wires being
       // split
       for (Circuit circuit : modified) {
-        ReplacementMap repl = mutator.getReplacementMap(circuit);
+        ReplacementLog repl = mutator.getReplacementLog(circuit);
         if (repl != null) {
           CircuitPins pins = circuit.getAppearance().getCircuitPins();
           pins.transactionCompleted(repl);
@@ -134,7 +135,7 @@ public abstract class CircuitTransaction {
       // xn phase 5
       // Now go through each affected circuit and repair its wires
       for (Circuit circuit : modified) {
-        // RepairWireHelper.repairWires(circuit, mutator);
+        RepairWireHelper.repairWires(circuit, mutator);
       }
 
       // xn phase 6

@@ -46,7 +46,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitMutation;
-import com.cburch.logisim.circuit.ReplacementMap;
+import com.cburch.logisim.circuit.ReplacementLog;
 import com.cburch.logisim.circuit.Wire;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -91,7 +91,7 @@ public class Selection {
     public void circuitChanged(CircuitEvent event) {
       if (event.getAction() == CircuitEvent.TRANSACTION_DONE) {
         Circuit circuit = event.getCircuit();
-        ReplacementMap repl = event.getResult().getReplacementMap(circuit);
+        ReplacementLog repl = event.getResult().getReplacementLog(circuit);
         boolean change = false;
 
         ArrayList<Component> oldAnchored;
@@ -524,9 +524,7 @@ public class Selection {
 
   void translateHelper(CircuitMutation xn, int dx, int dy) {
     Map<Component, Component> selectedAfter = copyComponents(selected, dx, dy);
-    for (Map.Entry<Component, Component> entry : selectedAfter.entrySet()) {
-      xn.replace(entry.getKey(), entry.getValue());
-    }
+    xn.replacePairs(selectedAfter);
 
     Map<Component, Component> liftedAfter = copyComponents(lifted, dx, dy);
     lifted.clear();

@@ -103,6 +103,12 @@ class RepairWireHelper {
   //                           |
   //                           o
   //
+  // The left and right halves would be each merged independently:
+  //
+  //   o---------wnew1---------o--------------wnew2--------------o
+  //                           |
+  //                           o
+  //
   // Also note: A chain may double back on itself. It is still merged, using the
   // two most distant points for the ends of the new wire.
   private static void doMerges(Circuit circuit, CircuitMutator mutator) {
@@ -130,7 +136,6 @@ class RepairWireHelper {
     }
 
     // For each chain, replace all the wires in the chain with one new wire.
-    ReplacementMap repl = new ReplacementMap();
     for (ArrayList<Wire> mergeSet : sets.getMergeSets()) {
       // FIXME: if mergeSet kept track of largest and smallest point, would not
       // need to sort here. Also, code here uses ArrayList, other code uses
@@ -159,19 +164,24 @@ class RepairWireHelper {
       //  - removing all the wires,
       //  - adding the new wire repeatedly (only the first addition matters)
       //  - and moving any old wire selection to wnew instead
-      mergeSet.remove(wnew); // don't bother recording wnew --> wnew, I guess? FIXME Does it matter?
-      for (Wire wold : mergeSet)
-        repl.appendReplacement(wold, wnew);
+      // Note: if we remove wnew, we gain nothing, but could change an N-to-1
+      // replacement (N>1) into to just a 1-to-1 replacement.
+
+      // mergeSet.remove(wnew); // don't bother recording wnew --> wnew, I guess? FIXME Does it matter?
+      // for (Wire wold : mergeSet)
+      //  mutator.repairWires( wold, wnew);
+
+      mutator.repairWires(circuit, mergeSet, Collections.singletonList(wnew));
+
       // Note: repl is using append-style semantics, but because none of the
       // wires are .equal(), this is equivalent to simultaneous replacements.
     }
-    mutator.applyReplacements(circuit, repl);
   }
 
   // Helper: Merges a set of parallel, overlapping wires into a chain of wires
   // broken only at midpoints where some other component is touching.
-  private static void doMergeSet(Circuit circuit, ArrayList<Wire> mergeSet,
-      ReplacementMap replacements, Set<Location> allLocs) {
+  private static void doMergeAndSplit(Circuit circuit, ArrayList<Wire> mergeSet,
+      CircuitMutator mutator, Set<Location> allLocs) {
     // FIXME: if mergeSet kept track of largest and smallest point, would not
     // need to sort here. Also, code here uses TreeSort, other code uses
     // ArrayList for sorting... not sure why.
@@ -227,13 +237,15 @@ class RepairWireHelper {
         }
       }
       // Replace one old wire with some subset of the new (possibly existing) wires
-      replacements.appendReplacements(w, wRepl);
+      // Note: we don't check for it, but this could be doing a 1-to-1
+      // replacement of a wire with itself.
+      mutator.repairWires(circuit, Collections.singletonList(w), wRepl);
       // Note: repl is using append-style semantics, but I don't think it
       // matters here... none of the old wires are .equals() to each other,
       // because they all came from the circuit, which does not have duplicates.
       // And the new wires may or may not be equal to some old wires, but if
       // they are, we keep the w --> w replacements, so I think the
-      // append-semantics is harmles. Maybe.
+      // append-semantics is harmless. Maybe.
     }
   }
 
@@ -252,7 +264,8 @@ class RepairWireHelper {
   //
   // Note: there won't be points where exactly 2 wires meet (they would have
   // been merged already by doMerges(), but I think there could be points where
-  // 3 or more wires meet.
+  // 3 or more wires meet, and those need to be handled (but aren't yet) I think.
+  // FIXME
   private static void doOverlaps(Circuit circuit, CircuitMutator mutator) {
     // For each location, determine all wires ending at or passing through that location.
     HashMap<Location, ArrayList<Wire>> wirePoints = new HashMap<>();
@@ -285,12 +298,10 @@ class RepairWireHelper {
       }
     }
 
-    ReplacementMap replacements = new ReplacementMap();
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
     for (ArrayList<Wire> mergeSet : mergeSets.getMergeSets()) {
-      doMergeSet(circuit, mergeSet, replacements, allLocs);
+      doMergeAndSplit(circuit, mergeSet, mutator, allLocs);
     }
-    mutator.applyReplacements(circuit, replacements);
   }
 
   // Within current, find and split wires that pass through locations where
@@ -313,7 +324,6 @@ class RepairWireHelper {
   //
   private static void doSplits(Circuit circuit, CircuitMutator mutator) {
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
-    ReplacementMap repl = new ReplacementMap();
     // For each wire
     for (Wire w : circuit.getWires()) {
       Location w0 = w.getEnd0();
@@ -339,12 +349,13 @@ class RepairWireHelper {
           e0 = e1;
         }
         // A single wire is removed, replaced with a N>1 new wires.
-        // Note: the new wires are not .equal() to each other or the removed wire.
-        // But some of them could be .equal() to other wires in repl?
-        repl.appendReplacements(w, subs);
+        // Note: the new wires are not .equal() to each other or to the removed
+        // wire, or to any other wires (because no other wire in the circuit is
+        // parallel and overlapping with our w... earlier repairs would have
+        // eliminated such cases).
+        mutator.repairWires(circuit, Collections.singletonList(w), subs);
       }
     }
-    mutator.applyReplacements(circuit, repl);
   }
 
   public static void repairWires(Circuit circuit, CircuitMutator mutator) {

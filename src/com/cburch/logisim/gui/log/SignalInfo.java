@@ -32,7 +32,6 @@ package com.cburch.logisim.gui.log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Objects;
 
 import java.awt.Color;
@@ -48,7 +47,7 @@ import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.circuit.RadixOption;
-import com.cburch.logisim.circuit.ReplacementMap;
+import com.cburch.logisim.circuit.ReplacementLog;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -169,11 +168,9 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
         Circuit t = circ[i];
         Component c = path[i];
 
-        ReplacementMap repl = event.getResult().getReplacementMap(t);
-        // if (repl.isEmpty())
-        //   continue; // no changes at all to circuit at this level
+        ReplacementLog repl = event.getResult().getReplacementLog(t);
         if (!repl.wasNonWireRemoved(c))
-          continue; // changes at this level don't affect our path
+          continue; // any changes at this level don't affect our path
        
         Component cNew = repl.getNonWireReplacementFor(c);
         if (cNew == c) {

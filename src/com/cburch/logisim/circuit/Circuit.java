@@ -574,23 +574,21 @@ public class Circuit implements AttributeDefaultProvider {
     return false;
   }
 
-  void mutatorAdd(Component c) {
-
+  boolean mutatorAdd(Component c) {
     locker.checkForWritePermission("add");
 
     if (c instanceof Wire) {
       Wire w = (Wire) c;
       if (w.getEnd0().equals(w.getEnd1()))
-        return;
+        return false;
       boolean added = wires.add(w);
       if (!added)
-        return;
+        return false;
     } else {
       // add it into the circuit
       boolean added = comps.add(c);
       if (!added)
-        return;
-
+        return false;
       wires.add(c);
       ComponentFactory factory = c.getFactory();
       if (factory instanceof Clock) {
@@ -605,7 +603,9 @@ public class Circuit implements AttributeDefaultProvider {
       }
       c.addComponentWeakListener(null, myComponentListener);
     }
+
     fireEvent(CircuitEvent.ACTION_ADD, c);
+    return true;
   }
 
   HashSet<Circuit> dynamicShapeDependentCircuits() {
@@ -630,14 +630,20 @@ public class Circuit implements AttributeDefaultProvider {
   // position. This causes trouble for DynamicElement and DynamicCondition
   // shapes that depend on the old component c. For those cases, we try hader
   // to update rather than simply remove-then-add.
-  void mutatorReplaceNonWire(Component c, Component r) {
+  boolean mutatorReplaceNonWire(Component c, Component r) {
+    locker.checkForWritePermission("replace");
+    if (c instanceof Wire || r instanceof Wire)
+      return false;
+    if (!comps.contains(c) || comps.contains(r))
+      return false;
+    // In practice, both factories will always be the same, since this method is
+    // only called when user moves components on the canvas.
     ComponentFactory factory = c.getFactory();
     ComponentFactory factory2 = r.getFactory();
     if (factory == factory2 && (factory instanceof SubcircuitFactory)) {
-      locker.checkForWritePermission("replace");
       // remove c, but update dynamic shapes instead of removing them
-      wires.remove(c);
       comps.remove(c);
+      wires.remove(c);
       SubcircuitFactory subcirc = (SubcircuitFactory) factory;
       subcirc.getSubcircuit().circuitsUsingThis.remove(c);
       for (Circuit circ : dynamicShapeDependentCircuits())
@@ -645,9 +651,7 @@ public class Circuit implements AttributeDefaultProvider {
       c.removeComponentWeakListener(null, myComponentListener);
       fireEvent(CircuitEvent.ACTION_REMOVE, c);
       // add r
-      boolean added = comps.add(r);
-      if (!added)
-        return;
+      comps.add(r);
       wires.add(r);
       subcirc.getSubcircuit().circuitsUsingThis.put(r, this);
       r.addComponentWeakListener(null, myComponentListener);
@@ -657,7 +661,6 @@ public class Circuit implements AttributeDefaultProvider {
         && ((factory instanceof DynamicElementProvider || factory instanceof DynamicValueProvider))
         && c instanceof InstanceComponent
         && r instanceof InstanceComponent) {
-      locker.checkForWritePermission("replace");
       // remove c, but update dynamic shapes instead of removing them
       wires.remove(c);
       comps.remove(c);
@@ -666,9 +669,7 @@ public class Circuit implements AttributeDefaultProvider {
       c.removeComponentWeakListener(null, myComponentListener);
       fireEvent(CircuitEvent.ACTION_REMOVE, c);
       // add r
-      boolean added = comps.add(r);
-      if (!added)
-        return;
+      comps.add(r);
       wires.add(r);
       r.addComponentWeakListener(null, myComponentListener);
       fireEvent(CircuitEvent.ACTION_ADD, r);
@@ -676,17 +677,21 @@ public class Circuit implements AttributeDefaultProvider {
       mutatorRemove(c);
       mutatorAdd(r);
     }
+    return true;
   }
 
-  void mutatorRemove(Component c) {
-
+  boolean mutatorRemove(Component c) {
     locker.checkForWritePermission("remove");
 
     if (c instanceof Wire) {
-      wires.remove(c);
+      boolean removed = wires.remove((Wire)c);
+      if (!removed)
+        return false;
     } else {
+      boolean removed = comps.remove(c);
+      if (!removed)
+        return false;
       wires.remove(c);
-      comps.remove(c);
       ComponentFactory factory = c.getFactory();
       if (factory instanceof Clock) {
         clocks.remove(c);
@@ -712,7 +717,9 @@ public class Circuit implements AttributeDefaultProvider {
       }
       c.removeComponentWeakListener(null, myComponentListener);
     }
+
     fireEvent(CircuitEvent.ACTION_REMOVE, c);
+    return true;
   }
 
   // Note: caller must have validated name already

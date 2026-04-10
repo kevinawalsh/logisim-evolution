@@ -132,25 +132,25 @@ public final class CircuitState /* implements ComponentData */ {
 
       /* components were added, deleted, moved (delete-then-add replacements), etc. */
       else if (action == CircuitEvent.TRANSACTION_DONE) {
-        ReplacementMap map = event.getResult().getReplacementMap(circuit);
-        if (map == null)
-          return;
-        for (Component comp : map.getNonWireRemovals()) {
-          // Retain state iff comp was replaced by one component that is
-          // (probably) a "moved" version of the original component.
-          Component repl = map.getNonWireReplacementFor(comp);
+        // NOTE: This could probably be done within Circuit.mutatorReplaceNonWire()?
+        ReplacementLog log = event.getResult().getReplacementLog(circuit);
+        for (Component comp : log.getNonWireRemovals()) {
+          // Cleanup state on removal, or transfer state on replacement.
+          // We retain state iff comp was replaced by a like component, e.g.
+          // when a component is moved from one place to another, which is
+          // implmeneted as a replacement of the old component for the new one.
+          Component repl = log.getNonWireReplacementFor(comp);
           if (comp.getFactory() instanceof SubcircuitFactory)
-            xferSubcircuitState(map, comp, repl);
+            xferSubcircuitState(comp, repl);
           else
-            xferComponentState(map, comp, repl);
+            xferComponentState(comp, repl);
         }
       }
 
     }
 
     // subcircuit component removed or moved or replaced
-    private void xferSubcircuitState(ReplacementMap map,
-        Component comp, Component repl) {
+    private void xferSubcircuitState(Component comp, Component repl) {
       CircuitState subcircData = subcircuitData.remove(comp);
       if (subcircData == null) {
         // nothing to retain or cleanup, substate
@@ -180,8 +180,7 @@ public final class CircuitState /* implements ComponentData */ {
     }
 
     // non-subcircuit component removed or moved or replaced
-    private void xferComponentState(ReplacementMap map,
-        Component comp, Component repl) {
+    private void xferComponentState(Component comp, Component repl) {
       Integer integerData = componentIntegerData.remove(comp);
       Value valueData = componentValueData.remove(comp);
       Double doubleData = componentDoubleData.remove(comp);

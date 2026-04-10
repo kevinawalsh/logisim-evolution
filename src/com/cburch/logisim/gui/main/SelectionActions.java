@@ -48,7 +48,6 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitMutation;
 import com.cburch.logisim.circuit.CircuitTransaction;
 import com.cburch.logisim.circuit.CircuitTransactionResult;
-import com.cburch.logisim.circuit.ReplacementMap;
 import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
@@ -67,6 +66,7 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.tools.AddTool;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.TextTool;
+import com.cburch.logisim.tools.move.ConnectionPlan;
 
 public class SelectionActions {
 
@@ -777,20 +777,20 @@ public class SelectionActions {
 
   private static class Translate extends SelectionAnchoringAction {
     private int dx, dy;
-    private ReplacementMap replacements;
+    private ConnectionPlan plan;
 
-    Translate(Selection sel, int dx, int dy, ReplacementMap replacements) {
+    Translate(Selection sel, int dx, int dy, ConnectionPlan plan) {
       super(sel, 0);
       this.dx = dx;
       this.dy = dy;
-      this.replacements = replacements;
+      this.plan = plan;
     }
 
     @Override
     protected void doIt(Project proj, Circuit circ, CircuitMutation xn) {
       sel.translateHelper(xn, dx, dy);
-      if (replacements != null)
-        xn.replaceMultiple(replacements);
+      if (plan != null)
+        xn.repairWires(plan.wiresToRemove, plan.wiresToAdd);
     }
 
     @Override
@@ -1062,8 +1062,8 @@ public class SelectionActions {
     return true;
   }
 
-  public static Action translate(Selection sel, int dx, int dy, ReplacementMap repl) {
-    return new Translate(sel, dx, dy, repl);
+  public static Action translate(Selection sel, int dx, int dy, ConnectionPlan plan) {
+    return new Translate(sel, dx, dy, plan);
   }
 
   private SelectionActions() {
