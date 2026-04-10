@@ -84,9 +84,10 @@ class RepairWireHelper {
       Clump cA = map.get(a);
       Clump cB = map.get(b);
       if (cA == null && cB == null) {
-        cA = cB = new Clump(a, b);
-        map.put(a, cA);
-        map.put(b, cB);
+        Clump cAB = new Clump(a, b);
+        clumps.add(cAB);
+        map.put(a, cAB);
+        map.put(b, cAB);
       } else if (cA == null && cB != null) {
         cB.add(a);
         map.put(a, cB);
@@ -151,8 +152,9 @@ class RepairWireHelper {
         if (at0 instanceof Wire && at1 instanceof Wire) {
           Wire w0 = (Wire) at0;
           Wire w1 = (Wire) at1;
-          if (w0.isParallel(w1))
+          if (w0.isParallel(w1)) {
             repair.merge(w0, w1);
+          }
         }
       }
     }
@@ -219,7 +221,7 @@ class RepairWireHelper {
       // Figure out which of the new wires it gets replaced by...
       HashSet<Wire> wRepl = new HashSet<>();
       for (Wire w2 : pieces)
-        if (w2.overlaps(w, false))
+        if (w2.overlaps(w, false /* exclude ends */))
           wRepl.add(w2);
       // Replace one old wire with some subset of the new (possibly existing) wires
       // Note: we don't check for it, but this could be doing a 1-to-1
@@ -247,9 +249,8 @@ class RepairWireHelper {
   //   o--------------wnew--------------o
   //
   // Note: there won't be points where exactly 2 wires meet (they would have
-  // been merged already by doMerges(), but I think there could be points where
-  // 3 or more wires meet, and those need to be handled (but aren't yet) I think.
-  // FIXME
+  // been merged already by doMerges(), but there could be points where
+  // 3 or more wires meet, and those need to be handled.
   private static void doOverlaps(Circuit circuit, CircuitMutator mutator) {
     // For each location, determine all wires ending at or passing through that location.
     HashMap<Location, ArrayList<Wire>> wirePoints = new HashMap<>();
@@ -275,7 +276,7 @@ class RepairWireHelper {
           for (int j = i + 1; j < n; j++) {
             Wire w1 = locWires.get(j);
             // ... if they are parallel and overlapping, mark as part of the same chain
-            if (w0.overlaps(w1, false /*don't include ends*/)) // FIXME: why exclude ends?
+            if (w0.overlaps(w1, true /* include ends */))
               repair.merge(w0, w1);
           }
         }

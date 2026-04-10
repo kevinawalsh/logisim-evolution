@@ -153,7 +153,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    public String toString() { return "ADDx" + comps.length + " components TO " + circuit.getName(); }
+    public String toString() { return "ADDx" + comps.length + " COMPONENTS " + comps + " TO " + circuit.getName(); }
 
     @Override
     public void apply(ReplacementLog repl) {
@@ -198,7 +198,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    public String toString() { return "REMOVEx" + comps.length + " components FROM " + circuit.getName(); }
+    public String toString() { return "REMOVEx" + comps.length + " COMPONENTS " + comps + " FROM " + circuit.getName(); }
 
     @Override
     public void apply(ReplacementLog repl) {
