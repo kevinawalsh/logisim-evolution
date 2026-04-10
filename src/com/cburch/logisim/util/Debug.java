@@ -128,8 +128,8 @@ public class Debug {
   private static final String timestamp = LocalDateTime.now().format(
       DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
  
-  private static final long MAX_CRASH_SIZE = 20*1024;
-  private static final long CUT_CRASH_SIZE = 10*1024;
+  private static final long MAX_CRASH_SIZE = 32*1024;
+  private static final long CUT_CRASH_SIZE = 24*1024;
   private static OutputStream crashLogStream;
   public static Path crashLogPath; // this is within PERSIST_DIR
   public static Path crashLogUncutPath; // this is within TEMP_DIR
@@ -533,8 +533,8 @@ public class Debug {
     try {
       long size = Files.size(src);
 
-      long tailsize = Math.min(size, CUT_CRASH_SIZE/2);
-      long headsize = Math.min(size - tailsize, CUT_CRASH_SIZE/2);
+      long tailsize = Math.min(size, 3*CUT_CRASH_SIZE/4);
+      long headsize = Math.min(size - tailsize, 1*CUT_CRASH_SIZE/4);
       byte[] snip = String.format(
           "\n[... truncated %d bytes here ...]\n",
           size - (headsize - tailsize)).getBytes(StandardCharsets.UTF_8);
