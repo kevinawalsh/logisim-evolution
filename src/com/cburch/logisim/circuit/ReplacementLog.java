@@ -284,7 +284,7 @@ public class ReplacementLog {
       ws = new HashSet<>();
       ws.addAll(wsNew);
       ws.remove(null);
-      wireChanged.put(a, ws);
+      wireChanged.put(w, ws);
     }
   }
 
@@ -347,11 +347,11 @@ public class ReplacementLog {
       if (e.getValue() != null)
         out.println("      ... replaces " + e.getValue());
     }
-    out.printf("  updating %d wire selections:\n");
+    out.printf("  updating %d wire selections:\n", wireChanged.size());
     for (Map.Entry<Wire, HashSet<Wire>> e : wireChanged.entrySet()) {
       Wire w0 = e.getKey();
       HashSet<Wire> ws = e.getValue();
-      out.println("    " + w + " selection moves to " + ws);
+      out.println("    " + w0 + " selection moves to " + ws);
     }
   }
 

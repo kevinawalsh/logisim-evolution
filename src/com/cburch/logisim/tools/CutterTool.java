@@ -335,7 +335,7 @@ public final class CutterTool extends Tool {
   private void doIt(Project proj, Circuit circ, StringGetter name,
       Collection<Wire> wiresToAdd, Collection<Wire> wiresToRemove) {
     if (!wiresToAdd.isEmpty() || !wiresToRemove.isEmpty()) {
-      CircuitMutation mutation = new CircuitMutation(circ);
+      CircuitMutation mutation = CircuitMutation.forCircuit(circ);
       mutation.addAll(wiresToAdd);
       mutation.removeAll(wiresToRemove);
       Action act = mutation.toAction(name);

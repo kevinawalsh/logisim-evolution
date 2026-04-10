@@ -82,7 +82,7 @@ public class AttrTableCircuitModel extends AttributeSetTableModel {
     if (err != null)
       throw new AttrTableSetException(err);
 
-    CircuitMutation xn = new CircuitMutation(circ);
+    CircuitMutation xn = CircuitMutation.forCircuit(circ);
     xn.setForCircuit(attr, value);
     proj.doAction(xn.toAction(S.getter("changeCircuitAttrAction")));
   }

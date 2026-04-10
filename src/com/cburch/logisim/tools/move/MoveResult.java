@@ -80,17 +80,13 @@ public class MoveResult {
   }
 
   public Collection<Wire> getWiresToAdd() {
-    Collection<Wire> ret = replacements.getWireAdditions();
-    if (replacements.getAllAdditions().size() != ret.size())
-      System.err.println("MISMATCH - old code would have returned garbage here?");
-    return ret;
+    return plan.wiresToAdd;
   }
 
   public void print(PrintStream out) {
-    out.print("MoveResult: ");
-    replacements.print(out);
+    out.print("MoveResult: remove=" + plan.wiresToRemove + " add=" + plan.wiresToAdd);
   }
   public String toString() {
-    return "MoveResult: " + replacements.toString();
+    return "MoveResult: remove=" + plan.wiresToRemove + " add=" + plan.wiresToAdd;
   }
 }

@@ -86,7 +86,7 @@ public class LoadedLibrary extends Library implements LibraryEventSource {
       }
     }
     if (toReplace != null) {
-      CircuitMutation xn = new CircuitMutation(circuit);
+      CircuitMutation xn = CircuitMutation.forCircuit(circuit);
       for (Component comp : toReplace) {
         xn.remove(comp);
         ComponentFactory factory = compMap.get(comp.getFactory());

@@ -46,34 +46,34 @@ public interface CircuitMutator {
   public void applyChange(CircuitChange change);
 
   // convenience methods: same as applyChange(new CircuitChange...)
-  public void add(Circuit circuit, Component comp) {
+  default void add(Circuit circuit, Component comp) {
     applyChange(new CircuitChange.ADD(circuit, comp));
   }
-  public void addAll(Circuit circuit, Collection<Component> comps) {
+  default void addAll(Circuit circuit, Collection<? extends Component> comps) {
     applyChange(new CircuitChange.ADD_ALL(circuit, comps));
   }
-  public void remove(Circuit circuit, Component comp) {
+  default void remove(Circuit circuit, Component comp) {
     applyChange(new CircuitChange.REMOVE(circuit, comp));
   }
-  public void removeAll(Circuit circuit, Collection<Component> comps) {
+  default void removeAll(Circuit circuit, Collection<? extends Component> comps) {
     applyChange(new CircuitChange.REMOVE_ALL(circuit, comps));
   }
-  public void replacePairs(Circuit circuit, Map<Component, Component> pairs) {
+  default void replacePairs(Circuit circuit, Map<Component, Component> pairs) {
     applyChange(new CircuitChange.REPLACE_PAIRS(circuit, pairs));
   }
-  public void replacePairs(Circuit circuit, List<Component> oldComps, List<Component> newComps) {
+  default void replacePairs(Circuit circuit, List<Component> oldComps, List<Component> newComps) {
     applyChange(new CircuitChange.REPLACE_PAIRS(circuit, oldComps, newComps));
   }
-  public void repairWires(Circuit circuit, Collection<Wire> oldWires, Collection<Wire> newWires) {
+  default void repairWires(Circuit circuit, Collection<Wire> oldWires, Collection<Wire> newWires) {
     applyChange(new CircuitChange.REPAIR_WIRES(circuit, oldWires, newWires));
   }
-  public void set(Circuit circuit, Component comp, Attribute<?> attr, Object value) {
+  default void set(Circuit circuit, Component comp, Attribute<?> attr, Object value) {
     applyChange(new CircuitChange.SET_COMP_ATTR(circuit, comp, attr, value));
   }
-  public void setForCircuit(Circuit circuit, Attribute<?> attr, Object value) {
+  default void setForCircuit(Circuit circuit, Attribute<?> attr, Object value) {
     applyChange(new CircuitChange.SET_CIRC_ATTR(circuit, attr, value));
   }
-  public void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object value) {
+  default void setForVhdl(VhdlContent vhdl, Attribute<?> attr, Object value) {
     applyChange(new CircuitChange.SET_VHDL_ATTR(vhdl, attr, value));
   }
 }

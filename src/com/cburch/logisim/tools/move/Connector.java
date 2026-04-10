@@ -294,7 +294,7 @@ class Connector {
             Wire shortenedWire = Wire.create(pathLoc, loc0);
             // 1 wire is replaced by 1 new, different wire
             plan.wiresToRemove.add(w);
-            plan.wiresToAdd(shortenedWire);
+            plan.wiresToAdd.add(shortenedWire);
             avoid.markWire(shortenedWire, 0, 0);
           }
         }

@@ -36,8 +36,8 @@ import com.cburch.logisim.circuit.Wire;
 
 public class ConnectionPlan {
 
-  final ArrayList<Wire> wiresToRemove = new ArrayList<>();
-  final ArrayList<Wire> wiresToAdd = new ArrayList<>();
+  public final ArrayList<Wire> wiresToRemove = new ArrayList<>();
+  public final ArrayList<Wire> wiresToAdd = new ArrayList<>();
 
   public ConnectionPlan() { }
 

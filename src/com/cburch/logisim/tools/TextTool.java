@@ -103,7 +103,7 @@ public final class TextTool extends Tool {
         if (!isEmpty) {
           // Adding new Text component
           caretComponent.getAttributeSet().setAttr(Text.ATTR_TEXT, val);
-          CircuitMutation xn = new CircuitMutation(caretCircuit);
+          CircuitMutation xn = CircuitMutation.forCircuit(caretCircuit);
           xn.add(caretComponent);
           a = xn.toAction(S.getter("addComponentAction",
                 Text.FACTORY.getDisplayGetter()));
@@ -114,7 +114,7 @@ public final class TextTool extends Tool {
       } else {
         if (isEmpty && caretComponent.getFactory() instanceof Text) {
           // Removing existing Text component (user removed all text)
-          CircuitMutation xn = new CircuitMutation(caretCircuit);
+          CircuitMutation xn = CircuitMutation.forCircuit(caretCircuit);
           xn.remove(caretComponent);
           a = xn.toAction(S.getter("removeComponentAction",
                 Text.FACTORY.getDisplayGetter()));

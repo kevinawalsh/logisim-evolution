@@ -109,7 +109,7 @@ public final class MenuTool extends Tool {
         SelectionActions.doCopy(proj, comps);
         return;
       }
-      CircuitMutation xn = new CircuitMutation(circ);
+      CircuitMutation xn = CircuitMutation.forCircuit(circ);
       if (src == cut) {
         SelectionActions.doCopy(proj, comps);
         xn.remove(comp);
@@ -187,7 +187,7 @@ public final class MenuTool extends Tool {
         proj.doAction(SelectionActions.delete(sel));
       else if (src == rotate) {
         Circuit circ = proj.getCurrentCircuit();
-        CircuitMutation xn = new CircuitMutation(circ);
+        CircuitMutation xn = CircuitMutation.forCircuit(circ);
         int n = 0;
         Component singleton = null;
         for (Component comp : sel.getComponents()) {

@@ -134,13 +134,13 @@ public class CircuitMutation extends CircuitTransaction {
   public void add(Component comp) {
     throw new UnsupportedOperationException();
   }
-  public void addAll(Collection<Component> comps) {
+  public void addAll(Collection<? extends Component> comps) {
     throw new UnsupportedOperationException();
   }
   public void remove(Component comp) {
     throw new UnsupportedOperationException();
   }
-  public void removeAll(Collection<Component> comps) {
+  public void removeAll(Collection<? extends Component> comps) {
     throw new UnsupportedOperationException();
   }
   public void replacePairs(Map<Component, Component> pairs) {
@@ -181,7 +181,7 @@ public class CircuitMutation extends CircuitTransaction {
       plan.add(new CircuitChange.ADD(primaryCircuit, comp));
     }
     @Override
-    public void addAll(Collection<Component> comps) {
+    public void addAll(Collection<? extends Component> comps) {
       plan.add(new CircuitChange.ADD_ALL(primaryCircuit, comps));
     }
     @Override
@@ -189,7 +189,7 @@ public class CircuitMutation extends CircuitTransaction {
       plan.add(new CircuitChange.REMOVE(primaryCircuit, comp));
     }
     @Override
-    public void removeAll(Collection<Component> comps) {
+    public void removeAll(Collection<? extends Component> comps) {
       plan.add(new CircuitChange.REMOVE_ALL(primaryCircuit, comps));
     }
     @Override

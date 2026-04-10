@@ -538,7 +538,7 @@ public final class WiringTool extends Tool {
     if (wires.isEmpty() && removals.isEmpty())
       return;
 
-    CircuitMutation mutation = new CircuitMutation(canvas.getCircuit());
+    CircuitMutation mutation = CircuitMutation.forCircuit(canvas.getCircuit());
     if (!wires.isEmpty())
       mutation.addAll(wires);
     if (!removals.isEmpty())

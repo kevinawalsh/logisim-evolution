@@ -82,7 +82,7 @@ public class AttrTableVhdlModel extends AttributeSetTableModel {
     if (err != null)
       throw new AttrTableSetException(err);
 
-    CircuitMutation xn = new CircuitMutation(vhdl);
+    CircuitMutation xn = CircuitMutation.forVhdl(vhdl);
     xn.setForVhdl(attr, value);
     proj.doAction(xn.toAction(S.getter("changeVhdlAttrAction")));
   }

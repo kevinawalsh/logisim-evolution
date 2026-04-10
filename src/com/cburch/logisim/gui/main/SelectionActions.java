@@ -93,7 +93,7 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      xn = new CircuitMutation(circuit);
+      xn = CircuitMutation.forCircuit(circuit);
       doIt(proj, circuit, xn);
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -165,7 +165,7 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      xn = new CircuitMutation(circuit);
+      xn = CircuitMutation.forCircuit(circuit);
       sel.deleteAllHelper(xn);
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -229,7 +229,7 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      xn = new CircuitMutation(circuit);
+      xn = CircuitMutation.forCircuit(circuit);
       sel.duplicateHelper(xn);
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -315,7 +315,7 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      xn = new CircuitMutation(circuit);
+      xn = CircuitMutation.forCircuit(circuit);
       sel.pasteHelper(xn, Collections.singletonList(tool.create(loc, clip)));
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -361,7 +361,7 @@ public class SelectionActions {
 
     @Override
     public void doIt(Project proj) {
-      xn = new CircuitMutation(circuit);
+      xn = CircuitMutation.forCircuit(circuit);
       sel.pasteHelper(xn, Collections.singletonList(Image.create(tool, loc, clip)));
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -464,7 +464,7 @@ public class SelectionActions {
         cxnReverse = null;
       }
 
-      xn = new CircuitMutation(circuit);
+      xn = CircuitMutation.forCircuit(circuit);
       sel.pasteHelper(xn, clip.selection);
       CircuitTransactionResult result = xn.execute();
       xnReverse = result.getReverseTransaction();
@@ -593,7 +593,7 @@ public class SelectionActions {
       circuit = new Circuit(newName, file);
       file.addCircuit(circuit);
       proj.setCurrentCircuit(circuit);
-      CircuitMutation xn = new CircuitMutation(circuit);
+      CircuitMutation xn = CircuitMutation.forCircuit(circuit);
       for (Component c : clip.selection)
         xn.add(c);
 

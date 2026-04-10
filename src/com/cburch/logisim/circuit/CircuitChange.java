@@ -32,8 +32,11 @@ package com.cburch.logisim.circuit;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import com.cburch.logisim.data.AttributeSet;
 
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
@@ -96,12 +99,12 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       return added ? new REMOVE(circuit, comp) : null;
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       return comp.getFactory() instanceof Pin;
     }
   }
@@ -126,12 +129,12 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       return removed ? new ADD(circuit, comp) : null;
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       return comp.getFactory() instanceof Pin;
     }
   }
@@ -140,7 +143,7 @@ abstract class CircuitChange {
     private final Component comps[];
     private boolean added[];
 
-    public ADD_ALL(Circuit circuit, Collection<Component> comps) {
+    public ADD_ALL(Circuit circuit, Collection<? extends Component> comps) {
       super(circuit);
       this.comps = comps.toArray(new Component[0]);
     }
@@ -163,7 +166,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       if (added == null) return null;
       int n = comps.length;
       REMOVE_ALL inv = new REMOVE_ALL(circuit, n);
@@ -173,7 +176,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       for (Component comp : comps)
         if (comp != null && comp.getFactory() instanceof Pin)
           return true;
@@ -185,7 +188,7 @@ abstract class CircuitChange {
     private final Component comps[];
     private boolean removed[];
 
-    public REMOVE_ALL(Circuit circuit, Collection<Component> comps) {
+    public REMOVE_ALL(Circuit circuit, Collection<? extends Component> comps) {
       super(circuit);
       this.comps = comps.toArray(new Component[0]);
     }
@@ -208,7 +211,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       if (removed == null) return null;
       int n = comps.length;
       ADD_ALL inv = new ADD_ALL(circuit, n);
@@ -218,7 +221,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       for (Component comp : comps)
         if (comp != null && comp.getFactory() instanceof Pin)
           return true;
@@ -292,7 +295,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       if (status == null) return null;
       int n = oldComps.length;
       REPLACE_PAIRS inv = new REPLACE_PAIRS(circuit, n);
@@ -305,7 +308,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       for (int i = 0; i < oldComps.length; i++)
         if ((oldComps[i] != null && oldComps[i].getFactory() instanceof Pin)
             || (newComps[i] != null && newComps[i].getFactory() instanceof Pin))
@@ -356,7 +359,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       if (removed == null) return null;
       int nOld = oldWires.length;
       int nNew = newWires.length;
@@ -370,7 +373,7 @@ abstract class CircuitChange {
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       return false;
     }
   }
@@ -415,12 +418,12 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       return set ? new SET_COMP_ATTR(circuit, comp, attr, oldValue, newValue) : null;
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       // NOTE: The list of attributes in appear/CircuitPins which could affect the
       // appearance ports and layout must be consistent with the list here, which
       // ensures affected circuits are locked.
@@ -469,12 +472,12 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       return set ? new SET_CIRC_ATTR(circuit, attr, newValue, oldValue) : null;
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       return attr == CircuitAttributes.CIRCUIT_APPEARANCE
           || attr == CircuitAttributes.CIRCUIT_NAME
           || attr == CircuitAttributes.CIRCUIT_REVISION
@@ -518,12 +521,12 @@ abstract class CircuitChange {
     }
 
     @Override
-    CircuitChange inverse() {
+    public CircuitChange inverse() {
       return set ? new SET_VHDL_ATTR(vhdl, attr, newValue, oldValue) : null;
     }
 
     @Override
-    boolean concernsSupercircuit() {
+    public boolean concernsSupercircuit() {
       return attr == VhdlEntity.NAME_ATTR
           || attr == StdAttr.APPEARANCE; // note: always true so far
     }

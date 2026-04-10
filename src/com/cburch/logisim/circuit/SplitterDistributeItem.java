@@ -72,7 +72,7 @@ class SplitterDistributeItem extends JMenuItem implements ActionListener {
     byte[] actual = attrs.bit_end;
     byte[] desired = SplitterAttributes.computeDistribution(attrs.fanout,
         actual.length, order);
-    CircuitMutation xn = new CircuitMutation(proj.getCircuitState()
+    CircuitMutation xn = CircuitMutation.forCircuit(proj.getCircuitState()
         .getCircuit());
     for (int i = 0, n = Math.min(actual.length, desired.length); i < n; i++) {
       if (actual[i] != desired[i]) {

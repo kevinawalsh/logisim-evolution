@@ -64,7 +64,7 @@ public class SetAttributeAction extends Action {
 
   @Override
   public void doIt(Project proj) {
-    CircuitMutation xn = new CircuitMutation(circuit);
+    CircuitMutation xn = CircuitMutation.forCircuit(circuit);
     int len = values.size();
     oldValues.clear();
     for (int i = 0; i < len; i++) {
