@@ -55,6 +55,14 @@ Updates on Java Versions [9 January 2025]:
 
 Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
 
+Updates on Java Versions [9 April 2026]:
+
+Now developing on OpenJDK Temurin 24, compiling with release="17", packaging
+with runtime 17.
+
+It is time to explore moving to runtime 21 (or 25?), as jdk17 is rapidly
+approaching end of support.
+
 -->
 
 <project name="logisim-evolution">
@@ -110,7 +118,7 @@ Now developing on OpenJDK Temurin 21, but still compiling jar with release="11".
     <target name="compile" depends="cleanjars,version,contact">
         <mkdir dir="bin"/>
         <depend srcdir="src" destdir="bin" cache="depcache" closure="no"/>
-        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" release="11" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/rsyntaxtextarea-stripped.jar:libs/jSerialComm-2.11.2.jar">
+        <javac srcdir="src" includeantruntime="false" destdir="bin" debug="true" release="17" classpath="libs/xswingx.jar:libs/lablib-checkboxtree-3.3.jar:libs/colorpicker.jar:libs/fontchooser.jar:libs/rsyntaxtextarea-stripped.jar:libs/jSerialComm-2.11.2.jar">
             <compilerarg line="-Xmaxerrs 10000"/>
             <compilerarg line="-Xlint:unchecked"/>
             <compilerarg line="-Xlint:deprecation"/>
