@@ -111,7 +111,7 @@ public class CircuitPins {
           in.getAttributeSet().removeAttributeWeakListener(null, myComponentListener);
           Component r = repl.getNonWireReplacementFor(comp);
           if (r == null) {
-            semoves.add(in);
+            removes.add(in);
           } else {
             Instance rin = Instance.getInstanceFor(r);
             adds.remove(rin);

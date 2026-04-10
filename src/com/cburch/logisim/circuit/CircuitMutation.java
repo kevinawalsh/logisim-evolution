@@ -126,8 +126,47 @@ public class CircuitMutation extends CircuitTransaction {
     return new CircuitAction(name, this);
   }
 
+  // Lots of callers expect CircuitMutation to have all of the convenience
+  // methods. So we include them here, all throwing errors, and the two
+  // subclasses below override them.
+
+  // convenience methods for Circuit
+  public void add(Component comp) {
+    throw new UnsupportedOperationException();
+  }
+  public void addAll(Collection<Component> comps) {
+    throw new UnsupportedOperationException();
+  }
+  public void remove(Component comp) {
+    throw new UnsupportedOperationException();
+  }
+  public void removeAll(Collection<Component> comps) {
+    throw new UnsupportedOperationException();
+  }
+  public void replacePairs(Map<Component, Component> pairs) {
+    throw new UnsupportedOperationException();
+  }
+  public void replacePairs(List<Component> oldComps, List<Component> newComps) {
+    throw new UnsupportedOperationException();
+  }
+  public void repairWires(Collection<Wire> oldWires, Collection<Wire> newWires) {
+    throw new UnsupportedOperationException();
+  }
+  public void set(Component comp, Attribute<?> attr, Object value) {
+    throw new UnsupportedOperationException();
+  }
+  public void setForCircuit(Attribute<?> attr, Object value) {
+    throw new UnsupportedOperationException();
+  }
+  
+  // convenience methods for VhdlContent
+  public void setForVhdl(Attribute<?> attr, Object value) {
+    throw new UnsupportedOperationException();
+  }
+
+
   // convenience subclass for modifying a single circuit
-  static CircuitMutation forCircuit(Circuit circuit) {
+  public static CircuitMutation forCircuit(Circuit circuit) {
     return new CircuitMutationForCircuit(circuit);
   }
   static class CircuitMutationForCircuit extends CircuitMutation {
@@ -137,30 +176,39 @@ public class CircuitMutation extends CircuitTransaction {
     }
 
     // convenience methods: same as addToPlan(new CircuitChange.FOO(circuit, ...)
+    @Override
     public void add(Component comp) {
       plan.add(new CircuitChange.ADD(primaryCircuit, comp));
     }
+    @Override
     public void addAll(Collection<Component> comps) {
       plan.add(new CircuitChange.ADD_ALL(primaryCircuit, comps));
     }
+    @Override
     public void remove(Component comp) {
       plan.add(new CircuitChange.REMOVE(primaryCircuit, comp));
     }
+    @Override
     public void removeAll(Collection<Component> comps) {
       plan.add(new CircuitChange.REMOVE_ALL(primaryCircuit, comps));
     }
+    @Override
     public void replacePairs(Map<Component, Component> pairs) {
       plan.add(new CircuitChange.REPLACE_PAIRS(primaryCircuit, pairs));
     }
+    @Override
     public void replacePairs(List<Component> oldComps, List<Component> newComps) {
       plan.add(new CircuitChange.REPLACE_PAIRS(primaryCircuit, oldComps, newComps));
     }
+    @Override
     public void repairWires(Collection<Wire> oldWires, Collection<Wire> newWires) {
       plan.add(new CircuitChange.REPAIR_WIRES(primaryCircuit, oldWires, newWires));
     }
+    @Override
     public void set(Component comp, Attribute<?> attr, Object value) {
       plan.add(new CircuitChange.SET_COMP_ATTR(primaryCircuit, comp, attr, value));
     }
+    @Override
     public void setForCircuit(Attribute<?> attr, Object value) {
       plan.add(new CircuitChange.SET_CIRC_ATTR(primaryCircuit, attr, value));
     }
@@ -176,7 +224,7 @@ public class CircuitMutation extends CircuitTransaction {
   }
   
   // convenience subclass for modifying a single vhdl
-  static CircuitMutation forVhdl(VhdlContent vhdl) {
+  public static CircuitMutation forVhdl(VhdlContent vhdl) {
     return new CircuitMutationForVhdl(vhdl);
   }
   static class CircuitMutationForVhdl extends CircuitMutation {
@@ -186,6 +234,7 @@ public class CircuitMutation extends CircuitTransaction {
     }
 
     // convenience methods: same as addToPlan(new CircuitChange.FOO(vhdl, ...)
+    @Override
     public void setForVhdl(Attribute<?> attr, Object value) {
       plan.add(new CircuitChange.SET_VHDL_ATTR(primaryVhdl, attr, value));
     }

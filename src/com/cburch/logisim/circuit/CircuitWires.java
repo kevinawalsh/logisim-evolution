@@ -1285,25 +1285,31 @@ public class CircuitWires {
     return bds;
   }
 
-  /*synchronized*/ void remove(Component comp) {
+  /*synchronized*/ boolean remove(Component comp) {
     if (comp instanceof Wire) {
-      removeWire((Wire) comp);
+      if (!removeWire((Wire) comp))
+        return false;
     } else if (comp instanceof Splitter) {
-      splitters.remove(comp);
+      if (!splitters.remove(comp))
+        return false;
     } else {
       Object factory = comp.getFactory();
       if (factory instanceof Tunnel) {
-        tunnels.remove(comp);
+        if (!tunnels.remove(comp))
+          return false;
         comp.getAttributeSet().removeAttributeWeakListener(null, tunnelListener);
       } else if (factory instanceof PullResistor) {
-        pulls.remove(comp);
+        if (!pulls.remove(comp))
+          return false;
         comp.getAttributeSet().removeAttributeWeakListener(null, tunnelListener);
       } else {
-        components.remove(comp);
+        if (!components.remove(comp))
+          return false;
       }
     }
     points.remove(comp);
     voidConnectivity();
+    return true;
   }
 
   /*synchronized*/ void remove(Component comp, EndData end) {
@@ -1311,10 +1317,10 @@ public class CircuitWires {
     voidConnectivity();
   }
 
-  private void removeWire(Wire w) {
+  private boolean removeWire(Wire w) {
     boolean removed = wires.remove(w);
     if (!removed)
-      return;
+      return false;
 
     if (bounds != Bounds.EMPTY_BOUNDS) {
       // bounds is valid - invalidate if endpoint on border
@@ -1323,6 +1329,7 @@ public class CircuitWires {
         bounds = Bounds.EMPTY_BOUNDS;
       }
     }
+    return true;
   }
 
   /*synchronized*/ void replace(Component comp, EndData oldEnd, EndData newEnd) {

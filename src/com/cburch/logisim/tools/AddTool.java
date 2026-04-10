@@ -532,7 +532,7 @@ public class AddTool extends Tool {
       try {
         if (libToPromote != null)
           proj.doAction(LogisimFileActions.loadLibraries(new Library[] { libToPromote }));
-        CircuitMutation mutation = new CircuitMutation(circ);
+        CircuitMutation mutation = CircuitMutation.forCircuit(circ);
         mutation.add(c);
         Action action = mutation.toAction(S.getter(
               "addComponentAction", factory.getDisplayGetter()));

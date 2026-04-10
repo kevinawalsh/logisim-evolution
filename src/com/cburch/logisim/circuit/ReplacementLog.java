@@ -150,7 +150,7 @@ public class ReplacementLog {
       // further changes involving b don't pollute the map?
     } else {
       if (added.containsKey(b)) {
-        System.err.printf("Invariant violated: a was already added: a=%s\n", a);
+        System.err.printf("Invariant violated: b was already added: b=%s\n", b);
         return;
       }
       if (removed.containsKey(b)) {
@@ -235,12 +235,12 @@ public class ReplacementLog {
         System.err.printf("Invariant violated: a already replaced by b0, now a replaced by b: a=%s b0=%s b=%s\n", a, b0, b);
         // a --> b0 was present, but now we wanted a --> b, which isn't possible.
         // I guess just add b outright?
-        appendAddition(b);
+        logAddition(b);
       } else {
         System.err.printf("Invariant violated: a already removed outright, now a replaced by b: a=%s b=%s\n", a, b);
         // a --> null was present, but now we wanted a --> b, which isn't possible.
         // I guess just add b outright?
-        appendAddition(b);
+        logAddition(b);
       }
     } else { // a not previously mentioned: simple replacement
       removed.put(a, b);
