@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -155,26 +156,11 @@ class RepairWireHelper {
       // from circuit, which doesn't have duplicates), and none are .equal() to
       // other wires in repl, which are either old (from circuit) or new (and
       // necessarily different, coming from a different mergeSet).
-      // If wnew existed previously, then the code here is:
-      //  - removing all the other wires (skipping wnew)
-      //  - adding the new wire repeatedly (which does nothing, since it already
-      //    exists),
-      //  - and moving any old wire selection to wnew instead
-      // But if wnew did not exist previously, then the code here is :
-      //  - removing all the wires,
+      // If wnew existed previously, or even if not, the code here is:
+      //  - removing all the wires (possibly including wnew)
       //  - adding the new wire repeatedly (only the first addition matters)
       //  - and moving any old wire selection to wnew instead
-      // Note: if we remove wnew, we gain nothing, but could change an N-to-1
-      // replacement (N>1) into to just a 1-to-1 replacement.
-
-      // mergeSet.remove(wnew); // don't bother recording wnew --> wnew, I guess? FIXME Does it matter?
-      // for (Wire wold : mergeSet)
-      //  mutator.repairWires( wold, wnew);
-
       mutator.repairWires(circuit, mergeSet, Collections.singletonList(wnew));
-
-      // Note: repl is using append-style semantics, but because none of the
-      // wires are .equal(), this is equivalent to simultaneous replacements.
     }
   }
 
@@ -239,13 +225,12 @@ class RepairWireHelper {
       // Replace one old wire with some subset of the new (possibly existing) wires
       // Note: we don't check for it, but this could be doing a 1-to-1
       // replacement of a wire with itself.
+      //
+      // Note: none of the old wires are .equals() to each other, because they
+      // all came from the circuit, which does not have duplicates. And the new
+      // wires may or may not be equal to some old wires, but if they are, we
+      // keep the w --> w replacements.
       mutator.repairWires(circuit, Collections.singletonList(w), wRepl);
-      // Note: repl is using append-style semantics, but I don't think it
-      // matters here... none of the old wires are .equals() to each other,
-      // because they all came from the circuit, which does not have duplicates.
-      // And the new wires may or may not be equal to some old wires, but if
-      // they are, we keep the w --> w replacements, so I think the
-      // append-semantics is harmless. Maybe.
     }
   }
 
@@ -324,6 +309,7 @@ class RepairWireHelper {
   //
   private static void doSplits(Circuit circuit, CircuitMutator mutator) {
     Set<Location> allLocs = circuit.wires.points.getAllLocations();
+    HashMap<Wire, HashSet<Wire>> plan = new HashMap<>();
     // For each wire
     for (Wire w : circuit.getWires()) {
       Location w0 = w.getEnd0();
@@ -353,8 +339,13 @@ class RepairWireHelper {
         // wire, or to any other wires (because no other wire in the circuit is
         // parallel and overlapping with our w... earlier repairs would have
         // eliminated such cases).
-        mutator.repairWires(circuit, Collections.singletonList(w), subs);
+        plan.put(w, subs);
       }
+    }
+    for (Map.Entry<Wire, HashSet<Wire>> e : plan.entrySet()) {
+      Wire w = e.getKey();
+      HashSet<Wire> subs = e.getValue();
+      mutator.repairWires(circuit, Collections.singletonList(w), subs);
     }
   }
 
