@@ -78,9 +78,6 @@ public abstract class CircuitTransaction {
 
   public final CircuitTransactionResult execute() {
 
-    System.out.println("executing: " + this);
-    dump();
-
     // xn phase 0 - setup and sanity check for nested transaction
     CircuitTransactionResult result;
     CircuitMutatorImpl mutator = activeMutatorForThisThread.get();
@@ -140,8 +137,6 @@ public abstract class CircuitTransaction {
 
       // xn phase 6
       result = new CircuitTransactionResult(mutator);
-
-      System.out.println("xn result = " + result);
 
       // xn phase 7
       for (Circuit circuit : result.getModifiedCircuits()) {
