@@ -254,9 +254,9 @@ public class Scope extends InstanceFactory {
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
     setInstancePoker(Poker.class);
     setPorts(new Port[] {
-      new Port(0, 0, Port.INPUT, StdAttr.WIDTH),
-      new Port(20, 20, Port.INPUT, 1), // CK
-      new Port(10, 20, Port.INPUT, 1), // EN
+      new Port(0, 0, Port.INPUT, StdAttr.WIDTH).withToolTip(S.getter("ioScopeSampleTip")),
+      new Port(20, 20, Port.INPUT, 1).withToolTip(S.getter("ioScopeClockTip")),
+      new Port(10, 20, Port.INPUT, 1).withToolTip(S.getter("ioScopeEnableTip")),
     });
   }
 
