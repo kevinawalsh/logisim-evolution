@@ -46,8 +46,6 @@ public class CircuitAction extends Action {
 
   @Override
   public void doIt(Project proj) {
-    System.out.println("executing forward: " + forward);
-    forward.dump();
     CircuitTransactionResult result = forward.execute();
     if (result != null) {
       reverse = result.getReverseTransaction();
@@ -61,10 +59,7 @@ public class CircuitAction extends Action {
 
   @Override
   public void undo(Project proj) {
-    if (reverse != null) {
-      System.out.println("executing reverse: " + reverse);
-      reverse.dump();
+    if (reverse != null)
       reverse.execute();
-    }
   }
 }
