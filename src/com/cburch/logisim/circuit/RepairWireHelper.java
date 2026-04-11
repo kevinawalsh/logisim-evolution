@@ -72,7 +72,7 @@ class RepairWireHelper {
     void addAll(Clump other) {
       wires.addAll(other.wires);
       if (other.e0.compareTo(e0) < 0) e0 = other.e0;
-      if (other.e1.compareTo(e1) < 0) e1 = other.e1;
+      if (other.e1.compareTo(e1) > 0) e1 = other.e1;
     }
   }
 
