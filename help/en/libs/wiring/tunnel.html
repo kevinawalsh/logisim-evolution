@@ -10,46 +10,53 @@
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/tunnel.gif">
-<em>Tunnel</em></h1>
+<h1><img src="/logisim-evolution/icons/tunnel.gif"> <em>Tunnel</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.5.0 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/tunnel.png" width="220" height="90"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
+
+<img src="tunnels.png">
+
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=splitters.circ&circ=tunnel-examplese">Live Circuit: Tunnels</a></li>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=bounce.circ">Live Circuit: Bounce</a></li>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=digital-clock.circ">Live Circuit: Digital Clock</a></li>
+</ul>
 
 <h2>Behavior</h2>
 
-<p>A <q>tunnel</q> acts like a wire in that it binds points together,
-but unlike a wire the connection is not explicitly drawn.
-This is helpful when you need to connect points far apart in the circuit
-and a network of wires would make the circuit much more ugly.
-The below illustration illustrates how this works.</p>
+<p>A pair of identically-labeled tunnels acts like an <i>invisible wire</i>.
+This is helpful when you need to connect points far apart in the circuit but
+need to avoid long or confusing tangles of wires. In the examples above, a pair
+of "hitTop" tunnels connects the output of the AND gate (near the top middle of
+the circuit) to the selector input of a multiplexor (near the bottom right). The
+"bounce" and "gravity" tunnels connect the pink button and dial (top right) to
+other multiplexors (bottom right).
 
-<blockquote class="plain"><img src="/logisim-evolution/img-libs/tunnel-demo.png" width="204" height="86"></blockquote>
+<p>More generally, you can use as many identically-labeled tunnels as you need:
+the simulator acts as if all of them are joined by a network of invisible wires.
+And like wires, signals can travel in any direction through tunnels: any of the
+tunnels in a group can be used at any time as the "source", taking some value
+and sending it to all of it's siblings. Tunnels can also carry multi-bit
+signals, but the number of bits must be configured in the properties panel.
 
-<p>Here, all three tunnels have the same label, <em>a</em>, and so
-the three points to which the tunnels point are connected.
-(If one of the tunnels were labeled something else, like <em>b</em>,
-then it would be part of a different set of tunnels.)
-The tristate buffer at top emits a floating output
-since its lower input is 0.
-This normally leads the wire coming from the tristate buffer to be blue;
-but here it is dark green because the floating output combines
-through the tunnel with the 0 from the pin at bottom.
-If the control input into the tristate buffer changes to 1,
-then the tristate buffer would feed 1 into the tunnel,
-which would combine with 0 from the pin at bottom to result in an error value; thus, we would then see red wires feeding through all three tunnels.</p>
+<h2>Ports</h2>
 
-<h2>Pins</h2>
+<p>Tunnels have just one port, used to send values into the tunnel and/or to
+take values out of the tunnel. The simulator ensures that all tunnels with the
+same label all have the same value at all times.
 
-<p>A tunnel has only one pin, whose bit width matches the tunnel's
-Data Bits property. This pin is bidirection, allowing values to flow in either
-direction through the tunnel.</p>
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b> 
+changes <b>both</b> the <i>Fan Out</i> <b>and</b> the <i>Combined Bit Width</i>
+property, controlling the number of bits available at the combined end and the
+number of bits available for the taps, and making enough taps so there is one
+for each bit.</li>
+</ul>
 
 <h2>Properties</h2>
 
@@ -60,27 +67,25 @@ and the arrow keys alter its <q>Facing</q> property.</p>
 <dl>
 
 <dt>Facing</dt>
-<dd>The direction toward which the tunnel points.</dd>
+<dd>The direction the tunnel points.</dd>
 
 <dt>Data Bits</dt>
-<dd>The number of bits for the tunnel.</dd>
+<dd>The number of bits in the tunnel's signal.</dd>
 
 <dt>Label</dt>
-<dd>The text within the label associated with the tunnel.
-This tunnel is connected to all other tunnels with exactly the same label.</dd>
+<dd>A name for the tunnel. The label is critical for connectivity: a tunnel is
+invisibly connected to all other tunnels with the same label.</dd>
 
 <dt>Label Font</dt>
-<dd>The font with which to render the label.</dd>
+<dd>Font for the label.</dd>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - tunnels do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project source="5.1.3-HC" version="1.0">
+<project source="5.1.4-HC" version="1.0">
   This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
 
   <lib desc="#Base" name="0"/>
   <lib desc="#Wiring" name="1">
+    <tool name="Splitter">
+      <a name="facing" val="south"/>
+    </tool>
     <tool name="Constant">
       <a name="value" val="0x1"/>
     </tool>
@@ -22,7 +25,7 @@
   <lib desc="#BFH-Praktika" name="9"/>
   <lib desc="#External I/O" name="10"/>
   <lib desc="#Decor" name="11"/>
-  <main name="main"/>
+  <main name="splitter-examples"/>
   <options/>
   <toolbar>
     <tool lib="0" name="Poke Tool"/>
@@ -46,7 +49,7 @@
     <tool lib="2" name="NAND Gate"/>
     <tool lib="2" name="NOR Gate"/>
   </toolbar>
-  <circuit name="main">
+  <circuit name="splitter-examples">
     <a name="appearance" val="classic"/>
     <comp lib="1" loc="(120,280)" name="Probe">
       <a name="facing" val="north"/>
@@ -230,16 +233,6 @@
       <a name="valign" val="top"/>
     </comp>
     <comp lib="11" loc="(220,500)" name="Callout">
-      <a name="background" val="#81e6df00"/>
-      <a name="dx" val="-20"/>
-      <a name="dy" val="8"/>
-      <a name="foreground" val="#2e5c56"/>
-      <a name="format" val="wrapped"/>
-      <a name="text" val=" "/>
-      <a name="textwidth" val="37"/>
-      <a name="valign" val="top"/>
-    </comp>
-    <comp lib="11" loc="(220,500)" name="Callout">
       <a name="background" val="#81e6df80"/>
       <a name="dx" val="-22"/>
       <a name="dy" val="-14"/>
@@ -253,6 +246,16 @@
       <a name="background" val="#81e6df00"/>
       <a name="dx" val="-18"/>
       <a name="dy" val="39"/>
+      <a name="foreground" val="#2e5c56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val=" "/>
+      <a name="textwidth" val="37"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(220,500)" name="Callout">
+      <a name="background" val="#81e6df00"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="8"/>
       <a name="foreground" val="#2e5c56"/>
       <a name="format" val="wrapped"/>
       <a name="text" val=" "/>
@@ -402,5 +405,173 @@
     <wire from="(80,280)" to="(120,280)"/>
     <wire from="(80,280)" to="(80,300)"/>
     <wire from="(90,120)" to="(90,130)"/>
+  </circuit>
+  <circuit name="tunnel-examples">
+    <comp lib="1" loc="(110,110)" name="Tunnel">
+      <a name="label" val="bar"/>
+    </comp>
+    <comp lib="1" loc="(110,230)" name="Splitter">
+      <a name="appear" val="right"/>
+      <a name="facing" val="south"/>
+      <a name="fanout" val="8"/>
+      <a name="incoming" val="8"/>
+    </comp>
+    <comp lib="1" loc="(110,50)" name="Tunnel">
+      <a name="label" val="foo"/>
+    </comp>
+    <comp lib="1" loc="(120,230)" name="Tunnel">
+      <a name="label" val="switches"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(180,320)" name="Tunnel">
+      <a name="facing" val="south"/>
+      <a name="label" val="stored value"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(180,330)" name="Splitter">
+      <a name="appear" val="right"/>
+      <a name="bit1" val="0"/>
+      <a name="bit2" val="0"/>
+      <a name="bit3" val="0"/>
+      <a name="bit4" val="1"/>
+      <a name="bit5" val="1"/>
+      <a name="bit6" val="1"/>
+      <a name="bit7" val="1"/>
+      <a name="facing" val="south"/>
+      <a name="incoming" val="8"/>
+      <a name="spacing" val="2"/>
+    </comp>
+    <comp lib="1" loc="(420,40)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="foo"/>
+    </comp>
+    <comp lib="1" loc="(430,80)" name="Tunnel">
+      <a name="facing" val="north"/>
+      <a name="label" val="bar"/>
+    </comp>
+    <comp lib="1" loc="(440,200)" name="Tunnel">
+      <a name="facing" val="south"/>
+      <a name="label" val="switches"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(440,250)" name="Tunnel">
+      <a name="facing" val="east"/>
+      <a name="label" val="bar"/>
+    </comp>
+    <comp lib="1" loc="(480,270)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(530,230)" name="Tunnel">
+      <a name="label" val="stored value"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(80,50)" name="Pin"/>
+    <comp lib="11" loc="(200,160)" name="Callout">
+      <a name="background" val="#89feff67"/>
+      <a name="dx" val="-49"/>
+      <a name="dy" val="-42"/>
+      <a name="text">A tunnel can appear
+as many times as
+needed. All three
+"bar" tunnels are
+invisibly connected.</a>
+    </comp>
+    <comp lib="11" loc="(200,70)" name="Callout">
+      <a name="background" val="#fcff3367"/>
+      <a name="dx" val="-46"/>
+      <a name="dy" val="-21"/>
+      <a name="text">All tunnels
+named "foo"
+are invisibly
+connected.</a>
+    </comp>
+    <comp lib="11" loc="(242,246)" name="Callout">
+      <a name="background" val="#ff9dec67"/>
+      <a name="dx" val="-46"/>
+      <a name="dy" val="-11"/>
+      <a name="text">Tunnels can
+carry multi-bit
+signals</a>
+    </comp>
+    <comp lib="11" loc="(270,354)" name="Callout">
+      <a name="background" val="#bfffae67"/>
+      <a name="dx" val="-38"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="Like wires and splitters, tunnels have no &quot;direction&quot;... values are carried from any tunnel to every other identically-named tunnel."/>
+      <a name="textwidth" val="184"/>
+    </comp>
+    <comp lib="11" loc="(300,70)" name="Callout">
+      <a name="background" val="#bdbf2667"/>
+      <a name="dx" val="72"/>
+      <a name="dy" val="-26"/>
+      <a name="halign" val="right"/>
+      <a name="text" val="    "/>
+    </comp>
+    <comp lib="11" loc="(344,140)" name="Callout">
+      <a name="background" val="#6bc7c767"/>
+      <a name="dx" val="54"/>
+      <a name="dy" val="-36"/>
+      <a name="halign" val="right"/>
+      <a name="text">
+</a>
+    </comp>
+    <comp lib="11" loc="(344,180)" name="Callout">
+      <a name="background" val="#6bc7c767"/>
+      <a name="dx" val="50"/>
+      <a name="dy" val="56"/>
+      <a name="halign" val="right"/>
+      <a name="text">
+</a>
+    </comp>
+    <comp lib="11" loc="(560,310)" name="Callout">
+      <a name="background" val="#97c98967"/>
+      <a name="dx" val="-17"/>
+      <a name="dy" val="-57"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="text" val="Values go into this tunnel, and appear near the hex displays at left."/>
+      <a name="textwidth" val="99"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="2" loc="(470,50)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
+    <comp lib="5" loc="(500,230)" name="Register"/>
+    <comp lib="6" loc="(110,420)" name="Hex Digit Display"/>
+    <comp lib="6" loc="(20,260)" name="DipSwitch"/>
+    <comp lib="6" loc="(200,420)" name="Hex Digit Display"/>
+    <comp lib="6" loc="(500,50)" name="LED"/>
+    <comp lib="6" loc="(80,110)" name="Button">
+      <a name="color" val="#7ffeff"/>
+    </comp>
+    <wire from="(100,250)" to="(100,260)"/>
+    <wire from="(110,230)" to="(120,230)"/>
+    <wire from="(110,420)" to="(110,440)"/>
+    <wire from="(110,440)" to="(150,440)"/>
+    <wire from="(150,350)" to="(150,440)"/>
+    <wire from="(170,350)" to="(170,440)"/>
+    <wire from="(170,440)" to="(200,440)"/>
+    <wire from="(180,320)" to="(180,330)"/>
+    <wire from="(200,420)" to="(200,440)"/>
+    <wire from="(30,250)" to="(30,260)"/>
+    <wire from="(40,250)" to="(40,260)"/>
+    <wire from="(420,40)" to="(440,40)"/>
+    <wire from="(430,60)" to="(430,80)"/>
+    <wire from="(430,60)" to="(440,60)"/>
+    <wire from="(440,200)" to="(440,230)"/>
+    <wire from="(440,230)" to="(470,230)"/>
+    <wire from="(440,250)" to="(460,250)"/>
+    <wire from="(460,240)" to="(460,250)"/>
+    <wire from="(460,240)" to="(470,240)"/>
+    <wire from="(470,50)" to="(500,50)"/>
+    <wire from="(480,250)" to="(480,270)"/>
+    <wire from="(50,250)" to="(50,260)"/>
+    <wire from="(500,230)" to="(530,230)"/>
+    <wire from="(60,250)" to="(60,260)"/>
+    <wire from="(70,250)" to="(70,260)"/>
+    <wire from="(80,110)" to="(110,110)"/>
+    <wire from="(80,250)" to="(80,260)"/>
+    <wire from="(80,50)" to="(110,50)"/>
+    <wire from="(90,250)" to="(90,260)"/>
   </circuit>
 </project>
