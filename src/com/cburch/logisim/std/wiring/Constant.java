@@ -231,7 +231,7 @@ public class Constant extends InstanceFactory {
     g.fillOval(-2, -2, 4, 4);
     g.setFont(DEFAULT_FONT);
     GraphicsUtil.drawCenteredText(g, vStr, bds.getX() + bds.getWidth() / 2,
-        bds.getY() + bds.getHeight() / 2 - 2);
+        bds.getY() + bds.getHeight() / 2);
   }
 
   //
@@ -287,7 +287,7 @@ public class Constant extends InstanceFactory {
     RadixOption radix = painter.getAttributeValue(RadixOption.ATTRIBUTE);
     GraphicsUtil.drawCenteredText(g, v.toUnadornedString(),
         bds.getX() + bds.getWidth() / 2,
-        bds.getY() + bds.getHeight() / 2 - 2);
+        bds.getY() + bds.getHeight() / 2);
     painter.drawPorts();
   }
 
