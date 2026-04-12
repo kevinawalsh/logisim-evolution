@@ -419,7 +419,7 @@ abstract class CircuitChange {
 
     @Override
     public CircuitChange inverse() {
-      return set ? new SET_COMP_ATTR(circuit, comp, attr, oldValue, newValue) : null;
+      return set ? new SET_COMP_ATTR(circuit, comp, attr, newValue, oldValue) : null;
     }
 
     @Override
