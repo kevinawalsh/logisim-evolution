@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentDrawContext;
@@ -397,15 +398,33 @@ public /*final*/ class InstanceComponent
   }
 
   public String toString() { // note: Text overrides this
+    Attribute<String> labelAttr = null;
+    String label;
     InstanceTextField field = textField;
+    String s = factory.getName()+"{";
+    s += "loc="+loc;
     if (field != null) {
-      String label = field.getText();
-      return "InstanceComponent{factory="+factory.getName()
-          +",loc="+loc+",textfield="+label+"}@"+System.identityHashCode(this);
+      label = field.getText();
+      if (label != null)
+        s += ",textfield='"+label+"'";
     } else {
-      String label = attrs.getValue(StdAttr.LABEL);
-      return "InstanceComponent{factory="+factory.getName()
-          +",loc="+loc+",stdlabel="+label+"}@"+System.identityHashCode(this);
+      label = attrs.getValue(StdAttr.LABEL);
+      labelAttr = StdAttr.LABEL;
+      if (label != null)
+        s += ",stdlabel='"+label+"'";
     }
+    for (Attribute<?> a : attrs.getAttributes()) {
+      if (a == labelAttr)
+        continue;
+      @SuppressWarnings("unchecked")
+      Attribute<Object> attr = (Attribute<Object>)a;
+      Object val = attrs.getValue(attr);
+      Object def = getFactory().getDefaultAttributeValue(attr, Main.VERSION);
+      if (((val == null) && (def == null)) || (val != null && val.equals(def)))
+          continue;
+      s += ","+attr.getName()+"="+attr.toStandardString(val);
+    }
+    s += "}@"+System.identityHashCode(this);
+    return s;
   }
 }

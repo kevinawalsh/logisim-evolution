@@ -400,8 +400,10 @@ abstract class CircuitChange {
 
     @Override
     public String toString() {
-      return "SET " + comp + " " + attr + " = " + newValue
-        + (oldValue != null ? " (from " + oldValue + ")" : "")
+      @SuppressWarnings("unchecked")
+      Attribute<Object> a = (Attribute<Object>) attr;
+      return "SET " + comp + " " + a.getName() + " = " + a.toStandardString(newValue)
+        + (oldValue != null ? " (WAS " + a.toStandardString(oldValue) + ")" : "")
         + " IN " + circuit.getName();
     }
 
@@ -456,8 +458,10 @@ abstract class CircuitChange {
 
     @Override
     public String toString() {
-      return "SET " + attr + " = " + newValue
-        + (oldValue != null ? " (from " + oldValue + ")" : "")
+      @SuppressWarnings("unchecked")
+      Attribute<Object> a = (Attribute<Object>) attr;
+      return "SET " + a.getName() + " = " + a.toStandardString(newValue)
+        + (oldValue != null ? " (WAS " + a.toStandardString(oldValue) + ")" : "")
         + " OF " + circuit.getName();
     }
 
@@ -505,8 +509,10 @@ abstract class CircuitChange {
 
     @Override
     public String toString() {
-      return "SET " + attr + " = " + newValue
-        + (oldValue != null ? " (from " + oldValue + ")" : "")
+      @SuppressWarnings("unchecked")
+      Attribute<Object> a = (Attribute<Object>) attr;
+      return "SET " + a.getName() + " = " + a.toStandardString(newValue)
+        + (oldValue != null ? " (WAS " + a.toStandardString(oldValue) + ")" : "")
         + " OF " + vhdl.getName();
     }
 

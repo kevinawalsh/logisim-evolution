@@ -334,7 +334,7 @@ public class Constant extends InstanceFactory {
       } else if (s.startsWith("+") || s.startsWith("-")) {
         value = Value.createKnown(BitWidth.of(32), (int) Long.parseLong(s, 10));
         radix = RadixOption.RADIX_10_SIGNED;
-      } else  {
+      } else {
         value = Value.createKnown(BitWidth.of(32), (int) Long.parseLong(s, 10));
         radix = RadixOption.RADIX_10_UNSIGNED;
       }
