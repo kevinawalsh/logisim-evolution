@@ -10,90 +10,139 @@
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/clock.gif">
-<em>Clock</em></h1>
+<h1><img src="/logisim-evolution/icons/clock.gif"> <em>Clock</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0 Beta 13 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/clock.png" width="23" height="23"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
 
-<h2>Behavior</h2>
+<video src="clocks.mp4" autoplay loop muted playsinline></video>
 
-<p>The clock toggles its output value on a regular schedule as long as
-auto-ticks are enabled via the
-<a href="../../guide/menu/simulate.html">Simulate menu</a>, or when a manual
-half-tick or full-tick is selected from the same menu.
-(Auto-ticking are disabled by default.)
-A "tick" is Logisim's unit of time; the speed at which ticks occur can
-be selected from the Simulate menu's Auto-Tick Frequency submenu.</p>
-Each clock component's duty cycle can be independently configured using its High
-Duration and Low Duration properties.</p>
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=wiring.circ&circuit=clock-examples">Live Circuit: Clocks</a></li>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=bounce.circ">Live Circuit: Bounce</a></li>
+</ul>
 
-<p>Note that Logisim's simulation of clocks is quite unrealistic: In
-real circuits, multiple clocks will drift from one another and will
-never move in lockstep. But in Logisim, all clocks experience ticks at
-the same rate.</p>
+<h2>Default Behavior</h2>
 
-<blockquote class="warning">Warning: The auto-tick frequency is best-effort&mdash;Logisim will
-    attempt to toggle the clocks at the selected frequency, but does not provide
-    any guarantees. Complex circuits will necessarily require more actual time
-    to simulate, and will not be able to keep up with high clock frequencies.
-    The actual simulated frequency can be displayed (see the 'Window' tab of the
-    Logisim Preferences).</blockquote>
+<p>Clocks are for synchronizing state changes in a circuit: a clock outputs an
+alternating sequence of high (1) and low (0) values, and other components like
+registers and flip flops perform actions when triggered by these clock signals.
 
-<h2>Pins</h2>
+<p><b>Manual ticks:</b> Toggle a clock's value by clicking it with the <a
+href="poke.html">Poke Tool</a>. All clocks within a circuit are internally tied
+together, so poking <i>any</i> clock will advance <i>all</i> clocks in unison.
+You can also tick forward using the <a
+href="../../guide/menu/simulate.html">Simulate menu</a> or keyboard shortcuts: a
+"half cycle" tick will make all clocks go from low to high, or vice versa; A
+"full cycle" tick will do a pair of half cycles in quick succession, so clocks
+will go through a full cycle, e.g. from high, to low, and back to high again.
 
-<p>A clock has only one pin, an output with a bit width of 1, whose
-value will represent the current value of the clock. The location of
-this pin is specified in the Facing property. The clock's value
-will toggle on its schedule whenever ticks are enabled, and it will
-toggle whenever it is clicked using the <a href="poke.html">Poke
-Tool</a>.</p>
+<p><b>Auto-ticks:</b> Enabing auto-ticks using the
+<a href="../../guide/menu/simulate.html">Simulate menu</a>, or keyboard
+shortcut, causes the simulator to generate ticks on a regular schedule,
+advancing all clocks at an even tempo. Using the <a
+href="../../guide/menu/simulate.html">Simulate menu</a> or keyboard shortcuts,
+you can speed up or slow down the tick rate tempo: selecting 32Hz, for example,
+makes the simulator aim for 32 full cycle ticks (64 half cycle ticks) every
+second. 
+
+<p><b>Multiple Clocks:</b> All clocks in a simulation -- all the clocks in a
+circuit, and all clocks within any embedded subcircuits -- are tied to the same
+underlying tick source, so they all tick in unison. 
+
+<p class="warning"><b>Note:</b> At high tick rates, the simulator on-screen
+visualization and animations may not keep up with the underlying circuit
+simulation. Visual glitches may be present: for example, a network of wires
+connected to a clock may blink at what appears to be an uneven pace, or a signal
+with rapidly changing values may seem to stay mostly constant. These are not
+glitches with the underlying circuit simulation itself, only with the
+visualization, much like the strobe effect or rolling-shutter effect in
+photographs and videos. Logisim is designed to prioritize simulation at the
+highest possible rate, even if the on-screen graphics can't keep up. Many
+circuits can be simulated at 8MHz or faster, but animations above 30-60 frames
+per second likely wouldn't be visible to the human eye anyway.</p>
+
+<p class="warning"><b>Also note:</b> Depending on the complexity of the circuit,
+the simulator may not be able run as fast as you want. In other words, the auto
+tick frequency is a <i>target</i>, but can't be guaranteed. 
+Logisim can display the actual tick rate achieved in the upper right corner
+(see <a href="../../guide/prefs/">Logisim Settings</a>).</p>
+
+<h2>Advanced Behavior</h2>
+
+<p><img class="nonicon" src="clock-dutycycle.png" style="float: right; border: 1px solid gray;">
+Non-standard duty cycles and phase offsets can be configured in the
+properties panel for each clock. By default, clocks use a 1:1 duty cycle meaning
+they output a high value for 1 tick, then a low value for 1 tick. The full cycle
+takes 2 ticks. An n:m duty cycle means a clock will output a high value for the
+first n ticks, then output a low value for the next m ticks, before starting
+over again, taking n+m ticks to complete a full cycle.
+
+<p>The phase offset controls the alignment of each clock's duty cycle relative
+to other clocks. By default, clocks have a phase offset of 0. Configuring a
+clock to use a 1 tick phase offset, the timing is advanced so the clock is
+effectively 1 tick ahead of others. Generally, a phase offset of k ticks means
+the clock is k ticks ahead of other clocks. For example, a clock with 4:1 duty
+complete its cycle in 5 ticks, normally outputting high values for the first 4
+ticks, then transition to a low value for the last tick in the cycle, then begin
+again by transitioning to high. But setting the phase offset to 1 tick means all
+the transitions arrive 1 tick earlier, but otherwise have the exact same spacing
+and pace. If the circuit has only one clock, or if all clocks have the same
+phase offset, you won't notice any difference by changing the phase offset. But
+putting two clocks side by side that are identical except for different phase
+offsets will reveal how they are "offset" in time from each other.
+
+<h2>Ports</h2>
+
+<p>A clock has only one port, an output with a bit width of 1, carrying the current value of the clock.
+
+<h2>Keyboard Shortcuts</h2>
+
+<p>When using Edit Tool:</p>
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b>
+change the <i>Label Location</i> property.</li>
+
+</ul>
 
 <h2>Properties</h2>
-
-<p>When the component is selected or being added,
-the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 
 <dt>Facing</dt>
-<dd>The side of the component where its output pin should be.</dd>
+<dd>The side where the port should be.</dd>
 
 <dt>High Duration</dt>
-<dd>The length of time within each cycle that the clock's output should
-be 1.</dd>
+<dd>Number of ticks at the start of a cycle that the output should be 1.</dd>
 
 <dt>Low Duration</dt>
-<dd>The length of time within each cycle that the clock's output should
-be 0.</dd>
+<dd>Number of ticks at the end of a cycle that the output should be 0.</dd>
+
+<dt>Phase Offset</dt>
+<dd>Controls alignment with other clocks. A phase offset of k means the clock begins its cycle k ticks before other clocks.</dd>
 
 <dt>Label</dt>
-<dd>The text within the label associated with the clock component.</dd>
+<dd>Text to show next to the clock.</dd>
 
 <dt>Label Location</dt>
-<dd>The location of the label relative to the component.</dd>
+<dd>Location of the label relative to the clock.</dd>
 
 <dt>Label Font</dt>
-<dd>The font with which to render the label.</dd>
+<dd>Font for the label.
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>Clicking a clock component will toggle its current output value
-immediately. Note that <b>all clocks</b> are tied to the same simulated notion
-of time, so poking any one clock will toggle all clocks in the current
-simulation.</p>
+<p>Clicking any clock within a circuit will cause the simulator to tick once,
+advancing all clocks forward in unison.</p>
 
-<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
 
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis. To dynamically
+control the speed clocks tick within an fpga, use the <a
+href="../bfh/dynclock.html">Dynamic Clock Control</a> component.
 
 </body>
 </html>

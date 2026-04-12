@@ -16,6 +16,9 @@
   <lib desc="#Arithmetic" name="4"/>
   <lib desc="#Memory" name="5"/>
   <lib desc="#I/O" name="6">
+    <tool name="LED">
+      <a name="facing" val="south"/>
+    </tool>
     <tool name="RGB Video">
       <a name="fixed" val="0#888 RGB (24 bit)"/>
     </tool>
@@ -233,22 +236,22 @@
       <a name="valign" val="top"/>
     </comp>
     <comp lib="11" loc="(220,500)" name="Callout">
-      <a name="background" val="#81e6df80"/>
-      <a name="dx" val="-22"/>
-      <a name="dy" val="-14"/>
-      <a name="foreground" val="#2e5c56"/>
-      <a name="format" val="wrapped"/>
-      <a name="text" val="taps"/>
-      <a name="textwidth" val="37"/>
-      <a name="valign" val="top"/>
-    </comp>
-    <comp lib="11" loc="(220,500)" name="Callout">
       <a name="background" val="#81e6df00"/>
       <a name="dx" val="-18"/>
       <a name="dy" val="39"/>
       <a name="foreground" val="#2e5c56"/>
       <a name="format" val="wrapped"/>
       <a name="text" val=" "/>
+      <a name="textwidth" val="37"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(220,500)" name="Callout">
+      <a name="background" val="#81e6df80"/>
+      <a name="dx" val="-22"/>
+      <a name="dy" val="-14"/>
+      <a name="foreground" val="#2e5c56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="taps"/>
       <a name="textwidth" val="37"/>
       <a name="valign" val="top"/>
     </comp>
@@ -573,5 +576,163 @@ signals</a>
     <wire from="(80,250)" to="(80,260)"/>
     <wire from="(80,50)" to="(110,50)"/>
     <wire from="(90,250)" to="(90,260)"/>
+  </circuit>
+  <circuit name="clock-examples">
+    <comp lib="1" loc="(130,590)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(230,200)" name="Clock">
+      <a name="facing" val="north"/>
+      <a name="lowDuration" val="4"/>
+    </comp>
+    <comp lib="1" loc="(240,140)" name="Clock"/>
+    <comp lib="1" loc="(280,220)" name="Clock">
+      <a name="facing" val="south"/>
+      <a name="lowDuration" val="4"/>
+      <a name="phaseOffset" val="1"/>
+    </comp>
+    <comp lib="1" loc="(80,370)" name="Clock">
+      <a name="highDuration" val="20"/>
+      <a name="lowDuration" val="20"/>
+    </comp>
+    <comp lib="1" loc="(80,430)" name="Clock">
+      <a name="highDuration" val="60"/>
+      <a name="lowDuration" val="40"/>
+    </comp>
+    <comp lib="1" loc="(80,490)" name="Clock">
+      <a name="highDuration" val="20"/>
+      <a name="lowDuration" val="80"/>
+    </comp>
+    <comp lib="1" loc="(80,550)" name="Clock">
+      <a name="highDuration" val="20"/>
+      <a name="lowDuration" val="80"/>
+      <a name="phaseOffset" val="15"/>
+    </comp>
+    <comp lib="11" loc="(170,580)" name="Text">
+      <a name="background" val="#ff40e456"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="Notice how the +15 phase offset makes the high pulse arrive a little earlier (15 ticks earlier than the other display, above)."/>
+      <a name="textwidth" val="277"/>
+    </comp>
+    <comp lib="11" loc="(180,130)" name="Callout">
+      <a name="background" val="#a8ff9573"/>
+      <a name="dx" val="31"/>
+      <a name="dy" val="7"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="text" val="Default clock: 1 tick high, 1 tick low."/>
+      <a name="textwidth" val="136"/>
+    </comp>
+    <comp lib="11" loc="(180,210)" name="Callout">
+      <a name="background" val="#ffb55073"/>
+      <a name="dx" val="26"/>
+      <a name="dy" val="2"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="text" val="Unbalanced clocks with 1 high for every 4 lows. The right one is phase-shifted by 1."/>
+      <a name="textwidth" val="136"/>
+    </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="background" val="#59fffd56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text">Poke any clock to make all clocks tick once. Or enable auto-ticks in the Simulate menu, and adjust the auto-tick frequency to your liking.
+All clocks in a simulation are internally tied to a common tick source.</a>
+      <a name="textwidth" val="413"/>
+    </comp>
+    <comp lib="11" loc="(20,260)" name="Text">
+      <a name="background" val="#59fffd56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="Let's visualize different clock parameters! For this demo, it's best to enable auto-ticks and set the auto-frequecy to around 32Hz. The scopes capture and display one value per clock cycle (2 ticks), so the clocks at the left are set to use 40 or more ticks per cycle."/>
+      <a name="textwidth" val="413"/>
+    </comp>
+    <comp lib="11" loc="(330,370)" name="Callout">
+      <a name="background" val="#a8ff9573"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-1"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="Balanced: 20 ticks high, 20 ticks low"/>
+      <a name="textwidth" val="118"/>
+    </comp>
+    <comp lib="11" loc="(330,430)" name="Callout">
+      <a name="background" val="#a8ff9573"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-1"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="60 high, 40 low"/>
+      <a name="textwidth" val="118"/>
+    </comp>
+    <comp lib="11" loc="(330,490)" name="Callout">
+      <a name="background" val="#a8ff9573"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-1"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="20 high, 80 low, no phase offset"/>
+      <a name="textwidth" val="118"/>
+    </comp>
+    <comp lib="11" loc="(330,550)" name="Callout">
+      <a name="background" val="#a8ff9573"/>
+      <a name="dx" val="-15"/>
+      <a name="dy" val="-1"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="20 high, 80 low, +15 phase offset"/>
+      <a name="textwidth" val="118"/>
+    </comp>
+    <comp lib="6" loc="(140,370)" name="Scope">
+      <a name="samples" val="128"/>
+      <a name="scopeheight" val="40"/>
+      <a name="scopewidth" val="160"/>
+      <a name="width" val="1"/>
+    </comp>
+    <comp lib="6" loc="(140,430)" name="Scope">
+      <a name="samples" val="128"/>
+      <a name="scopeheight" val="40"/>
+      <a name="scopewidth" val="160"/>
+      <a name="width" val="1"/>
+    </comp>
+    <comp lib="6" loc="(140,490)" name="Scope">
+      <a name="samples" val="128"/>
+      <a name="scopeheight" val="40"/>
+      <a name="scopewidth" val="160"/>
+      <a name="width" val="1"/>
+    </comp>
+    <comp lib="6" loc="(140,550)" name="Scope">
+      <a name="samples" val="128"/>
+      <a name="scopeheight" val="40"/>
+      <a name="scopewidth" val="160"/>
+      <a name="width" val="1"/>
+    </comp>
+    <comp lib="6" loc="(280,130)" name="LED">
+      <a name="facing" val="south"/>
+    </comp>
+    <comp lib="6" loc="(330,200)" name="LED">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="6" loc="(360,220)" name="LED">
+      <a name="facing" val="south"/>
+    </comp>
+    <wire from="(130,400)" to="(130,460)"/>
+    <wire from="(130,400)" to="(160,400)"/>
+    <wire from="(130,460)" to="(130,520)"/>
+    <wire from="(130,460)" to="(160,460)"/>
+    <wire from="(130,520)" to="(130,580)"/>
+    <wire from="(130,520)" to="(160,520)"/>
+    <wire from="(130,580)" to="(130,590)"/>
+    <wire from="(130,580)" to="(160,580)"/>
+    <wire from="(160,390)" to="(160,400)"/>
+    <wire from="(160,450)" to="(160,460)"/>
+    <wire from="(160,510)" to="(160,520)"/>
+    <wire from="(160,570)" to="(160,580)"/>
+    <wire from="(230,180)" to="(230,200)"/>
+    <wire from="(230,180)" to="(330,180)"/>
+    <wire from="(240,140)" to="(280,140)"/>
+    <wire from="(280,130)" to="(280,140)"/>
+    <wire from="(280,220)" to="(280,240)"/>
+    <wire from="(280,240)" to="(360,240)"/>
+    <wire from="(330,180)" to="(330,200)"/>
+    <wire from="(360,220)" to="(360,240)"/>
+    <wire from="(80,370)" to="(140,370)"/>
+    <wire from="(80,430)" to="(140,430)"/>
+    <wire from="(80,490)" to="(140,490)"/>
+    <wire from="(80,550)" to="(140,550)"/>
   </circuit>
 </project>

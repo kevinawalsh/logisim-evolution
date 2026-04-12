@@ -162,6 +162,11 @@ public class Port {
     toolTip = value;
   }
 
+  public Port withToolTip(StringGetter value) {
+    toolTip = value;
+    return this;
+  }
+
   public EndData toEnd(Location loc, AttributeSet attrs) {
     Location pt = loc.translate(dx, dy);
     if (widthFixed >= 0) {

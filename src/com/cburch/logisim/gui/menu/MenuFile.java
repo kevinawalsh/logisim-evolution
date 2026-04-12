@@ -117,8 +117,9 @@ class MenuFile extends Menu implements ActionListener {
     "MIPS > 32x32 register file                  : mips-test.circ : regfile",
 
     "logisim features > multi-bit gates          : gates.circ : Multi-bit Gates",
-    "logisim features > splitters                : splitters.circ : splitter-examples",
-    "logisim features > tunnels                  : splitters.circ : tunnel-examples",
+    "logisim features > splitters                : wiring.circ : splitter-examples",
+    "logisim features > tunnels                  : wiring.circ : tunnel-examples",
+    "logisim features > clocks                   : wiring.circ : clock-examples",
     "logisim features > dynamic conditions       : DynamicConditions.circ : main",
     "logisim features > in-circuit slideshow     : FilesAndImages.circ : main",
     "logisim features > in-circuit file viewer   : FilesAndImages.circ : main",
