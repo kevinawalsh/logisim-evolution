@@ -36,29 +36,53 @@ import com.cburch.hex.HexModel;
 import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.util.WeakList;
 
-public class MemContents implements HexModel {
-  public static MemContents create(int addrBits, int width) {
-    return new MemContents(addrBits, width);
-  }
+public abstract class MemContents {
 
   private static final int PAGE_SIZE_BITS = 12;
   private static final int PAGE_SIZE = 1 << PAGE_SIZE_BITS;
 
   private static final int PAGE_MASK = PAGE_SIZE - 1;
 
-  private WeakList<HexModelListener> listeners = null;
+  // MemContents holds the bytes and dimensions for RAM and ROM.
+  // Changes may come from, e.g.
+  //  - HexFrame/HexEditor windows
+  //    [ triggers propagation, and may require Action]
+  //    editor --> MemContents.set() // FIXME - should go through state
+  //    editor --> MemContents.fill() // FIXME - should go through state
+  //  - poke tool
+  //    [ triggers propagation, and may require Action]
+  //    poke rom --> RomState.setContentBytes --> Action --> MemContents.set()
+  //    poke rom --> RomState.clearContents --> Action --> MemContents.clear()
+  //    poke ram --> RamState.setContentBytes --> MemContents.set()
+  //    poke ram --> RamState.clearContents --> MemContents.clear()
+  //  - popup menu
+  //    [ triggers propagation, and may require Action]
+  //    rom menu --> RomState.clearContents --> action --> MemContents.clear()
+  //    ram menu --> RamState.clearContents --> MemContents.clear()
+  //  - propagation (ram only)
+  //    [ no propagation, no Action ]
+  //    write --> MemContents.set()
+  //
+  // When the bytes or dimensions change, we fire an event to listeners. Only
+  // HexEditor windows listening for changes, e.g. it can redraw the window when
+  // changes are made from poke tool, popup, or propagation. Previously there
+  // was a complicated tangle of listeners and callbacks to create an Action and
+  // trigger propagation when various events happen, but this was cumbersome and
+  // fragile.
+  private WeakList<HexModelListener> listeners;
+
   private int width;
   private int addrBits;
   private int mask;
   private Page[] pages;
 
   private MemContents(int addrBits, int width) {
-    listeners = null;
+    listeners = new WeakList<>();
     setDimensions(addrBits, width);
   }
 
   private MemContents(MemContents other) {
-    listeners = null;
+    listeners = new WeakList<>();
     width = other.width;
     addrBits = other.addrBits;
     mask = other.mask;
@@ -74,13 +98,7 @@ public class MemContents implements HexModel {
     return new MemContents(this);
   }
 
-  public void addHexModelWeakListener(Object owner, HexModelListener l) {
-    if (listeners == null)
-      listeners = new WeakList<>();
-    listeners.add(owner, l);
-  }
-
-  public void clear() {
+  public void clearDirect() {
     for (int i = 0; i < pages.length; i++) {
       if (pages[i] != null) {
         if (pages[i] != null)
@@ -101,8 +119,7 @@ public class MemContents implements HexModel {
     }
     if (changed) {
       pages[index] = null;
-      fireBytesChanged(index << PAGE_SIZE_BITS, oldValues.length,
-          oldValues);
+      fireBytesChanged(index << PAGE_SIZE_BITS, oldValues.length, oldValues);
     }
   }
 
@@ -187,36 +204,29 @@ public class MemContents implements HexModel {
             page.load(0, vals, mask);
             if (value == 0 && page.isClear())
               pages[pageEnd] = null;
-            fireBytesChanged((long) pageEnd << PAGE_SIZE_BITS,
-                endOffs + 1, oldValues);
+            fireBytesChanged((long) pageEnd << PAGE_SIZE_BITS, endOffs + 1, oldValues);
           }
         }
       }
     }
   }
+  
+  public void addHexModelWeakListener(Object owner, HexModelListener l) {
+    listeners.add(owner, l);
+  }
+
+  public void removeHexModelWeakListener(Object owner, HexModelListener l) {
+    listeners.remove(owner, l);
+  }
 
   private void fireBytesChanged(long start, long numBytes, int[] oldValues) {
-    if (listeners == null)
-      return;
-    boolean found = false;
-    for (HexModelListener l : listeners) {
-      found = true;
+    for (HexModelListener l : listeners)
       l.bytesChanged(this, start, numBytes, oldValues);
-    }
-    if (!found)
-      listeners = null;
   }
 
   private void fireMetainfoChanged() {
-    if (listeners == null)
-      return;
-    boolean found = false;
-    for (HexModelListener l : listeners) {
-      found = true;
+    for (HexModelListener l : listeners)
       l.metainfoChanged(this);
-    }
-    if (!found)
-      listeners = null;
   }
 
   public int get(long addr) {
@@ -260,15 +270,9 @@ public class MemContents implements HexModel {
     return true;
   }
 
-  public void removeHexModelWeakListener(Object owner, HexModelListener l) {
-    if (listeners == null)
-      return;
-    listeners.remove(owner, l);
-    if (listeners.isEmpty())
-      listeners = null;
-  }
+  abstract void set(long addr, int value) {
 
-  public void set(long addr, int value) {
+  public void setDirect(long addr, int value) {
     int page = (int) (addr >>> PAGE_SIZE_BITS);
     int offs = (int) (addr & PAGE_MASK);
     if (page < 0 || page >= pages.length)
@@ -284,7 +288,7 @@ public class MemContents implements HexModel {
     }
   }
 
-  public void set(long start, int[] values) {
+  public void setDirect(long start, int[] values) {
     if (values.length == 0)
       return;
 
@@ -346,8 +350,7 @@ public class MemContents implements HexModel {
             page.load(0, vals, mask);
             if (page.isClear())
               pages[i] = null;
-            fireBytesChanged((long) i << PAGE_SIZE_BITS, PAGE_SIZE,
-                oldValues);
+            fireBytesChanged((long) i << PAGE_SIZE_BITS, PAGE_SIZE, oldValues);
           }
         }
       }
@@ -361,8 +364,7 @@ public class MemContents implements HexModel {
           page.load(0, vals, mask);
           if (page.isClear())
             pages[pageEnd] = null;
-          fireBytesChanged((long) pageEnd << PAGE_SIZE_BITS,
-              endOffs + 1, oldValues);
+          fireBytesChanged((long) pageEnd << PAGE_SIZE_BITS, endOffs + 1, oldValues);
         }
       }
     }

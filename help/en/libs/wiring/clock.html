@@ -50,7 +50,7 @@ second.
 circuit, and all clocks within any embedded subcircuits -- are tied to the same
 underlying tick source, so they all tick in unison. 
 
-<p class="warning"><b>Note:</b> At high tick rates, the simulator on-screen
+<blockquote class="warning"><b>Note:</b> At high tick rates, the simulator on-screen
 visualization and animations may not keep up with the underlying circuit
 simulation. Visual glitches may be present: for example, a network of wires
 connected to a clock may blink at what appears to be an uneven pace, or a signal
@@ -60,13 +60,13 @@ visualization, much like the strobe effect or rolling-shutter effect in
 photographs and videos. Logisim is designed to prioritize simulation at the
 highest possible rate, even if the on-screen graphics can't keep up. Many
 circuits can be simulated at 8MHz or faster, but animations above 30-60 frames
-per second likely wouldn't be visible to the human eye anyway.</p>
+per second likely wouldn't be visible to the human eye anyway.</blockquote>
 
-<p class="warning"><b>Also note:</b> Depending on the complexity of the circuit,
+<blockquote class="warning"><b>Also note:</b> Depending on the complexity of the circuit,
 the simulator may not be able run as fast as you want. In other words, the auto
 tick frequency is a <i>target</i>, but can't be guaranteed. 
 Logisim can display the actual tick rate achieved in the upper right corner
-(see <a href="../../guide/prefs/">Logisim Settings</a>).</p>
+(see <a href="../../guide/prefs/">Logisim Settings</a>).</blockquote>
 
 <h2>Advanced Behavior</h2>
 

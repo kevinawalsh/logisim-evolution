@@ -236,16 +236,6 @@
       <a name="valign" val="top"/>
     </comp>
     <comp lib="11" loc="(220,500)" name="Callout">
-      <a name="background" val="#81e6df00"/>
-      <a name="dx" val="-18"/>
-      <a name="dy" val="39"/>
-      <a name="foreground" val="#2e5c56"/>
-      <a name="format" val="wrapped"/>
-      <a name="text" val=" "/>
-      <a name="textwidth" val="37"/>
-      <a name="valign" val="top"/>
-    </comp>
-    <comp lib="11" loc="(220,500)" name="Callout">
       <a name="background" val="#81e6df80"/>
       <a name="dx" val="-22"/>
       <a name="dy" val="-14"/>
@@ -259,6 +249,16 @@
       <a name="background" val="#81e6df00"/>
       <a name="dx" val="-20"/>
       <a name="dy" val="8"/>
+      <a name="foreground" val="#2e5c56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val=" "/>
+      <a name="textwidth" val="37"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(220,500)" name="Callout">
+      <a name="background" val="#81e6df00"/>
+      <a name="dx" val="-18"/>
+      <a name="dy" val="39"/>
       <a name="foreground" val="#2e5c56"/>
       <a name="format" val="wrapped"/>
       <a name="text" val=" "/>
@@ -734,5 +734,112 @@ All clocks in a simulation are internally tied to a common tick source.</a>
     <wire from="(80,430)" to="(140,430)"/>
     <wire from="(80,490)" to="(140,490)"/>
     <wire from="(80,550)" to="(140,550)"/>
+  </circuit>
+  <circuit name="constant-examples">
+    <comp lib="1" loc="(190,200)" name="Constant">
+      <a name="value" val="0xffff"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(190,230)" name="Constant">
+      <a name="value" val="0xffff"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(190,260)" name="Constant">
+      <a name="value" val="0x0000"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(190,290)" name="Constant">
+      <a name="value" val="0x0000"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(260,300)" name="Pin">
+      <a name="facing" val="north"/>
+      <a name="label" val="select"/>
+      <a name="labelloc" val="south"/>
+      <a name="width" val="2"/>
+    </comp>
+    <comp lib="1" loc="(320,230)" name="Splitter">
+      <a name="bit1" val="0"/>
+      <a name="bit10" val="2"/>
+      <a name="bit11" val="2"/>
+      <a name="bit12" val="3"/>
+      <a name="bit13" val="3"/>
+      <a name="bit14" val="3"/>
+      <a name="bit15" val="3"/>
+      <a name="bit2" val="0"/>
+      <a name="bit3" val="0"/>
+      <a name="bit4" val="1"/>
+      <a name="bit5" val="1"/>
+      <a name="bit6" val="1"/>
+      <a name="bit7" val="1"/>
+      <a name="bit8" val="2"/>
+      <a name="bit9" val="2"/>
+      <a name="fanout" val="4"/>
+      <a name="incoming" val="16"/>
+    </comp>
+    <comp lib="1" loc="(330,250)" name="Pin">
+      <a name="facing" val="west"/>
+      <a name="labelloc" val="east"/>
+      <a name="type" val="output"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="11" loc="(130,210)" name="Callout">
+      <a name="background" val="#ff00e626"/>
+      <a name="dx" val="18"/>
+      <a name="dy" val="14"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="text" val="Hex constants, 16 bits each (enough to fill a 4x4 LED Matrix)"/>
+      <a name="textwidth" val="105"/>
+    </comp>
+    <comp lib="11" loc="(20,20)" name="Text">
+      <a name="background" val="#59fffd56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text">Use a constant when a circuit calls for a fixed, known value. It's a common mistake to use an Input Pin when a constant would be better:
+* Input Pin - takes on any value, depending on user interaction, and resets to zero when simulation is reset or project file is opened.
+* Constant - fixed value, does not change during a simulation, saved with project file.</a>
+      <a name="textwidth" val="413"/>
+    </comp>
+    <comp lib="11" loc="(372,337)" name="Callout">
+      <a name="background" val="#4324ff26"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="A multiplexor, selecting one of four constants."/>
+      <a name="textwidth" val="110"/>
+    </comp>
+    <comp lib="11" loc="(59,333)" name="Callout">
+      <a name="background" val="#4324ff26"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="A multiplexor, selecting one of four constants."/>
+      <a name="textwidth" val="110"/>
+    </comp>
+    <comp lib="3" loc="(280,250)" name="Multiplexer">
+      <a name="select" val="2"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="6" loc="(360,190)" name="DotMatrix">
+      <a name="inputtype" val="row"/>
+      <a name="matrixcols" val="4"/>
+      <a name="matrixrows" val="4"/>
+    </comp>
+    <wire from="(190,200)" to="(220,200)"/>
+    <wire from="(190,230)" to="(200,230)"/>
+    <wire from="(190,260)" to="(200,260)"/>
+    <wire from="(190,290)" to="(220,290)"/>
+    <wire from="(200,230)" to="(200,240)"/>
+    <wire from="(200,240)" to="(240,240)"/>
+    <wire from="(200,250)" to="(200,260)"/>
+    <wire from="(200,250)" to="(240,250)"/>
+    <wire from="(220,200)" to="(220,230)"/>
+    <wire from="(220,230)" to="(240,230)"/>
+    <wire from="(220,260)" to="(220,290)"/>
+    <wire from="(220,260)" to="(240,260)"/>
+    <wire from="(260,270)" to="(260,300)"/>
+    <wire from="(280,250)" to="(320,250)"/>
+    <wire from="(320,230)" to="(320,250)"/>
+    <wire from="(320,250)" to="(330,250)"/>
+    <wire from="(340,190)" to="(360,190)"/>
+    <wire from="(340,200)" to="(360,200)"/>
+    <wire from="(340,210)" to="(360,210)"/>
+    <wire from="(340,220)" to="(360,220)"/>
   </circuit>
 </project>

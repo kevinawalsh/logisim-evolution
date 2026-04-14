@@ -69,20 +69,21 @@ bit 0. Tap 2, second from the top, carries bits 3, 2, and 1. The next two taps
 carry no bits. Bit 6 is carried by the bottom-most tap, Tap 8. The numbers drawn
 next to each tap show which bits are carried by that tap.</p>
 
-<p class="warning"><b>Note:</b> Each bit can only be assigned to one tap. So the
-combined end has "all the bits" in the splitter (all 8 bits in the image at
-right). And the taps, taken together, can't have duplicate copies of any of
-those bits. In other words, each bit number drawn on the symbol can only appear
-at most once. But there is no requirement that the taps, taken together, cover
-all the bits: there can be bits "missing" from the taps. And some taps can be
-empty, carrying no signals at all, if you want. These are shown in gray.</p>
+<blockquote class="warning"><b>Note:</b> Each bit can only be assigned to one
+tap. So the combined end has "all the bits" in the splitter (all 8 bits in the
+image at right). And the taps, taken together, can't have duplicate copies of
+any of those bits. In other words, each bit number drawn on the symbol can only
+appear at most once. But there is no requirement that the taps, taken together,
+cover all the bits: there can be bits "missing" from the taps. And some taps can
+be empty, carrying no signals at all, if you want. These are shown in
+gray.</blockquote>
 
-<p class="hint"><b>Tip:</b> The combined end, and the taps, have no specific
-direction. In fact, you can mix and match directions freely, even within the
-same splitter or the same port of a splitter. You can arrange for some signals
-to flow into certain taps (or parts of a tap) and out (part of) the combined
-end, while having other signals flowing into (other parts of) the combined end
-and out of other (or other parts of) some taps.</p>
+<blockquote class="hint"><b>Tip:</b> The combined end, and the taps, have no
+specific direction. In fact, you can mix and match directions freely, even
+within the same splitter or the same port of a splitter. You can arrange for
+some signals to flow into certain taps (or parts of a tap) and out (part of) the
+combined end, while having other signals flowing into (other parts of) the
+combined end and out of other (or other parts of) some taps.</blockquote>
 
 <p>Logisim's simulation engine treats splitters specially when propagating
 values within a circuit. Unlike all other components, splitters have no "delay"

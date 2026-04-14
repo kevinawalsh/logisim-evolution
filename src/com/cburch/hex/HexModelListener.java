@@ -31,8 +31,6 @@
 package com.cburch.hex;
 
 public interface HexModelListener {
-	public void bytesChanged(HexModel source, long start, long numBytes,
-			int[] oldValues);
-
-	public void metainfoChanged(HexModel source);
+	public void bytesChanged(long start, long numBytes);
+	public void dimensionsChanged();
 }

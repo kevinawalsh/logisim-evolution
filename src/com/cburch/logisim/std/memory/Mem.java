@@ -66,22 +66,22 @@ public abstract class Mem extends InstanceFactory {
   // size. And second, I'd alter the MemContents class's PAGE_SIZE_BITS
   // constant to 14 so that its "page table" isn't quite so big.
 
-  static class MemListener implements HexModelListener {
+  // static class MemListener implements HexModelListener {
 
-    Instance instance;
+  //   Instance instance;
 
-    MemListener(Instance instance) {
-      this.instance = instance;
-    }
+  //   MemListener(Instance instance) {
+  //     this.instance = instance;
+  //   }
 
-    public void bytesChanged(HexModel source, long start, long numBytes,
-        int[] values) {
-      instance.fireInvalidated(); // ROM edit affects all simulations
-    }
+  //   public void bytesChanged(HexModel source, long start, long numBytes,
+  //       int[] values) {
+  //     instance.fireInvalidated(); // ROM edit affects all simulations
+  //   }
 
-    public void metainfoChanged(HexModel source) {
-    }
-  }
+  //   public void metainfoChanged(HexModel source) {
+  //   }
+  // }
 
   static final AttributeOption SINGLE = new AttributeOption("single",
       S.getter("memSingle"));
@@ -111,7 +111,6 @@ public abstract class Mem extends InstanceFactory {
   Mem(String name, StringGetter desc, int extraPorts) {
     super(name, desc);
     currentInstanceFiles = new WeakHashMap<Instance, File>();
-    setInstancePoker(MemPoker.class);
     setKeyConfigurator(JoinedConfigurator.create(new BitWidthConfigurator(
             ADDR_ATTR, 2, 24, 0), new BitWidthConfigurator(DATA_ATTR)));
 
@@ -206,7 +205,9 @@ public abstract class Mem extends InstanceFactory {
 
   abstract MemState getState(Instance instance, CircuitState state);
 
-  abstract MemState getState(InstanceState state);
+  MemState getState(InstanceState state) {
+    return getState(state.getInstance(), state.getCircuitState());
+  }
 
   @Override
   public abstract void propagate(InstanceState state);

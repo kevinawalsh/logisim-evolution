@@ -132,19 +132,20 @@ class RomContentsListener implements HexModelListener {
 
   public void bytesChanged(HexModel source, long start, long numBytes,
       int[] oldValues) {
-    System.out.println("bytesChanged");
-    if (enabled && proj != null && oldValues != null) {
-      // this change needs to be logged in the undo log
-      int[] newValues = new int[oldValues.length];
-      for (int i = 0; i < newValues.length; i++) {
-        newValues[i] = source.get(start + i);
-      }
-      proj.doAction(new Change(this, (MemContents) source, start,
-            oldValues, newValues));
-    }
+    System.out.println("defunct RomContentListener bytesChanged - nop");
+    // if (enabled && proj != null && oldValues != null) {
+    //   // this change needs to be logged in the undo log
+    //   int[] newValues = new int[oldValues.length];
+    //   for (int i = 0; i < newValues.length; i++) {
+    //     newValues[i] = source.get(start + i);
+    //   }
+    //   proj.doAction(new Change(this, (MemContents) source, start,
+    //         oldValues, newValues));
+    // }
   }
 
   public void metainfoChanged(HexModel source) {
+    System.out.println("defunct RomContentListener metainfoChanged - nop");
     // ignore - this can only come from an already-registered
     // action
   }

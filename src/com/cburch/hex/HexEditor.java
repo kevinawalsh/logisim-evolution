@@ -46,13 +46,11 @@ import com.cburch.logisim.util.GraphicsUtil;
 
 public class HexEditor extends JComponent implements Scrollable {
 	private class Listener implements HexModelListener {
-		public void bytesChanged(HexModel source, long start, long numBytes,
-				int[] oldValues) {
+		public void bytesChanged(long start, long numBytes) {
 			repaint(0, measures.toY(start), getWidth(),
 					measures.toY(start + numBytes) + measures.getCellHeight());
 		}
-
-		public void metainfoChanged(HexModel source) {
+		public void dimensionsChanged() {
 			measures.recompute();
 			repaint();
 		}

@@ -176,14 +176,15 @@ public class Rom extends Mem {
   public Rom() {
     super("ROM", S.getter("romComponent"), 0);
     setIconName("rom.gif");
+    setInstancePoker(RomPoker.class);
   }
 
   @Override
   protected void configureNewInstance(Instance instance) {
     super.configureNewInstance(instance);
-    MemContents newContents = getMemContents(instance);
-    MemListener listener = new MemListener(instance);
-    newContents.addHexModelWeakListener(instance, listener);
+    // MemContents newContents = getMemContents(instance);
+    // MemListener listener = new MemListener(instance);
+    // newContents.addHexModelWeakListener(instance, listener);
     instance.addAttributeListener();
   }
 
@@ -338,22 +339,13 @@ public class Rom extends Mem {
 
   @Override
   MemState getState(Instance instance, CircuitState state) {
-    MemState ret = (MemState) instance.getDataAsCustom(state);
+    RomState ret = (RomState) instance.getDataAsCustom(state);
+    MemContents contents = getMemContents(instance);
     if (ret == null) {
-      MemContents contents = getMemContents(instance);
-      ret = new MemState(contents);
+      ret = new RomState(contents);
       instance.setData(state, ret);
-    }
-    return ret;
-  }
-
-  @Override
-  MemState getState(InstanceState state) {
-    MemState ret = (MemState) state.getDataAsCustom();
-    if (ret == null) {
-      MemContents contents = getMemContents(state.getInstance());
-      ret = new MemState(contents);
-      state.setData(ret);
+    } else {
+      ret.setContents(contents);
     }
     return ret;
   }
@@ -390,6 +382,9 @@ public class Rom extends Mem {
       configurePorts(instance);
     } else if (attr == Mem.LINE_ATTR) {
       configurePorts(instance);
+    } else if (attr == CONTENTS_ATTR) {
+      System.out.println("rom contents attr changed?");
+      instance.fireInvalidated();
     }
   }
 

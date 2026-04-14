@@ -31,11 +31,12 @@
 package com.cburch.hex;
 
 public interface HexModel {
+
 	/** Registers a listener for changes to the values. */
 	public void addHexModelWeakListener(Object owner, HexModelListener l);
 
-	/** Fills a series of values with the same value. */
-	public void fill(long start, long length, int value);
+	/** Unregisters a listener for changes to the values. */
+	public void removeHexModelWeakListener(Object owner, HexModelListener l);
 
 	/** Returns the value at the given address. */
 	public int get(long address);
@@ -43,18 +44,22 @@ public interface HexModel {
 	/** Returns the offset of the initial value to be displayed. */
 	public long getFirstOffset();
 
-	/** Returns the number of values to be displayed. */
+	/** Returns the offset of the last value to be displayed. */
 	public long getLastOffset();
 
 	/** Returns number of bits in each value. */
 	public int getValueWidth();
+	
+  /** Fills all addresses with zeros. */
+	public void clearContents();
 
-	/** Unregisters a listener for changes to the values. */
-	public void removeHexModelWeakListener(Object owner, HexModelListener l);
+	/** Fills a series of addresses with zeros. */
+	public void clearContents(long start, long length);
 
 	/** Changes the value at the given address. */
-	public void set(long address, int value);
+	public void setContents(long address, int value);
 
-	/** Changes a series of values at the given addresses. */
-	public void set(long start, int[] values);
+	/** Changes values at a series of addresses. */
+	public void setContents(long start, int[] values);
+
 }

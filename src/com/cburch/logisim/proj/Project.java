@@ -248,6 +248,9 @@ public class Project {
       if (toAdd != null) {
         undoLog.add(new ActionData(circuitState, hdlModel, toAdd));
         ++undoMods;
+      } else {
+        // The two actions combined to form a no-op and are requesting to be
+        // removed from the undo/redo log entirely.
       }
       // firstData was removed from undoLog, and we are about drop the
       // firstData.circuitState reference.

@@ -209,6 +209,7 @@ public class Ram extends Mem {
     super("RAM", S.getter("ramComponent"), 3);
     setIconName("ram.gif");
     setInstanceLogger(Logger.class);
+    setInstancePoker(RamPoker.class);
   }
 
   @Override
@@ -633,17 +634,12 @@ public class Ram extends Mem {
       int addrBits = instance.getAttributeValue(ADDR_ATTR).getWidth();
       int dataBits = instance.getAttributeValue(DATA_ATTR).getWidth();
       MemContents contents = MemContents.create(addrBits, dataBits);
-      ret = new RamState(instance, contents, new MemListener(instance));
+      ret = new RamState(instance, contents /*, new MemListener(instance)*/);
       state.setData(comp, ret);
     } else {
       ret.setRam(instance);
     }
     return ret;
-  }
-
-  @Override
-  MemState getState(InstanceState state) {
-    return getState(state.getInstance(), state.getCircuitState());
   }
 
   @Override

@@ -47,7 +47,7 @@ public class UndoRedo {
     // Note: append may re-use/invalidate this action.
     // Returns null if combined act is effectively a no-op.
     public Action append(Action other) {
-      throw new RuntimeException("not imnplemented");
+      throw new RuntimeException("not implemented");
       // return new JoinedAction(this, other);
     }
 

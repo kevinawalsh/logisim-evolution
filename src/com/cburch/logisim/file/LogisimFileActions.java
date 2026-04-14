@@ -137,8 +137,7 @@ public class LogisimFileActions {
 
     @Override
     public Action append(Action other) {
-      MoveTool ret = new MoveTool(tool,
-          ((MoveTool) other).toIndex);
+      MoveTool ret = new MoveTool(tool, ((MoveTool) other).toIndex);
       ret.fromIndex = this.fromIndex;
       return ret.fromIndex == ret.toIndex ? null : ret;
     }

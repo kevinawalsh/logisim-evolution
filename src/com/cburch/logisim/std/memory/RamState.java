@@ -39,34 +39,49 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.std.memory.Mem.MemListener;
+import com.cburch.logisim.instance.InstanceState;
+// import com.cburch.logisim.std.memory.Mem.MemListener;
 
 public class RamState extends MemState
   implements ComponentData.WithLifetimeTracking, AttributeListener {
 
   private Instance parent;
-  private MemListener listener;
+  // private MemListener listener;
   private ClockState clockState;
   private int CurrentData = 0;
 
-  RamState(Instance parent, MemContents contents, MemListener listener) {
+  RamState(Instance parent, MemContents contents /*, MemListener listener*/) {
     super(contents);
     this.parent = parent;
-    this.listener = listener;
+    // this.listener = listener;
     this.clockState = new ClockState();
     if (parent != null) {
       parent.getAttributeSet().addAttributeWeakListener(null, this);
     }
-    contents.addHexModelWeakListener(null, listener);
+    // contents.addHexModelWeakListener(null, listener);
   }
 
   RamState(RamState other) {
     super(other);
     parent = null;
     clockState = new ClockState(other.clockState);
-    listener = other.listener;
+    // listener = other.listener;
     CurrentData = other.CurrentData;
-    getContents().addHexModelWeakListener(null, listener);
+    // getContents().addHexModelWeakListener(null, listener);
+  }
+
+  @Override
+  void clearContents(InstanceState state) {
+    System.out.println("ram clearContents direct");
+    contents.clear();
+    state.queueForPropagation();
+  }
+
+  @Override
+  void setContentBytes(InstanceState state, long start, int[] data) {
+    System.out.println("ram setContentBytes direct");
+    contents.set(start, data);
+    state.queueForPropagation();
   }
 
   @Override

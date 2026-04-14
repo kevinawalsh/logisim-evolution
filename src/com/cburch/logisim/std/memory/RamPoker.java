@@ -41,12 +41,12 @@ import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.proj.Project;
 
-public class MemPoker extends InstancePoker {
+public class RamPoker extends InstancePoker {
 
   @Override
   public boolean capturesTextInput() { return true; }
 
-  private static class AddrPoker extends MemPoker {
+  private static class AddrPoker extends InstancePoker {
     @Override
     public Bounds getNominalBounds(InstanceState state) {
       MemState data = (MemState) state.getDataAsCustom();
@@ -108,7 +108,7 @@ public class MemPoker extends InstancePoker {
     }
   }
 
-  private static class DataPoker extends MemPoker {
+  private static class DataPoker extends InstancePoker {
     int initValue;
     int curValue;
 
@@ -208,7 +208,7 @@ public class MemPoker extends InstancePoker {
     }
   }
 
-  private MemPoker sub;
+  private InstancePoker sub;
 
   @Override
   public Bounds getNominalBounds(InstanceState state) {

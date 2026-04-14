@@ -31,9 +31,6 @@
 package com.cburch.logisim.proj;
 
 public abstract class Action {
-  public Action append(Action other) {
-    return new JoinedAction(this, other);
-  }
 
   // Note: if doIt(proj) depends on current selection, or current selected
   // circuit, or similar non-action state, then redo() must be overriden to
@@ -43,6 +40,17 @@ public abstract class Action {
   public abstract String getName();
 
   public boolean shouldAppendTo(Action other) { return false; }
+
+  // Append can return null if the combined actions are effectively a no-op and
+  // both should be removed from the undo/log.
+  public Action append(Action other) { return new JoinedAction(this, other); }
+
+  // FIXME: merging actions indiscriminently is probably not ideal. Currently,
+  // only a few actions support merging at all, and some of those that do seem
+  // overly aggressive, losing meaningful intermediate state. Moving components,
+  // then moving them again... why should that be merged into one action? And
+  // why would we consider that "no action" and remove the undo entirely if the
+  // two moves happen to cancel each other?
 
   public boolean isEmpty() { return false; }
 

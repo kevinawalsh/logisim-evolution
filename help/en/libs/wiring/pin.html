@@ -80,13 +80,13 @@ enter a value.
 input pins values are "tied" to the outer circuit, so the poke
 tool can't change the values.
 
-<p class="warning">When viewing an "inner" simulation, if you poke an input pin,
-a notice will appear warning that the pins are "tied," or linked, to the outer
-circuit and can't be changed. The notice window also gives you the chance to
-break this link by creating a new standalone simulation where you will be able
-to modify the input pin values. See
+<blockquote class="warning">When viewing an "inner" simulation, if you poke an
+input pin, a notice will appear warning that the pins are "tied," or linked, to
+the outer circuit and can't be changed. The notice window also gives you the
+chance to break this link by creating a new standalone simulation where you will
+be able to modify the input pin values. See
 <a href="../../guide/subcirc/debug.html">debugging subcircuits</a> for more
-info.</p>
+info.</blockquote>
 
 <h2>Advanced Input Behaviors</h2>
 
@@ -110,15 +110,15 @@ floating value from a connected wire in an outer circuit, but will never
 "create" a floating value via the poke tool or because there is no connected
 wire in the outer circuit.
 
-<p class="warning">This special case for <i>Simple</i> &mdash; using '0' for the
-value of a completely-unconnected subcircuit input pin &mdash; can be confusing,
-and can lead to subtle mistakes. If you accidentally miswire the outer circuit,
-or forget to connect something to the subcircuit input, you may not notice the
-mistake, as it will be treated as if it were '0'. This behavior is also
-inconsistent with reality. The advanced behaviors (described below) are a better
-option, and this special case was probably not the best idea. Nevertheless, the
-special case is retained for backwards compatibility with older logisim
-circuits.</p>
+<blockquote class="warning">This special case for <i>Simple</i> &mdash; using
+'0' for the value of a completely-unconnected subcircuit input pin &mdash; can
+be confusing, and can lead to subtle mistakes. If you accidentally miswire the
+outer circuit, or forget to connect something to the subcircuit input, you may
+not notice the mistake, as it will be treated as if it were '0'. This behavior
+is also inconsistent with reality. The advanced behaviors (described below) are
+a better option, and this special case was probably not the best idea.
+Nevertheless, the special case is retained for backwards compatibility with
+older logisim circuits.</blockquote>
 
 <p>The <i>Behavior</i> property allows other options than the <i>Simple</i>
 behavior described above:
