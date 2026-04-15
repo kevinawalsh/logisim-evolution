@@ -39,50 +39,61 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceState;
 // import com.cburch.logisim.std.memory.Mem.MemListener;
 
 public class RamState extends MemState
   implements ComponentData.WithLifetimeTracking, AttributeListener {
 
-  private Instance parent;
+  // RamState holds simulation state for Ram, including everything MemState
+  // provides, plus clock state, and a reference to the instance (note we are
+  // always in a circuit) so we can respond to attribute changes,
+
+  private Instance parent; // also stored in contents
   // private MemListener listener;
   private ClockState clockState;
-  private int CurrentData = 0;
 
-  RamState(Instance parent, MemContents contents /*, MemListener listener*/) {
+  RamState(Project proj, Instance inst, int addrBits, int dataBits) { // RamContents contents /*, MemListener listener*/) {
     super(contents);
+    contents.setProject(proj);
+    contents.setRamInstance(inst);
     this.parent = parent;
     // this.listener = listener;
     this.clockState = new ClockState();
     if (parent != null) {
       parent.getAttributeSet().addAttributeWeakListener(null, this);
+    } else {
+      System.err.println("ram - missing instance?");
     }
     // contents.addHexModelWeakListener(null, listener);
   }
 
-  RamState(RamState other) {
-    super(other);
-    parent = null;
+  private RamState(RamState other) {
+    // duplicate: new state does not share our RamContents
+    super(other.contents.duplicate(), other);
+    parent = null; // instance not known just yet...
     clockState = new ClockState(other.clockState);
     // listener = other.listener;
-    CurrentData = other.CurrentData;
     // getContents().addHexModelWeakListener(null, listener);
   }
 
   @Override
-  void clearContents(InstanceState state) {
-    System.out.println("ram clearContents direct");
-    contents.clear();
-    state.queueForPropagation();
+  public RamState duplicateForNewSimulation() {
+    return new RamState(this);
   }
 
-  @Override
-  void setContentBytes(InstanceState state, long start, int[] data) {
-    System.out.println("ram setContentBytes direct");
-    contents.set(start, data);
-    state.queueForPropagation();
-  }
+  // @Override
+  // void clearContents(InstanceState state) {
+  //   System.out.println("ram clearContents direct");
+  //   contents.clear();
+  //   state.queueForPropagation();
+  // }
+
+  // @Override
+  // void setContentBytes(InstanceState state, long start, int[] data) {
+  //   System.out.println("ram setContentBytes direct");
+  //   contents.set(start, data);
+  //   state.queueForPropagation();
+  // }
 
   @Override
   public void attributeListChanged(AttributeEvent e) { }
@@ -92,45 +103,33 @@ public class RamState extends MemState
     AttributeSet attrs = e.getSource();
     BitWidth addrBits = attrs.getValue(Mem.ADDR_ATTR);
     BitWidth dataBits = attrs.getValue(Mem.DATA_ATTR);
-    getContents().setDimensions(addrBits.getWidth(), dataBits.getWidth());
-  }
-
-  @Override
-  public RamState duplicateForNewSimulation() {
-    return new RamState(this);
-  }
-
-  int GetCurrentData() {
-    return CurrentData;
+    contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
   }
 
   public boolean setClock(Value newClock, Object trigger) {
     return clockState.updateClock(newClock, trigger);
   }
 
-  void SetCurrentData(int data) {
-    CurrentData = data;
+  void setRamInstance(Instance instance) {
+    if (parent == value)
+      return;
+    if (parent != null)
+      parent.getAttributeSet().removeAttributeWeakListener(null, this);
+    parent = instance;
+    contents.setRamInstance(instance);
+    if (instance != null)
+      instance.getAttributeSet().addAttributeWeakListener(null, this);
   }
 
-  void setRam(Instance value) {
-    if (parent == value) {
-      return;
-    }
-    if (parent != null) {
-      parent.getAttributeSet().removeAttributeWeakListener(null, this);
-    }
-    parent = value;
-    if (value != null) {
-      value.getAttributeSet().addAttributeWeakListener(null, this);
-    }
+  void setProject(Project proj) {
+    contents.setProject(proj);
   }
   
   @Override
   public boolean simulationReset(CircuitState cs, Component comp) {
     AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
     if (type == RamAttributes.VOLATILE) {
-      MemContents contents = getContents();
-      contents.clear();
+      contents.simulatorClear();
       return true; // okay to delete this RamState
     } else {
       return false; // do not delete this RamState
@@ -139,7 +138,7 @@ public class RamState extends MemState
 
   @Override
   public void simulationCleanup(CircuitState cs, Component comp) {
-    Ram.closeHexFrame(this);
+    contents.closeHexFrame();
   }
 
 }

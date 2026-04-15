@@ -37,47 +37,10 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
-import com.cburch.logisim.gui.hex.HexFrame;
-import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.util.WeakIdentityHashMap;
 
 class RomAttributes extends AbstractAttributeSet {
 
-  // FIXME: it is not clear why this registry (and the similar one in Ram.java) could not be
-  // eliminated, and instead reference the HexFrame from a member variable in MemContents.
-  private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
-  static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
-    synchronized (windowRegistry) {
-      HexFrame ret = windowRegistry.get(value);
-      if (ret == null) {
-        ret = new HexFrame(proj, instance, value);
-        windowRegistry.put(value, ret);
-      }
-      return ret;
-    }
-  }
-
-  static void closeHexFrame(MemContents value) {
-    HexFrame ret;
-    synchronized (windowRegistry) {
-       ret = windowRegistry.remove(value);
-    }
-    if (ret != null) {
-      ret.closeAndDispose();
-    }
-  }
-
-  static void register(MemContents value, Project proj) {
-    if (proj == null) //  || listenerRegistry.containsKey(value)) {
-      return;
-    // }
-    RomContentsListener l = new RomContentsListener(proj);
-    value.addHexModelWeakListener(value, l);
-    // listenerRegistry.put(value, l);
-  }
-  
   // WARNING: The prefix of these lists before APPEARANCE must be identical. The
   // list of possible attributes depends on APPEARANCE, so during xml file
   // loading APPEARANCE must be set before the remaining attributes.
@@ -91,22 +54,16 @@ class RomAttributes extends AbstractAttributeSet {
         Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
         StdAttr.APPEARANCE });
 
-  // fixme: this isn't necessary since listener lists now have an owner
-  // for each listener?
-  // private static WeakHashMap<MemContents, RomContentsListener> listenerRegistry = new WeakHashMap<MemContents, RomContentsListener>();
-
   private BitWidth addrBits = BitWidth.create(8);
   private BitWidth dataBits = BitWidth.create(8);
-  private MemContents contents;
+  private RomContents contents = new RomContents(8, 8);
   private AttributeOption lineSize = Mem.SINGLE;
   private String Label = "";
   private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
   private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
   private AttributeOption Proportions = Rom.RECT;
 
-  RomAttributes() {
-    contents = MemContents.create(addrBits.getWidth(), dataBits.getWidth());
-  }
+  RomAttributes() { }
 
   @Override
   protected void copyInto(AbstractAttributeSet dest) {
@@ -147,10 +104,6 @@ class RomAttributes extends AbstractAttributeSet {
     return null;
   }
 
-  void setProject(Project proj) {
-    register(contents, proj);
-  }
-
   @Override
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Mem.ADDR_ATTR) {
@@ -162,8 +115,11 @@ class RomAttributes extends AbstractAttributeSet {
     }
     else if (attr == Mem.LINE_ATTR)
       lineSize = (AttributeOption) value;
-    else if (attr == Rom.CONTENTS_ATTR)
-      contents = (MemContents) value;
+    else if (attr == Rom.CONTENTS_ATTR) {
+      System.err.println("rom set CONTENTS_ATTR");
+      contents = (MemContents) value; // only occurs during xml reading?
+                                      // should sync addrBits and dataBits?
+    }
     else if (attr == StdAttr.LABEL)
       Label = (String) value;
     else if (attr == StdAttr.LABEL_FONT)

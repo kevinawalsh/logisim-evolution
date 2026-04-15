@@ -70,16 +70,18 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class Rom extends Mem {
-  static class ContentsAttribute extends Attribute<MemContents> {
+  static class ContentsAttribute extends Attribute<RomContents> {
     public ContentsAttribute() {
       super("contents", S.getter("romContentsAttr"));
     }
 
     @Override
-    public java.awt.Component getCellEditor(Window source, MemContents value) {
+    public java.awt.Component getCellEditor(Window source, RomContents value) {
       if (source instanceof Frame) {
-        Project proj = ((Frame) source).getProject();
-        RomAttributes.register(value, proj);
+        Project proj = ((Frame)source).getProject();
+        value.setProject(proj);
+      } else {
+        System.err.println("huh?");
       }
       ContentsCell ret = new ContentsCell(source, value);
       ret.mouseClicked(null);
@@ -87,7 +89,7 @@ public class Rom extends Mem {
     }
 
     @Override
-    public MemContents parse(String value) {
+    public RomContents parse(String value) {
       int lineBreak = value.indexOf('\n');
       String first = lineBreak < 0 ? value : value.substring(0, lineBreak);
       String rest = lineBreak < 0 ? "" : value.substring(lineBreak + 1);
@@ -98,7 +100,11 @@ public class Rom extends Mem {
           return null;
         int addr = Integer.parseInt(toks.nextToken());
         int data = Integer.parseInt(toks.nextToken());
-        return HexFile.parseFromCircFile(rest, addr, data);
+        // FIXME: refactor HexFile to parameterize on subclass?
+        MemContents mc = HexFile.parseFromCircFile(rest, addr, data);
+        RomContents contents = new RomContents(mc.getLogLength(), mc.getValueWidth());
+        contents.copyFrom(0, mc, 0, (int)(mc.getLastOffset() + 1));
+        return contents;
       } catch (IOException e) {
         e.printStackTrace();
         return null;
@@ -112,16 +118,16 @@ public class Rom extends Mem {
     }
 
     @Override
-    public String toDisplayString(MemContents value) {
+    public String toDisplayString(RomContents value) {
       return S.get("romContentsValue");
     }
 
     @Override
-    public String toStandardString(MemContents state) {
-      int addr = state.getLogLength();
-      int data = state.getWidth();
-      String contents = HexFile.saveToStringForCircFile(state);
-      return "addr/data: " + addr + " " + data + "\n" + contents;
+    public String toStandardString(RomContents contents) {
+      int addr = contents.getLogLength();
+      int data = contents.getWidth();
+      String body = HexFile.saveToStringForCircFile(contents);
+      return "addr/data: " + addr + " " + data + "\n" + body;
     }
 
     @Override
@@ -133,9 +139,9 @@ public class Rom extends Mem {
   @SuppressWarnings("serial")
   private static class ContentsCell extends JLabel implements MouseListener {
     Window source;
-    MemContents contents;
+    RomContents contents;
 
-    ContentsCell(Window source, MemContents contents) {
+    ContentsCell(Window source, RomContents contents) {
       super(S.get("romContentsValue"));
       this.source = source;
       this.contents = contents;
@@ -145,24 +151,21 @@ public class Rom extends Mem {
     public void mouseClicked(MouseEvent e) {
       if (contents == null)
         return;
-      Project proj = source instanceof Frame ? ((Frame) source)
-          .getProject() : null;
-      HexFrame frame = RomAttributes.getHexFrame(contents, proj, null);
+      if (source instanceof Frame) {
+        Project proj = ((Frame)source).getProject();
+        contents.setProject(proj);
+      } else {
+        System.err.println("huh?");
+      }
+      HexFrame frame = contents.getHexFrame();
       frame.setVisible(true);
       frame.toFront();
     }
 
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
+    public void mouseEntered(MouseEvent e) { }
+    public void mouseExited(MouseEvent e) { }
+    public void mousePressed(MouseEvent e) { }
+    public void mouseReleased(MouseEvent e) { }
   }
   
   static final AttributeOption RECT = new AttributeOption("rect", S.getter("romProportionsRect"));
@@ -171,7 +174,7 @@ public class Rom extends Mem {
   static final Attribute<AttributeOption> ATTR_PROPORTIONS = Attributes.forOption(
       "proportions", S.getter("romProportions"), new AttributeOption[] { RECT, WIDE, TALL });
 
-  public static Attribute<MemContents> CONTENTS_ATTR = new ContentsAttribute();
+  public static Attribute<RomContents> CONTENTS_ATTR = new ContentsAttribute();
 
   public Rom() {
     super("ROM", S.getter("romComponent"), 0);
@@ -182,7 +185,7 @@ public class Rom extends Mem {
   @Override
   protected void configureNewInstance(Instance instance) {
     super.configureNewInstance(instance);
-    // MemContents newContents = getMemContents(instance);
+    // RomContents newContents = getMemContents(instance);
     // MemListener listener = new MemListener(instance);
     // newContents.addHexModelWeakListener(instance, listener);
     instance.addAttributeListener();
@@ -228,34 +231,23 @@ public class Rom extends Mem {
     GraphicsUtil.switchToWidth(g, 2);
     AttributeSet attrs = painter.getAttributeSet();
     g.drawLine(xpos + 20, ypos, xpos + 20 + SymbolWidth, ypos);
-    g.drawLine(xpos + 20, ypos, xpos + 20, ypos + getControlHeight(attrs)
-        - 10);
-    g.drawLine(xpos + 20 + SymbolWidth, ypos, xpos + 20 + SymbolWidth, ypos
-        + getControlHeight(attrs) - 10);
-    g.drawLine(xpos + 20, ypos + getControlHeight(attrs) - 10, xpos + 30,
-        ypos + getControlHeight(attrs) - 10);
-    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
-        - 10, xpos + 20 + SymbolWidth, ypos + getControlHeight(attrs)
-        - 10);
-    g.drawLine(xpos + 30, ypos + getControlHeight(attrs) - 10, xpos + 30,
-        ypos + getControlHeight(attrs));
-    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
-        - 10, xpos + 20 + SymbolWidth - 10, ypos
-        + getControlHeight(attrs));
+    g.drawLine(xpos + 20, ypos, xpos + 20, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 20 + SymbolWidth, ypos, xpos + 20 + SymbolWidth, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 20, ypos + getControlHeight(attrs) - 10, xpos + 30, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs) - 10, xpos + 20 + SymbolWidth, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 30, ypos + getControlHeight(attrs) - 10, xpos + 30, ypos + getControlHeight(attrs));
+    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs) - 10, xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs));
+    int addrBits = painter.getAttributeValue(Mem.ADDR_ATTR).getWidth();
+    int dataBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
     GraphicsUtil.drawCenteredText(g,
-        "ROM " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR) .getWidth())
-        + " x "
-        + painter.getAttributeValue(Mem.DATA_ATTR).getWidth(),
+        "ROM " + GetSizeLabel(addrBits) + " x " + dataBits,
         xpos + (SymbolWidth / 2) + 20, ypos + 6);
     GraphicsUtil.switchToWidth(g, 1);
-    DrawAddress(painter, xpos, ypos + 10,
-        painter.getAttributeValue(Mem.ADDR_ATTR).getWidth());
+    DrawAddress(painter, xpos, ypos + 10, addrBits);
   }
 
-  private void DrawDataBlock(InstancePainter painter, int xpos, int ypos,
-      int bit, int NrOfBits) {
-    int realypos = ypos + getControlHeight(painter.getAttributeSet()) + bit
-        * 20;
+  private void DrawDataBlock(InstancePainter painter, int xpos, int ypos, int bit, int NrOfBits) {
+    int realypos = ypos + getControlHeight(painter.getAttributeSet()) + bit * 20;
     int realxpos = xpos + 20;
     boolean FirstBlock = bit == 0;
     boolean LastBlock = bit == (NrOfBits - 1);
@@ -271,32 +263,23 @@ public class Rom extends Mem {
       painter.drawPort(MEM_INPUTS+i-1);
     if (FirstBlock && LastBlock) {
       GraphicsUtil.switchToWidth(g, 3);
-      g.drawLine(realxpos + SymbolWidth + 1, realypos + 10, realxpos
-          + SymbolWidth + 20, realypos + 10);
+      g.drawLine(realxpos + SymbolWidth + 1, realypos + 10, realxpos + SymbolWidth + 20, realypos + 10);
       return;
     }
-    g.drawLine(realxpos + SymbolWidth, realypos + 10, realxpos
-        + SymbolWidth + 10, realypos + 10);
-    g.drawLine(realxpos + SymbolWidth + 10, realypos + 10, realxpos
-        + SymbolWidth + 15, realypos + 5);
+    g.drawLine(realxpos + SymbolWidth, realypos + 10, realxpos + SymbolWidth + 10, realypos + 10);
+    g.drawLine(realxpos + SymbolWidth + 10, realypos + 10, realxpos + SymbolWidth + 15, realypos + 5);
     g.setFont(font.deriveFont(7.0f));
-    GraphicsUtil
-        .drawText(g, Integer.toString(bit), realxpos + SymbolWidth + 3,
-            realypos + 7, GraphicsUtil.H_LEFT,
-            GraphicsUtil.V_BASELINE);
+    GraphicsUtil.drawText(g, ""+bit, realxpos + SymbolWidth + 3, realypos + 7, GraphicsUtil.H_LEFT, GraphicsUtil.V_BASELINE);
     g.setFont(font);
     GraphicsUtil.switchToWidth(g, 5);
     if (FirstBlock) {
-      g.drawLine(realxpos + SymbolWidth + 15, realypos + 5, realxpos
-          + SymbolWidth + 15, realypos + 20);
-      g.drawLine(realxpos + SymbolWidth + 15, realypos + 5, realxpos
-          + SymbolWidth + 20, realypos);
+      g.drawLine(realxpos + SymbolWidth + 15, realypos + 5, realxpos + SymbolWidth + 15, realypos + 20);
+      g.drawLine(realxpos + SymbolWidth + 15, realypos + 5, realxpos + SymbolWidth + 20, realypos);
     } else if (LastBlock) {
-      g.drawLine(realxpos + SymbolWidth + 15, realypos, realxpos
-          + SymbolWidth + 15, realypos + 10);
-    } else
-      g.drawLine(realxpos + SymbolWidth + 15, realypos, realxpos
-          + SymbolWidth + 15, realypos + 20);
+      g.drawLine(realxpos + SymbolWidth + 15, realypos, realxpos + SymbolWidth + 15, realypos + 10);
+    } else {
+      g.drawLine(realxpos + SymbolWidth + 15, realypos, realxpos + SymbolWidth + 15, realypos + 20);
+    }
     GraphicsUtil.switchToWidth(g, 1);
   }
 
@@ -304,21 +287,21 @@ public class Rom extends Mem {
     return 60;
   }
 
-  @Override
-  HexFrame getHexFrame(Project proj, Instance instance, CircuitState state) {
-    return RomAttributes.getHexFrame(getMemContents(instance), proj, instance);
-  }
+  // @Override
+  // HexFrame getHexFrame(Project proj, Instance instance, CircuitState state) {
+  //   return RomAttributes.getHexFrame(getMemContents(instance), proj, instance);
+  // }
 
-  public static MemContents getMemContents(Instance instance) {
-    return instance.getAttributeValue(CONTENTS_ATTR);
-  }
+  // private static RomContents getMemContents(Instance instance) {
+  //   return instance.getAttributeValue(CONTENTS_ATTR);
+  // }
 
-  public static void closeHexFrame(Component c) {
-    if (!(c instanceof InstanceComponent))
-      return;
-    Instance instance = ((InstanceComponent)c).getInstance();
-    RomAttributes.closeHexFrame(getMemContents(instance));
-  }
+  // public static void closeHexFrame(Component c) {
+  //   if (!(c instanceof InstanceComponent))
+  //     return;
+  //   Instance instance = ((InstanceComponent)c).getInstance();
+  //   RomAttributes.closeHexFrame(getMemContents(instance));
+  // }
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
@@ -340,12 +323,16 @@ public class Rom extends Mem {
   @Override
   MemState getState(Instance instance, CircuitState state) {
     RomState ret = (RomState) instance.getDataAsCustom(state);
-    MemContents contents = getMemContents(instance);
+    RomContents contents = instance.getAttributeValue(CONTENTS_ATTR);
     if (ret == null) {
-      ret = new RomState(contents);
+      ret = new RomState(state.getProject(), instance, contents);
       instance.setData(state, ret);
+    } else if (ret.getContents() != contents) {
+      System.err.println("rom content mismatch");
     } else {
-      ret.setContents(contents);
+      ret.getContents().setProject(state.getProject());
+      ret.getContents().setRomInstance(instance);
+      // ret.setContents(contents);
     }
     return ret;
   }
@@ -519,7 +506,7 @@ public class Rom extends Mem {
   @Override
   public boolean hasDefaultAttributeValue(AttributeSet attrs, Attribute<?> attr, LogisimVersion ver) {
     if (attr == CONTENTS_ATTR) {
-      MemContents contents = attrs.getValue(CONTENTS_ATTR);
+      RomContents contents = attrs.getValue(CONTENTS_ATTR);
       return contents.isAllZeros();
     }
     else return super.hasDefaultAttributeValue(attrs, attr, ver);

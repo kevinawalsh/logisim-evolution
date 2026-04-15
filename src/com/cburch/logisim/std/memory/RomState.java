@@ -28,30 +28,28 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 package com.cburch.logisim.std.memory;
-import static com.cburch.logisim.std.Strings.S;
 
 import com.cburch.logisim.instance.Instance;
-import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.proj.Project;
-import com.cburch.logisim.proj.Action;
 
 class RomState extends MemState {
 
-  RomState(MemContents contents) {
+  // RomState holds simulation state for Rom, which is nothing beyond the basics
+  // that MemState provides.
+
+  RomState(Project proj, Instance inst, RomContents contents) {
     super(contents);
+    contents.setProject(proj);
+    contents.setRomInstance(inst);
+    // this.project = proj;
+    // this.instance = inst;
   }
 
-  RomState(RomState other) {
-    super(other);
-  }
-
-  public void setContents(MemContents newContents) {
-    if (contents == newContents) return;
-    System.out.println("rom contents changed?");
-    contents.removeHexModelWeakListener(null, this);
-    contents = newContents;
-    contents.addHexModelWeakListener(null, this);
-    setBits(contents.getLogLength(), contents.getWidth());
+  private RomState(RomState other) {
+    // no duplication: new state shares the same RomContents
+    super(other.contents, other);
+    // project = null;
+    // instance = null;
   }
 
   @Override
@@ -59,127 +57,18 @@ class RomState extends MemState {
     return new RomState(this);
   }
 
-  @Override
-  void clearContents(InstanceState state) {
-    System.out.println("rom clearContents as action");
-    if (contents.isAllZeros())
-      return;
-    // Circuit circ = state.getCircuitState().getCircuit();
-    // MemContents newContents = MemContents.create(oldContents.getLogLength(), oldContents.getWidth());
-    // CircuitMutation xn = CircuitMutation.forCircuit(circ);
-    // xn.set(state.getInstance().getComponent(), Rom.CONTENTS_ATTR, newContents);
-    // proj.doAction(xn.toAction(S.getter("romClearContentsAction")));
-    state.getProject().doAction(new ClearBytes(state.getInstance(), contents));
-  }
+  // void setRom(Project proj, Instance inst) {
+  //   project = proj;
+  //   instance = inst;
+  // }
 
-  @Override
-  void setContentBytes(InstanceState state, long start, int[] data) {
-    System.out.println("rom setContentBytes as action");
-    state.getProject().doAction(new ChangeBytes(state.getInstance(), contents, start, null, data));
-  }
-
-  private static class ClearBytes extends Action {
-    private Instance instance;
-    private MemContents contents;
-    private MemContents oldContents;
-
-    ClearBytes(Instance instance, MemContents contents) {
-      this.instance = instance;
-      this.contents = contents;
-      this.oldContents = contents.duplicate();
-    }
-
-    @Override
-    public void doIt(Project proj) {
-      contents.clear();
-      instance.fireInvalidated();
-    }
-
-    @Override
-    public void undo(Project proj) {
-      contents.copyFrom(0, oldContents, 0, oldContents.getLogLength());
-      instance.fireInvalidated();
-    }
-
-    @Override
-    public String getName() {
-      return S.get("romClearContentsAction");
-    }
-  }
-
-  private static class ChangeBytes extends Action {
-    private Instance instance;
-    private MemContents contents;
-    private long start;
-    private int[] oldValues;
-    private int[] newValues;
-
-    ChangeBytes(Instance instance, MemContents contents, long start, int[] oldValues, int[] newValues) {
-      this.instance = instance;
-      this.contents = contents;
-      this.start = start;
-      this.newValues = newValues;
-      if (oldValues == null) {
-        oldValues = new int[newValues.length];
-        for (int i = 0; i < oldValues.length; i++)
-          oldValues[i] = contents.get(start + i);
-      }
-      this.oldValues = oldValues;
-    }
-
-    @Override
-    public boolean shouldAppendTo(Action other) {
-      if (other instanceof ChangeBytes) {
-        ChangeBytes o = (ChangeBytes) other;
-        long oEnd = o.start + o.newValues.length;
-        long end = start + newValues.length;
-        if (o.instance == instance && oEnd >= start && end >= o.start)
-          return true;
-      }
-      return super.shouldAppendTo(other);
-    }
-
-    @Override
-    public Action append(Action other) {
-      if (other instanceof ChangeBytes) {
-        ChangeBytes o = (ChangeBytes) other;
-        long oEnd = o.start + o.newValues.length;
-        long end = start + newValues.length;
-        if (oEnd >= start && end >= o.start) {
-          long nStart = Math.min(start, o.start);
-          long nEnd = Math.max(end, oEnd);
-          int[] nOld = new int[(int) (nEnd - nStart)];
-          int[] nNew = new int[(int) (nEnd - nStart)];
-          System.arraycopy(o.oldValues, 0, nOld,
-              (int) (o.start - nStart), o.oldValues.length);
-          System.arraycopy(oldValues, 0, nOld,
-              (int) (start - nStart), oldValues.length);
-          System.arraycopy(newValues, 0, nNew,
-              (int) (start - nStart), newValues.length);
-          System.arraycopy(o.newValues, 0, nNew,
-              (int) (o.start - nStart), o.newValues.length);
-          return new ChangeBytes(instance, contents, nStart, nOld, nNew);
-        }
-      }
-      return super.append(other);
-    }
-
-    @Override
-    public void doIt(Project proj) {
-      contents.set(start, newValues);
-      instance.fireInvalidated();
-    }
-
-    @Override
-    public void undo(Project proj) {
-      contents.set(start, oldValues);
-      instance.fireInvalidated();
-    }
-
-    @Override
-    public String getName() {
-      return S.get("romChangeAction");
-    }
-  }
+  // void setContents(MemContents newContents) {
+  //   if (contents == newContents) return;
+  //   System.out.println("rom contents changed?");
+  //   contents.removeHexModelWeakListener(null, this);
+  //   contents = newContents;
+  //   contents.addHexModelWeakListener(null, this);
+  //   setBits(contents.getLogLength(), contents.getWidth());
+  // }
 
 }

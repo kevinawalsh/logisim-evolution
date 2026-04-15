@@ -45,7 +45,7 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-import com.cburch.logisim.gui.hex.HexFrame;
+// import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceLogger;
@@ -525,35 +525,35 @@ public class Ram extends Mem {
       return 90 + enables * 10;
   }
 
-  // FIXME: it is not clear why this registry (and the similar one in RomAttributes.java) could not
-  // be eliminated, and instead reference the HexFrame from a member variable in MemContents.
-  private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
-  static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
-    synchronized (windowRegistry) {
-      HexFrame ret = windowRegistry.get(value);
-      if (ret == null) {
-        ret = new HexFrame(proj, instance, value);
-        windowRegistry.put(value, ret);
-      }
-      return ret;
-    }
-  }
+  // // FIXME: it is not clear why this registry (and the similar one in RomAttributes.java) could not
+  // // be eliminated, and instead reference the HexFrame from a member variable in MemContents.
+  // private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
+  // static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
+  //   synchronized (windowRegistry) {
+  //     HexFrame ret = windowRegistry.get(value);
+  //     if (ret == null) {
+  //       ret = new HexFrame(proj, instance, value);
+  //       windowRegistry.put(value, ret);
+  //     }
+  //     return ret;
+  //   }
+  // }
 
-  public static void closeHexFrame(RamState state) {
-    MemContents contents = state.getContents();
-    HexFrame ret;
-    synchronized (windowRegistry) {
-      ret = windowRegistry.remove(contents);
-    }
-    if (ret == null)
-      return;
-    ret.closeAndDispose();
-  }
+  // public static void closeHexFrame(RamState state) {
+  //   MemContents contents = state.getContents();
+  //   HexFrame ret;
+  //   synchronized (windowRegistry) {
+  //     ret = windowRegistry.remove(contents);
+  //   }
+  //   if (ret == null)
+  //     return;
+  //   ret.closeAndDispose();
+  // }
 
-  @Override
-  HexFrame getHexFrame(Project proj, Instance instance, CircuitState circState) {
-    return getHexFrame(getState(instance, circState).getContents(), proj, instance);
-  }
+  // @Override
+  // HexFrame getHexFrame(Project proj, Instance instance, CircuitState circState) {
+  //   return getHexFrame(getState(instance, circState).getContents(), proj, instance);
+  // }
 
 //  public AttributeSet getNonVolatileSimulationAttributes(Component comp) {
 //    // return Collections.singletonList(NV_CONTENTS_ATTR);
@@ -602,7 +602,8 @@ public class Ram extends Mem {
       throw new IllegalStateException("Component is missing simulation state");
     Instance instance = ((InstanceComponent)comp).getInstance();
     InstanceState istate = new InstanceStateImpl(state, comp);
-    MemContents contents = getContents(istate);
+    // MemContents contents = getContents(istate);
+    RamContents contents = (RamState)getState(ramState).getContents();
     contents.copyFrom(0, src, 0, (int)(src.getLastOffset()+1));
   }
   
@@ -621,9 +622,9 @@ public class Ram extends Mem {
     }
   }
 
-  public MemContents getContents(InstanceState ramState) {
-    return (MemContents)getState(ramState).getContents();
-  }
+  // public MemContents getContents(InstanceState ramState) {
+  //   return (MemContents)getState(ramState).getContents();
+  // }
 
   @Override
   MemState getState(Instance instance, CircuitState state) {
@@ -633,11 +634,13 @@ public class Ram extends Mem {
       AttributeOption type = instance.getAttributeValue(RamAttributes.ATTR_TYPE);
       int addrBits = instance.getAttributeValue(ADDR_ATTR).getWidth();
       int dataBits = instance.getAttributeValue(DATA_ATTR).getWidth();
-      MemContents contents = MemContents.create(addrBits, dataBits);
-      ret = new RamState(instance, contents /*, new MemListener(instance)*/);
+      // MemContents contents = MemContents.create(addrBits, dataBits);
+      // ret = new RamState(state.getProject(), instance, contents /*, new MemListener(instance)*/);
+      ret = new RamState(state.getProject(), instance, addrBits, dataBits);
       state.setData(comp, ret);
     } else {
-      ret.setRam(instance);
+      ret.setProject(state.getProject());
+      ret.setRamInstance(instance);
     }
     return ret;
   }
@@ -761,7 +764,7 @@ public class Ram extends Mem {
             continue;
         }
         int dataValue = state.getPortValue(DATAIN[i]).toIntValue();
-        myState.getContents().set(addr+i, dataValue);
+        myState.getContents().simulatorSet(addr+i, dataValue);
       }
     }
 

@@ -33,34 +33,22 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 
-import com.cburch.hex.HexModel;
-import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Bounds;
-import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.StringUtil;
 
-abstract class MemState implements ComponentData, HexModelListener {
+abstract class MemState implements ComponentData {
 
-  // RamState holds per-simulation state for both Ram and Rom, providing:
-  //  - a reference to the underlying MemContents with the data
+  // MemState holds per-simulation state for both Ram and Rom, providing:
+  //  - a reference to the underlying MemContents subclass with the data
   //  - current cursor and scroll position
   //  - drawing methods to show data, address, hilighted cell, etc.
-  // Ram and Rom differ in how they handle changes to MemContents.
-  // For Ram, MemContents is simulation state.
-  //  - Each instance has its own MemContents and MemState.
-  //  - The underlying MemContents reference doesn't change.
-  //  - Clearing, and other changes to MemContents, are done in-place.
-  //  - Data changes are not captured in the project undo/redo log.
-  // For Rom, MemContents is a component property.
-  //  - Each instance has its own MemState, but all share the same MemContents.
-  //  - Clearing, and other changes to MemContents, are done in-place.
-  //  - But Data changes are all captured in the project undo/redo log.
-  abstract void clearContents(InstanceState state);
-  abstract void setContentBytes(InstanceState state, long start, int[] data);
 
+  // For Ram, each MemState has its own contents.
+  // For Rom, all MemState for an instance share one contents.
   protected MemContents contents;
+
   private long curScroll = 0;
   private long cursorLoc = -1;
   private long curAddr = -1;
@@ -80,12 +68,12 @@ abstract class MemState implements ComponentData, HexModelListener {
 
   MemState(MemContents contents) {
     this.contents = contents;
-    contents.addHexModelWeakListener(null, this);
+    // contents.addHexModelWeakListener(null, this);
   }
 
-  public MemState(MemState other) {
-    contents = other.contents.duplicate();
-    contents.addHexModelWeakListener(null, this);
+  public MemState(MemContents contents, MemState other) {
+    this. contents = contents; // other.contents.duplicate();
+    // contents.addHexModelWeakListener(null, this);
     curScroll = other.curScroll;
     cursorLoc = other.cursorLoc;
     curAddr = other.curAddr;
@@ -101,15 +89,15 @@ abstract class MemState implements ComponentData, HexModelListener {
     CharHeight = other.CharHeight;
   }
 
-  public void bytesChanged(HexModel source, long start, long numBytes, int[] oldValues) {
-    System.out.println("bytesChanged - nop - why is this here?");
-  }
+  // public void bytesChanged(HexModel source, long start, long numBytes, int[] oldValues) {
+  //   System.out.println("bytesChanged - nop - why is this here?");
+  // }
 
-  public void metainfoChanged(HexModel source) {
-    System.out.println("metainfoChanged - setbits - why is this here?");
-    // FIXME
-    setBits(contents.getLogLength(), contents.getWidth());
-  }
+  // public void metainfoChanged(HexModel source) {
+  //   System.out.println("metainfoChanged - setbits - why is this here?");
+  //   // FIXME
+  //   setBits(contents.getLogLength(), contents.getWidth());
+  // }
 
   private void CalculateDisplayParameters(Graphics2D g,
       int offsetX, int offsetY,

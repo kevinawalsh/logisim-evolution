@@ -32,11 +32,11 @@ package com.cburch.hex;
 
 public interface HexModel {
 
-	/** Registers a listener for changes to the values. */
-	public void addHexModelWeakListener(Object owner, HexModelListener l);
+	// /** Registers a listener for changes to the values. */
+	// public void addHexModelWeakListener(Object owner, HexModelListener l);
 
-	/** Unregisters a listener for changes to the values. */
-	public void removeHexModelWeakListener(Object owner, HexModelListener l);
+	// /** Unregisters a listener for changes to the values. */
+	// public void removeHexModelWeakListener(Object owner, HexModelListener l);
 
 	/** Returns the value at the given address. */
 	public int get(long address);
