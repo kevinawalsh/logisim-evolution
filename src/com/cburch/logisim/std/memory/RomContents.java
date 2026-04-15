@@ -31,7 +31,7 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
-import java.util.WeakReference;
+import java.lang.ref.WeakReference;
 
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
@@ -65,7 +65,7 @@ public class RomContents extends MemContents {
  
   private Project project; // used for Action, which is always required
   private WeakReference<HexFrame> hexFrameRef; // only if currently open
-  private static WeakIdentityHashMap<Instance> instanceRef;  // only if in circuit
+  private WeakReference<Instance> instanceRef;  // only if in circuit
 
   public RomContents(int addrBits, int width) {
     super(addrBits, width);
@@ -111,18 +111,31 @@ public class RomContents extends MemContents {
     instanceRef = new WeakReference<>(instance);
   }
 
+  @Override
   public HexFrame getHexFrame() {
     // Check if we have an existing hexframe window
     HexFrame hexFrame = hexFrameRef.get();
     if (hexFrame == null) {
       Instance instance = instanceRef.get();
-      if (project == null || instance == null)
-        throw new IllegalStateException("missing project or instance");
+      if (project == null)
+        throw new IllegalStateException("missing project");
       // Create new hexframe window, retain reference
-      hexFrame = new HexFrame(project, /*instance,*/ this);
+      // project is used here to create the window, required
+      // instance is used for recent-file history, optional
+      // this is the HexModel
+      hexFrame = new HexFrame(project, instance, this);
       hexFrameRef = new WeakReference<>(hexFrame);
     }
     return hexFrame;
+  }
+
+  @Override public void clearHexFrameRef(Object hexFrame) {
+    HexFrame prev = hexFrameRef.get();
+    if (prev == null)
+      return; // already cleared
+    hexFrameRef = new WeakReference<>(null);
+    if (prev != hexFrame)
+      System.err.println("rom - wrong hex frame closed?");
   }
 
   public void closeHexFrame() {
@@ -133,10 +146,10 @@ public class RomContents extends MemContents {
   }
 
   @Override
-  protected void fireBytesChanged(boolean fromSimulation, long start, long numBytes) {
+  protected void fireBytesChanged(boolean fromSimulation, long start, long count) {
     HexFrame hexFrame = hexFrameRef.get();
     if (hexFrame != null)
-      hexFrame.bytesChanged(start, numBytes);
+      hexFrame.getListener().bytesChanged(start, count);
     Instance instance = instanceRef.get();
     if (instance != null)
       instance.fireInvalidated();
@@ -146,7 +159,7 @@ public class RomContents extends MemContents {
   protected void fireDimensionsChanged() {
     HexFrame hexFrame = hexFrameRef.get();
     if (hexFrame != null)
-      hexFrame.dimensionsChanged();
+      hexFrame.getListener().dimensionsChanged();
     Instance instance = instanceRef.get();
     if (instance != null)
       instance.fireInvalidated();
@@ -157,7 +170,7 @@ public class RomContents extends MemContents {
   // notifies hexframe (if open) and instance propagation (if in circuit)
   
   @Override
-  void clearContents() {
+  public void clearContents() {
     System.out.println("rom clearContents as action");
     if (isAllZeros())
       return;
@@ -168,7 +181,7 @@ public class RomContents extends MemContents {
   }
 
   @Override
-  void clearContents(long start, long length) {
+  public void clearContents(long start, long length) {
     System.out.println("rom clearContents as action");
     if (project != null)
       project.doAction(new ClearRange(instanceRef.get(), this, start, length));
@@ -177,7 +190,7 @@ public class RomContents extends MemContents {
   }
   
   @Override
-  void setContents(long start, int data) {
+  public void setContents(long start, int data) {
     System.out.println("rom setContent as action");
     if (project != null)
       project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, new int[] { data }));
@@ -186,7 +199,7 @@ public class RomContents extends MemContents {
   }
 
   @Override
-  void setContents(long start, int[] data) {
+  public void setContents(long start, int[] data) {
     System.out.println("rom setContent as action");
     if (project != null)
       project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
@@ -194,7 +207,27 @@ public class RomContents extends MemContents {
       System.out.println("set direct here, probably setting on a tool?");
   }
 
+  @Override
+	public void copyContents(long start, MemContents src, long offset, long count) {
+    // If new data is under 32KB, use ChangeBytes with array to hold old data,
+    // otherwise use CopyContents which uses duplication for old data.
+    System.out.println("rom copyContents as action");
+    if (project != null) {
+      if (count <= 32*1024) {
+        int[] data = src.get(offset, count);
+        project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
+      } else {
+        project.doAction(new CopyContents(instanceRef.get(), this, start, src, offset, count));
+      }
+    } else {
+      System.out.println("set direct here, probably setting on a tool?");
+    }
+  }
+
   // Actions push changes to underlying bytes 
+  // private static void _clear(RomContents contents) {
+  //   contents.clear();
+  // }
   
   private static class ClearAll extends Action {
     private Instance instance;
@@ -209,7 +242,7 @@ public class RomContents extends MemContents {
 
     @Override
     public void doIt(Project proj) {
-      contents.clear();
+      contents.clear(false);
       if (instance != null)
         instance.fireInvalidated();
     }
@@ -227,7 +260,7 @@ public class RomContents extends MemContents {
     }
   }
 
-  private static class ClearRange  extends Action {
+  private static class ClearRange extends Action {
     private Instance instance;
     private RomContents contents;
     private int[] oldValues;
@@ -250,7 +283,7 @@ public class RomContents extends MemContents {
 
     @Override
     public void undo(Project proj) {
-      contents.set(start, oldValues);
+      contents.set(false, start, oldValues);
       if (instance != null)
         instance.fireInvalidated();
     }
@@ -321,14 +354,14 @@ public class RomContents extends MemContents {
 
     @Override
     public void doIt(Project proj) {
-      contents.set(start, newValues);
+      contents.set(false, start, newValues);
       if (instance != null)
         instance.fireInvalidated();
     }
 
     @Override
     public void undo(Project proj) {
-      contents.set(start, oldValues);
+      contents.set(false, start, oldValues);
       if (instance != null)
         instance.fireInvalidated();
     }
@@ -336,6 +369,40 @@ public class RomContents extends MemContents {
     @Override
     public String getName() {
       return S.get("romChangeAction");
+    }
+  }
+
+  private static class CopyContents extends Action {
+    private Instance instance;
+    private RomContents contents;
+    private MemContents src;
+    private RomContents oldContents;
+    long start, offset, count;
+
+    CopyContents(Instance instance, RomContents contents, long start, MemContents src, long offset, long count) {
+      this.instance = instance;
+      this.contents = contents;
+      this.src = src;
+      this.oldContents = contents.duplicate();
+    }
+
+    @Override
+    public void doIt(Project proj) {
+      contents.copyFrom(start, src, offset, count);
+      if (instance != null)
+        instance.fireInvalidated();
+    }
+
+    @Override
+    public void undo(Project proj) {
+      contents.copyFrom(oldContents);
+      if (instance != null)
+        instance.fireInvalidated();
+    }
+
+    @Override
+    public String getName() {
+      return S.get("romLoadAction");
     }
   }
 

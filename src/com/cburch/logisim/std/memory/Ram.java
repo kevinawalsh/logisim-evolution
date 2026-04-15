@@ -45,7 +45,6 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
-// import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceLogger;
@@ -54,9 +53,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.InstanceStateImpl;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.util.WeakIdentityHashMap;
 
 public class Ram extends Mem {
 
@@ -209,7 +206,6 @@ public class Ram extends Mem {
     super("RAM", S.getter("ramComponent"), 3);
     setIconName("ram.gif");
     setInstanceLogger(Logger.class);
-    setInstancePoker(RamPoker.class);
   }
 
   @Override
@@ -288,17 +284,14 @@ public class Ram extends Mem {
       } else {
         g.drawLine(xpos + 5, ypos + 5, xpos + 10, ypos + 10);
         g.drawLine(xpos + 10, ypos + 10, xpos + 20, ypos + 10);
-        g.drawLine(xpos + 20 + SymbolWidth, ypos + 10, xpos + 30
-            + SymbolWidth, ypos + 10);
-        g.drawLine(xpos + 30 + SymbolWidth, ypos + 10, xpos + 35
-            + SymbolWidth, ypos + 5);
+        g.drawLine(xpos + 20 + SymbolWidth, ypos + 10, xpos + 30 + SymbolWidth, ypos + 10);
+        g.drawLine(xpos + 30 + SymbolWidth, ypos + 10, xpos + 35 + SymbolWidth, ypos + 5);
         g.setFont(font.deriveFont(7.0f));
-        GraphicsUtil
-            .drawText(g, Integer.toString(bit), xpos + 17,
-                ypos + 7, GraphicsUtil.H_RIGHT,
-                GraphicsUtil.V_BASELINE);
-        GraphicsUtil.drawText(g, Integer.toString(bit), xpos + 23
-            + SymbolWidth, ypos + 7, GraphicsUtil.H_LEFT,
+        GraphicsUtil.drawText(g, Integer.toString(bit), xpos + 17,
+            ypos + 7, GraphicsUtil.H_RIGHT,
+            GraphicsUtil.V_BASELINE);
+        GraphicsUtil.drawText(g, Integer.toString(bit), xpos + 23 + SymbolWidth,
+            ypos + 7, GraphicsUtil.H_LEFT,
             GraphicsUtil.V_BASELINE);
         g.setFont(font);
       }
@@ -316,32 +309,22 @@ public class Ram extends Mem {
           ypos + 10, GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
       g.setFont(font);
     } else {
-      g.drawLine(xpos + 24 + SymbolWidth, ypos + 2, xpos + 28
-          + SymbolWidth, ypos + 5);
-      g.drawLine(xpos + 24 + SymbolWidth, ypos + 8, xpos + 28
-          + SymbolWidth, ypos + 5);
-      g.drawLine(xpos + 20 + SymbolWidth, ypos + 5, xpos + 30
-          + SymbolWidth, ypos + 5);
-      g.drawLine(xpos + 22 + SymbolWidth, ypos + 15, xpos + 26
-          + SymbolWidth, ypos + 12);
-      g.drawLine(xpos + 22 + SymbolWidth, ypos + 15, xpos + 26
-          + SymbolWidth, ypos + 18);
-      g.drawLine(xpos + 20 + SymbolWidth, ypos + 15, xpos + 30
-          + SymbolWidth, ypos + 15);
-      g.drawLine(xpos + 30 + SymbolWidth, ypos + 5, xpos + 30
-          + SymbolWidth, ypos + 15);
-      g.drawLine(xpos + 30 + SymbolWidth, ypos + 10, xpos + 40
-          + SymbolWidth, ypos + 10);
+      g.drawLine(xpos + 24 + SymbolWidth, ypos + 2, xpos + 28 + SymbolWidth, ypos + 5);
+      g.drawLine(xpos + 24 + SymbolWidth, ypos + 8, xpos + 28 + SymbolWidth, ypos + 5);
+      g.drawLine(xpos + 20 + SymbolWidth, ypos + 5, xpos + 30 + SymbolWidth, ypos + 5);
+      g.drawLine(xpos + 22 + SymbolWidth, ypos + 15, xpos + 26 + SymbolWidth, ypos + 12);
+      g.drawLine(xpos + 22 + SymbolWidth, ypos + 15, xpos + 26 + SymbolWidth, ypos + 18);
+      g.drawLine(xpos + 20 + SymbolWidth, ypos + 15, xpos + 30 + SymbolWidth, ypos + 15);
+      g.drawLine(xpos + 30 + SymbolWidth, ypos + 5, xpos + 30 + SymbolWidth, ypos + 15);
+      g.drawLine(xpos + 30 + SymbolWidth, ypos + 10, xpos + 40 + SymbolWidth, ypos + 10);
       if (singleBit) {
-        g.drawLine(xpos + 40 + SymbolWidth, ypos + 10, xpos + 50
-            + SymbolWidth, ypos + 10);
+        g.drawLine(xpos + 40 + SymbolWidth, ypos + 10, xpos + 50 + SymbolWidth, ypos + 10);
       } else {
-        g.drawLine(xpos + 40 + SymbolWidth, ypos + 10, xpos + 45
-            + SymbolWidth, ypos + 5);
+        g.drawLine(xpos + 40 + SymbolWidth, ypos + 10, xpos + 45 + SymbolWidth, ypos + 5);
       }
       g.setFont(font.deriveFont(7.0f));
-      GraphicsUtil.drawText(g, Integer.toString(bit), xpos + 33
-          + SymbolWidth, ypos + 7, GraphicsUtil.H_LEFT,
+      GraphicsUtil.drawText(g, Integer.toString(bit), xpos + 33 + SymbolWidth,
+          ypos + 7, GraphicsUtil.H_LEFT,
           GraphicsUtil.V_BASELINE);
       String ByteIndex = "";
       if (ByteEnabled) {
@@ -357,12 +340,9 @@ public class Ram extends Mem {
           GraphicsUtil.H_RIGHT, GraphicsUtil.V_CENTER_FIRST);
       g.setFont(font);
       GraphicsUtil.switchToWidth(g, 1);
-      g.drawLine(xpos + 11 + SymbolWidth, ypos + 4, xpos + 19
-          + SymbolWidth, ypos + 4);
-      g.drawLine(xpos + 11 + SymbolWidth, ypos + 4, xpos + 15
-          + SymbolWidth, ypos + 8);
-      g.drawLine(xpos + 15 + SymbolWidth, ypos + 8, xpos + 19
-          + SymbolWidth, ypos + 4);
+      g.drawLine(xpos + 11 + SymbolWidth, ypos + 4, xpos + 19 + SymbolWidth, ypos + 4);
+      g.drawLine(xpos + 11 + SymbolWidth, ypos + 4, xpos + 15 + SymbolWidth, ypos + 8);
+      g.drawLine(xpos + 15 + SymbolWidth, ypos + 8, xpos + 19 + SymbolWidth, ypos + 4);
     }
     GraphicsUtil.switchToWidth(g, 1);
   }
@@ -389,24 +369,17 @@ public class Ram extends Mem {
     GraphicsUtil.switchToWidth(g, 2);
     AttributeSet attrs = painter.getAttributeSet();
     g.drawLine(xpos + 20, ypos, xpos + 20 + SymbolWidth, ypos);
-    g.drawLine(xpos + 20, ypos, xpos + 20, ypos + getControlHeight(attrs)
-        - 10);
-    g.drawLine(xpos + 20 + SymbolWidth, ypos, xpos + 20 + SymbolWidth, ypos
-        + getControlHeight(attrs) - 10);
-    g.drawLine(xpos + 20, ypos + getControlHeight(attrs) - 10, xpos + 30,
-        ypos + getControlHeight(attrs) - 10);
-    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
-        - 10, xpos + 20 + SymbolWidth, ypos + getControlHeight(attrs)
-        - 10);
-    g.drawLine(xpos + 30, ypos + getControlHeight(attrs) - 10, xpos + 30,
-        ypos + getControlHeight(attrs));
-    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs)
-        - 10, xpos + 20 + SymbolWidth - 10, ypos
-        + getControlHeight(attrs));
+    g.drawLine(xpos + 20, ypos, xpos + 20, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 20 + SymbolWidth, ypos, xpos + 20 + SymbolWidth, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 20, ypos + getControlHeight(attrs) - 10, xpos + 30, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs) - 10, xpos + 20 + SymbolWidth, ypos + getControlHeight(attrs) - 10);
+    g.drawLine(xpos + 30, ypos + getControlHeight(attrs) - 10, xpos + 30, ypos + getControlHeight(attrs));
+    g.drawLine(xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs) - 10, xpos + 20 + SymbolWidth - 10, ypos + getControlHeight(attrs));
+
+    int addrBits = painter.getAttributeValue(Mem.ADDR_ATTR).getWidth();
+    int dataBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
     GraphicsUtil.drawCenteredText(g,
-        "RAM " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR).getWidth())
-        + " x "
-        + painter.getAttributeValue(Mem.DATA_ATTR).getWidth(),
+        "RAM " + GetSizeLabel(addrBits) + " x " + dataBits,
         xpos + (SymbolWidth / 2) + 20, ypos + 5);
     g.drawLine(xpos, ypos + 50, xpos + 20, ypos + 50);
     GraphicsUtil.drawText(g, "M1 [Write Enable]", xpos + 33, ypos + 50,
@@ -481,15 +454,11 @@ public class Ram extends Mem {
         if (separate) {
           g.drawLine(xpos, realypos, xpos + 5, realypos + 5);
           g.drawLine(xpos + 5, realypos + 5, xpos + 5, realypos + 20);
-          g.drawLine(xpos + 40 + SymbolWidth, realypos, xpos + 35
-              + SymbolWidth, realypos + 5);
-          g.drawLine(xpos + 35 + SymbolWidth, realypos + 5, xpos + 35
-              + SymbolWidth, realypos + 20);
+          g.drawLine(xpos + 40 + SymbolWidth, realypos, xpos + 35 + SymbolWidth, realypos + 5);
+          g.drawLine(xpos + 35 + SymbolWidth, realypos + 5, xpos + 35 + SymbolWidth, realypos + 20);
         } else {
-          g.drawLine(xpos + 50 + SymbolWidth, realypos, xpos + 45
-              + SymbolWidth, realypos + 5);
-          g.drawLine(xpos + 45 + SymbolWidth, realypos + 5, xpos + 45
-              + SymbolWidth, realypos + 20);
+          g.drawLine(xpos + 50 + SymbolWidth, realypos, xpos + 45 + SymbolWidth, realypos + 5);
+          g.drawLine(xpos + 45 + SymbolWidth, realypos + 5, xpos + 45 + SymbolWidth, realypos + 20);
         }
       }
     } else {
@@ -497,20 +466,16 @@ public class Ram extends Mem {
       if (LastBlock) {
         if (separate) {
           g.drawLine(xpos + 5, realypos, xpos + 5, realypos + 5);
-          g.drawLine(xpos + 35 + SymbolWidth, realypos, xpos + 35
-              + SymbolWidth, realypos + 5);
+          g.drawLine(xpos + 35 + SymbolWidth, realypos, xpos + 35 + SymbolWidth, realypos + 5);
         } else {
-          g.drawLine(xpos + 45 + SymbolWidth, realypos, xpos + 45
-              + SymbolWidth, realypos + 5);
+          g.drawLine(xpos + 45 + SymbolWidth, realypos, xpos + 45 + SymbolWidth, realypos + 5);
         }
       } else {
         if (separate) {
           g.drawLine(xpos + 5, realypos, xpos + 5, realypos + 20);
-          g.drawLine(xpos + 35 + SymbolWidth, realypos, xpos + 35
-              + SymbolWidth, realypos + 20);
+          g.drawLine(xpos + 35 + SymbolWidth, realypos, xpos + 35 + SymbolWidth, realypos + 20);
         } else {
-          g.drawLine(xpos + 45 + SymbolWidth, realypos, xpos + 45
-              + SymbolWidth, realypos + 20);
+          g.drawLine(xpos + 45 + SymbolWidth, realypos, xpos + 45 + SymbolWidth, realypos + 20);
         }
       }
     }
@@ -525,48 +490,6 @@ public class Ram extends Mem {
       return 90 + enables * 10;
   }
 
-  // // FIXME: it is not clear why this registry (and the similar one in RomAttributes.java) could not
-  // // be eliminated, and instead reference the HexFrame from a member variable in MemContents.
-  // private static WeakIdentityHashMap<MemContents, HexFrame> windowRegistry = new WeakIdentityHashMap<>();
-  // static HexFrame getHexFrame(MemContents value, Project proj, Instance instance) {
-  //   synchronized (windowRegistry) {
-  //     HexFrame ret = windowRegistry.get(value);
-  //     if (ret == null) {
-  //       ret = new HexFrame(proj, instance, value);
-  //       windowRegistry.put(value, ret);
-  //     }
-  //     return ret;
-  //   }
-  // }
-
-  // public static void closeHexFrame(RamState state) {
-  //   MemContents contents = state.getContents();
-  //   HexFrame ret;
-  //   synchronized (windowRegistry) {
-  //     ret = windowRegistry.remove(contents);
-  //   }
-  //   if (ret == null)
-  //     return;
-  //   ret.closeAndDispose();
-  // }
-
-  // @Override
-  // HexFrame getHexFrame(Project proj, Instance instance, CircuitState circState) {
-  //   return getHexFrame(getState(instance, circState).getContents(), proj, instance);
-  // }
-
-//  public AttributeSet getNonVolatileSimulationAttributes(Component comp) {
-//    // return Collections.singletonList(NV_CONTENTS_ATTR);
-//    AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
-//    if (type != RamAttributes.NONVOLATILE)
-//      return null;
-//    int addrBits = state.getAttributeValue(ADDR_ATTR).getWidth();
-//    int dataBits = state.getAttributeValue(DATA_ATTR).getWidth();
-//    MemContents contents = MemContents.create(addrBits, dataBits);
-//    return AttributeSets.fixedSet(new Attribute<?>[] { NV_CONTENTS_ATTR },
-//        new Object[] { contents });
-//  }
-//
   @Override
   public AttributeSet getNonVolatileSimulationState(Component comp, CircuitState state) {
     AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
@@ -577,13 +500,13 @@ public class Ram extends Mem {
       // FIXME: should return null here???? contents is clear...
       int addrBits = comp.getAttributeSet().getValue(ADDR_ATTR).getWidth();
       int dataBits = comp.getAttributeSet().getValue(DATA_ATTR).getWidth();
-      contents = MemContents.create(addrBits, dataBits);
+      contents = new RamContents(addrBits, dataBits);
     } else {
       RamState ret = (RamState)state.getDataAsCustom(comp);
       if (ret == null)
         return null;
       contents = ret.getContents();
-      if (contents.isClear())
+      if (contents.isAllZeros())
         return null;
     }
     return AttributeSets.fixedSet(new Attribute<?>[] { NV_CONTENTS_ATTR },
@@ -602,12 +525,11 @@ public class Ram extends Mem {
       throw new IllegalStateException("Component is missing simulation state");
     Instance instance = ((InstanceComponent)comp).getInstance();
     InstanceState istate = new InstanceStateImpl(state, comp);
-    // MemContents contents = getContents(istate);
-    RamContents contents = (RamState)getState(ramState).getContents();
-    contents.copyFrom(0, src, 0, (int)(src.getLastOffset()+1));
+    RamContents contents = (RamContents)getState(istate).getContents();
+    contents.copyContents(src);
   }
   
-  public static Attribute<MemContents> NV_CONTENTS_ATTR = Rom.CONTENTS_ATTR;
+  public static Attribute<RomContents> NV_CONTENTS_ATTR = Rom.CONTENTS_ATTR;
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
@@ -622,9 +544,10 @@ public class Ram extends Mem {
     }
   }
 
-  // public MemContents getContents(InstanceState ramState) {
-  //   return (MemContents)getState(ramState).getContents();
-  // }
+  // used by TtyInterface, for loading ram contents
+  public MemContents getContents(InstanceState ramState) {
+    return getState(ramState).getContents();
+  }
 
   @Override
   MemState getState(Instance instance, CircuitState state) {
@@ -634,8 +557,6 @@ public class Ram extends Mem {
       AttributeOption type = instance.getAttributeValue(RamAttributes.ATTR_TYPE);
       int addrBits = instance.getAttributeValue(ADDR_ATTR).getWidth();
       int dataBits = instance.getAttributeValue(DATA_ATTR).getWidth();
-      // MemContents contents = MemContents.create(addrBits, dataBits);
-      // ret = new RamState(state.getProject(), instance, contents /*, new MemListener(instance)*/);
       ret = new RamState(state.getProject(), instance, addrBits, dataBits);
       state.setData(comp, ret);
     } else {
@@ -764,7 +685,7 @@ public class Ram extends Mem {
             continue;
         }
         int dataValue = state.getPortValue(DATAIN[i]).toIntValue();
-        myState.getContents().simulatorSet(addr+i, dataValue);
+        ((RamContents)myState.getContents()).simulatorSet(addr+i, dataValue);
       }
     }
 

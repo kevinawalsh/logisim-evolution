@@ -64,8 +64,8 @@ class Highlighter {
 			start = end;
 			end = t;
 		}
-		if (start < model.getFirstOffset())
-			start = model.getFirstOffset();
+		if (start < 0)
+			start = 0;
 		if (end > model.getLastOffset())
 			end = model.getLastOffset();
 		if (start >= end)

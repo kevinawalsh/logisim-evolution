@@ -76,11 +76,13 @@ public class HexEditor extends JComponent implements Scrollable {
     setFont(FONT);
 		setOpaque(true);
 		setBackground(Color.WHITE);
-		if (model != null)
-			model.addHexModelWeakListener(null, listener);
+		// if (model != null)
+		// 	model.addHexModelWeakListener(null, listener);
 
 		measures.recompute();
 	}
+
+  public HexModelListener getListener() { return listener; }
 
 	public Object addHighlight(int start, int end, Color color) {
 		return highlighter.add(start, end, color);
@@ -96,7 +98,7 @@ public class HexEditor extends JComponent implements Scrollable {
 			p0 = p1;
 			p1 = t;
 		}
-		model.fill(p0, p1 - p0 + 1, 0);
+		model.clearContents(p0, p1 - p0 + 1);
 	}
 
 	public Caret getCaret() {
@@ -175,12 +177,10 @@ public class HexEditor extends JComponent implements Scrollable {
 			g.fillRect(clip.x, clip.y, clip.width, clip.height);
 		}
 
-		long addr0 = model.getFirstOffset();
+		long addr0 = 0;
 		long addr1 = model.getLastOffset();
 
 		long xaddr0 = measures.toAddress(0, clip.y);
-		if (xaddr0 == addr0)
-			xaddr0 = measures.getBaseAddress(model);
 		long xaddr1 = measures.toAddress(getWidth(), clip.y + clip.height) + 1;
 		highlighter.paint(g, xaddr0, xaddr1);
 
@@ -268,18 +268,18 @@ public class HexEditor extends JComponent implements Scrollable {
 		measures.recompute();
 	}
 
-	public void setModel(HexModel value) {
-		if (model == value)
-			return;
-		if (model != null)
-			model.removeHexModelWeakListener(null, listener);
-		model = value;
-		highlighter.clear();
-		caret.setDot(-1, false);
-		if (model != null)
-			model.addHexModelWeakListener(null, listener);
-		measures.recompute();
-	}
+	// public void setModel(HexModel value) {
+	// 	if (model == value)
+	// 		return;
+	// 	if (model != null)
+	// 		model.removeHexModelWeakListener(null, listener);
+	// 	model = value;
+	// 	highlighter.clear();
+	// 	caret.setDot(-1, false);
+	// 	if (model != null)
+	// 		model.addHexModelWeakListener(null, listener);
+	// 	measures.recompute();
+	// }
 
 	private String toHex(long value, int chars) {
 		String ret = Long.toHexString(value);

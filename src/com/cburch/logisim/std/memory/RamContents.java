@@ -30,7 +30,7 @@
 
 package com.cburch.logisim.std.memory;
 
-import java.util.WeakReference;
+import java.lang.ref.WeakReference;
 
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.gui.hex.HexFrame;
@@ -68,8 +68,8 @@ public class RamContents extends MemContents {
  
   private Project project; // used only for positioning HexFrame
   private WeakReference<HexFrame> hexFrameRef; // only if currently open
-  private static WeakIdentityHashMap<Instance> instanceRef;  // only if in circuit
-  private static WeakIdentityHashMap<CircuitState> circStateRef;  // only if in simulation
+  private WeakReference<Instance> instanceRef;  // only if in circuit
+  private WeakReference<CircuitState> circStateRef;  // only if in simulation
 
   public RamContents(int addrBits, int width) {
     super(addrBits, width);
@@ -119,7 +119,7 @@ public class RamContents extends MemContents {
 
   public void setRamCircState(CircuitState circState) {
     // Update circState binding, only needed if we are in a simulation
-    Instance oldCircState = circStateRef.get();
+    CircuitState oldCircState = circStateRef.get();
     if (oldCircState == circState) {
       System.err.println("WARN: ram no need to change circState");
       return;
@@ -131,18 +131,30 @@ public class RamContents extends MemContents {
     circStateRef = new WeakReference<>(circState);
   }
 
+  @Override
   public HexFrame getHexFrame() {
     // Check if we have an existing hexframe window
     HexFrame hexFrame = hexFrameRef.get();
     if (hexFrame == null) {
       Instance instance = instanceRef.get();
-      if (project == null || instance == null)
-        throw new IllegalStateException("missing project or instance");
+      if (project == null)
+        throw new IllegalStateException("missing project");
       // Create new hexframe window, retain reference
-      hexFrame = new HexFrame(project, /* instance,*/ this);
+      // project is used here to create the window, required
+      // instance is used for recent-file history, optional
+      // this is the HexModel
+      hexFrame = new HexFrame(project, instance, this);
       hexFrameRef = new WeakReference<>(hexFrame);
     }
     return hexFrame;
+  }
+
+  @Override
+  public void clearHexFrameRef(Object hexFrame) {
+    HexFrame prev = hexFrameRef.get();
+    hexFrameRef = new WeakReference<>(null);
+    if (prev != hexFrame)
+      System.err.println("rom - wrong hex frame closed?");
   }
 
   public void closeHexFrame() {
@@ -153,10 +165,10 @@ public class RamContents extends MemContents {
   }
 
   @Override
-  protected void fireBytesChanged(boolean fromSimulation, long start, long numBytes) {
+  protected void fireBytesChanged(boolean fromSimulation, long start, long count) {
     HexFrame hexFrame = hexFrameRef.get();
     if (hexFrame != null)
-      hexFrame.bytesChanged(start, numBytes);
+      hexFrame.getListener().bytesChanged(start, count);
     if (!fromSimulation) {
       Instance instance = instanceRef.get();
       CircuitState circState = circStateRef.get();
@@ -169,7 +181,7 @@ public class RamContents extends MemContents {
   protected void fireDimensionsChanged() {
     HexFrame hexFrame = hexFrameRef.get();
     if (hexFrame != null)
-      hexFrame.dimensionsChanged();
+      hexFrame.getListener().dimensionsChanged();
     Instance instance = instanceRef.get();
     CircuitState circState = circStateRef.get();
     if (instance != null)
@@ -192,27 +204,33 @@ public class RamContents extends MemContents {
   // and notifies hexframe (if open) and state propagation (if in simulation)
   
   @Override
-  void clearContents() {
+  public void clearContents() {
     System.out.println("ram clearContents direct");
     clear(false);
   }
 
   @Override
-  void clearContents(long start, long length) {
+  public void clearContents(long start, long length) {
     System.out.println("ram clearContents direct");
     clear(start, length);
   }
   
   @Override
-  void setContents(long start, int data) {
+  public void setContents(long start, int data) {
     System.out.println("ram setContent direct");
     set(false, start, data);
   }
 
   @Override
-  void setContents(long start, int[] data) {
+  public void setContents(long start, int[] data) {
     System.out.println("ram setContent direct");
     set(false, start, data);
+  }
+
+  @Override
+  public void copyContents(long start, MemContents src, long offset, long count) {
+    System.out.println("ram copyContents direct");
+    copyFrom(start, src, offset, count);
   }
 
 }

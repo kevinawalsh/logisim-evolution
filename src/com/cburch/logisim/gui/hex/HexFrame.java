@@ -47,11 +47,12 @@ import javax.swing.event.ChangeListener;
 
 import com.cburch.hex.HexEditor;
 import com.cburch.hex.HexModel;
-import com.cburch.logisim.std.memory.MemContents;
+import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.std.memory.MemContents;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
@@ -110,9 +111,9 @@ public class HexFrame extends LFrame.SubWindow {
     public void actionPerformed(ActionEvent event) {
       Object src = event.getSource();
       if (src == open) {
-        HexFile.open((MemContents)model, HexFrame.this, project, instance);
+        HexFile.open(model, HexFrame.this, project, instance);
       } else if (src == save) {
-        HexFile.save((MemContents)model, HexFrame.this, project, instance);
+        HexFile.save(model, HexFrame.this, project, instance);
       } else if (src == close) {
         WindowEvent e = new WindowEvent(HexFrame.this, WindowEvent.WINDOW_CLOSING);
         HexFrame.this.processWindowEvent(e);
@@ -155,15 +156,16 @@ public class HexFrame extends LFrame.SubWindow {
   private WindowMenuManager windowManager = new WindowMenuManager();
   private EditListener editListener = new EditListener();
   private MyListener myListener = new MyListener();
-  private HexModel model;
+  private MemContents model;
   private HexEditor editor;
   private JButton open = new JButton();
   private JButton save = new JButton();
   private JButton close = new JButton();
   private Instance instance;
 
-  public HexFrame(Project project, Instance instance, HexModel model) {
+  public HexFrame(Project project, Instance instance, MemContents model) {
     super(project);
+    setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
     this.model = model;
     this.editor = new HexEditor(model);
@@ -209,11 +211,21 @@ public class HexFrame extends LFrame.SubWindow {
     setLocationRelativeTo(project.getFrame());
   }
 
+  public HexModelListener getListener() {
+    return editor.getListener();
+  }
+
   @Override
   public void setVisible(boolean value) {
     if (value && !isVisible()) {
       windowManager.frameOpened(this);
     }
     super.setVisible(value);
+  }
+
+  @Override
+  public void dispose() {
+    model.clearHexFrameRef(this);
+    super.dispose();
   }
 }

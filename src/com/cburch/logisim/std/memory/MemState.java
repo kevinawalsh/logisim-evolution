@@ -104,7 +104,7 @@ abstract class MemState implements ComponentData {
       int DisplayWidth, int DisplayHeight) {
     RecalculateParameters = false;
     int addrBits = getAddrBits();
-    int dataBits = contents.getWidth();
+    int dataBits = contents.getValueWidth();
 
     CharHeight = StringUtil.estimateBounds("0".length(), FONT).getHeight();
     SpaceSize = StringUtil.estimateBounds(" ".length(), FONT).getWidth() * 3/4;
@@ -200,7 +200,7 @@ abstract class MemState implements ComponentData {
   }
 
   int getDataBits() {
-    return contents.getWidth();
+    return contents.getValueWidth();
   }
 
   long getLastAddress() {
@@ -282,13 +282,13 @@ abstract class MemState implements ComponentData {
                 DataSize + 2, CharHeight + 2);
             g.setColor(Color.WHITE);
             GraphicsUtil.drawText(g, StringUtil.toHexString(
-                  contents.getWidth(), value), firstx + j
+                  contents.getValueWidth(), value), firstx + j
                 * DataSize, firsty + i * yinc,
                 GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_FIRST);
             g.setColor(Color.BLACK);
           } else {
             GraphicsUtil.drawText(g, StringUtil.toHexString(
-                  contents.getWidth(), value), firstx + j
+                  contents.getValueWidth(), value), firstx + j
                 * DataSize, firsty + i * yinc,
                 GraphicsUtil.H_CENTER, GraphicsUtil.V_CENTER_FIRST);
           }
@@ -320,19 +320,19 @@ abstract class MemState implements ComponentData {
       curScroll = 0;
   }
 
-  // FIXME: not needed?
-  protected void setBits(int addrBits, int dataBits) {
-    RecalculateParameters = true;
-    if (contents == null) {
-      // FIXME - delete this
-      contents = MemContents.create(addrBits, dataBits);
-    } else {
-      contents.setDimensions(addrBits, dataBits);
-    }
-    cursorLoc = -1;
-    curAddr = -1;
-    curScroll = 0;
-  }
+  // // FIXME: not needed?
+  // protected void setBits(int addrBits, int dataBits) {
+  //   RecalculateParameters = true;
+  //   if (contents == null) {
+  //     // FIXME - delete this
+  //     contents = MemContents.create(addrBits, dataBits);
+  //   } else {
+  //     contents.setDimensions(addrBits, dataBits);
+  //   }
+  //   cursorLoc = -1;
+  //   curAddr = -1;
+  //   curScroll = 0;
+  // }
 
   void setCurrent(long value) {
     curAddr = isValidAddr(value) ? value : -1L;

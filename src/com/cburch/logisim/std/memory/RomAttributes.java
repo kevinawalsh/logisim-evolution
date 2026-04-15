@@ -117,7 +117,7 @@ class RomAttributes extends AbstractAttributeSet {
       lineSize = (AttributeOption) value;
     else if (attr == Rom.CONTENTS_ATTR) {
       System.err.println("rom set CONTENTS_ATTR");
-      contents = (MemContents) value; // only occurs during xml reading?
+      contents = (RomContents) value; // only occurs during xml reading?
                                       // should sync addrBits and dataBits?
     }
     else if (attr == StdAttr.LABEL)

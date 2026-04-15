@@ -34,8 +34,6 @@ import java.awt.Graphics2D;
 import java.io.File;
 import java.util.WeakHashMap;
 
-import com.cburch.hex.HexModel;
-import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
@@ -44,13 +42,11 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
-import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.tools.MenuExtender;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
@@ -66,39 +62,21 @@ public abstract class Mem extends InstanceFactory {
   // size. And second, I'd alter the MemContents class's PAGE_SIZE_BITS
   // constant to 14 so that its "page table" isn't quite so big.
 
-  // static class MemListener implements HexModelListener {
-
-  //   Instance instance;
-
-  //   MemListener(Instance instance) {
-  //     this.instance = instance;
-  //   }
-
-  //   public void bytesChanged(HexModel source, long start, long numBytes,
-  //       int[] values) {
-  //     instance.fireInvalidated(); // ROM edit affects all simulations
-  //   }
-
-  //   public void metainfoChanged(HexModel source) {
-  //   }
-  // }
-
-  static final AttributeOption SINGLE = new AttributeOption("single",
-      S.getter("memSingle"));
-  static final AttributeOption DUAL = new AttributeOption("dual",
-      S.getter("memDual"));
-  static final AttributeOption QUAD = new AttributeOption("quad",
-      S.getter("memQuad"));
+  static final AttributeOption SINGLE = new AttributeOption("single", S.getter("memSingle"));
+  static final AttributeOption DUAL = new AttributeOption("dual", S.getter("memDual"));
+  static final AttributeOption QUAD = new AttributeOption("quad", S.getter("memQuad"));
   static final Attribute<AttributeOption> LINE_ATTR = Attributes.forOption(
       "line", S.getter("memLineSize"), new AttributeOption[] {
         SINGLE, DUAL, QUAD });
 
-  public static final int SymbolWidth = 200;
-  public static final Attribute<BitWidth> ADDR_ATTR = Attributes.forBitWidth(
-      "addrWidth", S.getter("ramAddrWidthAttr"), 2, 24);
+  public static final Attribute<BitWidth> ADDR_ATTR =
+    Attributes.forBitWidth( "addrWidth", S.getter("ramAddrWidthAttr"), 2, 24);
 
-  public static final Attribute<BitWidth> DATA_ATTR = Attributes.forBitWidth(
-      "dataWidth", S.getter("ramDataWidthAttr"));
+  public static final Attribute<BitWidth> DATA_ATTR =
+    Attributes.forBitWidth( "dataWidth", S.getter("ramDataWidthAttr"));
+
+  public static final int SymbolWidth = 200;
+
   // port-related constants
   static final int DATA = 0;
   static final int ADDR = 1;
@@ -113,7 +91,7 @@ public abstract class Mem extends InstanceFactory {
     currentInstanceFiles = new WeakHashMap<Instance, File>();
     setKeyConfigurator(JoinedConfigurator.create(new BitWidthConfigurator(
             ADDR_ATTR, 2, 24, 0), new BitWidthConfigurator(DATA_ATTR)));
-
+    setInstancePoker(MemPoker.class);
     setOffsetBounds(Bounds.create(-140, -40, 140, 80));
   }
 
@@ -179,8 +157,6 @@ public abstract class Mem extends InstanceFactory {
   public File getCurrentImage(Instance instance) {
     return currentInstanceFiles.get(instance);
   }
-
-  // abstract HexFrame getHexFrame(Project proj, Instance instance, CircuitState state);
 
   @Override
   protected Object getInstanceFeature(Instance instance, Object key) {
@@ -264,10 +240,10 @@ public abstract class Mem extends InstanceFactory {
       proportions = Rom.RECT;
     int symwidth = (proportions == Rom.TALL) ? SymbolWidth/2 : SymbolWidth;
 
+    int addrBits = painter.getAttributeValue(Mem.ADDR_ATTR).getWidth();
+    int dataBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
     GraphicsUtil.drawCenteredText(g,
-        MEM + " " + GetSizeLabel(painter.getAttributeValue(Mem.ADDR_ATTR).getWidth())
-        + " x "
-        + Integer.toString(painter.getAttributeValue(Mem.DATA_ATTR).getWidth()),
+        MEM + " " + GetSizeLabel(addrBits) + " x " + dataBits,
         bds.getX() + (symwidth / 2) + 20, bds.getY() + 6);
 
     // draw input and output ports

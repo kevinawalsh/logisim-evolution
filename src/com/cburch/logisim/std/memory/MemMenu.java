@@ -80,10 +80,10 @@ class MemMenu implements ActionListener, MenuExtender {
     this.frame = proj.getFrame();
     this.circState = proj.getCircuitState();
 
-    Object attrs = instance.getAttributeSet();
-    if (attrs instanceof RomAttributes) {
-      ((RomAttributes) attrs).setProject(proj);
-    }
+    // Object attrs = instance.getAttributeSet();
+    // if (attrs instanceof RomAttributes) {
+    //   ((RomAttributes) attrs).setProject(proj);
+    // }
 
     boolean enabled = circState != null;
     edit = createItem(enabled, S.get("ramEditMenuItem"));
@@ -107,32 +107,34 @@ class MemMenu implements ActionListener, MenuExtender {
 
   private void doClear() {
     MemState s = factory.getState(instance, circState);
-    if (s.getContents().isClear())
+    if (s.getContents().isAllZeros())
       return;
 
-    int choice = JOptionPane.showConfirmDialog(frame,
-        S.get("ramConfirmClearMsg"),
-        S.get("ramConfirmClearTitle"), JOptionPane.YES_NO_OPTION);
-    if (choice == JOptionPane.YES_OPTION) {
-      s.getContents().clear();
+    // For ROM, don't confirm, because user can undo the operation.
+    if (factory instanceof Ram) { 
+      int choice = JOptionPane.showConfirmDialog(frame,
+          S.get("ramConfirmClearMsg"),
+          S.get("ramConfirmClearTitle"), JOptionPane.YES_NO_OPTION);
+      if (choice != JOptionPane.YES_OPTION)
+        return;
     }
+    s.getContents().clearContents();
   }
 
   private void doEdit() {
-    if (factory.getState(instance, circState) == null)
-      return;
-    HexFrame frame = factory.getHexFrame(proj, instance, circState);
+    MemContents m = factory.getState(instance, circState).getContents();
+    HexFrame frame = m.getHexFrame();
     frame.setVisible(true);
     frame.toFront();
   }
 
   private void doLoad() {
-    MemContents m = (MemContents)factory.getState(instance, circState).getContents();
+    MemContents m = factory.getState(instance, circState).getContents();
     HexFile.open(m, frame, proj, instance);
   }
 
   private void doSave() {
-    MemContents m = (MemContents)factory.getState(instance, circState).getContents();
+    MemContents m = factory.getState(instance, circState).getContents();
     HexFile.save(m, frame, proj, instance);
   }
 }

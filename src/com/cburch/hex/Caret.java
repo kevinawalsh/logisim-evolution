@@ -81,14 +81,12 @@ public class Caret {
 					setDot(cursor - 1, shift);
 				break;
 			case KeyEvent.VK_DOWN:
-				if (cursor >= hex.getModel().getFirstOffset()
-						&& cursor <= hex.getModel().getLastOffset() - cols) {
+				if (cursor >= 0 && cursor <= hex.getModel().getLastOffset() - cols) {
 					setDot(cursor + cols, shift);
 				}
 				break;
 			case KeyEvent.VK_RIGHT:
-				if (cursor >= hex.getModel().getFirstOffset()
-						&& cursor <= hex.getModel().getLastOffset() - 1) {
+				if (cursor >= 0 && cursor <= hex.getModel().getLastOffset() - 1) {
 					setDot(cursor + 1, shift);
 				}
 				break;
@@ -175,11 +173,10 @@ public class Caret {
 				int digit = Character.digit(e.getKeyChar(), 16);
 				if (digit >= 0) {
 					HexModel model = hex.getModel();
-					if (model != null && cursor >= model.getFirstOffset()
-							&& cursor <= model.getLastOffset()) {
+					if (model != null && cursor >= 0 && cursor <= model.getLastOffset()) {
 						int curValue = model.get(cursor);
 						int newValue = 16 * curValue + digit;
-						model.set(cursor, newValue);
+						model.setContents(cursor, newValue);
 					}
 				}
 			}
@@ -309,8 +306,7 @@ public class Caret {
 
 	public void setDot(long value, boolean keepMark) {
 		HexModel model = hex.getModel();
-		if (model == null || value < model.getFirstOffset()
-				|| value > model.getLastOffset()) {
+		if (model == null || value < 0 || value > model.getLastOffset()) {
 			value = -1;
 		}
 		if (cursor != value) {

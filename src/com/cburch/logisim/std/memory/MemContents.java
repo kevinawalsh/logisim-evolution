@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.memory;
 
 import com.cburch.hex.HexModel;
+import com.cburch.logisim.gui.hex.HexFrame;
 
 public abstract class MemContents implements HexModel {
   
@@ -39,7 +40,8 @@ public abstract class MemContents implements HexModel {
   // window, triggering propagation, and (for Rom) adding actions to the project
   // undo/redo stack. Subclasses provide two notificaton methods, to perform
   // Ram-specific or Rom-specific triggers, plus the four
-  // setContentBytes/clearContents methods for HexModel.
+  // setContentBytes/clearContents methods for HexModel and copyContents
+  // method used by HexFile.
   //
   // Ram and Rom differ in how they handle changes to contents.
   // For Ram, RamContents is part of the simulation state.
@@ -52,9 +54,14 @@ public abstract class MemContents implements HexModel {
   //    refer to a common shared RomContents for the instance.
   //  - Clearing, and other changes to RomContents, are done in-place.
   //  - Content changes are all captured in the project undo/redo log.
-  abstract protected void fireBytesChanged(boolean fromSimulation, long start, long numBytes);
+  abstract protected void fireBytesChanged(boolean fromSimulation, long start, long count);
   abstract protected void fireDimensionsChanged();
-
+	abstract public void copyContents(long start, MemContents src, long offset, long count);
+	public void copyContents(MemContents src) {
+    copyContents(0, src, 0, Math.min(getValueCount(), src.getValueCount()));
+  }
+  abstract public HexFrame getHexFrame();
+  abstract public void closeHexFrame();
 
   private static final int PAGE_SIZE_BITS = 12;
   private static final int PAGE_SIZE = 1 << PAGE_SIZE_BITS;
@@ -66,11 +73,11 @@ public abstract class MemContents implements HexModel {
   private int mask;
   private Page[] pages;
 
-  private MemContents(int addrBits, int width) {
+  protected MemContents(int addrBits, int width) {
     setDimensions(addrBits, width);
   }
 
-  private MemContents(MemContents other) {
+  protected MemContents(MemContents other) {
     width = other.width;
     addrBits = other.addrBits;
     mask = other.mask;
@@ -80,10 +87,6 @@ public abstract class MemContents implements HexModel {
         pages[i] = other.pages[i].duplicate();
   }
   
-  public MemContents duplicate() {
-    return new MemContents(this);
-  }
-
   protected void clear(boolean fromSimulation) {
     for (int i = 0; i < pages.length; i++) {
       if (pages[i] != null) {
@@ -107,7 +110,7 @@ public abstract class MemContents implements HexModel {
     }
   }
 
-  public void clear(long start, long len) {
+  protected void clear(long start, long len) {
     if (len == 0)
       return;
 
@@ -115,7 +118,6 @@ public abstract class MemContents implements HexModel {
     int startOffs = (int) (start & PAGE_MASK);
     int pageEnd = (int) ((start + len - 1) >>> PAGE_SIZE_BITS);
     int endOffs = (int) ((start + len - 1) & PAGE_MASK);
-    value &= mask;
 
     if (pageStart == pageEnd) {
       Page page = pages[pageStart];
@@ -166,14 +168,6 @@ public abstract class MemContents implements HexModel {
     }
   }
   
-  public void addHexModelWeakListener(Object owner, HexModelListener l) {
-    listeners.add(owner, l);
-  }
-
-  public void removeHexModelWeakListener(Object owner, HexModelListener l) {
-    listeners.remove(owner, l);
-  }
-
   public int get(long addr) {
     int page = (int) (addr >>> PAGE_SIZE_BITS);
     int offs = (int) (addr & PAGE_MASK);
@@ -203,25 +197,17 @@ public abstract class MemContents implements HexModel {
     }
     return ret;
   }
+  
+  @Override
+  public long getValueCount() { return (1L << addrBits); }
 
   @Override
-  public long getFirstOffset() {
-    return 0;
-  }
+  public long getLastOffset() { return (1L << addrBits) - 1; }
 
   @Override
-  public long getLastOffset() {
-    return (1L << addrBits) - 1;
-  }
+  public int getValueWidth() { return width; }
 
-  @Override
-  public int getValueWidth() {
-    return width;
-  }
-
-  public int getLogLength() {
-    return addrBits;
-  }
+  public int getLogLength() { return addrBits; }
 
   protected void set(boolean fromSimulation, long addr, int value) {
     int page = (int) (addr >>> PAGE_SIZE_BITS);
@@ -239,7 +225,7 @@ public abstract class MemContents implements HexModel {
     }
   }
 
-  protected void set(long start, int[] values) {
+  protected void set(boolean fromSimulation, long start, int[] values) {
     if (values.length == 0)
       return;
 
@@ -255,7 +241,7 @@ public abstract class MemContents implements HexModel {
         page.load(startOffs, values, mask);
         if (page.isClear())
           pages[pageStart] = null;
-        fireBytesChanged(false, start, values.length);
+        fireBytesChanged(fromSimulation, start, values.length);
       }
     } else {
       int nextOffs;
@@ -271,7 +257,7 @@ public abstract class MemContents implements HexModel {
           page.load(startOffs, vals, mask);
           if (page.isClear())
             pages[pageStart] = null;
-          fireBytesChanged(false, start, PAGE_SIZE - pageStart);
+          fireBytesChanged(fromSimulation, start, PAGE_SIZE - pageStart);
         }
         nextOffs = vals.length;
       }
@@ -316,9 +302,13 @@ public abstract class MemContents implements HexModel {
       }
     }
   }
+  
+  protected void copyFrom(MemContents src) {
+    copyFrom(0, src, 0, Math.min(getValueCount(), src.getValueCount()));
+  }
 
-  void copyFrom(long start, MemContents src, long offs, int count) {
-    count = (int)Math.min(count, getLastOffset() - start + 1);
+  protected void copyFrom(long start, MemContents src, long offs, long count) {
+    count = Math.min(count, getLastOffset() - start + 1);
     if (count <= 0)
       return;
     if (src.width != width)
@@ -344,12 +334,12 @@ public abstract class MemContents implements HexModel {
     do {
       Page dstPage = pages[dp];
       Page srcPage = src.pages[sp];
-      int n = Math.min(count, Math.min(PAGE_SIZE - si, PAGE_SIZE - di));
+      int n = (int)Math.min(count, Math.min(PAGE_SIZE - si, PAGE_SIZE - di));
       if (dstPage == null && srcPage == null) {
         // both already all zeros, so do nothing
       } else if (srcPage == null) {
         // clearing locations di..di+n on this page
-        fill(dp*PAGE_SIZE+di, n, 0);
+        clear(dp*PAGE_SIZE+di, n);
       } else {
         if (dstPage == null)
           dstPage = pages[dp] = MemContentsSub.createPage(PAGE_SIZE, width);
@@ -388,7 +378,7 @@ public abstract class MemContents implements HexModel {
   // make a targeted change to the xml writing code. It now calls a new
   // function, hasDefaultAttributeValue(), which Rom now overrides to check
   // for the all zeros case.
-  boolean isAllZeros() {
+  public boolean isAllZeros() {
     int n = pages.length;
     for (int i = 0; i < n; i++) {
       Page a = pages[i];
@@ -403,7 +393,7 @@ public abstract class MemContents implements HexModel {
     return true;
   }
 
-  void setDimensions(int addrBits, int width) {
+  protected void setDimensions(int addrBits, int width) {
     if (addrBits == this.addrBits && width == this.width)
       return;
     this.addrBits = addrBits;

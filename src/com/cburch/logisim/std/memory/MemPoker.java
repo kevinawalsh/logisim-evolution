@@ -39,9 +39,10 @@ import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstancePoker;
 import com.cburch.logisim.instance.InstanceState;
-import com.cburch.logisim.proj.Project;
 
-public class RamPoker extends InstancePoker {
+public class MemPoker extends InstancePoker {
+
+  public MemPoker() { }
 
   @Override
   public boolean capturesTextInput() { return true; }
@@ -70,7 +71,7 @@ public class RamPoker extends InstancePoker {
       } else if (c == '\u0008' || c == '\u007f') {
         data.setScroll(data.getScroll() - data.GetNrOfLineItems());
       } else if (c == 'R' || c == 'r') {
-        data.getContents().clear();
+        data.getContents().clearContents();
       } else {
         return;
       }
@@ -116,14 +117,6 @@ public class RamPoker extends InstancePoker {
       data.setCursor(addr);
       initValue = data.getContents().get(data.getCursor());
       curValue = initValue;
-
-      Object attrs = state.getInstance().getAttributeSet();
-      if (attrs instanceof RomAttributes) {
-        Project proj = state.getProject();
-        if (proj != null) {
-          ((RomAttributes) attrs).setProject(proj);
-        }
-      }
     }
 
     @Override
@@ -140,8 +133,8 @@ public class RamPoker extends InstancePoker {
       MemState data = (MemState) state.getDataAsCustom();
       if (val >= 0) {
         curValue = curValue * 16 + val;
-        data.getContents().set(data.getCursor(), curValue);
-        state.fireInvalidated(); // ROM edit affects all simulations
+        long cursor = data.getCursor();
+        data.getContents().setContents(cursor, curValue);
       } else if (c == ' ' || c == '\t') {
         moveTo(data, data.getCursor() + 1);
       } else if (c == '\r' || c == '\n') {
@@ -149,7 +142,7 @@ public class RamPoker extends InstancePoker {
       } else if (c == '\u0008' || c == '\u007f') {
         moveTo(data, data.getCursor() - 1);
       } else if (c == 'R' || c == 'r') {
-        data.getContents().clear();
+        data.getContents().clearContents();
       } else {
         return;
       }

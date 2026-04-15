@@ -747,7 +747,7 @@ public class HexFile {
   private static class HexReader extends FormatOptions {
 
     BufferedLineReader in;
-    MemContents dst;
+    HexContents dst;
 
     int decodedWordCount;
     boolean haltedEarly;
@@ -766,10 +766,10 @@ public class HexFile {
 
     HexReader(BufferedLineReader in, int addrBits, int width) {
       this.in = in;
-      this.dst = MemContents.create(addrBits, width);
+      this.dst = new HexContents(addrBits, width);
     }
 
-    MemContents warnAndAsk(String errmsg) throws IOException {
+    HexContents warnAndAsk(String errmsg) throws IOException {
       if (Main.headless) {
         System.out.println(errmsg);
         System.out.println("Warnings:\n" + warnings.toString());
@@ -782,7 +782,7 @@ public class HexFile {
       return dst;
     }
 
-    MemContents detectFormatAndDecode() throws IOException {
+    HexContents detectFormatAndDecode() throws IOException {
       if (in.byteLength() == 0)
         throw new IOException("File contains no data.");
 
@@ -815,7 +815,7 @@ public class HexFile {
       return decodeOrWarn();
     }
 
-    MemContents decode() throws IOException {
+    HexContents decode() throws IOException {
       reset();
       if (taggedOrUnset("radix", "binary"))
         decodeBinary();
@@ -832,7 +832,7 @@ public class HexFile {
       return dst;
     }
 
-    MemContents decodeOrWarn() throws IOException {
+    HexContents decodeOrWarn() throws IOException {
       decode();
       if (tagged("size", "bytes") && (mMaxAddr - mEnd) * mWidth >= 8)
         warn("File contained %f extra bytes.", (mMaxAddr - mEnd) * mWidth / 8.0);
@@ -853,7 +853,7 @@ public class HexFile {
 
     void reset() throws IOException {
       in.reset();
-      dst.clear();
+      dst.clearContents();
       curLineNo = 0;
       decodedWordCount = 0;
       warnings.getBuffer().setLength(0);
@@ -867,7 +867,7 @@ public class HexFile {
       mAddrFrac = 0;
       mMaxAddr = 0;
       mEnd = dst.getLastOffset();
-      mWidth = dst.getWidth();
+      mWidth = dst.getValueWidth();
       bEnd = ((mEnd+1)*mWidth + 7)/8;
       bigEndian = bigEndian();
     }
@@ -942,10 +942,10 @@ public class HexFile {
         if (end > mEnd) {
           if (offs <= mEnd) {
             int n = (int)(mEnd - offs + 1);
-            dst.set(offs, subarray(data, n));
+            dst.setContents(offs, subarray(data, n));
           }
         } else {
-          dst.set(offs, v);
+          dst.setContents(offs, v);
         }
         offs += v.length;
         decodedWordCount += v.length;
@@ -1033,7 +1033,7 @@ public class HexFile {
       if (addr > mMaxAddr)
         mMaxAddr = addr;
       if (addr <= mEnd)
-        dst.set(addr, (int)val);
+        dst.setContents(addr, (int)val);
       // else
       //   System.out.printf("warn: overflow addr = %x\n", addr);
     }
@@ -1403,7 +1403,7 @@ public class HexFile {
     BufferedLineReader in = BufferedLineReader.forFile(src);
     try {
       HexReader r = new HexReader(in, dst.getLogLength(), dst.getValueWidth());
-      MemContents loaded;
+      HexContents loaded;
       if (desc == null) {
         loaded = r.detectFormatAndDecode();
       } else {
@@ -1412,7 +1412,7 @@ public class HexFile {
       }
       if (loaded == null)
         return false;
-      dst.copyFrom(0, loaded, 0, (int)(loaded.getLastOffset()+1));
+      dst.copyContents(loaded);
       return true;
     } finally {
       try { in.close(); }
@@ -1421,10 +1421,10 @@ public class HexFile {
   }
 
   public static class ParseResult {
-    public MemContents model;
+    public HexContents model;
     public int numWords;
 
-    ParseResult(MemContents m, int n) {
+    ParseResult(HexContents m, int n) {
       model = m;
       numWords = n;
     }
@@ -1435,8 +1435,7 @@ public class HexFile {
     return parse(true, src, "v3.0 hex plain words", addrSize, wordSize);
   }
 
-  public static MemContents parseFromCircFile(String src, int addrSize, int wordSize)
-      throws IOException {
+  public static void parseFromCircFile(MemContents dst, String src) throws IOException {
     if (src.startsWith("compressed\n")) {
       byte[] bytes = src.getBytes("UTF-8");
       ByteArrayInputStream input = new ByteArrayInputStream(bytes, 11, bytes.length-11);
@@ -1451,7 +1450,10 @@ public class HexFile {
       src = result.toString("UTF-8");
       uncompress.close();
     }
-    return parse(false, src, "v2.0 raw", addrSize, wordSize).model;
+    int addrSize = dst.getLogLength();
+    int wordSize = dst.getValueWidth();
+    HexContents data = parse(false, src, "v2.0 raw", addrSize, wordSize).model;
+    dst.copyContents(data);
   }
 
   private static ParseResult parse(boolean interactive,
@@ -1461,7 +1463,7 @@ public class HexFile {
     try {
       HexReader r = new HexReader(in, addrSize, wordSize);
       r.parseFormat(desc);
-      MemContents loaded = interactive ? r.decodeOrWarn() : r.decode();
+      HexContents loaded = interactive ? r.decodeOrWarn() : r.decode();
       if (loaded == null)
         throw new IOException("Could not parse memory image data.");
       return new ParseResult(loaded, (int)(r.mMaxAddr + 1));
@@ -1552,7 +1554,7 @@ public class HexFile {
       this.src = src;
       this.bOut = out;
       mEnd = src.getLastOffset();
-      mWidth = src.getWidth();
+      mWidth = src.getValueWidth();
       bigEndian = bigEndian();
     }
 
@@ -1915,9 +1917,9 @@ public class HexFile {
 
   private HexFile() { }
 
-  private static MemContents compare(boolean autodetect, String desc, File tmp, int addrSize, int wordSize, HashMap<Long, Integer> vals)
+  private static HexContents compare(boolean autodetect, String desc, File tmp, int addrSize, int wordSize, HashMap<Long, Integer> vals)
       throws Exception {
-    MemContents dst = MemContents.create(addrSize, wordSize);
+    HexContents dst = new HexContents(addrSize, wordSize);
     if (desc.startsWith("Binary") || desc.startsWith("ASCII") || !autodetect) {
       // these can't be auto-detected
       if (!open(dst, tmp, desc)) {
@@ -1962,7 +1964,7 @@ public class HexFile {
     int wordSize = rng.nextInt(32)+1;
     System.out.printf("Testing addrSize = %d, wordSize = %d\n", addrSize, wordSize);
 
-    MemContents m = MemContents.create(addrSize, wordSize);
+    HexContents m = new HexContents(addrSize, wordSize);
 
     HashMap<Long, Integer> vals = new HashMap<>();
     int count = rng.nextInt(1<<addrSize);
@@ -1971,7 +1973,7 @@ public class HexFile {
       long a = rng.nextInt(1<<addrSize);
       int v = (int)(rng.nextLong() & mask);
       vals.put(a, v);
-      m.set(a, v);
+      m.setContents(a, v);
     }
 
     File orig = File.createTempFile("hexfile-orig-", ".dat");
@@ -1983,7 +1985,7 @@ public class HexFile {
       File tmp = File.createTempFile("hexfile-"+i+"-", ".dat");
       save(tmp, m, desc);
    
-      MemContents dst = compare(true, desc, tmp, addrSize, wordSize, vals);
+      HexContents dst = compare(true, desc, tmp, addrSize, wordSize, vals);
 
       if (desc.startsWith("Binary")) {
         String endian = desc.endsWith("big-endian") ? "big-endian" : "little-endian";
@@ -2016,7 +2018,7 @@ public class HexFile {
         int addrSize = Integer.parseInt(args[0]);
         int wordSize = Integer.parseInt(args[1]);
 
-        MemContents m = MemContents.create(addrSize, wordSize);
+        HexContents m = new HexContents(addrSize, wordSize);
 
         // open file
         File f;

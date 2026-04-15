@@ -28,35 +28,50 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.cburch.hex;
+package com.cburch.logisim.gui.hex;
 
-public interface HexModel {
+import com.cburch.logisim.std.memory.MemContents;
 
-	/** Unregisters any previously referenced HexFrame */
-	public void clearHexFrameRef(/*HexFrame*/ Object hexFrame);
+public class HexContents extends MemContents {
 
-	/** Returns the number of values stored. */
-	public long getValueCount(); // same as GetLastOffset() + 1
+  // HexContents holds the dimensions and bytes for HexReader, with no support
+  // for viewing/editing in a hexframe or trigggering propagation.
+ 
+  public HexContents(int addrBits, int width) {
+    super(addrBits, width);
+  }
 
-	/** Returns the offset of the last value to be displayed. */
-	public long getLastOffset(); // same as getValueCount() - 1
+  @Override
+  public HexFrame getHexFrame() { return null; }
+ 
+  @Override
+  public void clearHexFrameRef(Object hexFrame) { }
 
-	/** Returns number of bits in each value. */
-	public int getValueWidth();
+  @Override
+  public void closeHexFrame() { }
 
-	/** Returns the value at the given address. */
-	public int get(long address);
-	
-  /** Fills all addresses with zeros. */
-	public void clearContents();
+  @Override
+  protected void fireBytesChanged(boolean fromSimulation, long start, long count) { }
 
-	/** Fills a series of addresses with zeros. */
-	public void clearContents(long start, long length);
+  @Override
+  protected void fireDimensionsChanged() { }
 
-	/** Changes the value at the given address. */
-	public void setContents(long address, int value);
+  // accessor methods called by HexFile...
+  // makes change directly, no notifications
+  
+  @Override
+  public void clearContents() { clear(true); }
 
-	/** Changes values at a series of addresses. */
-	public void setContents(long start, int[] values);
+  @Override
+  public void clearContents(long start, long length) { clear(start, length); }
+  
+  @Override
+  public void setContents(long start, int data) { set(true, start, data); }
+
+  @Override
+  public void setContents(long start, int[] data) { set(true, start, data); }
+
+  @Override
+  public void copyContents(long start, MemContents src, long offset, long count) { copyFrom(start, src, offset, count); }
 
 }

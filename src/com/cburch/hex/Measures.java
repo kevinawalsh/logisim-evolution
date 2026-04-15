@@ -114,7 +114,7 @@ class Measures {
 		if (model == null) {
 			height = 16 * cellHeight;
 		} else {
-			long addr0 = getBaseAddress(model);
+			long addr0 = 0;
 			long addr1 = model.getLastOffset();
 			long rows = (int) (((addr1 - addr0 + 1) + cols - 1) / cols);
 			height = rows * cellHeight;
@@ -137,15 +137,6 @@ class Measures {
 	void ensureComputed(Graphics g) {
 		if (guessed || cellWidth < 0)
 			computeCellSize(g);
-	}
-
-	public long getBaseAddress(HexModel model) {
-		if (model == null) {
-			return 0;
-		} else {
-			long addr0 = model.getFirstOffset();
-			return addr0 - addr0 % cols;
-		}
 	}
 
 	public int getBaseX() {
@@ -192,10 +183,10 @@ class Measures {
 		HexModel model = hex.getModel();
 		if (model == null)
 			return Integer.MIN_VALUE;
-		long addr0 = model.getFirstOffset();
+		long addr0 = 0;
 		long addr1 = model.getLastOffset();
 
-		long base = getBaseAddress(model) + ((long) y / cellHeight) * cols;
+		long base = 0 + ((long) y / cellHeight) * cols;
 		int offs = (x - baseX) / (cellWidth + (spacerWidth + 2) / 4);
 		if (offs < 0)
 			offs = 0;
@@ -216,7 +207,7 @@ class Measures {
 	}
 
 	public int toY(long addr) {
-		long row = (addr - getBaseAddress(hex.getModel())) / cols;
+		long row = (addr) / cols;
 		long ret = row * cellHeight;
 		return ret < Integer.MAX_VALUE ? (int) ret : Integer.MAX_VALUE;
 	}

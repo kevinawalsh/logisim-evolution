@@ -138,15 +138,15 @@ class Clip implements ClipboardOwner {
     Clipboard clip = editor.getToolkit().getSystemClipboard();
     Transferable xfer = clip.getContents(this);
     MemContents model = (MemContents)editor.getModel();
-    MemContents pasted = null;
+    HexContents pasted = null;
     int numWords = 0;
     if (xfer.isDataFlavorSupported(binaryFlavor)) {
       try {
         int[] data = (int[]) xfer.getTransferData(binaryFlavor);
         numWords = data.length;
         int addrBits = 32 - Integer.numberOfLeadingZeros(numWords);
-        pasted = MemContents.create(addrBits, model.getValueWidth());
-        pasted.set(0, data);
+        pasted = new HexContents(addrBits, model.getValueWidth());
+        pasted.setContents(0, data);
       } catch (UnsupportedFlavorException e) {
         return;
       } catch (IOException e) {
@@ -187,9 +187,9 @@ class Clip implements ClipboardOwner {
     long p1 = caret.getDot();
     if (p0 == p1) {
       if (p0 + numWords - 1 <= model.getLastOffset()) {
-        ((MemContents)model).copyFrom(p0, pasted, 0, numWords);
+        model.copyContents(p0, pasted, 0, numWords);
       } else {
-        ((MemContents)model).copyFrom(p0, pasted, 0, (int)(model.getLastOffset() - p0 + 1));
+        model.copyContents(p0, pasted, 0, model.getValueCount() - p0);
       }
     } else {
       if (p0 < 0 || p1 < 0)
@@ -221,7 +221,7 @@ class Clip implements ClipboardOwner {
         numWords = (int)(p1 - p0);
       }
 
-      ((MemContents)model).copyFrom(p0, pasted, 0, numWords);
+      model.copyContents(p0, pasted, 0, numWords);
     }
   }
 

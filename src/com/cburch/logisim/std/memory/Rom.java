@@ -100,10 +100,8 @@ public class Rom extends Mem {
           return null;
         int addr = Integer.parseInt(toks.nextToken());
         int data = Integer.parseInt(toks.nextToken());
-        // FIXME: refactor HexFile to parameterize on subclass?
-        MemContents mc = HexFile.parseFromCircFile(rest, addr, data);
-        RomContents contents = new RomContents(mc.getLogLength(), mc.getValueWidth());
-        contents.copyFrom(0, mc, 0, (int)(mc.getLastOffset() + 1));
+        RomContents contents = new RomContents(addr, data);
+        HexFile.parseFromCircFile(contents, rest);
         return contents;
       } catch (IOException e) {
         e.printStackTrace();
@@ -125,7 +123,7 @@ public class Rom extends Mem {
     @Override
     public String toStandardString(RomContents contents) {
       int addr = contents.getLogLength();
-      int data = contents.getWidth();
+      int data = contents.getValueWidth();
       String body = HexFile.saveToStringForCircFile(contents);
       return "addr/data: " + addr + " " + data + "\n" + body;
     }
@@ -179,15 +177,11 @@ public class Rom extends Mem {
   public Rom() {
     super("ROM", S.getter("romComponent"), 0);
     setIconName("rom.gif");
-    setInstancePoker(RomPoker.class);
   }
 
   @Override
   protected void configureNewInstance(Instance instance) {
     super.configureNewInstance(instance);
-    // RomContents newContents = getMemContents(instance);
-    // MemListener listener = new MemListener(instance);
-    // newContents.addHexModelWeakListener(instance, listener);
     instance.addAttributeListener();
   }
 
@@ -287,21 +281,14 @@ public class Rom extends Mem {
     return 60;
   }
 
-  // @Override
-  // HexFrame getHexFrame(Project proj, Instance instance, CircuitState state) {
-  //   return RomAttributes.getHexFrame(getMemContents(instance), proj, instance);
-  // }
-
-  // private static RomContents getMemContents(Instance instance) {
-  //   return instance.getAttributeValue(CONTENTS_ATTR);
-  // }
-
-  // public static void closeHexFrame(Component c) {
-  //   if (!(c instanceof InstanceComponent))
-  //     return;
-  //   Instance instance = ((InstanceComponent)c).getInstance();
-  //   RomAttributes.closeHexFrame(getMemContents(instance));
-  // }
+  // called from Circuit when a Rom is removed from circuit
+  public static void closeHexFrame(Component c) {
+    if (!(c instanceof InstanceComponent))
+      return;
+    Instance instance = ((InstanceComponent)c).getInstance();
+    RomContents contents = instance.getAttributeValue(CONTENTS_ATTR);
+    contents.closeHexFrame();
+  }
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
@@ -330,8 +317,8 @@ public class Rom extends Mem {
     } else if (ret.getContents() != contents) {
       System.err.println("rom content mismatch");
     } else {
-      ret.getContents().setProject(state.getProject());
-      ret.getContents().setRomInstance(instance);
+      ((RomContents)ret.getContents()).setProject(state.getProject());
+      ((RomContents)ret.getContents()).setRomInstance(instance);
       // ret.setContents(contents);
     }
     return ret;
@@ -347,23 +334,6 @@ public class Rom extends Mem {
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    // if (attr == StdAttr.APPEARANCE) {
-    //   boolean classic = StdAttr.APPEAR_CLASSIC.equals(instance.getAttributeValue(StdAttr.APPEARANCE));
-    //   int lineSize = Mem.lineSize(instance);
-    //   if (!classic) {
-    //     if (lineSize > 1) {
-    //       instance.getAttributeSet().setValue(Mem.LINE_SIZE, Mem.SINGLE);
-    //       super.instanceAttributeChanged(instance, Mem.LINE_SIZE);
-    //     }
-    //     instance.setAttributeReadOnly(Mem.LINE_SIZE, true);
-    //     super.instanceAttributeChanged(instance, Mem.LINE_SIZE);
-    //   } else {
-    //     if (instance.getAttributeSet().isReadOnly(Mem.LINE_SIZE)) {
-    //       instance.setAttributeReadOnly(Mem.LINE_SIZE, false);
-    //       super.instanceAttributeChanged(instance, Mem.LINE_SIZE);
-    //     }
-    //   }
-    // }
     if (attr == Mem.DATA_ATTR || attr == StdAttr.APPEARANCE || attr == ATTR_PROPORTIONS) {
       instance.recomputeBounds();
       configurePorts(instance);

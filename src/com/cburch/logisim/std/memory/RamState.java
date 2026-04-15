@@ -39,6 +39,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.proj.Project;
 // import com.cburch.logisim.std.memory.Mem.MemListener;
 
 public class RamState extends MemState
@@ -53,9 +54,9 @@ public class RamState extends MemState
   private ClockState clockState;
 
   RamState(Project proj, Instance inst, int addrBits, int dataBits) { // RamContents contents /*, MemListener listener*/) {
-    super(contents);
-    contents.setProject(proj);
-    contents.setRamInstance(inst);
+    super(new RamContents(addrBits, dataBits));
+    ((RamContents)contents).setProject(proj);
+    ((RamContents)contents).setRamInstance(inst);
     this.parent = parent;
     // this.listener = listener;
     this.clockState = new ClockState();
@@ -69,7 +70,7 @@ public class RamState extends MemState
 
   private RamState(RamState other) {
     // duplicate: new state does not share our RamContents
-    super(other.contents.duplicate(), other);
+    super(((RamContents)other.contents).duplicate(), other);
     parent = null; // instance not known just yet...
     clockState = new ClockState(other.clockState);
     // listener = other.listener;
@@ -111,25 +112,25 @@ public class RamState extends MemState
   }
 
   void setRamInstance(Instance instance) {
-    if (parent == value)
+    if (parent == instance)
       return;
     if (parent != null)
       parent.getAttributeSet().removeAttributeWeakListener(null, this);
     parent = instance;
-    contents.setRamInstance(instance);
+    ((RamContents)contents).setRamInstance(instance);
     if (instance != null)
       instance.getAttributeSet().addAttributeWeakListener(null, this);
   }
 
   void setProject(Project proj) {
-    contents.setProject(proj);
+    ((RamContents)contents).setProject(proj);
   }
   
   @Override
   public boolean simulationReset(CircuitState cs, Component comp) {
     AttributeOption type = comp.getAttributeSet().getValue(RamAttributes.ATTR_TYPE);
     if (type == RamAttributes.VOLATILE) {
-      contents.simulatorClear();
+      ((RamContents)contents).simulatorClear();
       return true; // okay to delete this RamState
     } else {
       return false; // do not delete this RamState
