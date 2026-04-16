@@ -46,7 +46,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.cburch.hex.HexEditor;
-import com.cburch.hex.HexModel;
 import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;

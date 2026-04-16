@@ -74,7 +74,20 @@ public abstract class MemContents implements HexModel {
   private Page[] pages;
 
   protected MemContents(int addrBits, int width) {
-    setDimensions(addrBits, width);
+    this.addrBits = addrBits;
+    this.width = width;
+    this.mask = width == 32 ? 0xffffffff : ((1 << width) - 1);
+    int pageCount;
+    int pageLength;
+    if (addrBits < PAGE_SIZE_BITS) {
+      pageCount = 1;
+      pageLength = 1 << addrBits;
+    } else {
+      pageCount = 1 << (addrBits - PAGE_SIZE_BITS);
+      pageLength = PAGE_SIZE;
+    }
+    pages = new Page[pageCount];
+    pages[0] = MemContentsSub.createPage(pageLength, width);
   }
 
   protected MemContents(MemContents other) {

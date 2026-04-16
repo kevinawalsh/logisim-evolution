@@ -87,7 +87,7 @@ public class RomContents extends MemContents {
   public void setProject(Project project) {
     // Update project binding, always needed to create Action during changes
     if (this.project == project) {
-      System.err.println("WARN: rom no need to change project");
+      // System.err.println("WARN: rom no need to change project");
       return;
     }
     if (this.project != null)
@@ -101,7 +101,7 @@ public class RomContents extends MemContents {
     // Update instance binding, only needed if we are in a circuit
     Instance oldInstance = instanceRef.get();
     if (oldInstance == instance) {
-      System.err.println("WARN: rom no need to change instance");
+      // System.err.println("WARN: rom no need to change instance");
       return;
     }
     if (oldInstance != null)
@@ -183,6 +183,7 @@ public class RomContents extends MemContents {
   @Override
   public void clearContents(long start, long length) {
     System.out.println("rom clearContents as action");
+    Thread.dumpStack();
     if (project != null)
       project.doAction(new ClearRange(instanceRef.get(), this, start, length));
     else
@@ -194,8 +195,10 @@ public class RomContents extends MemContents {
     System.out.println("rom setContent as action");
     if (project != null)
       project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, new int[] { data }));
-    else
+    else {
       System.out.println("set direct here, probably setting on a tool?");
+      Thread.dumpStack();
+    }
   }
 
   @Override
@@ -203,8 +206,10 @@ public class RomContents extends MemContents {
     System.out.println("rom setContent as action");
     if (project != null)
       project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
-    else
+    else {
       System.out.println("set direct here, probably setting on a tool?");
+      Thread.dumpStack();
+    }
   }
 
   @Override
@@ -220,7 +225,9 @@ public class RomContents extends MemContents {
         project.doAction(new CopyContents(instanceRef.get(), this, start, src, offset, count));
       }
     } else {
-      System.out.println("set direct here, probably setting on a tool?");
+      System.out.println("set direct here, probably setting on a tool or loading xml?");
+      Thread.dumpStack();
+      copyFrom(start, src, offset, count);
     }
   }
 

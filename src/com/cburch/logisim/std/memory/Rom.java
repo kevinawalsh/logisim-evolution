@@ -117,7 +117,7 @@ public class Rom extends Mem {
 
     @Override
     public String toDisplayString(RomContents value) {
-      return S.get("romContentsValue");
+      return S.get("romContentsValue"); // "click to edit"
     }
 
     @Override

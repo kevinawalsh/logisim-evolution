@@ -46,6 +46,12 @@ public abstract class Attribute<V> {
     this.disp = disp;
   }
 
+  // getCellEditor() may return:
+  //  - JTextField
+  //  - JComboBox
+  //  - JInputDialog<?> [AttrTable will wrap in PopupEditor]
+  //  - JInputComponent<?> [AttrTable will wrap in MyDialog+PopupEditor]
+  //  - PopupEditor [private for now, but could be made public?]
   protected java.awt.Component getCellEditor(V value) {
     return new JTextField(toDisplayString(value));
   }

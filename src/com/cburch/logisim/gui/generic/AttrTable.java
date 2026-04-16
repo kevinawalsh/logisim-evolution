@@ -90,7 +90,7 @@ public class AttrTable extends JPanel implements LocaleListener {
     public Object doPopup(); // returns null if cancelled
   }
 
-  public static class PopupEditor extends JLabel {
+  private static class PopupEditor extends JLabel {
     TableCellEditor editor;
     PopupActor pop;
     Object result;
