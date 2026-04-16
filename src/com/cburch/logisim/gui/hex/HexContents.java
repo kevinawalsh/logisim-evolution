@@ -48,9 +48,6 @@ public class HexContents extends MemContents {
   public void clearHexFrameRef(Object hexFrame) { }
 
   @Override
-  public void closeHexFrame() { }
-
-  @Override
   protected void fireBytesChanged(boolean fromSimulation, long start, long count) { }
 
   @Override

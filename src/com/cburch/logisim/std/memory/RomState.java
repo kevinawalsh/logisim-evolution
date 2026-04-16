@@ -29,10 +29,13 @@
  */
 package com.cburch.logisim.std.memory;
 
+import com.cburch.logisim.circuit.CircuitState;
+import com.cburch.logisim.comp.Component;
+import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
 
-class RomState extends MemState {
+class RomState extends MemState implements ComponentData.WithLifetimeTracking {
 
   // RomState holds simulation state for Rom, which is nothing beyond the basics
   // that MemState provides.
@@ -41,15 +44,11 @@ class RomState extends MemState {
     super(contents);
     contents.setProject(proj);
     contents.setRomInstance(inst);
-    // this.project = proj;
-    // this.instance = inst;
   }
 
   private RomState(RomState other) {
-    // no duplication: new state shares the same RomContents
+    // no contents duplication: new state shares the same RomContents
     super(other.contents, other);
-    // project = null;
-    // instance = null;
   }
 
   @Override
@@ -57,18 +56,17 @@ class RomState extends MemState {
     return new RomState(this);
   }
 
-  // void setRom(Project proj, Instance inst) {
-  //   project = proj;
-  //   instance = inst;
-  // }
+  @Override
+  public void simulationRelocating(CircuitState cs, Component originalComp, Component replacementComp) {
+    System.out.println("relocate");
+    ((RomContents)contents).setProject(cs.getProject());
+    ((RomContents)contents).setRomInstance(Instance.getInstanceFor(replacementComp));
+  };
 
-  // void setContents(MemContents newContents) {
-  //   if (contents == newContents) return;
-  //   System.out.println("rom contents changed?");
-  //   contents.removeHexModelWeakListener(null, this);
-  //   contents = newContents;
-  //   contents.addHexModelWeakListener(null, this);
-  //   setBits(contents.getLogLength(), contents.getWidth());
-  // }
+  @Override
+  public void simulationCleanup(CircuitState cs, Component comp) {
+    if (!cs.getCircuit().contains(comp))
+      ((RomContents)contents).closeHexFrame(Instance.getInstanceFor(comp));
+  }
 
 }

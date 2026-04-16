@@ -61,7 +61,6 @@ public abstract class MemContents implements HexModel {
     copyContents(0, src, 0, Math.min(getValueCount(), src.getValueCount()));
   }
   abstract public HexFrame getHexFrame();
-  abstract public void closeHexFrame();
 
   private static final int PAGE_SIZE_BITS = 12;
   private static final int PAGE_SIZE = 1 << PAGE_SIZE_BITS;

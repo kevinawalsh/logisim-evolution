@@ -696,8 +696,6 @@ public class Circuit implements AttributeDefaultProvider {
       ComponentFactory factory = c.getFactory();
       if (factory instanceof Clock) {
         clocks.remove(c);
-      } else if (factory instanceof Rom) {
-        Rom.closeHexFrame(c);
       } else if (factory instanceof SubcircuitFactory) {
         SubcircuitFactory subcirc = (SubcircuitFactory) factory;
         subcirc.getSubcircuit().circuitsUsingThis.remove(c);

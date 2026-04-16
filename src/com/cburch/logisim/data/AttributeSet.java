@@ -94,33 +94,33 @@ public interface AttributeSet {
     changeAttr(attr, value);
   }
   
-  public static boolean indistinguishable(AttributeSet a, AttributeSet b) {
-    if (a == b)
-      return true;
-    if (a == null || b == null)
-      return false;
-    if (a.getClass() != b.getClass()) // TODO: verify if this can be violated by moving/replacing a component with itself
-      return false;
-    List<Attribute<?>> attrsA = a.getAttributes();
-    List<Attribute<?>> attrsB = b.getAttributes();
-    if (attrsA.size() != attrsB.size())
-      return false;
-    for (Attribute<?> attr : attrsA) {
-      // There is a possibility that A could have a null value
-      // explicitly set for some attribute that B doesn't have?
-      // Seems unlikely. Let's ignore it.
-      Object valA = a.getValue(attr);
-      Object valB = b.getValue(attr);
-      if (!Objects.equals(valA, valB))
-        return false;
-      // These seem excessive for purposes of CircuitState replacement
-      // if (a.isReadOnly(attr) != b.isReadOnly(attr))
-      //   return false;
-      // if (a.isToSave(attr) != b.isToSave(attr))
-      //   return false;
-    }
-    return true;
-  }
+  // public static boolean indistinguishable(AttributeSet a, AttributeSet b) {
+  //   if (a == b)
+  //     return true;
+  //   if (a == null || b == null)
+  //     return false;
+  //   if (a.getClass() != b.getClass()) // TODO: verify if this can be violated by moving/replacing a component with itself
+  //     return false;
+  //   List<Attribute<?>> attrsA = a.getAttributes();
+  //   List<Attribute<?>> attrsB = b.getAttributes();
+  //   if (attrsA.size() != attrsB.size())
+  //     return false;
+  //   for (Attribute<?> attr : attrsA) {
+  //     // There is a possibility that A could have a null value
+  //     // explicitly set for some attribute that B doesn't have?
+  //     // Seems unlikely. Let's ignore it.
+  //     Object valA = a.getValue(attr);
+  //     Object valB = b.getValue(attr);
+  //     if (!Objects.equals(valA, valB))
+  //       return false;
+  //     // These seem excessive for purposes of CircuitState replacement
+  //     // if (a.isReadOnly(attr) != b.isReadOnly(attr))
+  //     //   return false;
+  //     // if (a.isToSave(attr) != b.isToSave(attr))
+  //     //   return false;
+  //   }
+  //   return true;
+  // }
 
   public default String dump() {
     List<Attribute<?>> attrs = getAttributes();

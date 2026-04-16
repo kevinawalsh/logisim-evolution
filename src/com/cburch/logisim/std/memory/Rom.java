@@ -298,7 +298,7 @@ public class Rom extends Mem {
       return;
     Instance instance = ((InstanceComponent)c).getInstance();
     RomContents contents = instance.getAttributeValue(CONTENTS_ATTR);
-    contents.closeHexFrame();
+    contents.closeHexFrame(instance);
   }
 
   @Override

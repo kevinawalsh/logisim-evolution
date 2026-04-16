@@ -191,6 +191,7 @@ public final class CircuitState /* implements ComponentData */ {
         return;
       }
       boolean retain = repl != null && isIndistinguishableComponent(comp, repl);
+      System.out.println("retain: " + retain);
       if (retain) {
         // transfer state from comp to repl
         if (integerData != null)
@@ -243,9 +244,14 @@ public final class CircuitState /* implements ComponentData */ {
     private boolean isIndistinguishableComponent(Component a, Component b) {
       if (a.getFactory().getClass() != b.getFactory().getClass())
         return false;
-      AttributeSet pa = a.getAttributeSet();
-      AttributeSet pb = b.getAttributeSet();
-      return AttributeSet.indistinguishable(pa, pb);
+      // xferComponentState is now called only when a replacement really is
+      // taking place, i.e. when user moves a component on canvas. So just a
+      // basic sanity check is all that is needed, don't need to confirm
+      // attributes are compatible.
+      // AttributeSet pa = a.getAttributeSet();
+      // AttributeSet pb = b.getAttributeSet();
+      // return AttributeSet.indistinguishable(pa, pb);
+      return true;
     }
 
   }

@@ -155,7 +155,12 @@ public class RomContents extends MemContents {
       System.err.println("rom - wrong hex frame closed?");
   }
 
-  public void closeHexFrame() {
+  public void closeHexFrame(Instance instance) {
+    if (instanceRef.get() != instance) { // if we moved from this instance, don't close
+      System.out.println("leave open");
+      return;
+    }
+    System.out.println("close, this instance");
     HexFrame hexFrame = hexFrameRef.get();
     hexFrameRef = new WeakReference<>(null);
     if (hexFrame != null)

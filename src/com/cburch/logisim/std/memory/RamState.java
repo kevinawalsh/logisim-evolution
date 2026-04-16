@@ -139,7 +139,7 @@ public class RamState extends MemState
 
   @Override
   public void simulationCleanup(CircuitState cs, Component comp) {
-    contents.closeHexFrame();
+    ((RamContents)contents).closeHexFrame();
   }
 
 }
