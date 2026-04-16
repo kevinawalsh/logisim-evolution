@@ -36,6 +36,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
@@ -50,8 +51,10 @@ import com.cburch.hex.HexModelListener;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.memory.MemContents;
+import com.cburch.logisim.std.memory.RomContents;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
@@ -76,7 +79,26 @@ public class HexFrame extends LFrame.SubWindow {
         editor.delete();
       } else if (src == LogisimMenuBar.SELECT_ALL) {
         editor.selectAll();
+      } else if (src == LogisimMenuBar.UNDO) {
+        Action last = project.getLastAction();
+        project.undoAction();
+        updateAfter(last);
+      } else if (src == LogisimMenuBar.UNDO) {
+        Action next = project.getLastRedoAction();
+        project.redoAction();
+        updateAfter(next);
       }
+    }
+
+    void updateAfter(Action act) {
+      enableItems((LogisimMenuBar) getJMenuBar());
+      if (act == null)
+        return;
+      RomContents hex = RomContents.forAction(act);
+      if (hex == null) // Unrelated to any Rom
+        project.getFrame().toFront();
+      else if (hex != model) // Related to some other Rom
+        hex.raiseHexFrameOrProject();
     }
 
     private void enableItems(LogisimMenuBar menubar) {
@@ -87,6 +109,22 @@ public class HexFrame extends LFrame.SubWindow {
       menubar.setEnabled(LogisimMenuBar.PASTE, clip);
       menubar.setEnabled(LogisimMenuBar.DELETE, sel);
       menubar.setEnabled(LogisimMenuBar.SELECT_ALL, true);
+
+      LocaleManager mainS = com.cburch.logisim.gui.menu.Strings.S;
+
+      Action last = project == null ? null : project.getLastAction();
+      menubar.setEnabled(LogisimMenuBar.UNDO, last != null);
+      if (last == null)
+        menubar.setText(LogisimMenuBar.UNDO, mainS.get("editCantUndoItem"));
+      else
+        menubar.setText(LogisimMenuBar.UNDO, mainS.fmt("editUndoItem", last.getName()));
+
+      Action next = project == null ? null : project.getLastRedoAction();
+      menubar.setEnabled(LogisimMenuBar.REDO, next != null);
+      if (next == null)
+        menubar.setText(LogisimMenuBar.REDO, mainS.get("editCantRedoItem"));
+      else
+        menubar.setText(LogisimMenuBar.REDO, mainS.fmt("editRedoItem", next.getName()));
     }
 
     private Clip getClip() {
@@ -96,6 +134,8 @@ public class HexFrame extends LFrame.SubWindow {
     }
 
     private void register(LogisimMenuBar menubar) {
+      menubar.addActionListener(LogisimMenuBar.UNDO, this);
+      menubar.addActionListener(LogisimMenuBar.REDO, this);
       menubar.addActionListener(LogisimMenuBar.CUT, this);
       menubar.addActionListener(LogisimMenuBar.COPY, this);
       menubar.addActionListener(LogisimMenuBar.PASTE, this);
@@ -209,6 +249,13 @@ public class HexFrame extends LFrame.SubWindow {
     editor.getCaret().addChangeListener(editListener);
     editor.getCaret().setDot(0, false);
     editListener.register(menubar);
+
+    addWindowListener(new WindowAdapter() {
+      @Override
+      public void windowActivated(WindowEvent e) {
+        editListener.enableItems((LogisimMenuBar) getJMenuBar());
+      }
+    });
 
     setLocationRelativeTo(project.getFrame());
   }

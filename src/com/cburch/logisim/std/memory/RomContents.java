@@ -129,7 +129,24 @@ public class RomContents extends MemContents {
     return hexFrame;
   }
 
-  @Override public void clearHexFrameRef(Object hexFrame) {
+  public void raiseHexFrameOrProject() {
+    HexFrame hexFrame = hexFrameRef.get();
+    if (hexFrame != null)
+      hexFrame.toFront();
+    else if (project != null)
+      project.getFrame().toFront();
+  }
+
+  public static RomContents forAction(Action a) {
+    if (a instanceof ClearAll)     return ((ClearAll)a).contents;
+    if (a instanceof ClearRange)   return ((ClearRange)a).contents;
+    if (a instanceof ChangeBytes)  return ((ChangeBytes)a).contents;
+    if (a instanceof CopyContents) return ((CopyContents)a).contents;
+    return null;
+  }
+
+  @Override
+  public void clearHexFrameRef(Object hexFrame) {
     HexFrame prev = hexFrameRef.get();
     if (prev == null)
       return; // already cleared
