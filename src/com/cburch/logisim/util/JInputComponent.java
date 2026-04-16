@@ -33,5 +33,5 @@ package com.cburch.logisim.util;
 public interface JInputComponent<V> {
   public V getValue();
 
-  public void setValue(V value);
+  public void setValue(V value); // never used?
 }

@@ -51,6 +51,10 @@ public abstract class Attribute<V> {
   //  - JComboBox
   //  - JInputDialog<?> [AttrTable will wrap in PopupEditor]
   //  - JInputComponent<?> [AttrTable will wrap in MyDialog+PopupEditor]
+  //    (for the latter two, the java.awt.Component type isn't important at
+  //     all... most of these are already a swing or awt component, and for
+  //     those that are entirely custom, or wrappers around some UI, just extend
+  //     java.awt.Component so the type checker is satisfied)
   //  - PopupEditor [private for now, but could be made public?]
   protected java.awt.Component getCellEditor(V value) {
     return new JTextField(toDisplayString(value));

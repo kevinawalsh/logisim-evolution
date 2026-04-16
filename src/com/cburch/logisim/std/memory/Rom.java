@@ -34,16 +34,12 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Window;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
-
-import javax.swing.JLabel;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.LogisimVersion;
@@ -68,6 +64,7 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.JInputDialog;
 
 public class Rom extends Mem {
   static class ContentsAttribute extends Attribute<RomContents> {
@@ -77,14 +74,14 @@ public class Rom extends Mem {
 
     @Override
     public java.awt.Component getCellEditor(Window source, RomContents value) {
-      if (source instanceof Frame) {
-        Project proj = ((Frame)source).getProject();
-        value.setProject(proj);
-      } else {
-        System.err.println("huh?");
-      }
+      // if (source instanceof Frame) {
+      //   Project proj = ((Frame)source).getProject();
+      //   value.setProject(proj);
+      // } else {
+      //   System.err.println("huh?");
+      // }
       ContentsCell ret = new ContentsCell(source, value);
-      ret.mouseClicked(null);
+      // ret.mouseClicked(null);
       return ret;
     }
 
@@ -135,19 +132,33 @@ public class Rom extends Mem {
   }
 
   @SuppressWarnings("serial")
-  private static class ContentsCell extends JLabel implements MouseListener {
+  private static class ContentsCell 
+    extends java.awt.Component
+    implements JInputDialog<RomContents> {
     Window source;
     RomContents contents;
 
     ContentsCell(Window source, RomContents contents) {
-      super(S.get("romContentsValue"));
       this.source = source;
       this.contents = contents;
-      addMouseListener(this);
     }
 
-    public void mouseClicked(MouseEvent e) {
-      if (contents == null)
+    @Override
+    public RomContents getValue() {
+      // return null to cancel attribute edit... all changes are done in-place
+      // on the existing MemContents via Actions, instead of replacing the
+      // RomContents using the normal attribute table mechanism.
+      return null;
+    }
+
+    @Override
+    public void setValue(RomContents value) {
+      // never used
+    }
+
+    @Override
+    public void setVisible(boolean b) {
+      if (contents == null || !b)
         return;
       if (source instanceof Frame) {
         Project proj = ((Frame)source).getProject();
@@ -159,11 +170,6 @@ public class Rom extends Mem {
       frame.setVisible(true);
       frame.toFront();
     }
-
-    public void mouseEntered(MouseEvent e) { }
-    public void mouseExited(MouseEvent e) { }
-    public void mousePressed(MouseEvent e) { }
-    public void mouseReleased(MouseEvent e) { }
   }
   
   static final AttributeOption RECT = new AttributeOption("rect", S.getter("romProportionsRect"));

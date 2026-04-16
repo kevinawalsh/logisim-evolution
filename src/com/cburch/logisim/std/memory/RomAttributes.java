@@ -118,8 +118,8 @@ class RomAttributes extends AbstractAttributeSet {
     else if (attr == Rom.CONTENTS_ATTR) {
       System.err.println("rom set CONTENTS_ATTR");
       contents = (RomContents) value; // only occurs during xml reading?
-      addrBits = contents.getLogLength(); 
-      dataBits = contents.getValueWidth(); 
+      addrBits = BitWidth.create(contents.getLogLength());
+      dataBits = BitWidth.create(contents.getValueWidth());
     }
     else if (attr == StdAttr.LABEL)
       Label = (String) value;
