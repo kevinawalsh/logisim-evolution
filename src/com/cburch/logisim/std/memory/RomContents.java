@@ -183,7 +183,6 @@ public class RomContents extends MemContents {
   @Override
   public void clearContents(long start, long length) {
     System.out.println("rom clearContents as action");
-    Thread.dumpStack();
     if (project != null)
       project.doAction(new ClearRange(instanceRef.get(), this, start, length));
     else

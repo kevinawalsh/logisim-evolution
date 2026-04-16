@@ -140,6 +140,13 @@ public class Caret {
 				else if (cursor >= cols)
 					setDot(cursor % cols, shift);
 				break;
+
+      case KeyEvent.VK_BACK_SPACE:
+      case KeyEvent.VK_DELETE:
+        hex.delete();
+        // setDot(cursor - 1, shift);
+        e.consume(); // prevents menu-bar accelerator from also firing
+        break;
 			}
 		}
 
@@ -163,11 +170,6 @@ public class Caret {
 				if (cursor >= 0) {
 					setDot(cursor + cols, (mask & InputEvent.SHIFT_DOWN_MASK) != 0);
         }
-				break;
-			case '\u0008':
-			case '\u007f':
-				hex.delete();
-				// setDot(cursor - 1, (mask & InputEvent.SHIFT_DOWN_MASK) != 0);
 				break;
 			default:
 				int digit = Character.digit(e.getKeyChar(), 16);

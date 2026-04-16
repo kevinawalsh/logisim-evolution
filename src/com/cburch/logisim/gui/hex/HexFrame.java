@@ -70,6 +70,9 @@ public class HexFrame extends LFrame.SubWindow {
       } else if (src == LogisimMenuBar.PASTE) {
         getClip().paste();
       } else if (src == LogisimMenuBar.DELETE) {
+        // This only gets menu activations; keyboard delete is handled by
+        // HexEditor's Caret.keyPressed() before triggering the menu
+        // accelerator.
         editor.delete();
       } else if (src == LogisimMenuBar.SELECT_ALL) {
         editor.selectAll();
