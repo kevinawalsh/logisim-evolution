@@ -80,6 +80,8 @@ public class Rom extends Mem {
       // } else {
       //   System.err.println("huh?");
       // }
+      if (value == null) // this happens when user has multiple components selected
+        return null;
       ContentsCell ret = new ContentsCell(source, value);
       // ret.mouseClicked(null);
       return ret;
@@ -114,7 +116,10 @@ public class Rom extends Mem {
 
     @Override
     public String toDisplayString(RomContents value) {
-      return S.get("romContentsValue"); // "click to edit"
+      if (value != null)
+        return S.get("romContentsValue"); // "click to edit"
+      else
+        return S.get("romContentsMultiValue"); // "various"
     }
 
     @Override

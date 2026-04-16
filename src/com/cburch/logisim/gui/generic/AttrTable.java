@@ -243,7 +243,7 @@ public class AttrTable extends JPanel implements LocaleListener {
         MyDialog dlg = new MyDialog(input);
         String text = row.getDisplayString();
         editor = new PopupEditor(text, this, dlg);
-      } else {
+      } else if (editor != null) {
         editor.addFocusListener(this);
       }
 
