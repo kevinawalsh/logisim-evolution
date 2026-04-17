@@ -244,7 +244,7 @@ public abstract class Mem extends InstanceFactory {
     int dataBits = painter.getAttributeValue(Mem.DATA_ATTR).getWidth();
     GraphicsUtil.drawCenteredText(g,
         MEM + " " + GetSizeLabel(addrBits) + " x " + dataBits,
-        bds.getX() + (symwidth / 2) + 20, bds.getY() + 6);
+        bds.getX() + (symwidth / 2) + 20, bds.getY() + 7);
 
     // draw input and output ports
     painter.drawPort(DATA, S.get("ramDataLabel"), Direction.WEST);
