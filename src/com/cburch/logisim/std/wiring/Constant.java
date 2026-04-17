@@ -111,6 +111,14 @@ public class Constant extends InstanceFactory {
         this.radix = (RadixOption) value;
       }
     }
+
+    @Override
+    public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+      if (attr == StdAttr.WIDTH)
+        return List.of(ATTR_VALUE, StdAttr.WIDTH);
+      else
+        return null;
+    }
   }
 
   private static class ConstantExpression implements ExpressionComputer {

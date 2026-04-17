@@ -383,7 +383,9 @@ abstract class CircuitChange {
     private final Component comp;
     private final Attribute<?> attr;
     private final Object newValue;
-    private Object oldValue;
+    private List<Attribute<?>> attrsToUndo; // null in simple cases
+    private Object[] oldValues; // used if attrsToUndo != null
+    private Object oldValue; // used if attrsToUndo == null
     private boolean set;
 
     public SET_COMP_ATTR(Circuit circuit, Component comp, Attribute<?> attr, Object newValue) {
@@ -413,7 +415,18 @@ abstract class CircuitChange {
         @SuppressWarnings("unchecked")
         Attribute<Object> a = (Attribute<Object>) attr;
         AttributeSet attrs = comp.getAttributeSet();
-        oldValue = attrs.getValue(a);
+        attrsToUndo = attrs.getAttributesForUndo(a);
+        if (attrsToUndo == null) { // simple case: capture only one value
+          oldValue = attrs.getValue(a);
+        } else { // capture all related attribute values
+          int n = attrsToUndo.size();
+          oldValues = new Object[n];
+          for (int i = 0; i < n; i++) {
+            @SuppressWarnings("unchecked")
+            Attribute<Object> a2 = (Attribute<Object>) attrsToUndo.get(i);
+            oldValues[i] = attrs.getValue(a2);
+          }
+        }
         attrs.setAttr(a, newValue);
         set = true;
       }
@@ -421,7 +434,73 @@ abstract class CircuitChange {
 
     @Override
     public CircuitChange inverse() {
-      return set ? new SET_COMP_ATTR(circuit, comp, attr, newValue, oldValue) : null;
+      if (!set) return null;
+      if (attrsToUndo == null) return new SET_COMP_ATTR(circuit, comp, attr, newValue, oldValue);
+      else return new UNSET_COMP_ATTRS(circuit, comp, attr, newValue, attrsToUndo, oldValues);
+    }
+
+    @Override
+    public boolean concernsSupercircuit() {
+      // NOTE: The list of attributes in appear/CircuitPins which could affect the
+      // appearance ports and layout must be consistent with the list here, which
+      // ensures affected circuits are locked.
+      // Note: WIDTH needed b/c handling changes, even though appearance is the same
+      // Note: BEHAVIOR does not affect appearance or parent
+      return comp.getFactory() instanceof Pin
+          && (attr == StdAttr.WIDTH
+              || attr == Pin.ATTR_TYPE
+              || attr == StdAttr.LABEL
+              || attr == StdAttr.FACING);
+    }
+  }
+
+  // used to undo an attribute change that affected multiple attribute values
+  private final static class UNSET_COMP_ATTRS extends CircuitChange {
+    private final Component comp;
+    private final Attribute<?> attr; // the attribute we will be setting, indirectly
+    private final Object oldValue; // the value that caused this mess
+    private final List<Attribute<?>> attrsToChange; // the actual attributes to change
+    private final Object[] newValues; // the actual values to set
+    private boolean set;
+
+    public UNSET_COMP_ATTRS(Circuit circuit, Component comp, Attribute<?> attr, Object oldValue,
+        List<Attribute<?>> attrsToChange, Object[] newValues) {
+      super(circuit);
+      this.comp = comp;
+      this.attr = attr;
+      this.oldValue = oldValue;
+      this.attrsToChange = attrsToChange;
+      this.newValues = newValues;
+    }
+
+    @Override
+    public String toString() {
+      String s = "SET " + comp;
+      for (int i = attrsToChange.size()-1; i >= 0; i--) {
+        @SuppressWarnings("unchecked")
+        Attribute<Object> a = (Attribute<Object>) attrsToChange.get(i);
+        s += " " + a.getName() + " = " + a.toStandardString(newValues[i]);
+      }
+      s += " IN " + circuit.getName();
+      return s;
+    }
+
+    @Override
+    public void apply(ReplacementLog repl) {
+      AttributeSet attrs = comp.getAttributeSet();
+      if (circuit.contains(comp)) {
+        for (int i = attrsToChange.size()-1; i >= 0; i--) {
+          @SuppressWarnings("unchecked")
+          Attribute<Object> a2 = (Attribute<Object>) attrsToChange.get(i);
+          attrs.setAttr(a2, newValues[i]);
+        }
+        set = true;
+      }
+    }
+
+    @Override
+    public CircuitChange inverse() {
+      return set ? new SET_COMP_ATTR(circuit, comp, attr, oldValue) : null;
     }
 
     @Override

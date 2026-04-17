@@ -31,7 +31,6 @@
 package com.cburch.logisim.data;
 
 import java.util.List;
-import java.util.Objects;
 
 public interface AttributeSet {
 
@@ -63,6 +62,28 @@ public interface AttributeSet {
 
   public default void setToSave(Attribute<?> attr, boolean value) {
     // optional, so no error
+  }
+
+  // For most attributes, x0 = getValue(a0); setAttr(a0, y0);
+  // can be undone by calling setAttr(a0, x0);
+  // In those cases, getAttributesForUndo() should return null.
+  // But for a few components, modifying the value of a0 can, sometimes, affect
+  // the value of a1, a2, ...
+  // For those cases, getAttributesForUndo() returns a list of attributes, in
+  // order, and including a0, that should be captured, and which can, if
+  // re-applied in the opposite order, undo the change.
+  // With Constant for example:
+  //   getAttributesForUndo(StdAttr.WIDTH) --> [ Constant.VALUE_ATTR, StdAttr.WIDTH ]
+  // So a CircuitChange or other action that changes StdAttr.WIDTH for Constant
+  // would essentially do:
+  //   x0 = getValue(Constant.VALUE_ATTR)
+  //   x1 = getValue(StdAttr.WIDTH_ATTR)
+  //   setValue(StdAttr.WIDTH_ATTR, y0)
+  // And the undo operation for the action would do:
+  //   setValue(StdAttr.WIDTH_ATTR, x1)
+  //   setValue(Constant.VALUE_ATTR, x0)
+  public default List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+    return null;
   }
 
   // getValue() returns null if attr was not found
