@@ -191,7 +191,6 @@ public final class CircuitState /* implements ComponentData */ {
         return;
       }
       boolean retain = repl != null && isIndistinguishableComponent(comp, repl);
-      System.out.println("retain: " + retain);
       if (retain) {
         // transfer state from comp to repl
         if (integerData != null)

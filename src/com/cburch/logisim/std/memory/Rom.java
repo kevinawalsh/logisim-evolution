@@ -63,6 +63,7 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.JInputDialog;
 
@@ -169,7 +170,7 @@ public class Rom extends Mem {
         Project proj = ((Frame)source).getProject();
         contents.setProject(proj);
       } else {
-        System.err.println("huh?");
+        Debug.println(0, "Editing ROM attribute but missing project");
       }
       HexFrame frame = contents.getHexFrame();
       frame.setVisible(true);
@@ -326,7 +327,7 @@ public class Rom extends Mem {
       ret = new RomState(state.getProject(), instance, contents);
       instance.setData(state, ret);
     } else if (ret.getContents() != contents) {
-      System.err.println("rom content mismatch");
+      Debug.println(0, "ROM state contents does not match attribute");
     } else {
       ((RomContents)ret.getContents()).setProject(state.getProject());
       ((RomContents)ret.getContents()).setRomInstance(instance);
@@ -351,7 +352,8 @@ public class Rom extends Mem {
     } else if (attr == Mem.LINE_ATTR) {
       configurePorts(instance);
     } else if (attr == CONTENTS_ATTR) {
-      System.out.println("rom contents attr changed?");
+      // This occurs during xml reading, and when a rom is moved on the canvas
+      // (see RomState.simulationRelocating()).
       instance.fireInvalidated();
     }
   }

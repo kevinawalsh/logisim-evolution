@@ -58,7 +58,9 @@ class RomState extends MemState implements ComponentData.WithLifetimeTracking {
 
   @Override
   public void simulationRelocating(CircuitState cs, Component originalComp, Component replacementComp) {
-    System.out.println("relocate");
+    // change the CONTENTS_ATTR so it adopts the previous RomContents
+    replacementComp.getAttributeSet().setAttr(Rom.CONTENTS_ATTR, (RomContents)contents);
+    // rebind the RomContents to the new Instance
     ((RomContents)contents).setProject(cs.getProject());
     ((RomContents)contents).setRomInstance(Instance.getInstanceFor(replacementComp));
   };

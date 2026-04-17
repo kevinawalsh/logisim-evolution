@@ -157,10 +157,8 @@ public class RomContents extends MemContents {
 
   public void closeHexFrame(Instance instance) {
     if (instanceRef.get() != instance) { // if we moved from this instance, don't close
-      System.out.println("leave open");
       return;
     }
-    System.out.println("close, this instance");
     HexFrame hexFrame = hexFrameRef.get();
     hexFrameRef = new WeakReference<>(null);
     if (hexFrame != null)
@@ -187,67 +185,57 @@ public class RomContents extends MemContents {
       instance.fireInvalidated();
   }
 
+  // Usually we want to submit each Action to project, so it is included in the
+  // undo/redo log. In a few cases, we don't yet have a project (e.g. during
+  // file loading) but in those cases we want to simply execute the action
+  // any<F8>way.
+  private void doAction(Action act) {
+    if (project != null)
+      project.doAction(act);
+    else
+      act.doIt(null);
+  }
+
   // accessor methods called by poke, menu, hexframe to make changes...
   // creates Action, which then makes change and
   // notifies hexframe (if open) and instance propagation (if in circuit)
   
   @Override
   public void clearContents() {
-    System.out.println("rom clearContents as action");
     if (isAllZeros())
       return;
-    if (project != null)
-      project.doAction(new ClearAll(instanceRef.get(), this));
-    else
-      System.out.println("set direct here, probably setting on a tool?");
+    doAction(new ClearAll(instanceRef.get(), this));
   }
 
   @Override
   public void clearContents(long start, long length) {
-    System.out.println("rom clearContents as action");
-    if (project != null)
-      project.doAction(new ClearRange(instanceRef.get(), this, start, length));
-    else
-      System.out.println("set direct here, probably setting on a tool?");
+    doAction(new ClearRange(instanceRef.get(), this, start, length));
   }
   
   @Override
   public void setContents(long start, int data) {
-    System.out.println("rom setContent as action");
-    if (project != null)
-      project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, new int[] { data }));
-    else {
-      System.out.println("set direct here, probably setting on a tool?");
-      Thread.dumpStack();
-    }
+    doAction(new ChangeBytes(instanceRef.get(), this, start, null, new int[] { data }));
   }
 
   @Override
   public void setContents(long start, int[] data) {
-    System.out.println("rom setContent as action");
-    if (project != null)
-      project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
-    else {
-      System.out.println("set direct here, probably setting on a tool?");
-      Thread.dumpStack();
-    }
+    doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
   }
 
   @Override
 	public void copyContents(long start, MemContents src, long offset, long count) {
     // If new data is under 32KB, use ChangeBytes with array to hold old data,
     // otherwise use CopyContents which uses duplication for old data.
-    System.out.println("rom copyContents as action");
     if (project != null) {
       if (count <= 32*1024) {
         int[] data = src.get(offset, count);
-        project.doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
+        doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
       } else {
-        project.doAction(new CopyContents(instanceRef.get(), this, start, src, offset, count));
+        doAction(new CopyContents(instanceRef.get(), this, start, src, offset, count));
       }
     } else {
-      System.out.println("set direct here, probably setting on a tool or loading xml?");
-      Thread.dumpStack();
+      // When file is being loaded, we don't yet have a project, nor would we
+      // want to use an Action anyway.
       copyFrom(start, src, offset, count);
     }
   }
