@@ -436,5 +436,14 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
         appear = (AttributeOption) value;
       }
     }
+
+    @Override
+    public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+      if (attr == StdAttr.WIDTH)
+        return List.of(ATTR_INIT, StdAttr.WIDTH);
+      else
+        return null;
+    }
+
   }
 }
