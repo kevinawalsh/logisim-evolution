@@ -36,6 +36,7 @@ import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.Debug;
 
 public class RamContents extends MemContents {
 
@@ -93,13 +94,13 @@ public class RamContents extends MemContents {
   public void setProject(Project project) {
     // Update project binding, used for positioning HexFrame
     if (this.project == project) {
-      System.err.println("WARN: ram no need to change project");
+      // System.err.println("WARN: ram no need to change project");
       return;
     }
-    if (this.project != null)
-      System.err.println("WARN: ram changing project?");
-    if (project == null)
-      System.err.println("WARN: ram losing project?");
+    // if (this.project != null)
+    //   System.err.println("WARN: ram changing project?");
+    // if (project == null)
+    //   System.err.println("WARN: ram losing project?");
     this.project = project;
   }
 
@@ -107,13 +108,13 @@ public class RamContents extends MemContents {
     // Update instance binding, only needed if we are in a circuit
     Instance oldInstance = instanceRef.get();
     if (oldInstance == instance) {
-      System.err.println("WARN: ram no need to change instance");
+      // System.err.println("WARN: ram no need to change instance");
       return;
     }
-    if (oldInstance != null)
-      System.err.println("WARN: ram changing instance?");
-    if (instance == null)
-      System.err.println("WARN: ram losing instance?");
+    // if (oldInstance != null)
+    //   System.err.println("WARN: ram changing instance?");
+    // if (instance == null)
+    //   System.err.println("WARN: ram losing instance?");
     instanceRef = new WeakReference<>(instance);
   }
 
@@ -121,13 +122,13 @@ public class RamContents extends MemContents {
     // Update circState binding, only needed if we are in a simulation
     CircuitState oldCircState = circStateRef.get();
     if (oldCircState == circState) {
-      System.err.println("WARN: ram no need to change circState");
+      // System.err.println("WARN: ram no need to change circState");
       return;
     }
-    if (oldCircState != null)
-      System.err.println("WARN: ram changing circState?");
-    if (circState == null)
-      System.err.println("WARN: ram losing circState?");
+    // if (oldCircState != null)
+    //   System.err.println("WARN: ram changing circState?");
+    // if (circState == null)
+    //   System.err.println("WARN: ram losing circState?");
     circStateRef = new WeakReference<>(circState);
   }
 
@@ -154,7 +155,7 @@ public class RamContents extends MemContents {
     HexFrame prev = hexFrameRef.get();
     hexFrameRef = new WeakReference<>(null);
     if (prev != hexFrame)
-      System.err.println("rom - wrong hex frame closed?");
+      Debug.println(1, "ram - wrong hex frame closed?");
   }
 
   public void closeHexFrame() {
@@ -205,31 +206,26 @@ public class RamContents extends MemContents {
   
   @Override
   public void clearContents() {
-    System.out.println("ram clearContents direct");
     clear(false);
   }
 
   @Override
   public void clearContents(long start, long length) {
-    System.out.println("ram clearContents direct");
     clear(start, length);
   }
   
   @Override
   public void setContents(long start, int data) {
-    System.out.println("ram setContent direct");
     set(false, start, data);
   }
 
   @Override
   public void setContents(long start, int[] data) {
-    System.out.println("ram setContent direct");
     set(false, start, data);
   }
 
   @Override
   public void copyContents(long start, MemContents src, long offset, long count) {
-    System.out.println("ram copyContents direct");
     copyFrom(start, src, offset, count);
   }
 

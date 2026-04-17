@@ -37,6 +37,7 @@ import com.cburch.logisim.gui.hex.HexFrame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Action;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.util.Debug;
 
 public class RomContents extends MemContents {
 
@@ -87,13 +88,12 @@ public class RomContents extends MemContents {
   public void setProject(Project project) {
     // Update project binding, always needed to create Action during changes
     if (this.project == project) {
-      // System.err.println("WARN: rom no need to change project");
       return;
     }
-    if (this.project != null)
-      System.err.println("WARN: rom changing project?");
-    if (project == null)
-      System.err.println("WARN: rom losing project?");
+    // if (this.project != null)
+    //   System.err.println("WARN: rom changing project?");
+    // if (project == null)
+    //   System.err.println("WARN: rom losing project?");
     this.project = project;
   }
 
@@ -104,10 +104,10 @@ public class RomContents extends MemContents {
       // System.err.println("WARN: rom no need to change instance");
       return;
     }
-    if (oldInstance != null)
-      System.err.println("WARN: rom changing instance?");
-    if (instance == null)
-      System.err.println("WARN: rom losing instance?");
+    // if (oldInstance != null)
+    //   System.err.println("WARN: rom changing instance?");
+    // if (instance == null)
+    //   System.err.println("WARN: rom losing instance?");
     instanceRef = new WeakReference<>(instance);
   }
 
@@ -152,7 +152,7 @@ public class RomContents extends MemContents {
       return; // already cleared
     hexFrameRef = new WeakReference<>(null);
     if (prev != hexFrame)
-      System.err.println("rom - wrong hex frame closed?");
+      Debug.println(1, "rom - wrong hex frame closed?");
   }
 
   public void closeHexFrame(Instance instance) {

@@ -40,7 +40,6 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.proj.Project;
-// import com.cburch.logisim.std.memory.Mem.MemListener;
 
 public class RamState extends MemState
   implements ComponentData.WithLifetimeTracking, AttributeListener {
@@ -49,23 +48,21 @@ public class RamState extends MemState
   // provides, plus clock state, and a reference to the instance (note we are
   // always in a circuit) so we can respond to attribute changes,
 
-  private Instance parent; // also stored in contents
-  // private MemListener listener;
+  private Instance parent; // instance also stored as super.contents
   private ClockState clockState;
 
-  RamState(Project proj, Instance inst, int addrBits, int dataBits) { // RamContents contents /*, MemListener listener*/) {
+  RamState(Project proj, Instance inst, int addrBits, int dataBits) {
     super(new RamContents(addrBits, dataBits));
     ((RamContents)contents).setProject(proj);
     ((RamContents)contents).setRamInstance(inst);
-    this.parent = parent;
-    // this.listener = listener;
-    this.clockState = new ClockState();
+    parent = inst;
+    clockState = new ClockState();
     if (parent != null) {
       parent.getAttributeSet().addAttributeWeakListener(null, this);
     } else {
       System.err.println("ram - missing instance?");
+      Thread.dumpStack();
     }
-    // contents.addHexModelWeakListener(null, listener);
   }
 
   private RamState(RamState other) {
@@ -73,28 +70,12 @@ public class RamState extends MemState
     super(((RamContents)other.contents).duplicate(), other);
     parent = null; // instance not known just yet...
     clockState = new ClockState(other.clockState);
-    // listener = other.listener;
-    // getContents().addHexModelWeakListener(null, listener);
   }
 
   @Override
   public RamState duplicateForNewSimulation() {
     return new RamState(this);
   }
-
-  // @Override
-  // void clearContents(InstanceState state) {
-  //   System.out.println("ram clearContents direct");
-  //   contents.clear();
-  //   state.queueForPropagation();
-  // }
-
-  // @Override
-  // void setContentBytes(InstanceState state, long start, int[] data) {
-  //   System.out.println("ram setContentBytes direct");
-  //   contents.set(start, data);
-  //   state.queueForPropagation();
-  // }
 
   @Override
   public void attributeListChanged(AttributeEvent e) { }
