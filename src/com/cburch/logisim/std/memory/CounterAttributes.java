@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.std.memory;
 
+import java.util.List;
+
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.BitWidth;
@@ -82,5 +84,13 @@ class CounterAttributes extends AttributeSets.ArrayBacked {
     } else {
       super.updateAttr(attr, value);
     }
+  }
+
+  @Override
+  public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+    if (attr == StdAttr.WIDTH)
+      return List.of(Counter.ATTR_INIT, Counter.ATTR_MAX, StdAttr.WIDTH);
+    else
+      return null;
   }
 }
