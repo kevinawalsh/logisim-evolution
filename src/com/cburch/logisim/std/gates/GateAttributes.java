@@ -33,6 +33,7 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Font;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
@@ -160,5 +161,22 @@ class GateAttributes extends AbstractAttributeSet {
       else
         negated &= ~(1 << index);
     }
+  }
+      
+  static final List<Attribute<?>> NEGATIONS_AND_WIDTH;
+  static {
+    ArrayList<Attribute<?>> all = new ArrayList<>();
+    for (int i = 31; i >= 0; i--)
+      all.add(new NegateAttribute(i, null));
+    all.add(ATTR_INPUTS);
+    NEGATIONS_AND_WIDTH = all;
+  }
+
+  @Override
+  public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+    if (attr == ATTR_INPUTS)
+      return NEGATIONS_AND_WIDTH;
+    else
+      return null;
   }
 }
