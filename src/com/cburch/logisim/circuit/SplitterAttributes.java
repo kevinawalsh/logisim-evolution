@@ -241,8 +241,7 @@ public class SplitterAttributes extends AbstractAttributeSet {
         ATTR_WIDTH, ATTR_APPEARANCE, ATTR_SPACING, });
 
   private static final String unchosen_val = "none";
-  private ArrayList<Attribute<?>> attrs = new ArrayList<Attribute<?>>(
-      INIT_ATTRIBUTES);
+  private ArrayList<Attribute<?>> attrs = new ArrayList<Attribute<?>>(INIT_ATTRIBUTES);
   private SplitterParameters parameters;
   AttributeOption appear = APPEAR_LEFT;
   Direction facing = Direction.EAST;
@@ -408,10 +407,29 @@ public class SplitterAttributes extends AbstractAttributeSet {
       else
         val = ((BitOutOption) value).value + 1;
       if (val >= 0 && val <= fanout) {
-        if (bit_end[bitOutAttr.which] == (byte) val)
+        if (bit_end[bitOutAttr.which] == (byte) val) // never happens?
           return;
         bit_end[bitOutAttr.which] = (byte) val;
       }
+    }
+  }
+
+  @Override
+  public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+    if (attr == ATTR_FANOUT) {
+      int offs = INIT_ATTRIBUTES.size();
+      ArrayList<Attribute<?>> toUndo = new ArrayList<>();
+      toUndo.addAll(attrs.subList(offs, attrs.size()));
+      toUndo.add(ATTR_FANOUT);
+      return toUndo;
+    } else if (attr == ATTR_WIDTH) {
+      int offs = INIT_ATTRIBUTES.size();
+      ArrayList<Attribute<?>> toUndo = new ArrayList<>();
+      toUndo.addAll(attrs.subList(offs, attrs.size()));
+      toUndo.add(ATTR_WIDTH);
+      return toUndo;
+    } else {
+      return null;
     }
   }
 }
