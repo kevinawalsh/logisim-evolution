@@ -246,7 +246,6 @@ public class Attributes {
 
     @Override
     public void setValue(LinkedFile file) {
-      result = file;
       if (file == null) {
         chooser.setSelectedFile(null);
         return;
