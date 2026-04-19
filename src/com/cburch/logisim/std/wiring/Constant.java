@@ -113,7 +113,7 @@ public class Constant extends InstanceFactory {
     }
 
     @Override
-    public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+    public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
       if (attr == StdAttr.WIDTH)
         return List.of(ATTR_VALUE, StdAttr.WIDTH);
       else

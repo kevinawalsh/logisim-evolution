@@ -82,7 +82,7 @@ public interface AttributeSet {
   // And the undo operation for the action would do:
   //   setValue(StdAttr.WIDTH_ATTR, x1)
   //   setValue(Constant.VALUE_ATTR, x0)
-  public default List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+  public default <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
     return null;
   }
 

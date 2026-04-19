@@ -87,7 +87,7 @@ class CounterAttributes extends AttributeSets.ArrayBacked {
   }
 
   @Override
-  public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+  public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
     if (attr == StdAttr.WIDTH)
       return List.of(Counter.ATTR_INIT, Counter.ATTR_MAX, StdAttr.WIDTH);
     else

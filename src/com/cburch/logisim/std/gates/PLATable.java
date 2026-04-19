@@ -347,6 +347,7 @@ public class PLATable {
     private JPanel ttScrollPanel;
     private PLATable oldTable, newTable;
     private BoundedRangeModel vScrollModel;
+    private boolean ok;
 
     public EditorDialog(Frame parent) {
       super(parent, S.get("plaEditorTitle"), true);
@@ -398,7 +399,7 @@ public class PLATable {
     }
 
     public PLATable getValue() {
-      return oldTable;
+      return ok ? newTable : null /* oldValue */;
     }
 
     void reset(boolean resize) {
@@ -426,8 +427,7 @@ public class PLATable {
     }
 
     void close(boolean ok) {
-      if (ok)
-        oldTable.copyFrom(newTable);
+      this.ok = ok;
       setVisible(false);
     }
 

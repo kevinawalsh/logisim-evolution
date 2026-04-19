@@ -415,7 +415,7 @@ public class SplitterAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+  public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
     if (attr == ATTR_FANOUT) {
       int offs = INIT_ATTRIBUTES.size();
       ArrayList<Attribute<?>> toUndo = new ArrayList<>();

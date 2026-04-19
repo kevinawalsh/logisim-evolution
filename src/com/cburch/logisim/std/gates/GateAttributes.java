@@ -173,7 +173,7 @@ class GateAttributes extends AbstractAttributeSet {
   }
 
   @Override
-  public List<Attribute<?>> getAttributesForUndo(Attribute<?> attr) {
+  public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
     if (attr == ATTR_INPUTS)
       return NEGATIONS_AND_WIDTH;
     else

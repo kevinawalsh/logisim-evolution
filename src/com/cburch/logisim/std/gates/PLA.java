@@ -79,7 +79,7 @@ class PLA extends InstanceFactory {
       = Attributes.forBitWidth("in_width", S.getter("Bit Width In"));
   static final Attribute<BitWidth> ATTR_OUT_WIDTH
       = Attributes.forBitWidth("out_width", S.getter("Bit Width Out"));
-  static Attribute<PLATable> ATTR_TABLE = new TruthTableAttribute();
+  static final Attribute<PLATable> ATTR_TABLE = new TruthTableAttribute();
 
   public static InstanceFactory FACTORY = new PLA();
 
@@ -167,16 +167,18 @@ class PLA extends InstanceFactory {
         return (V) labelFont;
       return null;
     }
-
+  
     @Override
     public <V> void updateAttr(Attribute<V> attr, V value) {
       if (attr == StdAttr.FACING) {
         facing = (Direction) value;
       } else if (attr == ATTR_IN_WIDTH) {
         widthIn = (BitWidth) value;
+        tt = new PLATable(tt);
         tt.setInSize(widthIn.getWidth());
       } else if (attr == ATTR_OUT_WIDTH) {
         widthOut = (BitWidth) value;
+        tt = new PLATable(tt);
         tt.setOutSize(widthOut.getWidth());
       } else if (attr == ATTR_TABLE) {
         tt = (PLATable) value;
@@ -191,6 +193,17 @@ class PLA extends InstanceFactory {
       } else if (attr == StdAttr.LABEL_FONT) {
         labelFont = (Font) value;
       }
+    }
+
+
+    @Override
+    public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
+      if (attr == ATTR_IN_WIDTH && ((BitWidth)newValue).getWidth() < tt.inSize())
+        return List.of(ATTR_TABLE, ATTR_IN_WIDTH);
+      else if (attr == ATTR_OUT_WIDTH && ((BitWidth)newValue).getWidth() < tt.outSize())
+        return List.of(ATTR_TABLE, ATTR_OUT_WIDTH);
+      else
+        return null;
     }
   }
 

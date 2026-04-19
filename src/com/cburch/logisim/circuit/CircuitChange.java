@@ -415,7 +415,7 @@ abstract class CircuitChange {
         @SuppressWarnings("unchecked")
         Attribute<Object> a = (Attribute<Object>) attr;
         AttributeSet attrs = comp.getAttributeSet();
-        attrsToUndo = attrs.getAttributesForUndo(a);
+        attrsToUndo = attrs.getAttributesForUndo(a, newValue);
         if (attrsToUndo == null) { // simple case: capture only one value
           oldValue = attrs.getValue(a);
         } else { // capture all related attribute values
