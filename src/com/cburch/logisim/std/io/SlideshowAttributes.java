@@ -116,4 +116,16 @@ class SlideshowAttributes extends AbstractAttributeSet {
     }
   }
 
+  @Override
+  public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
+    if (attr == Slideshow.ATTR_COUNT && ((Integer)newValue).intValue() < count) {
+      ArrayList<Attribute<?>> toUndo = new ArrayList<>();
+      toUndo.addAll(Slideshow.ATTR_SLIDE.subList(((Integer)newValue).intValue(), count));
+      toUndo.add(Slideshow.ATTR_COUNT);
+      return toUndo;
+    } else {
+      return null;
+    }
+  }
+
 }

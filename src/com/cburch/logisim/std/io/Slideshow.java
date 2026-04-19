@@ -253,8 +253,6 @@ public class Slideshow extends InstanceFactory {
 
   @Override
   public void propagate(InstanceState state) {
-    int n = state.getAttributeValue(ATTR_COUNT).intValue();
-
     State data = getState(state);
     int v = state.getPortValue(0).toIntValue();
     if (v < 0)
