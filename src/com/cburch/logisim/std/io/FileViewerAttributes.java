@@ -40,8 +40,7 @@ import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 
 class FileViewerAttributes extends AbstractAttributeSet {
-  private final /*public*/ static FileViewerAttributes instance = new FileViewerAttributes(); // why?
-      
+
   // WARNING: The prefix of these lists before STORAGE must be identical. The list of possible
   // attributes depends on STORAGE, so during xml file loading STORAGE must be set before the
   // remaining attributes.

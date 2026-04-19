@@ -37,7 +37,6 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 
 class VideoAttributes extends AbstractAttributeSet {
-  private final /*public*/ static VideoAttributes instance = new VideoAttributes(); // why?
 
   // WARNING: The prefix of these lists before BLANK must be identical. The list of possible
   // attributes depends on BLANK, so during xml file loading BLANK must be set before the

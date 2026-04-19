@@ -400,8 +400,6 @@ public class FileViewer extends InstanceFactory {
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == ATTR_LINES || attr == ATTR_COLS)
       instance.recomputeBounds();
-    // if (attr == ATTR_FILENAME)
-    //   ...
     instance.fireInvalidated();
   }
 

@@ -42,7 +42,6 @@ import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.instance.StdAttr;
 
 class ProbeAttributes extends AbstractAttributeSet {
-  public static ProbeAttributes instance = new ProbeAttributes();
 
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,

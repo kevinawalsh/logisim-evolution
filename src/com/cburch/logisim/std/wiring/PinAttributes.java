@@ -42,7 +42,6 @@ import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.StdAttr;
 
 class PinAttributes extends ProbeAttributes {
-  // public static PinAttributes instance = new PinAttributes(); // WHY ???
 
   // WARNING: The prefix of these lists before TYPE must be identical. The list of possible
   // attributes depends on TYPE, so during xml file loading TYPE must be set before the
