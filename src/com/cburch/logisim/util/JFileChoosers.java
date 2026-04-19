@@ -80,6 +80,11 @@ public class JFileChoosers {
   // showDialog(Component, String) is intentionally not overridden here; those
   // four call sites (missing-library picker, backup recovery, export image,
   // print export) keep the Swing fallback.
+  // Additionally, showOpenDialog/showSaveDialog fall back to Swing when the
+  // chooser has multiple non-accept-all filters (i.e. accept-all was explicitly
+  // disabled). In that pattern the filter selection carries semantic meaning
+  // beyond mere extension filtering (e.g. HexFile uses it to choose a save
+  // format), and the native dialog cannot preserve the user's format choice.
   private static class MacOSNativeFileChooser extends JFileChooser {
     private static final long serialVersionUID = 1L;
 
@@ -111,9 +116,25 @@ public class JFileChoosers {
       if (selectedFile != null && !selectedFile.isDirectory())
         fd.setFile(selectedFile.getName());
 
-      FileFilter ff = getFileFilter();
-      if (ff != null)
-        fd.setFilenameFilter((dir, name) -> ff.accept(new File(dir, name)));
+      FileFilter[] choosable = getChoosableFileFilters();
+      FileFilter acceptAll = getAcceptAllFileFilter();
+      boolean hasAcceptAll = false;
+      for (FileFilter ff : choosable)
+        if (ff == acceptAll) { hasAcceptAll = true; break; }
+      // If accept-all is absent and there are multiple filters, the filters are
+      // acting as format selectors (not just extension hints). Fall back to Swing
+      // so the user can actually pick a format.
+      if (!hasAcceptAll && choosable.length > 1)
+        return mode == FileDialog.LOAD ? super.showOpenDialog(parent) : super.showSaveDialog(parent);
+      // Otherwise build a union filter: a file is shown if any choosable filter
+      // accepts it. When accept-all is present the union is effectively accept-all.
+      if (choosable.length > 0)
+        fd.setFilenameFilter((dir, name) -> {
+          File f = new File(dir, name);
+          for (FileFilter ff : choosable)
+            if (ff.accept(f)) return true;
+          return false;
+        });
 
       boolean dirMode = (getFileSelectionMode() == JFileChooser.DIRECTORIES_ONLY);
       if (dirMode)
