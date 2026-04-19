@@ -40,7 +40,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.std.decor.Image;
 
 class SlideshowAttributes extends AbstractAttributeSet {
-      
+
   BitWidth addrWidth = BitWidth.create(16);
   int count = 4;
   int width = 320;

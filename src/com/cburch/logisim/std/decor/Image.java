@@ -32,7 +32,12 @@ package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.SecondaryLoop;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
@@ -50,7 +55,12 @@ import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.imageio.ImageIO;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
@@ -85,11 +95,15 @@ public class Image extends InstanceFactory implements Reshapable {
   // inputs, or outputs. 
 
   public static class ImageContent {
-    String format; // "PNG" or "JPG"
-    Attributes.LinkedFile source;
-    byte[] imgData;
+    final String format; // "PNG" or "JPG"
+    final Attributes.LinkedFile source;
+    final byte[] imgData;
     BufferedImage img;
     long timestamp;
+
+    // For linked image: format and source are valid, img and timestamp used as cache
+    // For embedded image: format, imgData, and img are valid
+    // For empty image: both source and imgData are null
 
     public ImageContent(Attributes.LinkedFile src) {
       this.source = src;
@@ -97,6 +111,7 @@ public class Image extends InstanceFactory implements Reshapable {
         format = "PNG";
       else
         format = "JPG";
+      this.imgData = null;
     }
 
     public ImageContent(ImageContent other) {
@@ -116,12 +131,18 @@ public class Image extends InstanceFactory implements Reshapable {
         format = "PNG";
       else
         format = "JPG";
+      this.source = null;
     }
 
     public ImageContent(String format, BufferedImage img, byte[] imgData) {
       this.format = format;
       this.img = img;
       this.imgData = imgData;
+      this.source = null;
+    }
+
+    public boolean isEmpty() {
+      return (source == null && imgData == null);
     }
 
     public BufferedImage getImage() {
@@ -141,6 +162,7 @@ public class Image extends InstanceFactory implements Reshapable {
       return img;
     }
 
+    static final ImageContent EMPTY = new ImageContent("empty", null, null);
   }
 
   public static final Attribute<Attributes.LinkedFile> ATTR_FILENAME_SINGLETON =
@@ -151,7 +173,7 @@ public class Image extends InstanceFactory implements Reshapable {
   public static final ImageContentAttribute ATTR_IMAGE_CONTENT =
     new ImageContentAttribute("image", S.getter("stdImageContents"));
 
-  public static final double MIN_SCALE = 0.1;
+  public static final double MIN_SCALE = 0.01;
   public static final double MAX_SCALE = 10.0;
   public static final Attribute<Double> ATTR_IMAGE_XSCALE =
     Attributes.forDoubleRange("xscale", S.getter("stdImageXScaleAttr"), MIN_SCALE, 1.0, MAX_SCALE);
@@ -166,12 +188,12 @@ public class Image extends InstanceFactory implements Reshapable {
 
     @Override
     public java.awt.Component getCellEditor(Window source, ImageContent s) {
-      return new FileChooser((Frame)source, s);
+      return new ImageChooser((Frame)source, s);
     }
 
     @Override
     public String toDisplayString(ImageContent value) {
-      if (value == null)
+      if (value == null || value.isEmpty())
         return S.get("stdImageClickToLoad");
       else if (value.source != null)
         return value.source.relative + " [" + value.source.absolute + "]";
@@ -186,7 +208,7 @@ public class Image extends InstanceFactory implements Reshapable {
     
     @Override
     public String toStandardStringRelative(ImageContent value, String outFilename) {
-      if (value == null) {
+      if (value == null || value.isEmpty()) {
         return "";
       } else if (value.source != null) {
         return "file:" + ATTR_FILENAME_SINGLETON.toStandardStringRelative(value.source, outFilename);
@@ -222,7 +244,7 @@ public class Image extends InstanceFactory implements Reshapable {
     @Override
     public ImageContent parseFromFilesystem(File directory, String value) {
       if (value == null || value.equals(""))
-        return null;
+        return ImageContent.EMPTY;
       String prefix = value.length() >= 5 ? value.substring(0, 5) : value;
       if (prefix.equalsIgnoreCase("file:")) {
         return new ImageContent(ATTR_FILENAME_SINGLETON.parseFromFilesystem(directory, value.substring(5)));
@@ -252,11 +274,11 @@ public class Image extends InstanceFactory implements Reshapable {
     public Domain getDomain() { return Domain.ofDescription("path or encoded contents of image"); }
   }
 
-  private static class FileChooser extends java.awt.Component implements JInputDialog<ImageContent> {
+  private static class ImageChooser extends java.awt.Component implements JInputDialog<ImageContent> {
     Frame parent;
     ImageContent result;
 
-    FileChooser(Frame parent, ImageContent r) {
+    ImageChooser(Frame parent, ImageContent r) {
       this.parent = parent;
       this.result = r;
     }
@@ -268,6 +290,33 @@ public class Image extends InstanceFactory implements Reshapable {
     public void setVisible(boolean b) {
       if (!b)
         return;
+      if (result != null && !result.isEmpty()) {
+        int[] choice = {-1}; // -1 = dismissed, 0 = choose new, 1 = remove
+        SecondaryLoop loop = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem chooseItem = new JMenuItem(S.get("stdImageChooseNewOption"));
+        chooseItem.addActionListener(e -> { choice[0] = 0; loop.exit(); });
+        menu.add(chooseItem);
+        JMenuItem removeItem = new JMenuItem(S.get("stdImageRemoveOption"));
+        removeItem.addActionListener(e -> { choice[0] = 1; loop.exit(); });
+        menu.add(removeItem);
+        menu.addPopupMenuListener(new PopupMenuListener() {
+          public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
+          public void popupMenuWillBecomeInvisible(PopupMenuEvent e) { loop.exit(); }
+          public void popupMenuCanceled(PopupMenuEvent e) { loop.exit(); }
+        });
+        Point loc = MouseInfo.getPointerInfo().getLocation();
+        SwingUtilities.convertPointFromScreen(loc, parent);
+        menu.show(parent, loc.x, loc.y);
+        loop.enter();
+        if (choice[0] == 1) {
+          result = ImageContent.EMPTY;
+          return;
+        } else if (choice[0] != 0) {
+          return; // dismissed without selection
+        }
+        // choice[0] == 0: fall through to chooser dialog below
+      }
       JInputDialog<Attributes.LinkedFile> chooser =
         (JInputDialog<Attributes.LinkedFile>)
         ATTR_FILENAME_SINGLETON.getCellEditor(parent, result == null ? null : result.source);
