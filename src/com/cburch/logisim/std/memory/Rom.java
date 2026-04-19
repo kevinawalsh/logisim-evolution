@@ -185,6 +185,7 @@ public class Rom extends Mem {
       "proportions", S.getter("romProportions"), new AttributeOption[] { RECT, WIDE, TALL });
 
   public static Attribute<RomContents> CONTENTS_ATTR = new ContentsAttribute();
+  public static Attribute<RomContents> CONTENTS_ATTR_DUPLICATE = new ContentsAttribute();
 
   public Rom() {
     super("ROM", S.getter("romComponent"), 0);
@@ -327,6 +328,8 @@ public class Rom extends Mem {
       ret = new RomState(state.getProject(), instance, contents);
       instance.setData(state, ret);
     } else if (ret.getContents() != contents) {
+      // Maybe never update contents, but instead copy new data into existing contents within
+      // updateAttr()?
       Debug.println(0, "ROM state contents does not match attribute");
     } else {
       ((RomContents)ret.getContents()).setProject(state.getProject());
@@ -351,9 +354,10 @@ public class Rom extends Mem {
       configurePorts(instance);
     } else if (attr == Mem.LINE_ATTR) {
       configurePorts(instance);
-    } else if (attr == CONTENTS_ATTR) {
+    } else if (attr == CONTENTS_ATTR || attr == CONTENTS_ATTR_DUPLICATE) {
       // This occurs during xml reading, and when a rom is moved on the canvas
       // (see RomState.simulationRelocating()).
+      // And CONTENTS_ATTR_DUPLICATE occurs during undo/redo actions.
       instance.fireInvalidated();
     }
   }

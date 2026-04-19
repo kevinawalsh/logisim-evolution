@@ -56,7 +56,7 @@ class RomAttributes extends AbstractAttributeSet {
 
   private BitWidth addrBits = BitWidth.create(8);
   private BitWidth dataBits = BitWidth.create(8);
-  private RomContents contents = new RomContents(8, 8);
+  private final RomContents contents = new RomContents(8, 8); // all changes are in-place
   private AttributeOption lineSize = Mem.SINGLE;
   private String Label = "";
   private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
@@ -70,7 +70,10 @@ class RomAttributes extends AbstractAttributeSet {
     RomAttributes d = (RomAttributes) dest;
     d.addrBits = addrBits;
     d.dataBits = dataBits;
-    d.contents = contents.duplicate();
+    // d.contents = contents.duplicate();
+    // modify in-place, using setDmensions+copyInto, so contents reference never changes
+    d.contents.setDimensions(addrBits.getWidth(), dataBits.getWidth());
+    d.contents.copyFrom(contents);
     d.lineSize = lineSize;
     d.LabelFont = LabelFont;
     d.Appearance = Appearance;
@@ -91,6 +94,8 @@ class RomAttributes extends AbstractAttributeSet {
       return (V) dataBits;
     if (attr == Rom.CONTENTS_ATTR)
       return (V) contents;
+    if (attr == Rom.CONTENTS_ATTR_DUPLICATE)
+      return (V) contents.duplicate();
     if (attr == Mem.LINE_ATTR)
       return (V) lineSize;
     if (attr == StdAttr.LABEL)
@@ -115,11 +120,16 @@ class RomAttributes extends AbstractAttributeSet {
     }
     else if (attr == Mem.LINE_ATTR)
       lineSize = (AttributeOption) value;
-    else if (attr == Rom.CONTENTS_ATTR) {
+    else if (attr == Rom.CONTENTS_ATTR || attr == Rom.CONTENTS_ATTR_DUPLICATE) {
       // Occurs during xml reading, and when rom is moved on the canvas
-      contents = (RomContents) value;
+      // CONTENTS_ATTR_DUPLICATE occurs during some undo/redo actions
+      RomContents newContents = (RomContents) value;
+      contents.setDimensions(newContents.getLogLength(), newContents.getValueWidth());
+      contents.copyFrom(newContents);
       addrBits = BitWidth.create(contents.getLogLength());
       dataBits = BitWidth.create(contents.getValueWidth());
+      // RomState for all simulations has a reference to the RomContents, so we
+      // modify contents in-place rather than changing the reference.
     }
     else if (attr == StdAttr.LABEL)
       Label = (String) value;
@@ -131,5 +141,22 @@ class RomAttributes extends AbstractAttributeSet {
     }
     else if (attr == Rom.ATTR_PROPORTIONS)
       Proportions = (AttributeOption) value;
+  }
+
+  @Override
+  public <V> List<Attribute<?>> getAttributesForUndo(Attribute<V> attr, V newValue) {
+    // Rom modifies the contents in-place, using a custom attribute editor, so
+    // saving the value of CONTENTS_ATTR during undo/redo actions is not
+    // effective. We instead use a special, unlisted CONTENTS_ATTR_DUPLICATE
+    // attribute to capture a copy of the contents during destructive attribute
+    // changes.
+    if (attr == Mem.ADDR_ATTR && ((BitWidth)newValue).getWidth() < addrBits.getWidth())
+      return List.of(Rom.CONTENTS_ATTR_DUPLICATE, Mem.ADDR_ATTR);
+    else if (attr == Mem.DATA_ATTR && ((BitWidth)newValue).getWidth() < dataBits.getWidth())
+      return List.of(Rom.CONTENTS_ATTR_DUPLICATE, Mem.DATA_ATTR);
+    else if (attr == Rom.CONTENTS_ATTR) // should not occur during most Actions
+      return List.of(Rom.CONTENTS_ATTR_DUPLICATE);
+    else
+      return null;
   }
 }

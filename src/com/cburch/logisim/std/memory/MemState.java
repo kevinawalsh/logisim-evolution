@@ -47,7 +47,7 @@ abstract class MemState implements ComponentData {
 
   // For Ram, each MemState has its own contents.
   // For Rom, all MemState for an instance share one contents.
-  protected MemContents contents;
+  protected final MemContents contents; // all changes are in-place
 
   private long curScroll = 0;
   private long cursorLoc = -1;
@@ -72,7 +72,7 @@ abstract class MemState implements ComponentData {
   }
 
   public MemState(MemContents contents, MemState other) {
-    this. contents = contents; // other.contents.duplicate();
+    this.contents = contents; // other.contents.duplicate();
     // contents.addHexModelWeakListener(null, this);
     curScroll = other.curScroll;
     cursorLoc = other.cursorLoc;

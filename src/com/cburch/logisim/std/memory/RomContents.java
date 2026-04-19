@@ -204,22 +204,22 @@ public class RomContents extends MemContents {
   public void clearContents() {
     if (isAllZeros())
       return;
-    doAction(new ClearAll(instanceRef.get(), this));
+    doAction(new ClearAll(this));
   }
 
   @Override
   public void clearContents(long start, long length) {
-    doAction(new ClearRange(instanceRef.get(), this, start, length));
+    doAction(new ClearRange(this, start, length));
   }
   
   @Override
   public void setContents(long start, int data) {
-    doAction(new ChangeBytes(instanceRef.get(), this, start, null, new int[] { data }));
+    doAction(new ChangeBytes(this, start, null, new int[] { data }));
   }
 
   @Override
   public void setContents(long start, int[] data) {
-    doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
+    doAction(new ChangeBytes(this, start, null, data));
   }
 
   @Override
@@ -229,9 +229,9 @@ public class RomContents extends MemContents {
     if (project != null) {
       if (count <= 32*1024) {
         int[] data = src.get(offset, count);
-        doAction(new ChangeBytes(instanceRef.get(), this, start, null, data));
+        doAction(new ChangeBytes(this, start, null, data));
       } else {
-        doAction(new CopyContents(instanceRef.get(), this, start, src, offset, count));
+        doAction(new CopyContents(this, start, src, offset, count));
       }
     } else {
       // When file is being loaded, we don't yet have a project, nor would we
@@ -246,12 +246,10 @@ public class RomContents extends MemContents {
   // }
   
   private static class ClearAll extends Action {
-    private Instance instance;
     private RomContents contents;
     private RomContents oldContents;
 
-    ClearAll(Instance instance, RomContents contents) {
-      this.instance = instance;
+    ClearAll(RomContents contents) {
       this.contents = contents;
       this.oldContents = contents.duplicate();
     }
@@ -259,15 +257,11 @@ public class RomContents extends MemContents {
     @Override
     public void doIt(Project proj) {
       contents.clear(false);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
     public void undo(Project proj) {
       contents.copyFrom(0, oldContents, 0, oldContents.getLogLength());
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
@@ -277,13 +271,11 @@ public class RomContents extends MemContents {
   }
 
   private static class ClearRange extends Action {
-    private Instance instance;
     private RomContents contents;
     private int[] oldValues;
     long start, length;
 
-    ClearRange(Instance instance, RomContents contents, long start, long length) {
-      this.instance = instance;
+    ClearRange(RomContents contents, long start, long length) {
       this.contents = contents;
       this.start = start;
       this.length = length;
@@ -293,15 +285,11 @@ public class RomContents extends MemContents {
     @Override
     public void doIt(Project proj) {
       contents.clear(start, length);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
     public void undo(Project proj) {
       contents.set(false, start, oldValues);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
@@ -311,14 +299,12 @@ public class RomContents extends MemContents {
   }
 
   private static class ChangeBytes extends Action {
-    private Instance instance;
     private RomContents contents;
     private long start;
     private int[] oldValues;
     private int[] newValues;
 
-    ChangeBytes(Instance instance, RomContents contents, long start, int[] oldValues, int[] newValues) {
-      this.instance = instance;
+    ChangeBytes(RomContents contents, long start, int[] oldValues, int[] newValues) {
       this.contents = contents;
       this.start = start;
       this.newValues = newValues;
@@ -333,11 +319,8 @@ public class RomContents extends MemContents {
         ChangeBytes o = (ChangeBytes) other;
         long oEnd = o.start + o.newValues.length;
         long end = start + newValues.length;
-        // Only merge edits if consecutive, same underlying contents, and same
-        // instance (or both have no instance). So if user edits rom in one
-        // simulation, then edits iame rom in a different simulation, those
-        // don't get merged.
-        if (o.instance == instance && o.contents == contents && oEnd >= start && end >= o.start)
+        // Only merge edits if consecutive in same underlying contents.
+        if (o.contents == contents && oEnd >= start && end >= o.start)
           return true;
       }
       return super.shouldAppendTo(other);
@@ -362,7 +345,7 @@ public class RomContents extends MemContents {
               (int) (start - nStart), newValues.length);
           System.arraycopy(o.newValues, 0, nNew,
               (int) (o.start - nStart), o.newValues.length);
-          return new ChangeBytes(instance, contents, nStart, nOld, nNew);
+          return new ChangeBytes(contents, nStart, nOld, nNew);
         }
       }
       return super.append(other);
@@ -371,15 +354,11 @@ public class RomContents extends MemContents {
     @Override
     public void doIt(Project proj) {
       contents.set(false, start, newValues);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
     public void undo(Project proj) {
       contents.set(false, start, oldValues);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
@@ -389,14 +368,12 @@ public class RomContents extends MemContents {
   }
 
   private static class CopyContents extends Action {
-    private Instance instance;
     private RomContents contents;
     private MemContents src;
     private RomContents oldContents;
     long start, offset, count;
 
-    CopyContents(Instance instance, RomContents contents, long start, MemContents src, long offset, long count) {
-      this.instance = instance;
+    CopyContents(RomContents contents, long start, MemContents src, long offset, long count) {
       this.contents = contents;
       this.src = src;
       this.oldContents = contents.duplicate();
@@ -405,15 +382,11 @@ public class RomContents extends MemContents {
     @Override
     public void doIt(Project proj) {
       contents.copyFrom(start, src, offset, count);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
     public void undo(Project proj) {
       contents.copyFrom(oldContents);
-      if (instance != null)
-        instance.fireInvalidated();
     }
 
     @Override
