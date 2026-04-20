@@ -34,29 +34,15 @@ import static com.cburch.logisim.data.Strings.S;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
-import java.awt.Window;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 
 import com.bric.swing.ColorPicker;
-import com.cburch.logisim.file.Loader;
-import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.generic.ComboBox;
-import com.cburch.logisim.gui.main.Frame;
-import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.FontUtil;
-import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.JInputComponent;
-import com.cburch.logisim.util.JInputDialog;
 import com.cburch.logisim.util.StringGetter;
 import com.connectina.swing.fontchooser.JFontChooser;
 
@@ -80,210 +66,6 @@ public class Attributes {
         return S.get("booleanTrueOption");
       else
         return S.get("booleanFalseOption");
-    }
-  }
-
-  public static final class LinkedFile {
-    public final File absolute, relative;
-    public LinkedFile(File a, File r)  {
-      absolute = a ;
-      relative = r;
-    }
-
-    public LinkedFile(File f, Window source) { // normally f should be absolute here
-      this(resolve(f, source), relativize(f, source));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (!(o instanceof LinkedFile))
-        return false;
-      LinkedFile other = (LinkedFile)o;
-      return this.absolute.equals(other.absolute);
-    }
-
-    @Override
-    public int hashCode() {
-      return absolute.hashCode();
-    }
-
-    public static File relativize(File abs, Window source) {
-      if (abs == null || !abs.isAbsolute() || !(source instanceof Frame)) {
-        return abs;
-      }
-      Project proj = ((Frame)source).getProject();
-      LogisimFile lf = (proj == null ? null : proj.getLogisimFile());
-      Loader ld = (lf == null ? null : lf.getLoader());
-      File parent = (ld == null ? null : ld.getCurrentDirectory());
-      if (parent == null)
-        return abs;
-      File rel;
-      try {
-        rel = parent.toPath().toRealPath().relativize(abs.toPath().toRealPath()).toFile();
-      } catch (IOException ex) {
-        rel = parent.toPath().relativize(abs.toPath()).toFile();
-      }
-      return rel;
-    }
-    
-    public static File resolve(File rel, Window source) {
-      if (rel == null || rel.isAbsolute() || !(source instanceof Frame)) {
-        return rel;
-      }
-      Project proj = ((Frame)source).getProject();
-      LogisimFile lf = (proj == null ? null : proj.getLogisimFile());
-      Loader ld = (lf == null ? null : lf.getLoader());
-      File parent = (ld == null ? null : ld.getCurrentDirectory());
-      if (parent == null)
-        return rel;
-      File abs = parent.toPath().resolve(rel.toPath()).toFile();
-      return abs;
-    }
-  }
-
-  private static class FilenameAttribute extends Attribute<LinkedFile> {
-    StringGetter dialogTitle;
-    FileFilter[] filters;
-    public FilenameAttribute(String name, StringGetter desc, StringGetter dialogTitle, FileFilter[] filters) {
-      super(name, desc);
-      this.dialogTitle = dialogTitle;
-      this.filters = filters;
-    }
-    
-    @Override
-    public String toDisplayString(LinkedFile value) {
-      return value == null ? "" : (value.relative + " [" + value.absolute) + "]";
-    }
-
-    @Override
-    public String toStandardString(LinkedFile value) {
-      return value == null ? "" : value.relative.toString();
-    }
-
-    @Override
-    public String toStandardStringRelative(LinkedFile value, String outFilename) {
-      if (value == null)
-        return "";
-      if (outFilename == null || outFilename.equals("")) {
-        return value.absolute.toString();
-      } else {
-        try {
-          return new File(outFilename).toPath().toRealPath().relativize(value.absolute.toPath().toRealPath()).toString();
-        } catch (IOException e) {
-          return new File(outFilename).toPath().relativize(value.absolute.toPath()).toString();
-        }
-      }
-    }
-
-    @Override
-    public java.awt.Component getCellEditor(Window source, LinkedFile value) {
-      return new FilenameChooser((Frame)source, value, dialogTitle, filters);
-    }
-    
-    @Override
-    public LinkedFile parse(String value) {
-      throw new UnsupportedOperationException("parse filename without source");
-      // if (value == null || value.equals(""))
-      //   return null;
-      // return new LinkedFile(new File(value), (Window)null);
-    }
-
-    @Override
-    public LinkedFile parseFromUser(Window source, String value) {
-      if (value == null || value.equals(""))
-        return null;
-      // if (!abs.exists())
-      //   throw new IllegalArgumentException("File '"+abs+"' can't be found.");
-      // if (abs.isDirectory())
-      //   throw new IllegalArgumentException("Expected '"+abs+"' to be a file, but it's a directory.");
-      return new LinkedFile(new File(value), source);
-    }
-
-    @Override
-    public LinkedFile parseFromFilesystem(File directory, String value) {
-      if (value == null || value.equals(""))
-        return null;
-      if (directory == null || directory.toString().equals("")) {
-        // happens when copy-pasting
-        File f = new File(value);
-        return new LinkedFile(f, f);
-      }
-      Path parent = directory.toPath();
-      Path abs = parent.resolve(new File(value).toPath());
-      Path rel;
-      try {
-        rel = parent.toRealPath().relativize(abs.toRealPath());
-      } catch (IOException ex) {
-        rel = parent.relativize(abs);
-      }
-      return new LinkedFile(abs.toFile(), rel.toFile());
-    }
-
-    @Override
-    public Domain getDomain() {
-      return Domain.ofDescription("file name");
-    }
-
-  }
-
-  private static class FilenameChooser extends java.awt.Component implements JInputDialog<LinkedFile> {
-
-    JFileChooser chooser;
-    Frame parent;
-    LinkedFile result;
-
-    FilenameChooser(Frame parent, LinkedFile file, StringGetter title, FileFilter[] filters) {
-      this.parent = parent;
-      chooser = JFileChoosers.create();
-      chooser.setDialogTitle(title.toString());
-      setValue(file);
-      if (filters != null && filters.length != 0) {
-        for (FileFilter ff : filters)
-          chooser.addChoosableFileFilter(ff);
-        chooser.setFileFilter(filters[0]);
-      }
-    }
-
-    @Override
-    public void setValue(LinkedFile file) {
-      if (file == null) {
-        chooser.setSelectedFile(null);
-        return;
-      } 
-      if (file.absolute.isDirectory()) {
-        chooser.setCurrentDirectory(file.absolute);
-      } else {
-        chooser.setCurrentDirectory(file.absolute.getParentFile());
-        chooser.setSelectedFile(file.absolute);
-      }
-    }
-
-    @Override
-    public LinkedFile getValue() {
-      return result;
-    }
-
-    public void setVisible(boolean b) {
-      if (!b)
-        return;
-      int choice = chooser.showOpenDialog(parent);
-      if (choice == JFileChooser.APPROVE_OPTION) {
-        File f = chooser.getSelectedFile();
-        LinkedFile lf = new LinkedFile(f, parent);
-        try {
-          // sanity check: try to read file data
-          Files.readAllBytes(lf.absolute.toPath());
-          result = lf;
-        } catch (IOException e) {
-          choice = JOptionPane.showConfirmDialog(parent,
-              S.get("fileUnreadableConfirmation"),
-              S.get("fileUnreadableTitle"),
-              JOptionPane.OK_CANCEL_OPTION,
-              JOptionPane.WARNING_MESSAGE);
-          if (choice == JOptionPane.OK_OPTION)
-            result = lf;
-        }
-      }
     }
   }
 
@@ -721,11 +503,6 @@ public class Attributes {
     return new BooleanAttribute(name, disp);
   }
   
-  public static Attribute<LinkedFile> forFilename(String name, StringGetter disp,
-      StringGetter dialogTitle, FileFilter... filters) {
-    return new FilenameAttribute(name, disp, dialogTitle, filters);
-  }
-
   public static Attribute<Color> forColor(String name) {
     return forColor(name, getter(name));
   }

@@ -32,13 +32,7 @@ package com.cburch.logisim.std.decor;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Graphics2D;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.SecondaryLoop;
-import java.awt.Toolkit;
-import java.awt.Window;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
@@ -48,19 +42,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.imageio.ImageIO;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
-import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.comp.Component;
@@ -69,9 +56,9 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
+import com.cburch.logisim.data.LinkedOrEmbedded;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.gui.main.ExportImage;
-import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -84,94 +71,59 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.Tool;
-import com.cburch.logisim.util.Errors;
-import com.cburch.logisim.util.JInputDialog;
 import com.cburch.logisim.util.StringGetter;
 
+// Image just displays an image, which can be embedded in the project or
+// linked to an external file. Like Text, this component has no behavior,
+// inputs, or outputs. 
 public class Image extends InstanceFactory implements Reshapable {
 
-  // Image just displays an image, which can be embedded in the project or
-  // linked to an external file. Like Text, this component has no behavior,
-  // inputs, or outputs. 
+  public ImageContentAttribute extends LinkedOrEmbedded<BufferedImage>.Attr {
 
-  public static class ImageContent {
-    final String format; // "PNG" or "JPG"
-    final Attributes.LinkedFile source;
-    final byte[] imgData;
-    BufferedImage img;
-    long timestamp;
-
-    // For linked image: format and source are valid, img and timestamp used as cache
-    // For embedded image: format, imgData, and img are valid
-    // For empty image: both source and imgData are null
-
-    public ImageContent(Attributes.LinkedFile src) {
-      this.source = src;
-      if (src.relative.toString().toLowerCase().endsWith(".png"))
-        format = "PNG";
-      else
-        format = "JPG";
-      this.imgData = null;
+    public ImageContentAttribute(String name, StringGetter disp) {
+      super(name, disp,
+        S.getter("stdImageLoadDialogTitle"),
+        ExportImage.PNG_FILTER, ExportImage.JPG_FILTER);
     }
 
-    public ImageContent(ImageContent other) {
-      this.format = other.format;
-      this.source = other.source;
-      this.imgData = other.imgData;
-      this.img = other.img;
-      this.timestamp = other.timestamp;
+    @Override
+    protected String encodeData(byte[] data) {
+      ByteArrayOutputStream result = new ByteArrayOutputStream();
+      result.write("\n".getBytes("UTF-8"));
+      byte[] LF = System.lineSeparator().getBytes("UTF-8"); // "\n" or "\r\n"
+      OutputStream encoded = Base64.getMimeEncoder(76, LF).wrap(result);
+      encoded.write(data, 0, data.length);
+      try { encoded.flush(); } catch (IOException e) { e.printStackTrace(); }
+      try { result.flush(); } catch (IOException e) { e.printStackTrace(); }
+      try { encoded.close(); } catch (IOException e) { e.printStackTrace(); }
+      try { result.close(); } catch (IOException e) { e.printStackTrace(); }
+      return new String(result.toByteArray(), "UTF-8");
     }
 
-    public ImageContent(File f) throws IOException {
-      imgData = Files.readAllBytes(f.toPath());
-      ByteArrayInputStream stream = new ByteArrayInputStream(imgData);
-      img = ImageIO.read(stream);
+    @Override
+    protected byte[] decodeData(String fmt, String encoded) {
+      byte[] bytes = encoded.getBytes("UTF-8");
+      ByteArrayInputStream input = new ByteArrayInputStream(bytes, 5, bytes.length-5);
+      InputStream decoded = Base64.getMimeDecoder().wrap(input);
+      bytes = decoded.readAllBytes();
+      decoded.close();
+      input.close();
+      return bytes;
+    }
+
+    @Override
+    protected BufferedImage parseData(byte[] data) throws IOExeption {
+      ByteArrayInputStream stream = new ByteArrayInputStream(data);
+      BufferedImage img = ImageIO.read(stream);
       stream.close();
-      if (f.toString().toLowerCase().endsWith(".png"))
-        format = "PNG";
-      else
-        format = "JPG";
-      this.source = null;
-    }
-
-    public ImageContent(String format, BufferedImage img, byte[] imgData) {
-      this.format = format;
-      this.img = img;
-      this.imgData = imgData;
-      this.source = null;
-    }
-
-    public boolean isEmpty() {
-      return (source == null && imgData == null);
-    }
-
-    public BufferedImage getImage() {
-      if (source == null)
-        return img;
-      long ts = source.absolute.lastModified();
-      if (ts == timestamp)
-        return img;
-      timestamp = ts;
-      try {
-        img = ImageIO.read(source.absolute);
-      } catch (IOException e) {
-        img = null;
-        // maybe don't warn?
-        System.out.println("image file access error: " + source.relative);
-      }
       return img;
     }
 
-    static final ImageContent EMPTY = new ImageContent("empty", null, null);
+    @Override
+    protected String formatForPath(File f) {
+      return f.toString().toLowerCase().endsWith(".png") ? "PNG" : "JPG";
+    }
   }
-
-  public static final Attribute<Attributes.LinkedFile> ATTR_FILENAME_SINGLETON =
-      Attributes.forFilename("filename", 
-          S.getter("stdImageFilename"), S.getter("stdImageLoadDialogTitle"),
-          ExportImage.PNG_FILTER, ExportImage.JPG_FILTER);
-
-  public static final ImageContentAttribute ATTR_IMAGE_CONTENT =
-    new ImageContentAttribute("image", S.getter("stdImageContents"));
 
   public static final double MIN_SCALE = 0.01;
   public static final double MAX_SCALE = 10.0;
@@ -180,183 +132,8 @@ public class Image extends InstanceFactory implements Reshapable {
   public static final Attribute<Double> ATTR_IMAGE_YSCALE =
     Attributes.forDoubleRange("yscale", S.getter("stdImageYScaleAttr"), MIN_SCALE, 1.0, MAX_SCALE);
 
-  public static class ImageContentAttribute extends Attribute<ImageContent> {
-
-    public ImageContentAttribute(String name, StringGetter disp) {
-      super(name, disp);
-    }
-
-    @Override
-    public java.awt.Component getCellEditor(Window source, ImageContent s) {
-      return new ImageChooser((Frame)source, s);
-    }
-
-    @Override
-    public String toDisplayString(ImageContent value) {
-      if (value == null || value.isEmpty())
-        return S.get("stdImageClickToLoad");
-      else if (value.source != null)
-        return value.source.relative + " [" + value.source.absolute + "]";
-      else
-        return String.format(S.get("stdImageImageInfo"), value.format, value.imgData.length);
-    }
-
-    @Override
-    public String toStandardString(ImageContent value) {
-      return toStandardStringRelative(value, null);
-    }
-    
-    @Override
-    public String toStandardStringRelative(ImageContent value, String outFilename) {
-      if (value == null || value.isEmpty()) {
-        return "";
-      } else if (value.source != null) {
-        return "file:" + ATTR_FILENAME_SINGLETON.toStandardStringRelative(value.source, outFilename);
-      } else {
-        try {
-          ByteArrayOutputStream result = new ByteArrayOutputStream();
-          result.write((value.format+":\n").getBytes("UTF-8"));
-          byte[] LF = System.lineSeparator().getBytes("UTF-8"); // "\n" or "\r\n"
-          OutputStream encoded = Base64.getMimeEncoder(76, LF).wrap(result);
-          encoded.write(value.imgData, 0, value.imgData.length);
-          try { encoded.flush(); } catch (IOException e) { e.printStackTrace(); }
-          try { result.flush(); } catch (IOException e) { e.printStackTrace(); }
-          try { encoded.close(); } catch (IOException e) { e.printStackTrace(); }
-          try { result.close(); } catch (IOException e) { e.printStackTrace(); }
-          return new String(result.toByteArray(), "UTF-8");
-        } catch (Exception e) {
-          e.printStackTrace();
-          return "";
-        }
-      }
-    }
-
-    @Override
-    public ImageContent parse(String str) {
-      throw new UnsupportedOperationException("parse filename without source");
-    }
-
-    @Override
-    public ImageContent parseFromUser(Window source, String value) {
-      throw new UnsupportedOperationException("parse filename without source");
-    }
-
-    @Override
-    public ImageContent parseFromFilesystem(File directory, String value) {
-      if (value == null || value.equals(""))
-        return ImageContent.EMPTY;
-      String prefix = value.length() >= 5 ? value.substring(0, 5) : value;
-      if (prefix.equalsIgnoreCase("file:")) {
-        return new ImageContent(ATTR_FILENAME_SINGLETON.parseFromFilesystem(directory, value.substring(5)));
-      } else if (prefix.equalsIgnoreCase("PNG:\n") || prefix.equalsIgnoreCase("JPG:\n")) {
-        String format = value.substring(0, 3).toUpperCase();
-        try {
-          byte[] bytes = value.getBytes("UTF-8");
-          ByteArrayInputStream input = new ByteArrayInputStream(bytes, 5, bytes.length-5);
-          InputStream decoded = Base64.getMimeDecoder().wrap(input);
-          bytes = decoded.readAllBytes();
-          decoded.close();
-          input.close();
-          input = new ByteArrayInputStream(bytes);
-          BufferedImage img = ImageIO.read(input);
-          input.close();
-          return new ImageContent(format, img, bytes);
-        } catch (IOException e) {
-          e.printStackTrace();
-          return null;
-        }
-      } else {
-        throw new IllegalArgumentException("Bad image data for " + getName());
-      }
-    }
-
-    @Override
-    public Domain getDomain() { return Domain.ofDescription("path or encoded contents of image"); }
-  }
-
-  private static class ImageChooser extends java.awt.Component implements JInputDialog<ImageContent> {
-    Frame parent;
-    ImageContent result;
-
-    ImageChooser(Frame parent, ImageContent r) {
-      this.parent = parent;
-      this.result = r;
-    }
-
-    public void setValue(ImageContent r) { result = r; }
-    public ImageContent getValue() { return result; }
-
-    @SuppressWarnings("unchecked")
-    public void setVisible(boolean b) {
-      if (!b)
-        return;
-      if (result != null && !result.isEmpty()) {
-        int[] choice = {-1}; // -1 = dismissed, 0 = choose new, 1 = remove
-        SecondaryLoop loop = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
-        JPopupMenu menu = new JPopupMenu();
-        JMenuItem chooseItem = new JMenuItem(S.get("stdImageChooseNewOption"));
-        chooseItem.addActionListener(e -> { choice[0] = 0; loop.exit(); });
-        menu.add(chooseItem);
-        JMenuItem removeItem = new JMenuItem(S.get("stdImageRemoveOption"));
-        removeItem.addActionListener(e -> { choice[0] = 1; loop.exit(); });
-        menu.add(removeItem);
-        menu.addPopupMenuListener(new PopupMenuListener() {
-          public void popupMenuWillBecomeVisible(PopupMenuEvent e) {}
-          public void popupMenuWillBecomeInvisible(PopupMenuEvent e) { loop.exit(); }
-          public void popupMenuCanceled(PopupMenuEvent e) { loop.exit(); }
-        });
-        Point loc = MouseInfo.getPointerInfo().getLocation();
-        SwingUtilities.convertPointFromScreen(loc, parent);
-        menu.show(parent, loc.x, loc.y);
-        loop.enter();
-        if (choice[0] == 1) {
-          result = ImageContent.EMPTY;
-          return;
-        } else if (choice[0] != 0) {
-          return; // dismissed without selection
-        }
-        // choice[0] == 0: fall through to chooser dialog below
-      }
-      JInputDialog<Attributes.LinkedFile> chooser =
-        (JInputDialog<Attributes.LinkedFile>)
-        ATTR_FILENAME_SINGLETON.getCellEditor(parent, result == null ? null : result.source);
-
-      chooser.setVisible(true);
-      Attributes.LinkedFile lf = chooser.getValue();
-
-      if (lf == null)
-        return;
-
-      long size;
-      try {
-        size = Files.size(lf.absolute.toPath());
-      } catch (IOException ex) {
-        Errors.title(S.get("stdImageErrorTitle")).show(S.get("stdImageErrorMessage"), ex);
-        return;
-      }
-
-      String[] options = {
-        S.get("stdImageEmbedOption"),
-        S.get("stdImageLinkOption"),
-        S.get("stdImageCancelOption") };
-      int choice = JOptionPane.showOptionDialog(parent,
-          String.format(S.get("stdImageStorageDialogQuestion"), size),
-          S.get("stdImageStorageDialogTitle"), 0,
-          JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-      if (choice == 0) {
-        try {
-          result = new ImageContent(lf.absolute);
-        } catch (IOException ex) {
-          Errors.title(S.get("stdImageErrorTitle")).show(S.get("stdImageErrorMessage"), ex);
-          return;
-        }
-      } else if (choice == 1) {
-          result = new ImageContent(lf);
-      } else {
-        result = null;
-      }
-    }
-  }
+  public static final ImageContentAttribute ATTR_IMAGE_CONTENT =
+    new ImageContentAttribute("image", S.getter("stdImageContents"));
 
   public Image() {
     super("Image", S.getter("stdImageComponent"));
@@ -378,8 +155,8 @@ public class Image extends InstanceFactory implements Reshapable {
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
     Point2D.Double scaling = getScaling(attrs);
-    Image.ImageContent content = attrs.getValue(ATTR_IMAGE_CONTENT);
-    BufferedImage img = content == null ? null : content.getImage();
+    LinkedOrEmbedded<BufferedImage> embed = attrs.getValue(ATTR_IMAGE_CONTENT);
+    BufferedImage img = embed == null ? null : embed.getContent();
     return getOffsetBounds(img, scaling);
   }
 
@@ -416,8 +193,8 @@ public class Image extends InstanceFactory implements Reshapable {
   }
 
   private void paint(InstancePainter painter, boolean border, Point2D.Double altScaling) {
-    Image.ImageContent content = painter.getAttributeValue(ATTR_IMAGE_CONTENT);
-    BufferedImage img = content == null ? null : content.getImage();
+    LinkedOrEmbedded<BufferedImage> embed = painter.getAttributeValue(ATTR_IMAGE_CONTENT);
+    BufferedImage img = embed == null ? null : embed.getContent();
     Graphics2D g = painter.getGraphics();
     Point2D.Double scaling = altScaling != null ? altScaling : getScaling(painter.getAttributeSet());
     Location loc = painter.getLocation();
@@ -536,7 +313,8 @@ public class Image extends InstanceFactory implements Reshapable {
     byte[] imgData = toByteArray(img, "PNG");
     AttributeSet copy = (AttributeSet) imageTool.getAttributeSet().clone();
     Component comp = imageTool.getFactory().createComponent(loc, copy);
-    comp.getAttributeSet().setAttr(ATTR_IMAGE_CONTENT, new ImageContent("PNG", img, imgData));
+    comp.getAttributeSet().setAttr(ATTR_IMAGE_CONTENT,
+        new LinkedOrEmbedded<BufferedImage>("PNG", true, null, null, imgData, ATTR_IMAGE_CONTENT::parseData));
     return comp;
   }
 
@@ -551,8 +329,8 @@ public class Image extends InstanceFactory implements Reshapable {
   }
 
   public static java.awt.Image getImage(Component comp) {
-    ImageContent content = comp.getAttributeSet().getValue(ATTR_IMAGE_CONTENT);
-    return content.getImage();
+    LinkedOrEmbedded<BufferedImage> embed = comp.getAttributeSet().getValue(ATTR_IMAGE_CONTENT);
+    return embed == null ? null : embed.getContent();
   }
   
   @Override
@@ -586,8 +364,8 @@ public class Image extends InstanceFactory implements Reshapable {
     Location corner = Location.create(bds.x + bds.width, bds.y + bds.height);
     corner = corner.translate(rdx, rdy);
 
-    Image.ImageContent content = attrs.getValue(ATTR_IMAGE_CONTENT);
-    BufferedImage img = content == null ? null : content.getImage();
+    LinkedOrEmbedded<BufferedImage> embed = attrs.getValue(ATTR_IMAGE_CONTENT);
+    BufferedImage img = embed == null ? null : embed.getImage();
     int w = 20, h = 20;
     if (img != null) {
       w = img.getWidth();
