@@ -63,6 +63,7 @@ abstract class MemState implements ComponentData {
   private int xOffset = 0;
   private int yOffset = 0;
   private int CharHeight = 0;
+  private int CachedAddrBits, CachedDataBits;
 
   public static final Font FONT = new Font("monospaced", Font.PLAIN, 12);
 
@@ -87,24 +88,19 @@ abstract class MemState implements ComponentData {
     xOffset = other.xOffset;
     yOffset = other.yOffset;
     CharHeight = other.CharHeight;
+    CachedAddrBits = other.CachedAddrBits;
+    CachedDataBits = other.CachedDataBits;
   }
-
-  // public void bytesChanged(HexModel source, long start, long numBytes, int[] oldValues) {
-  //   System.out.println("bytesChanged - nop - why is this here?");
-  // }
-
-  // public void metainfoChanged(HexModel source) {
-  //   System.out.println("metainfoChanged - setbits - why is this here?");
-  //   // FIXME
-  //   setBits(contents.getLogLength(), contents.getWidth());
-  // }
 
   private void CalculateDisplayParameters(Graphics2D g,
       int offsetX, int offsetY,
       int DisplayWidth, int DisplayHeight) {
     RecalculateParameters = false;
-    int addrBits = getAddrBits();
+    int addrBits = contents.getLogLength();
     int dataBits = contents.getValueWidth();
+
+    CachedAddrBits = addrBits;
+    CachedDataBits = dataBits;
 
     CharHeight = StringUtil.estimateBounds("0".length(), FONT).getHeight();
     SpaceSize = StringUtil.estimateBounds(" ".length(), FONT).getWidth() * 3/4;
@@ -137,16 +133,6 @@ abstract class MemState implements ComponentData {
     yOffset = offsetY;
   }
 
-  //
-  // methods for accessing data within memory
-  //
-  int getAddrBits() {
-    return contents.getLogLength();
-  }
-
-  //
-  // graphical methods
-  //
   public long getAddressAt(int x, int y) {
     /*
      * This function returns the address of a data symbol inside the data
@@ -230,9 +216,11 @@ abstract class MemState implements ComponentData {
 
   private boolean classicAppearance = true;
   private int displayWidth = 0, displayHeight = 0;
+
   public void paint(Graphics2D g, int leftX, int topY,
       int offsetX, int offsetY,
       int DisplayWidth, int DisplayHeight, boolean classic, int dataLines) {
+    checkDimensions();
     if (RecalculateParameters || classicAppearance != classic || displayWidth != DisplayWidth || DisplayHeight != displayHeight) {
       classicAppearance = classic;
       displayWidth = DisplayWidth;
@@ -240,7 +228,7 @@ abstract class MemState implements ComponentData {
       CalculateDisplayParameters(g, offsetX, offsetY, DisplayWidth, DisplayHeight);
     }
     int BlockHeight = NrOfLines * (CharHeight + 2);
-    int TotalNrOfEntries = (1 << getAddrBits());
+    int TotalNrOfEntries = (1 << contents.getLogLength());
     g.setColor(Color.LIGHT_GRAY);
     g.fillRect(leftX + xOffset, topY + yOffset, DataBlockSize
         + AddrBlockSize, BlockHeight);
@@ -266,7 +254,7 @@ abstract class MemState implements ComponentData {
     for (int i = 0; i < NrOfLines; i++) {
       /* Draw address */
       GraphicsUtil.drawText(g,
-          StringUtil.toHexString(getAddrBits(), addr), leftX
+          StringUtil.toHexString(contents.getLogLength(), addr), leftX
           + xOffset + (AddrBlockSize / 2), firsty + i
           * (yinc), GraphicsUtil.H_CENTER,
           GraphicsUtil.V_CENTER_FIRST);
@@ -320,19 +308,18 @@ abstract class MemState implements ComponentData {
       curScroll = 0;
   }
 
-  // // FIXME: not needed?
-  // protected void setBits(int addrBits, int dataBits) {
-  //   RecalculateParameters = true;
-  //   if (contents == null) {
-  //     // FIXME - delete this
-  //     contents = MemContents.create(addrBits, dataBits);
-  //   } else {
-  //     contents.setDimensions(addrBits, dataBits);
-  //   }
-  //   cursorLoc = -1;
-  //   curAddr = -1;
-  //   curScroll = 0;
-  // }
+  private void checkDimensions() {
+    if (RecalculateParameters)
+      return;
+    int addrBits = contents.getLogLength();
+    int dataBits = contents.getValueWidth();
+    if (addrBits != CachedAddrBits || dataBits != CachedDataBits) {
+      RecalculateParameters = true;
+      cursorLoc = -1;
+      curAddr = -1;
+      curScroll = 0;
+    }
+  }
 
   void setCurrent(long value) {
     curAddr = isValidAddr(value) ? value : -1L;
@@ -343,9 +330,10 @@ abstract class MemState implements ComponentData {
   }
 
   void setScroll(long addr) {
+    checkDimensions();
     if (RecalculateParameters)
       return;
-    long maxAddr = (1 << getAddrBits())
+    long maxAddr = (1 << contents.getLogLength())
         - (NrOfLines * NrDataSymbolsEachLine);
     if (addr > maxAddr) {
       addr = maxAddr; // note: maxAddr could be negative
