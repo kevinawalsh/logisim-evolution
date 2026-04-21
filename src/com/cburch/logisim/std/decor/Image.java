@@ -42,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
@@ -71,6 +72,7 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Reshapable;
 import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.StringGetter;
 
 // Image just displays an image, which can be embedded in the project or
@@ -78,7 +80,7 @@ import com.cburch.logisim.util.StringGetter;
 // inputs, or outputs. 
 public class Image extends InstanceFactory implements Reshapable {
 
-  public ImageContentAttribute extends LinkedOrEmbedded<BufferedImage>.Attr {
+  public static class ImageContentAttribute extends LinkedOrEmbedded.Attr<BufferedImage> {
 
     public ImageContentAttribute(String name, StringGetter disp) {
       super(name, disp,
@@ -88,34 +90,47 @@ public class Image extends InstanceFactory implements Reshapable {
 
     @Override
     protected String encodeData(byte[] data) {
-      ByteArrayOutputStream result = new ByteArrayOutputStream();
-      result.write("\n".getBytes("UTF-8"));
-      byte[] LF = System.lineSeparator().getBytes("UTF-8"); // "\n" or "\r\n"
-      OutputStream encoded = Base64.getMimeEncoder(76, LF).wrap(result);
-      encoded.write(data, 0, data.length);
-      try { encoded.flush(); } catch (IOException e) { e.printStackTrace(); }
-      try { result.flush(); } catch (IOException e) { e.printStackTrace(); }
-      try { encoded.close(); } catch (IOException e) { e.printStackTrace(); }
-      try { result.close(); } catch (IOException e) { e.printStackTrace(); }
-      return new String(result.toByteArray(), "UTF-8");
+      try {
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        result.write('\n');
+        byte[] LF = System.lineSeparator().getBytes(StandardCharsets.UTF_8); // "\n" or "\r\n"
+        OutputStream encoded = Base64.getMimeEncoder(76, LF).wrap(result);
+        encoded.write(data, 0, data.length);
+        try { encoded.flush(); } catch (IOException e) { e.printStackTrace(); }
+        try { result.flush(); } catch (IOException e) { e.printStackTrace(); }
+        try { encoded.close(); } catch (IOException e) { e.printStackTrace(); }
+        try { result.close(); } catch (IOException e) { e.printStackTrace(); }
+        return new String(result.toByteArray(), StandardCharsets.UTF_8);
+      } catch (Exception ex) {
+        Debug.error(ex);
+        return "";
+      }
     }
 
     @Override
     protected byte[] decodeData(String fmt, String encoded) {
-      byte[] bytes = encoded.getBytes("UTF-8");
-      ByteArrayInputStream input = new ByteArrayInputStream(bytes, 5, bytes.length-5);
-      InputStream decoded = Base64.getMimeDecoder().wrap(input);
-      bytes = decoded.readAllBytes();
-      decoded.close();
-      input.close();
-      return bytes;
+      try {
+        byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
+        int offset = (bytes.length > 0 && bytes[0] == (byte)'\n') ? 1 : 0; // skip inital newline
+        ByteArrayInputStream input = new ByteArrayInputStream(bytes, offset, bytes.length-offset);
+        InputStream decoded = Base64.getMimeDecoder().wrap(input);
+        bytes = decoded.readAllBytes();
+        decoded.close();
+        input.close();
+        return bytes;
+      } catch (IOException ex) {
+        Debug.error(ex);
+        return new byte[0];
+      }
     }
 
     @Override
-    protected BufferedImage parseData(byte[] data) throws IOExeption {
+    protected BufferedImage parseData(byte[] data) throws IOException {
       ByteArrayInputStream stream = new ByteArrayInputStream(data);
       BufferedImage img = ImageIO.read(stream);
       stream.close();
+      if (img == null)
+        throw new IOException("Data does not contain an image");
       return img;
     }
 
@@ -314,7 +329,7 @@ public class Image extends InstanceFactory implements Reshapable {
     AttributeSet copy = (AttributeSet) imageTool.getAttributeSet().clone();
     Component comp = imageTool.getFactory().createComponent(loc, copy);
     comp.getAttributeSet().setAttr(ATTR_IMAGE_CONTENT,
-        new LinkedOrEmbedded<BufferedImage>("PNG", true, null, null, imgData, ATTR_IMAGE_CONTENT::parseData));
+        new LinkedOrEmbedded<BufferedImage>("PNG", imgData, img));
     return comp;
   }
 
@@ -365,7 +380,7 @@ public class Image extends InstanceFactory implements Reshapable {
     corner = corner.translate(rdx, rdy);
 
     LinkedOrEmbedded<BufferedImage> embed = attrs.getValue(ATTR_IMAGE_CONTENT);
-    BufferedImage img = embed == null ? null : embed.getImage();
+    BufferedImage img = embed == null ? null : embed.getContent();
     int w = 20, h = 20;
     if (img != null) {
       w = img.getWidth();

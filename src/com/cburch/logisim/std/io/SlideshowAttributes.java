@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.std.io;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +38,7 @@ import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.BitWidth;
-import com.cburch.logisim.std.decor.Image;
+import com.cburch.logisim.data.LinkedOrEmbedded;
 
 class SlideshowAttributes extends AbstractAttributeSet {
 
@@ -45,7 +46,8 @@ class SlideshowAttributes extends AbstractAttributeSet {
   int count = 4;
   int width = 320;
   int height = 240;
-  Image.ImageContent[] slides = new Image.ImageContent[Slideshow.MAX_SLIDES];
+  @SuppressWarnings("unchecked")
+  LinkedOrEmbedded<BufferedImage>[] slides = (LinkedOrEmbedded<BufferedImage>[]) new LinkedOrEmbedded[Slideshow.MAX_SLIDES];
   AttributeOption fit = Slideshow.SCALE;
 
   public SlideshowAttributes() { }
@@ -89,6 +91,7 @@ class SlideshowAttributes extends AbstractAttributeSet {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <V> void updateAttr(Attribute<V> attr, V value) {
     if (attr == Slideshow.ATTR_WIDTH)
       addrWidth = (BitWidth) value;
@@ -108,7 +111,7 @@ class SlideshowAttributes extends AbstractAttributeSet {
     else {
       for (int i = 0; i < count; i++) {
         if (attr == Slideshow.ATTR_SLIDE.get(i)) {
-          slides[i] = (Image.ImageContent) value;
+          slides[i] = (LinkedOrEmbedded<BufferedImage>) value;
           break;
         }
       }

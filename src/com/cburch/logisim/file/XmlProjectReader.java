@@ -597,6 +597,40 @@ public class XmlProjectReader extends XmlReader {
           });
     }
 
+    if (version.compareTo(LogisimVersion.get(5, 1, 5)) < 0) {
+      // As of version 5.1.5, FileViewer has a single attribute in place of a
+      // dynamically-changing set
+      //   storage="embed" and contents="..." --> content="text:..."
+      //   storage="link" and filename="..." --> content="file:..."
+      repairComponentsAndTools(doc, root, "#Decor", "FileViewer",
+          (elt, name) -> {
+            String storage = null, value = null;
+            Element storageElt = null, valueElt = null;
+            for (Element attrElt : XmlIterator.forChildElements(elt, "a")) {
+              String n = attrElt.getAttribute("name");
+              if ("storage".equals(n)) {
+                storage = attrElt.getAttribute("val");
+                storageElt = attrElt;
+              } else if ("contents".equals(n) || "filename".equals(n)) {
+                value = attrElt.getAttribute("val");
+                valueElt = attrElt;
+              }
+            }
+            String newVal = null;
+            if ("embed".equals(storage) && valueElt != null)
+              newVal = "text:" + value;
+            else if ("link".equals(storage) && valueElt != null)
+              newVal = "file:" + value;
+            if (newVal != null) {
+              elt.removeChild(storageElt);
+              elt.removeChild(valueElt);
+              Element a = doc.createElement("a");
+              a.setAttribute("name", "content");
+              a.setAttribute("val", newVal);
+              elt.insertBefore(a, elt.getFirstChild());
+            }
+          });
+    }
   }
 
   @FunctionalInterface

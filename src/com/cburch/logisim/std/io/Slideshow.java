@@ -43,6 +43,7 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.LinkedOrEmbedded;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -56,25 +57,27 @@ public class Slideshow extends InstanceFactory {
 
   private static class State implements ComponentData {
     int w, h, n;
-    Image.ImageContent[] slides; // always large enough for MAX_SLIDES
+    LinkedOrEmbedded<BufferedImage>[] slides; // always large enough for MAX_SLIDES
     int cur;
 
+    @SuppressWarnings("unchecked")
     State(int w, int h, int n) {
       this.w = w;
       this.h = h;
       this.n = n;
-      this.slides = new Image.ImageContent[MAX_SLIDES];
+      this.slides = (LinkedOrEmbedded<BufferedImage>[]) new LinkedOrEmbedded[MAX_SLIDES];
       this.cur = -1;
     }
 
+    @SuppressWarnings("unchecked")
     State(State other) {
       w = other.w;
       h = other.h;
       n = other.n;
       cur = other.cur;
-      slides = new Image.ImageContent[MAX_SLIDES];
+      this.slides = (LinkedOrEmbedded<BufferedImage>[]) new LinkedOrEmbedded[MAX_SLIDES];
       for (int i = 0; i < n; i++)
-        slides[i] = new Image.ImageContent(other.slides[i]);
+        slides[i] = new LinkedOrEmbedded<>(other.slides[i]);
     }
 
     void updateSize(int w, int h, int n) {
@@ -85,7 +88,7 @@ public class Slideshow extends InstanceFactory {
         this.cur = -1;
     }
 
-    void updateSlide(int i, Image.ImageContent s) {
+    void updateSlide(int i, LinkedOrEmbedded<BufferedImage> s) {
       if (i < 0 | i >= n)
         return;
       slides[i] = s;
@@ -103,7 +106,7 @@ public class Slideshow extends InstanceFactory {
       if (cur < 0 || slides[cur] == null) {
         return null;
       }
-      return slides[cur].getImage();
+      return slides[cur].getContent();
     }
 
     @Override
@@ -139,7 +142,7 @@ public class Slideshow extends InstanceFactory {
   public static final Attribute<Integer> ATTR_IMG_HEIGHT =
       Attributes.forIntegerRange("height", S.getter("ioSlideshowHeight"), 10, 640);
  
-  public static final ArrayList<Attribute<Image.ImageContent>> ATTR_SLIDE = new ArrayList<>();
+  public static final ArrayList<Image.ImageContentAttribute> ATTR_SLIDE = new ArrayList<>();
   static {
     for (int i = 0; i < MAX_SLIDES; i++)
       ATTR_SLIDE.add(new Image.ImageContentAttribute("image"+i, S.getter("ioSlideshowImage", ""+i)));

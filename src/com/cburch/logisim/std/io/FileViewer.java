@@ -34,18 +34,15 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.Window;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
@@ -54,8 +51,8 @@ import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.data.LinkedOrEmbedded;
 import com.cburch.logisim.file.Loader;
-import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -63,8 +60,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
-import com.cburch.logisim.util.JFileChoosers;
-import com.cburch.logisim.util.JInputDialog;
 
 public class FileViewer extends InstanceFactory {
 
@@ -170,137 +165,38 @@ public class FileViewer extends InstanceFactory {
     // void selectOffset(int offset) { }
   }
 
-  private static class LinkedFileState extends State {
-    long timestamp = 0;
-    Attributes.LinkedFile source = null;
+  private static class ContentsAttribute extends LinkedOrEmbedded.Attr<List<String>> {
 
-    LinkedFileState(int lines, int cols, Attributes.LinkedFile src) {
-      super(lines, cols);
-      updateSource(src);
-    }
-
-    void updateSource(Attributes.LinkedFile src) {
-      if (((this.source == null && src == null)
-           || this.source != null && this.source.equals(src))) {
-        return;
-      }
-      source = src;
-      if (source == null) {
-        timestamp = 0;
-        updateContents(null);
-        return;
-      }
-      timestamp = source.absolute.lastModified();
-      try {
-        List<String> data;
-        data = Files.readAllLines(source.absolute.toPath(), StandardCharsets.UTF_8);
-        updateContents(data);
-      } catch (IOException e) {
-        updateContents(null);
-        // maybe don't warn?
-        System.out.println("file access error: " + source.relative);
-        // JOptionPane.showMessageDialog(null, e.getMessage(),
-        //     S.get("fileViewerLoadErrorTitle"),
-        //     JOptionPane.ERROR_MESSAGE);
-      }
-    }
-
-    void reloadFile() {
-      if (source == null)
-        return;
-      long ts = source.absolute.lastModified();
-      if (ts == timestamp)
-        return;
-      timestamp = ts;
-      try {
-        List<String> data;
-        data = Files.readAllLines(source.absolute.toPath(), StandardCharsets.UTF_8);
-        updateContents(data);
-      } catch (IOException e) {
-        updateContents(null);
-        // maybe don't warn?
-        System.out.println("file access error: " + source.relative);
-      }
-    }
-
-    void selectLine(int lineno) {
-      reloadFile();
-      super.selectLine(lineno);
-    }
-
-    void selectAddr(int addr) {
-      reloadFile();
-      super.selectAddr(addr);
-    }
-
-  }
-
-  private static class FileChooser extends java.awt.Component implements JInputDialog<List<String>> {
-    JFileChooser chooser;
-    Frame parent;
-    List<String> result;
-
-    FileChooser(Frame parent, List<String> r) {
-      this.parent = parent;
-      this.result = r;
-      chooser = JFileChoosers.create();
-      chooser.setDialogTitle(S.get("ioFileViewerLoadDialogTitle"));
-      chooser.setFileFilter(Loader.TXT_FILTER);
-    }
-
-    public void setValue(List<String> r) {
-      result = r;
-    }
-
-    public List<String> getValue() {
-      return result;
-    }
-
-    public void setVisible(boolean b) {
-      if (!b)
-        return;
-      int choice = chooser.showOpenDialog(parent);
-      if (choice == JFileChooser.APPROVE_OPTION) {
-        File f = chooser.getSelectedFile();
-        try {
-          result = Files.readAllLines(f.toPath(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-          JOptionPane.showMessageDialog(parent, e.getMessage(),
-              S.get("fileViewerLoadErrorTitle"),
-              JOptionPane.ERROR_MESSAGE);
-        }
-      }
-    }
-  }
-
-  private static class ContentsAttribute extends Attribute<List<String>> {
     public ContentsAttribute() {
-      super("contents", S.getter("ioFileViewerContents"));
+      super("contents", S.getter("ioFileViewerContents"),
+        S.getter("ioFileViewerLoadDialogTitle"),
+        Loader.TXT_FILTER);
     }
 
     @Override
-    public java.awt.Component getCellEditor(Window source, List<String> s) {
-      return new FileChooser((Frame)source, s);
+    protected String encodeData(byte[] data) {
+      return new String(data, StandardCharsets.UTF_8);
     }
 
     @Override
-    public String toDisplayString(List<String> value) {
-      return S.get("ioFileViewerClickToLoad");
+    protected byte[] decodeData(String fmt, String encoded) {
+      return encoded.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
-    public String toStandardString(List<String> value) {
-      return String.join("\n", value);
+    protected List<String> parseData(byte[] data) throws IOException {
+      List<String> lines = new ArrayList<>();
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(new ByteArrayInputStream(data), StandardCharsets.UTF_8));
+      String line;
+      while ((line = reader.readLine()) != null)
+        lines.add(line);
+      return lines;
     }
 
     @Override
-    public List<String> parse(String str) {
-      return Arrays.asList(str.split("\\R"));
-    }
-
-    @Override
-    public Domain getDomain() {
-      return Domain.ofDescription("multi-line text");
+    protected String formatForPath(File f) {
+      return "text";
     }
   }
 
@@ -315,15 +211,6 @@ public class FileViewer extends InstanceFactory {
       Attributes.forOption("select", S.getter("ioFileViewerSelect"),
           new AttributeOption[] { BY_LINE, BY_ADDR, /* BY_OFFSET, */ });
 
-  static final AttributeOption FILE_EMBED = new AttributeOption("embed",
-      S.getter("ioFileViewerEmbedFile"));
-  static final AttributeOption FILE_LINK = new AttributeOption("link",
-      S.getter("ioFileViewerLinkFile"));
-
-  static final Attribute<AttributeOption> ATTR_STORAGE = 
-      Attributes.forOption("storage", S.getter("ioFileViewerStorage"),
-          new AttributeOption[] { FILE_EMBED, FILE_LINK });
-
   static final Attribute<Integer> ATTR_LINES =
       Attributes.forIntegerRange("lines", S.getter("ioFileViewerLines"), 1, 60);
   static final Attribute<Integer> ATTR_COLS =
@@ -333,12 +220,14 @@ public class FileViewer extends InstanceFactory {
 
   static final ContentsAttribute ATTR_CONTENTS = new ContentsAttribute();
 
-  static final Attribute<Attributes.LinkedFile> ATTR_FILENAME = Attributes.forFilename("filename",
-      S.getter("ioFileViewerFilename"), S.getter("ioFileViewerLoadDialogTitle"),
-      Loader.TXT_FILTER);
-
   public FileViewer() {
     super("FileViewer", S.getter("fileViewerComponent"));
+    setAttributes(new Attribute[] {
+      FileViewer.ATTR_WIDTH, FileViewer.ATTR_LINES, FileViewer.ATTR_COLS,
+        FileViewer.ATTR_SELECT, FileViewer.ATTR_CONTENTS
+    }, new Object[] {
+     BitWidth.create(16), 5, 40, BY_LINE, ATTR_CONTENTS.EMPTY
+    });
     setKeyConfigurator(new BitWidthConfigurator(ATTR_WIDTH, 1, 30));
     setIconName("fileviewer.gif");
     setPorts(new Port[] { new Port(0, 0, Port.INPUT, ATTR_WIDTH) });
@@ -348,11 +237,6 @@ public class FileViewer extends InstanceFactory {
   @Override
   protected void configureNewInstance(Instance instance) {
     instance.addAttributeListener();
-  }
-
-  @Override
-  public AttributeSet createAttributeSet() {
-    return new FileViewerAttributes();
   }
 
   @Override
@@ -367,33 +251,25 @@ public class FileViewer extends InstanceFactory {
     return Bounds.create(0, -h/2, w, h);
   }
 
+  private static final List<String> EMPTY_LIST = List.of("");
+
   private State getState(InstanceState state) {
     int lines = state.getAttributeValue(ATTR_LINES).intValue();
     int cols = state.getAttributeValue(ATTR_COLS).intValue();
-    if (state.getAttributeValue(ATTR_STORAGE) == FILE_EMBED) {
-      List<String> contents = state.getAttributeValue(ATTR_CONTENTS);
-      State data = (State) state.getDataAsCustom();
-      if (data == null) {
-        data = new State(lines, cols, contents);
-        state.setData(data);
-      } else {
-        data.updateSize(lines, cols);
-        data.updateContents(contents);
-      }
-      return data;
+    LinkedOrEmbedded<List<String>> embed = state.getAttributeValue(ATTR_CONTENTS);
+    List<String> contents = embed == null ? null : embed.getContent();
+    if (contents == null)
+      contents = EMPTY_LIST;
+
+    State data = (State) state.getDataAsCustom();
+    if (data == null) {
+      data = new State(lines, cols, contents);
+      state.setData(data);
     } else {
-      Attributes.LinkedFile source = state.getAttributeValue(ATTR_FILENAME);
-      State data = (State) state.getDataAsCustom();
-      if (data == null || !(data instanceof LinkedFileState)) {
-        data = new LinkedFileState(lines, cols, source);
-        state.setData(data);
-      } else {
-        LinkedFileState linkedData = (LinkedFileState) data;
-        linkedData.updateSize(lines, cols);
-        linkedData.updateSource(source);
-      }
-      return data;
+      data.updateSize(lines, cols);
+      data.updateContents(contents);
     }
+    return data;
   }
 
   @Override

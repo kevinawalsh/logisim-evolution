@@ -56,6 +56,7 @@ import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.util.Debug;
+import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JFileChoosers;
 import com.cburch.logisim.util.JInputDialog;
 import com.cburch.logisim.util.StringGetter;
@@ -64,52 +65,55 @@ import com.cburch.logisim.util.StringGetter;
 //  - file path in circ file, which is read and parsed into a Thing
 //  - raw bytes in circ file, which is parsed into a Thing
 //  - empty
-// For linked content: format and absolute are valid, content and timestamp used as cache
-// For embedded content: format and data are valid, content is valid if possible
-// For empty content: both absolute and data are null, format is "empty"
-
-public static class LinkedOrEmbedded<Thing> {
+public class LinkedOrEmbedded<Thing> {
 
   @FunctionalInterface
-  public interface Parser {
+  public interface Parser<Thing> {
     Thing parse(byte[] data) throws IOException;
   }
 
-  private final format; // "empty", or some custom tag like "text", "PNG", "JPG", etc.
-  private final embedded; // whether data is embedded in circ file, or linked via file path
-  private final File absolute, relative; // only for linked, non-null
-  private final byte[] data; // only for embedded, non-null
-  private final Parser parser;
+  // For linked content: format and absolute are valid, content and timestamp used as cache
+  // For embedded content: format and data are valid, content is valid if possible
+  // For empty content: both absolute and data are null, format is "empty"
+  private final String format; // "empty", or some custom tag like "text", "PNG", "JPG", etc.
+  private final File absolute, relative; // non-null iff linked content
+  private final Parser<Thing> parser; // non-null iff linked content
+  private final byte[] data; // non-null iff embedded content
 
   private Thing content; // parsed from data or file, or null if empty
   private long timestamp; // only for linked: file timestamp when data was last parsed
+  
+  // Constructor for empty content
+  public LinkedOrEmbedded() {
+    format = "empty";
+    absolute = relative = null;
+    parser = null;
+    data = null;
+  }
 
-  public LinkedOrEmbedded(String fmt, boolean e, File a, File r, byte[] d, Parser p) {
+  // Constructor for linked content; later exceptions from parser are suppresed
+  public LinkedOrEmbedded(String fmt, File a, File r, Parser<Thing> p) {
     format = fmt;
-    embedded = e;
     absolute = a;
     relative = r;
-    data = d;
     parser = p;
-    if (embedded) {
-      try {
-        content = parser.parse(data);
-      } catch (IOException e) {
-        Debug.error(e);
-      }
-    }
+    data = null;
   }
 
-  // normally f should be absolute here
-  public LinkedOrEmbedded(String fmt, File f, Window source, Parser p) {
-    this(fmt, false, resolve(f, source), relativize(f, source), null, p);
+  // Constructor for embedded content; may have exception now, no later exceptions
+  public LinkedOrEmbedded(String fmt, byte[] d, Thing c) {
+    format = fmt;
+    absolute = relative = null;
+    parser = null;
+    data = d;
+    content = c;
   }
 
-  public LinkedOrEmbedded(LinkedOrEmbeded<Thing> other) {
+  public LinkedOrEmbedded(LinkedOrEmbedded<Thing> other) {
     this.format = other.format;
-    this.embedded = other.embedded;
     this.relative = other.relative;
     this.absolute = other.absolute;
+    this.parser = other.parser;
     this.data = other.data;
     this.content = other.content;
     this.timestamp = other.timestamp;
@@ -126,11 +130,11 @@ public static class LinkedOrEmbedded<Thing> {
     if (ts == timestamp)
       return content; // cached
     timestamp = ts;
-    byte[] fileData = Files.readAllBytes(f.toPath());
     try {
+      byte[] fileData = Files.readAllBytes(absolute.toPath());
       content = parser.parse(fileData);
     } catch (IOException e) {
-      Debug.error(e);
+      Debug.error("Failed to parse " + absolute, e);
     }
     return content;
   }
@@ -168,9 +172,10 @@ public static class LinkedOrEmbedded<Thing> {
     return abs;
   }
 
-  public static final LinkedOrEmbedded<Thing> EMPTY = new LinkedOrEmbedded<>("empty", false, null, null, null);
 
-  public static abstract class Attr extends Attribute<LinkedOrEmbedded<Thing>> {
+  public static abstract class Attr<Thing> extends Attribute<LinkedOrEmbedded<Thing>> {
+
+    public final LinkedOrEmbedded<Thing> EMPTY = new LinkedOrEmbedded<>();
 
     // encode raw data (e.g. from file, or from decoded circ) so it can appear after "fmt:" in circ file
     protected abstract String encodeData(byte[] data);
@@ -184,7 +189,7 @@ public static class LinkedOrEmbedded<Thing> {
     protected StringGetter dialogTitle;
     protected FileFilter[] filters;
 
-    public LinkedOrEmbeddedAttribute(String name, StringGetter desc, StringGetter dialogTitle, FileFilter... filters) {
+    public Attr(String name, StringGetter desc, StringGetter dialogTitle, FileFilter... filters) {
       super(name, desc);
       this.dialogTitle = dialogTitle;
       this.filters = filters;
@@ -192,7 +197,7 @@ public static class LinkedOrEmbedded<Thing> {
 
     @Override
     public java.awt.Component getCellEditor(Window source, LinkedOrEmbedded<Thing> s) {
-      return new EmbeddedChooser<>(this, (Frame)source, s);
+      return new Chooser<>(this, (Frame)source, s);
     }
 
     @Override
@@ -212,10 +217,10 @@ public static class LinkedOrEmbedded<Thing> {
 
     @Override
     public String toStandardStringRelative(LinkedOrEmbedded<Thing> value, String outFilename) {
-      if (value == null) {
+      if (value == null || value.isEmpty()) {
         return "";
       }
-      if (value.embedded) {
+      if (value.data != null) {
         // embedded, encode existing data
         return value.format+":"+encodeData(value.data);
       } else if (outFilename == null || outFilename.equals("")) {
@@ -242,7 +247,7 @@ public static class LinkedOrEmbedded<Thing> {
     }
 
     @Override
-    public LinkedOrEmbeded<Thing> parseFromFilesystem(File directory, String value) {
+    public LinkedOrEmbedded<Thing> parseFromFilesystem(File directory, String value) {
       if (value == null || value.equals("")) {
         return EMPTY;
       }
@@ -257,28 +262,37 @@ public static class LinkedOrEmbedded<Thing> {
       String fmt = value.substring(0, idx);
       String encoded = value.substring(idx+1);
       byte[] data = decodeData(fmt, encoded);
-      return new LinkedOrEmbedded(fmt, true, null, null, data, (d) -> parseData(d));
+      Thing content = null;
+      try {
+        content = parseData(data);
+      } catch (IOException e) {
+        Errors.title(S.get("stdEmbedParseErrorTitle")).show(S.get("stdEmbedParseErrorMessage"), e);
+      }
+      return new LinkedOrEmbedded<>(fmt, data, content);
     }
 
-    private LinkedOrEmbeded<Thing> parsePathFromFilesystem(File directory, String path) {
+    private LinkedOrEmbedded<Thing> parsePathFromFilesystem(File directory, String path) {
       if (path == null || path.equals(""))
         return null;
       if (directory == null || directory.toString().equals("")) {
         // happens when copy-pasting
-        File f = new File(value);
-        String fmt = formatForPath(f);
-        return new LinkedOrEmbedded<>(fmt, false, f, f, null, this::parseData);
+        File abs = new File(path);
+        File rel = abs;
+        String fmt = formatForPath(abs);
+        return new LinkedOrEmbedded<>(fmt, abs, rel, this::parseData);
+      } else {
+        // happens when loading from Xml
+        Path parent = directory.toPath();
+        Path abs = parent.resolve(new File(path).toPath());
+        Path rel;
+        try {
+          rel = parent.toRealPath().relativize(abs.toRealPath());
+        } catch (IOException ex) {
+          rel = parent.relativize(abs);
+        }
+        String fmt = formatForPath(abs.toFile());
+        return new LinkedOrEmbedded<>(fmt, abs.toFile(), rel.toFile(), this::parseData);
       }
-      Path parent = directory.toPath();
-      Path abs = parent.resolve(new File(value).toPath());
-      Path rel;
-      try {
-        rel = parent.toRealPath().relativize(abs.toRealPath());
-      } catch (IOException ex) {
-        rel = parent.relativize(abs);
-      }
-      String fmt = formatForPath(abs.toFile());
-      return new LinkedOrEmbedded<>(fmt, false, abs.toFile(), rel.toFile(), null, this::parseData);
     }
 
     @Override
@@ -289,13 +303,13 @@ public static class LinkedOrEmbedded<Thing> {
   }
 
 
-  private static class Chooser extends java.awt.Component implements JInputDialog<LinkedOrEmbedded<Thing>> {
+  private static class Chooser<Thing> extends java.awt.Component implements JInputDialog<LinkedOrEmbedded<Thing>> {
     
     private final Frame parent;
-    private final Attr attr;
+    private final Attr<Thing> attr;
     private LinkedOrEmbedded<Thing> result;
 
-    Chooser(Attr attr, Frame parent, ImageContent r) {
+    Chooser(Attr<Thing> attr, Frame parent, LinkedOrEmbedded<Thing> r) {
       this.attr = attr;
       this.parent = parent;
       this.result = r;
@@ -331,7 +345,7 @@ public static class LinkedOrEmbedded<Thing> {
         menu.show(parent, loc.x, loc.y);
         loop.enter();
         if (choice[0] == 1) { // remove
-          result = EMPTY;
+          result = attr.EMPTY;
           return;
         } else if (choice[0] != 0) { // dismissed without selection
           return;
@@ -339,13 +353,8 @@ public static class LinkedOrEmbedded<Thing> {
         // choice[0] == 0: fall through to file dialog
       }
 
-      JInputDialog<Attributes.LinkedFile> chooser =
-        (JInputDialog<Attributes.LinkedFile>)
-        ATTR_FILENAME_SINGLETON.getCellEditor(parent, result == null ? null : result.source);
-
-      // HERE
       JFileChooser chooser = JFileChoosers.create();
-      chooser.setDialogTitle(attr.dialogTitle);
+      chooser.setDialogTitle(attr.dialogTitle.toString());
       if (result == null || result.absolute == null) {
         chooser.setSelectedFile(null);
       } else if (result.absolute.isDirectory()) {
@@ -355,8 +364,10 @@ public static class LinkedOrEmbedded<Thing> {
         chooser.setSelectedFile(result.absolute);
       }
       if (attr.filters != null && attr.filters.length != 0) {
-        for (FileFilter ff : attr.filters)
+        chooser.setAcceptAllFileFilterUsed(false);
+        for (FileFilter ff : attr.filters) {
           chooser.addChoosableFileFilter(ff);
+        }
         chooser.setFileFilter(attr.filters[0]);
       }
 
@@ -370,17 +381,18 @@ public static class LinkedOrEmbedded<Thing> {
       byte[] data = null;
       try {
         // read all data in case of embed, also for sanity check
-        data = Files.readAll(absolute.toPath());
+        data = Files.readAllBytes(absolute.toPath());
         // size is needed
         size = data.length;
       } catch (IOException e) {
         Errors.title(S.get("stdEmbedUnreadableTitle")).show(S.get("stdEmbedUnreadableMessage"), e);
         return;
       }
+      Thing content = null;
       try {
         // try to parse, to surface errors, fail if can't parse
         if (data != null)
-          attr.parseData(data);
+          content = attr.parseData(data);
       } catch (IOException e) {
         Errors.title(S.get("stdEmbedParseErrorTitle")).show(S.get("stdEmbedParseErrorMessage"), e);
         return;
@@ -390,16 +402,17 @@ public static class LinkedOrEmbedded<Thing> {
         S.get("stdEmbedEmbedOption"),
         S.get("stdEmbedLinkOption"),
         S.get("stdEmbedCancelOption") };
-      int choice = JOptionPane.showOptionDialog(parent,
+      choice = JOptionPane.showOptionDialog(parent,
           String.format(S.get("stdEmbedStorageDialogQuestion"), size),
           S.get("stdEmbedStorageDialogTitle"), 0,
           JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
       if (choice == 0) { // embed
         String fmt = attr.formatForPath(absolute);
-        result = new LinkedOrEmbedded<>(fmt, true, null, null, data, attr::parseData);
+        result = new LinkedOrEmbedded<>(fmt, data, content);
       } else if (choice == 1) { // link
         String fmt = attr.formatForPath(absolute);
-        result = new LinkedOrEmbedded<>(fmt, absolute, parent, attr::parseData);
+        File relative = relativize(absolute, parent);
+        result = new LinkedOrEmbedded<>(fmt, absolute, relative, attr::parseData);
       } else { // cancel
         return;
       }

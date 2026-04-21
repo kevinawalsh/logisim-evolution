@@ -62,6 +62,7 @@ import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
+import com.cburch.logisim.util.Debug;
 
 public class XmlReader {
 
@@ -82,7 +83,12 @@ public class XmlReader {
           if (comp != null)
             knownComponents.put(e, comp);
       } catch (XmlReaderException ex) {
-        ctx.addErrors(ex, "parsing component from xml");
+        String factory = e.getAttribute("name");
+        String name = "component";
+        if (factory != null && !factory.equals(""))
+          name = "'" + factory + "' component";
+        ctx.addErrors(ex, "parsing " + name + " from xml");
+        knownComponents.put(e, null); // mark failed so buildCircuit doesn't retry
       }
       // load appearance
       for (Element e : XmlIterator.forChildElements(elt, "appear"))
@@ -293,9 +299,12 @@ public class XmlReader {
           try {
             Object val = attr.parseFromFilesystem(new File(srcDirPath), attrVal);
             attrs.setAttr(attr, val);
-          } catch (NumberFormatException e) {
+          } catch (Exception e) {
+            Debug.error(e);
             if (messages == null)
               messages = new ArrayList<String>();
+            if (attrVal != null && attrVal.length() > 30)
+              attrVal = attrVal.substring(0, 15)+"...";
             messages.add(S.fmt("attrValueInvalidError", attrVal, attrName));
           }
         }

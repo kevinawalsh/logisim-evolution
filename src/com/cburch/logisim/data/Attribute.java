@@ -76,7 +76,7 @@ public abstract class Attribute<V> {
     return parse(value);
   }
 
-  public V parseFromFilesystem(File directory, String value) {
+  public V parseFromFilesystem(File directory, String value) throws Exception {
     return parse(value);
   }
 
