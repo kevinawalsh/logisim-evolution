@@ -104,10 +104,7 @@ class PinAttributes extends ProbeAttributes {
       type = (AttributeOption) value;
       fireAttributeListChanged();
     } else if (attr == Pin.ATTR_BEHAVIOR) {
-      if (behavior != value) {
-        behavior = (AttributeOption) value;
-        fireAttributeListChanged(); // not needed?
-      }
+      behavior = (AttributeOption) value;
     } else {
       super.updateAttr(attr, value);
     }
