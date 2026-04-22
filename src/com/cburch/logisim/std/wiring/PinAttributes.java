@@ -101,8 +101,8 @@ class PinAttributes extends ProbeAttributes {
     if (attr == StdAttr.WIDTH) {
       width = (BitWidth) value;
     } else if (attr == Pin.ATTR_TYPE) {
-      fireAttributeListChanged();
       type = (AttributeOption) value;
+      fireAttributeListChanged();
     } else if (attr == Pin.ATTR_BEHAVIOR) {
       if (behavior != value) {
         behavior = (AttributeOption) value;
