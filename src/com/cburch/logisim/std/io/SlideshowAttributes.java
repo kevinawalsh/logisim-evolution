@@ -53,7 +53,9 @@ class SlideshowAttributes extends AbstractAttributeSet {
   public SlideshowAttributes() { }
 
   @Override
-  protected void copyInto(AbstractAttributeSet destObj) { /* nothing to do */ }
+  protected void copyInto(AbstractAttributeSet destObj) { 
+    ((SlideshowAttributes)destObj).slides = this.slides.clone();
+  }
 
   @Override
   public List<Attribute<?>> getAttributes() {
