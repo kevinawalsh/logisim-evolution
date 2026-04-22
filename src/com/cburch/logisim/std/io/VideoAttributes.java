@@ -108,8 +108,8 @@ class VideoAttributes extends AbstractAttributeSet {
       reset = (String) value;
     if (attr == Video.BLANK_OPTION) {
       if (value != blank) {
-        fireAttributeListChanged(); // why before changing value
         blank = (String) value;
+        fireAttributeListChanged();
       }
     }
     if (attr == Video.FIXED_OPTION)
