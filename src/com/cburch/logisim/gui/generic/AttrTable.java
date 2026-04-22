@@ -122,6 +122,7 @@ public class AttrTable extends JPanel implements LocaleListener {
     int[] currentRowIndexes;
     Component currentEditor;
     boolean multiEditActive = false;
+    EventObject pendingEditEvent;
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -234,11 +235,19 @@ public class AttrTable extends JPanel implements LocaleListener {
           rowIndexes = null;
         }
       } else if (editor instanceof JInputDialog<?>) {
+        if (!(pendingEditEvent instanceof MouseEvent)) {
+          SwingUtilities.invokeLater(this::fireEditingCanceled);
+          return new JLabel(row.getDisplayString());
+        }
         JInputDialog<?> dlg = (JInputDialog<?>) editor;
         String text = row.getDisplayString();
-        editor = new PopupEditor(text, this, 
+        editor = new PopupEditor(text, this,
             () -> { dlg.setVisible(true); return dlg.getValue(); });
       } else if (editor instanceof JInputComponent<?>) {
+        if (!(pendingEditEvent instanceof MouseEvent)) {
+          SwingUtilities.invokeLater(this::fireEditingCanceled);
+          return new JLabel(row.getDisplayString());
+        }
         JInputComponent<?> input = (JInputComponent<?>) editor;
         MyDialog dlg = new MyDialog(input);
         String text = row.getDisplayString();
@@ -270,7 +279,10 @@ public class AttrTable extends JPanel implements LocaleListener {
     }
 
     @Override
-    public boolean isCellEditable(EventObject anEvent) { return true; }
+    public boolean isCellEditable(EventObject anEvent) {
+      pendingEditEvent = anEvent;
+      return true;
+    }
 
     @Override
     public void removeCellEditorListener(CellEditorListener l) {
