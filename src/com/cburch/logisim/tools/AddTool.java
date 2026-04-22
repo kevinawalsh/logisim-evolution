@@ -562,8 +562,12 @@ public class AddTool extends Tool {
 
   public synchronized void snapToMouse(Canvas canvas) {
     Point p = canvas.getMousePosition();
-    if (p != null)
-      moveTo(canvas, p.x, p.y);
+    if (p != null) {
+      double zoom = canvas.getZoomFactor();
+      int x = (int) Math.round(p.x / zoom);
+      int y = (int) Math.round(p.y / zoom);
+      moveTo(canvas, x, y);
+    }
   }
 
   private synchronized void moveTo(Canvas canvas, int x, int y) {

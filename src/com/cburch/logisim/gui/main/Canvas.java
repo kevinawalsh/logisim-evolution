@@ -943,7 +943,7 @@ public class Canvas extends JPanel
   //
   // graphics methods
   //
-  double getZoomFactor() {
+  public double getZoomFactor() {
     CanvasPane pane = canvasPane;
     return pane == null ? 1.0 : pane.getZoomFactor();
   }

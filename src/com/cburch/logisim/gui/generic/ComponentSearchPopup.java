@@ -223,9 +223,12 @@ public class ComponentSearchPopup extends JPanel {
 
   // ----- public API -----
 
-  /** Show the popup anchored to the given canvas-local pixel position. */
+  /** Show the popup anchored to the given canvas model coordinate position. */
   public void showAt(int canvasX, int canvasY) {
-    anchorY     = canvasY;
+    double zoom = canvas.getZoomFactor();
+    int screenX  = (int) Math.round(canvasX * zoom);
+    int screenY  = (int) Math.round(canvasY * zoom);
+    anchorY     = screenY;
     scrollOffset = 0;
     initMetrics();
     computeWindowSize();  // sets flipped and windowSize
@@ -235,11 +238,11 @@ public class ComponentSearchPopup extends JPanel {
     int w = getPreferredSize().width;
     int h = getPreferredSize().height;
 
-    int x = canvasX + 8;
+    int x = screenX + 8;
     if (x + w > view.x + view.width)
-      x = canvasX - w - 4;
+      x = screenX - w - 4;
 
-    int y = flipped ? canvasY - h - 4 : canvasY + 8;
+    int y = flipped ? screenY - h - 4 : screenY + 8;
 
     setBounds(x, y, w, h);
     canvas.add(this);
