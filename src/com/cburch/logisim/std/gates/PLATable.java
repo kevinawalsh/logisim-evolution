@@ -707,8 +707,11 @@ public class PLATable {
         add(text);
         addMouseListener(new MouseAdapter() {
           public void mousePressed(MouseEvent e) { setBorder(clickBorder); }
-          public void mouseReleased(MouseEvent e) { setBorder(stdBorder); }
-          public void mouseClicked(MouseEvent e) { text.setText("" + clicked()); }
+          public void mouseReleased(MouseEvent e) {
+            setBorder(stdBorder);
+            if (contains(e.getPoint()))
+              text.setText("" + clicked());
+          }
         });
       }
     }
