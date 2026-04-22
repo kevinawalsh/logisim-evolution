@@ -488,7 +488,7 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
     @Override
     public String toDisplayString(ColorModelColor value) {
       if (value == null)
-        return "0x0";
+        return "";
       int digits = (value.bits+3)/4;
       int mask = (1 << value.bits) - 1;
       return String.format("0x%0"+digits+"x", value.color & mask);
@@ -585,6 +585,18 @@ class Video extends ManagedComponent implements ToolTipMaker, AttributeListener 
       } else {
         throw new IllegalArgumentException("invalid color model: " + model);
       }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof ColorModelColor)) return false;
+      ColorModelColor other = (ColorModelColor) o;
+      return model.equals(other.model) && color == other.color;
+    }
+
+    @Override
+    public int hashCode() {
+      return model.hashCode() * 31 + color;
     }
 
     ColorModelColor transferTo(String destModel) {
