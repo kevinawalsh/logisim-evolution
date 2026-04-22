@@ -98,8 +98,8 @@ class SlideshowAttributes extends AbstractAttributeSet {
     else if (attr == Slideshow.ATTR_COUNT) {
       int newCount = (Integer) value;
       if (count != newCount) {
-        fireAttributeListChanged(); // why before changing value?
         count = newCount;
+        fireAttributeListChanged();
       }
     }
     else if (attr == Slideshow.ATTR_IMG_WIDTH)
