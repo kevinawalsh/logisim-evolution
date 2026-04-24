@@ -118,6 +118,7 @@ public class Main {
   public static final String CRASH_CONTACT_LINK = getFromFile("/contact.txt", "issues", "");
   public static final String CRASH_CONTACT_EMAIL = getFromFile("/contact.txt", "contact", "");
   public static final String SOURCE_LINK = getFromFile("/contact.txt", "source", "https://github.com/kevinawalsh/logisim-evolution");
+  public static final String WEBSITE = getFromFile("/contact.txt", "website", "https://");
   // public static final String ONLINE_DOCS_LINK = getFromFile("/contact.txt", "docs", ""); // used in html and javascript, but not in java code
   // public static final String RELEASE_LINK = getFromFile("/contact.txt", "releases", ""); // used in html and javascript, but not in java code
 

@@ -490,6 +490,7 @@ public class XmlWriter {
           + "loaded by Logisim-evolution (" + Main.SOURCE_LINK + ").\n"));
     ret.setAttribute("version", "1.0");
     ret.setAttribute("source", Main.VERSION_NAME);
+    ret.setAttribute("website", Main.WEBSITE);
 
     for (Library lib : file.getLibraries()) {
       Element elt = fromLibrary(lib);

@@ -116,14 +116,18 @@ if [ "${VERSION}-HC" != "${VERSION_HC}" ]; then
 fi
 echo "Release version: $VERSION Holy Cross Edition"
 
-CRASH_EMAIL=`sed -n '1p' contact.txt`
-CRASH_LINK=`sed -n '2p' contact.txt`
-SRC_LINK=`sed -n '3p' contact.txt`
-DOC_LINK=`sed -n '4p' contact.txt`
+CRASH_LINK=`awk '/^issues:/ { print $2; }' contact.txt`
+CRASH_EMAIL=`awk '/^contact:/ { print $2; }' contact.txt`
+SRC_LINK=`awk '/^source:/ { print $2; }' contact.txt`
+HOME_LINK=`awk '/^website:/ { print $2; }' contact.txt`
+DOCS_LINK=`awk '/^docs:/ { print $2; }' contact.txt`
+RELEASES_LINK=`awk '/^releases:/ { print $2; }' contact.txt`
 echo "Crash contact email is: $CRASH_EMAIL"
 echo "Crash contact link is: $CRASH_LINK"
 echo "Source code link is: $SRC_LINK"
-echo "Online documentation link is: $DOC_LINK"
+echo "Main webpage link is: $HOME_LINK"
+echo "Online documentation link is: $DOCS_LINK"
+echo "Releases link is: $RELEASES_LINK"
 
 COPYRIGHT_YEAR=`sed -n '1p' COPYRIGHT_YEAR`
 echo "Copyright year is: $COPYRIGHT_YEAR"

@@ -39,12 +39,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
+import javax.swing.JEditorPane;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.cburch.logisim.LogisimVersion;
@@ -152,29 +156,345 @@ public class XmlProjectReader extends XmlReader {
       return lib;
     }
 
-    private void parseProject(Element elt) throws LoadCanceledByUser {
-      // determine the version producing this file
-      String versionString = elt.getAttribute("source");
-      if (versionString.equals("")) {
-        sourceVersion = Main.VERSION;
-      } else {
-        sourceVersion = LogisimVersion.parse(versionString);
+    private static String getTagline(Element projElt) {
+      NodeList children = projElt.getChildNodes();
+      for (int i = 0; i < children.getLength(); i++) {
+        Node child = children.item(i);
+        if (child.getNodeType() == Node.TEXT_NODE) {
+          String tagline = child.getTextContent().trim();
+          return tagline.isEmpty() ? null : tagline;
+        }
+      }
+      return null;
+    }
+
+
+    // Version and edition history:
+    // 0 - 2.7.1, cburch url in tagline --> legacy
+    // 2.13.5.x, cburch url in tagline --> reds-heig + holycross
+    // 2.13.5.x - 2.13.14.x, reds-heig url in tagline --> reds-heig and holycross
+    // 2.13.15.x - 2.13.16.x, reds-heig url in tagline --> reds-heig or holycross (different, but indistinguishable)
+    // 2.13.17.x - later, no "-HC" suffix, reds-heig url in tagline --> reds-heig
+    // 2.13.17.x - 4.0.0.x, "-HC" suffix, reds-heig url in tagline --> holycross
+    // 4.0.1.x - later, "-HC" suffix, kwalsh url in tagline --> holycross
+    // 5.1.6.x - later, "-HC" suffix, website provided --> holycross
+
+    private String getVersionWarning(Element projElt) {
+      String tagline = getTagline(projElt);
+      String website = projElt.getAttribute("website");
+      if (website != null && website.isEmpty()) website = null;
+      String version = projElt.getAttribute("source");
+      if (version != null && version.isEmpty()) version = null;
+      LogisimVersion ver = version == null ? null : LogisimVersion.parse(version);
+
+      // 1........10........20........30........40........50........60........70........80
+      String HOLY_CROSS_FUTURE =
+        "You are opening a project file created with version %s of Logisim-evolution\n" +
+        "Holy Cross Edition. But this software is version %s.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to install a newer version of\n" +
+        "Logisim-evolution Holy Cross Edition, which you can find at:\n" +
+        "<https://kevinawalsh.github.com/logisim-evolution>";
+
+      // 1........10........20........30........40........50........60........70........80
+      String HOLY_CROSS_MISLABELED =
+        "You are opening a project file that lists version %s, but the contents do not\n" +
+        "match expectations for that version of Logisim-evolution Holy Cross Edition.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to verify if the file is corrupted, or\n" +
+        "try to determine what software created it.";
+      
+      // 1........10........20........30........40........50........60........70........80
+      String EVOLUTION_MYSTERY_VERSION =
+        "You are opening a project file created with version %s of Logisim-evolution,\n" +
+        "but it is not clear if this is from a Holy Cross Edition or REDS-HEIG Edition.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "If problems arise, you may wish to install the REDS-HEIG Edition, which you\n" +
+        "can find at: <https://github.com/logisim-evolution/>";
+
+      // reds-heig taglines always say "github.com/reds-heig/" or "github.com/logisim-evolution/":
+      //   "This file is intended to be loaded by Logisim-evolution v3.8.0(https://github.com/logisim-evolution/)."
+      //   "This file is intended to be loaded by Logisim-evolution (https://github.com/logisim-evolution/logisim-evolution).\n"));
+      //   "This file is intended to be loaded by Logisim-evolution (https://github.com/reds-heig/logisim-evolution)."
+      // 1........10........20........30........40........50........60........70........80
+      String REDS_HEIG_VERSION =
+        "You are opening a project file created with version %s of Logisim-evolution,\n" +
+        "but it appears to be from the REDS-HEIG Edition.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to try installing the\n" +
+        "REDS-HEIG edition of Logisim-evolution, which you can find at:\n" +
+        "<https://github.com/logisim-evolution/>";
+
+      // 1........10........20........30........40........50........60........70........80
+      String UNFAMLIAR_MYSTERY_VERSION =
+        "You are opening a project file listing version %s, but the contents do not match\n" +
+        "expectations for any known version or edition of Logisim or Logisim-evolution.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "If problems arise, you may wish to try the REDS-HEIG Edition, which you\n" +
+        "can find at: <https://github.com/logisim-evolution/>";
+
+      // 1........10........20........30........40........50........60........70........80
+      String UNFAMLIAR_MYSTERY_VERSION_TAGLINE =
+        "You are opening a project file listing version %s, but the contents do not match\n" +
+        "expectations for any known version or edition of Logisim or Logisim-evolution.\n" +
+        "The file states:\n" +
+        "<br>    \"%s\"\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "If problems arise, you may wish to try the REDS-HEIG Edition, which you\n" +
+        "can find at: <https://github.com/logisim-evolution/>";
+
+      // 1........10........20........30........40........50........60........70........80
+      String EVOLUTION =
+        "You are opening a project file created with version %s of Logisim-evolution,\n" +
+        "but it may be from the REDS-HEIG Edition.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to try installing the\n" +
+        "REDS-HEIG edition of Logisim-evolution, which you can find at:\n" +
+        "<https://github.com/logisim-evolution/>";
+      
+      // unknown tagline, e.g. "This file is intended to be loaded by Something Else(http://site)."
+      //
+      // For greatest compatibility, you may wish to try installing the
+      // Something Else edition of Logisim, which you can find at
+      // http://site.
+      
+      // no tagline, website available
+      //
+      // For greatest compatibility, you may wish to try installing whichever
+      // edition of Logisim produced this file, which may or may not be available at
+      // http://site.
+    
+      // 1........10........20........30........40........50........60........70........80
+      String DEAD_END = 
+        "You are opening a project file that contains no version information. Are you sure\n" +
+        "it is a Logisim project? If so, it was likely created by an incompatible edition\n" +
+        "of Logisim.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to try installing whichever edition of\n" +
+        "Logisim produced this file. Unfortunately, no further information is available\n" +
+        "about which software that might be or where it might be found.";
+
+      // 1........10........20........30........40........50........60........70........80
+      String DEAD_END_VERSION = 
+        "You are opening a project file that indicates version %s, but otherwise does\n" +
+        "not match expectations for Logisim or Logisim-evolution. Are you sure it is a\n" + 
+        "Logisim project? If so, it was likely created by an incompatible edition\n" +
+        "of Logisim.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to try installing whichever edition of\n" +
+        "Logisim produced this file. Unfortunately, no further information is available\n" +
+        "about which software that might be or where it might be found.";
+
+      // 1........10........20........30........40........50........60........70........80
+      String NOVERSION =
+        "You are opening a project file that contains no version information. Are you sure\n" +
+        "it is a Logisim project? If so, it was likely created by an incompatible edition\n" +
+        "of Logisim.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "For greatest compatibility, you may wish to try installing whichever edition of\n" +
+        "Logisim produced this file.";
+
+      // 1........10........20........30........40........50........60........70........80
+      String CARL_BURCH_VERSION =
+        "You are opening a project file created with version %s of Logisim, one of \n" +
+        "the original releases by Dr. Carl Burch, the creator of Logisim. Many\n" +
+        "components have since changed, and some features may no longer be supported.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "The legacy version of Logisim is no longer maintained, and the last release was\n" +
+        "version 2.7.1, in March 2021. For greatest compatibility, you may wish to try\n" +
+        "installing that version, which you can find at: <http://www.cburch.com/logisim/>";
+
+      // 1........10........20........30........40........50........60........70........80
+      String CARL_BURCH_NOVERSION =
+        "You are opening a project file created with unknown version of Logisim, perhaps\n" +
+        "one of the original releases by Dr. Carl Burch, the creator of Logisim. Many\n" +
+        "components have since changed, and some features may no longer be supported.\n" +
+        "<p>" +
+        "An attempt will be made to parse the file, but problems may result.\n" +
+        "<p>" +
+        "The legacy version of Logisim is no longer maintained, and the last release was\n" +
+        "version 2.7.1, in March 2021. For greatest compatibility, you may wish to try\n" +
+        "installing that version, which you can find at: <http://www.cburch.com/logisim/>";
+
+      if (website == null) {
+        // no version, no website listed, no tagline... dead end referral
+        if (tagline == null && ver == null)
+          return DEAD_END;
+        // lists a version, but no website, no tagline... dead end referral
+        if (tagline == null)
+          return String.format(DEAD_END_VERSION, version);
+
+        // no website listed, legacy tagline, old or missing version... refer to legacy site
+        if (tagline.toLowerCase().contains("http://www.cburch.com/logisim"))
+          if (ver == null)
+            return CARL_BURCH_NOVERSION;
+          else if (ver.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
+            sourceVersion = ver; // apply compatibility fixes for given version
+            return String.format(CARL_BURCH_VERSION, version);
+          }
+        
+        // no website listed, try to extract from tagline
+        Matcher m = Pattern.compile(" ?\\(([a-zA-Z]*://[^)]*)\\)").matcher(tagline);
+        if (m.find()) {
+          website = m.group(1);
+          tagline = m.replaceFirst("").trim();
+        }
       }
 
-      // If we are opening a pre-logisim-evolution file, there might be some
-      // components (such as the RAM or the counters), that have changed their
-      // shape and other details. We have therefore to warn the user that things
-      // might be a little strange in their circuits...
-      if (sourceVersion.compareTo(LogisimVersion.get(2, 7, 2)) < 0) {
-        String msg = 
-            "You are opening a file created with original Logisim code.\n"
-            + "You might encounter some problems in the execution, since many components\n"
-            + "have evolved since then. Some components and labels will be adjusted.";
-        if (Main.headless)
-          System.err.println("WARNING:\n" + msg);
+      // Strip prefix from tagline, if present
+      // String prefix = "This file is intended to be loaded by ";
+      // if (tagline != null && tagline.toLowerCase().startsWith(prefix.toLowerCase()))
+      //   tagline = tagline.substring(prefix.length()).trim();
+      if (tagline.isEmpty())
+        tagline = null;
+      
+      // Check for known legacy website
+      boolean cb_website = (website != null && website.toLowerCase().contains("/www.cburch.com/"));
+
+      // Check for known holycross website
+      boolean hc_website = (website != null &&
+          (website.toLowerCase().contains("/github.com/kevinawalsh/") ||
+           website.toLowerCase().contains("/kevinawalsh.github.com/")));
+
+      // Check for known reds-heig website
+      boolean rh_website = (website != null &&
+          (website.toLowerCase().contains("/github.com/reds-heig/") ||
+           website.toLowerCase().contains("/github.com/logisim-evolution/") ||
+           website.toLowerCase().contains("/reds-heig.github.com/") || // not yet used, but predictable
+           website.toLowerCase().contains("/logisim-evolution.github.com/"))); // not yet used, but predictable
+
+      if (ver == null) {
+        // no version, refer to wherever...
+        if (tagline != null)
+          return NOVERSION + String.format(" The file states:\n    <br>\"%s\"", tagline) +
+            (website == null ? "" :
+             String.format("\n<p>You might try the following site, which was also listed within the\n" +
+               "project file: <%s>", website));
         else
-          JOptionPane.showMessageDialog(null, msg, "Warning: Legacy Circuit", JOptionPane.WARNING_MESSAGE);
+          return NOVERSION +
+            (website == null ? "" :
+              String.format("\n<br>You might try the following site, which was listed within the\n" +
+              "project file: <%s>", website));
       }
+
+      /* *** by this point, we have a version number *** */
+
+      boolean hc_variant = ver.variant().equalsIgnoreCase("HC");
+      
+      // claims to be HC edition, known version, and has website known to appear in true HC files...
+      if (hc_variant && ver.compareTo(Main.VERSION) <= 0 &&
+          (cb_website || rh_website || hc_website)) {
+        sourceVersion = ver; // apply compatibility fixes for given version
+        return null; // we can open these files with no issues
+      }
+
+      // claims to be HC edition, future version, and expected website, or no website...
+      if (hc_variant && ver.compareTo(Main.VERSION) <= 0 &&
+          (hc_website || website == null))
+        return HOLY_CROSS_FUTURE;
+
+      // claims to be HC edition, future version, and an unexpected website...
+      if (hc_variant && ver.compareTo(Main.VERSION) <= 0)
+        return HOLY_CROSS_FUTURE + "\n" +
+          String.format(
+              "\nOr, you might try the following site, which was listed within the\n" +
+              "project file: <%s>", website);
+
+      // claims to be HC edition, known version, but missing or wrong website...
+      if (hc_variant) {
+        sourceVersion = ver; // apply compatibility fixes for given version, I guess?
+        return HOLY_CROSS_MISLABELED +
+          (website == null ? "" :
+           String.format(" You might try the following site,\n" +
+             "which was listed within the project file: <%s>", website));
+      }
+
+      // versions where HC and REDS-HEIG are identical...
+      if (ver.compareTo(LogisimVersion.get(2, 7, 1)) > 0 &&
+          ver.compareTo(LogisimVersion.get(2, 13, 14)) <= 0 &&
+          (cb_website || rh_website)) {
+        sourceVersion = ver; // apply compatibility fixes for given version
+        return null; // we can open these files with (mostly) no issues
+      }
+
+      // versions where HC and REDS-HEIG may differ, but are not distinguishable...
+      if (ver.compareTo(LogisimVersion.get(2, 13, 14)) > 0 &&
+          ver.compareTo(LogisimVersion.get(2, 13, 16)) <= 0 &&
+          (cb_website || rh_website)) {
+        sourceVersion = ver; // apply compatibility fixes for given version
+        return String.format(EVOLUTION_MYSTERY_VERSION, version);
+      }
+
+      /* *** by this point, all HC edition cases have been handled *** */
+
+      // appears to be REDS-HEIG...
+      if (rh_website) {
+        sourceVersion = LogisimVersion.get(2, 13, 17, 0); // apply compatibility fixes from version at fork
+        return String.format(REDS_HEIG_VERSION, version);
+      }
+
+      // otherwise, no idea...
+      if (tagline != null)
+        return String.format(UNFAMLIAR_MYSTERY_VERSION_TAGLINE, version, tagline)
+          + (website == null ? "" :
+              String.format(
+                "\n<br>Or, you might try the following site, which was listed within the\n" +
+                "project file: <%s>", website));
+      else
+        return String.format(UNFAMLIAR_MYSTERY_VERSION, version)
+          + (website == null ? "" :
+              String.format(
+                "\n<br>Or, you might try the following site, which was listed within the\n" +
+                "project file: <%s>", website));
+    } 
+
+    private static void versionWarning(String msg) {
+      if (Main.headless) {
+        msg = msg.replaceAll("<br>", "").replaceAll("<p>", "\n");
+        System.err.println("WARNING: Potential Version Incompatibility\n" + msg);
+      } else {
+        msg = msg.replaceAll("<p>", "<p style='margin-top: 8px;'>");
+        msg = "<html><div style='width: 400px;'>" + msg.replaceAll("<(https?://[^>]+)>", "<a href=\"$1\">$1</a>") + "</div></html>";
+        JEditorPane ep = new JEditorPane("text/html", msg);
+        ep.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        ep.setEditable(false);
+        ep.setOpaque(false);
+        ep.setBorder(null);
+        JOptionPane.showMessageDialog(null, ep, "Warning: Potential Version Incompatibility", JOptionPane.WARNING_MESSAGE);
+      }
+    }
+
+    private void parseProject(Element elt) throws LoadCanceledByUser {
+
+      String warn = getVersionWarning(elt);
+      if (warn != null)
+        versionWarning(warn);
+
+      // if we have no idea what created this, don't apply compatibility fixes...
+      if (sourceVersion == null)
+        sourceVersion = Main.VERSION;
 
       // first, load the sublibraries
       for (Element o : XmlIterator.forChildElements(elt, "lib")) {
@@ -241,7 +561,7 @@ public class XmlProjectReader extends XmlReader {
           break;
         default:
           throw new IllegalArgumentException(
-              "Invalid node in logisim file: " + name);
+              "Invalid node in project file: " + name);
         }
       }
       if (useDefaultMappings)

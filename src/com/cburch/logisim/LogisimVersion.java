@@ -35,7 +35,7 @@ package com.cburch.logisim;
 //   {major}.{minor}.{release}-HC             ... "HC" variant, FINAL_REVISION
 //   {major}.{minor}.{release}.{revision}     ... no variant
 //   {major}.{minor}.{release}.{revision}-HC  ... "HC" variant
-//   {major}.{minor}.{release}-HC ({hash})    ... "HC" variant, FINAL_REVISIONA, with git hash
+//   {major}.{minor}.{release}-HC ({hash})    ... "HC" variant, FINAL_REVISION, with git hash
 // When parsing:
 // - All leading and trailing whitespace is ignored.
 // - If the result doesn't start with a digit, then
@@ -77,10 +77,14 @@ public class LogisimVersion {
   // Create a version, used within xml parsing code in
   // backwards compatibility handling.
   public static LogisimVersion get(int major, int minor, int release) {
+    return get(major, minor, release, FINAL_REVISION);
+  }
+  public static LogisimVersion get(int major, int minor, int release, int revision) {
     if (major < 0) throw new IllegalArgumentException("major");
     if (minor < 0) throw new IllegalArgumentException("minor");
     if (release < 0) throw new IllegalArgumentException("release");
-    return new LogisimVersion(major, minor, release, FINAL_REVISION, "");
+    if (revision < 0 || revision > FINAL_REVISION) throw new IllegalArgumentException("revision");
+    return new LogisimVersion(major, minor, release, revision, "");
   }
 
   // number of [0-9] chars at start of s
@@ -274,6 +278,10 @@ public class LogisimVersion {
 
   public String rev() {
     return revision != FINAL_REVISION ? "rev. " + revision : "";
+  }
+
+  public String variant() {
+    return variant;
   }
 
   public String edition() {
