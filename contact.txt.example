@@ -1,0 +1,25 @@
+# Contact information for this build of logisim-evolution.
+#
+# Copy this file to contact.txt and fill in your details.
+# contact.txt is listed in .gitignore and should NOT be committed.
+#
+# Format: one "key: value" entry per line. Lines starting with '#' are ignored.
+# All fields are optional — omit or leave blank any that don't apply.
+
+# URL where users should report bugs/issues (enables Help > Report a Bug):
+issues: https://github.com/yourname/logisim-evolution/issues
+
+# Email address for users to send feedback (enables Help > Email Developer):
+contact: you@example.com
+
+# URL of the source code repository:
+source: https://github.com/yourname/logisim-evolution
+
+# URL of the project website or homepage (appears in saved files):
+website: https://yourname.example.com/logisim
+
+# URL of the online documentation (used by publish-docs.py):
+docs: https://yourname.example.com/logisim/help/en/
+
+# URL of the releases page (used by publish-docs.py):
+releases: https://github.com/yourname/logisim-evolution/releases

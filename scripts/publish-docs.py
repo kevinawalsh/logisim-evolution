@@ -21,6 +21,8 @@ version = open(os.path.join(base, "VERSION")).read().strip()
 
 contact = {}
 for line in open(os.path.join(base, "contact.txt")):
+    if line.startswith('#'):
+        continue
     if ":" in line:
         key, _, val = line.partition(":")
         contact[key.strip()] = val.strip()

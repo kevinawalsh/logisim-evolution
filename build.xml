@@ -79,6 +79,15 @@ approaching end of support.
     </target>
     
     <target name="contact">
+        <available file="contact.txt" property="contact.txt.exists"/>
+        <fail unless="contact.txt.exists">
+
+  Missing contact.txt!
+  A contact.txt file is required to compile. Create one like this:
+    cp contact.txt.example contact.txt
+  Then edit contact.txt to fill in your details.
+  (The contact.txt file is gitignored and should not be committed.)
+</fail>
         <mkdir dir="bin"/>
         <copy file="contact.txt" tofile="bin/contact.txt"/>
     </target>
