@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project source="5.1.4-HC" version="1.0">
+<project source="5.1.5-HC" version="1.0" website="https://kevinawalsh.github.com/logisim-evolution">
   This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
 
   <lib desc="#Base" name="0"/>
@@ -18,9 +18,6 @@
   <lib desc="#I/O" name="6">
     <tool name="LED">
       <a name="facing" val="south"/>
-    </tool>
-    <tool name="RGB Video">
-      <a name="fixed" val="0#888 RGB (24 bit)"/>
     </tool>
   </lib>
   <lib desc="#Analog" name="7"/>
@@ -247,8 +244,8 @@
     </comp>
     <comp lib="11" loc="(220,500)" name="Callout">
       <a name="background" val="#81e6df00"/>
-      <a name="dx" val="-20"/>
-      <a name="dy" val="8"/>
+      <a name="dx" val="-18"/>
+      <a name="dy" val="39"/>
       <a name="foreground" val="#2e5c56"/>
       <a name="format" val="wrapped"/>
       <a name="text" val=" "/>
@@ -257,8 +254,8 @@
     </comp>
     <comp lib="11" loc="(220,500)" name="Callout">
       <a name="background" val="#81e6df00"/>
-      <a name="dx" val="-18"/>
-      <a name="dy" val="39"/>
+      <a name="dx" val="-20"/>
+      <a name="dy" val="8"/>
       <a name="foreground" val="#2e5c56"/>
       <a name="format" val="wrapped"/>
       <a name="text" val=" "/>
@@ -736,21 +733,52 @@ All clocks in a simulation are internally tied to a common tick source.</a>
     <wire from="(80,550)" to="(140,550)"/>
   </circuit>
   <circuit name="constant-examples">
+    <comp lib="1" loc="(140,580)" name="Constant">
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0x19"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(140,660)" name="Constant">
+      <a name="radix" val="10signed"/>
+      <a name="value" val="0xe7"/>
+      <a name="width" val="8"/>
+    </comp>
     <comp lib="1" loc="(190,200)" name="Constant">
       <a name="value" val="0xffff"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="1" loc="(190,230)" name="Constant">
-      <a name="value" val="0xffff"/>
+      <a name="value" val="0x8e96"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="1" loc="(190,260)" name="Constant">
-      <a name="value" val="0x0000"/>
+      <a name="value" val="0xa5a5"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="1" loc="(190,290)" name="Constant">
-      <a name="value" val="0x0000"/>
+    <comp lib="1" loc="(190,290)" name="Pin">
+      <a name="label" val="V"/>
       <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(190,460)" name="Constant">
+      <a name="radix" val="2"/>
+      <a name="value" val="0xdee48"/>
+      <a name="width" val="20"/>
+    </comp>
+    <comp lib="1" loc="(190,490)" name="Constant">
+      <a name="radix" val="2"/>
+      <a name="value" val="0xaccce"/>
+      <a name="width" val="20"/>
+    </comp>
+    <comp lib="1" loc="(200,390)" name="Splitter">
+      <a name="facing" val="south"/>
+      <a name="fanout" val="20"/>
+      <a name="incoming" val="20"/>
+    </comp>
+    <comp lib="1" loc="(200,490)" name="Splitter">
+      <a name="appear" val="right"/>
+      <a name="facing" val="north"/>
+      <a name="fanout" val="20"/>
+      <a name="incoming" val="20"/>
     </comp>
     <comp lib="1" loc="(260,300)" name="Pin">
       <a name="facing" val="north"/>
@@ -783,14 +811,33 @@ All clocks in a simulation are internally tied to a common tick source.</a>
       <a name="type" val="output"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="1" loc="(70,650)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
     <comp lib="11" loc="(130,210)" name="Callout">
       <a name="background" val="#ff00e626"/>
       <a name="dx" val="18"/>
       <a name="dy" val="14"/>
       <a name="format" val="wrapped"/>
       <a name="halign" val="right"/>
-      <a name="text" val="Hex constants, 16 bits each (enough to fill a 4x4 LED Matrix)"/>
+      <a name="text" val="Hex constants, 16 bits each."/>
       <a name="textwidth" val="105"/>
+    </comp>
+    <comp lib="11" loc="(140,530)" name="Callout">
+      <a name="background" val="#ff00e626"/>
+      <a name="dx" val="-24"/>
+      <a name="dy" val="-23"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="Two 20-bit binary constants, each used to control parts of 7-segment displays."/>
+      <a name="textwidth" val="267"/>
+    </comp>
+    <comp lib="11" loc="(150,700)" name="Callout">
+      <a name="background" val="#ff00e626"/>
+      <a name="dx" val="-24"/>
+      <a name="dy" val="-23"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="Two 8-bit constants in signed decimal format, used for a comparison."/>
+      <a name="textwidth" val="267"/>
     </comp>
     <comp lib="11" loc="(20,20)" name="Text">
       <a name="background" val="#59fffd56"/>
@@ -800,46 +847,534 @@ All clocks in a simulation are internally tied to a common tick source.</a>
 * Constant - fixed value, does not change during a simulation, saved with project file.</a>
       <a name="textwidth" val="413"/>
     </comp>
-    <comp lib="11" loc="(372,337)" name="Callout">
+    <comp lib="11" loc="(320,320)" name="Callout">
       <a name="background" val="#4324ff26"/>
       <a name="format" val="wrapped"/>
-      <a name="text" val="A multiplexor, selecting one of four constants."/>
-      <a name="textwidth" val="110"/>
+      <a name="text">A multiplexor, selecting one of three constants, or an input value V.
+Each constant is enough bits to fill the 4x4 matrix.</a>
+      <a name="textwidth" val="162"/>
     </comp>
-    <comp lib="11" loc="(59,333)" name="Callout">
-      <a name="background" val="#4324ff26"/>
-      <a name="format" val="wrapped"/>
-      <a name="text" val="A multiplexor, selecting one of four constants."/>
-      <a name="textwidth" val="110"/>
-    </comp>
+    <comp lib="2" loc="(270,610)" name="AND Gate"/>
     <comp lib="3" loc="(280,250)" name="Multiplexer">
       <a name="select" val="2"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="4" loc="(190,590)" name="Comparator"/>
+    <comp lib="4" loc="(190,650)" name="Comparator"/>
+    <comp lib="5" loc="(60,600)" name="Random"/>
+    <comp lib="6" loc="(210,410)" name="7-Segment Display"/>
+    <comp lib="6" loc="(250,410)" name="7-Segment Display"/>
+    <comp lib="6" loc="(290,410)" name="7-Segment Display"/>
+    <comp lib="6" loc="(320,630)" name="LED">
+      <a name="facing" val="north"/>
+      <a name="label" val="Is random between -25 and +25?"/>
+      <a name="labelloc" val="south"/>
+    </comp>
+    <comp lib="6" loc="(330,410)" name="7-Segment Display"/>
     <comp lib="6" loc="(360,190)" name="DotMatrix">
       <a name="inputtype" val="row"/>
       <a name="matrixcols" val="4"/>
       <a name="matrixrows" val="4"/>
     </comp>
+    <comp lib="6" loc="(370,410)" name="7-Segment Display"/>
+    <wire from="(100,620)" to="(130,620)"/>
+    <wire from="(130,600)" to="(130,620)"/>
+    <wire from="(130,600)" to="(150,600)"/>
+    <wire from="(130,620)" to="(130,640)"/>
+    <wire from="(130,640)" to="(150,640)"/>
+    <wire from="(140,580)" to="(150,580)"/>
+    <wire from="(140,660)" to="(150,660)"/>
     <wire from="(190,200)" to="(220,200)"/>
     <wire from="(190,230)" to="(200,230)"/>
     <wire from="(190,260)" to="(200,260)"/>
     <wire from="(190,290)" to="(220,290)"/>
+    <wire from="(190,390)" to="(190,460)"/>
+    <wire from="(190,390)" to="(200,390)"/>
+    <wire from="(190,490)" to="(200,490)"/>
+    <wire from="(190,580)" to="(210,580)"/>
+    <wire from="(190,640)" to="(210,640)"/>
     <wire from="(200,230)" to="(200,240)"/>
     <wire from="(200,240)" to="(240,240)"/>
     <wire from="(200,250)" to="(200,260)"/>
     <wire from="(200,250)" to="(240,250)"/>
+    <wire from="(210,580)" to="(210,590)"/>
+    <wire from="(210,590)" to="(220,590)"/>
+    <wire from="(210,630)" to="(210,640)"/>
+    <wire from="(210,630)" to="(220,630)"/>
     <wire from="(220,200)" to="(220,230)"/>
     <wire from="(220,230)" to="(240,230)"/>
     <wire from="(220,260)" to="(220,290)"/>
     <wire from="(220,260)" to="(240,260)"/>
     <wire from="(260,270)" to="(260,300)"/>
+    <wire from="(270,610)" to="(320,610)"/>
     <wire from="(280,250)" to="(320,250)"/>
     <wire from="(320,230)" to="(320,250)"/>
     <wire from="(320,250)" to="(330,250)"/>
+    <wire from="(320,610)" to="(320,630)"/>
     <wire from="(340,190)" to="(360,190)"/>
     <wire from="(340,200)" to="(360,200)"/>
     <wire from="(340,210)" to="(360,210)"/>
     <wire from="(340,220)" to="(360,220)"/>
+    <wire from="(70,640)" to="(70,650)"/>
+  </circuit>
+  <circuit name="fizz-buzz">
+    <comp lib="1" loc="(120,250)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="1" loc="(190,230)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x03"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(190,290)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x05"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(270,230)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x00"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="1" loc="(270,290)" name="Constant">
+      <a name="radix" val="10unsigned"/>
+      <a name="value" val="0x00"/>
+      <a name="width" val="8"/>
+    </comp>
+    <comp lib="11" loc="(160,340)" name="Callout">
+      <a name="background" val="#ff00e626"/>
+      <a name="dx" val="18"/>
+      <a name="dy" val="-34"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="right"/>
+      <a name="text" val="8-bit unsigned decimal constants, used here to compute (value mod 3), and (value mod 5)"/>
+      <a name="textwidth" val="143"/>
+    </comp>
+    <comp lib="11" loc="(20,30)" name="Text">
+      <a name="background" val="#59fffd56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text">FizzBuzz - Displays various messages depending on the value of a counter.
+Poke the counter register to enter a new value, poke the clock twice to advance to the next value, or enable auto-ticks (with a slow auto-tick frequency, approx 1Hz is plenty fast).</a>
+      <a name="textwidth" val="311"/>
+    </comp>
+    <comp lib="11" loc="(310,370)" name="Callout">
+      <a name="background" val="#ff00e626"/>
+      <a name="dx" val="-34"/>
+      <a name="dy" val="-42"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="8-bit zero constants, used for comparisons"/>
+      <a name="textwidth" val="143"/>
+    </comp>
+    <comp lib="11" loc="(592,278)" name="Callout">
+      <a name="background" val="#85f76826"/>
+      <a name="dx" val="-36"/>
+      <a name="dy" val="-19"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="text" val="Each of these is just a slideshow with two images; the comparison output determines which image is displayed."/>
+      <a name="textwidth" val="143"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="4" loc="(240,220)" name="Divider">
+      <a name="mode" val="unsigned"/>
+    </comp>
+    <comp lib="4" loc="(240,280)" name="Divider">
+      <a name="mode" val="unsigned"/>
+    </comp>
+    <comp lib="4" loc="(320,240)" name="Comparator"/>
+    <comp lib="4" loc="(320,300)" name="Comparator"/>
+    <comp lib="5" loc="(140,210)" name="Counter"/>
+    <comp lib="6" loc="(340,240)" name="Slideshow">
+      <a name="addrWidth" val="1"/>
+      <a name="count" val="2"/>
+      <a name="height" val="56"/>
+      <a name="image0">JPG:
+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
++WlXINQGeQPO1f/Z</a>
+      <a name="image1">JPG:
+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
+fykr8kU6HLlixMAAFf/Z</a>
+      <a name="width" val="144"/>
+    </comp>
+    <comp lib="6" loc="(370,130)" name="Hex Digit Display"/>
+    <comp lib="6" loc="(430,130)" name="Hex Digit Display"/>
+    <comp lib="6" loc="(490,130)" name="Hex Digit Display"/>
+    <comp lib="6" loc="(510,240)" name="Slideshow">
+      <a name="addrWidth" val="1"/>
+      <a name="count" val="2"/>
+      <a name="height" val="56"/>
+      <a name="image0">JPG:
+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
++WlXINQGeQPO1f/Z</a>
+      <a name="image1">JPG:
+/9j/4AAQSkZJRgABAQEBLAEsAAD//gATQ3JlYXRlZCB3aXRoIEdJTVD/4gIoSUNDX1BST0ZJTEUA
+AQEAAAIYYXBwbAQAAABtbnRyUkdCIFhZWiAH5gABAAEAAAAAAABhY3NwQVBQTAAAAABBUFBMAAAA
+AAAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLWFwcGwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAApkZXNjAAAA/AAAADBjcHJ0AAABLAAAAFB3dHB0AAABfAAAABRy
+WFlaAAABkAAAABRnWFlaAAABpAAAABRiWFlaAAABuAAAABRyVFJDAAABzAAAACBjaGFkAAAB7AAA
+ACxiVFJDAAABzAAAACBnVFJDAAABzAAAACBtbHVjAAAAAAAAAAEAAAAMZW5VUwAAABQAAAAcAEQA
+aQBzAHAAbABhAHkAIABQADNtbHVjAAAAAAAAAAEAAAAMZW5VUwAAADQAAAAcAEMAbwBwAHkAcgBp
+AGcAaAB0ACAAQQBwAHAAbABlACAASQBuAGMALgAsACAAMgAwADIAMlhZWiAAAAAAAAD21QABAAAA
+ANMsWFlaIAAAAAAAAIPfAAA9v////7tYWVogAAAAAAAASr8AALE3AAAKuVhZWiAAAAAAAAAoOAAA
+EQsAAMi5cGFyYQAAAAAAAwAAAAJmZgAA8qcAAA1ZAAAT0AAACltzZjMyAAAAAAABDEIAAAXe///z
+JgAAB5MAAP2Q///7ov///aMAAAPcAADAbv/bAEMAAwICAwICAwMDAwQDAwQFCAUFBAQFCgcHBggM
+CgwMCwoLCw0OEhANDhEOCwsQFhARExQVFRUMDxcYFhQYEhQVFP/bAEMBAwQEBQQFCQUFCRQNCw0U
+FBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFP/CABEIADgA
+kAMBEQACEQEDEQH/xAAcAAADAAMBAQEAAAAAAAAAAAAEBQcCAwYIAAH/xAAaAQACAwEBAAAAAAAA
+AAAAAAABBAACBgUD/9oADAMBAAIQAxAAAAHzcvS6ZZIe8ykh2mdaSD+tsgNfmGq1KxwFVTFhL2jG
+kbv+TRC9S1WrC9S6Z6EMm55JCXaJutZpNB0fWV99teZ6ByKEb1byK5Y1FXz6ss0DWqHKTveCpwne
+a/JNBN8yPPjmjcr2aT5Dp+3JdtlUZZMojGtW/wDslX4KnBdP3UN3FJe+Ve7zykv0rmBO4C+47nrb
+ET0PL9T35Pre4plRzacs0jhfmChF3qRoc4HnjVXch+lswNBN8yPPjmjcr2aT5Dp+3JdtlUTZMohG
+tW/XswjN9M6osdoHZ8ZfS1fieh7bwPpAybnkkJdom61mk0HR9ZX3215noHIoTzutLAEnR9mFQIZR
+8+rNdA2IYYAH5i6ZZIe8ykh2mdsWeU+Mar1m3YYA97VjgKqmLCXtGNI3f8miF6lqtWF6l3//xAAn
+EAABAwIFBAMBAQAAAAAAAAAFAQMEAgYABxMUFxI0NTcRFTMWNv/aAAgBAQABBQIQPQlO44C4py7F
+az2XIhGpYmXBnugqoVdQ1rH1rGJIWQzEtcCwbm8chUwOscJPaO2MNHjW2anHY2XgdyO9ZANmdxwF
+wXHoNnDO1IMImLn9a2ywjRC5fZmYzKSTgf8ASPH3MqtUqytiqlI+RH20otStbpIOzbwCL5SawjrM
+TxlgA23KinbDO1gOI82eY1LAGyNa5bl9mZjvrHu1lulJDtSQ4jHqRfDNVJNi2oPjvFJhpw/cEXyj
+EjRmxYXXTfRBoOPJ9qN+du3seuHp/wA7G/jNyf3HIl7f6Bro6Xdn80a/HDHTsIkePIVZCtMMbbUj
+dX2VWx6nGnYLsp6JIkEvnbjO1gNoy2ff07AGx9G5bl9mZjsLIu1lylZDtKTYrHqRfDx4rdn2Y85S
+kiGwschF8pZVvoWNnS9JiZPbR5sn2oztSD6Li5/Wtsvo6QuX2ZmM8kY4H/SPI20qtEpyttVpl+Td
+twLcJwx+kR5JOIvlDJpoVaMTxg99EwT7UQQQbO5HC4pzEFI69mMIVqWWlzp4zMSHREI3wEntcjBU
+xc92qaW1zzASauYwVcDr4CQGjt8jSI1t6pt2NmIHbjvXuDencjhcFyCEp3//xAApEQABAwEGBQUB
+AAAAAAAAAAABAAIDERASExQzUgQgITEyIjRBQlFE/9oACAEDAQE/AXG6KhZh+1Y7/wAWYftQcCKh
+Bwd1Ft4VuqR5YKgLMSbU6aRv1TJnOdQiwzvr4oTSEVurMP2ppvCtseuVJ4lR6Dlw3gjZ/RyRvMjy
+fjknf9B8oWx6xT/AqPQcuG07T7i2dxAuj5TGXG0tJp1ULb5xHcjtQ4fdHHp6uyZTBcoKXPTaaY4/
+bCad1SvJUOCAp0HJHrFP8Co9By4bTtPuLK4svTsOSd91tB3KjbcaByx65UniVHoOXDeCNn9ClqGm
+iiZhtQtay9IXH45HC8KLLv3LLv8A1Zd+5BoAoE6B1fSU2GRv2WXk3KOK51PdSMLxQFZeTcnQyO+y
+ZC5rqk2GB9fJCGQCl5Zd+5NF0UK//8QAMhEAAQMBBAcIAgIDAAAAAAAAAQACAwQFESExEhMVNUGB
+sRQiMlFTccHwECMkNEKR4f/aAAgBAgEBPwGeQxRl7ReVtiq9Lqja9RdhHim2xU396LDmo6iOSPWt
+OCjmbM3TjN4V6vK18es1V/eVdUyU0elG3SK2xV+l1U1pVkJAMSpLSqJ5Qx8WCJuT7XqmuIEPVNtK
+sdG6TVZLbFV6XVQSGWMPcLiigqLeknNVh/RJ7FUe65efwrFwpeZTkTcE7fA+8Ec0DeEDcLyqSodV
+1Ukg8IFwRyQRzVq1LhdTReJyajmj5qj3nLzVUP40nsVR7rl5/CsX+pzP4zKdvgfeC/yWStWV7YxD
+Hm9UtMKWERhHJXYJ79Bpf5Ky4XVEjq2XjkhmisVLf2t/YvHx/wCJ+1NE63w8cslS6GzZdHLH4Vl6
+HZhqvpXusVJqtqMu8XH/AEuKe8Mu0zmixrnB12IWPFcFimuZM3DEJjdBoa3JBHNHyVHvOXmqo/xp
+PYqj3XLz+FYv9Tmfxknb4H3guKL3WhXAM8Ef4OSOStSr1EOrZ4nKigNNA2N2aHkhmigqLeknNVg/
+RJ7FUe65efwrFxpeZTkReEd8D7wVe5zYHlmas+k7JBonM5pqOCOShpnT1z55Mm5I5ooKeMyxljTc
+Vseq9XqjZFRdhJim2PU396XDmo6eOOPVNGCmsiUv/RJc3yUNm1kJJEq2PV+r1VFQdm70h0nearqZ
+9THoxu0Stj1fq9VNZtZMQTKqSzaiCUPfLgiL0+yKouJE3VNs2sbG6PW5rY9V6vVQRmKMMcbyv//E
+AD0QAAEDAQMFDQUIAwAAAAAAAAIAAQMRBBIhBRMxMkEUFSIzNUJRYXGBorLwI1JykqEkQ1NjkcHD
+4QYls//aAAgBAQAGPwKKE5WgiIqHKWgVyz4wRMWUpQh5kr3WEn20dHm8s+0pwauL4rccsBDaK0YK
+aexPFbHeCdtIOuDK5P1Lj09sCMjsdbud2VVy1WprHDTWfnP0MuWfGCMt9yBxMhoV0cK4Pj1KSey5
+VaaYdEbuz3urBXGbhKMiy0zk41e6Q0UFnfK5e0Z+FwaN0YrlnxgpYQlaeISoMo6CU6GYNQ1knsi8
+qsMhax2iNh+Zlkf4Y/MSlBuMaICZS9iduaz1dWm7ovfyqK9or+6Zua71ZQiLVd8GZlk6yFTd8x56
+VtuhTd6eUNYHdi/VTd6nyvbODZLIzuzlocv6UKn9bEVmPQ+qskRv+XX5XWTRHUC0AzfMsj/DH5iT
+G34I1+qKQNWQaqg8ZLipe3+VN62qhcZFijt9rJmhsEeco/T0/RTWs8BfAB90dim71KJahk7Ojswv
+S+d1n6Kqzf49YXoEYs87tt9aVB62KX3a4prlb2ylVY9/OTfuLlb3Vepjo/tRbivbsvNmbt+t/Zpw
+WR85m89cj1a3dJKbfG7nqNduVpc2Jtz1702cvVptqrbdubhvNm/e12r9UGd4nb+qk3OBm4A5Fdrg
+KljlMhjkZr7DodtlU25+M71NSl7FPfrf26dKo4nFdoT3tZuhSSTkRzE9SIq1qovdrgp/WxFaT0Nq
+rJEj/l+V1k0h1DtAO3zLI/wx+YkwN+CNfqijDVjGiqPGRYKXt/lTetqkO0D/ALDKTXGHazP/AFih
+jPVkGicH6MFN3qW1WhvsVkK+bvod9jK32yJqRuVA62ZqIbSGh9ZQetinQwhqAsk9kXlVhjLWC0Ru
+PzMsj/DH5iUh/ePEIspexO/Nd6OrTd0Xn/6qwDaGZ4c5Ur2jDFPKL/Zo3uRN1dKi7FGb8Y3BdTd6
+s2TbJwZ7XWSd26K/upu9FCeoagUUxxNPEJVKItBLkbwAivZNlKHmRPdcRfbRkebyN7SnBqwtit2S
+zkVorVjro7ELZRyduq186agve/VAO9BA4mJVG6OFcWw6lyN4AWZskT2Ow4O8Lc5+l1ftVla2Q0pd
+fmv0suRvACMd6CNyMiqV0sK4Nj1KSCy5KaGYtEjszXevBX2fhKMSyKzEw0e6I0UNo3oL2bPwWu0f
+owXI3gBSzBE0ERFUIh0Cv//EACUQAAICAQMEAgMBAAAAAAAAAAERACExQVFhcYGhsZHwEMHR4f/a
+AAgBAQABPyEFpgKmcmBySAjYkJRVY52hicxAx0ULPaPGoWRfHJzTqLwR/YABYsIa1M+0iDIYTEU2
+/wCxS7MhQO4GoRiSaELQogQgVG5DFoC7fWTgcYGRYx1gd4iAstAb+YdLYIEi0hCg7ztOTAlpgame
+16h2yK1oZ9hulJYAO34BCaPeMBANFIcrkF4cPSXJdELCYy4OFxC8OGoDILJcKi46xC6BgfM8f2Es
+QBA2afX4gHRopRns8kQmf7ie1Bv6WW0Gf1XsgPQUnR+BGJwLbhwfahJUSwkdhPMek8yQklwA7ibM
+ytZrsbuo9kEl6GE8f2EHhUB6xBtqcH9mv0RRZAPJNu09KNj+SlanKncuagoOjH5Il5KfsZk85Zqf
+ueD5ov01r5zrNpkdaXDnCwtud/xf83lzxO51M7JSMB6mSeIOXIWUjocz91UWuZwoyxkTk7n3MRpG
+lYUAkHeFCB5lTLlNj+SlTntQP2lBvAj9XPeA8ikHR+BGJwvbBwPQIUhSC4kNxPOek8qQ3S3cNQ7E
+3JUHtYnE4DbcTx/YQVgEayX4GenMbdBmhAe6cF/Sg2npR7XqHaILW8+w3S0sgHb8QgNl7UhMhspD
+lcwPDg6TGXRKTkWgRt8QsjsPPtn4hIgotKaLPwzx/YRKgJnYM89i6CfX4h2yKnoZ6XqAtMLUzkwO
+aUGbExKDrzvBEpjBhosWO0WNQoiuOCl3GN45nR0xKQogQgFm5hAMADQgYGNjAA9AV8bRy5MFE7Aa
+gIgmQYUhRAgIuwQRQAu31k4HGFmWc9YCcIBLLQm/mHONAgAtMQoq87zkwJaYSpn/2gAMAwEAAgAD
+AAAAEHmbR4AVQc2gQx8/Y9uXCwB3sw4O4dmpfQqrXHCQBniA0Y2gQx0gG1k3maCEAVQc/wD/xAAk
+EQACAgECBgMBAAAAAAAAAAAAARExIUHwEFGBkbHBYXGh4f/aAAgBAwEBPxB7USzakcWFkUucOpP7
+AollEks17JmqZsSMEmFSChibJeQw6RtSPSyhjsXI80bts8z0Ydb4G4Q6b0HYnKE4UsQeihDoQ7GK
+LeA7HzG/cXss8z0ZdTHRbKN6GpTEG3AQtR0RggfAc3WoVjMku5fzf0ZHUqiorPowdpPszoVn27Gu
+BEJWNWTjKM6mhkWAyiAqBDsfIT9x+yzzPRh1MdFMo3oajdSCqHlDrg0PY2LkKx2JHmidpnmehJ63
+wNSh03oMysY1274HgdDK3Qdj5ise1HDNqRwYWRS5w6kfsDVNchg2hsSXGeYxVM2JGCbCpJQxtmvI
+YdY2pHpZLP/EACURAAICAQMEAgMBAAAAAAAAAAERACExQVHwYXGBsZGhEMHR4f/aAAgBAgEBPxBf
+mDAGs4xAIkB1CyQNGMh8zCR7qgrua+YjM79llwMYNRH2nSgUMaNarn9mR8+OpVwEr1gTWwDqcixW
+xqJLFkgELrdKIOIKAE5DfUFwUm/mslVicYh/mDIOkzEPQzh9RGC5Iz7/AKQaDwqYD8B6M5PwAiEQ
+E/v1AH5Kcww0UZhg28UNZT/fqUMxQUUho3NiKJyRn3/SBacKhJSMHwT1pEG3eBvsXiq8v4cyfjJ3
+OswwsBjgDQn4mRsiP68YHmZpmId88t2S62rOX4pzRtTalLxeNr2mtrZJ4jX6Zbzu/wAhcDbNSU7M
+l9Q5LMpQGAD1JwIdQFiOzyoaQcZ0wpJgjHTYxM0GAJmZihspBYubEcDkjPv+kGm4VCCmYLd5634z
+vWN7kf00OlwApiE2mGGETTCyBqf0IcagZ7kteIaLTNMxB1M4fURBuSM+/wCkCgcKmA/AerOh6QXV
+CCADW7tvGJgYFhMMuROu5frPczDB1EzMf5ggRpOMwSIANRtnZnJXMQEe6sq7GvmIzG3d5cMDsVgv
+j3neCa2CNTkUb2Nwkv3gYfrIbB3xCZPx9+hVwAsfeBNaAGowLNbm40sGQCS+l0ogoxoCTkt9QXRS
+b+byHWJxmF+YIk6z/8QAJhABAAEDAwMFAQEBAAAAAAAAAREAITFBYXFRgfAQkaGxwdHx4f/aAAgB
+AQABPxBK/JFOru4JsTKgLXmP7UGsJxrJG+tcpQbQ2iUWL3mCLnS9QR0pavBhojcyJSWawBbl1sS8
+lulW6Qk1JFg6E0OSDz3q/mebtSaTaFpQmbUpjR6LYaZZcCA3gqoJXCe9FqIDBRAKFIWlTSKb/wDK
+tLhtahbEMwXG3iAmOWBMFKEdfkFkwJ0u61HR/plhHT5Eo6k+Y/tO+5YB1NzDFmJFEa8LfRXASsYf
+37H0Sxd5DF1bmF4PSjbQMapbHDCe1MQQBHIy0YjxQYd8U0ajvCAbe1JOI4VoWX96MR3JLDtilY2k
+igAGqtG/By4BsuqXqy6+gYqDI46jiZ4a8TbRfPmtWt+SB/BQFYUSvw/sq+CCMrKHDc71EVKw1FJ3
+ilBAMwWFfw49KM0SCOrIUSBEBiZu95HmaPDGHK/wY5V9F3hbqv0EOR/oQ7hTzUMLmlaQUjVdFPQx
+5ZwcsXeqvoGVkcUAqB/HmrISjyQkXrH0oQqSQyyOo5BXw/orGYH+MTE1sa+yIr7KGeWMTQi+B3Nn
+hU2r/qHizhM9or+hDNkXnVldpFcA7q992cRac180adMaRnFebxh3Iy4U0Ndm3Sui8T020mpi79lr
+0wLZodmJM/Gqic2nFq17b+y/i8xvXyG91B6gdZdwZnFqZtkEk78h8RF5pCCELN1OtZzI/wAYmIr4
+f2VEGQjKwp3sd6uFaU0BPtNCiOLAVU/Tn0ozQCPRZGiShLhM3O0HzVughyP9CTcfQdf5sqxCIPDk
+1BmwdFEgVC4mbHeU5ipKFFdWIfQNYcZuZJWyEtoDSPgoyVvpC1pMVbBAGVgXhs9q+H9FeFvqKoYD
+sxx2+59ErdmQhYQcSnD6UT1l7qEOeCV9qZwoiuVlpxHcksu2aKMTJrQrb3q/MdIgbhJWoCJqwXEO
+rOyGlMwQQTIyUbeFNUunhgff0DMrPOCFFmYIaOaleJtprhIGMP79hXhbad9ywDo7mSbMQiKV5j+V
+NdS8a6TtpphKTaPalFydphm40vUEdKWj0YaI3cq0owIJrpFlRBCwCALDamAwUyChQNpR0miqggMJ
+7UzJtmApRa1jBZYhTMzUW41wyYWEvI9wRG6e1F6cDABKUGiLSLrNPd6XbG63tELDLMlkt4kJnkgz
+DQJzXYAYMidbutLr1oZcQ0+DEOhHmP5SV+SKdDdyxYmAACv/2Q==</a>
+      <a name="width" val="144"/>
+    </comp>
+    <comp lib="9" loc="(370,160)" name="Binary_to_BCD_converter">
+      <a name="width" val="8"/>
+    </comp>
+    <wire from="(120,230)" to="(120,250)"/>
+    <wire from="(140,210)" to="(160,210)"/>
+    <wire from="(160,160)" to="(160,210)"/>
+    <wire from="(160,160)" to="(340,160)"/>
+    <wire from="(160,210)" to="(160,270)"/>
+    <wire from="(160,210)" to="(200,210)"/>
+    <wire from="(160,270)" to="(200,270)"/>
+    <wire from="(190,230)" to="(200,230)"/>
+    <wire from="(190,290)" to="(200,290)"/>
+    <wire from="(220,240)" to="(220,250)"/>
+    <wire from="(220,250)" to="(280,250)"/>
+    <wire from="(220,300)" to="(220,310)"/>
+    <wire from="(220,310)" to="(280,310)"/>
+    <wire from="(270,230)" to="(280,230)"/>
+    <wire from="(270,290)" to="(280,290)"/>
+    <wire from="(320,240)" to="(340,240)"/>
+    <wire from="(320,300)" to="(500,300)"/>
+    <wire from="(370,130)" to="(370,140)"/>
+    <wire from="(430,130)" to="(430,140)"/>
+    <wire from="(490,130)" to="(490,140)"/>
+    <wire from="(500,240)" to="(500,300)"/>
+    <wire from="(500,240)" to="(510,240)"/>
   </circuit>
 </project>

@@ -14,49 +14,107 @@
 
 <p>Found in <a href="index.html">Wiring Library</a></p>
 
-<h2>Behavior</h2>
+<img src="constants.jpg">
 
-<p>Emits the value specified in its Value property.</p>
+<p>Use a constant when a circuit calls for a fixed, known value. You can
+specifify a value for each constants in binary, hex, or decimal, and the
+constant will hold that value during the circuit simulation. 
 
-<h2>Pins</h2>
 
-<p>There is only one pin, an output whose bit width matches the Data Bits
-property. The location of this pin is specified in the Facing
-property. The component constantly outputs on this pin whatever
-value specified in the Value property.</p>
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=wiring.circ&circuit=constant-examples">Live Circuit: Constants</a></li>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=wiring.circ&circuit=fizz-buzz">Live Circuit: Fizz-Buzz</a></li>
+</ul>
 
-</dl>
+<p>Constants can be unintuitive at first. But if you are familiar with
+programming, think of constants in Logisim circuits as playing a similar role as
+"literal values" like 6 and 12 in a statement like <tt>y = 12 + x*6</tt>. They
+are fixed values, not inputs (like <tt>x</tt>) or outputs (like <tt>y</tt>).
+
+<p>It's a common mistake to use an <a href="pin.html">Input Pin</a> when a constant would be better.
+An Input Pin takes on different values, depending on user interaction, and it
+resets to zero when the simulation is reset. The value of an Input Pin is not
+saved with a project, but instead resets to zero whenever a project is opened again. By contrast, 
+a Constant has a fixed value that does not change during a simulation and is saved with project file.
+
+<p>Similarly, here are some other common mistakes, and how to fix them:
+<ul>
+<li><p>
+<b>Mistake:</b> Using an Input Pin, with a label nearby saying "Don't touch this input, it must be zero or the circuit won't work."
+<br><b>Fix:</b> Use a constant with value 0.
+<li><p>
+<b>Mistake:</b> Using an Input Pin and expecting it to be zero at all times, and hoping the user never pokes the input.
+<br><b>Fix:</b> Use a constant with value 0.
+<li><p>
+<b>Mistake:</b> Using an Input Pin, with a label nearby saying "Before simulating this circuit, please put hex value 4c in this input, otherwise the circuit won't work."
+<br><b>Fix:</b> Use a constant with hex value 4c. Or use whatever number base is most convenient.
+<li><p>
+<b>Mistake:</b> Cleverly using 1-bit Input Pin, wired to both inputs of a XOR gate, followed by a NOT gate, knowing that anything XOR'ed with itself will result in a 0, so the NOT gate will always output 1.
+<br><b>Fix:</b> Use a 1-bit constant with value 1.
+<li><p>
+<b>Mistake:</b> Using a 1-bit constant 0, followed by a NOT gate, to obtain the value 1.
+<br><b>Fix:</b> Use a 1-bit constant with value 1.
+<li><p>
+<b>Mistake:</b> Using the <a href="../analog/const01.html">power or ground</a>
+components from the <a href="../analog/">Analog Library</a> with components
+expecting digital or boolean inputs.
+<br><b>Fix:</b> Use constants instead. Although the power and ground components work
+identically to constant 1 and constant 0, they have more limited options, and
+they are intended for use with other Analog Library components or places where
+defined voltage devel is needed for "power", rather than a digital or Boolean
+true/false value.
+</ul>
+
+<h2>Ports</h2>
+
+<p>Each constant has a single port, which constantly carries the specified value.
+
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Typing hex digits (<span class="key">0</span>-<span class="key">9</span>, <span class="key">a</span>-<span class="key">f</span>)</b>
+changes the <i>Value</i> property. Note that any value typed this way is
+interpreted as hex, regardless of the constant's <i>Radix</i> property. For
+example, if an 8-bit constant is set to display with unsigned decimal for
+<i>Radix</i>, typing <span class="key">f</span> <span class="key">f</span> will change its value to 255,
+since 255 decimal is 0x80 hex.
+
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b>
+changes the <i>Data Bits</i> property.</li>
+
+</ul>
 
 <h2>Properties</h2>
-
-<p>When the component is selected or being added,
-the hexademical digits '0' through '9' and 'a' through 'f' alter its <q>Value</q> property,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
-and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 
 <dt>Facing</dt>
-<dd>The direction in which the pin is located relative to where the
-value is drawn.</dd>
+<dd>The side where the port should be.</dd>
+
+<dt>Radix</dt>
+<dd>The radix for displaying the value: binary, octal, hexadecimal, signed
+decimal, or unsigned decimal.</dd>
 
 <dt>Data Bits</dt>
-<dd>The bit width of the value placed onto the wire.</dd>
+<dd>The number of bits for the constant value. The underlying binary
+representation of the value must fit within this number of bits.</dd>
 
 <dt>Value</dt>
-<dd>The value, written in hexademical, that is emitted by the component.
-The number of bits used to specify the value cannot exceed the
-component's bit width.</dd>
+<dd>The value for the constant, specified in the chosen radix. The allowable
+range of values depends on the radix and data bits chosen. For example, the
+range for 8-bit signed decimal is -128 to +127, while the range for 8-bit
+unsigned decimal is 0 to 255.<dt>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - constants do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>

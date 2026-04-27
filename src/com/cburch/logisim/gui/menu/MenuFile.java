@@ -120,6 +120,7 @@ class MenuFile extends Menu implements ActionListener {
     "logisim features > splitters                : wiring.circ : splitter-examples",
     "logisim features > tunnels                  : wiring.circ : tunnel-examples",
     "logisim features > clocks                   : wiring.circ : clock-examples",
+    "logisim features > constants                : wiring.circ : constant-examples",
     "logisim features > dynamic conditions       : DynamicConditions.circ : main",
     "logisim features > in-circuit slideshow     : FilesAndImages.circ : main",
     "logisim features > in-circuit file viewer   : FilesAndImages.circ : main",
@@ -128,6 +129,7 @@ class MenuFile extends Menu implements ActionListener {
     "logisim features > inputs and poke tool     : interaction.circ : main",
     "logisim features > real time clock          : digital-clock.circ : main",
 
+    "miscellaneous > fizz-buzz                   : wiring.circ : fizz-buzz",
     "miscellaneous > ideal relay                 : IdealRelay.circ : main",
     "miscellaneous > invaders game               : invaders.circ : main",
     "miscellaneous > bouncing ball               : bounce.circ : main",
