@@ -151,8 +151,11 @@ public class ApioDownload extends FPGADownload {
 
     // Generate apio.ini
     Hdl out = new Hdl(lang, err);
-    out.stmt("[env]");
+    // FIXME: to support apio v0.9.5 and earlier, should use "[env]" here,
+    // but version 1.0.0 and later expect "[env:default]"
+    out.stmt("[env:default]");
     out.stmt("board = " + board_name);
+    out.stmt("top-module = LogisimToplevelApioShell");
     f = FileWriter.GetFilePointer(sandboxPath, "apio.ini", err);
     if (f == null || !FileWriter.WriteContents(f, out, err))
       return false;
@@ -162,9 +165,15 @@ public class ApioDownload extends FPGADownload {
       err.AddSevereWarning("Design will probably fail to compile.");
     }
 
+    // iCE40UP/UL family has SB_HFOSC; HX/LP family requires an external clock pin.
+    boolean hasHFOSC = board.fpga.Part.toUpperCase().contains("UP") ||
+        board.fpga.Part.toUpperCase().contains("UL");
+
     // Generate fpga.pcf
     Hdl out2 = new Hdl(lang, err);
     out2.stmt();
+    if (ioResources.requiresOscillator && !hasHFOSC)
+      out2.stmt("set_io --warn-no-port FPGA_CLK %s", board.fpga.ClockPinLocation);
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
       out2.stmt("set_io --warn-no-port %s %s", net, pin);
     });
@@ -199,13 +208,18 @@ public class ApioDownload extends FPGADownload {
     Hdl out3 = new Hdl(lang, err);
     Netlist.Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
     int n = ioPinCount.size();
+    if (ioResources.requiresOscillator && !hasHFOSC) n++;  // FPGA_CLK as input port
     out3.stmt("module LogisimToplevelApioShell(%s", (n == 0 ? " );" : ""));
+    if (ioResources.requiresOscillator && !hasHFOSC)
+      out3.stmt("              FPGA_CLK%s", (--n == 0 ? " );" : ","));
 		for (int i = 0; i < ioPinCount.in; i++)
       out3.stmt("              FPGA_INPUT_PIN_%d%s", i, (--n == 0 ? " );" : ","));
 		for (int i = 0; i < ioPinCount.inout; i++)
       out3.stmt("              FPGA_BIDIR_PIN_%d%s", i, (--n == 0 ? " );" : ","));
 		for (int i = 0; i < ioPinCount.out; i++)
       out3.stmt("              FPGA_OUTPUT_PIN_%d%s", i, (--n == 0 ? " );" : ","));
+    if (ioResources.requiresOscillator && !hasHFOSC)
+      out3.stmt("  input FPGA_CLK;");
 		for (int i = 0; i < ioPinCount.in; i++)
       out3.stmt("  input FPGA_INPUT_PIN_%d;", i);
 		for (int i = 0; i < ioPinCount.inout; i++)
@@ -216,9 +230,17 @@ public class ApioDownload extends FPGADownload {
 
     n = ioPinCount.size();
     if (ioResources.requiresOscillator) {
-      out3.stmt("  wire FPGA_CLK;");
-      out3.stmt("  SB_HFOSC internal_oscillator(.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(FPGA_CLK));");
-      out3.stmt();
+      if (hasHFOSC) {
+        out3.stmt("  wire FPGA_CLK;");
+        // For iCE40UP/UL fpga, use the high-speed oscillator (48 MHz).
+        // FIXME: the SB_HFOSC block can divide by 1, 2, 4, or 8. We should
+        // probably use that feature when the design clock settings call for clock
+        // division. Or, use the SB_LFOSC block instead, which runs at 10 kHz.
+        out3.stmt("  SB_HFOSC internal_oscillator(.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(FPGA_CLK));");
+        out3.stmt();
+      }
+      // For iCE40HX/LP, FPGA_CLK is an input port wired to the board's external
+      // crystal via PCF constraint; no internal oscillator primitive is needed.
       n++;
     }
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
@@ -290,26 +312,76 @@ public class ApioDownload extends FPGADownload {
     if (!readyForDownload()) {
       stages.add(new ProcessStage(
             "synthesis", "Synthesizing (may take a while)",
-            apio("build","--top-module", "LogisimToplevelApioShell"),
+            apio("build"),
             "Failed to synthesize design, cannot download"));
     }
 
-    // upload
-    stages.add(new ProcessStage(
-          "upload", "Uploading to FPGA", 
-           apio("upload"),
-          "Failed to upload design; did you connect the board?") {
-      @Override
-      protected boolean prep() {
-        if (!cmdr.confirmDownload()) {
-          cancelled = true;
-          return false;
+    // upload: use openFPGAloader when the board specifies it (e.g. boards whose
+    // flash chip is not supported by apio/iceprog), otherwise use apio upload.
+    if (board.openFPGAloader_name != null) {
+      String bin_ofl = findOpenFPGAloaderExecutable();
+      if (bin_ofl == null)
+        return stages;
+      stages.add(new ProcessStage(
+            "upload", "Uploading to FPGA via openFPGAloader",
+            openFPGAloaderCmd(bin_ofl),
+            "Failed to upload design; did you connect the board?") {
+        @Override
+        protected boolean prep() {
+          if (!cmdr.confirmDownload()) {
+            cancelled = true;
+            return false;
+          }
+          return true;
         }
-        return true;
-      }
-    });
+      });
+    } else {
+      stages.add(new ProcessStage(
+            "upload", "Uploading to FPGA",
+            apio("upload"),
+            "Failed to upload design; did you connect the board?") {
+        @Override
+        protected boolean prep() {
+          if (!cmdr.confirmDownload()) {
+            cancelled = true;
+            return false;
+          }
+          return true;
+        }
+      });
+    }
 
     return stages;
+  }
+
+  private ArrayList<String> openFPGAloaderCmd(String bin) {
+    ArrayList<String> cmd = new ArrayList<>();
+    cmd.add(bin);
+    cmd.add("--verify");
+    cmd.add("-b");
+    cmd.add(board.openFPGAloader_name);
+    cmd.add("hardware.bin");
+    return cmd;
+  }
+
+  private String findOpenFPGAloaderExecutable() {
+    String p = settings.GetOpenFPGALoaderPath();
+    if (p != null) {
+      File script = new File(p);
+      if (script.exists() && !script.isDirectory() && script.canExecute())
+        return p;
+      if (script.exists() && script.isDirectory()) {
+        String pp = p + "/openFPGAloader";
+        script = new File(pp);
+        if (script.exists() && !script.isDirectory() && script.canExecute())
+          return pp;
+      }
+      err.AddFatalError("OpenFPGAloaderPath=" + p + " is not executable, nor is it a directory"
+          + " containing openFPGAloader. Please adjust FPGA Settings then try again.");
+      return null;
+    }
+    // Try just using "openFPGAloader", hope it is found on system path?
+    return "openFPGAloader";
   }
 
   public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {

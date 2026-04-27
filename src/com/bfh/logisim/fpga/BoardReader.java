@@ -156,7 +156,7 @@ public class BoardReader {
     NodeList xml = getSection(doc, "BoardInformation");
     if (xml == null)
       return null;
-    String openFPGALoader_name = xmlToMap(xml).get("openFPGAloader/Name");
+    String openFPGALoader_name = xmlToMap(xml).get("Toolchain/openFPGAloaderName");
     if (openFPGALoader_name != null)
       openFPGALoader_name = openFPGALoader_name.trim();
     if (openFPGALoader_name != null && openFPGALoader_name.equals(""))
