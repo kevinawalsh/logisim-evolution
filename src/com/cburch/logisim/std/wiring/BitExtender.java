@@ -33,8 +33,13 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.swing.Icon;
 
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -53,6 +58,7 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.BitWidthConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.Icons;
 
 public class BitExtender extends InstanceFactory {
   private static final Attribute<BitWidth> ATTR_IN_WIDTH = Attributes
@@ -68,11 +74,22 @@ public class BitExtender extends InstanceFactory {
         new AttributeOption("sign", "sign", S.getter("extenderSignType")),
         new AttributeOption("input", "input", S.getter("extenderInputType")), });
 
+  static final Attribute<AttributeOption> ATTR_TRUNC = Attributes.forOption(
+      "type",
+      S.getter("extenderTypeAttr"),
+      new AttributeOption[] {
+        new AttributeOption("trunc", "trunc", S.getter("extenderTruncType")), });
+
+  static final Attribute<AttributeOption> ATTR_NOP = Attributes.forOption(
+      "type",
+      S.getter("extenderTypeAttr"),
+      new AttributeOption[] {
+        new AttributeOption("nop", "nop", S.getter("extenderNopType")), });
+
   public static final BitExtender FACTORY = new BitExtender();
 
   public BitExtender() {
     super("Bit Extender", S.getter("extenderComponent"));
-    setIconName("extender.gif");
     setAttributes(new Attribute[] { StdAttr.FACING,
       ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TYPE },
       new Object[] { Direction.EAST, BitWidth.create(8), BitWidth.create(16),
@@ -81,6 +98,29 @@ public class BitExtender extends InstanceFactory {
     setKeyConfigurator(JoinedConfigurator.create(new BitWidthConfigurator(
             ATTR_OUT_WIDTH), new BitWidthConfigurator(ATTR_IN_WIDTH, 1,
               Value.MAX_WIDTH, 0)));
+  }
+
+  @Override
+  public AttributeSet createAttributeSet() {
+    return new BitExtenderAttributes();
+  }
+  
+  private static final Icon ICON_EXTENDER = Icons.getIcon("extender.png");
+  private static final Icon ICON_TRUNCATOR = Icons.getIcon("truncator.png");
+  private static final Icon ICON_NOP = Icons.getIcon("nop.png");
+
+  @Override
+  public void paintIcon(InstancePainter painter) {
+    BitWidth w0 = painter.getAttributeValue(ATTR_OUT_WIDTH);
+    BitWidth w1 = painter.getAttributeValue(ATTR_IN_WIDTH);
+    Icon icon;
+    if (w0.compareTo(w1) > 0)
+      icon = ICON_EXTENDER;
+    else if (w0.compareTo(w1) < 0)
+      icon = ICON_TRUNCATOR;
+    else
+      icon = ICON_NOP;
+    icon.paintIcon(painter.getDestination(), painter.getGraphics(), 2, 2);
   }
 
   @Override
@@ -99,7 +139,10 @@ public class BitExtender extends InstanceFactory {
   private void configurePorts(Instance instance) {
     Port p0, p1, p2;
     Direction facing = instance.getAttributeValue(StdAttr.FACING);
-    boolean isInput = getType(instance.getAttributeSet()).equals("input");
+    BitWidth w0 = instance.getAttributeValue(ATTR_OUT_WIDTH);
+    BitWidth w1 = instance.getAttributeValue(ATTR_IN_WIDTH);
+    boolean isInput = getType(instance.getAttributeSet()).equals("input") &&
+      (w0.compareTo(w1) > 0);
     p0 = new Port(0, 0, Port.OUTPUT, ATTR_OUT_WIDTH);
     if (facing == Direction.WEST) {
       p1 = new Port(40, 0, Port.INPUT, ATTR_IN_WIDTH);
@@ -189,6 +232,7 @@ public class BitExtender extends InstanceFactory {
     paintBorder(painter);
 
     Graphics2D g = painter.getGraphics();
+    g.setFont(g.getFont().deriveFont(9.0f));
 
     Direction facing = painter.getAttributeValue(StdAttr.FACING);
     int degrees = Direction.EAST.toDegrees() - facing.toDegrees();
@@ -265,6 +309,91 @@ public class BitExtender extends InstanceFactory {
 
     Value out = in.extendWidth(wout.getWidth(), extend);
     state.setPort(0, out, 1);
+  }
+
+  class BitExtenderAttributes extends AbstractAttributeSet {
+
+    // WARNING: The prefix of these lists before both widths must be identical.
+    // The list of possible attributes depends on the widths, so during xml file
+    // loading the widths must be set before the remaining attribute.
+    private static final List<Attribute<?>> EXTENDER_ATTRIBUTES = Arrays.asList(
+        new Attribute<?>[] { StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TYPE }
+        );
+    
+    private static final List<Attribute<?>> TRUNCATOR_ATTRIBUTES = Arrays.asList(
+        new Attribute<?>[] { StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TRUNC }
+        );
+
+    private static final List<Attribute<?>> NOP_ATTRIBUTES = Arrays.asList(
+        new Attribute<?>[] { StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_NOP }
+        );
+
+    private Direction facing = Direction.EAST;
+    private BitWidth inWidth = BitWidth.create(8); 
+    private BitWidth outWidth = BitWidth.create(16); 
+    private AttributeOption type = ATTR_TYPE.parse("sign");
+    private static final AttributeOption TRUNC = ATTR_TRUNC.parse("trunc");
+    private static final AttributeOption NOP = ATTR_NOP.parse("nop");
+
+    public BitExtenderAttributes() { }
+
+    @Override
+    protected void copyInto(AbstractAttributeSet destObj) {
+      ; // nothing to do
+    }
+
+    @Override
+    public List<Attribute<?>> getAttributes() {
+      if (inWidth.compareTo(outWidth) < 0)
+        return EXTENDER_ATTRIBUTES;
+      else if (inWidth.compareTo(outWidth) > 0)
+        return TRUNCATOR_ATTRIBUTES;
+      else
+        return NOP_ATTRIBUTES;
+    }
+
+    @Override
+    public boolean isReadOnly(Attribute<?> attr) {
+      return attr == ATTR_TRUNC || attr == ATTR_NOP;
+    }
+
+    @Override
+    public boolean isToSave(Attribute<?> attr) {
+      return attr != ATTR_TRUNC && attr != ATTR_NOP;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <E> E getValue(Attribute<E> attr) {
+      if (attr == StdAttr.FACING)
+        return (E) facing;
+      if (attr == ATTR_IN_WIDTH)
+        return (E) inWidth;
+      if (attr == ATTR_OUT_WIDTH)
+        return (E) outWidth;
+      if (attr == ATTR_TYPE)
+        return (E) type;
+      if (attr == ATTR_TRUNC)
+        return (E) TRUNC;
+      if (attr == ATTR_NOP)
+        return (E) NOP;
+      return null;
+    }
+
+    @Override
+    public <V> void updateAttr(Attribute<V> attr, V value) {
+      int cmp = Integer.signum(inWidth.compareTo(outWidth));
+      if (attr == StdAttr.FACING)
+        facing = (Direction) value;
+      else if (attr == ATTR_IN_WIDTH)
+        inWidth = (BitWidth) value;
+      else if (attr == ATTR_OUT_WIDTH)
+        outWidth = (BitWidth) value;
+      else if (attr == ATTR_TYPE)
+        type = (AttributeOption) value;
+      if (cmp != Integer.signum(inWidth.compareTo(outWidth)))
+        fireAttributeListChanged();
+    }
   }
 
 }

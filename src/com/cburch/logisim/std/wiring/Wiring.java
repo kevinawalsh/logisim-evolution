@@ -51,7 +51,7 @@ public class Wiring extends Library {
 
   private static FactoryDescription EXTENDER_DESCRIPTION =
     new FactoryDescription("Bit Extender",
-        S.getter("extenderComponent"), "extender.gif",
+        S.getter("extenderComponent"), "extender.png",
         "BitExtender");
 
   // TODO: There are now two situations like this where we create multiple
