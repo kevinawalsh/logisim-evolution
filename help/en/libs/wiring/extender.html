@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="/logisim-evolution/sidebar.js"></script>
-<title>Bit Extender</title>
+<title>Extend/Truncate</title>
 <link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
 </head>
 
@@ -13,75 +13,87 @@
 <h1><img src="/logisim-evolution/icons/extender.png">
 <img src="/logisim-evolution/icons/truncator.png">
 <img src="/logisim-evolution/icons/nop.png">
-<em>Bit Extender</em></h1>
+<em>Extend/Truncate</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.5.0 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/extender.png" width="44" height="42"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
 
 <h2>Behavior</h2>
 
-<p>The bit extender transforms a value into a value of another bit width.
-For values being transformed into a smaller bit width,
-the value is simply truncated to keep the lowest-order bits.
-For values being transformed into a large bit width,
-the lowest-order bits are kept the same,
-and you have a choice about what the additional high-order bits will be:
-They can all be 0, all be 1, all match the input's <q>sign bit</q>
-(its highest-order bit), or the bit extender component can have an additional one-bit
-input that determines the value for the upper bits.</p>
+<p>Extend/Truncate changes the width of a value, either truncating it to have
+fewer bits, or extending it to have more bits, depending on the <i>Input
+Bits</i> and <i>Output Bits</i> properties.
 
-<h2>Pins</h2>
+<p><b>Truncate</b> - When there are fewer <i>Output Bits</i> than <i>Input
+Bits</i>, the output is formed by taking the input value and discarding some of
+the most significant (i.e. "leftmost") bits. For example, when truncating from
+8-bits to 4 bits, if the input is <tt>0x4a</tt> (or <tt>0100 1010</tt> in
+binary) then the output will be <tt>0xa</tt> (or <tt>1010</tt> in binary).
 
-<dl>
+<p><b>Extend</b> - When there are more <i>Output Bits</i> than <i>Input Bits</i>, 
+the output is formed by taking the input value, retaining all of those bits, and
+placing new bits to the "left" of them, so the new bits are now in the most
+significant (i.e. "leftmost") positions. The <i>Operation</i> property specifies
+what the new input bits will be:
+<ul>
+<li><b>zero-extend</b> - The new bits are all zeros. This is appropriate for unsigned values.
+<li><b>one-extend</b> - The new bits are all ones. This isn't commonly used.
+<li><b>sign-extend</b> - The new bits are copies of the leftmost bit of the input. This is appropriiate for signed two's complement values.
+<li><b>input-extend</b> - The new bits are specified by an additional 1-bit input. This isn't commonly used.
+</ul>
 
-<dt>West edge (input, bit width from Bit Width In property)</dt>
-<dd><p>The multi-bit input whose value is to be transformed.</p></dd>
+<p><b>No-op</b> - If there are the same number of <i>Output Bits</i> and
+<i>Input Bits</i>, this component does nothing useful: the output mirrors the
+input.
 
-<dt>East edge (output, bit width from Bit Width Out property)</dt>
-<dd><p>The computed output.</p></dd>
+<h2>Ports</h2>
 
-<dt>North edge (input, bit width 1)</dt>
-<dd><p>Specifies what the additional bits in the output should be.
-This pin is available only when the Extension Type property is <q>Input.</q></p></dd>
+<p>The input and output ports, on the east and west edges, are labeled with
+their width. When <i>Operation</i> is set to <i>input-extend</i>, a third port
+is present on the north edge, a 1-bit input to specify what the new bits will
+be.
 
-</dl>
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Typing a number (1-32)</b> changes the <i>Input Bits</i> property.
+
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b>
+changes the <i>Output Bits</i> property.</li>
+
+</ul>
 
 <h2>Properties</h2>
 
-<p>When the component is selected or being added,
-the digits 0 through 9 alter the <q>Bit Width In</q> property
-and Alt-0 through Alt-9 alter its <q>Bit Width Out</q> property.</p>
-
 <dl>
 
-<dt>Bit Width In</dt>
-<dd>The input's bit width.</dd>
+<dt>Facing</dt>
+<dd>The side where the output should be.</dd>
 
-<dt>Bit Width Out</dt>
-<dd>The output's bit width.</dd>
+<dt>Input Bits</dt>
+<dd>The number of bits in the input value.</dd>
 
-<dt>Extension Type</dt>
-<dd>Assuming the output bit width exceeds the input bit width,
-this property configures what the additional output bits should be.
-If <q>Zero</q> or <q>One,</q> the additional bits are 0 or 1 accordingly.
-If <q>Sign,</q> the additional bits are taken to match the highest-order bit in the input.
-And if <q>Input,</q> the component has a second input on its north side whose one-bit value is used for the additional bits.</dd>
+<dt>Output Bits</dt>
+<dd>The number of bits in the output.</dd>
+
+<dt>Operation</dt>
+<dd>When extending, controls how the new bits are determined.
+<ul>
+    <li><b>zero-extend</b>: New bits are zeros.
+    <li><b>one-extend</b>: New bits are ones.
+    <li><b>sign-extend</b>: New bits are copies of the input's most significant (leftmost) bit.
+    <li><b>input-extend</b>: New bits are copies of the value present at the second input port.
+</ul>
+</dd>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - extend/truncate components do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>
