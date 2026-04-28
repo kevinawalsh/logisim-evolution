@@ -45,7 +45,7 @@ import com.cburch.logisim.file.Options;
 import com.cburch.logisim.gui.log.ClockSource;
 import com.cburch.logisim.gui.log.ComponentSelector;
 import com.cburch.logisim.gui.log.SignalInfo;
-import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.UniquelyNamedThread;
 
@@ -630,7 +630,7 @@ public class Simulator {
     // dummy2.start();
     // dummy3.start();
 
-    setTickFrequency(AppPreferences.TICK_FREQUENCY.get().doubleValue());
+    setTickFrequency(StateStore.getTickFrequency());
   }
 
   public void addSimulatorListener(StatusListener l) {

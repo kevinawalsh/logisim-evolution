@@ -31,19 +31,13 @@
 package com.cburch.logisim.prefs;
 
 import java.util.Locale;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 
-import javax.swing.JFrame;
-
-import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.util.LocaleManager;
 
-@SuppressWarnings("unchecked")
 public class AppPreferences {
-  
+
   public static final class ChangeEvent<E> {
     public final Object pref; // PrefMonitor<E> or similar object like TemplatePref
     public final E oldValue, newValue;
@@ -58,10 +52,10 @@ public class AppPreferences {
   public interface Listener<E> {
     public void prefChanged(ChangeEvent<E> event);
   }
-  
+
   private static class LocalePreference extends PrefMonitor<String> {
     public LocalePreference() {
-      super("locale", "");
+      super("display", "locale", "");
       if (value != null && !value.equals(""))
         LocaleManager.setLocale(new Locale(value));
       LocaleManager.addLocaleListener(() -> set(LocaleManager.getLocale().getLanguage()));
@@ -97,9 +91,8 @@ public class AppPreferences {
 
   private static class AccentsPreference extends PrefMonitor<Boolean> {
     public AccentsPreference() {
-      super("accentsReplace", false);
+      super("display", "accentsReplace", false);
       LocaleManager.setReplaceAccents(value);
-      // No need for listener here, no other code changes the value in LocaleManager
     }
 
     @Override
@@ -112,30 +105,9 @@ public class AppPreferences {
     }
   }
 
+  /** Clears all user-set preferences; state (window size, zoom, etc.) is unaffected. */
   public static void clear() {
-    Preferences p = getPrefs(true);
-    try { p.clear(); }
-    catch (BackingStoreException e) { }
-  }
-
-  public static Preferences getPrefs() {
-    return getPrefs(false);
-  }
-
-  private static Preferences getPrefs(boolean shouldClear) {
-    if (prefs == null) {
-      synchronized (AppPreferences.class) {
-        if (prefs == null) {
-          Preferences p = Preferences.userNodeForPackage(Main.class);
-          if (shouldClear) {
-            try { p.clear(); }
-            catch (BackingStoreException e) { }
-          }
-          prefs = p;
-        }
-      }
-    }
-    return prefs;
+    SettingsStore.clear();
   }
 
   public static void handleGraphicsAcceleration() {
@@ -165,53 +137,65 @@ public class AppPreferences {
     }
   }
 
-  // class variables for maintaining consistency between properties,
-  // internal variables, and other classes
-  private static Preferences prefs = null;
-
+  // =========================================================================
   // Template preferences
+  // =========================================================================
+
   public static final TemplatePref TEMPLATE = new TemplatePref();
-  // International preferences
+
+  // =========================================================================
+  // Display preferences (section: "display")
+  // =========================================================================
+
   public static final String SHAPE_SHAPED = "shaped";
   public static final String SHAPE_RECTANGULAR = "rectangular";
   public static final String SHAPE_DIN40700 = "din40700";
   public static final PrefMonitor<String>
-      GATE_SHAPE = new PrefMonitor("gateShape",
+      GATE_SHAPE = new PrefMonitor<>("display", "gateShape",
           new String[] { SHAPE_SHAPED, SHAPE_RECTANGULAR, SHAPE_DIN40700 },
           SHAPE_SHAPED);
+
   public static final PrefMonitor<String>
       LOCALE = new LocalePreference();
+
   public static final PrefMonitor<Boolean>
       ACCENTS_REPLACE = new AccentsPreference();
-  // Window preferences
+
   public static final PrefMonitor<Boolean>
-      SHOW_TICK_RATE = new PrefMonitor("showTickRate", false);
+      SHOW_TICK_RATE = new PrefMonitor<>("display", "showTickRate", false);
+
   public static final PrefMonitor<Boolean>
-      SHOW_COORDS = new PrefMonitor("showCoordinates", false);
+      SHOW_COORDS = new PrefMonitor<>("display", "showCoordinates", false);
+
   public static final String TOOLBAR_HIDDEN = "hidden";
   public static final String TOOLBAR_DOWN_MIDDLE = "downMiddle";
   public static final PrefMonitor<String>
-      TOOLBAR_PLACEMENT = new PrefMonitor("toolbarPlacement",
+      TOOLBAR_PLACEMENT = new PrefMonitor<>("display", "toolbarPlacement",
           new String[] {
             Direction.NORTH.toString(), Direction.SOUTH.toString(),
             Direction.EAST.toString(), Direction.WEST.toString(),
             TOOLBAR_DOWN_MIDDLE, TOOLBAR_HIDDEN },
           Direction.NORTH.toString());
-  // Layout preferences
+
   public static final PrefMonitor<Boolean>
-      PRINTER_VIEW = new PrefMonitor("printerView", false);
+      PRINTER_VIEW = new PrefMonitor<>("display", "printerView", false);
+
   public static final PrefMonitor<Boolean>
-      ATTRIBUTE_HALO = new PrefMonitor("attributeHalo", true);
+      ATTRIBUTE_HALO = new PrefMonitor<>("display", "attributeHalo", true);
+
   public static final PrefMonitor<Boolean>
-      COMPONENT_TIPS = new PrefMonitor("componentTips", true);
+      COMPONENT_TIPS = new PrefMonitor<>("display", "componentTips", true);
+
   public static final PrefMonitor<Boolean>
-      MOVE_KEEP_CONNECT = new PrefMonitor("keepConnected", true);
+      MOVE_KEEP_CONNECT = new PrefMonitor<>("display", "keepConnected", true);
+
   public static final PrefMonitor<Boolean>
-      ADD_SHOW_GHOSTS = new PrefMonitor("showGhosts", true);
+      ADD_SHOW_GHOSTS = new PrefMonitor<>("display", "showGhosts", true);
+
   public static final String ADD_AFTER_UNCHANGED = "unchanged";
   public static final String ADD_AFTER_EDIT = "edit";
   public static final PrefMonitor<String>
-      ADD_AFTER = new PrefMonitor("afterAdd",
+      ADD_AFTER = new PrefMonitor<>("display", "afterAdd",
           new String[] { ADD_AFTER_EDIT, ADD_AFTER_UNCHANGED },
           ADD_AFTER_EDIT);
 
@@ -220,90 +204,67 @@ public class AppPreferences {
   static {
     RadixOption[] radixOptions = RadixOption.OPTIONS;
     String[] radixStrings = new String[radixOptions.length];
-    for (int i = 0; i < radixOptions.length; i++) {
+    for (int i = 0; i < radixOptions.length; i++)
       radixStrings[i] = radixOptions[i].getSaveString();
-    }
-    POKE_WIRE_RADIX1 = new PrefMonitor("pokeRadix1",
-          radixStrings, RadixOption.RADIX_2.getSaveString());
-    POKE_WIRE_RADIX2 = new PrefMonitor("pokeRadix2",
-          radixStrings, RadixOption.RADIX_10_SIGNED.getSaveString());
+    POKE_WIRE_RADIX1 = new PrefMonitor<>("display", "pokeRadix1",
+        radixStrings, RadixOption.RADIX_2.getSaveString());
+    POKE_WIRE_RADIX2 = new PrefMonitor<>("display", "pokeRadix2",
+        radixStrings, RadixOption.RADIX_10_SIGNED.getSaveString());
   }
 
-  // Experimental preferences
-  public static final PrefMonitor<Boolean> AUTO_BACKUP = new PrefMonitor("autobackup", true);
-  public static final PrefMonitor<Integer> AUTO_BACKUP_FREQ = new PrefMonitor("autobackupFreq", 7);
+  // =========================================================================
+  // Simulation preferences (section: "simulation")
+  // =========================================================================
+
+  public static final PrefMonitor<Boolean>
+      AUTO_BACKUP = new PrefMonitor<>("simulation", "autobackup", true);
+
+  public static final PrefMonitor<Integer>
+      AUTO_BACKUP_FREQ = new PrefMonitor<>("simulation", "autobackupFreq", 7);
+
+  public static final PrefMonitor<String>
+      QUESTA_PATH = new PrefMonitor<>("simulation", "questaPath", "");
+
+  public static final PrefMonitor<Boolean>
+      QUESTA_VALIDATION = new PrefMonitor<>("simulation", "questaValidation", false);
+
+  // =========================================================================
+  // Graphics preferences (section: "graphics")
+  // =========================================================================
+
   public static final String ACCEL_DEFAULT = "default";
-  public static final String ACCEL_NONE = "none";
-  public static final String ACCEL_METAL = "metal";
-  public static final String ACCEL_OPENGL = "opengl";
-  public static final String ACCEL_D3D = "d3d";
+  public static final String ACCEL_NONE    = "none";
+  public static final String ACCEL_METAL   = "metal";
+  public static final String ACCEL_OPENGL  = "opengl";
+  public static final String ACCEL_D3D     = "d3d";
   public static final PrefMonitor<String> GRAPHICS_ACCELERATION =
-    new PrefMonitor("graphicsAcceleration",
+      new PrefMonitor<>("graphics", "graphicsAcceleration",
           new String[] { ACCEL_DEFAULT, ACCEL_NONE, ACCEL_METAL, ACCEL_OPENGL, ACCEL_D3D },
           ACCEL_DEFAULT);
+
   public static final String DUALSCREEN_NONE = "none";
-  public static final String DUALSCREEN_FIX = "fixBlackWindows";
+  public static final String DUALSCREEN_FIX  = "fixBlackWindows";
   public static final String DUALSCREEN_MORE = "fixBlackWindowsMore";
   public static final String DUALSCREEN_MOST = "fixBlackWindowsBest";
   public static final PrefMonitor<String> DUALSCREEN =
-    new PrefMonitor("dualScreenFixes",
+      new PrefMonitor<>("graphics", "dualScreenFixes",
           new String[] { DUALSCREEN_NONE, DUALSCREEN_FIX, DUALSCREEN_MORE, DUALSCREEN_MOST },
           DUALSCREEN_NONE);
 
-  // Third party softwares preferences
-  public static final PrefMonitor<String>
-      QUESTA_PATH = new PrefMonitor("questaPath", "");
-  public static final PrefMonitor<Boolean>
-      QUESTA_VALIDATION = new PrefMonitor("questaValidation", false);
+  // =========================================================================
+  // Misc preferences (section: "misc")
+  // =========================================================================
 
-  // hidden window preferences - not part of the preferences dialog, changes
-  // to preference does not affect current windows, and the values are not
-  // saved until the application is closed
+  public static final PrefMonitor<Integer>
+      WIRING_TOOL_TIP = new PrefMonitor<>("misc", "wiringToolTip", 3);
+
+  public static final PrefMonitor<Integer>
+      CUTTER_TOOL_TIP = new PrefMonitor<>("misc", "cutterToolTip", 3);
+
+  // =========================================================================
+  // Recent projects (state — backed by StateStore, not SettingsStore)
+  // =========================================================================
+
   public static final RecentProjects
       RECENT_PROJECTS = new RecentProjects();
-
-  public static final PrefMonitor<Double>
-      TICK_FREQUENCY = new PrefMonitor("tickFrequency", 1.0);
-
-  public static final PrefMonitor<Boolean>
-      LAYOUT_SHOW_GRID = new PrefMonitor("layoutGrid", true);
-
-  public static final PrefMonitor<Double>
-      LAYOUT_ZOOM = new PrefMonitor("layoutZoom", 1.0);
-
-  public static final PrefMonitor<Boolean>
-      APPEARANCE_SHOW_GRID = new PrefMonitor("appearanceGrid", true);
-
-  public static final PrefMonitor<Double>
-      APPEARANCE_ZOOM = new PrefMonitor("appearanceZoom", 1.0);
-
-  public static final PrefMonitor<Integer>
-      WINDOW_STATE = new PrefMonitor("windowState", JFrame.NORMAL);
-
-  public static final PrefMonitor<Integer>
-      WINDOW_WIDTH = new PrefMonitor("windowWidth", 640);
-
-  public static final PrefMonitor<Integer>
-      WINDOW_HEIGHT = new PrefMonitor("windowHeight", 480);
-
-  public static final PrefMonitor<String>
-      WINDOW_LOCATION = new PrefMonitor("windowLocation", "0,0");
-
-  public static final PrefMonitor<Double>
-      WINDOW_MAIN_SPLIT = new PrefMonitor("windowMainSplit", 0.25);
-
-  public static final PrefMonitor<Double>
-      WINDOW_LEFT_SPLIT = new PrefMonitor("windowLeftSplit", 0.5);
-
-  public static final PrefMonitor<Double>
-      WINDOW_RIGHT_SPLIT = new PrefMonitor("windowRightSplit", 0.75);
-
-  public static final PrefMonitor<String>
-      DIALOG_DIRECTORY = new PrefMonitor("dialogDirectory", "");
-
-  public static final PrefMonitor<Integer>
-      WIRING_TOOL_TIP = new PrefMonitor("wiringToolTip", 3);
-
-  public static final PrefMonitor<Integer>
-      CUTTER_TOOL_TIP = new PrefMonitor("cutterToolTip", 3);
 }

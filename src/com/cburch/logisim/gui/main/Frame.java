@@ -81,6 +81,7 @@ import com.cburch.logisim.gui.generic.ZoomControl;
 import com.cburch.logisim.gui.generic.ZoomModel;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.proj.ProjectEvent;
@@ -252,17 +253,9 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   // }
 
   private static Point getInitialLocation() {
-    String s = AppPreferences.WINDOW_LOCATION.get();
-    if (s == null) {
-      return null;
-    }
-    int comma = s.indexOf(',');
-    if (comma < 0) {
-      return null;
-    }
+    int x = StateStore.getWindowX();
+    int y = StateStore.getWindowY();
     try {
-      int x = Integer.parseInt(s.substring(0, comma));
-      int y = Integer.parseInt(s.substring(comma + 1));
       while (isProjectFrameAt(x, y)) {
         x += 20;
         y += 20;
@@ -360,7 +353,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   // for VHDL Editor
   private ToolbarModel hdlToolbarModel;
 
-  private Double lastFraction = AppPreferences.WINDOW_RIGHT_SPLIT.get();
+  private Double lastFraction = 0.75; // right-split default; see commented-out code below
 
   public Frame(Project project) {
     super(project);
@@ -377,8 +370,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     // set up elements for the Layout view
     layoutToolbarModel = new LayoutToolbarModel(this, project);
     layoutCanvas = new Canvas(project);
-    layoutZoomModel = new BasicZoomModel(AppPreferences.LAYOUT_SHOW_GRID,
-        AppPreferences.LAYOUT_ZOOM, ZOOM_OPTIONS);
+    layoutZoomModel = new BasicZoomModel(StateStore.getLayoutGrid(),
+        StateStore.getLayoutZoom(), ZOOM_OPTIONS);
 
     layoutCanvas.getGridPainter().setZoomModel(layoutZoomModel);
     layoutEditHandler = new LayoutEditHandler(this);
@@ -441,7 +434,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     bottomTabAndZoom.add(attrFooter, BorderLayout.SOUTH);
 
     leftRegion = new HorizontalSplitPane(topTab, bottomTabAndZoom,
-        AppPreferences.WINDOW_LEFT_SPLIT.get());
+        StateStore.getLeftSplit());
 
     hdlEditor = new HdlContentView(project);
     // vhdlSimulatorConsole = new VhdlSimulatorConsole(project);
@@ -452,19 +445,18 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     rightPanel.add(rightRegion, BorderLayout.CENTER);
 
     mainRegion = new VerticalSplitPane(leftRegion, rightPanel,
-        clamp(AppPreferences.WINDOW_MAIN_SPLIT.get(), 0.05, 0.80));
+        clamp(StateStore.getMainSplit(), 0.05, 0.80));
 
     getContentPane().add(mainRegion, BorderLayout.CENTER);
 
     computeTitle();
 
-    this.setSize(AppPreferences.WINDOW_WIDTH.get(),
-        AppPreferences.WINDOW_HEIGHT.get());
+    this.setSize(StateStore.getWindowWidth(), StateStore.getWindowHeight());
     Point prefPoint = getInitialLocation();
     if (prefPoint != null) {
       this.setLocation(prefPoint);
     }
-    this.setExtendedState(AppPreferences.WINDOW_STATE.get());
+    this.setExtendedState(StateStore.getWindowState());
 
     menuListener.register(mainPanel);
     KeyboardToolSelection.register(toolbar);
@@ -587,19 +579,19 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   }
 
   public void savePreferences() {
-    AppPreferences.TICK_FREQUENCY.set(project.getSimulator().getTickFrequency());
-    AppPreferences.LAYOUT_SHOW_GRID.set(layoutZoomModel.getShowGrid());
-    AppPreferences.LAYOUT_ZOOM.set(layoutZoomModel.getZoomFactor());
+    StateStore.setTickFrequency(project.getSimulator().getTickFrequency());
+    StateStore.setLayoutGrid(layoutZoomModel.getShowGrid());
+    StateStore.setLayoutZoom(layoutZoomModel.getZoomFactor());
     if (appearance != null) {
       ZoomModel aZoom = appearance.getZoomModel();
-      AppPreferences.APPEARANCE_SHOW_GRID.set(aZoom.getShowGrid());
-      AppPreferences.APPEARANCE_ZOOM.set(aZoom.getZoomFactor());
+      StateStore.setAppearanceGrid(aZoom.getShowGrid());
+      StateStore.setAppearanceZoom(aZoom.getZoomFactor());
     }
     int state = getExtendedState() & ~JFrame.ICONIFIED;
-    AppPreferences.WINDOW_STATE.set(state);
+    StateStore.setWindowState(state);
     Dimension dim = getSize();
-    AppPreferences.WINDOW_WIDTH.set(dim.width);
-    AppPreferences.WINDOW_HEIGHT.set(dim.height);
+    StateStore.setWindowWidth(dim.width);
+    StateStore.setWindowHeight(dim.height);
     Point loc;
     try {
       loc = getLocationOnScreen();
@@ -607,14 +599,13 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       loc = Projects.getLocation(this);
     }
     if (loc != null) {
-      AppPreferences.WINDOW_LOCATION.set(loc.x + "," + loc.y);
+      StateStore.setWindowX(loc.x);
+      StateStore.setWindowY(loc.y);
     }
-    AppPreferences.WINDOW_LEFT_SPLIT.set(leftRegion.getFraction());
-
-    // if (rightRegion.getFraction() < 1.0)
-    //   AppPreferences.WINDOW_RIGHT_SPLIT.set(rightRegion.getFraction());
-    AppPreferences.WINDOW_MAIN_SPLIT.set(clamp(mainRegion.getFraction(), 0.05, 0.80));
-    AppPreferences.DIALOG_DIRECTORY.set(JFileChoosers.getCurrentDirectory());
+    StateStore.setLeftSplit(leftRegion.getFraction());
+    StateStore.setMainSplit(clamp(mainRegion.getFraction(), 0.05, 0.80));
+    StateStore.setDialogDirectory(JFileChoosers.getCurrentDirectory());
+    StateStore.save();
   }
 
   void setAttrTableModel(AttrTableModel value) {

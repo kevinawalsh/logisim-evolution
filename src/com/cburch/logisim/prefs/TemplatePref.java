@@ -34,8 +34,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.Preferences;
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.gui.start.Startup;
@@ -43,64 +41,52 @@ import com.cburch.logisim.util.WeakList;
 
 public class TemplatePref {
 
-  // Template preferences,
-  // holds type (integer) and custom template path (optional, string).
-  
-  private static final String TYPE_KEY = "templateType";
-  private static final String FILE_KEY = "templateFile";
-  
+  // Template preferences in the "misc" section of settings.xml
+  private static final String SECTION   = "misc";
+  private static final String TYPE_KEY  = "templateType";
+  private static final String FILE_KEY  = "templateFile";
+
   public static final int TEMPLATE_UNKNOWN = -1;
-  public static final int TEMPLATE_EMPTY = 0;
-  public static final int TEMPLATE_PLAIN = 1;
-  public static final int TEMPLATE_CUSTOM = 2;
+  public static final int TEMPLATE_EMPTY   = 0;
+  public static final int TEMPLATE_PLAIN   = 1;
+  public static final int TEMPLATE_CUSTOM  = 2;
 
   private int typeValue;
   private File fileValue; // non-null only if typeValue==TEMPLATE_CUSTOM
-  private Preferences backingStore;
 
   public TemplatePref() {
-    this.typeValue = TEMPLATE_PLAIN;
-    this.fileValue = null;
-    this.backingStore = AppPreferences.getPrefs();
-    backingStore.addPreferenceChangeListener(e -> backingStoreChanged(e));
+    // Register keys so they appear in settings.xml
+    SettingsStore.registerKey(SECTION, TYPE_KEY, "" + TEMPLATE_PLAIN);
+    SettingsStore.registerKey(SECTION, FILE_KEY, "");
 
-    setFromBackingStore(false);
+    // React to changes pushed by SettingsStore (e.g. from another instance or clear())
+    SettingsStore.addChangeListener(SECTION, TYPE_KEY, () -> setFromStore(true));
+    SettingsStore.addChangeListener(SECTION, FILE_KEY, () -> setFromStore(true));
+
+    setFromStore(false);
   }
 
-  public int getType() {
-    return typeValue;
-  }
-
-  public boolean isEmptyType() { return typeValue == TEMPLATE_EMPTY; }
-  public boolean isPlainType() { return typeValue == TEMPLATE_PLAIN; }
+  public int getType()        { return typeValue; }
+  public boolean isEmptyType()  { return typeValue == TEMPLATE_EMPTY; }
+  public boolean isPlainType()  { return typeValue == TEMPLATE_PLAIN; }
   public boolean isCustomType() { return typeValue == TEMPLATE_CUSTOM; }
+  public File getFile()         { return fileValue; }
 
-  public File getFile() {
-    return fileValue;
-  }
-
-  public void setEmpty() {
-    set(TEMPLATE_EMPTY, null, null);
-  }
-
-  public void setPlain() {
-    set(TEMPLATE_PLAIN, null, null);
-  }
-
-  public void setCustom(File file, Template template) {
-    set(TEMPLATE_CUSTOM, file, template);
-  }
+  public void setEmpty()                              { set(TEMPLATE_EMPTY,  null, null); }
+  public void setPlain()                              { set(TEMPLATE_PLAIN,  null, null); }
+  public void setCustom(File file, Template template) { set(TEMPLATE_CUSTOM, file, template); }
 
   private void set(int newType, File newFile, Template newTemplate) {
     if (setAndFire(newType, newFile, newTemplate))
-      setIntoBackingStore();
+      setIntoStore();
   }
 
   private boolean setAndFire(int newType, File newFile, Template newTemplate) {
-    if (newType == typeValue && (typeValue != TEMPLATE_CUSTOM || identical(newFile, fileValue)))
+    if (newType == typeValue
+        && (typeValue != TEMPLATE_CUSTOM || identical(newFile, fileValue)))
       return false;
-    Object oldValue = typeValue == TEMPLATE_CUSTOM ? fileValue : (Integer)typeValue;
-    Object newValue = newType == TEMPLATE_CUSTOM ? newFile : (Integer)newType;
+    Object oldValue = typeValue == TEMPLATE_CUSTOM ? fileValue : (Integer) typeValue;
+    Object newValue = newType  == TEMPLATE_CUSTOM ? newFile  : (Integer) newType;
     typeValue = newType;
     fileValue = newFile;
     customTemplate = newTemplate;
@@ -110,39 +96,25 @@ public class TemplatePref {
     return true;
   }
 
-  private void setIntoBackingStore() {
+  private void setIntoStore() {
     try {
       String path = fileValue == null ? "" : fileValue.getCanonicalPath();
-      // in case PreferenceChangeEvent arrives quickly, let's do path first,
-      // as that callback will turn into a nop.
-      backingStore.put(FILE_KEY, path);
-      backingStore.putInt(TYPE_KEY, (Integer)typeValue);
+      // write path first so that if the change listener fires mid-write it's a nop
+      SettingsStore.put(SECTION, FILE_KEY, path);
+      SettingsStore.put(SECTION, TYPE_KEY, "" + typeValue);
     } catch (IOException ex) { }
   }
 
-  private void backingStoreChanged(PreferenceChangeEvent event) {
-    if (event.getKey().equals(TYPE_KEY)) {
-      int newType = convertTypeFromString(event.getNewValue());
-      if (newType == typeValue)
-        return;
-      setFromBackingStore(true); // type changed out from under us
-    } else if (event.getKey().equals(FILE_KEY)) {
-      String path = event.getNewValue();
-      File newFile = (path == null || path.equals("")) ? null : new File(path);
-      if (identical(newFile, fileValue))
-        return;
-      setFromBackingStore(true); // file changed out from under us
-    }
-  }
-
-  private void setFromBackingStore(boolean shouldFire) {
-    int newType = backingStore.getInt(TYPE_KEY, (Integer)TEMPLATE_PLAIN);
-    String path = newType == TEMPLATE_CUSTOM ? backingStore.get(FILE_KEY, "") : null;
-    File newFile = (path == null || path.equals("")) ? null : new File(path);
-    if (newType == typeValue && (typeValue != TEMPLATE_CUSTOM || newFile.equals(fileValue)))
+  private void setFromStore(boolean shouldFire) {
+    String typeStr = SettingsStore.getEffective(SECTION, TYPE_KEY);
+    int newType = convertTypeFromString(typeStr);
+    String path = newType == TEMPLATE_CUSTOM ? SettingsStore.getEffective(SECTION, FILE_KEY) : null;
+    File newFile = (path == null || path.isEmpty()) ? null : new File(path);
+    if (newType == typeValue
+        && (typeValue != TEMPLATE_CUSTOM || identical(newFile, fileValue)))
       return;
-    Object oldValue = typeValue == TEMPLATE_CUSTOM ? fileValue : (Integer)typeValue;
-    Object newValue = newType == TEMPLATE_CUSTOM ? newFile : (Integer)newType;
+    Object oldValue = typeValue == TEMPLATE_CUSTOM ? fileValue : (Integer) typeValue;
+    Object newValue = newType  == TEMPLATE_CUSTOM ? newFile  : (Integer) newType;
     typeValue = newType;
     fileValue = newFile;
     customTemplate = null;
@@ -152,26 +124,27 @@ public class TemplatePref {
           firePrefChangeEvent(new AppPreferences.ChangeEvent<Object>(this, oldValue, newValue)));
   }
 
+  // =========================================================================
+  // Template loading
+  // =========================================================================
+
   public Template getTemplate() {
     switch (typeValue) {
-    case TEMPLATE_EMPTY:
-      return getEmptyTemplate();
-    case TEMPLATE_CUSTOM:
-      return getCustomTemplate();
-    case TEMPLATE_PLAIN:
-    default:
-      return getPlainTemplate();
+      case TEMPLATE_EMPTY:  return getEmptyTemplate();
+      case TEMPLATE_CUSTOM: return getCustomTemplate();
+      case TEMPLATE_PLAIN:
+      default:              return getPlainTemplate();
     }
   }
 
-  private Template emptyTemplate = null; // cached, set once
+  private Template emptyTemplate = null;
   public Template getEmptyTemplate() {
     if (emptyTemplate == null)
       emptyTemplate = Template.createEmpty();
     return emptyTemplate;
   }
 
-  private Template plainTemplate = null; // cached, set once
+  private Template plainTemplate = null;
   private Template getPlainTemplate() {
     if (plainTemplate == null) {
       ClassLoader ld = Startup.class.getClassLoader();
@@ -180,11 +153,8 @@ public class TemplatePref {
         plainTemplate = getEmptyTemplate();
       } else {
         try {
-          try {
-            plainTemplate = Template.create(in);
-          } finally {
-            in.close();
-          }
+          try { plainTemplate = Template.create(in); }
+          finally { in.close(); }
         } catch (Exception e) {
           plainTemplate = getEmptyTemplate();
         }
@@ -193,11 +163,11 @@ public class TemplatePref {
     return plainTemplate;
   }
 
-  private Template customTemplate = null; // cached, may be reset
-  private File customTemplateSourceFile = null; // file from where customTemplate came
+  private Template customTemplate = null;
+  private File customTemplateSourceFile = null;
   private Template getCustomTemplate() {
     File toRead = fileValue;
-    if (customTemplateSourceFile == null || !(customTemplateSourceFile.equals(toRead))) {
+    if (customTemplateSourceFile == null || !customTemplateSourceFile.equals(toRead)) {
       customTemplate = null;
       customTemplateSourceFile = null;
       if (toRead != null) {
@@ -209,8 +179,7 @@ public class TemplatePref {
         } catch (Exception t) {
         } finally {
           if (reader != null) {
-            try { reader.close(); }
-            catch (IOException e) { }
+            try { reader.close(); } catch (IOException e) { }
           }
         }
       }
@@ -219,14 +188,11 @@ public class TemplatePref {
   }
 
   private int convertTypeFromString(String s) {
-    if (s == null)
-      return TEMPLATE_PLAIN;
+    if (s == null) return TEMPLATE_PLAIN;
     try {
-      int newValue = Integer.parseInt(s);
-      if (newValue == TEMPLATE_EMPTY ||
-          newValue == TEMPLATE_PLAIN ||
-          newValue == TEMPLATE_CUSTOM)
-        return newValue;
+      int v = Integer.parseInt(s);
+      if (v == TEMPLATE_EMPTY || v == TEMPLATE_PLAIN || v == TEMPLATE_CUSTOM)
+        return v;
     } catch (NumberFormatException e) { }
     return TEMPLATE_PLAIN;
   }
@@ -240,5 +206,4 @@ public class TemplatePref {
     return (a == null && b == null)
         || (a != null && b != null && a.equals(b));
   }
-
 }

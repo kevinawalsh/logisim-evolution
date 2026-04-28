@@ -30,31 +30,39 @@
 
 package com.cburch.logisim.prefs;
 
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.Preferences;
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.util.WeakList;
 
 public class PrefMonitor<E> {
 
-  protected String name;
+  protected final String section;
+  protected final String name;
   protected E value, dflt;
   protected E[] opts; // only enforced if not null
-  protected Preferences backingStore;
 
-  PrefMonitor(String name, E dflt) {
-    this(name, null, dflt);
+  PrefMonitor(String section, String name, E dflt) {
+    this(section, name, null, dflt);
   }
 
-  PrefMonitor(String name, E[] opts, E dflt) {
+  PrefMonitor(String section, String name, E[] opts, E dflt) {
+    this.section = section;
     this.name = name;
     this.dflt = dflt;
     this.value = dflt;
     this.opts = opts;
-    this.backingStore = AppPreferences.getPrefs();
-    backingStore.addPreferenceChangeListener(e -> backingStoreChanged(e));
-    setFromBackingStore();
+
+    // Register this key so it appears in settings.xml (even when unset)
+    SettingsStore.registerKey(section, name, convertToString(dflt));
+
+    // React to changes pushed by SettingsStore (e.g. from --config reload or clear())
+    SettingsStore.addChangeListener(section, name, () -> {
+      E newVal = convertFromString(SettingsStore.getEffective(section, name));
+      setAndFire(newVal);
+    });
+
+    // Load initial value from SettingsStore
+    setFromStore();
   }
 
   private final WeakList<AppPreferences.Listener<E>> listeners = new WeakList<>();
@@ -68,14 +76,24 @@ public class PrefMonitor<E> {
 
   public void set(E newValue) {
     if (setAndFire(newValue))
-      setIntoBackingStore();
+      SettingsStore.put(section, name, convertToString(newValue));
   }
 
-  private void backingStoreChanged(PreferenceChangeEvent event) {
-    if (!event.getKey().equals(name))
-      return;
-    E newValue = convertFromString(event.getNewValue());
-    setAndFire(newValue);
+  /** Returns true if the user has explicitly set this preference (has value= in settings.xml). */
+  public boolean isUserSet() {
+    return SettingsStore.isUserSet(section, name);
+  }
+
+  /** Clears the user-set value; effective value reverts to the default. */
+  public void unset() {
+    SettingsStore.unset(section, name);
+    // Change listener will call setAndFire() with the new effective (default) value
+  }
+
+  private void setFromStore() { // does not fire
+    E newValue = convertFromString(SettingsStore.getEffective(section, name));
+    newValue = ensureWithinRange(newValue);
+    value = (newValue != null) ? newValue : dflt;
   }
 
   protected boolean setAndFire(E newValue) {
@@ -91,48 +109,19 @@ public class PrefMonitor<E> {
     return true;
   }
 
-  private void setIntoBackingStore() {
-    if (dflt instanceof Double)
-      backingStore.putDouble(name, (Double)value);
-    else if (dflt instanceof Integer)
-      backingStore.putInt(name, (Integer)value);
-    else if (dflt instanceof Boolean)
-      backingStore.putBoolean(name, (Boolean)value);
-    else if (dflt instanceof String)
-      backingStore.put(name, (String)value);
-  }
-
   private E ensureWithinRange(E v) {
     if (opts == null)
       return v;
-    E chosen = dflt;
     for (E opt : opts) {
-      if (identical(opt, v)) {
+      if (identical(opt, v))
         return opt;
-      }
     }
     return dflt;
   }
 
-  @SuppressWarnings("unchecked")
-  private void setFromBackingStore() { // does not fire
-    E newValue;
-    if (dflt instanceof Double)
-      newValue = (E)Double.valueOf(backingStore.getDouble(name, (Double)dflt));
-    else if (dflt instanceof Integer)
-      newValue = (E)Integer.valueOf(backingStore.getInt(name, (Integer)dflt));
-    else if (dflt instanceof Boolean)
-      newValue = (E)Boolean.valueOf(backingStore.getBoolean(name, (Boolean)dflt));
-    else if (dflt instanceof String)
-      newValue = (E)backingStore.get(name, (String)dflt);
-    else
-      throw new IllegalArgumentException("illegal preference type");
-    if (identical(newValue, value))
-      return;
-    newValue = ensureWithinRange(newValue);
-    if (identical(value, newValue))
-      return;
-    value = newValue;
+  private String convertToString(E v) {
+    if (v == null) return null;
+    return v.toString();
   }
 
   @SuppressWarnings("unchecked")
@@ -140,22 +129,20 @@ public class PrefMonitor<E> {
     if (s == null)
       return dflt;
     try {
-      E newValue;
       if (dflt instanceof Double)
-        newValue = (E)Double.valueOf(Double.parseDouble(s));
+        return (E) Double.valueOf(Double.parseDouble(s));
       else if (dflt instanceof Integer)
-        newValue = (E)Integer.valueOf(Integer.parseInt(s));
+        return (E) Integer.valueOf(Integer.parseInt(s));
       else if (dflt instanceof Boolean && s.equalsIgnoreCase("true"))
-        newValue = (E)Boolean.TRUE;
+        return (E) Boolean.TRUE;
       else if (dflt instanceof Boolean && s.equalsIgnoreCase("false"))
-        newValue = (E)Boolean.FALSE;
+        return (E) Boolean.FALSE;
       else if (dflt instanceof Boolean)
         return dflt;
       else if (dflt instanceof String)
-        newValue = (E)s;
+        return (E) s;
       else
-        throw new IllegalArgumentException("illegal preference type");
-      return ensureWithinRange(newValue);
+        throw new IllegalArgumentException("illegal preference type: " + dflt.getClass());
     } catch (NumberFormatException e) {
       return dflt;
     }
@@ -165,5 +152,4 @@ public class PrefMonitor<E> {
     return (a == null && b == null)
         || (a != null && b != null && a.equals(b));
   }
-
 }

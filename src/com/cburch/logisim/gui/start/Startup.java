@@ -61,6 +61,8 @@ import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.WindowManagers;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.prefs.SettingsStore;
+import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.util.Debug;
@@ -89,6 +91,8 @@ public class Startup {
     options.put("--accents", ONEPARAM);
     options.put("--nosplash", 0);
     options.put("--clearprefs", 0);
+    options.put("--config", ONEPARAM);
+    options.put("--defaults", ONEPARAM);
     options.put("--questa", ONEPARAM);
     options.put("--sub", TWOPARAM);
     options.put("--test", TWOPARAM); // is this a tty option? what is this?
@@ -135,6 +139,8 @@ public class Startup {
 
     // first pass: check for headless, process locale, and make note of high priority items
     boolean doClearPreferences = false;
+    File configOverride = null;
+    File defaultsOverride = null;
     int i;
     for (i = 0; i < args.length && args[i].startsWith("-"); i++) {
       String arg = args[i];
@@ -156,6 +162,8 @@ public class Startup {
         arg = arg.substring(1);
       // special cases
       doClearPreferences |= (arg.equals("-clearprefs") || arg.equals("-clearprops"));
+      if (arg.equals("-config"))   configOverride  = new File(args[i]);
+      if (arg.equals("-defaults")) defaultsOverride = new File(args[i]);
       if (arg.equals("-help") || arg.equals("-?"))
         printUsage();
       if (arg.equals("-locale"))
@@ -182,6 +190,13 @@ public class Startup {
 
     if (GraphicsEnvironment.isHeadless() && !Main.headless)
       fail(S.get("argHeadlessError"));
+
+    // Initialize settings and state stores before any AppPreferences access
+    SettingsStore.initialize(configOverride, defaultsOverride);
+    StateStore.initialize();
+
+    if (doClearPreferences)
+      AppPreferences.clear();
 
     if (!Main.headless) {
       // we're using the GUI: Set up the Look&Feel to match the platform
@@ -213,9 +228,6 @@ public class Startup {
     Startup ret = new Startup();
     if (!Main.headless)
       DesktopIntegration.init(ret);
-
-    if (doClearPreferences)
-      AppPreferences.clear();
 
     for ( ; i < args.length; i++)
       ret.filesToOpen.add(new File(args[i]));
@@ -378,10 +390,12 @@ public class Startup {
         }
         if (w <= 0 || h <= 0)
           fail(S.get("argGeometryError"));
-        AppPreferences.WINDOW_WIDTH.set(w);
-        AppPreferences.WINDOW_HEIGHT.set(h);
-        if (loc != null)
-          AppPreferences.WINDOW_LOCATION.set(x+","+y);
+        StateStore.setWindowWidth(w);
+        StateStore.setWindowHeight(h);
+        if (loc != null) {
+          StateStore.setWindowX(x);
+          StateStore.setWindowY(y);
+        }
       } else if (arg.equals("-locale")) {
         // already handled above
       } else if (arg.equals("-accents")) {
@@ -401,6 +415,8 @@ public class Startup {
       } else if (arg.equals("-circuit")) {
         ret.circuitToTest = param0;
       } else if (arg.equals("-clearprefs") || arg.equals("-clearprops")) {
+        // already handled above
+      } else if (arg.equals("-config") || arg.equals("-defaults")) {
         // already handled above
       } else if (arg.equals("-analyze")) {
         // ignore

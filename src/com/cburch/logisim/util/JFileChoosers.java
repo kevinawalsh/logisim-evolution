@@ -40,7 +40,7 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
 import com.cburch.logisim.Main;
-import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.prefs.StateStore;
 
 public class JFileChoosers {
   /*
@@ -186,7 +186,7 @@ public class JFileChoosers {
         if (prop == null) {
           dirname = currentDirectory;
           if (dirname.equals("")) {
-            dirname = AppPreferences.DIALOG_DIRECTORY.get();
+            dirname = StateStore.getDialogDirectory();
           }
         } else {
           dirname = System.getProperty(prop);

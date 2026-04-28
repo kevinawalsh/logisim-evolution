@@ -31,76 +31,70 @@
 package com.bfh.logisim.settings;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.bfh.logisim.download.FPGADownload;
-import com.bfh.logisim.download.GowinDownload;
+
 import com.bfh.logisim.download.LatticeDownload;
 import com.bfh.logisim.gui.FPGASettingsDialog;
-import com.cburch.logisim.util.Errors;
+import com.cburch.logisim.prefs.SettingsStore;
 
+/**
+ * FPGA-related settings, backed by the {@code <fpga>} section of
+ * {@code settings.xml} managed by {@link SettingsStore}.
+ *
+ * All workspace values are held in-memory. Changes are flushed back to
+ * SettingsStore (and from there to disk) via {@link #updateSettingsFile()}.
+ * The getter/setter API is identical to the old Settings.java so that the
+ * ~40 FPGA callsites need no changes.
+ */
 public class Settings {
 
-  public static final String VHDL = "VHDL";
+  public static final String VHDL    = "VHDL";
   public static final String VERILOG = "Verilog";
 
-  private static final String WorkSpace = "WorkSpace";
-  private static final String WorkPath = "WorkPath";
-  private static final String WorkPathName = "logisim_fpga_workspace" + File.separator;
+  // =========================================================================
+  // In-memory workspace settings
+  // =========================================================================
 
-  private static final String XilinxToolsPath = "XilinxToolsPath";
-  // AlteraToolsPath can be a local directory, in which case we look for
-  // programs like quartus_pgm and quartus_map in that directory.
-  // Or, AlteraToolsPath can be a local filename, which is used as a single
-  // executable script or program to do synthesis.
-  // or, AlteraToolsPath can be a URL (starting with http:// or https://) in
-  // which case a web API is used.
-  private static final String AlteraToolsPath = "AlteraToolsPath";
-  private static final String GowinShPath = "GowinShPath";
-  private static final String GowinProgPath = "GowinProgPath";
-  private static final String Altera64Bit = "Altera64Bit";
-  private static final String LatticeToolsPath = "LatticeToolsPath";
-  private static final String ApioToolsPath = "ApioToolsPath";
-  private static final String OpenFPGAloaderPath = "openFPGAloaderPath";
-  private static final String RawBinaryFormat = "RawBinaryFormat";
-  private static final String HDLTypeToGenerate = "HDLTypeToGenerate";
-  private static final String FPGABoards = "FPGABoards";
-  private static final String SelectedBoard = "SelectedBoard";
-  private static final String ExternalBoard = "ExternalBoardFile_";
+  private String  workspacePath = "";
+  private String  hdlType       = VHDL;
+  private String  selectedBoard = "";
+  private boolean useRBF        = false;
+  private String  xilinxPath    = "";
+  private String  alteraPath    = "";
+  private boolean altera64bit   = true;
+  private String  gowinShPath   = "";
+  private String  gowinProgPath = "";
+  private String  latticePath   = "";
+  private String  apioPath      = "";
+  private String  openFpgaPath  = "";
 
-  private String HomePath;
-  private String SharedPath;
-  private String SettingsElement = "LogisimFPGASettings";
-  private String UserSettingsFileName = ".LogisimFPGASettings.xml";
-  private String SharedSettingsFileName = "LogisimFPGASettings.xml";
-  private String LoadedSettingsFileName = "";
-  private Document SettingsDocument;
-  private boolean modified = false;
-  private BoardList KnownBoards = new BoardList();
-  private ArrayList<Listener> listeners = new ArrayList<>();
+  // Per-board preferences: boardName -> {attrName -> value}
+  private final LinkedHashMap<String, LinkedHashMap<String, String>> boardPrefs =
+      new LinkedHashMap<>();
+
+  // External board file paths (in registration order)
+  private final ArrayList<String> externalBoards = new ArrayList<>();
+
+  // Board catalog (built-in + external)
+  private final BoardList knownBoards = new BoardList();
+
+  private final ArrayList<Listener> listeners = new ArrayList<>();
+  private boolean dirty = false;
+
+  // =========================================================================
+  // Singleton
+  // =========================================================================
 
   private static Settings singleton;
 
@@ -111,33 +105,29 @@ public class Settings {
   }
 
   private Settings() {
-    HomePath = System.getProperty("user.home");
-    SharedPath = "";
-    try {
-      String path = Settings.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-      String decodedPath = URLDecoder.decode(path, "UTF-8");
-      SharedPath = new File(decodedPath).getParent();
-    } catch (UnsupportedEncodingException e) {
+    loadFromStore(SettingsStore.getFpgaDefaultsElement(), false);
+    loadFromStore(SettingsStore.getFpgaUserElement(), true);
+
+    // Validate selectedBoard; fall back to first known board if invalid
+    if (selectedBoard.isEmpty() || !knownBoards.BoardInCollection(selectedBoard)) {
+      Collection<String> names = knownBoards.GetBoardNames();
+      if (!names.isEmpty())
+        selectedBoard = names.iterator().next();
     }
-
-    if (!readFrom(HomePath, UserSettingsFileName)) {
-      readFrom(SharedPath, SharedSettingsFileName);
-    }
-
-    if (!settingsComplete())
-      writeXml();
   }
 
-  public void addSettingsListener(Listener l) {
-    listeners.add(l);
+  // =========================================================================
+  // Public listener / dialog API
+  // =========================================================================
+
+  public interface Listener {
+    void fpgaSettingsChanged();
   }
 
-  public void removeSettingsListener(Listener l) {
-    listeners.remove(l);
-  }
-
-  public static interface Listener {
-    public void fpgaSettingsChanged();
+  public void addSettingsListener(Listener l)    { listeners.add(l); }
+  public void removeSettingsListener(Listener l) { listeners.remove(l); }
+  public void notifyListeners() {
+    for (Listener l : listeners) l.fpgaSettingsChanged();
   }
 
   private static FPGASettingsDialog dialog;
@@ -152,499 +142,426 @@ public class Settings {
     }
   }
 
-  public void notifyListeners() {
-    for (Listener l : listeners)
-      l.fpgaSettingsChanged();
-  }
+  // =========================================================================
+  // Tool-path getters / setters / validators
+  // =========================================================================
 
-  private boolean readFrom(String dir, String name) {
-    File SettingsFile = new File(join(dir, name));
-    if (!SettingsFile.exists())
-      return false;
-    LoadedSettingsFileName = SettingsFile.getPath();
-    try {
-      // Create instance of DocumentBuilderFactory
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-      // Get the DocumentBuilder
-      DocumentBuilder parser = factory.newDocumentBuilder();
-      // Create blank DOM Document
-      SettingsDocument = parser.parse(SettingsFile);
-    } catch (Exception e) {
-      Errors.title("FPGA Settings").show("Can't open FPGA settings file: "
-          + SettingsFile.getPath(), e);
-      return false;
-    }
-    return true;
-  }
-
-  private String join(String path, String name) {
-    if (path.endsWith(File.separator))
-      return path + name;
-    else
-      return path + File.separator + name;
-  }
-
-  private String getAttribute(String nodeName, String attrName, String defValue) {
-    Element e = (Element)SettingsDocument.getElementsByTagName(nodeName).item(0);
-    Attr a = e.getAttributeNode(attrName);
-    if (a != null)
-      return a.getNodeValue();
-    a = SettingsDocument.createAttribute(attrName);
-    a.setNodeValue(defValue);
-    e.setAttributeNode(a);
-    modified = true;
-    return defValue;
-  }
-
-  private void setAttribute(String nodeName, String attrName, String value) {
-    if (value == null)
-      value = "";
-    Element e = (Element)SettingsDocument.getElementsByTagName(nodeName).item(0);
-    Attr a = e.getAttributeNode(attrName);
-    if (a != null && a.getNodeValue().equals(value)) {
-      return;
-    }
-    if (a == null) {
-      a = SettingsDocument.createAttribute(attrName);
-      e.setAttributeNode(a);
-    }
-    a.setNodeValue(value);
-    modified = true;
-  }
-
-  private String normalizePath(String path) {
-    if (path == null || path.isEmpty())
-      return null;
-    if (path.length() > 1 && path.endsWith(File.separator))
-      path = path.substring(0, path.length() - 1);
-    return path;
-  }
-
-  public String GetAlteraToolPath() {
-    String s = getAttribute(WorkSpace, AlteraToolsPath, "");
-    return normalizePath(s);
-  }
-
-  public String GetXilinxToolPath() {
-    String s = getAttribute(WorkSpace, XilinxToolsPath, "");
-    return normalizePath(s);
-  }
-
-  public String GetGowinShPath() {
-    String s = getAttribute(WorkSpace, GowinShPath, "");
-    return normalizePath(s);
-  }
-
-  public String GetGowinProgPath() {
-    String s = getAttribute(WorkSpace, GowinProgPath, "");
-    return normalizePath(s);
-  }
-
-  public String GetLatticeToolPath() {
-    String s = getAttribute(WorkSpace, LatticeToolsPath, "");
-    return normalizePath(s);
-  } 
-
-  public String GetApioToolPath() {
-    String s = getAttribute(WorkSpace, ApioToolsPath, "");
-    return normalizePath(s);
-  }
-
-  public String GetOpenFPGALoaderPath() {
-    String s = getAttribute(WorkSpace, OpenFPGAloaderPath, "");
-    return normalizePath(s);
-  }
+  public String GetAlteraToolPath()  { return alteraPath; }
+  public String GetXilinxToolPath()  { return xilinxPath; }
+  public String GetGowinShPath()     { return gowinShPath; }
+  public String GetGowinProgPath()   { return gowinProgPath; }
+  public String GetLatticeToolPath() { return latticePath; }
+  public String GetApioToolPath()    { return apioPath; }
+  public String GetOpenFPGALoaderPath() { return openFpgaPath; }
 
   public boolean SetAlteraToolPath(String path) {
     path = normalizePath(path);
-    if (!validAlteraToolPath(path))
-      return false;
-    setAttribute(WorkSpace, AlteraToolsPath, path);
-    return true;
+    if (!validAlteraToolPath(path)) return false;
+    alteraPath = nvl(path);
+    markDirty(); return true;
   }
 
   public boolean validAlteraToolPath(String path) {
     path = normalizePath(path);
     return path == null
-      || path.toLowerCase().startsWith("http://")
-      || path.toLowerCase().startsWith("https://")
-      || allToolsPresent(path, FPGADownload.ALTERA_PROGRAMS)
-      || isExecutableScript(path);
+        || path.toLowerCase().startsWith("http://")
+        || path.toLowerCase().startsWith("https://")
+        || allToolsPresent(path, FPGADownload.ALTERA_PROGRAMS)
+        || isExecutableScript(path);
   }
 
   public boolean SetXilinxToolPath(String path) {
     path = normalizePath(path);
-    if (!validXilinxToolPath(path))
-      return false;
-    setAttribute(WorkSpace, XilinxToolsPath, path);
-    return true;
-  }
-
-  public boolean SetGowinShPath(String path) {
-    path = normalizePath(path);
-    setAttribute(WorkSpace, GowinShPath, path);
-    return true;
-  }
-
-  public boolean SetGowinProgPath(String path) {
-    path = normalizePath(path);
-    setAttribute(WorkSpace, GowinProgPath, path);
-    return true;
+    if (!validXilinxToolPath(path)) return false;
+    xilinxPath = nvl(path);
+    markDirty(); return true;
   }
 
   public boolean validXilinxToolPath(String path) {
     path = normalizePath(path);
     return path == null
-      || allToolsPresent(path, FPGADownload.XILINX_PROGRAMS)
-      || isExecutableScript(path);
+        || allToolsPresent(path, FPGADownload.XILINX_PROGRAMS)
+        || isExecutableScript(path);
   }
 
-  public boolean SetLatticeToolPath(String path) {
+  public boolean SetGowinShPath(String path) {
     path = normalizePath(path);
-    if (!validLatticeToolPath(path))
-      return false;
-    setAttribute(WorkSpace, LatticeToolsPath, path);
-    return true;
+    gowinShPath = nvl(path);
+    markDirty(); return true;
   }
 
-  public boolean validLatticeToolPath(String path) {
+  public boolean SetGowinProgPath(String path) {
     path = normalizePath(path);
-    return path == null
-      || LatticeDownload.getToolChainType(path) != LatticeDownload.TOOLCHAIN.UNKNOWN;
+    gowinProgPath = nvl(path);
+    markDirty(); return true;
   }
 
   public boolean validGowinToolPath(String path) {
     path = normalizePath(path);
     return path == null
-      || isExecutableScript(path + File.separator + FPGADownload.GOWIN_SH);
+        || isExecutableScript(path + File.separator + FPGADownload.GOWIN_SH);
+  }
+
+  public boolean SetLatticeToolPath(String path) {
+    path = normalizePath(path);
+    if (!validLatticeToolPath(path)) return false;
+    latticePath = nvl(path);
+    markDirty(); return true;
+  }
+
+  public boolean validLatticeToolPath(String path) {
+    path = normalizePath(path);
+    return path == null
+        || LatticeDownload.getToolChainType(path) != LatticeDownload.TOOLCHAIN.UNKNOWN;
   }
 
   public boolean SetApioToolPath(String path) {
     path = normalizePath(path);
-    if (!validApioToolPath(path))
-      return false;
-    setAttribute(WorkSpace, ApioToolsPath, path);
-    return true;
+    if (!validApioToolPath(path)) return false;
+    apioPath = nvl(path);
+    markDirty(); return true;
   }
 
   public boolean validApioToolPath(String path) {
     path = normalizePath(path);
     return path == null
-      || allToolsPresent(path, FPGADownload.APIO_PROGRAMS);
+        || allToolsPresent(path, FPGADownload.APIO_PROGRAMS);
   }
 
   public boolean SetOpenFPGAloaderPath(String path) {
     path = normalizePath(path);
-    if (!validOpenFPGAloaderPath(path))
-      return false;
-    setAttribute(WorkSpace, OpenFPGAloaderPath, path);
-    return true;
+    if (!validOpenFPGAloaderPath(path)) return false;
+    openFpgaPath = nvl(path);
+    markDirty(); return true;
   }
 
   public boolean validOpenFPGAloaderPath(String path) {
     path = normalizePath(path);
-    return path == null
-      || isExecutableScript(path);
+    return path == null || isExecutableScript(path);
   }
 
-  public boolean GetUseRBF() {
-    String s = getAttribute(WorkSpace, RawBinaryFormat, "false");
-    return "true".equalsIgnoreCase(s);
-  }
+  // =========================================================================
+  // Other workspace settings
+  // =========================================================================
 
-  public void SetUseRBF(boolean enable) {
-    setAttribute(WorkSpace, RawBinaryFormat, ""+enable);
-  }
+  public boolean GetUseRBF()          { return useRBF; }
+  public void    SetUseRBF(boolean v) { useRBF = v; markDirty(); }
 
-  public Collection<String> GetBoardNames() {
-    return KnownBoards.GetBoardNames();
-  }
+  public boolean GetAltera64Bit()          { return altera64bit; }
+  public void    SetAltera64Bit(boolean v) { altera64bit = v; markDirty(); }
 
-  public boolean GetAltera64Bit() {
-    String s = getAttribute(WorkSpace, Altera64Bit, "true");
-    return "true".equalsIgnoreCase(s);
-  }
-
-  public void SetAltera64Bit(boolean enable) {
-    setAttribute(WorkSpace, Altera64Bit, ""+enable);
-  }
-
-  public String GetHDLType() {
-    String s = getAttribute(WorkSpace, HDLTypeToGenerate, VHDL);
-    if (VHDL.equalsIgnoreCase(s))
-      return VHDL;
-    if (VERILOG.equalsIgnoreCase(s))
-      return VERILOG;
-    setAttribute(WorkSpace, HDLTypeToGenerate, VHDL); // correct broken XML value
-    return VHDL;
-  }
-
+  public String GetHDLType() { return hdlType; }
   public void SetHDLType(String lang) {
-    if (VHDL.equalsIgnoreCase(lang))
-      setAttribute(WorkSpace, HDLTypeToGenerate, VHDL);
-    else if (VERILOG.equalsIgnoreCase(lang))
-      setAttribute(WorkSpace, HDLTypeToGenerate, VERILOG);
+    if (VHDL.equalsIgnoreCase(lang))    { hdlType = VHDL;    markDirty(); }
+    else if (VERILOG.equalsIgnoreCase(lang)) { hdlType = VERILOG; markDirty(); }
   }
 
-  public String GetSelectedBoard() {
-    String defBoard = KnownBoards.GetBoardNames().get(0);
-    String s = getAttribute(FPGABoards, SelectedBoard, defBoard);
-    if (KnownBoards.BoardInCollection(s))
-      return s;
-    setAttribute(FPGABoards, SelectedBoard, defBoard); // correct broken XML value
-    return defBoard;
-  }
+  // =========================================================================
+  // Board selection
+  // =========================================================================
 
-  private Element GetBoardSettings(String board) {
-    Element e = (Element)SettingsDocument.getElementsByTagName(FPGABoards).item(0);
-    NodeList nodes = e.getChildNodes();
-    for (int i = 0; i < nodes.getLength(); i++) {
-      Node n = nodes.item(i);
-      if (!(n instanceof Element))
-        continue;
-      Element e2 = (Element)n;
-      if ("Settings".equals(e2.getTagName()) && board.equals(e2.getAttribute("Board")))
-        return e2;
-    }
-    return null;
-  }
+  public Collection<String> GetBoardNames() { return knownBoards.GetBoardNames(); }
 
-  static boolean warnedBadToolchain = false;
-  static boolean warnedBadHDLType = false;
+  public String GetSelectedBoard() { return selectedBoard; }
 
-  public String GetPreferredToolchain(String board) {
-    String pref = GetBoardPreferences(board, "Toolchain");
-    String toolchain = FPGADownload.normalizeToolchain(pref);
-    if (pref != null && toolchain == null) {
-      if (!warnedBadToolchain) {
-        warnedBadToolchain = true;
-        JOptionPane.showMessageDialog(null,
-            "Error: Unrecognized toolchain '"+pref+"' in LogisimFPGASettings.xml");
-      }
-    }
-    return toolchain;
-  }
-
-  public String GetPreferredHDLType(String board) {
-    String pref = GetBoardPreferences(board, "HDLTypeToGenerate");
-    if (VHDL.equalsIgnoreCase(pref))
-      return VHDL;
-    if (VERILOG.equalsIgnoreCase(pref))
-      return VERILOG;
-    if (pref != null && !warnedBadHDLType) {
-      warnedBadHDLType = true;
-      JOptionPane.showMessageDialog(null,
-          "Error: Unrecognized HDL type '"+pref+"' in LogisimFPGASettings.xml");
-    }
-    return null;
-  }
-
-  private String GetBoardPreferences(String board, String attr) {
-    Element e = GetBoardSettings(board);
-    if (e == null)
-      return null;
-    String val = e.getAttribute(attr);
-    if (val == null || val.trim().equals(""))
-      return null;
-    return val;
-  }
-
-  public void SetPreferredToolchain(String board, String toolchain) {
-    SetBoardPreferences(board, "Toolchain", toolchain);
-  }
-
-  public void SetPreferredHDLType(String board, String hdlType) {
-    SetBoardPreferences(board, "HDLTypeToGenerate", hdlType);
-  }
-
-  private void SetBoardPreferences(String board, String attr, String val) {
-    Element e = GetBoardSettings(board);
-    if (e == null) {
-      Element p = (Element)SettingsDocument.getElementsByTagName(FPGABoards).item(0);
-      e = SettingsDocument.createElement("Settings");
-      p.appendChild(e);
-      Attr b = SettingsDocument.createAttribute("Board");
-      b.setNodeValue(board);
-      e.setAttributeNode(b);
-    }
-    Attr a = e.getAttributeNode(attr);
-    if (a == null) {
-      a = SettingsDocument.createAttribute(attr);
-    }
-    a.setNodeValue(val);
-    e.setAttributeNode(a);
-    modified = true;
-  }
-
-  public boolean SetSelectedBoard(String boardName) {
-    if (!KnownBoards.BoardInCollection(boardName))
-      return false;
-    setAttribute(FPGABoards, SelectedBoard, boardName);
+  public boolean SetSelectedBoard(String name) {
+    if (!knownBoards.BoardInCollection(name)) return false;
+    selectedBoard = name;
+    markDirty();
     return true;
   }
 
   public String GetSelectedBoardFileName() {
-    String SelectedBoardName = GetSelectedBoard();
-    return KnownBoards.GetBoardFilePath(SelectedBoardName);
+    return knownBoards.GetBoardFilePath(selectedBoard);
   }
 
+  // =========================================================================
+  // Board-specific preferences
+  // =========================================================================
+
+  public String GetPreferredToolchain(String board) {
+    String pref = getBoardPref(board, "Toolchain");
+    String tc = FPGADownload.normalizeToolchain(pref);
+    if (pref != null && tc == null && !warnedBadToolchain) {
+      warnedBadToolchain = true;
+      javax.swing.JOptionPane.showMessageDialog(null,
+          "Error: Unrecognized toolchain '" + pref + "' in settings.xml fpga section");
+    }
+    return tc;
+  }
+
+  public String GetPreferredHDLType(String board) {
+    String pref = getBoardPref(board, "HDLTypeToGenerate");
+    if (VHDL.equalsIgnoreCase(pref))    return VHDL;
+    if (VERILOG.equalsIgnoreCase(pref)) return VERILOG;
+    if (pref != null && !warnedBadHDLType) {
+      warnedBadHDLType = true;
+      javax.swing.JOptionPane.showMessageDialog(null,
+          "Error: Unrecognized HDL type '" + pref + "' in settings.xml fpga section");
+    }
+    return null;
+  }
+
+  public void SetPreferredToolchain(String board, String toolchain) {
+    setBoardPref(board, "Toolchain", toolchain);
+  }
+
+  public void SetPreferredHDLType(String board, String hdlType) {
+    setBoardPref(board, "HDLTypeToGenerate", hdlType);
+  }
+
+  private String getBoardPref(String board, String attr) {
+    LinkedHashMap<String, String> m = boardPrefs.get(board);
+    if (m == null) return null;
+    String v = m.get(attr);
+    return (v == null || v.trim().isEmpty()) ? null : v;
+  }
+
+  private void setBoardPref(String board, String attr, String val) {
+    boardPrefs.computeIfAbsent(board, k -> new LinkedHashMap<>()).put(attr, val);
+    markDirty();
+  }
+
+  private static boolean warnedBadToolchain = false;
+  private static boolean warnedBadHDLType   = false;
+
+  // =========================================================================
+  // Workspace path
+  // =========================================================================
+
   public String GetStaticWorkspacePath() {
-    String s = getAttribute(WorkSpace, WorkPath, "");
-    return normalizePath(s);
+    return workspacePath.isEmpty() ? null : workspacePath;
   }
 
   public void SetStaticWorkspacePath(String path) {
     path = normalizePath(path);
-    setAttribute(WorkSpace, WorkPath, path);
+    workspacePath = nvl(path);
+    markDirty();
   }
 
   public String GetWorkspacePath(File projectFile) {
     String p = GetStaticWorkspacePath();
     if (p != null)
       return p;
+    String home = System.getProperty("user.home");
     if (projectFile != null) {
-      String dir = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
-      String name = projectFile.getName();
-      name = name.replaceAll(".circ.xml$", "").replaceAll(".circ$", "") + "_fpga_workspace";
-      return join(dir, name);
+      String dir  = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
+      String name = projectFile.getName()
+          .replaceAll(".circ.xml$", "").replaceAll(".circ$", "") + "_fpga_workspace";
+      return dir + File.separator + name;
     }
-    return join(HomePath, WorkPathName);
+    return home + File.separator + "logisim_fpga_workspace" + File.separator;
   }
 
-  private void ensureExactlyOneNode(String nodeName) {
-    NodeList nodes = SettingsDocument.getElementsByTagName(nodeName);
-    int n = nodes.getLength();
-    if (n == 0) {
-      Element e = SettingsDocument.createElement(nodeName);
-      SettingsDocument.getDocumentElement().appendChild(e);
-      modified = true;
-    } else if (n > 1) {
-      JOptionPane.showMessageDialog(null,
-          "FPGA settings file is corrupted, some settings may be lost: " 
-          + LoadedSettingsFileName);
-      while (n > 1) {
-        nodes.item(1).getParentNode().removeChild(nodes.item(1));
-        nodes = SettingsDocument.getElementsByTagName(nodeName);
-        n = nodes.getLength();
-      }
-      modified = true;
-    }
-  }
-
-  private boolean settingsComplete() {
-    boolean missingXML = (SettingsDocument == null);
-    if (missingXML) { 
-      try {
-        // Create instance of DocumentBuilderFactory
-        DocumentBuilderFactory factory = DocumentBuilderFactory
-            .newInstance();
-        // Get the DocumentBuilder
-        DocumentBuilder parser;
-        parser = factory.newDocumentBuilder();
-        // Create blank DOM Document
-        SettingsDocument = parser.newDocument();
-      } catch (ParserConfigurationException e) {
-        JOptionPane.showMessageDialog(null,
-            "Fatal Error: Cannot create settings XML Document");
-        System.exit(-4);
-      }
-      Element root = SettingsDocument.createElement(SettingsElement);
-      SettingsDocument.appendChild(root);
-    }
-
-    ensureExactlyOneNode(WorkSpace);
-    ensureExactlyOneNode(FPGABoards);
-
-    Element e = (Element)SettingsDocument.getElementsByTagName(FPGABoards).item(0);
-    NamedNodeMap attrs = e.getAttributes();
-    for (int i = 0; i < attrs.getLength(); i++) {
-      String k = attrs.item(i).getNodeName();
-      String v = attrs.item(i).getNodeValue();
-      if (k.startsWith(ExternalBoard) && new File(v).exists())
-        KnownBoards.AddExternalBoard(v);
-    }
-
-    GetStaticWorkspacePath();
-    GetXilinxToolPath();
-    GetAlteraToolPath();
-    GetGowinShPath();
-    GetOpenFPGALoaderPath();
-    GetHDLType();
-    GetAltera64Bit();
-
-    GetSelectedBoard();
-
-    return !missingXML && !modified;
-  }
+  // =========================================================================
+  // External boards
+  // =========================================================================
 
   public void AddExternalBoard(String filename) {
-    Element e = (Element)SettingsDocument.getElementsByTagName(FPGABoards).item(0);
-    int id = 1;
-    while (e.getAttributeNode(ExternalBoard+id) != null)
-      id++;
-    setAttribute(FPGABoards, ExternalBoard+id, filename);
-    KnownBoards.AddExternalBoard(filename);
+    if (!externalBoards.contains(filename)) {
+      externalBoards.add(filename);
+      knownBoards.AddExternalBoard(filename);
+      markDirty();
+    }
   }
 
+  // =========================================================================
+  // Persistence
+  // =========================================================================
+
+  /** Flush any pending changes to SettingsStore (and from there to disk). */
   public boolean UpdateSettingsFile() {
-    if (!modified)
-      return true;
-    return writeXml();
+    return updateSettingsFile();
   }
 
-  private boolean writeXml() {
-    File UserSettingsFile = new File(join(HomePath, UserSettingsFileName));
-    if (!UserSettingsFile.exists()) {
-      try {
-        writeTo(SharedPath, SharedSettingsFileName);
-        return true;
-      } catch (Exception e) { }
-    }
-    try {
-      writeTo(HomePath, UserSettingsFileName);
-      return true;
-    } catch (Exception e) {
-      Errors.title("FPGA Settings").show("Can't write FPGA settings file: "
-          + UserSettingsFileName, e);
-      return false;
+  /** Same as {@link #UpdateSettingsFile()} — lower-case form for internal callers. */
+  public boolean updateSettingsFile() {
+    if (!dirty) return true;
+    SettingsStore.setFpgaXml(buildFpgaXml());
+    SettingsStore.save();
+    dirty = false;
+    return true;
+  }
+
+  private void markDirty() { dirty = true; }
+
+  // =========================================================================
+  // Load from SettingsStore DOM elements
+  // =========================================================================
+
+  /**
+   * Reads settings from a {@code <fpga>} DOM element (either user file or defaults file).
+   * When {@code isUser} is true, user-specific structured data (board prefs, external
+   * boards) is also loaded.
+   */
+  private void loadFromStore(Element fpgaEl, boolean isUser) {
+    if (fpgaEl == null) return;
+
+    NodeList children = fpgaEl.getChildNodes();
+    for (int i = 0; i < children.getLength(); i++) {
+      if (!(children.item(i) instanceof Element)) continue;
+      Element el = (Element) children.item(i);
+
+      switch (el.getTagName()) {
+        case "workspace":
+          readWorkspace(el);
+          break;
+        case "board-preferences":
+          if (isUser) readBoardPrefs(el);
+          break;
+        case "external-boards":
+          if (isUser) readExternalBoards(el);
+          break;
+        // unknown sub-elements silently ignored
+      }
     }
   }
-  
-  private void removeWhitespace(Element e) {
-    NodeList nodes = e.getChildNodes();
+
+  private void readWorkspace(Element ws) {
+    NodeList settings = ws.getChildNodes();
+    for (int i = 0; i < settings.getLength(); i++) {
+      if (!(settings.item(i) instanceof Element)) continue;
+      Element s = (Element) settings.item(i);
+      if (!"setting".equals(s.getTagName())) continue;
+      if (!s.hasAttribute("value")) continue; // unset — keep current value
+      String key = s.getAttribute("key");
+      String val = s.getAttribute("value");
+      switch (key) {
+        case "workspacePath":     workspacePath = val; break;
+        case "hdlType":
+          if (VERILOG.equalsIgnoreCase(val)) hdlType = VERILOG;
+          else hdlType = VHDL;
+          break;
+        case "selectedBoard":     selectedBoard = val; break;
+        case "useRawBinaryFormat": useRBF = "true".equalsIgnoreCase(val); break;
+        case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
+        case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // unknown keys silently ignored
+      }
+    }
+  }
+
+  private void readBoardPrefs(Element bpEl) {
+    NodeList nodes = bpEl.getChildNodes();
     for (int i = 0; i < nodes.getLength(); i++) {
-      Node n = nodes.item(i);
-      if (n.getNodeName().equalsIgnoreCase("#text"))
-          e.removeChild(n);
-      else if (n instanceof Element)
-        removeWhitespace((Element)n);
+      if (!(nodes.item(i) instanceof Element)) continue;
+      Element board = (Element) nodes.item(i);
+      if (!"board".equals(board.getTagName())) continue;
+      String name = board.getAttribute("name");
+      if (name == null || name.isEmpty()) continue;
+      NamedNodeMap attrs = board.getAttributes();
+      for (int j = 0; j < attrs.getLength(); j++) {
+        Node a = attrs.item(j);
+        if (!"name".equals(a.getNodeName()))
+          boardPrefs.computeIfAbsent(name, k -> new LinkedHashMap<>())
+                    .put(a.getNodeName(), a.getNodeValue());
+      }
     }
   }
 
-  private void writeTo(String dir, String name) throws Exception {
-    removeWhitespace(SettingsDocument.getDocumentElement());
-    File SettingsFile = new File(join(dir, name));
-    TransformerFactory tranFactory = TransformerFactory.newInstance();
-    tranFactory.setAttribute("indent-number", 3);
-    Transformer aTransformer = tranFactory.newTransformer();
-    aTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
-    Source src = new DOMSource(SettingsDocument);
-    Result dest = new StreamResult(SettingsFile);
-    aTransformer.transform(src, dest);
-    modified = false;
+  private void readExternalBoards(Element ebEl) {
+    NodeList nodes = ebEl.getChildNodes();
+    for (int i = 0; i < nodes.getLength(); i++) {
+      if (!(nodes.item(i) instanceof Element)) continue;
+      Element board = (Element) nodes.item(i);
+      if (!"board".equals(board.getTagName())) continue;
+      String path = board.getAttribute("path");
+      if (path != null && !path.isEmpty() && new File(path).exists()) {
+        externalBoards.add(path);
+        knownBoards.AddExternalBoard(path);
+      }
+    }
   }
 
-  private boolean allToolsPresent(String path, String[] progNames) {
-    for (String prog: progNames) {
-      File test = new File(join(path, prog));
-      if (!test.exists())
+  // =========================================================================
+  // Build XML for SettingsStore
+  // =========================================================================
+
+  private String buildFpgaXml() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("  <fpga>\n");
+    sb.append("    <workspace>\n");
+    appendSetting(sb, "workspacePath",      workspacePath);
+    appendSetting(sb, "hdlType",            hdlType);
+    appendSetting(sb, "selectedBoard",      selectedBoard);
+    appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
+    appendSetting(sb, "xilinxToolsPath",    xilinxPath);
+    appendSetting(sb, "alteraToolsPath",    alteraPath);
+    appendSetting(sb, "altera64bit",        "" + altera64bit);
+    appendSetting(sb, "gowinShPath",        gowinShPath);
+    appendSetting(sb, "gowinProgPath",      gowinProgPath);
+    appendSetting(sb, "latticeToolsPath",   latticePath);
+    appendSetting(sb, "apioToolsPath",      apioPath);
+    appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
+    sb.append("    </workspace>\n");
+
+    if (!boardPrefs.isEmpty()) {
+      sb.append("    <board-preferences>\n");
+      for (java.util.Map.Entry<String, LinkedHashMap<String, String>> e : boardPrefs.entrySet()) {
+        sb.append("      <board name=\"").append(xmlAttr(e.getKey())).append("\"");
+        for (java.util.Map.Entry<String, String> a : e.getValue().entrySet())
+          sb.append(" ").append(a.getKey()).append("=\"").append(xmlAttr(a.getValue())).append("\"");
+        sb.append("/>\n");
+      }
+      sb.append("    </board-preferences>\n");
+    }
+
+    if (!externalBoards.isEmpty()) {
+      sb.append("    <external-boards>\n");
+      for (String path : externalBoards)
+        sb.append("      <board path=\"").append(xmlAttr(path)).append("\"/>\n");
+      sb.append("    </external-boards>\n");
+    }
+
+    sb.append("  </fpga>");
+    return sb.toString();
+  }
+
+  private static void appendSetting(StringBuilder sb, String key, String value) {
+    sb.append("      <setting key=\"").append(key).append("\"");
+    if (value != null && !value.isEmpty())
+      sb.append(" value=\"").append(xmlAttr(value)).append("\"");
+    sb.append("/>\n");
+  }
+
+  private static String xmlAttr(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;")
+            .replace("\"", "&quot;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;");
+  }
+
+  // =========================================================================
+  // Path utilities
+  // =========================================================================
+
+  private static String normalizePath(String path) {
+    if (path == null || path.isEmpty()) return null;
+    if (path.length() > 1 && path.endsWith(File.separator))
+      path = path.substring(0, path.length() - 1);
+    return path;
+  }
+
+  /** Null-safe: returns empty string for null input. */
+  private static String nvl(String s) { return s != null ? s : ""; }
+
+  private static boolean allToolsPresent(String path, String[] progNames) {
+    for (String prog : progNames) {
+      if (!new File(path + File.separator + prog).exists())
         return false;
     }
     return true;
   }
 
-  private boolean isExecutableScript(String path) {
-    File test = new File(path);
-    return test.exists() && !test.isDirectory() && test.canExecute();
+  private static boolean isExecutableScript(String path) {
+    File f = new File(path);
+    return f.exists() && !f.isDirectory() && f.canExecute();
   }
 }
