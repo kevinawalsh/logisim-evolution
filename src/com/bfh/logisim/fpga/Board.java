@@ -48,16 +48,16 @@ public class Board extends AbstractList<BoardIO> {
 
 	public final String name;
 	public final String apio_name; // board name used for apio toolchain
-	public final String openFPGAloader_name; // board name used for openFPGAloader
+	public final String openFPGALoader_name; // board name used for openFPGALoader
 	public final Chipset fpga;
 	public final Image image;
 
 	private final ArrayList<BoardIO> ios = new ArrayList<>();
 
-	public Board(String name, String apio_name, String openFPGAloader_name, Chipset fpga, Image image) {
+	public Board(String name, String apio_name, String openFPGALoader_name, Chipset fpga, Image image) {
     this.name = name;
     this.apio_name = apio_name;
-    this.openFPGAloader_name = openFPGAloader_name;
+    this.openFPGALoader_name = openFPGALoader_name;
     this.fpga = fpga;
     this.image = image.getScaledInstance(IMG_WIDTH, IMG_HEIGHT, Image.SCALE_SMOOTH);
 	}

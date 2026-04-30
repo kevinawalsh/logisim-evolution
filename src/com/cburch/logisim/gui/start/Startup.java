@@ -192,8 +192,8 @@ public class Startup {
       fail(S.get("argHeadlessError"));
 
     // Initialize settings and state stores before any AppPreferences access
-    SettingsStore.initialize(configOverride, defaultsOverride);
     StateStore.initialize();
+    SettingsStore.initialize(configOverride, defaultsOverride);
 
     if (doClearPreferences)
       AppPreferences.clear();
@@ -390,11 +390,11 @@ public class Startup {
         }
         if (w <= 0 || h <= 0)
           fail(S.get("argGeometryError"));
-        StateStore.setWindowWidth(w);
-        StateStore.setWindowHeight(h);
+        StateStore.WINDOW_WIDTH.set(w);
+        StateStore.WINDOW_HEIGHT.set(h);
         if (loc != null) {
-          StateStore.setWindowX(x);
-          StateStore.setWindowY(y);
+          StateStore.WINDOW_X.set(x);
+          StateStore.WINDOW_Y.set(y);
         }
       } else if (arg.equals("-locale")) {
         // already handled above

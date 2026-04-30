@@ -284,7 +284,7 @@ public final class CutterTool extends Tool {
           moreWires.addAll(circ.getWireSet(w).getWires());
         wiresToRemove.addAll(moreWires);
       } else {
-        if (hintReady(AppPreferences.CUTTER_TOOL_TIP))
+        if (hintReady(AppPreferences.CUTTER_TOOL_HINTS))
           showHint(canvas, start, S.get("cutterTip"));
         wiresToRemove.addAll(wires);
       }

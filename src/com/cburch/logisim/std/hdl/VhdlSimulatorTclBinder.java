@@ -46,7 +46,7 @@ class VhdlSimulatorTclBinder { }
 // import com.cburch.logisim.std.hdl.VhdlSimulator.State;
 // import com.cburch.logisim.tools.MessageBox;
 // import com.cburch.logisim.util.FileUtil;
-// import com.cburch.logisim.util.Softwares;
+// import com.cburch.logisim.util.Questa;
 // 
 // /**
 //  * The TCL binder is a TCL program creating a socket server. The signals have to
@@ -76,8 +76,8 @@ class VhdlSimulatorTclBinder { }
 // 
 //     vhdlSimulator = vs;
 // 
-//     command.add(FileUtil.correctPath(Softwares.getQuestaPath())
-//         + Softwares.QUESTA_BIN[Softwares.VSIM]);
+//     command.add(FileUtil.correctPath(Questa.getQuestaPath())
+//         + Questa.QUESTA_BIN[Questa.VSIM]);
 // 
 //     command.add("-c");
 //     command.add("-do");

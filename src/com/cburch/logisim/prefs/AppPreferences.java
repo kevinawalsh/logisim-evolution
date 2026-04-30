@@ -55,7 +55,7 @@ public class AppPreferences {
 
   private static class LocalePreference extends PrefMonitor<String> {
     public LocalePreference() {
-      super("display", "locale", "");
+      super("international", "locale", "");
       if (value != null && !value.equals(""))
         LocaleManager.setLocale(new Locale(value));
       LocaleManager.addLocaleListener(() -> set(LocaleManager.getLocale().getLanguage()));
@@ -91,7 +91,7 @@ public class AppPreferences {
 
   private static class AccentsPreference extends PrefMonitor<Boolean> {
     public AccentsPreference() {
-      super("display", "accentsReplace", false);
+      super("international", "replaceAccents", false);
       LocaleManager.setReplaceAccents(value);
     }
 
@@ -181,21 +181,21 @@ public class AppPreferences {
       PRINTER_VIEW = new PrefMonitor<>("display", "printerView", false);
 
   public static final PrefMonitor<Boolean>
-      ATTRIBUTE_HALO = new PrefMonitor<>("display", "attributeHalo", true);
+      ATTRIBUTE_HALO = new PrefMonitor<>("editing", "attributeHalo", true);
 
   public static final PrefMonitor<Boolean>
-      COMPONENT_TIPS = new PrefMonitor<>("display", "componentTips", true);
+      COMPONENT_TIPS = new PrefMonitor<>("editing", "componentTips", true);
 
   public static final PrefMonitor<Boolean>
-      MOVE_KEEP_CONNECT = new PrefMonitor<>("display", "keepConnected", true);
+      MOVE_KEEP_CONNECT = new PrefMonitor<>("editing", "keepConnected", true);
 
   public static final PrefMonitor<Boolean>
-      ADD_SHOW_GHOSTS = new PrefMonitor<>("display", "showGhosts", true);
+      ADD_SHOW_GHOSTS = new PrefMonitor<>("editing", "showGhosts", true);
 
   public static final String ADD_AFTER_UNCHANGED = "unchanged";
   public static final String ADD_AFTER_EDIT = "edit";
   public static final PrefMonitor<String>
-      ADD_AFTER = new PrefMonitor<>("display", "afterAdd",
+      ADD_AFTER = new PrefMonitor<>("editing", "afterAdd",
           new String[] { ADD_AFTER_EDIT, ADD_AFTER_UNCHANGED },
           ADD_AFTER_EDIT);
 
@@ -213,20 +213,24 @@ public class AppPreferences {
   }
 
   // =========================================================================
-  // Simulation preferences (section: "simulation")
+  // Backup preferences (section: "backups")
   // =========================================================================
 
   public static final PrefMonitor<Boolean>
-      AUTO_BACKUP = new PrefMonitor<>("simulation", "autobackup", true);
+      AUTO_BACKUP = new PrefMonitor<>("backups", "enabled", true);
 
   public static final PrefMonitor<Integer>
-      AUTO_BACKUP_FREQ = new PrefMonitor<>("simulation", "autobackupFreq", 7);
+      AUTO_BACKUP_FREQ = new PrefMonitor<>("backups", "frequency", 7);
+
+  // =========================================================================
+  // Questa preferences (section: "questa")
+  // =========================================================================
 
   public static final PrefMonitor<String>
-      QUESTA_PATH = new PrefMonitor<>("simulation", "questaPath", "");
+      QUESTA_PATH = new PrefMonitor<>("hdl-validation", "questaPath", "");
 
   public static final PrefMonitor<Boolean>
-      QUESTA_VALIDATION = new PrefMonitor<>("simulation", "questaValidation", false);
+      QUESTA_VALIDATION = new PrefMonitor<>("hdl-validation", "questaValidation", false);
 
   // =========================================================================
   // Graphics preferences (section: "graphics")
@@ -238,7 +242,7 @@ public class AppPreferences {
   public static final String ACCEL_OPENGL  = "opengl";
   public static final String ACCEL_D3D     = "d3d";
   public static final PrefMonitor<String> GRAPHICS_ACCELERATION =
-      new PrefMonitor<>("graphics", "graphicsAcceleration",
+      new PrefMonitor<>("graphics", "acceleration",
           new String[] { ACCEL_DEFAULT, ACCEL_NONE, ACCEL_METAL, ACCEL_OPENGL, ACCEL_D3D },
           ACCEL_DEFAULT);
 
@@ -252,19 +256,23 @@ public class AppPreferences {
           DUALSCREEN_NONE);
 
   // =========================================================================
-  // Misc preferences (section: "misc")
+  // Tips and Hints preferences (section: "hints")
   // =========================================================================
 
   public static final PrefMonitor<Integer>
-      WIRING_TOOL_TIP = new PrefMonitor<>("misc", "wiringToolTip", 3);
+      WIRING_TOOL_HINTS = new PrefMonitor<>("hints", "wiring", 3);
 
   public static final PrefMonitor<Integer>
-      CUTTER_TOOL_TIP = new PrefMonitor<>("misc", "cutterToolTip", 3);
+      CUTTER_TOOL_HINTS = new PrefMonitor<>("hints", "cutter", 3);
 
   // =========================================================================
-  // Recent projects (state — backed by StateStore, not SettingsStore)
+  // FPGA stuff
   // =========================================================================
 
-  public static final RecentProjects
-      RECENT_PROJECTS = new RecentProjects();
+  public static final PrefMonitor<String>
+    APIO_PATH = new PrefMonitor<>("apio", "path", "");
+
+  public static final PrefMonitor<String>
+    OPENFPGALOADER_PATH = new PrefMonitor<>("openFPGALoader", "path", "");
+
 }

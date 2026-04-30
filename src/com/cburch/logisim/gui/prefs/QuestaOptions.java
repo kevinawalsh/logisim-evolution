@@ -31,22 +31,16 @@
 package com.cburch.logisim.gui.prefs;
 import static com.cburch.logisim.gui.prefs.Strings.S;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.PathSettingUI;
-import com.cburch.logisim.util.Softwares;
+import com.cburch.logisim.util.Questa;
 import com.cburch.logisim.util.StringGetter;
-import com.cburch.logisim.util.TableLayout;
 
-public class SoftwaresOptions extends SettingsPanel {
-  
-  private static final long serialVersionUID = 1L;
+public class QuestaOptions extends FPGAToolchainPanel {
   
   private PrefBoolean questaEnabled = new PrefBoolean(
       AppPreferences.QUESTA_VALIDATION,
-      S.getter("softwaresQuestaValidationLabel"));
+      S.getter("questaValidationLabel"));
   private PathSettingUI questaPath;
 
   private static final StringGetter dlgTitle = 
@@ -55,44 +49,20 @@ public class SoftwaresOptions extends SettingsPanel {
   private static final StringGetter dlgBtnText = 
     com.cburch.logisim.util.Strings.S.getter("questaDialogButton");
 
-  private PropertyChangeListener prefListener = new PropertyChangeListener() {
-    @Override
-    public void propertyChange(PropertyChangeEvent event) {
-    }
-  };
+  public QuestaOptions(SettingsFrame window) {
+    super(window, "Questa");
 
-  public SoftwaresOptions(SettingsFrame window) {
-    super(window);
-
-    questaPath = new PathSettingUI(window,
-        AppPreferences.QUESTA_PATH.get(),
-        S.getter("softwaresQuestaPathButton"),
-        dlgTitle, dlgBtnText,
-        (f) -> Softwares.setQuestaPath(f));
-    questaPath.setLeftMargin(30);
-    questaPath.setDirOnly(true);
-
-    AppPreferences.QUESTA_PATH.addPrefChangeWeakListener(this,
-      e -> questaPath.set(AppPreferences.QUESTA_PATH.get()));
-
-    setLayout(new TableLayout(1));
+    addExplanation("Questa integration in Logisim-HC is not currently working. "
+        + "The options here are maintained only in case Questa integration is fixed again.");
+    
     add(questaEnabled);
-    add(questaPath);
-  }
 
-  @Override
-  public String getHelpText() {
-    return S.get("softwaresHelp");
-  }
+    addDirOption(AppPreferences.QUESTA_PATH,
+        S.get("questaPathLabel"),
+        (path) -> allToolsPresent(path, Questa.QUESTA_BIN));
 
-  @Override
-  public String getTitle() {
-    return S.get("softwaresTitle");
-  }
-
-  @Override
-  public void localeChanged() {
-    questaPath.localeChanged();
+    addExplanation("The path here should be the installation directory for Questa, " +
+        " which must contain " + pretty(Questa.QUESTA_BIN, "and") + ".");
   }
 
 }

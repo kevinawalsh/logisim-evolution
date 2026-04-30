@@ -49,13 +49,14 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.LoadCanceledByUser;
+import com.cburch.logisim.file.LoadFailedException;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.file.LogisimFile;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.start.SplashScreen;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.JFileChoosers;
@@ -410,7 +411,7 @@ public class ProjectActions {
 
     try {
       LogisimFile.FileWithSimulations libWithSim = loader.openLogisimFile(f);
-      AppPreferences.RECENT_PROJECTS.update(f);
+      StateStore.RECENT_PROJECTS.update(f);
       if (libWithSim == null)
         return null;
       if (proj == null) {
@@ -447,7 +448,7 @@ public class ProjectActions {
     source = checkForAutoBackups(monitor, source);
     Loader loader = new Loader(monitor);
     LogisimFile.FileWithSimulations file = loader.openLogisimFile(source, substitutions);
-    AppPreferences.RECENT_PROJECTS.update(source);
+    StateStore.RECENT_PROJECTS.update(source);
 
     return completeProject(monitor, loader, file, false);
   }
@@ -492,7 +493,7 @@ public class ProjectActions {
         } catch (Exception e) {
         }
       }
-      AppPreferences.RECENT_PROJECTS.update(f);
+      StateStore.RECENT_PROJECTS.update(f);
       proj.setFileAsClean();
       removeAutoBackup(proj);
     }

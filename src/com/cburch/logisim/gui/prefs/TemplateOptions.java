@@ -62,19 +62,20 @@ class TemplateOptions extends SettingsPanel {
         AppPreferences.TEMPLATE.setEmpty();
       else if (custom.isSelected()) {
         AppPreferences.TEMPLATE.setCustom(null, null);
-        templatePathChanged(path.getFile());
+        templatePathChanged(path.getPath());
       }
       // computeEnabled();
     }
 
-    private void templatePathChanged(File file) {
-      if (file == null) {
+    private void templatePathChanged(String path) {
+      if (path.isEmpty()) {
         AppPreferences.TEMPLATE.setCustom(null, null);
         return;
       }
       FileInputStream reader = null;
       InputStream reader2 = null;
       try {
+        File file = new File(path);
         Loader loader = new Loader(getSettingsFrame());
         reader = new FileInputStream(file);
         Template template = Template.create(reader);
@@ -112,7 +113,6 @@ class TemplateOptions extends SettingsPanel {
 
   private MyListener myListener = new MyListener();
 
-  private JLabel templateLabel = new JLabel();
   private JRadioButton plain = new JRadioButton();
   private JRadioButton empty = new JRadioButton();
   private JRadioButton custom = new JRadioButton();
@@ -123,10 +123,11 @@ class TemplateOptions extends SettingsPanel {
 
     path = new PathSettingUI(window,
         AppPreferences.TEMPLATE.getFile(),
+        S.getter("templateLabel"),
         S.getter("templateSelectButton"),
         S.getter("selectDialogTitle"),
         S.getter("selectDialogButton"),
-        (f) -> myListener.templatePathChanged(f));
+        (path) -> myListener.templatePathChanged(path));
     path.setLeftMargin(30);
 
     ButtonGroup bgroup = new ButtonGroup();
@@ -140,7 +141,6 @@ class TemplateOptions extends SettingsPanel {
     // myListener.computeEnabled();
 
     setLayout(new TableLayout(1));
-    add(templateLabel);
     add(plain);
     add(empty);
     add(custom);
@@ -165,7 +165,6 @@ class TemplateOptions extends SettingsPanel {
 
   @Override
   public void localeChanged() {
-    templateLabel.setText(S.get("templateLabel"));
     plain.setText(S.get("templatePlainOption"));
     empty.setText(S.get("templateEmptyOption"));
     custom.setText(S.get("templateCustomOption"));

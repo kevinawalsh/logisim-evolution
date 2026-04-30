@@ -186,7 +186,7 @@ public class JFileChoosers {
         if (prop == null) {
           dirname = currentDirectory;
           if (dirname.equals("")) {
-            dirname = StateStore.getDialogDirectory();
+            dirname = StateStore.DIALOG_DIRECTORY.get();
           }
         } else {
           dirname = System.getProperty(prop);

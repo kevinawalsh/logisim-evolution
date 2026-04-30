@@ -22,94 +22,126 @@ package com.cburch.logisim.prefs;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.Map;
 
+import javax.swing.SwingUtilities;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import com.cburch.logisim.Main;
+import com.cburch.logisim.file.XmlIterator;
+import com.cburch.logisim.util.Debug;
+import com.cburch.logisim.util.WeakList;
 
-/**
- * Store for automatically-captured UI state (window geometry, zoom levels, etc.).
- *
- * Unlike SettingsStore, there is no layering, no user/default distinction, and
- * no "unset" concept. The app owns these values and writes them on every change.
- *
- * State file location:
- *   macOS:   ~/Library/Application Support/logisim-hc/state.xml
- *   Windows: %LOCALAPPDATA%\logisim-hc\state.xml   (non-roaming: machine-specific)
- *   Linux:   ${XDG_STATE_HOME:-~/.local/state}/logisim-hc/state.xml
- *   other:   ~/.logisim-hc/state.xml
- */
+// Store for UI state that is saved across sessions, but not exposed as
+// user-facing preferences, for example: recent projects list, window geometry,
+// zoom level, etc.
+//
+// Most state is accessed via:
+//   val = StateStore.SOME_ENTRY.get()
+//   StateStore.SOME_ENTRY.set(val)
+//
+// State file location:
+//   macOS:   ~/Library/Application Support/logisim-hc/state.xml
+//   Windows: ~/AppData/Local/logisim-hc/state.xml (%LOCALAPPDATA% can override this)
+//   Linux:   ~/.local/state/logisim-hc/state.xml ($XDG_STATE_HOME can override this)
+//   other:   ~/.logisim-hc/state.xml
 public class StateStore {
+ 
+  public static class Entry<V> {
+    private final LinkedHashMap<String, Object> map;
+    private final String name;
+
+    private Entry(LinkedHashMap<String, Object> map, String name, V defaultValue) {
+      this.map = map;
+      this.name = name;
+      map.put(name, defaultValue);
+    }
+
+    @SuppressWarnings("unchecked")
+    public V get() { return (V)map.get(name); }
+
+    public void set(V v) { map.put(name, v); store.markDirty(); }
+  }
 
   // Window geometry
-  private static int windowState = 0; // JFrame.NORMAL
-  private static int windowWidth = 640;
-  private static int windowHeight = 480;
-  private static int windowX = 0;
-  private static int windowY = 0;
-  private static double mainSplit = 0.25;
-  private static double leftSplit = 0.5;
+  private static final LinkedHashMap<String, Object> window = new LinkedHashMap<>();
+  public static final Entry<Integer> WINDOW_STATE = new Entry<>(window, "state", 0); // JFrame.NORMAL
+  public static final Entry<Integer> WINDOW_WIDTH = new Entry<>(window, "width", 800);
+  public static final Entry<Integer> WINDOW_HEIGHT = new Entry<>(window, "height", 600);
+  public static final Entry<Integer> WINDOW_X = new Entry<>(window, "x", 0);
+  public static final Entry<Integer> WINDOW_Y = new Entry<>(window, "y", 0);
+  public static final Entry<Double> WINDOW_MAIN_SPLIT = new Entry<>(window, "main-split", 0.25);
+  public static final Entry<Double> WINDOW_LEFT_SPLIT = new Entry<>(window, "left-split", 0.5);
 
   // Layout (circuit editor)
-  private static double layoutZoom = 1.0;
-  private static boolean layoutGrid = true;
+  private static final LinkedHashMap<String, Object> layout = new LinkedHashMap<>();
+  public static final Entry<Double> LAYOUT_ZOOM = new Entry<>(layout, "zoom", 1.0);
+  public static final Entry<Boolean> LAYOUT_GRID = new Entry<>(layout, "grid", true);
 
   // Appearance (appearance editor)
-  private static double appearanceZoom = 1.0;
-  private static boolean appearanceGrid = true;
+  private static final LinkedHashMap<String, Object> appearance = new LinkedHashMap<>();
+  public static final Entry<Double> APPEARANCE_ZOOM = new Entry<>(appearance, "zoom", 1.0);
+  public static final Entry<Boolean> APPEARANCE_GRID = new Entry<>(appearance, "grid", true);
 
   // Simulation
-  private static double tickFrequency = 1.0;
+  private static final LinkedHashMap<String, Object> simulation = new LinkedHashMap<>();
+  public static final Entry<Double> TICK_FREQ = new Entry<>(simulation, "tick-frequency", 1.0);
 
-  // File chooser dialog
-  private static String dialogDirectory = "";
+  // Tips and Hints Activity
+  // private static final LinkedHashMap<String, Object> activity = new LinkedHashMap<>();
+  // public static final Entry<Integer> WIRING_TOOL_ACTIVITY_COUNTER = new Entry<>(activity, "wiring", 0);
+  // public static final Entry<Integer> CUTTER_TOOL_ACTIVITY_COUNTER = new Entry<>(activity, "cutter", 0);
+
+  // Most recent directory for file-chooser dialogs
+  private static final LinkedHashMap<String, Object> dialog = new LinkedHashMap<>();
+  public static final Entry<String> DIALOG_DIRECTORY = new Entry<>(dialog, "directory", "");
 
   // Recent projects (most-recent-first, max 10)
   private static final List<String> recentProjects = new ArrayList<>();
   private static final int MAX_RECENT = 10;
+  public static final RecentProjects RECENT_PROJECTS = new RecentProjects();
 
-  // File location
+  static void updateRecentProject(File file) {
+    synchronized (store.lock) {
+      String path;
+      try { path = file.getCanonicalPath(); }
+      catch (IOException e) { path = file.getAbsolutePath(); }
+      recentProjects.remove(path);
+      recentProjects.add(0, path);
+      while (recentProjects.size() > MAX_RECENT)
+        recentProjects.remove(recentProjects.size() - 1);
+    }
+    store.markDirty();
+  }
+
+  private static List<File> getRecentProjects() {
+    synchronized (store.lock) {
+      ArrayList<File> ret = new ArrayList<>();
+      for (String path : recentProjects)
+        ret.add(new File(path));
+      return ret;
+    }
+  }
+
+  private static BackingStore store;
+  private static Object lock = new Object();
   private static File stateFile;
 
-  // Debounced write state
-  private static volatile boolean dirty = false;
-  private static Timer writeTimer;
-  private static TimerTask writeTask;
-  private static final long WRITE_DELAY_MS = 500;
-
-  // =========================================================================
-  // Initialization
-  // =========================================================================
-
   public static void initialize() {
-    stateFile = getDefaultStateFile();
-    if (stateFile.exists()) {
+    stateFile = new File(getDefaultStateDir(), "state.xml");
+    if (stateFile.exists())
       loadFile(stateFile);
-    }
-    Runtime.getRuntime().addShutdownHook(
-        new Thread(StateStore::flushIfDirty, "logisim-state-flush"));
+    store = new BackingStore("UI-state", stateFile, StateStore::buildXml);
   }
 
-  public static File getStateFile() { return stateFile; }
-
-  static File getDefaultStateFile() {
-    return new File(getDefaultStateDir(), "state.xml");
-  }
-
-  static File getDefaultStateDir() {
+  private static File getDefaultStateDir() {
     String home = System.getProperty("user.home");
     if (Main.MacOS) {
       // Same directory as settings.xml on macOS
@@ -130,132 +162,24 @@ public class StateStore {
     }
   }
 
-  // =========================================================================
-  // Getters / setters — window geometry
-  // =========================================================================
+  public static void save() { store.writeNow(); }
 
-  public static int getWindowState() { return windowState; }
-  public static void setWindowState(int v) { windowState = v; markDirty(); }
-
-  public static int getWindowWidth() { return windowWidth; }
-  public static void setWindowWidth(int v) { windowWidth = v; markDirty(); }
-
-  public static int getWindowHeight() { return windowHeight; }
-  public static void setWindowHeight(int v) { windowHeight = v; markDirty(); }
-
-  public static int getWindowX() { return windowX; }
-  public static void setWindowX(int v) { windowX = v; markDirty(); }
-
-  public static int getWindowY() { return windowY; }
-  public static void setWindowY(int v) { windowY = v; markDirty(); }
-
-  public static double getMainSplit() { return mainSplit; }
-  public static void setMainSplit(double v) { mainSplit = v; markDirty(); }
-
-  public static double getLeftSplit() { return leftSplit; }
-  public static void setLeftSplit(double v) { leftSplit = v; markDirty(); }
-
-  // =========================================================================
-  // Getters / setters — canvas state
-  // =========================================================================
-
-  public static double getLayoutZoom() { return layoutZoom; }
-  public static void setLayoutZoom(double v) { layoutZoom = v; markDirty(); }
-
-  public static boolean getLayoutGrid() { return layoutGrid; }
-  public static void setLayoutGrid(boolean v) { layoutGrid = v; markDirty(); }
-
-  public static double getAppearanceZoom() { return appearanceZoom; }
-  public static void setAppearanceZoom(double v) { appearanceZoom = v; markDirty(); }
-
-  public static boolean getAppearanceGrid() { return appearanceGrid; }
-  public static void setAppearanceGrid(boolean v) { appearanceGrid = v; markDirty(); }
-
-  // =========================================================================
-  // Getters / setters — simulation and dialog
-  // =========================================================================
-
-  public static double getTickFrequency() { return tickFrequency; }
-  public static void setTickFrequency(double v) { tickFrequency = v; markDirty(); }
-
-  public static String getDialogDirectory() { return dialogDirectory; }
-  public static void setDialogDirectory(String v) {
-    dialogDirectory = (v != null) ? v : "";
-    markDirty();
-  }
-
-  // =========================================================================
-  // Recent projects
-  // =========================================================================
-
-  /** Returns an unmodifiable view of the recent project paths, most-recent-first. */
-  public static List<String> getRecentProjects() {
-    return Collections.unmodifiableList(recentProjects);
-  }
-
-  /**
-   * Records that the given file was just opened/saved. Prepends it to the list,
-   * removes any earlier occurrence of the same path, and trims to MAX_RECENT.
-   */
-  public static void updateRecentProject(File file) {
-    String path;
-    try { path = file.getCanonicalPath(); }
-    catch (IOException e) { path = file.getAbsolutePath(); }
-    recentProjects.remove(path);
-    recentProjects.add(0, path);
-    while (recentProjects.size() > MAX_RECENT)
-      recentProjects.remove(recentProjects.size() - 1);
-    markDirty();
-  }
-
-  // =========================================================================
-  // Write scheduling
-  // =========================================================================
-
-  private static void markDirty() {
-    dirty = true;
-    scheduleWrite();
-  }
-
-  private static synchronized void scheduleWrite() {
-    if (writeTask != null) writeTask.cancel();
-    if (writeTimer == null)
-      writeTimer = new Timer("logisim-state-write", true); // daemon timer
-    writeTask = new TimerTask() {
-      @Override public void run() { writeNow(); }
-    };
-    writeTimer.schedule(writeTask, WRITE_DELAY_MS);
-  }
-
-  static synchronized void flushIfDirty() {
-    if (dirty) writeNow();
-  }
-
-  /** Flush immediately; called from Frame.savePreferences() on quit. */
-  public static void save() {
-    dirty = true;
-    writeNow();
-  }
-
-  static synchronized void writeNow() {
-    if (writeTask != null) { writeTask.cancel(); writeTask = null; }
-    try {
-      File dir = stateFile.getParentFile();
-      if (dir != null) dir.mkdirs();
-      File tmp = new File(dir != null ? dir : new File("."), stateFile.getName() + ".tmp");
-      Files.writeString(tmp.toPath(), buildXml(), StandardCharsets.UTF_8);
-      Files.move(tmp.toPath(), stateFile.toPath(),
-          StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-      dirty = false;
-    } catch (IOException e) {
-      System.err.println("Warning: Could not write state file: " + stateFile
-          + ": " + e.getMessage());
+  private static void loadElement(LinkedHashMap<String, Object> map, Element elt) {
+    for (Map.Entry<String, Object> e : map.entrySet()) {
+      String s = elt.getAttribute(e.getKey());
+      if (s == null || s.isEmpty())
+        continue;
+      Object defaultValue = e.getValue();
+      try {
+        if (defaultValue instanceof Integer) e.setValue(Integer.parseInt(s));
+        else if (defaultValue instanceof Double) e.setValue(Double.parseDouble(s));
+        else if (defaultValue instanceof Boolean) e.setValue("true".equalsIgnoreCase(s));
+        else if (defaultValue instanceof String) e.setValue(s);
+      } catch (NumberFormatException ex) {
+        continue;
+      }
     }
   }
-
-  // =========================================================================
-  // XML reading
-  // =========================================================================
 
   private static void loadFile(File file) {
     try {
@@ -266,51 +190,27 @@ public class StateStore {
       Document doc = parser.parse(file);
       Element root = doc.getDocumentElement();
       if (!"logisim-hc-state".equals(root.getTagName())) {
-        System.err.println("Warning: Unexpected root element in state file: " + file);
+        Debug.error("Warning: Unexpected xml root element in state file: " + file);
         return;
       }
       try {
         int v = Integer.parseInt(root.getAttribute("schema-version"));
         if (v > 1)
-          System.err.println("Warning: State file written by newer Logisim-HC"
+          Debug.error("Warning: State file written by newer and incompatible Logisim-HC"
               + " (schema-version=" + v + "): " + file);
       } catch (NumberFormatException ignored) { }
 
-      NodeList children = root.getChildNodes();
-      for (int i = 0; i < children.getLength(); i++) {
-        if (!(children.item(i) instanceof Element)) continue;
-        Element el = (Element) children.item(i);
-        switch (el.getTagName()) {
-          case "window":
-            windowState  = parseInt(el.getAttribute("state"),      windowState);
-            windowWidth  = parseInt(el.getAttribute("width"),       windowWidth);
-            windowHeight = parseInt(el.getAttribute("height"),      windowHeight);
-            windowX      = parseInt(el.getAttribute("x"),           windowX);
-            windowY      = parseInt(el.getAttribute("y"),           windowY);
-            mainSplit    = parseDouble(el.getAttribute("main-split"), mainSplit);
-            leftSplit    = parseDouble(el.getAttribute("left-split"), leftSplit);
-            break;
-          case "layout":
-            layoutZoom = parseDouble(el.getAttribute("zoom"), layoutZoom);
-            layoutGrid = parseBoolean(el.getAttribute("grid"), layoutGrid);
-            break;
-          case "appearance":
-            appearanceZoom = parseDouble(el.getAttribute("zoom"), appearanceZoom);
-            appearanceGrid = parseBoolean(el.getAttribute("grid"), appearanceGrid);
-            break;
-          case "simulation":
-            tickFrequency = parseDouble(el.getAttribute("tick-frequency"), tickFrequency);
-            break;
-          case "file-dialog":
-            String d = el.getAttribute("directory");
-            if (d != null) dialogDirectory = d;
-            break;
+      for (Element elt : XmlIterator.forChildElements(root)) {
+        switch (elt.getTagName()) {
+          case "window": loadElement(window, elt); break;
+          case "layout": loadElement(layout, elt); break;
+          case "appearance": loadElement(appearance, elt); break;
+          case "simulation": loadElement(simulation, elt); break;
+          case "dialog": loadElement(dialog, elt); break;
+          // case "activity": loadElement(activity, elt); break;
           case "recent-projects":
             recentProjects.clear();
-            NodeList projects = el.getChildNodes();
-            for (int j = 0; j < projects.getLength(); j++) {
-              if (!(projects.item(j) instanceof Element)) continue;
-              Element proj = (Element) projects.item(j);
+            for (Element proj : XmlIterator.forChildElements(elt)) {
               if (!"project".equals(proj.getTagName())) continue;
               String path = proj.getAttribute("path");
               if (path != null && !path.isEmpty())
@@ -321,80 +221,69 @@ public class StateStore {
         }
       }
     } catch (Exception e) {
-      System.err.println("Warning: Could not read state file: " + file
-          + ": " + e.getMessage());
+      Debug.error("Error reading saved UI state", e);
     }
   }
 
-  // =========================================================================
-  // XML writing
-  // =========================================================================
-
-  static String buildXml() {
+  private static String toNode(LinkedHashMap<String, Object> map, String name) {
     StringBuilder sb = new StringBuilder();
-    sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    sb.append("<!-- Logisim-HC state file."
-        + " Written automatically on exit. Hand edits will be overwritten. -->\n");
-    sb.append("<logisim-hc-state schema-version=\"1\">\n\n");
-
-    sb.append("  <window state=\"").append(windowState)
-      .append("\" width=\"").append(windowWidth)
-      .append("\" height=\"").append(windowHeight)
-      .append("\" x=\"").append(windowX)
-      .append("\" y=\"").append(windowY)
-      .append("\" main-split=\"").append(mainSplit)
-      .append("\" left-split=\"").append(leftSplit)
-      .append("\"/>\n");
-
-    sb.append("  <layout zoom=\"").append(layoutZoom)
-      .append("\" grid=\"").append(layoutGrid).append("\"/>\n");
-
-    sb.append("  <appearance zoom=\"").append(appearanceZoom)
-      .append("\" grid=\"").append(appearanceGrid).append("\"/>\n");
-
-    sb.append("  <simulation tick-frequency=\"").append(tickFrequency).append("\"/>\n");
-
-    sb.append("  <file-dialog directory=\"").append(xmlAttr(dialogDirectory))
-      .append("\"/>\n\n");
-
-    if (!recentProjects.isEmpty()) {
-      sb.append("  <!-- Most-recently-used files, most recent first. -->\n");
-      sb.append("  <recent-projects>\n");
-      for (String path : recentProjects)
-        sb.append("    <project path=\"").append(xmlAttr(path)).append("\"/>\n");
-      sb.append("  </recent-projects>\n\n");
-    }
-
-    sb.append("</logisim-hc-state>\n");
+    sb.append("<" + name);
+    for (Map.Entry<String, Object> e : map.entrySet())
+      sb.append(" " + e.getKey() + "=\"" + store.xmlEscapeAttr(e.getValue().toString()) + "\"");
+    sb.append("/>\n");
     return sb.toString();
   }
 
-  // =========================================================================
-  // Parse helpers
-  // =========================================================================
+  private static String buildXml() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    sb.append("<!-- Logisim-HC saved UI state. Overwritten by Logisim-HC, any manual edits will be lost. -->\n");
+    sb.append("<logisim-hc-state schema-version=\"1\" written-by=\"");
+    sb.append(store.xmlEscapeAttr(Main.VERSION_NAME));
+    sb.append("\">\n\n");
 
-  static String xmlAttr(String s) {
-    if (s == null) return "";
-    return s.replace("&", "&amp;")
-            .replace("\"", "&quot;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;");
+    sb.append("  " + toNode(window, "window"));
+    sb.append("  " + toNode(layout, "layout"));
+    sb.append("  " + toNode(appearance, "appearance"));
+    sb.append("  " + toNode(simulation, "simulation"));
+    sb.append("  " + toNode(dialog, "dialog"));
+    // sb.append("  " + toNode(activity, "activity"));
+
+    if (!recentProjects.isEmpty()) {
+      sb.append("  <recent-projects>\n");
+      for (String path : recentProjects)
+        sb.append("    <project path=\"").append(store.xmlEscapeAttr(path)).append("\"/>\n");
+      sb.append("  </recent-projects>\n");
+    }
+
+    sb.append("\n</logisim-hc-state>\n");
+    return sb.toString();
   }
 
-  private static int parseInt(String s, int dflt) {
-    if (s == null || s.isEmpty()) return dflt;
-    try { return Integer.parseInt(s); }
-    catch (NumberFormatException e) { return dflt; }
+  public static class RecentProjects {
+
+    private final WeakList<AppPreferences.Listener<List<File>>> listeners = new WeakList<>();
+    public void addPrefChangeWeakListener(Object owner, AppPreferences.Listener<List<File>> l) { listeners.add(owner, l); }
+    public void removePrefChangeWeakListener(Object owner, AppPreferences.Listener<List<File>> l) { listeners.remove(owner, l); }
+    private void firePrefChangeEvent(AppPreferences.ChangeEvent<List<File>> evt) { for (AppPreferences.Listener<List<File>> l : listeners) l.prefChanged(evt); }
+
+    RecentProjects() { }
+
+    // Returns list of recent projects, most-recent-first.
+    public List<File> get() {
+      return getRecentProjects();
+    }
+
+    // Updates list to indicate the given file was just opened/saved.
+    // Updates StateStore and fires a change event so the UI menu refreshes.
+    public void update(File file) {
+      List<File> oldList = get();
+      updateRecentProject(file);
+      List<File> newList = get();
+      SwingUtilities.invokeLater(() ->
+          firePrefChangeEvent(new AppPreferences.ChangeEvent<List<File>>(this, oldList, newList)));
+    }
+
   }
 
-  private static double parseDouble(String s, double dflt) {
-    if (s == null || s.isEmpty()) return dflt;
-    try { return Double.parseDouble(s); }
-    catch (NumberFormatException e) { return dflt; }
-  }
-
-  private static boolean parseBoolean(String s, boolean dflt) {
-    if (s == null || s.isEmpty()) return dflt;
-    return "true".equalsIgnoreCase(s);
-  }
 }

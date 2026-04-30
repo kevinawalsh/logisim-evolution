@@ -46,7 +46,7 @@ import javax.swing.JTextArea;
 
 import com.cburch.hdl.HdlModel;
 import com.cburch.logisim.file.LogisimFile;
-import com.cburch.logisim.util.Softwares;
+import com.cburch.logisim.util.Questa;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -276,7 +276,7 @@ public class VhdlContent extends HdlContent {
       return;
     if (errException != null)
       errException.printStackTrace();
-    if (errCode == Softwares.ERROR) {
+    if (errCode == Questa.ERROR) {
       JTextArea message = new JTextArea();
       message.setText(errMessage.toString());
       message.setEditable(false);
@@ -290,7 +290,7 @@ public class VhdlContent extends HdlContent {
           JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE, null,
           new String[] { S.get("validationErrorButton") },
           S.get("validationErrorButton"));
-    } else if (errCode == Softwares.ABORD) {
+    } else if (errCode == Questa.ABORD) {
       JOptionPane.showMessageDialog(null, errMessage.toString(),
           errTitle.toString(), JOptionPane.INFORMATION_MESSAGE);
     } else {
@@ -309,8 +309,8 @@ public class VhdlContent extends HdlContent {
     try {
       errTitle.setLength(0);
       errMessage.setLength(0);
-      errCode = Softwares.validateVhdl(content.toString(), errTitle, errMessage);
-      if (errCode != Softwares.SUCCESS)
+      errCode = Questa.validateVhdl(content.toString(), errTitle, errMessage);
+      if (errCode != Questa.SUCCESS)
         return false;
 
       VhdlParser parser = new VhdlParser(name, content.toString());

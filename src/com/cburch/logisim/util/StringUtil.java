@@ -31,7 +31,6 @@
 package com.cburch.logisim.util;
 
 import java.awt.Font;
-import java.awt.FontMetrics;
 
 import com.cburch.logisim.data.Bounds;
 

@@ -66,8 +66,8 @@ public class AppearanceView {
     canvas = new AppearanceCanvas(selectTool);
     ShowStateTool ssTool = new ShowStateTool(this, canvas, attrs);
     toolbarModel = new AppearanceToolbarModel(selectTool, ssTool, canvas, attrs);
-    zoomModel = new BasicZoomModel(StateStore.getAppearanceGrid(),
-        StateStore.getAppearanceZoom(), ZOOM_OPTIONS);
+    zoomModel = new BasicZoomModel(StateStore.APPEARANCE_GRID.get(),
+        StateStore.APPEARANCE_ZOOM.get(), ZOOM_OPTIONS);
     canvas.getGridPainter().setZoomModel(zoomModel);
     attrTableManager = null;
     canvasPane = new CanvasPane(canvas);

@@ -253,8 +253,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   // }
 
   private static Point getInitialLocation() {
-    int x = StateStore.getWindowX();
-    int y = StateStore.getWindowY();
+    int x = StateStore.WINDOW_X.get();
+    int y = StateStore.WINDOW_Y.get();
     try {
       while (isProjectFrameAt(x, y)) {
         x += 20;
@@ -353,7 +353,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   // for VHDL Editor
   private ToolbarModel hdlToolbarModel;
 
-  private Double lastFraction = 0.75; // right-split default; see commented-out code below
+  // private Double lastFraction = 0.75; // right-split default; see commented-out code below
 
   public Frame(Project project) {
     super(project);
@@ -370,8 +370,8 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     // set up elements for the Layout view
     layoutToolbarModel = new LayoutToolbarModel(this, project);
     layoutCanvas = new Canvas(project);
-    layoutZoomModel = new BasicZoomModel(StateStore.getLayoutGrid(),
-        StateStore.getLayoutZoom(), ZOOM_OPTIONS);
+    layoutZoomModel = new BasicZoomModel(StateStore.LAYOUT_GRID.get(),
+        StateStore.LAYOUT_ZOOM.get(), ZOOM_OPTIONS);
 
     layoutCanvas.getGridPainter().setZoomModel(layoutZoomModel);
     layoutEditHandler = new LayoutEditHandler(this);
@@ -434,7 +434,7 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     bottomTabAndZoom.add(attrFooter, BorderLayout.SOUTH);
 
     leftRegion = new HorizontalSplitPane(topTab, bottomTabAndZoom,
-        StateStore.getLeftSplit());
+        StateStore.WINDOW_LEFT_SPLIT.get());
 
     hdlEditor = new HdlContentView(project);
     // vhdlSimulatorConsole = new VhdlSimulatorConsole(project);
@@ -445,18 +445,18 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
     rightPanel.add(rightRegion, BorderLayout.CENTER);
 
     mainRegion = new VerticalSplitPane(leftRegion, rightPanel,
-        clamp(StateStore.getMainSplit(), 0.05, 0.80));
+        clamp(StateStore.WINDOW_MAIN_SPLIT.get(), 0.05, 0.80));
 
     getContentPane().add(mainRegion, BorderLayout.CENTER);
 
     computeTitle();
 
-    this.setSize(StateStore.getWindowWidth(), StateStore.getWindowHeight());
+    this.setSize(StateStore.WINDOW_WIDTH.get(), StateStore.WINDOW_HEIGHT.get());
     Point prefPoint = getInitialLocation();
     if (prefPoint != null) {
       this.setLocation(prefPoint);
     }
-    this.setExtendedState(StateStore.getWindowState());
+    this.setExtendedState(StateStore.WINDOW_STATE.get());
 
     menuListener.register(mainPanel);
     KeyboardToolSelection.register(toolbar);
@@ -579,19 +579,19 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
   }
 
   public void savePreferences() {
-    StateStore.setTickFrequency(project.getSimulator().getTickFrequency());
-    StateStore.setLayoutGrid(layoutZoomModel.getShowGrid());
-    StateStore.setLayoutZoom(layoutZoomModel.getZoomFactor());
+    StateStore.TICK_FREQ.set(project.getSimulator().getTickFrequency());
+    StateStore.LAYOUT_GRID.set(layoutZoomModel.getShowGrid());
+    StateStore.LAYOUT_ZOOM.set(layoutZoomModel.getZoomFactor());
     if (appearance != null) {
       ZoomModel aZoom = appearance.getZoomModel();
-      StateStore.setAppearanceGrid(aZoom.getShowGrid());
-      StateStore.setAppearanceZoom(aZoom.getZoomFactor());
+      StateStore.APPEARANCE_GRID.set(aZoom.getShowGrid());
+      StateStore.APPEARANCE_ZOOM.set(aZoom.getZoomFactor());
     }
     int state = getExtendedState() & ~JFrame.ICONIFIED;
-    StateStore.setWindowState(state);
+    StateStore.WINDOW_STATE.set(state);
     Dimension dim = getSize();
-    StateStore.setWindowWidth(dim.width);
-    StateStore.setWindowHeight(dim.height);
+    StateStore.WINDOW_WIDTH.set(dim.width);
+    StateStore.WINDOW_HEIGHT.set(dim.height);
     Point loc;
     try {
       loc = getLocationOnScreen();
@@ -599,12 +599,12 @@ public class Frame extends LFrame.MainWindow implements LocaleListener {
       loc = Projects.getLocation(this);
     }
     if (loc != null) {
-      StateStore.setWindowX(loc.x);
-      StateStore.setWindowY(loc.y);
+      StateStore.WINDOW_X.set(loc.x);
+      StateStore.WINDOW_Y.set(loc.y);
     }
-    StateStore.setLeftSplit(leftRegion.getFraction());
-    StateStore.setMainSplit(clamp(mainRegion.getFraction(), 0.05, 0.80));
-    StateStore.setDialogDirectory(JFileChoosers.getCurrentDirectory());
+    StateStore.WINDOW_LEFT_SPLIT.set(leftRegion.getFraction());
+    StateStore.WINDOW_MAIN_SPLIT.set(clamp(mainRegion.getFraction(), 0.05, 0.80));
+    StateStore.DIALOG_DIRECTORY.set(JFileChoosers.getCurrentDirectory());
     StateStore.save();
   }
 

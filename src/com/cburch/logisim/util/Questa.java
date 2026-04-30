@@ -45,7 +45,7 @@ import javax.swing.JOptionPane;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.PathSettingUI;
 
-public final class Softwares {
+public final class Questa {
 
   private static boolean createWorkLibrary(File tmpDir, String questaPath,
       StringBuffer result) throws IOException, InterruptedException {
@@ -97,10 +97,11 @@ public final class Softwares {
     // current setting is not valid, prompt to update setting
     new PathSettingUI(parent,
         AppPreferences.QUESTA_PATH.get(),
-        S.getter("softwaresQuestaPathButton"),
+        S.getter("questaPathLabel"),
+        S.getter("questaPathButton"),
         S.getter("questaDialogTitle"),
         S.getter("questaDialogButton"),
-        (f) -> setQuestaPath(f)).buttonClicked();
+        (path) -> setQuestaPath(path)).buttonClicked();
     
     prefPath = AppPreferences.QUESTA_PATH.get();
     if (validatePath(prefPath, QUESTA))
@@ -120,18 +121,7 @@ public final class Softwares {
     return questaProgs;
   }
   
-  public static String setQuestaPath(File file) {
-    String path;
-    try {
-      path = file.getCanonicalPath();
-    } catch (IOException ex) {
-      JOptionPane.showMessageDialog(null,
-          S.get("questaIoErrorMessage"),
-          S.get("questaErrorTitle"),
-          JOptionPane.ERROR_MESSAGE);
-      return null;
-    }
-
+  private static void setQuestaPath(String path) {
     if (validatePath(path, QUESTA)) {
       AppPreferences.QUESTA_PATH.set(path);
     } else {
@@ -139,9 +129,7 @@ public final class Softwares {
           S.get("questaErrorMessage"),
           S.get("questaErrorTitle"),
           JOptionPane.ERROR_MESSAGE);
-      return null;
     }
-    return path;
   }
 
   private static boolean validatePath(String path, String software) {
@@ -260,8 +248,6 @@ public final class Softwares {
 
   public static final int VLIB = 3;
 
-  private Softwares() {
-
-  }
+  private Questa() { }
 
 }

@@ -179,12 +179,12 @@ public class AlteraDownloadRemote extends AlteraDownload {
         }
       });
     } else {
-      final String openFPGAloader = findOpenFPGAloaderExecutable();
-      if (openFPGAloader == null) {
+      if (board.openFPGALoader_name == null) {
+        err.AddFatalError("Board does not support openFPGAloader yet.");
         return new ArrayList<>();
       }
-      if (board.openFPGAloader_name == null) {
-        err.AddFatalError("Board does not support openFPGAloader yet.");
+      final String openFPGAloader = OpenFPGALoader.findExecutable(err);
+      if (openFPGAloader == null) {
         return new ArrayList<>();
       }
       stages.add(new ProcessStage(
@@ -197,7 +197,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
           cmd = new ArrayList<>();
           cmd.add(openFPGAloader);
           cmd.add("-b");
-          cmd.add(board.openFPGAloader_name);
+          cmd.add(board.openFPGALoader_name);
           cmd.add(bitfile);
           return ok;
         }
@@ -206,26 +206,6 @@ public class AlteraDownloadRemote extends AlteraDownload {
       });
     }
     return stages;
-  }
-
-  private String findOpenFPGAloaderExecutable() {
-    String p = settings.GetOpenFPGALoaderPath();
-    if (p != null) {
-      File script = new File(p);
-      if (script.exists() && !script.isDirectory() && script.canExecute())
-        return p;
-      if (script.exists() && script.isDirectory()) {
-        String pp = p + "/openFPGAloader";
-        script = new File(pp);
-        if (script.exists() && !script.isDirectory() && script.canExecute())
-          return pp;
-      }
-      err.AddFatalError("OpenFPGAloaderPath="+p+" is not executable, nor is it a directory"
-          + " containing openFPGAloader. Please adjust FPGA Settings then try again.");
-      return null;
-    }
-    // Try just using "openFPGAloader", hope it is found on system path?
-    return "openFPGAloader";
   }
 
   protected boolean prepForScan(Commander cmdr, Console console) {

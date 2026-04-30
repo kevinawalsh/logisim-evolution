@@ -36,23 +36,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
-import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.gui.Commander;
-import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.netlist.Path;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
-import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.FileUtil;
 
 public class ApioDownload extends FPGADownload {
@@ -79,19 +74,22 @@ public class ApioDownload extends FPGADownload {
       BufferedReader reader = new BufferedReader(
           new InputStreamReader(process.getInputStream()));
       String line = reader.readLine();
-      if (line.startsWith("apio, version"))
-        return line.substring(6);
+      if (line.toLowerCase().startsWith("apio "))
+        return line.substring("apio ".length());
     } catch (Exception e) {
     }
     return null;
   }
 
+  private static final String helpmsg =
+    "Either install apio to a system directory, or set "
+    + "the toolchain path to point to the apio executable or a "
+    + "directory (e.g. a python virtualenv) containing bin/apio.";
+
   public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
-    String helpmsg = " Either install apio to a system directory, or set"
-      + " the toolchain path to point to the apio executable or a"
-      + " directory (e.g. a python virtualenv) containing bin/apio.";
-    String tool = settings.GetApioToolPath();
-    if (tool == null) {
+    String tool = AppPreferences.APIO_PATH.get();
+    // user wants system apio
+    if (tool == null || tool.isEmpty()) {
       String version = getApioVersion("apio");
       if (version != null) {
         err.AddInfo("Using system installed apio, version " + version);
@@ -101,28 +99,46 @@ public class ApioDownload extends FPGADownload {
           + " does not appear to be installed in a system directory. " + helpmsg);
       return false;
     }
-    String prog = findApioExecutable(settings);
-    if (prog != null)
-      return true;
-    err.AddFatalError("Apio toolchain path is set to " + tool + " but"
-        + " this does not appear to be correct." + helpmsg);
+    // user wants custom apio
+    String prog = findApioExecutable(tool);
+    if (prog != null && !prog.isEmpty()) {
+      String version = getApioVersion(prog);
+      if (version != null) {
+        err.AddInfo("Using " + prog + ", version " + version);
+        return true;
+      }
+      err.AddFatalError("Apio toolchain path is set to '" + tool + "', but "
+          + " `apio --version` still failed. " + helpmsg);
+      return false;
+    }
     return false;
   }
 
-  private String findApioExecutable(Settings settings) {
-    String p = settings.GetApioToolPath();
-    if (p != null) {
+  private String findApioExecutable() {
+    String p = AppPreferences.APIO_PATH.get();
+    String script = findApioExecutable(p);
+    if (script == null) {
+      err.AddFatalError("Apio toolchain path is set to '" + p + "' but"
+          + " the apio command was still not found. " + helpmsg);
+    }
+    return script;
+  }
+  
+  public static String findApioExecutable(String p) {
+    if (p != null && !p.isEmpty()) {
       File script = new File(p);
       if (script.exists() && !script.isDirectory() && script.canExecute())
         return p;
       if (script.exists() && script.isDirectory()) {
-        String pp = p + "/bin/apio";
+        String pp = p + "/apio";
+        script = new File(pp);
+        if (script.exists() && !script.isDirectory() && script.canExecute())
+          return pp;
+        pp = p + "/bin/apio";
         script = new File(pp);
         if (script.exists() && !script.isDirectory() && script.canExecute())
           return pp;
       }
-      err.AddFatalError("ApioToolsPath="+p+" is not executable, nor is it a directory"
-          + " containing bin/apio. Please adjust FPGA Settings then try again.");
       return null;
     }
     // Try just using "apio", hope it is found on system path?
@@ -132,7 +148,7 @@ public class ApioDownload extends FPGADownload {
   @Override
   public boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
 
-    bin_apio = findApioExecutable(settings);
+    bin_apio = findApioExecutable();
     if (bin_apio == null)
       return false;
 
@@ -304,7 +320,7 @@ public class ApioDownload extends FPGADownload {
   public ArrayList<Stage> initiateDownload(Commander cmdr) {
 
     ArrayList<Stage> stages = new ArrayList<>();
-    bin_apio = findApioExecutable(settings);
+    bin_apio = findApioExecutable();
     if (bin_apio == null)
       return stages;
 
@@ -316,72 +332,46 @@ public class ApioDownload extends FPGADownload {
             "Failed to synthesize design, cannot download"));
     }
 
-    // upload: use openFPGAloader when the board specifies it (e.g. boards whose
+    // upload: use openFPGALoader when the board specifies it (e.g. boards whose
     // flash chip is not supported by apio/iceprog), otherwise use apio upload.
-    if (board.openFPGAloader_name != null) {
-      String bin_ofl = findOpenFPGAloaderExecutable();
-      if (bin_ofl == null)
+    if (board.openFPGALoader_name != null) {
+      String bin_ofl = OpenFPGALoader.findExecutable(err);
+      if (bin_ofl != null) {
+        stages.add(new ProcessStage(
+              "upload", "Uploading to FPGA via openFPGALoader",
+              OpenFPGALoader.commandFor(board, bin_ofl),
+              "Failed to upload design; did you connect the board?") {
+          @Override
+          protected boolean prep() {
+            if (!cmdr.confirmDownload()) {
+              cancelled = true;
+              return false;
+            }
+            return true;
+          }
+        });
         return stages;
-      stages.add(new ProcessStage(
-            "upload", "Uploading to FPGA via openFPGAloader",
-            openFPGAloaderCmd(bin_ofl),
-            "Failed to upload design; did you connect the board?") {
-        @Override
-        protected boolean prep() {
-          if (!cmdr.confirmDownload()) {
-            cancelled = true;
-            return false;
-          }
-          return true;
-        }
-      });
-    } else {
-      stages.add(new ProcessStage(
-            "upload", "Uploading to FPGA",
-            apio("upload"),
-            "Failed to upload design; did you connect the board?") {
-        @Override
-        protected boolean prep() {
-          if (!cmdr.confirmDownload()) {
-            cancelled = true;
-            return false;
-          }
-          return true;
-        }
-      });
+      } else {
+        // err message
+
+      }
     }
+
+    stages.add(new ProcessStage(
+          "upload", "Uploading to FPGA",
+          apio("upload"),
+          "Failed to upload design; did you connect the board?") {
+      @Override
+      protected boolean prep() {
+        if (!cmdr.confirmDownload()) {
+          cancelled = true;
+          return false;
+        }
+        return true;
+      }
+    });
 
     return stages;
-  }
-
-  private ArrayList<String> openFPGAloaderCmd(String bin) {
-    ArrayList<String> cmd = new ArrayList<>();
-    cmd.add(bin);
-    cmd.add("--verify");
-    cmd.add("-b");
-    cmd.add(board.openFPGAloader_name);
-    cmd.add("hardware.bin");
-    return cmd;
-  }
-
-  private String findOpenFPGAloaderExecutable() {
-    String p = settings.GetOpenFPGALoaderPath();
-    if (p != null) {
-      File script = new File(p);
-      if (script.exists() && !script.isDirectory() && script.canExecute())
-        return p;
-      if (script.exists() && script.isDirectory()) {
-        String pp = p + "/openFPGAloader";
-        script = new File(pp);
-        if (script.exists() && !script.isDirectory() && script.canExecute())
-          return pp;
-      }
-      err.AddFatalError("OpenFPGAloaderPath=" + p + " is not executable, nor is it a directory"
-          + " containing openFPGAloader. Please adjust FPGA Settings then try again.");
-      return null;
-    }
-    // Try just using "openFPGAloader", hope it is found on system path?
-    return "openFPGAloader";
   }
 
   public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {

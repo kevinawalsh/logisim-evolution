@@ -630,7 +630,7 @@ public class Simulator {
     // dummy2.start();
     // dummy3.start();
 
-    setTickFrequency(StateStore.getTickFrequency());
+    setTickFrequency(StateStore.TICK_FREQ.get());
   }
 
   public void addSimulatorListener(StatusListener l) {

@@ -36,8 +36,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.List;
 import javax.swing.JButton;
 
@@ -72,28 +70,31 @@ import com.cburch.logisim.util.WindowMenuItemManager;
 public class SettingsFrame extends LFrame.Dialog {
 
   enum NavItemType { HEADER, PANEL }
+  enum Section { APP, PROJ, FPGA }
 
   static class NavItem {
     final NavItemType type;
     final SettingsPanel panel; // null for headers
-    boolean isApp;
+    Section section;
     String label;
 
-    NavItem(String label) { // header
+    NavItem(String label, Section section) { // header
       this.type = NavItemType.HEADER;
       this.label = label;
+      this.section = section;
       this.panel = null;
     }
-    NavItem(SettingsPanel panel, boolean isApp) { // panel item
+    NavItem(SettingsPanel panel, Section section) { // panel item
       this.type = NavItemType.PANEL;
       this.panel = panel;
-      this.isApp = isApp;
+      this.section = section;
       this.label = panel.getTitle();
     }
   }
 
   private static final Color APP_COLOR  = new Color(0x4A8EDB);
   private static final Color PROJ_COLOR = new Color(0x4A9A55);
+  private static final Color FPGA_COLOR = new Color(0x7B5EA7);
 
   private class HeaderBar extends JPanel {
     private final PillLabel pill = new PillLabel();
@@ -123,7 +124,7 @@ public class SettingsFrame extends LFrame.Dialog {
         Project sel = (Project) projectCombo.getSelectedItem();
         if (sel != null && sel != project) {
           switchProject(sel);
-          selectSomeProjPanel();
+          selectSome(Section.PROJ);
         }
       });
       add(pill);
@@ -191,6 +192,7 @@ public class SettingsFrame extends LFrame.Dialog {
       for (SettingsPanel p : appPanels) p.localeChanged();
       if (projPanels != null)
         for (SettingsPanel p : projPanels) p.localeChanged();
+      for (SettingsPanel p : fpgaPanels) p.localeChanged();
     }
   }
 
@@ -219,7 +221,7 @@ public class SettingsFrame extends LFrame.Dialog {
   public static void showAppSettings() {
     SettingsFrame f = getInstance();
     f.onProjectListChanged(true);
-    f.selectSomeAppPanel();
+    f.selectSome(Section.APP);
     f.setVisible(true);
     f.toFront();
   }
@@ -228,9 +230,17 @@ public class SettingsFrame extends LFrame.Dialog {
     SettingsFrame f = getInstance();
     f.switchProject(proj);
     if (clazz == null)
-      f.selectSomeProjPanel();
+      f.selectSome(Section.PROJ);
     else
       f.selectPanel(clazz);
+    f.setVisible(true);
+    f.toFront();
+  }
+
+  public static void showFPGASettings() {
+    SettingsFrame f = getInstance();
+    f.onProjectListChanged(true);
+    f.selectSome(Section.FPGA);
     f.setVisible(true);
     f.toFront();
   }
@@ -252,6 +262,7 @@ public class SettingsFrame extends LFrame.Dialog {
   private Project project;
   private SettingsPanel[] appPanels;
   private SettingsPanel[] projPanels; // null when no project
+  private SettingsPanel[] fpgaPanels;
 
   private final DefaultListModel<NavItem> navModel = new DefaultListModel<>();
   private final JList<NavItem> navList = new JList<>(navModel);
@@ -273,9 +284,14 @@ public class SettingsFrame extends LFrame.Dialog {
       new WindowOptions(this),
       new LayoutOptions(this),
       new ExperimentalOptions(this),
-      new SoftwaresOptions(this),
     };
     projPanels = null;
+    fpgaPanels = new SettingsPanel[] {
+      new QuestaOptions(this),
+      new ApioOptions(this),
+      new OpenFPGALoaderOptions(this),
+    };
+
     onProjectListChanged(true);
 
     buildNavModel();
@@ -307,10 +323,12 @@ public class SettingsFrame extends LFrame.Dialog {
     List<Project> open = Projects.getOpenProjects();
     if (open.isEmpty()) {
       switchProject(null);
-      selectSomeAppPanel();
+      NavItem item = navList.getSelectedValue();
+      if (item == null || (item.type == NavItemType.PANEL && item.section == Section.PROJ))
+        selectSome(Section.APP);
     } else if (selectSomeProject || project == null || !open.contains(project)) {
       switchProject(open.get(0));
-      selectSomeProjPanel();
+      selectSome(Section.PROJ);
     }
   }
 
@@ -329,27 +347,32 @@ public class SettingsFrame extends LFrame.Dialog {
 
   private void buildNavModel() {
     navModel.clear();
-    navModel.addElement(new NavItem(S.get("settingsNavAppSection")));
+    navModel.addElement(new NavItem(S.get("settingsNavAppSection"), Section.APP));
     for (SettingsPanel p : appPanels)
-      navModel.addElement(new NavItem(p, true));
+      navModel.addElement(new NavItem(p, Section.APP));
 
     if (projPanels != null) {
       projHeaderIndex = navModel.size();
-      navModel.addElement(new NavItem(S.get("settingsNavProjectSection")));
+      navModel.addElement(new NavItem(S.get("settingsNavProjectSection"), Section.PROJ));
       for (SettingsPanel p : projPanels)
-        navModel.addElement(new NavItem(p, false));
+        navModel.addElement(new NavItem(p, Section.PROJ));
     } else {
       projHeaderIndex = -1;
     }
+
+    navModel.addElement(new NavItem(S.get("settingsNavFPGASection"), Section.FPGA));
+    for (SettingsPanel p : fpgaPanels)
+      navModel.addElement(new NavItem(p, Section.FPGA));
   }
 
   private void refreshNavLabels() {
     for (int i = 0; i < navModel.size(); i++) {
       NavItem item = navModel.get(i);
       if (item.type == NavItemType.HEADER) {
-        item.label = (projHeaderIndex < 0 || i < projHeaderIndex)
-            ? S.get("settingsNavAppSection")
-            : S.get("settingsNavProjectSection");
+        item.label = 
+          item.section == Section.APP ? S.get("settingsNavAppSection") :
+          item.section == Section.FPGA ? S.get("settingsNavFPGASection") :
+          S.get("settingsNavProjectSection");
       } else {
         item.label = item.panel.getTitle();
       }
@@ -375,7 +398,7 @@ public class SettingsFrame extends LFrame.Dialog {
       if (!e.getValueIsAdjusting()) {
         NavItem item = navList.getSelectedValue();
         if (item != null && item.type == NavItemType.PANEL)
-          showPanel(item.panel, item.isApp);
+          showPanel(item.panel, item.section);
       }
     });
 
@@ -404,42 +427,35 @@ public class SettingsFrame extends LFrame.Dialog {
     getContentPane().add(mainPanel, BorderLayout.CENTER);
   }
 
-  private void showPanel(SettingsPanel panel, boolean isApp) {
+  private void showPanel(SettingsPanel panel, Section section) {
     contentHolder.removeAll();
     contentHolder.add(panel, BorderLayout.CENTER);
     contentHolder.revalidate();
     contentHolder.repaint();
-    String pillText = isApp ? S.get("settingsNavAppBadge") : S.get("settingsNavProjectBadge");
-    header.update(pillText, isApp ? APP_COLOR : PROJ_COLOR, !isApp);
+    String pillText =
+      section == Section.APP ? S.get("settingsNavAppBadge") :
+      section == Section.FPGA ? S.get("settingsNavFPGABadge") :
+      S.get("settingsNavProjectBadge");
+    header.update(pillText,
+        section == Section.APP ? APP_COLOR :
+        section == Section.FPGA ? FPGA_COLOR :
+        PROJ_COLOR,
+        section == Section.PROJ);
   }
 
   private void updateBadge() {
     NavItem item = navList.getSelectedValue();
     if (item != null && item.type == NavItemType.PANEL)
-      showPanel(item.panel, item.isApp);
+      showPanel(item.panel, item.section);
   }
 
-  private void selectSomeAppPanel() {
+  private void selectSome(Section section) {
     NavItem item = navList.getSelectedValue();
-    if (item != null && item.type == NavItemType.PANEL && item.isApp)
+    if (item != null && item.type == NavItemType.PANEL && item.section == section)
       return;
     for (int i = 0; i < navModel.size(); i++) {
       item = navModel.get(i);
-      if (item.type == NavItemType.PANEL && item.isApp) {
-        navList.setSelectedIndex(i);
-        navList.ensureIndexIsVisible(i);
-        return;
-      }
-    }
-  }
-
-  private void selectSomeProjPanel() {
-    NavItem item = navList.getSelectedValue();
-    if (item != null && item.type == NavItemType.PANEL && !item.isApp)
-      return;
-    for (int i = 0; i < navModel.size(); i++) {
-      item = navModel.get(i);
-      if (item.type == NavItemType.PANEL && !item.isApp) {
+      if (item.type == NavItemType.PANEL && item.section == section) {
         navList.setSelectedIndex(i);
         navList.ensureIndexIsVisible(i);
         return;
@@ -481,7 +497,7 @@ public class SettingsFrame extends LFrame.Dialog {
   @Override
   public void setVisible(boolean value) {
     if (value && navList.getSelectedValue() == null)
-      selectSomeAppPanel();
+      selectSome(Section.APP);
     if (value && MENU_MANAGER != null)
       MENU_MANAGER.frameOpened(this);
     super.setVisible(value);

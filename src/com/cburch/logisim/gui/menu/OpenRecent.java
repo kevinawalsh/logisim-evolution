@@ -42,7 +42,7 @@ import java.util.List;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
 
@@ -108,7 +108,7 @@ class OpenRecent extends JMenu {
   OpenRecent(LogisimMenuBar menubar) {
     this.menubar = menubar;
     this.recentItems = new ArrayList<RecentItem>();
-    AppPreferences.RECENT_PROJECTS.addPrefChangeWeakListener(this, e -> renewItems());
+    StateStore.RECENT_PROJECTS.addPrefChangeWeakListener(this, e -> renewItems());
     renewItems();
   }
 
@@ -128,7 +128,7 @@ class OpenRecent extends JMenu {
     }
     recentItems.clear();
 
-    List<File> files = AppPreferences.RECENT_PROJECTS.get();
+    List<File> files = StateStore.RECENT_PROJECTS.get();
     if (files.isEmpty()) {
       recentItems.add(new RecentItem(null));
     } else {

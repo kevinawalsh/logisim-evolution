@@ -24,8 +24,13 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -37,6 +42,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.cburch.logisim.util.Errors;
 
 /**
  * One-shot, silent migration from old storage formats to the new XML files.
@@ -59,8 +66,7 @@ class SettingsMigrator {
   private static final String OLD_FPGA_SHARED  = "LogisimFPGASettings.xml";
 
   // Keys that belong in StateStore (not settings)
-  private static final java.util.Set<String> STATE_KEYS = new java.util.HashSet<>(
-      java.util.Arrays.asList(
+  private static final Set<String> STATE_KEYS = new HashSet<>(Arrays.asList(
         "tickFrequency",
         "layoutGrid",
         "layoutZoom",
@@ -74,31 +80,43 @@ class SettingsMigrator {
         "windowLeftSplit",
         "windowRightSplit",
         "dialogDirectory"
-      ));
+        ));
 
   // Mapping from old pref key → settings section (for non-state keys)
-  private static final java.util.Map<String, String> SECTION = new java.util.HashMap<>();
+  private static final Map<String, String> SECTION = new HashMap<>();
   static {
-    // display section
-    for (String k : new String[]{ "gateShape", "locale", "accentsReplace",
-        "showTickRate", "showCoordinates", "toolbarPlacement", "printerView",
-        "attributeHalo", "componentTips", "keepConnected", "showGhosts",
-        "afterAdd", "pokeRadix1", "pokeRadix2" })
-      SECTION.put(k, "display");
+    SECTION.put("locale", "international/locale");
+    SECTION.put("accentsReplace", "international/replaceAccents");
 
-    // simulation section
-    for (String k : new String[]{ "autobackup", "autobackupFreq",
-        "questaPath", "questaValidation" })
-      SECTION.put(k, "simulation");
+    SECTION.put("gateShape", "display/gateShape");
+    SECTION.put("showTickRate", "display/showTickRate");
+    SECTION.put("showCoordinates", "display/showCoordinates");
+    SECTION.put("toolbarPlacement", "display/toolbarPlacement");
+    SECTION.put("printerView", "display/printerView");
+    SECTION.put("pokeRadix1", "display/pokeRadix1");
+    SECTION.put("pokeRadix2", "display/pokeRadix2");
 
-    // graphics section
-    for (String k : new String[]{ "graphicsAcceleration", "dualScreenFixes" })
-      SECTION.put(k, "graphics");
+    SECTION.put("attributeHalo", "editing/attributeHalo");
+    SECTION.put("componentTips", "editing/componentTips");
+    SECTION.put("keepConnected", "editing/keepConnected");
+    SECTION.put("showGhosts", "editing/showGhosts");
+    SECTION.put("afterAdd", "editing/afterAdd");
+    
+    SECTION.put("templateType", "template/type");
+    SECTION.put("templateFile", "template/file");
 
-    // misc section
-    for (String k : new String[]{ "wiringToolTip", "cutterToolTip",
-        "templateType", "templateFile" })
-      SECTION.put(k, "misc");
+    SECTION.put("autobackup", "backups/enabled");
+    SECTION.put("autobackupFreq", "backups/frequency");
+
+    SECTION.put("questaPath", "hdl-validation/questaPath");
+    SECTION.put("questaValidation", "hdl-validation/questaValidation");
+
+    SECTION.put("graphicsAcceleration", "graphics/acceleration");
+    SECTION.put("dualScreenFixes", "graphics/dualScreenFixes");
+    
+    SECTION.put("wiringToolTip", "hints/wiring");
+    SECTION.put("cutterToolTip", "hints/cutter");
+
   }
 
   static void migrate() {
@@ -129,7 +147,8 @@ class SettingsMigrator {
         if (STATE_KEYS.contains(key)) {
           migrateStateKey(key, value);
         } else if (SECTION.containsKey(key)) {
-          SettingsStore.put(SECTION.get(key), key, value);
+          String sk[] = SECTION.get(key).split("/", 2);
+          SettingsStore.put(sk[0], sk[1], value);
         } else if (key.startsWith("recent")) {
           // handled separately below
         }
@@ -191,38 +210,38 @@ class SettingsMigrator {
     try {
       switch (key) {
         case "tickFrequency":
-          StateStore.setTickFrequency(Double.parseDouble(value)); break;
+          StateStore.TICK_FREQ.set(Double.parseDouble(value)); break;
         case "layoutGrid":
-          StateStore.setLayoutGrid(Boolean.parseBoolean(value)); break;
+          StateStore.LAYOUT_GRID.set(Boolean.parseBoolean(value)); break;
         case "layoutZoom":
-          StateStore.setLayoutZoom(Double.parseDouble(value)); break;
+          StateStore.LAYOUT_ZOOM.set(Double.parseDouble(value)); break;
         case "appearanceGrid":
-          StateStore.setAppearanceGrid(Boolean.parseBoolean(value)); break;
+          StateStore.APPEARANCE_GRID.set(Boolean.parseBoolean(value)); break;
         case "appearanceZoom":
-          StateStore.setAppearanceZoom(Double.parseDouble(value)); break;
+          StateStore.APPEARANCE_ZOOM.set(Double.parseDouble(value)); break;
         case "windowState":
-          StateStore.setWindowState(Integer.parseInt(value)); break;
+          StateStore.WINDOW_STATE.set(Integer.parseInt(value)); break;
         case "windowWidth":
-          StateStore.setWindowWidth(Integer.parseInt(value)); break;
+          StateStore.WINDOW_WIDTH.set(Integer.parseInt(value)); break;
         case "windowHeight":
-          StateStore.setWindowHeight(Integer.parseInt(value)); break;
+          StateStore.WINDOW_HEIGHT.set(Integer.parseInt(value)); break;
         case "windowLocation": {
           int comma = value.indexOf(',');
           if (comma >= 0) {
-            StateStore.setWindowX(Integer.parseInt(value.substring(0, comma).trim()));
-            StateStore.setWindowY(Integer.parseInt(value.substring(comma + 1).trim()));
+            StateStore.WINDOW_X.set(Integer.parseInt(value.substring(0, comma).trim()));
+            StateStore.WINDOW_Y.set(Integer.parseInt(value.substring(comma + 1).trim()));
           }
           break;
         }
         case "windowMainSplit":
-          StateStore.setMainSplit(Double.parseDouble(value)); break;
+          StateStore.WINDOW_MAIN_SPLIT.set(Double.parseDouble(value)); break;
         case "windowLeftSplit":
-          StateStore.setLeftSplit(Double.parseDouble(value)); break;
+          StateStore.WINDOW_LEFT_SPLIT.set(Double.parseDouble(value)); break;
         case "windowRightSplit":
           // kept as a default (0.75); not exposed in StateStore, silently dropped
           break;
         case "dialogDirectory":
-          StateStore.setDialogDirectory(value); break;
+          StateStore.DIALOG_DIRECTORY.set(value); break;
       }
     } catch (NumberFormatException ignored) {
       // bad stored value; leave StateStore at its default
@@ -267,17 +286,17 @@ class SettingsMigrator {
       NodeList wsList = root.getElementsByTagName("WorkSpace");
       if (wsList.getLength() > 0) {
         Element ws = (Element) wsList.item(0);
-        workPath    = attr(ws, "WorkPath", "");
-        alteraPath  = attr(ws, "AlteraToolsPath", "");
-        xilinxPath  = attr(ws, "XilinxToolsPath", "");
-        gowinShPath = attr(ws, "GowinShPath", "");
+        workPath      = attr(ws, "WorkPath", "");
+        alteraPath    = attr(ws, "AlteraToolsPath", "");
+        xilinxPath    = attr(ws, "XilinxToolsPath", "");
+        gowinShPath   = attr(ws, "GowinShPath", "");
         gowinProgPath = attr(ws, "GowinProgPath", "");
-        altera64bit = attr(ws, "Altera64Bit", "true");
-        latticePath = attr(ws, "LatticeToolsPath", "");
-        apioPath    = attr(ws, "ApioToolsPath", "");
-        openFpgaPath = attr(ws, "openFPGAloaderPath", "");
-        rawBinary   = attr(ws, "RawBinaryFormat", "false");
-        hdlType     = attr(ws, "HDLTypeToGenerate", "VHDL");
+        altera64bit   = attr(ws, "Altera64Bit", "true");
+        latticePath   = attr(ws, "LatticeToolsPath", "");
+        apioPath      = attr(ws, "ApioToolsPath", "");
+        openFpgaPath  = attr(ws, "openFPGAloaderPath", "");
+        rawBinary     = attr(ws, "RawBinaryFormat", "false");
+        hdlType       = attr(ws, "HDLTypeToGenerate", "VHDL");
       }
 
       // Read FPGABoards element
@@ -327,18 +346,20 @@ class SettingsMigrator {
       appendSetting(sb, "gowinShPath",       gowinShPath);
       appendSetting(sb, "gowinProgPath",     gowinProgPath);
       appendSetting(sb, "latticeToolsPath",  latticePath);
-      appendSetting(sb, "apioToolsPath",     apioPath);
-      appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
+      // appendSetting(sb, "apioToolsPath",     apioPath);
+      SettingsStore.put("apio", "path", apioPath);
+      // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
+      SettingsStore.put("openFPGALoader", "path", openFpgaPath);
       sb.append("    </workspace>\n");
 
       if (!boardPrefs.isEmpty()) {
         sb.append("    <board-preferences>\n");
         for (String[] bp : boardPrefs) {
-          sb.append("      <board name=\"").append(SettingsStore.xmlAttr(bp[0])).append("\"");
+          sb.append("      <board name=\"").append(BackingStore.xmlEscapeAttr(bp[0])).append("\"");
           if (!bp[1].isEmpty())
-            sb.append(" toolchain=\"").append(SettingsStore.xmlAttr(bp[1])).append("\"");
+            sb.append(" toolchain=\"").append(BackingStore.xmlEscapeAttr(bp[1])).append("\"");
           if (!bp[2].isEmpty())
-            sb.append(" hdlType=\"").append(SettingsStore.xmlAttr(bp[2])).append("\"");
+            sb.append(" hdlType=\"").append(BackingStore.xmlEscapeAttr(bp[2])).append("\"");
           sb.append("/>\n");
         }
         sb.append("    </board-preferences>\n");
@@ -347,7 +368,7 @@ class SettingsMigrator {
       if (!externalBoards.isEmpty()) {
         sb.append("    <external-boards>\n");
         for (String path : externalBoards) {
-          sb.append("      <board path=\"").append(SettingsStore.xmlAttr(path))
+          sb.append("      <board path=\"").append(BackingStore.xmlEscapeAttr(path))
             .append("\"/>\n");
         }
         sb.append("    </external-boards>\n");
@@ -357,14 +378,23 @@ class SettingsMigrator {
       SettingsStore.setFpgaXml(sb.toString());
 
     } catch (Exception e) {
-      // Silent: failed FPGA migration is not fatal; user can reconfigure via dialog
+      Errors.title("FPGA Settings Error").warn(
+          "Logisim-HC has recently migrated to a new settings storage format, but "
+          + "some of your FPGA-related settings failed when migrating to the new format. "
+          + "Please check your settings, either by going to FPGA -> Toolchain Settings, or "
+          + "by comparing your old settings in .LogisimFPGASettings.xml (in your home "
+          + "directory) and/or LogisimFPGASettings.xml (in the directory where logisim's "
+          + "jar file is installed), against the new settings in "
+          + SettingsStore.getUserSettingsFile() + " (your settings) and/or "
+          + SettingsStore.getDefaultSettingsFile() + " (shared site-wide defaults).",
+          e);
     }
   }
 
   private static void appendSetting(StringBuilder sb, String key, String value) {
-    if (value == null || value.isEmpty()) return; // omit unset (falsy) values
+    if (value == null || value.isEmpty()) return; // omit unset empty or missing values
     sb.append("      <setting key=\"").append(key)
-      .append("\" value=\"").append(SettingsStore.xmlAttr(value))
+      .append("\" value=\"").append(BackingStore.xmlEscapeAttr(value))
       .append("\"/>\n");
   }
 

@@ -21,19 +21,12 @@
 package com.cburch.logisim.prefs;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -46,33 +39,50 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import com.cburch.logisim.Main;
+import com.cburch.logisim.file.XmlIterator;
+import com.cburch.logisim.util.Debug;
 
-/**
- * Central store for user-configurable application preferences.
- *
- * Settings are organized into sections (e.g. "display", "simulation") and
- * stored as string key-value pairs. The FPGA section is managed externally by
- * FpgaSettings and contributes a raw XML fragment.
- *
- * Layered loading (highest to lowest priority):
- *   1. User settings file  (--config FILE, or platform default)
- *   2. Defaults file       (--defaults FILE, or <jar-dir>/logisim-hc-defaults.xml)
- *   3. Hardcoded Java defaults (registered via PrefMonitor constructors)
- *
- * Only user-set keys (those with a "value" attribute in the XML) are stored
- * in userValues. Keys absent from userValues fall through to defaults.
- */
+// Backing store for user-configurable preferences.
+//
+// Settings are organized into sections and subsections with
+// key-value pairs. 
+//
+// FIXME: The FPGA section is managed externally by FpgaSettings and
+// contributes a raw XML fragment.
+//
+// Sources (highest to lowest priority):
+// 1. User settings file (--config FILE, or settings.xml file in platform-specific location)
+// 2. Defaults file      (--defaults FILE, or <jar-dir>/logisim-hc-defaults.xml)
+// 3. Hardcoded defaults (registered via PrefMonitor constructors)
+//
+// If a key-value pair is not found at one level, or if the value is missing (or
+// null), the next level is queried. This always succeeds, as the "Hardocded
+// Java defaults" level has a non-null default value for every key.
+//
+// Logisim never modifies the defaults file.
+//
+// When writing the user settings file, all known sections and keys are
+// included. Those not explicitly set by the user will omit the value. 
+// - "known" means the hardcoded ones, plus "passthrough" content (any
+//   unrecognized section, or unrecognized element within a recognized section,
+//   seen while parsing the user settings.xml).
+// - "explicitly set" means either: newly set within the preferences UI or
+//   similar; or, had with a value in the existing user settings file.
+//
+// User settings file location (if not overridden by --config FILE option):
+//   macOS:   ~/Library/Application Support/logisim-hc/settings.xml
+//   Windows: ~/AppData/Roamingl/logisim-hc/settings.xml (%APPDATA% can override this)
+//   Linux:   ~/.config/logisim-hc/settings.xml ($XDG_CONFIG_HOME can override this)
+//   other:   ~/.logisim-hc/settings.xml
 public class SettingsStore {
 
   // Schema: section -> key -> hardcoded default. Defines canonical write order.
   private static final LinkedHashMap<String, LinkedHashMap<String, String>> schema =
       new LinkedHashMap<>();
 
-  // User-set values (keys with value= attribute in user settings file)
+  // User-set values (keys with a value xml attribute in user settings file)
   private static final LinkedHashMap<String, LinkedHashMap<String, String>> userValues =
       new LinkedHashMap<>();
 
@@ -80,68 +90,54 @@ public class SettingsStore {
   private static final LinkedHashMap<String, LinkedHashMap<String, String>> defaultsValues =
       new LinkedHashMap<>();
 
-  // Change listeners: "section|key" -> list of Runnables
+  // Change listeners: "section/key" -> list of Runnables
   private static final Map<String, List<Runnable>> changeListeners = new LinkedHashMap<>();
 
-  // FPGA section: managed externally by FpgaSettings
+  // FPGA section: managed externally by FpgaSettings FIXME
   private static String customFpgaXml = null;
   static Element fpgaUserElement = null;
   static Element fpgaDefaultsElement = null;
 
-  // Unknown top-level sections not managed by SettingsStore or FpgaSettings
-  private static final List<String> passthroughXml = new ArrayList<>();
+  // Unrecognized top-level sections from the existing user settings.xml,
+  // keyed by section name. Filtered against schema at write time, so sections
+  // that were unknown when the file was loaded (empty schema) but are now
+  // known won't be written as passthrough.
+  private static final LinkedHashMap<String, String> passthroughXml = new LinkedHashMap<>();
 
-  // File paths
+  private static BackingStore store;
   private static File userFile;
   private static File defaultsFile;
 
-  // Debounced write state
-  private static volatile boolean dirty = false;
-  private static Timer writeTimer;
-  private static TimerTask writeTask;
-  private static final long WRITE_DELAY_MS = 500;
-
-  // =========================================================================
-  // Initialization
-  // =========================================================================
-
   public static void initialize(File configOverride, File defaultsOverride) {
-    userFile = (configOverride != null) ? configOverride : getDefaultUserFile();
+    userFile = (configOverride != null) ? configOverride : new File(getDefaultConfigDir(), "settings.xml");
     defaultsFile = (defaultsOverride != null) ? defaultsOverride : getDefaultDefaultsFile();
 
     // Load defaults file first (lower priority)
-    if (defaultsFile != null && defaultsFile.exists()) {
+    if (defaultsFile != null && defaultsFile.exists())
       loadFile(defaultsFile, defaultsValues, false);
-    }
 
     // Load user file; if absent and no explicit --config, run migration
+    boolean loaded = false;
     if (userFile.exists()) {
       loadFile(userFile, userValues, true);
-    } else if (configOverride == null) {
-      SettingsMigrator.migrate();
+      loaded = true;
     }
 
-    // Flush any pending writes on JVM exit
-    Runtime.getRuntime().addShutdownHook(new Thread(SettingsStore::flushIfDirty, "logisim-settings-flush"));
+    store = new BackingStore("settings", userFile, SettingsStore::buildXml);
+    
+    if (!loaded && configOverride == null)
+      SettingsMigrator.migrate();
   }
 
-  // =========================================================================
-  // File location
-  // =========================================================================
+  static File getUserSettingsFile() { return userFile; }
+  static File getDefaultSettingsFile() { return defaultsFile; }
 
-  public static File getUserSettingsFile() { return userFile; }
-  public static File getDefaultsFile() { return defaultsFile; }
-
-  static File getDefaultUserFile() {
-    return new File(getDefaultConfigDir(), "settings.xml");
-  }
-
-  static File getDefaultDefaultsFile() {
+  private static File getDefaultDefaultsFile() {
     String jarDir = getJarDir();
     return (jarDir != null) ? new File(jarDir, "logisim-hc-defaults.xml") : null;
   }
 
-  static File getDefaultConfigDir() {
+  private static File getDefaultConfigDir() {
     String home = System.getProperty("user.home");
     if (Main.MacOS) {
       return new File(home, "Library/Application Support/logisim-hc");
@@ -160,7 +156,7 @@ public class SettingsStore {
     }
   }
 
-  static String getJarDir() {
+  private static String getJarDir() {
     try {
       String path = SettingsStore.class.getProtectionDomain()
           .getCodeSource().getLocation().getPath();
@@ -176,17 +172,14 @@ public class SettingsStore {
   // Key registration (called by PrefMonitor constructor)
   // =========================================================================
 
-  /** Registers a key with its hardcoded default. Defines canonical write order. */
   public static void registerKey(String section, String key, String hardcodedDefault) {
-    schema.computeIfAbsent(section, k -> new LinkedHashMap<>())
-          .putIfAbsent(key, hardcodedDefault);
+    schema.computeIfAbsent(section, k -> new LinkedHashMap<>()).putIfAbsent(key, hardcodedDefault);
   }
 
   // =========================================================================
   // Value access
   // =========================================================================
 
-  /** Returns the effective value: user > defaults file > hardcoded default. */
   public static String getEffective(String section, String key) {
     String v = getUserValue(section, key);
     if (v != null) return v;
@@ -195,10 +188,9 @@ public class SettingsStore {
     return getHardcodedDefault(section, key);
   }
 
-  /** Returns the default value: defaults file > hardcoded default. */
   public static String getDefault(String section, String key) {
-    String v = getDefaultsFileValue(section, key);
-    return (v != null) ? v : getHardcodedDefault(section, key);
+      String v = getDefaultsFileValue(section, key);
+      return (v != null) ? v : getHardcodedDefault(section, key);
   }
 
   public static boolean isUserSet(String section, String key) {
@@ -206,18 +198,24 @@ public class SettingsStore {
   }
 
   private static String getUserValue(String section, String key) {
-    LinkedHashMap<String, String> m = userValues.get(section);
-    return (m != null) ? m.get(key) : null;
+    synchronized (store.lock) {
+      LinkedHashMap<String, String> m = userValues.get(section);
+      return (m != null) ? m.get(key) : null;
+    }
   }
 
   private static String getDefaultsFileValue(String section, String key) {
-    LinkedHashMap<String, String> m = defaultsValues.get(section);
-    return (m != null) ? m.get(key) : null;
+    synchronized (store.lock) {
+      LinkedHashMap<String, String> m = defaultsValues.get(section);
+      return (m != null) ? m.get(key) : null;
+    }
   }
 
   private static String getHardcodedDefault(String section, String key) {
-    LinkedHashMap<String, String> m = schema.get(section);
-    return (m != null) ? m.get(key) : null;
+    synchronized (store.lock) {
+      LinkedHashMap<String, String> m = schema.get(section);
+      return (m != null) ? m.get(key) : null;
+    }
   }
 
   // =========================================================================
@@ -225,25 +223,31 @@ public class SettingsStore {
   // =========================================================================
 
   public static void put(String section, String key, String value) {
-    userValues.computeIfAbsent(section, k -> new LinkedHashMap<>()).put(key, value);
-    dirty = true;
-    scheduleWrite();
+    synchronized (store.lock) {
+      userValues.computeIfAbsent(section, k -> new LinkedHashMap<>()).put(key, value);
+      store.markDirty();
+    }
     fireListeners(section, key);
   }
 
   public static void unset(String section, String key) {
-    LinkedHashMap<String, String> m = userValues.get(section);
-    if (m != null && m.remove(key) != null) {
-      dirty = true;
-      scheduleWrite();
-      fireListeners(section, key);
+    boolean fire = false;
+    synchronized (store.lock) {
+      LinkedHashMap<String, String> m = userValues.get(section);
+      if (m != null && m.remove(key) != null) {
+        store.markDirty();
+        fire = true;
+      }
     }
+    if (fire)
+      fireListeners(section, key);
   }
 
   public static void clear() {
-    userValues.clear();
-    dirty = true;
-    writeNow();
+    synchronized (store.lock) {
+      userValues.clear();
+      store.writeNow();
+    }
     // Notify all PrefMonitors so they revert to defaults
     for (Map.Entry<String, List<Runnable>> e : changeListeners.entrySet())
       for (Runnable r : e.getValue())
@@ -257,8 +261,7 @@ public class SettingsStore {
   /** Called by FpgaSettings to provide its XML content for the next file write. */
   public static void setFpgaXml(String xml) {
     customFpgaXml = xml;
-    dirty = true;
-    scheduleWrite();
+    store.markDirty();
   }
 
   /** Returns the raw &lt;fpga&gt; DOM element from the user file, for FpgaSettings to read. */
@@ -267,63 +270,19 @@ public class SettingsStore {
   /** Returns the raw &lt;fpga&gt; DOM element from the defaults file, for FpgaSettings to read. */
   public static Element getFpgaDefaultsElement() { return fpgaDefaultsElement; }
 
-  // =========================================================================
-  // Change listeners
-  // =========================================================================
 
   public static void addChangeListener(String section, String key, Runnable listener) {
-    String k = section + "|" + key;
+    String k = section + "/" + key;
     changeListeners.computeIfAbsent(k, x -> new CopyOnWriteArrayList<>()).add(listener);
   }
 
   private static void fireListeners(String section, String key) {
-    List<Runnable> list = changeListeners.get(section + "|" + key);
+    List<Runnable> list = changeListeners.get(section + "/" + key);
     if (list != null)
       for (Runnable r : list) r.run();
   }
 
-  // =========================================================================
-  // Write scheduling
-  // =========================================================================
-
-  private static synchronized void scheduleWrite() {
-    if (writeTask != null) writeTask.cancel();
-    if (writeTimer == null)
-      writeTimer = new Timer("logisim-settings-write", true); // daemon
-    writeTask = new TimerTask() {
-      @Override public void run() { writeNow(); }
-    };
-    writeTimer.schedule(writeTask, WRITE_DELAY_MS);
-  }
-
-  static synchronized void flushIfDirty() {
-    if (dirty) writeNow();
-  }
-
-  /** Flush any pending changes immediately; callable from any package. */
-  public static void save() {
-    dirty = true;
-    writeNow();
-  }
-
-  static synchronized void writeNow() {
-    if (writeTask != null) { writeTask.cancel(); writeTask = null; }
-    try {
-      File dir = userFile.getParentFile();
-      if (dir != null) dir.mkdirs();
-      File tmp = new File(dir != null ? dir : new File("."), userFile.getName() + ".tmp");
-      Files.writeString(tmp.toPath(), buildXml(), StandardCharsets.UTF_8);
-      Files.move(tmp.toPath(), userFile.toPath(),
-          StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-      dirty = false;
-    } catch (IOException e) {
-      System.err.println("Warning: Could not write settings file: " + userFile + ": " + e.getMessage());
-    }
-  }
-
-  // =========================================================================
-  // XML reading
-  // =========================================================================
+  public static void save() { store.writeNow(); }
 
   private static void loadFile(File file,
       LinkedHashMap<String, LinkedHashMap<String, String>> target,
@@ -336,21 +295,17 @@ public class SettingsStore {
       Document doc = parser.parse(file);
       Element root = doc.getDocumentElement();
       if (!"logisim-hc-settings".equals(root.getTagName())) {
-        System.err.println("Warning: Unexpected root in settings file: " + file);
+        Debug.error("Warning: Unexpected xml root element in settings file: " + file);
         return;
       }
       try {
         int v = Integer.parseInt(root.getAttribute("schema-version"));
         if (v > 1)
-          System.err.println("Warning: Settings file written by newer Logisim-HC (schema-version="
-              + v + "). Some settings may be ignored: " + file);
+          Debug.error("Warning: Settings file written by newer and incompatible Logisim-HC"
+              + " (schema-version=" + v + "): " + file);
       } catch (NumberFormatException ignored) { }
 
-      NodeList children = root.getChildNodes();
-      for (int i = 0; i < children.getLength(); i++) {
-        Node n = children.item(i);
-        if (!(n instanceof Element)) continue;
-        Element sectionEl = (Element) n;
+      for (Element sectionEl : XmlIterator.forChildElements(root)) {
         String sectionName = sectionEl.getTagName();
 
         if ("fpga".equals(sectionName)) {
@@ -360,11 +315,7 @@ public class SettingsStore {
         }
 
         // Read <setting key="..." value="..."/> elements
-        NodeList settings = sectionEl.getChildNodes();
-        for (int j = 0; j < settings.getLength(); j++) {
-          Node sn = settings.item(j);
-          if (!(sn instanceof Element)) continue;
-          Element setting = (Element) sn;
+        for (Element setting : XmlIterator.forChildElements(sectionEl)) {
           if (!"setting".equals(setting.getTagName())) continue;
           String key = setting.getAttribute("key");
           if (key == null || key.isEmpty()) continue;
@@ -374,9 +325,11 @@ public class SettingsStore {
           }
         }
 
-        // Preserve unknown sections as raw XML strings (for forwards compat)
-        if (loadPassthrough && !schema.containsKey(sectionName) && !"fpga".equals(sectionName)) {
-          passthroughXml.add(elementToString(sectionEl));
+        // Preserve unknown sections as raw XML strings (for forwards compat).
+        // Use section name as key; schema may be empty now but will be checked
+        // again at write time to avoid writing known sections as passthrough.
+        if (loadPassthrough && !schema.containsKey(sectionName)) {
+          passthroughXml.put(sectionName, elementToString(sectionEl));
         }
       }
     } catch (Exception e) {
@@ -384,22 +337,18 @@ public class SettingsStore {
     }
   }
 
-  // =========================================================================
-  // XML writing
-  // =========================================================================
-
   static String buildXml() {
     StringBuilder sb = new StringBuilder();
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<!--\n");
-    sb.append("  Logisim-HC settings file.\n");
-    sb.append("  This file is managed by Logisim-HC. You may hand-edit it while Logisim is not running.\n");
+    sb.append("  Logisim-HC settings. You can edit this file while Logisim is not running.\n");
     sb.append("  Comments and element ordering are normalized each time Logisim saves.\n");
-    sb.append("  Settings without a \"value\" attribute are unset and use the current default.\n");
-    sb.append("  To set a value: add value=\"...\"   To unset: remove the value attribute (or delete the line).\n");
+    sb.append("  Settings without a \"value\" attribute use a default value.\n");
+    sb.append("  To set a value, add value=\"...\" and to unset, remove the value\n");
+    sb.append("  attribute or delete the entire settins line.\n");
     sb.append("-->\n");
     sb.append("<logisim-hc-settings schema-version=\"1\" written-by=\"");
-    sb.append(xmlAttr(Main.VERSION_NAME));
+    sb.append(store.xmlEscapeAttr(Main.VERSION_NAME));
     sb.append("\">\n\n");
 
     // Known sections in registration order
@@ -409,14 +358,16 @@ public class SettingsStore {
       for (Map.Entry<String, String> keyEntry : sectionEntry.getValue().entrySet()) {
         String key = keyEntry.getKey();
         String userVal = getUserValue(section, key);
-        String effDefault = getDefault(section, key);
-        sb.append("    <setting key=\"").append(xmlAttr(key)).append("\"");
+        sb.append("    <setting key=\"").append(store.xmlEscapeAttr(key)).append("\"");
         if (userVal != null) {
-          sb.append(" value=\"").append(xmlAttr(userVal)).append("\"/>");
+          sb.append(" value=\"").append(store.xmlEscapeAttr(userVal)).append("\"/>");
         } else {
           sb.append("/>");
+          String effDefault = getDefault(section, key);
           String shown = (effDefault != null) ? effDefault : "";
-          sb.append("  <!-- default: ").append(xmlComment(shown)).append(" -->");
+          if (shown.isEmpty() || shown.contains(" "))
+            shown = "\"" + shown.replace("\"", "\\\"") + "\""; // not precise escaping, but good enough
+          sb.append("  <!-- default: ").append(store.xmlEscapeComment(shown)).append(" -->");
         }
         sb.append("\n");
       }
@@ -425,49 +376,39 @@ public class SettingsStore {
       if (extraUserKeys != null) {
         for (Map.Entry<String, String> extra : extraUserKeys.entrySet()) {
           if (!sectionEntry.getValue().containsKey(extra.getKey())) {
-            sb.append("    <setting key=\"").append(xmlAttr(extra.getKey()))
-              .append("\" value=\"").append(xmlAttr(extra.getValue())).append("\"/>\n");
+            sb.append("    <setting key=\"").append(store.xmlEscapeAttr(extra.getKey()))
+              .append("\" value=\"").append(store.xmlEscapeAttr(extra.getValue())).append("\"/>\n");
           }
         }
       }
       sb.append("  </").append(section).append(">\n\n");
     }
 
-    // FPGA section (managed by FpgaSettings)
+    // FPGA section (managed by FpgaSettings). Fall back to the DOM element
+    // loaded from the file if FpgaSettings hasn't initialized yet this run.
     if (customFpgaXml != null && !customFpgaXml.isBlank()) {
       sb.append(customFpgaXml);
       sb.append("\n\n");
+    } else if (fpgaUserElement != null) {
+      for (String line : elementToString(fpgaUserElement).split("\n"))
+        if (!line.isBlank())
+          sb.append("  ").append(line).append("\n");
+      sb.append("\n\n");
     }
 
-    // Unknown sections from a newer version (preserved verbatim)
-    for (String passthrough : passthroughXml) {
-      // Indent two spaces
-      for (String line : passthrough.split("\n")) {
-        sb.append("  ").append(line).append("\n");
-      }
+    // Unknown sections from a newer version (preserved verbatim). Skip any
+    // section that is now recognized by the schema — it was only added here
+    // because the schema was empty when the file was first loaded.
+    for (Map.Entry<String, String> e : passthroughXml.entrySet()) {
+      if (schema.containsKey(e.getKey())) continue;
+      for (String line : e.getValue().split("\n"))
+        if (!line.isBlank())
+          sb.append("  ").append(line).append("\n");
       sb.append("\n");
     }
 
     sb.append("</logisim-hc-settings>\n");
     return sb.toString();
-  }
-
-  // =========================================================================
-  // XML helpers
-  // =========================================================================
-
-  static String xmlAttr(String s) {
-    if (s == null) return "";
-    return s.replace("&", "&amp;")
-            .replace("\"", "&quot;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;");
-  }
-
-  static String xmlComment(String s) {
-    if (s == null) return "";
-    // XML comments must not contain "--"
-    return s.replace("--", "-\u2012"); // replace with figure dash
   }
 
   private static String elementToString(Element e) {
@@ -479,7 +420,7 @@ public class SettingsStore {
       t.transform(new DOMSource(e), new StreamResult(sw));
       return sw.toString().trim();
     } catch (Exception ex) {
-      return "<!-- unknown element (serialization failed) -->";
+      return "<!-- unrecognized element (xml serialization failed) -->";
     }
   }
 }

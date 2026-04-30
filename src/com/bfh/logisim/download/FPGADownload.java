@@ -66,7 +66,7 @@ public abstract class FPGADownload {
     // Fall back: select toolchain based on vendor
     if (toolchain == null)
       toolchain = vendorToolchain(board.fpga.Vendor);
-    // Last restor: apio
+    // Last resort: apio
     if (toolchain == null)
       toolchain = APIO_TOOLCHAIN;
     return toolchain;
@@ -248,7 +248,7 @@ public abstract class FPGADownload {
   public static final String GOWIN_PROG = "programmer_cli" + dotexe;
 
   public static final String BIN_APIO = "bin/apio";
-  // public static final String APIO_PYVENV = "pyvenv.cfg";
+  // // public static final String APIO_PYVENV = "pyvenv.cfg";
   public static final String[] APIO_PROGRAMS = { BIN_APIO }; // APIO_PYVENV
 
   public abstract class Stage {

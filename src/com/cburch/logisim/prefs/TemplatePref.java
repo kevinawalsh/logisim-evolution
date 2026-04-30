@@ -41,10 +41,10 @@ import com.cburch.logisim.util.WeakList;
 
 public class TemplatePref {
 
-  // Template preferences in the "misc" section of settings.xml
-  private static final String SECTION   = "misc";
-  private static final String TYPE_KEY  = "templateType";
-  private static final String FILE_KEY  = "templateFile";
+  // Template preferences in the "template" section of settings.xml
+  private static final String SECTION   = "template";
+  private static final String TYPE_KEY  = "type";
+  private static final String FILE_KEY  = "file";
 
   public static final int TEMPLATE_UNKNOWN = -1;
   public static final int TEMPLATE_EMPTY   = 0;

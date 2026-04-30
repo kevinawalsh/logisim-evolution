@@ -1112,6 +1112,8 @@ public class Commander extends JFrame
         eprintf("Please select an FPGA board.");
     } else {
       FPGADownload tools = FPGADownload.forToolchain(toolchain, settings);
+      if (tools != null)
+        tools.board = board;
       if (tools == null) {
         eprintf("Please select a toolchain.");
       } else if (!tools.toolchainIsInstalled(settings, err)) {

@@ -634,7 +634,7 @@ public final class WiringTool extends Tool {
     if (doneTip) // once per wiring sequence
       return false;
     doneTip = true;
-    return super.hintReady(AppPreferences.WIRING_TOOL_TIP);
+    return super.hintReady(AppPreferences.WIRING_TOOL_HINTS);
   }
 
   protected void showHint(Canvas canvas) {

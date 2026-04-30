@@ -83,9 +83,9 @@ public class GowinDownload extends FPGADownload {
            return false;
         }
         if (!gwProgPresent(settings)) {
-            if (!settings.validOpenFPGAloaderPath(settings.GetOpenFPGALoaderPath())) {
-                err.AddFatalError("Either Gowin " + FPGADownload.GOWIN_PROG + " path or " 
-                + "openFPGALoader path should be specified.");
+            if (OpenFPGALoader.findExecutable(err) == null) {
+                err.AddFatalError("Either Gowin " + FPGADownload.GOWIN_PROG + " path must be specified in settings, or " 
+                + "openFPGALoader must be installed and configured.");
                 return false;
             }
         }
@@ -104,9 +104,9 @@ public class GowinDownload extends FPGADownload {
 
         boolean tryOpenFPGALoader = !gwProgPresent(settings);
         if (tryOpenFPGALoader) {
-            String prog = settings.GetOpenFPGALoaderPath();
+            String prog = OpenFPGALoader.findExecutable(err);
             stages.add(new ProcessStage("scan", "Scaning for FPGA Devices",
-                    cmd(settings.GetOpenFPGALoaderPath(), "--detect"),
+                    cmd(prog, "--detect"),
                     "Could not find any FPGA devices.") {
                 @Override
                 protected boolean prep() {
@@ -148,23 +148,28 @@ public class GowinDownload extends FPGADownload {
                     return super.post();
                 }
             });
+            stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
+                @Override
+                protected boolean prep() {
+                  cmd = cmd(prog,
+                      sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
+                      "--cable-index", cableIndex);
+                  return true;
+                }
+            });
+        } else {
+            stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
+                @Override
+                protected boolean prep() {
+                  String prog = settings.GetGowinProgPath() + File.separator + FPGADownload.GOWIN_PROG;
+                  cmd = cmd(prog,
+                      "--fsFile", sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
+                      "-r", "2",
+                      "--device", board.fpga.Technology);
+                    return true;
+                }
+            });
         }
-        stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
-            @Override
-            protected boolean prep() {
-                if (!tryOpenFPGALoader) {
-                    String prog = settings.GetGowinProgPath() + File.separator + FPGADownload.GOWIN_PROG;
-                    cmd = cmd(prog,
-                            "--fsFile", sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
-                            "-r", "2",
-                            "--device", board.fpga.Technology);
-                } else
-                    cmd = cmd(settings.GetOpenFPGALoaderPath(),
-                            sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
-                            "--cable-index", cableIndex);
-                return true;
-            }
-        });
         return stages;
     }
 

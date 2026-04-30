@@ -76,8 +76,8 @@ public class Settings {
   private String  gowinShPath   = "";
   private String  gowinProgPath = "";
   private String  latticePath   = "";
-  private String  apioPath      = "";
-  private String  openFpgaPath  = "";
+  // private String  apioPath      = "";
+  // private String  openFpgaPath  = "";
 
   // Per-board preferences: boardName -> {attrName -> value}
   private final LinkedHashMap<String, LinkedHashMap<String, String>> boardPrefs =
@@ -151,8 +151,8 @@ public class Settings {
   public String GetGowinShPath()     { return gowinShPath; }
   public String GetGowinProgPath()   { return gowinProgPath; }
   public String GetLatticeToolPath() { return latticePath; }
-  public String GetApioToolPath()    { return apioPath; }
-  public String GetOpenFPGALoaderPath() { return openFpgaPath; }
+  // public String GetApioToolPath()    { return apioPath; }
+  // public String GetOpenFPGALoaderPath() { return openFpgaPath; }
 
   public boolean SetAlteraToolPath(String path) {
     path = normalizePath(path);
@@ -215,30 +215,30 @@ public class Settings {
         || LatticeDownload.getToolChainType(path) != LatticeDownload.TOOLCHAIN.UNKNOWN;
   }
 
-  public boolean SetApioToolPath(String path) {
-    path = normalizePath(path);
-    if (!validApioToolPath(path)) return false;
-    apioPath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetApioToolPath(String path) {
+  //   path = normalizePath(path);
+  //   if (!validApioToolPath(path)) return false;
+  //   apioPath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean validApioToolPath(String path) {
-    path = normalizePath(path);
-    return path == null
-        || allToolsPresent(path, FPGADownload.APIO_PROGRAMS);
-  }
+  // public boolean validApioToolPath(String path) {
+  //   path = normalizePath(path);
+  //   return path == null
+  //       || allToolsPresent(path, FPGADownload.APIO_PROGRAMS);
+  // }
 
-  public boolean SetOpenFPGAloaderPath(String path) {
-    path = normalizePath(path);
-    if (!validOpenFPGAloaderPath(path)) return false;
-    openFpgaPath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetOpenFPGAloaderPath(String path) {
+  //   path = normalizePath(path);
+  //   if (!validOpenFPGAloaderPath(path)) return false;
+  //   openFpgaPath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean validOpenFPGAloaderPath(String path) {
-    path = normalizePath(path);
-    return path == null || isExecutableScript(path);
-  }
+  // public boolean validOpenFPGAloaderPath(String path) {
+  //   path = normalizePath(path);
+  //   return path == null || isExecutableScript(path);
+  // }
 
   // =========================================================================
   // Other workspace settings
@@ -440,8 +440,8 @@ public class Settings {
         case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // unknown keys silently ignored
       }
     }
@@ -497,8 +497,8 @@ public class Settings {
     appendSetting(sb, "gowinShPath",        gowinShPath);
     appendSetting(sb, "gowinProgPath",      gowinProgPath);
     appendSetting(sb, "latticeToolsPath",   latticePath);
-    appendSetting(sb, "apioToolsPath",      apioPath);
-    appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
+    // appendSetting(sb, "apioToolsPath",      apioPath);
+    // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
     sb.append("    </workspace>\n");
 
     if (!boardPrefs.isEmpty()) {
