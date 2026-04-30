@@ -292,6 +292,7 @@ public class SettingsFrame extends LFrame.Dialog {
       new OpenFPGALoaderOptions(this),
       new XilinxOptions(this),
       new LatticeOptions(this),
+      new GowinOptions(this),
     };
 
     onProjectListChanged(true);

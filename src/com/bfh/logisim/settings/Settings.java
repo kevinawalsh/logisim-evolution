@@ -74,9 +74,9 @@ public class Settings {
   // private String  xilinxPath    = "";
   private String  alteraPath    = "";
   private boolean altera64bit   = true;
-  private String  gowinShPath   = "";
-  private String  gowinProgPath = "";
-  private String  latticePath   = "";
+  // private String  gowinShPath   = "";
+  // private String  gowinProgPath = "";
+  // private String  latticePath   = "";
   // private String  apioPath      = "";
   // private String  openFpgaPath  = "";
 
@@ -149,9 +149,9 @@ public class Settings {
 
   public String GetAlteraToolPath()  { return alteraPath; }
   // public String GetXilinxToolPath()  { return xilinxPath; }
-  public String GetGowinShPath()     { return gowinShPath; }
-  public String GetGowinProgPath()   { return gowinProgPath; }
-  public String GetLatticeToolPath() { return latticePath; }
+  // public String GetGowinShPath()     { return gowinShPath; }
+  // public String GetGowinProgPath()   { return gowinProgPath; }
+  // public String GetLatticeToolPath() { return latticePath; }
   // public String GetApioToolPath()    { return apioPath; }
   // public String GetOpenFPGALoaderPath() { return openFpgaPath; }
 
@@ -185,23 +185,23 @@ public class Settings {
   //       || isExecutableScript(path);
   // }
 
-  public boolean SetGowinShPath(String path) {
-    path = normalizePath(path);
-    gowinShPath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetGowinShPath(String path) {
+  //   path = normalizePath(path);
+  //   gowinShPath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean SetGowinProgPath(String path) {
-    path = normalizePath(path);
-    gowinProgPath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetGowinProgPath(String path) {
+  //   path = normalizePath(path);
+  //   gowinProgPath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean validGowinToolPath(String path) {
-    path = normalizePath(path);
-    return path == null
-        || isExecutableScript(path + File.separator + FPGADownload.GOWIN_SH);
-  }
+  // public boolean validGowinToolPath(String path) {
+  //   path = normalizePath(path);
+  //   return path == null
+  //       || isExecutableScript(path + File.separator + FPGADownload.GOWIN_SH);
+  // }
 
   // public boolean SetLatticeToolPath(String path) {
   //   path = normalizePath(path);
@@ -438,8 +438,8 @@ public class Settings {
         // case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
-        case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
@@ -495,8 +495,8 @@ public class Settings {
     // appendSetting(sb, "xilinxToolsPath",    xilinxPath);
     appendSetting(sb, "alteraToolsPath",    alteraPath);
     appendSetting(sb, "altera64bit",        "" + altera64bit);
-    appendSetting(sb, "gowinShPath",        gowinShPath);
-    appendSetting(sb, "gowinProgPath",      gowinProgPath);
+    // appendSetting(sb, "gowinShPath",        gowinShPath);
+    // appendSetting(sb, "gowinProgPath",      gowinProgPath);
     // appendSetting(sb, "latticeToolsPath",   latticePath);
     // appendSetting(sb, "apioToolsPath",      apioPath);
     // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);

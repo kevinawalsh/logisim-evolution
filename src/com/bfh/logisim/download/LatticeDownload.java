@@ -55,6 +55,7 @@ import com.bfh.logisim.gui.FPGASettingsDialog;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public class LatticeDownload extends FPGADownload {
 
@@ -64,14 +65,14 @@ public class LatticeDownload extends FPGADownload {
     String progs = FPGASettingsDialog.pretty(LATTICE_PROGRAMS, "or");
     String helpmsg = "It should be set to the directory where "
           + progs + " is installed.";
-    String tool = settings.GetLatticeToolPath();
-    if (tool == null) {
-      err.AddFatalError("Lattice Diamond and ispLEVER toolchain path not configured. " + helpmsg);
+    String tool = AppPreferences.LATTICE_PATH.get();
+    if (tool == null || tool.isEmpty()) {
+      err.AddFatalError("Lattice Diamond/ispLEVER toolchain path not configured. " + helpmsg);
       return false;
     }
     if (getTool() != null)
       return true;
-    err.AddFatalError("Lattice Diamond and ispLEVER toolchain path is set to " + tool + ","
+    err.AddFatalError("Lattice Diamond/ispLEVER toolchain path is set to " + tool + ","
         + " but this appears to be incorrect. " + helpmsg);
     return false;
   }
@@ -87,11 +88,13 @@ public class LatticeDownload extends FPGADownload {
 	  toolMap.put("projnav.exe",TOOLCHAIN.ISP_LEVER_WIN);
   }
 
-  public static String getTool() {
-	  return getTool(Settings.getSettings().GetLatticeToolPath());
+  private static String getTool() {
+	  return getTool(AppPreferences.LATTICE_PATH.get());
   }
 
-  public static String getTool(String toolPathBinDirectory) {
+  private static String getTool(String toolPathBinDirectory) {
+    if (toolPathBinDirectory == null || toolPathBinDirectory.isEmpty())
+      return null;
 	  Path toolPath = Paths.get(toolPathBinDirectory);
 	  for (String tool : toolMap.keySet()) {
 		  if (Files.exists(toolPath.resolve(tool))) {
@@ -353,89 +356,89 @@ public class LatticeDownload extends FPGADownload {
     out.stmt("prj_run PAR -impl impl1 -task PARTrace");
     out.stmt("prj_run Export -impl impl1 -task Bitgen");
     out.stmt("prj_project close");
-    
-	File f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_TCL_FILE, err);
-	boolean success = f != null && FileWriter.WriteContents(f, out, err);
-    
-	// --- windows synthesis script ---
-	
-	Path latticeToolPath = Paths.get(Settings.getSettings().GetLatticeToolPath());
-	String binDirectory = latticeToolPath.getFileName().toString();	// either "nt" or "nt64"
-	
-	// detect directory of tcl-library by going upwards above the bin-directory and downwards to the tcl-lib
-	Path toolPath = latticeToolPath;
-	while (((toolPath != null) && Files.notExists(toolPath.resolve("bin")))) {
-		toolPath = toolPath.getParent();
-	}
-	Path tclLibPath = toolPath.resolve("tcltk").resolve("lib");
-	try {
-		Path tcllib = Paths.get("");
-		List<Path> list = Files.list(tclLibPath).filter(p -> (p.getFileName().toString().startsWith("tcl") && Files.isDirectory(p))).collect(Collectors.toList()); 
-		for (Path ptcl : list) {
-			// take the directory with the longest name
-			if (tcllib.toString().length() < ptcl.toString().length()) {
-				tcllib = ptcl;
-			}
-		}
-		tclLibPath = tcllib;
-	} catch (IOException e) {
-	}
-	
-	Path tcl_prj_creation_file = getRelativePathAsPath(scriptPath,PROJECT_CREATION_TCL_FILE);
-	Path tcl_prj_synth_file = getRelativePathAsPath(scriptPath,PROJECT_RUN_TCL_FILE);
-	
-	String fpgaTool = getTool();
-	TOOLCHAIN toolChainTpye = getToolChainTypeFromToolname(fpgaTool);
-	Path latticeTool = latticeToolPath.resolve(fpgaTool);
 
-	if (toolChainTpye == TOOLCHAIN.DIAMOND_WIN) {
-		out = new Hdl(lang, err);
+    File f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_TCL_FILE, err);
+    boolean success = f != null && FileWriter.WriteContents(f, out, err);
 
-		out.stmt("@echo off",toWinPath(toolPath));
-		out.stmt("set LCD_DIAMOND_PATH=%s",toWinPath(toolPath));
-		out.stmt("");
-		out.stmt("set LSC_INI_PATH=");
-		out.stmt("set LSC_DIAMOND=true");
-		out.stmt("set TCL_LIBRARY=%s",toWinPath(tclLibPath));
-		out.stmt("set FOUNDRY=%s\\ispfpga",toWinPath(toolPath));
-		out.stmt("set PATH=%%FOUNDRY%%\\bin\\%s;%%PATH%%",binDirectory);
-		out.stmt("\"%s\" %s",toWinPath(latticeTool),toWinPath(tcl_prj_creation_file));
-		out.stmt("\"%s\" %s",toWinPath(latticeTool),toWinPath(tcl_prj_synth_file));
-		out.stmt("EXIT /B %%ERRORLEVEL%%");
-	    
-		f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE, err);
-		success &= f != null && FileWriter.WriteContents(f, out, err);
-	}
-	
-	// ---- Unix and Cygwin synthesis script ----
-	if (toolChainTpye != TOOLCHAIN.ISP_LEVER_WIN) {
-		out = new Hdl(lang, err);
-		
-		out.stmt("export TEMP=/tmp");
-		out.stmt("export LSC_INI_PATH=\"\"");
-		out.stmt("export LSC_DIAMOND=true");
-		out.stmt("export TCL_LIBRARY=%s",toUnixPath(tclLibPath));
-		out.stmt("export FOUNDRY=%s/ispFPGA",toUnixPath(toolPath));
-		out.stmt("export PATH=$FOUNDRY/bin/%s:$PATH",binDirectory);
-		out.stmt("%s %s",toUnixPath(latticeTool), toUnixPath(tcl_prj_creation_file));
-		out.stmt("%s %s",toUnixPath(latticeTool), toUnixPath(tcl_prj_synth_file));
-				
-		f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE_UNIX, err);
-		success &= f != null && FileWriter.WriteContents(f, out, err);
-	} else {
-	// --- ispLEVER synthesis file => open project navigator for the user
-		String prj_isplever_file = getRelativePath(sandboxPath,PROJECT_FILE_ISPLEVER);
-		String projnav = toWinPath(latticeToolPath.resolve("projnav.exe"));
-	
-		out = new Hdl(lang, err);
-		out.stmt("@echo off");
-		out.stmt("rem start project navigator and wait until it is finished. The user has to perfrom the synthesis!");
-		out.stmt("start /B /wait \"%s\" \"%s\"",projnav,prj_isplever_file);
-		f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE_ISPLEVER, err);
-		success &= f != null && FileWriter.WriteContents(f, out, err);
-	}
-	
-	return success;
+    // --- windows synthesis script ---
+
+    Path latticeToolPath = Paths.get(AppPreferences.LATTICE_PATH.get());
+    String binDirectory = latticeToolPath.getFileName().toString();	// either "nt" or "nt64"
+
+    // detect directory of tcl-library by going upwards above the bin-directory and downwards to the tcl-lib
+    Path toolPath = latticeToolPath;
+    while (((toolPath != null) && Files.notExists(toolPath.resolve("bin")))) {
+      toolPath = toolPath.getParent();
+    }
+    Path tclLibPath = toolPath.resolve("tcltk").resolve("lib");
+    try {
+      Path tcllib = Paths.get("");
+      List<Path> list = Files.list(tclLibPath).filter(p -> (p.getFileName().toString().startsWith("tcl") && Files.isDirectory(p))).collect(Collectors.toList()); 
+      for (Path ptcl : list) {
+        // take the directory with the longest name
+        if (tcllib.toString().length() < ptcl.toString().length()) {
+          tcllib = ptcl;
+        }
+      }
+      tclLibPath = tcllib;
+    } catch (IOException e) {
+    }
+
+    Path tcl_prj_creation_file = getRelativePathAsPath(scriptPath,PROJECT_CREATION_TCL_FILE);
+    Path tcl_prj_synth_file = getRelativePathAsPath(scriptPath,PROJECT_RUN_TCL_FILE);
+
+    String fpgaTool = getTool();
+    TOOLCHAIN toolChainTpye = getToolChainTypeFromToolname(fpgaTool);
+    Path latticeTool = latticeToolPath.resolve(fpgaTool);
+
+    if (toolChainTpye == TOOLCHAIN.DIAMOND_WIN) {
+      out = new Hdl(lang, err);
+
+      out.stmt("@echo off",toWinPath(toolPath));
+      out.stmt("set LCD_DIAMOND_PATH=%s",toWinPath(toolPath));
+      out.stmt("");
+      out.stmt("set LSC_INI_PATH=");
+      out.stmt("set LSC_DIAMOND=true");
+      out.stmt("set TCL_LIBRARY=%s",toWinPath(tclLibPath));
+      out.stmt("set FOUNDRY=%s\\ispfpga",toWinPath(toolPath));
+      out.stmt("set PATH=%%FOUNDRY%%\\bin\\%s;%%PATH%%",binDirectory);
+      out.stmt("\"%s\" %s",toWinPath(latticeTool),toWinPath(tcl_prj_creation_file));
+      out.stmt("\"%s\" %s",toWinPath(latticeTool),toWinPath(tcl_prj_synth_file));
+      out.stmt("EXIT /B %%ERRORLEVEL%%");
+
+      f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE, err);
+      success &= f != null && FileWriter.WriteContents(f, out, err);
+    }
+
+    // ---- Unix and Cygwin synthesis script ----
+    if (toolChainTpye != TOOLCHAIN.ISP_LEVER_WIN) {
+      out = new Hdl(lang, err);
+
+      out.stmt("export TEMP=/tmp");
+      out.stmt("export LSC_INI_PATH=\"\"");
+      out.stmt("export LSC_DIAMOND=true");
+      out.stmt("export TCL_LIBRARY=%s",toUnixPath(tclLibPath));
+      out.stmt("export FOUNDRY=%s/ispFPGA",toUnixPath(toolPath));
+      out.stmt("export PATH=$FOUNDRY/bin/%s:$PATH",binDirectory);
+      out.stmt("%s %s",toUnixPath(latticeTool), toUnixPath(tcl_prj_creation_file));
+      out.stmt("%s %s",toUnixPath(latticeTool), toUnixPath(tcl_prj_synth_file));
+
+      f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE_UNIX, err);
+      success &= f != null && FileWriter.WriteContents(f, out, err);
+    } else {
+      // --- ispLEVER synthesis file => open project navigator for the user
+      String prj_isplever_file = getRelativePath(sandboxPath,PROJECT_FILE_ISPLEVER);
+      String projnav = toWinPath(latticeToolPath.resolve("projnav.exe"));
+
+      out = new Hdl(lang, err);
+      out.stmt("@echo off");
+      out.stmt("rem start project navigator and wait until it is finished. The user has to perfrom the synthesis!");
+      out.stmt("start /B /wait \"%s\" \"%s\"",projnav,prj_isplever_file);
+      f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE_ISPLEVER, err);
+      success &= f != null && FileWriter.WriteContents(f, out, err);
+    }
+
+    return success;
   }
 
   private boolean generateDownloadScript() {
@@ -524,7 +527,7 @@ public class LatticeDownload extends FPGADownload {
 	  if (fpgaTool == null) {
 		  return false;
 	  }
-	  Path latticeToolPath = Paths.get(Settings.getSettings().GetLatticeToolPath());
+	  Path latticeToolPath = Paths.get(AppPreferences.LATTICE_PATH.get());
 	  Path latticeTool = latticeToolPath.resolve(fpgaTool);
 	  
 	  // --- Windows ----

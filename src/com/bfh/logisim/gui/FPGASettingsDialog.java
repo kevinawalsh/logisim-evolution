@@ -60,7 +60,7 @@ public class FPGASettingsDialog implements ActionListener {
 
 	private JDialog panel;
 	private Settings settings;
-	private JTextField alteraPath, /*xilinxPath,*/ /*latticePath,*/ /*apioPath,*/ /*openFPGAloaderPath,*/ gowinShPath, gowinProgPath /*, workPath*/;
+	private JTextField alteraPath /*, xilinxPath,*/ /*latticePath,*/ /*apioPath,*/ /*openFPGAloaderPath,*/ /*gowinShPath, gowinProgPath */ /*, workPath*/;
 	private JRadioButton altera32Choice, altera64Choice, svfChoice, rbfChoice;
 
 	public FPGASettingsDialog(JFrame parentFrame, Settings settings) {
@@ -87,10 +87,10 @@ public class FPGASettingsDialog implements ActionListener {
 		// if (fpath == null) fpath = "";
 		// String opath = settings.GetOpenFPGALoaderPath();
 		// if (opath == null) opath = "";
-		String gpath = settings.GetGowinShPath();
-		if (gpath == null) gpath = "";
-		String gprpath = settings.GetGowinProgPath();
-		if (gprpath == null) gprpath = "";
+		// String gpath = settings.GetGowinShPath();
+		// if (gpath == null) gpath = "";
+		// String gprpath = settings.GetGowinProgPath();
+		// if (gprpath == null) gprpath = "";
 		// String wpath = settings.GetStaticWorkspacePath();
 		// if (wpath == null) wpath = "";
 
@@ -99,7 +99,7 @@ public class FPGASettingsDialog implements ActionListener {
 		// JLabel xilinxSection = new JLabel("Xilinx Settings");
 		// JLabel latticeSection = new JLabel("Lattice Settings");
 		// JLabel apioSection = new JLabel("Apio Settings");
-		JLabel gowinSection = new JLabel("Gowin Settings");
+		// JLabel gowinSection = new JLabel("Gowin Settings");
 		// JLabel openFPGAloaderSection = new JLabel("openFPGAloader Settings");
 		Font font = alteraSection.getFont();
 		Font boldFont = new Font(font.getFontName(), Font.BOLD, font.getSize());
@@ -107,7 +107,7 @@ public class FPGASettingsDialog implements ActionListener {
 		alteraSection.setFont(boldFont);
 		// xilinxSection.setFont(boldFont);
 		// latticeSection.setFont(boldFont);
-		gowinSection.setFont(boldFont);
+		// gowinSection.setFont(boldFont);
 		// apioSection.setFont(boldFont);
 		// openFPGAloaderSection.setFont(boldFont);
 
@@ -145,18 +145,18 @@ public class FPGASettingsDialog implements ActionListener {
 		// xilinxPicker.setActionCommand("xilinxPicker");
 		// xilinxPicker.addActionListener(this);
 
-		JLabel gowinLabel = new JLabel("Gowin IDE path (path to gw_sh)");
-		gowinShPath = new JTextField(gpath);
-		gowinShPath.setPreferredSize(new Dimension(400, 10));
-		JButton gowinPicker = new JButton("Choose");
-		gowinPicker.setActionCommand("gowinPicker");
-		gowinPicker.addActionListener(this);
-		JLabel gowinProgLabel = new JLabel("Gowin Programmer path (path to programmer_cli)");
-		gowinProgPath = new JTextField(gprpath);
-		gowinProgPath.setPreferredSize(new Dimension(400, 10));
-		JButton gowinProgPicker = new JButton("Choose");
-		gowinProgPicker.setActionCommand("gowinProgPicker");
-		gowinProgPicker.addActionListener(this);
+		// JLabel gowinLabel = new JLabel("Gowin IDE path (path to gw_sh)");
+		// gowinShPath = new JTextField(gpath);
+		// gowinShPath.setPreferredSize(new Dimension(400, 10));
+		// JButton gowinPicker = new JButton("Choose");
+		// gowinPicker.setActionCommand("gowinPicker");
+		// gowinPicker.addActionListener(this);
+		// JLabel gowinProgLabel = new JLabel("Gowin Programmer path (path to programmer_cli)");
+		// gowinProgPath = new JTextField(gprpath);
+		// gowinProgPath.setPreferredSize(new Dimension(400, 10));
+		// JButton gowinProgPicker = new JButton("Choose");
+		// gowinProgPicker.setActionCommand("gowinProgPicker");
+		// gowinProgPicker.addActionListener(this);
 
 		// JLabel latticeLabel = new JLabel("Lattice tools path (install directory):");
 		// latticePath = new JTextField(lpath);
@@ -254,21 +254,21 @@ public class FPGASettingsDialog implements ActionListener {
 		// c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 5, 0, 0);
 		// panel.add(latticePicker, c);
 
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(10, 0, 10, 0);
-		panel.add(gowinSection, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(10, 0, 10, 0);
+		// panel.add(gowinSection, c);
 
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 10, 2, 0);
-		panel.add(gowinLabel, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 10, 5, 0);
-		panel.add(gowinShPath, c);
-		c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 10, 5, 0);
-		panel.add(gowinPicker, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 10, 2, 0);
-		panel.add(gowinProgLabel, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 10, 5, 0);
-		panel.add(gowinProgPath, c);
-		c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 10, 5, 0);
-		panel.add(gowinProgPicker, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 10, 2, 0);
+		// panel.add(gowinLabel, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 10, 5, 0);
+		// panel.add(gowinShPath, c);
+		// c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 10, 5, 0);
+		// panel.add(gowinPicker, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 10, 2, 0);
+		// panel.add(gowinProgLabel, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 10, 5, 0);
+		// panel.add(gowinProgPath, c);
+		// c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 10, 5, 0);
+		// panel.add(gowinProgPicker, c);
 
 		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(10, 10, 5, 0);
 		// panel.add(apioSection, c);
@@ -322,10 +322,10 @@ public class FPGASettingsDialog implements ActionListener {
 		// 	pick("Apio", apioPath.getText(), false);
 		// } else if (e.getActionCommand().equals("openFPGAloaderPicker")) {
 		// 	pick("openFPGAloader", openFPGAloaderPath.getText(), false);
-		} else if (e.getActionCommand().equals("gowinPicker")) {
-			pick("Gowin", gowinShPath.getText(), false);
-		} else if (e.getActionCommand().equals("gowinProgPicker")) {
-			pick("Gowin Programmer", gowinProgPath.getText(), false);
+		// } else if (e.getActionCommand().equals("gowinPicker")) {
+		// 	pick("Gowin", gowinShPath.getText(), false);
+		// } else if (e.getActionCommand().equals("gowinProgPicker")) {
+		// 	pick("Gowin Programmer", gowinProgPath.getText(), false);
 		} else if (e.getActionCommand().equals("Cancel")) {
 			panel.setVisible(false);
 		} else if (e.getActionCommand().equals("OK")) {
@@ -373,18 +373,18 @@ public class FPGASettingsDialog implements ActionListener {
 		// 			"Invalid python virtualenv directory.\n" +
 		// 			"Please select a directory containing " + names + ".");
 		// }
-		String gpath = gowinShPath.getText();
-		if (!settings.SetGowinShPath(gpath)) {
-			JOptionPane.showMessageDialog(null,
-					"Invalid Gowin Toolchain directory.\n" +
-					"Please select a directory containing " + FPGADownload.GOWIN_SH + ".");
-		}
-		String gprpath = gowinProgPath.getText();
-		if (!settings.SetGowinProgPath(gprpath)) {
-			JOptionPane.showMessageDialog(null,
-					"Invalid Gowin Toolchain directory.\n" +
-					"Please select a directory containing " + FPGADownload.GOWIN_PROG + ".");
-		}
+		// String gpath = gowinShPath.getText();
+		// if (!settings.SetGowinShPath(gpath)) {
+		// 	JOptionPane.showMessageDialog(null,
+		// 			"Invalid Gowin Toolchain directory.\n" +
+		// 			"Please select a directory containing " + FPGADownload.GOWIN_SH + ".");
+		// }
+		// String gprpath = gowinProgPath.getText();
+		// if (!settings.SetGowinProgPath(gprpath)) {
+		// 	JOptionPane.showMessageDialog(null,
+		// 			"Invalid Gowin Toolchain directory.\n" +
+		// 			"Please select a directory containing " + FPGADownload.GOWIN_PROG + ".");
+		// }
 		// String fpath = openFPGAloaderPath.getText();
 		// if (!settings.SetOpenFPGAloaderPath(fpath)) {
 		// 	JOptionPane.showMessageDialog(null,
@@ -454,20 +454,20 @@ public class FPGASettingsDialog implements ActionListener {
 		// 				"Invalid setting for openFPGAloader path.\n" +
 		// 				"Please select executable or a directory containing openFPGAloader.");
 		// 	}
-		} else if ("Gowin".equals(vendor)) {
-			gowinShPath.setText(path);
-			if (!settings.SetGowinShPath(path)) {
-				JOptionPane.showMessageDialog(null,
-						"Invalid Gowin Toolchain directory.\n" +
-						"Please select a directory containing " + FPGADownload.GOWIN_SH + ".");
-			}
-		} else if ("Gowin Progammer".equals(vendor)) {
-			gowinProgPath.setText(path);
-			if (!settings.SetGowinProgPath(path)) {
-				JOptionPane.showMessageDialog(null,
-						"Invalid Gowin Toolchain directory.\n" +
-						"Please select a directory containing " + FPGADownload.GOWIN_PROG + ".");
-			}
+		// } else if ("Gowin".equals(vendor)) {
+		// 	gowinShPath.setText(path);
+		// 	if (!settings.SetGowinShPath(path)) {
+		// 		JOptionPane.showMessageDialog(null,
+		// 				"Invalid Gowin Toolchain directory.\n" +
+		// 				"Please select a directory containing " + FPGADownload.GOWIN_SH + ".");
+		// 	}
+		// } else if ("Gowin Progammer".equals(vendor)) {
+		// 	gowinProgPath.setText(path);
+		// 	if (!settings.SetGowinProgPath(path)) {
+		// 		JOptionPane.showMessageDialog(null,
+		// 				"Invalid Gowin Toolchain directory.\n" +
+		// 				"Please select a directory containing " + FPGADownload.GOWIN_PROG + ".");
+		// 	}
 		// } else {
 		// 	workPath.setText(path);
 		}

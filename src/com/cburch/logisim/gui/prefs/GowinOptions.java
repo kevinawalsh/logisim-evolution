@@ -58,7 +58,7 @@ public class GowinOptions extends FPGAToolchainPanel {
     addExplanation(
         "For the shell tool, select the path to the 'gw_sh' or 'gw_sh.exe' program, "
         + "or to a custom script or program that will do full synthesis and "
-        + "place-and-route."
+        + "place-and-route. "
         + "For the programmer, select the path to the 'programmer_cli', 'programmer.exe', "
         + "or similar program for the downloading step. If left blank, openFPGALoader "
         + "will be tried instead.");
