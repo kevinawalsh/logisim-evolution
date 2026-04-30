@@ -44,12 +44,13 @@ import org.w3c.dom.NodeList;
 
 import com.bfh.logisim.download.FPGADownload;
 
-import com.bfh.logisim.download.LatticeDownload;
+// import com.bfh.logisim.download.LatticeDownload;
 import com.bfh.logisim.gui.FPGASettingsDialog;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.SettingsStore;
 
 /**
- * FPGA-related settings, backed by the {@code <fpga>} section of
+ * FPGA-related settings, backed by the {@code <legacy_fpga>} section of
  * {@code settings.xml} managed by {@link SettingsStore}.
  *
  * All workspace values are held in-memory. Changes are flushed back to
@@ -66,11 +67,11 @@ public class Settings {
   // In-memory workspace settings
   // =========================================================================
 
-  private String  workspacePath = "";
+  // private String  workspacePath = "";
   private String  hdlType       = VHDL;
   private String  selectedBoard = "";
   private boolean useRBF        = false;
-  private String  xilinxPath    = "";
+  // private String  xilinxPath    = "";
   private String  alteraPath    = "";
   private boolean altera64bit   = true;
   private String  gowinShPath   = "";
@@ -147,7 +148,7 @@ public class Settings {
   // =========================================================================
 
   public String GetAlteraToolPath()  { return alteraPath; }
-  public String GetXilinxToolPath()  { return xilinxPath; }
+  // public String GetXilinxToolPath()  { return xilinxPath; }
   public String GetGowinShPath()     { return gowinShPath; }
   public String GetGowinProgPath()   { return gowinProgPath; }
   public String GetLatticeToolPath() { return latticePath; }
@@ -170,19 +171,19 @@ public class Settings {
         || isExecutableScript(path);
   }
 
-  public boolean SetXilinxToolPath(String path) {
-    path = normalizePath(path);
-    if (!validXilinxToolPath(path)) return false;
-    xilinxPath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetXilinxToolPath(String path) {
+  //   path = normalizePath(path);
+  //   if (!validXilinxToolPath(path)) return false;
+  //   xilinxPath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean validXilinxToolPath(String path) {
-    path = normalizePath(path);
-    return path == null
-        || allToolsPresent(path, FPGADownload.XILINX_PROGRAMS)
-        || isExecutableScript(path);
-  }
+  // public boolean validXilinxToolPath(String path) {
+  //   path = normalizePath(path);
+  //   return path == null
+  //       || allToolsPresent(path, FPGADownload.XILINX_PROGRAMS)
+  //       || isExecutableScript(path);
+  // }
 
   public boolean SetGowinShPath(String path) {
     path = normalizePath(path);
@@ -202,18 +203,18 @@ public class Settings {
         || isExecutableScript(path + File.separator + FPGADownload.GOWIN_SH);
   }
 
-  public boolean SetLatticeToolPath(String path) {
-    path = normalizePath(path);
-    if (!validLatticeToolPath(path)) return false;
-    latticePath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetLatticeToolPath(String path) {
+  //   path = normalizePath(path);
+  //   if (!validLatticeToolPath(path)) return false;
+  //   latticePath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean validLatticeToolPath(String path) {
-    path = normalizePath(path);
-    return path == null
-        || LatticeDownload.getToolChainType(path) != LatticeDownload.TOOLCHAIN.UNKNOWN;
-  }
+  // public boolean validLatticeToolPath(String path) {
+  //   path = normalizePath(path);
+  //   return path == null
+  //       || LatticeDownload.getToolChainType(path) != LatticeDownload.TOOLCHAIN.UNKNOWN;
+  // }
 
   // public boolean SetApioToolPath(String path) {
   //   path = normalizePath(path);
@@ -285,7 +286,7 @@ public class Settings {
     if (pref != null && tc == null && !warnedBadToolchain) {
       warnedBadToolchain = true;
       javax.swing.JOptionPane.showMessageDialog(null,
-          "Error: Unrecognized toolchain '" + pref + "' in settings.xml fpga section");
+          "Error: Unrecognized toolchain '" + pref + "' in settings.xml legacy_fpga section");
     }
     return tc;
   }
@@ -297,7 +298,7 @@ public class Settings {
     if (pref != null && !warnedBadHDLType) {
       warnedBadHDLType = true;
       javax.swing.JOptionPane.showMessageDialog(null,
-          "Error: Unrecognized HDL type '" + pref + "' in settings.xml fpga section");
+          "Error: Unrecognized HDL type '" + pref + "' in settings.xml legacy_fpga section");
     }
     return null;
   }
@@ -329,20 +330,20 @@ public class Settings {
   // Workspace path
   // =========================================================================
 
-  public String GetStaticWorkspacePath() {
-    return workspacePath.isEmpty() ? null : workspacePath;
-  }
+  // public String GetStaticWorkspacePath() {
+  //   return workspacePath.isEmpty() ? null : workspacePath;
+  // }
 
-  public void SetStaticWorkspacePath(String path) {
-    path = normalizePath(path);
-    workspacePath = nvl(path);
-    markDirty();
-  }
+  // public void SetStaticWorkspacePath(String path) {
+  //   path = normalizePath(path);
+  //   workspacePath = nvl(path);
+  //   markDirty();
+  // }
 
   public String GetWorkspacePath(File projectFile) {
-    String p = GetStaticWorkspacePath();
-    if (p != null)
-      return p;
+    String p = AppPreferences.FPGA_WORKSPACE_PATH.get();
+    if (p != null && !p.isEmpty())
+      return p; // FIXME: create subdirectory per project?
     String home = System.getProperty("user.home");
     if (projectFile != null) {
       String dir  = projectFile.getAbsoluteFile().getParentFile().getAbsolutePath();
@@ -390,7 +391,7 @@ public class Settings {
   // =========================================================================
 
   /**
-   * Reads settings from a {@code <fpga>} DOM element (either user file or defaults file).
+   * Reads settings from a {@code <legacy_fpga>} DOM element (either user file or defaults file).
    * When {@code isUser} is true, user-specific structured data (board prefs, external
    * boards) is also loaded.
    */
@@ -427,19 +428,19 @@ public class Settings {
       String key = s.getAttribute("key");
       String val = s.getAttribute("value");
       switch (key) {
-        case "workspacePath":     workspacePath = val; break;
+        // case "workspacePath":     workspacePath = val; break;
         case "hdlType":
           if (VERILOG.equalsIgnoreCase(val)) hdlType = VERILOG;
           else hdlType = VHDL;
           break;
         case "selectedBoard":     selectedBoard = val; break;
         case "useRawBinaryFormat": useRBF = "true".equalsIgnoreCase(val); break;
-        case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
         case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // unknown keys silently ignored
@@ -485,18 +486,18 @@ public class Settings {
 
   private String buildFpgaXml() {
     StringBuilder sb = new StringBuilder();
-    sb.append("  <fpga>\n");
+    sb.append("  <legacy_fpga>\n");
     sb.append("    <workspace>\n");
-    appendSetting(sb, "workspacePath",      workspacePath);
+    // appendSetting(sb, "workspacePath",      workspacePath);
     appendSetting(sb, "hdlType",            hdlType);
     appendSetting(sb, "selectedBoard",      selectedBoard);
     appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
-    appendSetting(sb, "xilinxToolsPath",    xilinxPath);
+    // appendSetting(sb, "xilinxToolsPath",    xilinxPath);
     appendSetting(sb, "alteraToolsPath",    alteraPath);
     appendSetting(sb, "altera64bit",        "" + altera64bit);
     appendSetting(sb, "gowinShPath",        gowinShPath);
     appendSetting(sb, "gowinProgPath",      gowinProgPath);
-    appendSetting(sb, "latticeToolsPath",   latticePath);
+    // appendSetting(sb, "latticeToolsPath",   latticePath);
     // appendSetting(sb, "apioToolsPath",      apioPath);
     // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
     sb.append("    </workspace>\n");
@@ -519,7 +520,7 @@ public class Settings {
       sb.append("    </external-boards>\n");
     }
 
-    sb.append("  </fpga>");
+    sb.append("  </legacy_fpga>");
     return sb.toString();
   }
 

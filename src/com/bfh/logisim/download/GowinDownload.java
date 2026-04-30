@@ -10,6 +10,7 @@ import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public class GowinDownload extends FPGADownload {
     private String cableIndex;
@@ -62,27 +63,37 @@ public class GowinDownload extends FPGADownload {
         return command;
     }
 
-    private boolean gwProgPresent(Settings settings){
-        String progPath = settings.GetGowinProgPath();
-        File prog = progPath != null ? new File(progPath + File.separator + FPGADownload.GOWIN_PROG) : null;
-        return prog.exists() && !prog.isDirectory() && prog.canExecute();
+    private String resolve(String path, String progname) {
+        if (path == null || path.isEmpty())
+          return null;
+        File prog = new File(path);
+        // backwards compatibility: maybe it is a directory?
+        if (prog.exists() && prog.isDirectory()) {
+          path += File.separator + progname;
+          prog = new File(path);
+        }
+        if (prog.exists() && !prog.isDirectory() && prog.canExecute())
+          return path;
+        return null;
     }
+
+    private String getGowinProgrammerPath() {
+      return resolve(AppPreferences.GOWIN_PROGRAMMER_PATH.get(), FPGADownload.GOWIN_PROG);
+    }
+
+    private String getGowinShellPath() {
+      return resolve(AppPreferences.GOWIN_SHELL_PATH.get(), FPGADownload.GOWIN_SH);
+    }
+
     public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
-        String helpmsg = "It should be set to the directory where " + FPGADownload.GOWIN_SH
-              + " and related programs are installed, or set to a file"
-              + " containing a stand-alone executable script.";
-        String shPath = settings.GetGowinShPath();
+        String helpmsg = "It should be set to the path of " + FPGADownload.GOWIN_SH
+              + " or of a compatible stand-alone executable script.";
+        String shPath = getGowinShellPath();
         if (shPath == null) {
-          err.AddFatalError("Gowin toolchain path not configured. " + helpmsg);
+          err.AddFatalError("Gowin shell tool path not configured, or configured incorrectly. " + helpmsg);
           return false;
         }
-        File sh = new File(shPath + File.separator + FPGADownload.GOWIN_SH);
-        if (!sh.exists() || sh.isDirectory() || !sh.canExecute()) {
-          err.AddFatalError("Gowin Shell is set to " + shPath + ","
-           + " but this appears to be incorrect. " + helpmsg);
-           return false;
-        }
-        if (!gwProgPresent(settings)) {
+        if (getGowinProgrammerPath() == null) {
             if (OpenFPGALoader.findExecutable(err) == null) {
                 err.AddFatalError("Either Gowin " + FPGADownload.GOWIN_PROG + " path must be specified in settings, or " 
                 + "openFPGALoader must be installed and configured.");
@@ -90,7 +101,7 @@ public class GowinDownload extends FPGADownload {
             }
         }
         return true;
-      }
+    }
     @Override
     public ArrayList<Stage> initiateDownload(Commander cmdr) {
         ArrayList<Stage> stages = new ArrayList<>();
@@ -98,15 +109,15 @@ public class GowinDownload extends FPGADownload {
             String script = scriptPath.replace(projectPath, ".." + File.separator) + "gw_download.tcl";
             stages.add(new ProcessStage(
                     "compile", "Executing Gowin syn & pnr",
-                    cmd(settings.GetGowinShPath(), script),
+                    cmd(getGowinShellPath(), script),
                     "Failed to to execute gowin syn & pnr"));
         }
 
-        boolean tryOpenFPGALoader = !gwProgPresent(settings);
-        if (tryOpenFPGALoader) {
-            String prog = OpenFPGALoader.findExecutable(err);
+        String gwprog = getGowinProgrammerPath() ;
+        if (gwprog== null) { // try openFPGALoader
+            String ofl = OpenFPGALoader.findExecutable(err);
             stages.add(new ProcessStage("scan", "Scaning for FPGA Devices",
-                    cmd(prog, "--detect"),
+                    cmd(ofl, "--detect"),
                     "Could not find any FPGA devices.") {
                 @Override
                 protected boolean prep() {
@@ -151,7 +162,7 @@ public class GowinDownload extends FPGADownload {
             stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
                 @Override
                 protected boolean prep() {
-                  cmd = cmd(prog,
+                  cmd = cmd(ofl,
                       sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
                       "--cable-index", cableIndex);
                   return true;
@@ -161,8 +172,7 @@ public class GowinDownload extends FPGADownload {
             stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
                 @Override
                 protected boolean prep() {
-                  String prog = settings.GetGowinProgPath() + File.separator + FPGADownload.GOWIN_PROG;
-                  cmd = cmd(prog,
+                  cmd = cmd(gwprog,
                       "--fsFile", sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
                       "-r", "2",
                       "--device", board.fpga.Technology);

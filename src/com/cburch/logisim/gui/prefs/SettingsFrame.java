@@ -290,6 +290,8 @@ public class SettingsFrame extends LFrame.Dialog {
       new QuestaOptions(this),
       new ApioOptions(this),
       new OpenFPGALoaderOptions(this),
+      new XilinxOptions(this),
+      new LatticeOptions(this),
     };
 
     onProjectListChanged(true);

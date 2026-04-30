@@ -268,11 +268,25 @@ public class AppPreferences {
   // =========================================================================
   // FPGA stuff
   // =========================================================================
+  
+  public static final PrefMonitor<String>
+    FPGA_WORKSPACE_PATH = new PrefMonitor<>("fpga", "workspace", "");
 
   public static final PrefMonitor<String>
     APIO_PATH = new PrefMonitor<>("apio", "path", "");
 
   public static final PrefMonitor<String>
     OPENFPGALOADER_PATH = new PrefMonitor<>("openFPGALoader", "path", "");
+
+  public static final PrefMonitor<String>
+    XILINX_PATH = new PrefMonitor<>("xilinx", "path", "");
+
+  public static final PrefMonitor<String>
+    LATTICE_PATH = new PrefMonitor<>("lattice", "path", "");
+
+  public static final PrefMonitor<String>
+    GOWIN_SHELL_PATH = new PrefMonitor<>("gowin", "shell", "");
+  public static final PrefMonitor<String>
+    GOWIN_PROGRAMMER_PATH = new PrefMonitor<>("gowin", "programmer", "");
 
 }

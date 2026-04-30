@@ -37,7 +37,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import javax.swing.SwingUtilities;
 
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.DriveStrength;
@@ -50,6 +49,7 @@ import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public class XilinxDownload extends FPGADownload {
 
@@ -69,9 +69,13 @@ public class XilinxDownload extends FPGADownload {
     // If XilinxToolPath is an executable file, rather than a directory, then
     // use that as a single-file script to do the entire synthesis rather than
     // using the multi-step synthesis using xst.exe, etc.
-    String tool = settings.GetXilinxToolPath();
+    String tool = AppPreferences.XILINX_PATH.get();
+    if (tool == null || tool.isEmpty())
+      return null;
     File script = new File(tool);
-    if (!script.exists() || script.isDirectory() || !script.canExecute())
+    if (!script.exists() || script.isDirectory() || !script.canExecute()
+        || script.getName().equalsIgnoreCase("xst")
+        || script.getName().equalsIgnoreCase("xst.exe"))
       return null;
     ArrayList<String> command = new ArrayList<>();
     command.add(tool);
@@ -80,7 +84,18 @@ public class XilinxDownload extends FPGADownload {
 
   private ArrayList<String> cmd(String prog, String ...args) {
     ArrayList<String> command = new ArrayList<>();
-    command.add(settings.GetXilinxToolPath() + File.separator + prog);
+    String x = AppPreferences.XILINX_PATH.get();
+    if (x == null || x.isEmpty()) {
+      command.add(prog);
+    } else {
+      // strip off "xst" or "xst.exe", 
+      // or for standalone script (which might still be used with impact.exe)
+      // strip off the script name
+      File xdir = new File(x);
+      if (!xdir.isDirectory())
+        xdir = xdir.getParentFile();
+      command.add(xdir + File.separator + prog);
+    }
     for (String arg: args)
       command.add(arg);
     return command;
@@ -90,8 +105,8 @@ public class XilinxDownload extends FPGADownload {
     String helpmsg = "It should be set to the directory where " + XILINX_XST
           + " and related programs are installed, or set to a file"
           + " containing a stand-alone executable script.";
-    String tool = settings.GetXilinxToolPath();
-    if (tool == null) {
+    String tool = AppPreferences.XILINX_PATH.get();
+    if (tool == null || tool.isEmpty()) {
       err.AddFatalError("Xilinx ISE toolchain path not configured. " + helpmsg);
       return false;
     }

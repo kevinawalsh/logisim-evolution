@@ -36,7 +36,7 @@ import com.cburch.logisim.prefs.AppPreferences;
 public class OpenFPGALoaderOptions extends FPGAToolchainPanel {
  
   public OpenFPGALoaderOptions(SettingsFrame window) {
-    super(window, "openFPGALoader programmer");
+    super(window, "openFPGALoader");
 
     addExplanation(
       "OpenFPGALoader is a free, open-source utility for programming FPGAs, "

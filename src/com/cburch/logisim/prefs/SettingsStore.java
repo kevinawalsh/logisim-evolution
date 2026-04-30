@@ -264,10 +264,10 @@ public class SettingsStore {
     store.markDirty();
   }
 
-  /** Returns the raw &lt;fpga&gt; DOM element from the user file, for FpgaSettings to read. */
+  /** Returns the raw &lt;legacy_fpga&gt; DOM element from the user file, for FpgaSettings to read. */
   public static Element getFpgaUserElement() { return fpgaUserElement; }
 
-  /** Returns the raw &lt;fpga&gt; DOM element from the defaults file, for FpgaSettings to read. */
+  /** Returns the raw &lt;legacy_fpga&gt; DOM element from the defaults file, for FpgaSettings to read. */
   public static Element getFpgaDefaultsElement() { return fpgaDefaultsElement; }
 
 
@@ -308,7 +308,7 @@ public class SettingsStore {
       for (Element sectionEl : XmlIterator.forChildElements(root)) {
         String sectionName = sectionEl.getTagName();
 
-        if ("fpga".equals(sectionName)) {
+        if ("legacy_fpga".equals(sectionName)) {
           if (target == userValues) fpgaUserElement = sectionEl;
           else fpgaDefaultsElement = sectionEl;
           continue;

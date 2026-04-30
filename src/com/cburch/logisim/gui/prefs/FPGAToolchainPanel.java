@@ -162,4 +162,9 @@ public class FPGAToolchainPanel extends SettingsPanel {
     }
     return false;
   }
+
+  protected static boolean isExecutableScript(String path) {
+    File f = new File(path);
+    return f.exists() && !f.isDirectory() && f.canExecute();
+  }
 }

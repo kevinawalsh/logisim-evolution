@@ -241,7 +241,7 @@ public abstract class FPGADownload {
   public static final String LATTICE_DIAMOND_UNIX = "diamondc";
   public static final String LATTICE_ISPLEVER_WIN = "projnav" + dotexe;
   public static final String[] LATTICE_PROGRAMS = {
-      LATTICE_DIAMOND_WIN, LATTICE_DIAMOND_UNIX // , LATTICE_ISPLEVER_WIN
+      LATTICE_DIAMOND_WIN, LATTICE_DIAMOND_UNIX , LATTICE_ISPLEVER_WIN
   };
   // public static final String[] GOWIN_PROGRAMS = {"gw_sh" + dotexe};
   public static final String GOWIN_SH = "gw_sh" + dotexe;

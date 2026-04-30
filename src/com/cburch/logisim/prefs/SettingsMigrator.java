@@ -332,20 +332,25 @@ class SettingsMigrator {
         }
       }
 
-      // Build new-format <fpga> XML for SettingsStore
+      // Build new-format <legacy_fpga> XML for SettingsStore
       StringBuilder sb = new StringBuilder();
-      sb.append("  <fpga>\n");
+      sb.append("  <legacy_fpga>\n");
       sb.append("    <workspace>\n");
-      appendSetting(sb, "workspacePath",     workPath);
+      // appendSetting(sb, "workspacePath",     workPath);
+      SettingsStore.put("fpga", "workspace", workPath);
       appendSetting(sb, "hdlType",           hdlType);
       appendSetting(sb, "selectedBoard",     selectedBoard);
       appendSetting(sb, "useRawBinaryFormat", rawBinary);
-      appendSetting(sb, "xilinxToolsPath",   xilinxPath);
+      // appendSetting(sb, "xilinxToolsPath",   xilinxPath);
+      SettingsStore.put("xilinx", "path", xilinxPath);
       appendSetting(sb, "alteraToolsPath",   alteraPath);
       appendSetting(sb, "altera64bit",       altera64bit);
-      appendSetting(sb, "gowinShPath",       gowinShPath);
-      appendSetting(sb, "gowinProgPath",     gowinProgPath);
-      appendSetting(sb, "latticeToolsPath",  latticePath);
+      // appendSetting(sb, "gowinShPath",       gowinShPath);
+      // appendSetting(sb, "gowinProgPath",     gowinProgPath);
+      SettingsStore.put("gowin", "shell", gowinShPath);
+      SettingsStore.put("gowin", "programmer", gowinProgPath);
+      // appendSetting(sb, "latticeToolsPath",  latticePath);
+      SettingsStore.put("lattice", "path", latticePath);
       // appendSetting(sb, "apioToolsPath",     apioPath);
       SettingsStore.put("apio", "path", apioPath);
       // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
@@ -374,7 +379,7 @@ class SettingsMigrator {
         sb.append("    </external-boards>\n");
       }
 
-      sb.append("  </fpga>");
+      sb.append("  </legacy_fpga>");
       SettingsStore.setFpgaXml(sb.toString());
 
     } catch (Exception e) {
