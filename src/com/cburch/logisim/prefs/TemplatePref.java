@@ -56,8 +56,8 @@ public class TemplatePref {
 
   public TemplatePref() {
     // Register keys so they appear in settings.xml
-    SettingsStore.registerKey(SECTION, TYPE_KEY, "" + TEMPLATE_PLAIN);
-    SettingsStore.registerKey(SECTION, FILE_KEY, "");
+    SettingsStore.registerKey(SECTION, TYPE_KEY, "" + TEMPLATE_PLAIN, new String[] { "0", "1", "2"});
+    SettingsStore.registerKey(SECTION, FILE_KEY, "", null);
 
     // React to changes pushed by SettingsStore (e.g. from another instance or clear())
     SettingsStore.addChangeListener(SECTION, TYPE_KEY, () -> setFromStore(true));

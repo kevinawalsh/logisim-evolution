@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,8 +79,9 @@ import com.cburch.logisim.util.Debug;
 //   other:   ~/.logisim-hc/settings.xml
 public class SettingsStore {
 
-  // Schema: section -> key -> hardcoded default. Defines canonical write order.
-  private static final LinkedHashMap<String, LinkedHashMap<String, String>> schema =
+  // Schema: // section -> key -> [hardcoded default, optional list of options]
+  // Defines canonical write order, and specifies default and (optionall) set of valid values.
+  private static final LinkedHashMap<String, LinkedHashMap<String, String[]>> schema =
       new LinkedHashMap<>();
 
   // User-set values (keys with a value xml attribute in user settings file)
@@ -172,8 +174,24 @@ public class SettingsStore {
   // Key registration (called by PrefMonitor constructor)
   // =========================================================================
 
-  public static void registerKey(String section, String key, String hardcodedDefault) {
-    schema.computeIfAbsent(section, k -> new LinkedHashMap<>()).putIfAbsent(key, hardcodedDefault);
+  public static void registerKey(String section, String key, String hardcodedDefault, String options[]) {
+    String vs[];
+    if (options == null || options.length == 0) {
+      vs = new String[] { hardcodedDefault };
+    } else if (Arrays.asList(options).contains(hardcodedDefault)) {
+      vs = new String[options.length];
+      vs[0] = hardcodedDefault;
+      int i = 1;
+      for (String opt : options)
+        if (!opt.equals(hardcodedDefault))
+          vs[i++] = opt;
+    } else {
+      vs = new String[1 + options.length];
+      vs[0] = hardcodedDefault;
+      for (int i = 0; i < options.length; i++)
+        vs[1+i] = options[i];
+    }
+    schema.computeIfAbsent(section, k -> new LinkedHashMap<>()).putIfAbsent(key, vs);
   }
 
   // =========================================================================
@@ -212,9 +230,19 @@ public class SettingsStore {
   }
 
   private static String getHardcodedDefault(String section, String key) {
+    String vs[] = getEnumeratedOptions(section, key);
+    return (vs == null) ? null : vs[0];
+  }
+
+  private static String[] getEnumeratedOptions(String section, String key) {
     synchronized (store.lock) {
-      LinkedHashMap<String, String> m = schema.get(section);
-      return (m != null) ? m.get(key) : null;
+      LinkedHashMap<String, String[]> m = schema.get(section);
+      if (m == null)
+        return null;
+      String vs[] = m.get(key);
+      if (vs == null)
+        return null;
+      return vs;
     }
   }
 
@@ -352,10 +380,10 @@ public class SettingsStore {
     sb.append("\">\n\n");
 
     // Known sections in registration order
-    for (Map.Entry<String, LinkedHashMap<String, String>> sectionEntry : schema.entrySet()) {
+    for (Map.Entry<String, LinkedHashMap<String, String[]>> sectionEntry : schema.entrySet()) {
       String section = sectionEntry.getKey();
       sb.append("  <").append(section).append(">\n");
-      for (Map.Entry<String, String> keyEntry : sectionEntry.getValue().entrySet()) {
+      for (Map.Entry<String, String[]> keyEntry : sectionEntry.getValue().entrySet()) {
         String key = keyEntry.getKey();
         String userVal = getUserValue(section, key);
         sb.append("    <setting key=\"").append(store.xmlEscapeAttr(key)).append("\"");
@@ -368,6 +396,13 @@ public class SettingsStore {
           if (shown.isEmpty() || shown.contains(" "))
             shown = "\"" + shown.replace("\"", "\\\"") + "\""; // not precise escaping, but good enough
           sb.append("  <!-- default: ").append(store.xmlEscapeComment(shown)).append(" -->");
+        }
+        String vs[] = getEnumeratedOptions(section, key);
+        if (vs != null && vs.length > 1) {
+          sb.append("  <!-- options: ").append(store.xmlEscapeComment(vs[0]));
+          for (int i = 1; i < vs.length; i++)
+            sb.append(", " + store.xmlEscapeComment(vs[0]));
+          sb.append(" -->");
         }
         sb.append("\n");
       }

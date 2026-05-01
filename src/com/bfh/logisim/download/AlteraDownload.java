@@ -43,6 +43,7 @@ import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public abstract class AlteraDownload extends FPGADownload {
 
@@ -64,14 +65,15 @@ public abstract class AlteraDownload extends FPGADownload {
   }
  
   static boolean isRemote(Settings settings) {
-    String tool = settings.GetAlteraToolPath();
-    if (tool == null) return false;
+    String tool = AppPreferences.ALTERA_PATH.get();
+    if (tool == null || tool.isEmpty()) return false;
     tool = tool.toLowerCase();
     return tool.startsWith("http://") || tool.startsWith("https://");
   }
 
   static boolean isScript(Settings settings) {
-    String tool = settings.GetAlteraToolPath();
+    String tool = AppPreferences.ALTERA_PATH.get();
+    if (tool == null || tool.isEmpty()) return false;
     File script = new File(tool);
     return script.exists() && !script.isDirectory() && script.canExecute();
   }
@@ -81,8 +83,8 @@ public abstract class AlteraDownload extends FPGADownload {
           + " and related programs are installed, or set to a file"
           + " containing astand-alone executable script, or set to a"
           + " *trusted* URL to invoke for remote synthesis.";
-    String tool = settings.GetAlteraToolPath();
-    if (tool == null) {
+    String tool = AppPreferences.ALTERA_PATH.get();
+    if (tool == null || tool.isEmpty()) {
       err.AddFatalError("Altera Quartus toolchain path not configured. " + helpmsg);
       return false;
     }

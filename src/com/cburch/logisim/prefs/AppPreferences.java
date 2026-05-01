@@ -289,4 +289,12 @@ public class AppPreferences {
   public static final PrefMonitor<String>
     GOWIN_PROGRAMMER_PATH = new PrefMonitor<>("gowin", "programmer", "");
 
+  public static final PrefMonitor<String>
+    ALTERA_PATH = new PrefMonitor<>("altera", "path", "");
+  public static final PrefMonitor<Boolean>
+    ALTERA_64BIT = new PrefMonitor<>("altera", "64bit", Boolean.TRUE);
+  public static final PrefMonitor<String>
+    ALTERA_FORMAT = new PrefMonitor<>("altera", "format",
+          new String[] { "svf", "rbf"},
+          "svf");
 }

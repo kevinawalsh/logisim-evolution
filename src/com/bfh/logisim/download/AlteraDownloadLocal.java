@@ -34,6 +34,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import com.bfh.logisim.gui.Commander;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public class AlteraDownloadLocal extends AlteraDownload {
 
@@ -41,8 +42,8 @@ public class AlteraDownloadLocal extends AlteraDownload {
 
   private ArrayList<String> cmd(String prog, String ...args) {
     ArrayList<String> command = new ArrayList<>();
-    command.add(settings.GetAlteraToolPath() + File.separator + prog);
-    if (settings.GetAltera64Bit())
+    command.add(AppPreferences.ALTERA_PATH.get() + File.separator + prog);
+    if (AppPreferences.ALTERA_64BIT.get())
       command.add("--64bit");
     for (String arg: args)
       command.add(arg);

@@ -70,10 +70,10 @@ public class Settings {
   // private String  workspacePath = "";
   private String  hdlType       = VHDL;
   private String  selectedBoard = "";
-  private boolean useRBF        = false;
+  // private boolean useRBF        = false;
   // private String  xilinxPath    = "";
-  private String  alteraPath    = "";
-  private boolean altera64bit   = true;
+  // private String  alteraPath    = "";
+  // private boolean altera64bit   = true;
   // private String  gowinShPath   = "";
   // private String  gowinProgPath = "";
   // private String  latticePath   = "";
@@ -147,7 +147,7 @@ public class Settings {
   // Tool-path getters / setters / validators
   // =========================================================================
 
-  public String GetAlteraToolPath()  { return alteraPath; }
+  // public String GetAlteraToolPath()  { return alteraPath; }
   // public String GetXilinxToolPath()  { return xilinxPath; }
   // public String GetGowinShPath()     { return gowinShPath; }
   // public String GetGowinProgPath()   { return gowinProgPath; }
@@ -155,21 +155,21 @@ public class Settings {
   // public String GetApioToolPath()    { return apioPath; }
   // public String GetOpenFPGALoaderPath() { return openFpgaPath; }
 
-  public boolean SetAlteraToolPath(String path) {
-    path = normalizePath(path);
-    if (!validAlteraToolPath(path)) return false;
-    alteraPath = nvl(path);
-    markDirty(); return true;
-  }
+  // public boolean SetAlteraToolPath(String path) {
+  //   path = normalizePath(path);
+  //   if (!validAlteraToolPath(path)) return false;
+  //   alteraPath = nvl(path);
+  //   markDirty(); return true;
+  // }
 
-  public boolean validAlteraToolPath(String path) {
-    path = normalizePath(path);
-    return path == null
-        || path.toLowerCase().startsWith("http://")
-        || path.toLowerCase().startsWith("https://")
-        || allToolsPresent(path, FPGADownload.ALTERA_PROGRAMS)
-        || isExecutableScript(path);
-  }
+  // public boolean validAlteraToolPath(String path) {
+  //   path = normalizePath(path);
+  //   return path == null
+  //       || path.toLowerCase().startsWith("http://")
+  //       || path.toLowerCase().startsWith("https://")
+  //       || allToolsPresent(path, FPGADownload.ALTERA_PROGRAMS)
+  //       || isExecutableScript(path);
+  // }
 
   // public boolean SetXilinxToolPath(String path) {
   //   path = normalizePath(path);
@@ -245,11 +245,11 @@ public class Settings {
   // Other workspace settings
   // =========================================================================
 
-  public boolean GetUseRBF()          { return useRBF; }
-  public void    SetUseRBF(boolean v) { useRBF = v; markDirty(); }
+  // public boolean GetUseRBF()          { return useRBF; }
+  // public void    SetUseRBF(boolean v) { useRBF = v; markDirty(); }
 
-  public boolean GetAltera64Bit()          { return altera64bit; }
-  public void    SetAltera64Bit(boolean v) { altera64bit = v; markDirty(); }
+  // public boolean GetAltera64Bit()          { return altera64bit; }
+  // public void    SetAltera64Bit(boolean v) { altera64bit = v; markDirty(); }
 
   public String GetHDLType() { return hdlType; }
   public void SetHDLType(String lang) {
@@ -434,10 +434,10 @@ public class Settings {
           else hdlType = VHDL;
           break;
         case "selectedBoard":     selectedBoard = val; break;
-        case "useRawBinaryFormat": useRBF = "true".equalsIgnoreCase(val); break;
+        // case "useRawBinaryFormat": useRBF = "true".equalsIgnoreCase(val); break;
         // case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
+        // case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+        // case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
         // case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
         // case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
@@ -491,10 +491,10 @@ public class Settings {
     // appendSetting(sb, "workspacePath",      workspacePath);
     appendSetting(sb, "hdlType",            hdlType);
     appendSetting(sb, "selectedBoard",      selectedBoard);
-    appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
+    // appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
     // appendSetting(sb, "xilinxToolsPath",    xilinxPath);
-    appendSetting(sb, "alteraToolsPath",    alteraPath);
-    appendSetting(sb, "altera64bit",        "" + altera64bit);
+    // appendSetting(sb, "alteraToolsPath",    alteraPath);
+    // appendSetting(sb, "altera64bit",        "" + altera64bit);
     // appendSetting(sb, "gowinShPath",        gowinShPath);
     // appendSetting(sb, "gowinProgPath",      gowinProgPath);
     // appendSetting(sb, "latticeToolsPath",   latticePath);

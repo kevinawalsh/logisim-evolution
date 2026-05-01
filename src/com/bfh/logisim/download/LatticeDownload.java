@@ -62,9 +62,8 @@ public class LatticeDownload extends FPGADownload {
   public LatticeDownload() { super("Lattice"); }
 
   public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
-    String progs = FPGASettingsDialog.pretty(LATTICE_PROGRAMS, "or");
-    String helpmsg = "It should be set to the directory where "
-          + progs + " is installed.";
+    String helpmsg = "It should be set to the directory where pnmainc.exe, "
+      + "diamondc, or projnav.exe is installed.";
     String tool = AppPreferences.LATTICE_PATH.get();
     if (tool == null || tool.isEmpty()) {
       err.AddFatalError("Lattice Diamond/ispLEVER toolchain path not configured. " + helpmsg);

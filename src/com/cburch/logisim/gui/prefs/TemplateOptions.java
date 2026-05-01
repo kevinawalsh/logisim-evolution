@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JRadioButton;
 

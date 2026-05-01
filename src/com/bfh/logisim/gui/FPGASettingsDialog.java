@@ -60,8 +60,8 @@ public class FPGASettingsDialog implements ActionListener {
 
 	private JDialog panel;
 	private Settings settings;
-	private JTextField alteraPath /*, xilinxPath,*/ /*latticePath,*/ /*apioPath,*/ /*openFPGAloaderPath,*/ /*gowinShPath, gowinProgPath */ /*, workPath*/;
-	private JRadioButton altera32Choice, altera64Choice, svfChoice, rbfChoice;
+	// private JTextField alteraPath /*, xilinxPath,*/ /*latticePath,*/ /*apioPath,*/ /*openFPGAloaderPath,*/ /*gowinShPath, gowinProgPath */ /*, workPath*/;
+	// private JRadioButton /*altera32Choice, altera64Choice,*/ svfChoice, rbfChoice;
 
 	public FPGASettingsDialog(JFrame parentFrame, Settings settings) {
 		this.settings = settings;
@@ -75,8 +75,8 @@ public class FPGASettingsDialog implements ActionListener {
 		panel.setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
 
-		String apath = settings.GetAlteraToolPath();
-		if (apath == null) apath = "";
+		// String apath = settings.GetAlteraToolPath();
+		// if (apath == null) apath = "";
 		// String xpath = settings.GetXilinxToolPath();
 		// if (xpath == null) xpath = "";
 		// String lpath = settings.GetLatticeToolPath();
@@ -95,16 +95,16 @@ public class FPGASettingsDialog implements ActionListener {
 		// if (wpath == null) wpath = "";
 
 		// JLabel globalSection = new JLabel("Global Settings");
-		JLabel alteraSection = new JLabel("Altera Settings");
+		// JLabel alteraSection = new JLabel("Altera Settings");
 		// JLabel xilinxSection = new JLabel("Xilinx Settings");
 		// JLabel latticeSection = new JLabel("Lattice Settings");
 		// JLabel apioSection = new JLabel("Apio Settings");
 		// JLabel gowinSection = new JLabel("Gowin Settings");
 		// JLabel openFPGAloaderSection = new JLabel("openFPGAloader Settings");
-		Font font = alteraSection.getFont();
-		Font boldFont = new Font(font.getFontName(), Font.BOLD, font.getSize());
+		// Font font = alteraSection.getFont();
+		// Font boldFont = new Font(font.getFontName(), Font.BOLD, font.getSize());
 		// globalSection.setFont(boldFont);
-		alteraSection.setFont(boldFont);
+		// alteraSection.setFont(boldFont);
 		// xilinxSection.setFont(boldFont);
 		// latticeSection.setFont(boldFont);
 		// gowinSection.setFont(boldFont);
@@ -119,23 +119,23 @@ public class FPGASettingsDialog implements ActionListener {
 		// workPicker.setActionCommand("workPicker");
 		// workPicker.addActionListener(this);
 
-		JLabel alteraLabel = new JLabel("Altera tools path (trusted URL, script, or install directory):");
-		alteraPath = new JTextField(apath);
-		alteraPath.setPreferredSize(new Dimension(450, 10));
-		alteraPath.setToolTipText("A *trusted* URL, a custom script, or install directory of "+FPGADownload.ALTERA_PROGRAMS[0]+".");
-		JButton alteraPicker = new JButton("Choose");
-		alteraPicker.setActionCommand("alteraPicker");
-		alteraPicker.addActionListener(this);
+		// JLabel alteraLabel = new JLabel("Altera tools path (trusted URL, script, or install directory):");
+		// alteraPath = new JTextField(apath);
+		// alteraPath.setPreferredSize(new Dimension(450, 10));
+		// alteraPath.setToolTipText("A *trusted* URL, a custom script, or install directory of "+FPGADownload.ALTERA_PROGRAMS[0]+".");
+		// JButton alteraPicker = new JButton("Choose");
+		// alteraPicker.setActionCommand("alteraPicker");
+		// alteraPicker.addActionListener(this);
 
-		altera32Choice = new JRadioButton("32-bit (faster, less memory, small projects)");
-		altera64Choice = new JRadioButton("64-bit (slower, more memory, large projects)");
-		ButtonGroup group = new ButtonGroup();
-		group.add(altera32Choice);
-		group.add(altera64Choice);
-		if (settings.GetAltera64Bit())
-			altera64Choice.setSelected(true);
-		else
-			altera32Choice.setSelected(true);
+		// altera32Choice = new JRadioButton("32-bit (faster, less memory, small projects)");
+		// altera64Choice = new JRadioButton("64-bit (slower, more memory, large projects)");
+		// ButtonGroup group = new ButtonGroup();
+		// group.add(altera32Choice);
+		// group.add(altera64Choice);
+		// if (settings.GetAltera64Bit())
+		// 	altera64Choice.setSelected(true);
+		// else
+		// 	altera32Choice.setSelected(true);
 
 		// JLabel xilinxLabel = new JLabel("Xilinx tools path (script or install directory):");
 		// xilinxPath = new JTextField(xpath);
@@ -182,15 +182,15 @@ public class FPGASettingsDialog implements ActionListener {
 		// openFPGAloaderPicker.setActionCommand("openFPGAloaderPicker");
 		// openFPGAloaderPicker.addActionListener(this);
 
-		svfChoice = new JRadioButton("svf (Serial Vector Format)");
-		rbfChoice = new JRadioButton("rbf (Raw Binary File)");
-		ButtonGroup group2 = new ButtonGroup();
-		group2.add(svfChoice);
-		group2.add(rbfChoice);
-		if (settings.GetUseRBF())
-			rbfChoice.setSelected(true);
-		else
-			svfChoice.setSelected(true);
+		// svfChoice = new JRadioButton("svf (Serial Vector Format)");
+		// rbfChoice = new JRadioButton("rbf (Raw Binary File)");
+		// ButtonGroup group2 = new ButtonGroup();
+		// group2.add(svfChoice);
+		// group2.add(rbfChoice);
+		// if (settings.GetUseRBF())
+		// 	rbfChoice.setSelected(true);
+		// else
+		// 	svfChoice.setSelected(true);
 
 		JButton ok = new JButton("OK");
 		ok.setActionCommand("OK");
@@ -216,23 +216,23 @@ public class FPGASettingsDialog implements ActionListener {
 		// c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 5, 0, 0);
 		// panel.add(workPicker, c);
 
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(10, 10, 5, 0);
-		panel.add(alteraSection, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(10, 10, 5, 0);
+		// panel.add(alteraSection, c);
 
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 20, 0, 0);
-		panel.add(alteraLabel, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 20, 0, 0);
-		panel.add(alteraPath, c);
-		c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 5, 0, 0);
-		panel.add(alteraPicker, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 20, 0, 0);
-		panel.add(altera32Choice, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 20, 0, 0);
-		panel.add(altera64Choice, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 20, 0, 0);
-		panel.add(svfChoice, c);
-		c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 20, 0, 0);
-		panel.add(rbfChoice, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 20, 0, 0);
+		// panel.add(alteraLabel, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 20, 0, 0);
+		// panel.add(alteraPath, c);
+		// c.gridx = 1; c.gridy = y; c.gridwidth = 1; c.fill = GridBagConstraints.NONE; c.insets = new Insets(2, 5, 0, 0);
+		// panel.add(alteraPicker, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 20, 0, 0);
+		// panel.add(altera32Choice, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 20, 0, 0);
+		// panel.add(altera64Choice, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(5, 20, 0, 0);
+		// panel.add(svfChoice, c);
+		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(2, 20, 0, 0);
+		// panel.add(rbfChoice, c);
 
 		// c.gridx = 0; c.gridy = ++y; c.gridwidth = 2; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(10, 10, 5, 0);
 		// panel.add(xilinxSection, c);
@@ -312,8 +312,9 @@ public class FPGASettingsDialog implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		/* if (e.getActionCommand().equals("workPicker")) {
 			pick(null, workPath.getText(), false);
-		} else */ if (e.getActionCommand().equals("alteraPicker")) {
-			pick("Altera", alteraPath.getText(), true);
+		} else */ 
+    // if (e.getActionCommand().equals("alteraPicker")) {
+		// 	pick("Altera", alteraPath.getText(), true);
 		// } else if (e.getActionCommand().equals("xilinxPicker")) {
 		//	pick("Xilinx", xilinxPath.getText(), false);
 		// } else if (e.getActionCommand().equals("latticePicker")) {
@@ -326,7 +327,7 @@ public class FPGASettingsDialog implements ActionListener {
 		// 	pick("Gowin", gowinShPath.getText(), false);
 		// } else if (e.getActionCommand().equals("gowinProgPicker")) {
 		// 	pick("Gowin Programmer", gowinProgPath.getText(), false);
-		} else if (e.getActionCommand().equals("Cancel")) {
+		/*} else */ if (e.getActionCommand().equals("Cancel")) {
 			panel.setVisible(false);
 		} else if (e.getActionCommand().equals("OK")) {
 			panel.setVisible(false);
@@ -334,24 +335,24 @@ public class FPGASettingsDialog implements ActionListener {
 		}
 	}
 
-	public static String pretty(String[] names, String conjunction) {
-		String s = names[0];
-		for (int i = 1; i < names.length; i++) {
-			s += (i == names.length - 1 ? " "+conjunction+" " : ", "); 
-			s += names[i];
-		}
-		return s;
-	}
+	// public static String pretty(String[] names, String conjunction) {
+	// 	String s = names[0];
+	// 	for (int i = 1; i < names.length; i++) {
+	// 		s += (i == names.length - 1 ? " "+conjunction+" " : ", "); 
+	// 		s += names[i];
+	// 	}
+	// 	return s;
+	// }
 
 	private void save() {
-		String apath = alteraPath.getText();
-		if (!settings.SetAlteraToolPath(apath)) {
-			String names = pretty(FPGADownload.ALTERA_PROGRAMS, "and");
-			JOptionPane.showMessageDialog(null,
-					"Error setting Altera tool path.\n" +
-					"Please pick a *trusted* URL, or a directory containing " + names + ", or select a stand-alone synthesis script.");
-		}
-		settings.SetAltera64Bit(altera64Choice.isSelected());
+		// String apath = alteraPath.getText();
+		// if (!settings.SetAlteraToolPath(apath)) {
+		// 	String names = pretty(FPGADownload.ALTERA_PROGRAMS, "and");
+		// 	JOptionPane.showMessageDialog(null,
+		// 			"Error setting Altera tool path.\n" +
+		// 			"Please pick a *trusted* URL, or a directory containing " + names + ", or select a stand-alone synthesis script.");
+		// }
+		// settings.SetAltera64Bit(altera64Choice.isSelected());
 		// String xpath = xilinxPath.getText();
 		// if (!settings.SetXilinxToolPath(xpath)) {
 		// 	String names = pretty(FPGADownload.XILINX_PROGRAMS, "and");
@@ -391,7 +392,7 @@ public class FPGASettingsDialog implements ActionListener {
 		// 			"Invalid setting for openFPGAloader path.\n" +
 		// 			"Please select eecutable or a directory containing openFPGAloader.");
 		// }
-		settings.SetUseRBF(rbfChoice.isSelected());
+		// settings.SetUseRBF(rbfChoice.isSelected());
 		// settings.SetStaticWorkspacePath(workPath.getText());
 		settings.UpdateSettingsFile();
 		settings.notifyListeners();
@@ -415,14 +416,14 @@ public class FPGASettingsDialog implements ActionListener {
 			return;
 		File file = fc.getSelectedFile();
 		path = file.getPath();
-		if ("Altera".equals(vendor)) {
-			alteraPath.setText(path);
-			if (!settings.validAlteraToolPath(path)) {
-				String names = pretty(FPGADownload.ALTERA_PROGRAMS, "and");
-				JOptionPane.showMessageDialog(null,
-						"Invalid Altera tool path.\n" +
-						"Please pick a *trusted* URL, or a directory containing " + names + ", or select a stand-alone synthesis script.");
-			}
+		// if ("Altera".equals(vendor)) {
+		// 	alteraPath.setText(path);
+		// 	if (!settings.validAlteraToolPath(path)) {
+		// 		String names = pretty(FPGADownload.ALTERA_PROGRAMS, "and");
+		// 		JOptionPane.showMessageDialog(null,
+		// 				"Invalid Altera tool path.\n" +
+		// 				"Please pick a *trusted* URL, or a directory containing " + names + ", or select a stand-alone synthesis script.");
+		// 	}
 		// } else if ("Xilinx".equals(vendor)) {
 		// 	xilinxPath.setText(path);
 		// 	if (!settings.validXilinxToolPath(path)) {
@@ -470,6 +471,6 @@ public class FPGASettingsDialog implements ActionListener {
 		// 	}
 		// } else {
 		// 	workPath.setText(path);
-		}
+		// }
 	}
 }

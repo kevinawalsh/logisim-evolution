@@ -31,26 +31,11 @@
 package com.bfh.logisim.download;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.net.URLConnection;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
-import com.bfh.logisim.fpga.Chipset;
-import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.fpga.PullBehavior;
-import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.Commander;
-import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.cburch.logisim.hdl.Hdl;
+import com.bfh.logisim.gui.Console;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public class AlteraDownloadRemote extends AlteraDownload {
 
@@ -62,7 +47,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
   public boolean readyForDownload() {
     if (remoteJTAG)
       return super.readyForDownload();
-    String fmt = settings.GetUseRBF() ? "rbf" : "svf";
+    String fmt = AppPreferences.ALTERA_FORMAT.get();
     return new File(sandboxPath + TOP_HDL + "." + fmt).exists();
   }
 
@@ -71,7 +56,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
     ArrayList<Stage> stages = new ArrayList<>();
 
     //  example: http://some.server.org/home/quartus/synthesize.php
-    String url = settings.GetAlteraToolPath();
+    String url = AppPreferences.ALTERA_PATH.get();
     //  example: http://some.server.org/
     String urlbase = url.substring(0, url.indexOf('/', 8)+1);
     //  example: http://some.server.org/home/quartus/
@@ -82,7 +67,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
     //  example: /tmp/project_fpga_workspace/foo/bar_bitstream.zip
     String bitstreamzip = projectPath.substring(0, projectPath.length()-1) + "_bitstream.zip";
 
-    String use64bit = settings.GetAltera64Bit() ? "1" : "0";
+    String use64bit = AppPreferences.ALTERA_64BIT.get() ? "1" : "0";
 
     if (!readyForDownload()) {
       stages.add(new RunnableStage(
@@ -103,7 +88,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
           }
 
           // just in case of non-remote JTAG via openFPGAloader
-          String openFPGAloaderFormat = settings.GetUseRBF() ? "rbf" : "svf";
+          String openFPGAloaderFormat = AppPreferences.ALTERA_FORMAT.get();
 
           if (!HTTP.post(console, url, "operation", "synthesize",
                 "use64bit", use64bit,
@@ -213,7 +198,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
       return super.prepForScan(cmdr, console);
 
     // local JTAG via openFPGAloader
-    String fmt = settings.GetUseRBF() ? "rbf" : "svf";
+    String fmt = AppPreferences.ALTERA_FORMAT.get();
     if (new File(sandboxPath + TOP_HDL + "." + fmt).exists()) {
       bitfile = TOP_HDL + "." + fmt;
     }

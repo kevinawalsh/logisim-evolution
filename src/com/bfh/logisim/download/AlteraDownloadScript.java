@@ -32,8 +32,8 @@ package com.bfh.logisim.download;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.Commander;
+import com.cburch.logisim.prefs.AppPreferences;
 
 // If AlteraToolPath is an executable file, rather than a directory or URL, then
 // use that as a single-file script to do the entire synthesis rather than using
@@ -44,8 +44,8 @@ public class AlteraDownloadScript extends AlteraDownload {
 
   private ArrayList<String> script(String ...args) {
     ArrayList<String> command = new ArrayList<>();
-    command.add(settings.GetAlteraToolPath());
-    if (settings.GetAltera64Bit())
+    command.add(AppPreferences.ALTERA_PATH.get());
+    if (AppPreferences.ALTERA_64BIT.get())
       command.add("--64bit");
     for (String arg: args)
       command.add(arg);

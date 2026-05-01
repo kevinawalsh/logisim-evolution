@@ -30,6 +30,10 @@
 
 package com.cburch.logisim.prefs;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.util.WeakList;
@@ -53,7 +57,14 @@ public class PrefMonitor<E> {
     this.opts = opts;
 
     // Register this key so it appears in settings.xml (even when unset)
-    SettingsStore.registerKey(section, name, convertToString(dflt));
+    if (opts == null || opts.length == 0) {
+      SettingsStore.registerKey(section, name, convertToString(dflt), null);
+    } else {
+      String options[] = new String[opts.length];
+      for (int i = 0; i < opts.length; i++)
+        options[i] = convertToString(opts[i]);
+      SettingsStore.registerKey(section, name, convertToString(dflt), options);
+    }
 
     // React to changes pushed by SettingsStore (e.g. from --config reload or clear())
     SettingsStore.addChangeListener(section, name, () -> {
@@ -107,6 +118,10 @@ public class PrefMonitor<E> {
     SwingUtilities.invokeLater(() ->
         firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, chosen)));
     return true;
+  }
+
+  public List<E> getEnumeratedOptions() {
+    return opts == null ? null : Collections.unmodifiableList(Arrays.asList(opts));
   }
 
   private E ensureWithinRange(E v) {
