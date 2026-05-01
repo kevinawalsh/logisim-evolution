@@ -66,7 +66,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.bfh.logisim.download.FPGADownload;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
-import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
@@ -81,6 +80,7 @@ import com.cburch.logisim.file.LibraryListener;
 import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.menu.MenuSimulate;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.Projects;
@@ -311,7 +311,7 @@ public class Commander extends JFrame
     
     // configure settings button, and listen for settings changes
     settings.addSettingsListener(this);
-    toolSettings.addActionListener(e -> Settings.doSettingsDialog(this));
+    toolSettings.addActionListener(e -> SettingsFrame.showFPGASettings());
 
     // configure console panels
     messages.badge.commander = this;

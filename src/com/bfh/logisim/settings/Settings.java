@@ -45,7 +45,7 @@ import org.w3c.dom.NodeList;
 import com.bfh.logisim.download.FPGADownload;
 
 // import com.bfh.logisim.download.LatticeDownload;
-import com.bfh.logisim.gui.FPGASettingsDialog;
+// import com.bfh.logisim.gui.FPGASettingsDialog;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.prefs.SettingsStore;
 
@@ -131,17 +131,17 @@ public class Settings {
     for (Listener l : listeners) l.fpgaSettingsChanged();
   }
 
-  private static FPGASettingsDialog dialog;
-  public static void doSettingsDialog(JFrame parentFrame) {
-    if (dialog != null) {
-      dialog.toFront();
-    } else {
-      Settings s = getSettings();
-      dialog = new FPGASettingsDialog(parentFrame, s);
-      dialog.doDialog();
-      dialog = null;
-    }
-  }
+  // private static FPGASettingsDialog dialog;
+  // public static void doSettingsDialog(JFrame parentFrame) {
+  //   if (dialog != null) {
+  //     dialog.toFront();
+  //   } else {
+  //     Settings s = getSettings();
+  //     dialog = new FPGASettingsDialog(parentFrame, s);
+  //     dialog.doDialog();
+  //     dialog = null;
+  //   }
+  // }
 
   // =========================================================================
   // Tool-path getters / setters / validators

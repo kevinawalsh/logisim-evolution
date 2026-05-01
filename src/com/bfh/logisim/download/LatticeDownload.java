@@ -51,7 +51,6 @@ import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.gui.FPGASettingsDialog;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;

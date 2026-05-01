@@ -41,9 +41,9 @@ import javax.swing.KeyStroke;
 
 import com.bfh.logisim.fpga.BoardEditor;
 import com.bfh.logisim.gui.Commander;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
+import com.cburch.logisim.gui.prefs.SettingsFrame;
 import com.cburch.logisim.proj.Project;
 
 public class MenuFPGA extends JMenu implements ActionListener {
@@ -85,7 +85,7 @@ public class MenuFPGA extends JMenu implements ActionListener {
       else
         commander.reactivate();
 		} else if (src == settingsMenu) {
-      Settings.doSettingsDialog(parent);
+      SettingsFrame.showFPGASettings();
     }
 	}
 

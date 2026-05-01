@@ -340,11 +340,14 @@ class SettingsMigrator {
       SettingsStore.put("fpga", "workspace", workPath);
       appendSetting(sb, "hdlType",           hdlType);
       appendSetting(sb, "selectedBoard",     selectedBoard);
-      appendSetting(sb, "useRawBinaryFormat", rawBinary);
+      // appendSetting(sb, "useRawBinaryFormat", rawBinary);
+      SettingsStore.put("altera", "format", rawBinary.equalsIgnoreCase("true") ? "rbf" : "svf");
       // appendSetting(sb, "xilinxToolsPath",   xilinxPath);
       SettingsStore.put("xilinx", "path", xilinxPath);
-      appendSetting(sb, "alteraToolsPath",   alteraPath);
-      appendSetting(sb, "altera64bit",       altera64bit);
+      // appendSetting(sb, "alteraToolsPath",   alteraPath);
+      SettingsStore.put("altera", "path", alteraPath);
+      // appendSetting(sb, "altera64bit",       altera64bit);
+      SettingsStore.put("altera", "64bit", altera64bit);
       // appendSetting(sb, "gowinShPath",       gowinShPath);
       // appendSetting(sb, "gowinProgPath",     gowinProgPath);
       SettingsStore.put("gowin", "shell", gowinShPath);
