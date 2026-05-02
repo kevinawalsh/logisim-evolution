@@ -81,8 +81,8 @@ public class Settings {
   // private String  openFpgaPath  = "";
 
   // Per-board preferences: boardName -> {attrName -> value}
-  private final LinkedHashMap<String, LinkedHashMap<String, String>> boardPrefs =
-      new LinkedHashMap<>();
+  // private final LinkedHashMap<String, LinkedHashMap<String, String>> boardPrefs =
+  //     new LinkedHashMap<>();
 
   // External board file paths (in registration order)
   // private final ArrayList<String> externalBoards = new ArrayList<>();
@@ -90,8 +90,8 @@ public class Settings {
   // Board catalog (built-in + external)
   public final BoardList knownBoards = new BoardList();
 
-  private final ArrayList<Listener> listeners = new ArrayList<>();
-  private boolean dirty = false;
+  // private final ArrayList<Listener> listeners = new ArrayList<>();
+  // private boolean dirty = false;
 
   // =========================================================================
   // Singleton
@@ -106,8 +106,8 @@ public class Settings {
   }
 
   private Settings() {
-    loadFromStore(SettingsStore.getFpgaDefaultsElement(), false);
-    loadFromStore(SettingsStore.getFpgaUserElement(), true);
+    // loadFromStore(SettingsStore.getFpgaDefaultsElement(), false);
+    // loadFromStore(SettingsStore.getFpgaUserElement(), true);
 
     // Validate selectedBoard; fall back to first known board if invalid
     // if (selectedBoard.isEmpty() || !knownBoards.BoardInCollection(selectedBoard)) {
@@ -121,15 +121,15 @@ public class Settings {
   // Public listener / dialog API
   // =========================================================================
 
-  public interface Listener {
-    void fpgaSettingsChanged();
-  }
+  // public interface Listener {
+  //   void fpgaSettingsChanged();
+  // }
 
-  public void addSettingsListener(Listener l)    { listeners.add(l); }
-  public void removeSettingsListener(Listener l) { listeners.remove(l); }
-  public void notifyListeners() {
-    for (Listener l : listeners) l.fpgaSettingsChanged();
-  }
+  // public void addSettingsListener(Listener l)    { listeners.add(l); }
+  // public void removeSettingsListener(Listener l) { listeners.remove(l); }
+  // public void notifyListeners() {
+  //   for (Listener l : listeners) l.fpgaSettingsChanged();
+  // }
 
   // private static FPGASettingsDialog dialog;
   // public static void doSettingsDialog(JFrame parentFrame) {
@@ -280,51 +280,51 @@ public class Settings {
   // Board-specific preferences
   // =========================================================================
 
-  public String GetPreferredToolchain(String board) {
-    String pref = getBoardPref(board, "Toolchain");
-    String tc = FPGADownload.normalizeToolchain(pref);
-    if (pref != null && tc == null && !warnedBadToolchain) {
-      warnedBadToolchain = true;
-      javax.swing.JOptionPane.showMessageDialog(null,
-          "Error: Unrecognized toolchain '" + pref + "' in settings.xml legacy_fpga section");
-    }
-    return tc;
-  }
+  // public String GetPreferredToolchain(String board) {
+  //   String pref = getBoardPref(board, "Toolchain");
+  //   String tc = FPGADownload.normalizeToolchain(pref);
+  //   if (pref != null && tc == null && !warnedBadToolchain) {
+  //     warnedBadToolchain = true;
+  //     javax.swing.JOptionPane.showMessageDialog(null,
+  //         "Error: Unrecognized toolchain '" + pref + "' in settings.xml legacy_fpga section");
+  //   }
+  //   return tc;
+  // }
 
-  public String GetPreferredHDLType(String board) {
-    String pref = getBoardPref(board, "HDLTypeToGenerate");
-    if (VHDL.equalsIgnoreCase(pref))    return VHDL;
-    if (VERILOG.equalsIgnoreCase(pref)) return VERILOG;
-    if (pref != null && !warnedBadHDLType) {
-      warnedBadHDLType = true;
-      javax.swing.JOptionPane.showMessageDialog(null,
-          "Error: Unrecognized HDL type '" + pref + "' in settings.xml legacy_fpga section");
-    }
-    return null;
-  }
+  // public String GetPreferredHDLType(String board) {
+  //   String pref = getBoardPref(board, "HDLTypeToGenerate");
+  //   if (VHDL.equalsIgnoreCase(pref))    return VHDL;
+  //   if (VERILOG.equalsIgnoreCase(pref)) return VERILOG;
+  //   if (pref != null && !warnedBadHDLType) {
+  //     warnedBadHDLType = true;
+  //     javax.swing.JOptionPane.showMessageDialog(null,
+  //         "Error: Unrecognized HDL type '" + pref + "' in settings.xml legacy_fpga section");
+  //   }
+  //   return null;
+  // }
 
-  public void SetPreferredToolchain(String board, String toolchain) {
-    setBoardPref(board, "Toolchain", toolchain);
-  }
+  // public void SetPreferredToolchain(String board, String toolchain) {
+  //   setBoardPref(board, "Toolchain", toolchain);
+  // }
 
-  public void SetPreferredHDLType(String board, String hdlType) {
-    setBoardPref(board, "HDLTypeToGenerate", hdlType);
-  }
+  // public void SetPreferredHDLType(String board, String hdlType) {
+  //   setBoardPref(board, "HDLTypeToGenerate", hdlType);
+  // }
 
-  private String getBoardPref(String board, String attr) {
-    LinkedHashMap<String, String> m = boardPrefs.get(board);
-    if (m == null) return null;
-    String v = m.get(attr);
-    return (v == null || v.trim().isEmpty()) ? null : v;
-  }
+  // private String getBoardPref(String board, String attr) {
+  //   LinkedHashMap<String, String> m = boardPrefs.get(board);
+  //   if (m == null) return null;
+  //   String v = m.get(attr);
+  //   return (v == null || v.trim().isEmpty()) ? null : v;
+  // }
 
-  private void setBoardPref(String board, String attr, String val) {
-    boardPrefs.computeIfAbsent(board, k -> new LinkedHashMap<>()).put(attr, val);
-    markDirty();
-  }
+  // private void setBoardPref(String board, String attr, String val) {
+  //   boardPrefs.computeIfAbsent(board, k -> new LinkedHashMap<>()).put(attr, val);
+  //   markDirty();
+  // }
 
-  private static boolean warnedBadToolchain = false;
-  private static boolean warnedBadHDLType   = false;
+  // private static boolean warnedBadToolchain = false;
+  // private static boolean warnedBadHDLType   = false;
 
   // =========================================================================
   // Workspace path
@@ -370,21 +370,21 @@ public class Settings {
   // Persistence
   // =========================================================================
 
-  /** Flush any pending changes to SettingsStore (and from there to disk). */
-  public boolean UpdateSettingsFile() {
-    return updateSettingsFile();
-  }
+  // /** Flush any pending changes to SettingsStore (and from there to disk). */
+  // public boolean UpdateSettingsFile() {
+  //   return updateSettingsFile();
+  // }
 
-  /** Same as {@link #UpdateSettingsFile()} — lower-case form for internal callers. */
-  public boolean updateSettingsFile() {
-    if (!dirty) return true;
-    SettingsStore.setFpgaXml(buildFpgaXml());
-    SettingsStore.save();
-    dirty = false;
-    return true;
-  }
+  // /** Same as {@link #UpdateSettingsFile()} — lower-case form for internal callers. */
+  // public boolean updateSettingsFile() {
+  //   if (!dirty) return true;
+  //   SettingsStore.setFpgaXml(buildFpgaXml());
+  //   SettingsStore.save();
+  //   dirty = false;
+  //   return true;
+  // }
 
-  private void markDirty() { dirty = true; }
+  // private void markDirty() { dirty = true; }
 
   // =========================================================================
   // Load from SettingsStore DOM elements
@@ -395,28 +395,28 @@ public class Settings {
    * When {@code isUser} is true, user-specific structured data (board prefs, external
    * boards) is also loaded.
    */
-  private void loadFromStore(Element fpgaEl, boolean isUser) {
-    if (fpgaEl == null) return;
+  // private void loadFromStore(Element fpgaEl, boolean isUser) {
+  //   if (fpgaEl == null) return;
 
-    NodeList children = fpgaEl.getChildNodes();
-    for (int i = 0; i < children.getLength(); i++) {
-      if (!(children.item(i) instanceof Element)) continue;
-      Element el = (Element) children.item(i);
+  //   NodeList children = fpgaEl.getChildNodes();
+  //   for (int i = 0; i < children.getLength(); i++) {
+  //     if (!(children.item(i) instanceof Element)) continue;
+  //     Element el = (Element) children.item(i);
 
-      switch (el.getTagName()) {
-        // case "workspace":
-        //   readWorkspace(el);
-        //   break;
-        case "board-preferences":
-          if (isUser) readBoardPrefs(el);
-          break;
-        // case "external-boards":
-        //   if (isUser) readExternalBoards(el);
-        //   break;
-        // unknown sub-elements silently ignored
-      }
-    }
-  }
+  //     switch (el.getTagName()) {
+  //       // case "workspace":
+  //       //   readWorkspace(el);
+  //       //   break;
+  //       case "board-preferences":
+  //         if (isUser) readBoardPrefs(el);
+  //         break;
+  //       // case "external-boards":
+  //       //   if (isUser) readExternalBoards(el);
+  //       //   break;
+  //       // unknown sub-elements silently ignored
+  //     }
+  //   }
+  // }
 
   // private void readWorkspace(Element ws) {
   //   NodeList settings = ws.getChildNodes();
@@ -448,23 +448,23 @@ public class Settings {
   //   }
   // }
 
-  private void readBoardPrefs(Element bpEl) {
-    NodeList nodes = bpEl.getChildNodes();
-    for (int i = 0; i < nodes.getLength(); i++) {
-      if (!(nodes.item(i) instanceof Element)) continue;
-      Element board = (Element) nodes.item(i);
-      if (!"board".equals(board.getTagName())) continue;
-      String name = board.getAttribute("name");
-      if (name == null || name.isEmpty()) continue;
-      NamedNodeMap attrs = board.getAttributes();
-      for (int j = 0; j < attrs.getLength(); j++) {
-        Node a = attrs.item(j);
-        if (!"name".equals(a.getNodeName()))
-          boardPrefs.computeIfAbsent(name, k -> new LinkedHashMap<>())
-                    .put(a.getNodeName(), a.getNodeValue());
-      }
-    }
-  }
+  // private void readBoardPrefs(Element bpEl) {
+  //   NodeList nodes = bpEl.getChildNodes();
+  //   for (int i = 0; i < nodes.getLength(); i++) {
+  //     if (!(nodes.item(i) instanceof Element)) continue;
+  //     Element board = (Element) nodes.item(i);
+  //     if (!"board".equals(board.getTagName())) continue;
+  //     String name = board.getAttribute("name");
+  //     if (name == null || name.isEmpty()) continue;
+  //     NamedNodeMap attrs = board.getAttributes();
+  //     for (int j = 0; j < attrs.getLength(); j++) {
+  //       Node a = attrs.item(j);
+  //       if (!"name".equals(a.getNodeName()))
+  //         boardPrefs.computeIfAbsent(name, k -> new LinkedHashMap<>())
+  //                   .put(a.getNodeName(), a.getNodeValue());
+  //     }
+  //   }
+  // }
 
   // private void readExternalBoards(Element ebEl) {
   //   NodeList nodes = ebEl.getChildNodes();
@@ -484,85 +484,85 @@ public class Settings {
   // Build XML for SettingsStore
   // =========================================================================
 
-  private String buildFpgaXml() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("  <legacy_fpga>\n");
-    // sb.append("    <workspace>\n");
-    // appendSetting(sb, "workspacePath",      workspacePath);
-    // appendSetting(sb, "hdlType",            hdlType);
-    // appendSetting(sb, "selectedBoard",      selectedBoard);
-    // appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
-    // appendSetting(sb, "xilinxToolsPath",    xilinxPath);
-    // appendSetting(sb, "alteraToolsPath",    alteraPath);
-    // appendSetting(sb, "altera64bit",        "" + altera64bit);
-    // appendSetting(sb, "gowinShPath",        gowinShPath);
-    // appendSetting(sb, "gowinProgPath",      gowinProgPath);
-    // appendSetting(sb, "latticeToolsPath",   latticePath);
-    // appendSetting(sb, "apioToolsPath",      apioPath);
-    // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
-    // sb.append("    </workspace>\n");
+  // private String buildFpgaXml() {
+  //   StringBuilder sb = new StringBuilder();
+  //   sb.append("  <legacy_fpga>\n");
+  //   // sb.append("    <workspace>\n");
+  //   // appendSetting(sb, "workspacePath",      workspacePath);
+  //   // appendSetting(sb, "hdlType",            hdlType);
+  //   // appendSetting(sb, "selectedBoard",      selectedBoard);
+  //   // appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
+  //   // appendSetting(sb, "xilinxToolsPath",    xilinxPath);
+  //   // appendSetting(sb, "alteraToolsPath",    alteraPath);
+  //   // appendSetting(sb, "altera64bit",        "" + altera64bit);
+  //   // appendSetting(sb, "gowinShPath",        gowinShPath);
+  //   // appendSetting(sb, "gowinProgPath",      gowinProgPath);
+  //   // appendSetting(sb, "latticeToolsPath",   latticePath);
+  //   // appendSetting(sb, "apioToolsPath",      apioPath);
+  //   // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
+  //   // sb.append("    </workspace>\n");
 
-    if (!boardPrefs.isEmpty()) {
-      sb.append("    <board-preferences>\n");
-      for (java.util.Map.Entry<String, LinkedHashMap<String, String>> e : boardPrefs.entrySet()) {
-        sb.append("      <board name=\"").append(xmlAttr(e.getKey())).append("\"");
-        for (java.util.Map.Entry<String, String> a : e.getValue().entrySet())
-          sb.append(" ").append(a.getKey()).append("=\"").append(xmlAttr(a.getValue())).append("\"");
-        sb.append("/>\n");
-      }
-      sb.append("    </board-preferences>\n");
-    }
+  //   // if (!boardPrefs.isEmpty()) {
+  //   //   sb.append("    <board-preferences>\n");
+  //   //   for (java.util.Map.Entry<String, LinkedHashMap<String, String>> e : boardPrefs.entrySet()) {
+  //   //     sb.append("      <board name=\"").append(xmlAttr(e.getKey())).append("\"");
+  //   //     for (java.util.Map.Entry<String, String> a : e.getValue().entrySet())
+  //   //       sb.append(" ").append(a.getKey()).append("=\"").append(xmlAttr(a.getValue())).append("\"");
+  //   //     sb.append("/>\n");
+  //   //   }
+  //   //   sb.append("    </board-preferences>\n");
+  //   // }
 
-    // if (!externalBoards.isEmpty()) {
-    //   sb.append("    <external-boards>\n");
-    //   for (String path : externalBoards)
-    //     sb.append("      <board path=\"").append(xmlAttr(path)).append("\"/>\n");
-    //   sb.append("    </external-boards>\n");
-    // }
+  //   // if (!externalBoards.isEmpty()) {
+  //   //   sb.append("    <external-boards>\n");
+  //   //   for (String path : externalBoards)
+  //   //     sb.append("      <board path=\"").append(xmlAttr(path)).append("\"/>\n");
+  //   //   sb.append("    </external-boards>\n");
+  //   // }
 
-    sb.append("  </legacy_fpga>");
-    return sb.toString();
-  }
+  //   sb.append("  </legacy_fpga>");
+  //   return sb.toString();
+  // }
 
-  private static void appendSetting(StringBuilder sb, String key, String value) {
-    sb.append("      <setting key=\"").append(key).append("\"");
-    if (value != null && !value.isEmpty())
-      sb.append(" value=\"").append(xmlAttr(value)).append("\"");
-    sb.append("/>\n");
-  }
+  // private static void appendSetting(StringBuilder sb, String key, String value) {
+  //   sb.append("      <setting key=\"").append(key).append("\"");
+  //   if (value != null && !value.isEmpty())
+  //     sb.append(" value=\"").append(xmlAttr(value)).append("\"");
+  //   sb.append("/>\n");
+  // }
 
-  private static String xmlAttr(String s) {
-    if (s == null) return "";
-    return s.replace("&", "&amp;")
-            .replace("\"", "&quot;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;");
-  }
+  // private static String xmlAttr(String s) {
+  //   if (s == null) return "";
+  //   return s.replace("&", "&amp;")
+  //           .replace("\"", "&quot;")
+  //           .replace("<", "&lt;")
+  //           .replace(">", "&gt;");
+  // }
 
   // =========================================================================
   // Path utilities
   // =========================================================================
 
-  private static String normalizePath(String path) {
-    if (path == null || path.isEmpty()) return null;
-    if (path.length() > 1 && path.endsWith(File.separator))
-      path = path.substring(0, path.length() - 1);
-    return path;
-  }
+  // private static String normalizePath(String path) {
+  //   if (path == null || path.isEmpty()) return null;
+  //   if (path.length() > 1 && path.endsWith(File.separator))
+  //     path = path.substring(0, path.length() - 1);
+  //   return path;
+  // }
 
-  /** Null-safe: returns empty string for null input. */
-  private static String nvl(String s) { return s != null ? s : ""; }
+  // /** Null-safe: returns empty string for null input. */
+  // private static String nvl(String s) { return s != null ? s : ""; }
 
-  private static boolean allToolsPresent(String path, String[] progNames) {
-    for (String prog : progNames) {
-      if (!new File(path + File.separator + prog).exists())
-        return false;
-    }
-    return true;
-  }
+  // private static boolean allToolsPresent(String path, String[] progNames) {
+  //   for (String prog : progNames) {
+  //     if (!new File(path + File.separator + prog).exists())
+  //       return false;
+  //   }
+  //   return true;
+  // }
 
-  private static boolean isExecutableScript(String path) {
-    File f = new File(path);
-    return f.exists() && !f.isDirectory() && f.canExecute();
-  }
+  // private static boolean isExecutableScript(String path) {
+  //   File f = new File(path);
+  //   return f.exists() && !f.isDirectory() && f.canExecute();
+  // }
 }

@@ -88,7 +88,7 @@ import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.Projects;
 
 public class Commander extends JFrame
-  implements LibraryListener, CircuitListener, Settings.Listener {
+  implements LibraryListener, CircuitListener, AppPreferences.FPGASettingsListener {
 
   private static final String SLASH = File.separator;
   private static final String SANDBOX_DIR = "sandbox" + SLASH;
@@ -313,7 +313,7 @@ public class Commander extends JFrame
     clockOptions.add(clockDivCount, c);
     
     // configure settings button, and listen for settings changes
-    settings.addSettingsListener(this);
+    AppPreferences.addFPGAChangeWeakListener(null, this);
     toolSettings.addActionListener(e -> SettingsFrame.showFPGASettings());
 
     // configure console panels
@@ -1177,10 +1177,8 @@ public class Commander extends JFrame
       return;
     toolchain = t;
     if (board != null) {
-      if (!toolchain.equals(FPGADownload.getToolchain(board, settings))) {
-        settings.SetPreferredToolchain(board.name, toolchain);
-        settings.UpdateSettingsFile();
-      }
+      if (!toolchain.equals(FPGADownload.getToolchain(board, settings)))
+        AppPreferences.FPGA_BOARDPREFS.setBoardPreferredToolchain(board.name, toolchain);
       String v = FPGADownload.getLanguage(board, settings, toolchain);
       language.setSelectedItem(v);
       configureActions();
@@ -1193,16 +1191,8 @@ public class Commander extends JFrame
         return;
     lang = v;
     AppPreferences.FPGA_SELECTED_HDL.set(lang);
-    // if (!lang.equals(settings.GetHDLType())) {
-    //   settings.SetHDLType(lang);
-    //   settings.UpdateSettingsFile();
-    // }
-    if (board != null) {
-      if (!lang.equals(FPGADownload.getLanguage(board, settings, toolchain))) {
-        settings.SetPreferredHDLType(board.name, lang);
-        settings.UpdateSettingsFile();
-      }
-    }
+    if (board != null && !lang.equals(FPGADownload.getLanguage(board, settings, toolchain)))
+      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredHdl(board.name, lang);
   }
 
   private PinBindings performPinAssignments(Netlist.Context ctx) {

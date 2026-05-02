@@ -80,7 +80,11 @@ public class PrefMonitor<E> {
   private final WeakList<AppPreferences.Listener<E>> listeners = new WeakList<>();
   public void addPrefChangeWeakListener(Object owner, AppPreferences.Listener<E> l) { listeners.add(owner, l); }
   public void removePrefChangeWeakListener(Object owner, AppPreferences.Listener<E> l) { listeners.remove(owner, l); }
-  private void firePrefChangeEvent(AppPreferences.ChangeEvent<E> evt) { for (AppPreferences.Listener<E> l : listeners) l.prefChanged(evt); }
+  protected void firePrefChangeEvent(AppPreferences.ChangeEvent<E> evt) {
+    SwingUtilities.invokeLater(() -> {
+      for (AppPreferences.Listener<E> l : listeners) l.prefChanged(evt);
+    });
+  }
 
   public E get() {
     return value;
@@ -96,8 +100,7 @@ public class PrefMonitor<E> {
     E oldValue = value;
     SettingsStore.unset(section, name);
     setFromStore();
-    SwingUtilities.invokeLater(() ->
-        firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, value)));
+    firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, value));
   }
 
   protected void setFromStore() { // does not fire
@@ -117,8 +120,7 @@ public class PrefMonitor<E> {
     E oldValue = value;
     value = chosen;
     SettingsStore.put(section, name, value.toString());
-    SwingUtilities.invokeLater(() ->
-        firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, value)));
+    firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, value));
     return oldValue;
   }
 
@@ -169,4 +171,19 @@ public class PrefMonitor<E> {
     return (a == null && b == null)
         || (a != null && b != null && a.equals(b));
   }
+
+  public static class FPGA<E> extends PrefMonitor<E> {
+    public FPGA(String section, String name, E dflt) {
+      super(section, name, null, dflt);
+    }
+    public FPGA(String section, String name, E[] opts, E dflt) {
+      super(section, name, opts, dflt);
+    }
+    @Override
+    protected void firePrefChangeEvent(AppPreferences.ChangeEvent<E> evt) {
+      super.firePrefChangeEvent(evt);
+      AppPreferences.fireFPGAChangeEvent();
+    }
+  }
+
 }

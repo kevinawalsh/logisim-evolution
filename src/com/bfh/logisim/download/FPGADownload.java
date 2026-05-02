@@ -63,7 +63,7 @@ public abstract class FPGADownload {
   }
   public static String getToolchain(Board board, Settings settings) {
     // First priority: user preference for given board
-    String toolchain = settings.GetPreferredToolchain(board.name);
+    String toolchain = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
     // Fall back: select toolchain based on vendor
     if (toolchain == null)
       toolchain = vendorToolchain(board.fpga.Vendor);
@@ -191,7 +191,7 @@ public abstract class FPGADownload {
   }
 
   public static String getLanguage(Board board, Settings settings, String toolchain) {
-    String lang = settings.GetPreferredHDLType(board.name);
+    String lang = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredHdl(board.name);
     if (lang != null)
       return lang;
     if (toolchain == null)

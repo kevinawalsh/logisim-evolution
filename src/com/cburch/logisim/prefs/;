@@ -32,12 +32,11 @@ package com.cburch.logisim.prefs;
 
 import java.io.File;
 
-import javax.swing.SwingUtilities;
-
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.util.LocaleManager;
-import com.cburch.logisim.util.WeakList;
+
+import javax.swing.SwingUtilities;
 
 public class AppPreferences {
 
@@ -247,24 +246,24 @@ public class AppPreferences {
  
   @FunctionalInterface
   public interface FPGASettingsListener { void fpgaSettingsChanged(); }
-  private static final WeakList<FPGASettingsListener> fpgaListeners = new WeakList<>();
+  private static final WeakList<AppPreferences.Listener<FPGASettingsListener>> fpgaListeners = new WeakList<>();
   public static void addFPGAChangeWeakListener(Object owner, FPGASettingsListener l) { fpgaListeners.add(owner, l); }
   public static void removeFPGAChangeWeakListener(Object owner, FPGASettingsListener l) { fpgaListeners.remove(owner, l); }
-  static void fireFPGAChangeEvent() {
+  private static void fireFPGAChangeEvent() {
     SwingUtilities.invokeLater(() -> {
       for (FPGASettingsListener l : fpgaListeners) l.fpgaSettingsChanged();
     });
   }
   
   public static final PrefMonitor<String>
-    FPGA_WORKSPACE_PATH = new PrefMonitor.FPGA<>("fpga", "workspace", "");
+    FPGA_WORKSPACE_PATH = new PrefMonitor<>("fpga", "workspace", "");
 
   public static final PrefMonitor<String>
-    FPGA_SELECTED_HDL = new PrefMonitor.FPGA<>("fpga", "selected-hdl",
+    FPGA_SELECTED_HDL = new PrefMonitor<>("fpga", "selected-hdl",
           new String[] { "Verilog", "VHDL"}, "VHDL");
 
   public static final PrefMonitor<String>
-    FPGA_SELECTED_BOARD = new PrefMonitor.FPGA<>("fpga", "selected-board", "");
+    FPGA_SELECTED_BOARD = new PrefMonitor<>("fpga", "selected-board", "");
 
   public static final FPGABoardlistPref
     FPGA_BOARDLIST = new FPGABoardlistPref("fpga", "external-boards");
@@ -273,28 +272,28 @@ public class AppPreferences {
     FPGA_BOARDPREFS = new FPGABoardPrefs("fpga", "board-preferences");
 
   public static final PrefMonitor<String>
-    APIO_PATH = new PrefMonitor.FPGA<>("apio", "path", "");
+    APIO_PATH = new PrefMonitor<>("apio", "path", "");
 
   public static final PrefMonitor<String>
-    OPENFPGALOADER_PATH = new PrefMonitor.FPGA<>("openFPGALoader", "path", "");
+    OPENFPGALOADER_PATH = new PrefMonitor<>("openFPGALoader", "path", "");
 
   public static final PrefMonitor<String>
-    XILINX_PATH = new PrefMonitor.FPGA<>("xilinx", "path", "");
+    XILINX_PATH = new PrefMonitor<>("xilinx", "path", "");
 
   public static final PrefMonitor<String>
-    LATTICE_PATH = new PrefMonitor.FPGA<>("lattice", "path", "");
+    LATTICE_PATH = new PrefMonitor<>("lattice", "path", "");
 
   public static final PrefMonitor<String>
-    GOWIN_SHELL_PATH = new PrefMonitor.FPGA<>("gowin", "shell", "");
+    GOWIN_SHELL_PATH = new PrefMonitor<>("gowin", "shell", "");
   public static final PrefMonitor<String>
-    GOWIN_PROGRAMMER_PATH = new PrefMonitor.FPGA<>("gowin", "programmer", "");
+    GOWIN_PROGRAMMER_PATH = new PrefMonitor<>("gowin", "programmer", "");
 
   public static final PrefMonitor<String>
-    ALTERA_PATH = new PrefMonitor.FPGA<>("altera", "path", "");
+    ALTERA_PATH = new PrefMonitor<>("altera", "path", "");
   public static final PrefMonitor<Boolean>
-    ALTERA_64BIT = new PrefMonitor.FPGA<>("altera", "64bit", Boolean.TRUE);
+    ALTERA_64BIT = new PrefMonitor<>("altera", "64bit", Boolean.TRUE);
   public static final PrefMonitor<String>
-    ALTERA_FORMAT = new PrefMonitor.FPGA<>("altera", "format",
+    ALTERA_FORMAT = new PrefMonitor<>("altera", "format",
           new String[] { "svf", "rbf"}, "svf");
 
   public static void initialize(File configOverride, File defaultsOverride) {

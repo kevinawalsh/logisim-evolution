@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -307,7 +308,7 @@ class SettingsMigrator {
 
       // Read FPGABoards element
       List<String> externalBoards = new ArrayList<>();
-      List<String[]> boardPrefs = new ArrayList<>(); // [name, toolchain, hdlType]
+      LinkedHashMap<String, LinkedHashMap<String, String>> boardPrefs = new LinkedHashMap<>(); // name -> ["hdl"|"toolchain"] -> value
       NodeList boardsList = root.getElementsByTagName("FPGABoards");
       if (boardsList.getLength() > 0) {
         Element boards = (Element) boardsList.item(0);
@@ -333,21 +334,23 @@ class SettingsMigrator {
           String bName = attr(s, "Board", "");
           String bTc   = attr(s, "Toolchain", "");
           String bHdl  = attr(s, "HDLTypeToGenerate", "");
-          if (!bName.isEmpty())
-            boardPrefs.add(new String[]{ bName, bTc, bHdl });
+          if (!bName.isEmpty() && !bTc.isEmpty())
+            boardPrefs.computeIfAbsent(bName, k -> new LinkedHashMap<>()).put("toolchain", bTc);
+          if (!bName.isEmpty() && !bHdl.isEmpty())
+            boardPrefs.computeIfAbsent(bName, k -> new LinkedHashMap<>()).put("hdl", bHdl);
         }
       }
 
       // Build new-format <legacy_fpga> XML for SettingsStore
-      StringBuilder sb = new StringBuilder();
-      sb.append("  <legacy_fpga>\n");
-      sb.append("    <workspace>\n");
+      // StringBuilder sb = new StringBuilder();
+      // sb.append("  <legacy_fpga>\n");
+      // sb.append("    <workspace>\n");
       // appendSetting(sb, "workspacePath",     workPath);
       SettingsStore.put("fpga", "workspace", workPath);
       // appendSetting(sb, "hdlType",           hdlType);
-      SettingsStore.put("fpga", "selectedHdl", hdlType);
+      SettingsStore.put("fpga", "selected-hdl", hdlType);
       // appendSetting(sb, "selectedBoard",     selectedBoard);
-      SettingsStore.put("fpga", "selectedBoard", selectedBoard);
+      SettingsStore.put("fpga", "selected-board", selectedBoard);
       // appendSetting(sb, "useRawBinaryFormat", rawBinary);
       SettingsStore.put("altera", "format", rawBinary.equalsIgnoreCase("true") ? "rbf" : "svf");
       // appendSetting(sb, "xilinxToolsPath",   xilinxPath);
@@ -366,36 +369,20 @@ class SettingsMigrator {
       SettingsStore.put("apio", "path", apioPath);
       // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
       SettingsStore.put("openFPGALoader", "path", openFpgaPath);
-      sb.append("    </workspace>\n");
+      // sb.append("    </workspace>\n");
 
-      if (!boardPrefs.isEmpty()) {
-        sb.append("    <board-preferences>\n");
-        for (String[] bp : boardPrefs) {
-          sb.append("      <board name=\"").append(BackingStore.xmlEscapeAttr(bp[0])).append("\"");
-          if (!bp[1].isEmpty())
-            sb.append(" toolchain=\"").append(BackingStore.xmlEscapeAttr(bp[1])).append("\"");
-          if (!bp[2].isEmpty())
-            sb.append(" hdlType=\"").append(BackingStore.xmlEscapeAttr(bp[2])).append("\"");
-          sb.append("/>\n");
-        }
-        sb.append("    </board-preferences>\n");
-      }
+      if (!boardPrefs.isEmpty())
+        SettingsStore.put("fpga", "board-preferences", FPGABoardPrefs.encode(boardPrefs));
 
       if (!externalBoards.isEmpty()) {
-        // sb.append("    <external-boards>\n");
-        // for (String path : externalBoards) {
-        //   sb.append("      <board path=\"").append(BackingStore.xmlEscapeAttr(path))
-        //     .append("\"/>\n");
-        // }
-        // sb.append("    </external-boards>\n");
         String s = "";
         for (String v : externalBoards)
           s = s.isEmpty() ? v : s + "|" + v;
-        SettingsStore.put("fpga", "externalBoards", s);
+        SettingsStore.put("fpga", "external-boards", s);
       }
 
-      sb.append("  </legacy_fpga>");
-      SettingsStore.setFpgaXml(sb.toString());
+      // sb.append("  </legacy_fpga>");
+      // SettingsStore.setFpgaXml(sb.toString());
 
     } catch (Exception e) {
       Errors.title("FPGA Settings Error").warn(
@@ -411,12 +398,12 @@ class SettingsMigrator {
     }
   }
 
-  private static void appendSetting(StringBuilder sb, String key, String value) {
-    if (value == null || value.isEmpty()) return; // omit unset empty or missing values
-    sb.append("      <setting key=\"").append(key)
-      .append("\" value=\"").append(BackingStore.xmlEscapeAttr(value))
-      .append("\"/>\n");
-  }
+  // private static void appendSetting(StringBuilder sb, String key, String value) {
+  //   if (value == null || value.isEmpty()) return; // omit unset empty or missing values
+  //   sb.append("      <setting key=\"").append(key)
+  //     .append("\" value=\"").append(BackingStore.xmlEscapeAttr(value))
+  //     .append("\"/>\n");
+  // }
 
   private static String attr(Element el, String name, String dflt) {
     String v = el.getAttribute(name);

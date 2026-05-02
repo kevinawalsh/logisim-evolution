@@ -34,19 +34,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.swing.SwingUtilities;
-
 import org.w3c.dom.Element;
 
 import com.cburch.logisim.file.XmlIterator;
-import com.cburch.logisim.util.WeakList;
 
 public class FPGABoardlistPref implements SettingsStore.Item {
 
-  // "externalBoards" subsection of "fpga" section of settings.xml
+  // "external-boards" subsection of "fpga" section of settings.xml
  
   private final String section; //  "fpga"
-  private final String subsection; // "externalBoards"
+  private final String subsection; // "external-boards"
 
   private ArrayList<String> paths = new ArrayList<>();
 
@@ -66,20 +63,16 @@ public class FPGABoardlistPref implements SettingsStore.Item {
   public void add(String path) {
     if (paths.contains(path))
       return;
-    List<String> oldVal = new ArrayList<>(paths);
     paths.add(0, path);
-    List<String> newVal = new ArrayList<>(paths);
     SettingsStore.put(section, subsection, encode());
-    SwingUtilities.invokeLater(() ->
-        firePrefChangeEvent(new AppPreferences.ChangeEvent<Object>(this, oldVal, newVal)));
+    AppPreferences.fireFPGAChangeEvent();
   }
 
   private void setFromStore() {
     String s = SettingsStore.getEffective(section, subsection);
-    List<String> oldVal = new ArrayList<>(paths);
     paths.clear();
     paths.addAll(List.of(s.split("|")));
-    List<String> newVal = new ArrayList<>(paths);
+    AppPreferences.fireFPGAChangeEvent();
   }
 
   @Override
@@ -128,10 +121,5 @@ public class FPGABoardlistPref implements SettingsStore.Item {
       sb.append(indent + "  <file value=\"" + BackingStore.xmlEscapeAttr(path) + "\"/>\n");
     sb.append(indent + "</"+subsection+">\n");
   }
-
-  private final WeakList<AppPreferences.Listener<Object>> listeners = new WeakList<>();
-  public void addPrefChangeWeakListener(Object owner, AppPreferences.Listener<Object> l) { listeners.add(owner, l); }
-  public void removePrefChangeWeakListener(Object owner, AppPreferences.Listener<Object> l) { listeners.remove(owner, l); }
-  private void firePrefChangeEvent(AppPreferences.ChangeEvent<Object> evt) { for (AppPreferences.Listener<Object> l : listeners) l.prefChanged(evt); }
 
 }
