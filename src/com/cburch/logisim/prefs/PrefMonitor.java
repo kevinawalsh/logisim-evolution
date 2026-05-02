@@ -73,14 +73,8 @@ public class PrefMonitor<E> {
       SettingsStore.registerKey(section, name, dflt.toString(), options);
     }
 
-    // React to changes pushed by SettingsStore (e.g. from --config reload or clear())
-    SettingsStore.addChangeListener(section, name, () -> {
-      E newVal = convertFromString(SettingsStore.getEffective(section, name));
-      setAndFire(newVal);
-    });
-
-    // Load initial value from SettingsStore
-    setFromStore();
+    // React to changes pushed by SettingsStore (e.g. from load, reload, or clear)
+    SettingsStore.addReloadListener(() -> setFromStore());
   }
 
   private final WeakList<AppPreferences.Listener<E>> listeners = new WeakList<>();
@@ -92,41 +86,40 @@ public class PrefMonitor<E> {
     return value;
   }
 
-  public void set(E newValue) {
-    if (newValue == null)
-      throw new IllegalArgumentException("settings value must be non-null");
-    if (setAndFire(newValue))
-      SettingsStore.put(section, name, newValue.toString());
-  }
-
-  /** Returns true if the user has explicitly set this preference (has value= in settings.xml). */
+  // has user explicitly set this preference (i.e. has value attribute in settings.xml)?
   public boolean isUserSet() {
     return SettingsStore.isUserSet(section, name);
   }
 
-  /** Clears the user-set value; effective value reverts to the default. */
+  // Clears the user-set value; effective value reverts to a default.
   public void unset() {
+    E oldValue = value;
     SettingsStore.unset(section, name);
-    // Change listener will call setAndFire() with the new effective (default) value
+    setFromStore();
+    SwingUtilities.invokeLater(() ->
+        firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, value)));
   }
 
-  private void setFromStore() { // does not fire
+  protected void setFromStore() { // does not fire
     E newValue = convertFromString(SettingsStore.getEffective(section, name));
     newValue = ensureWithinRange(newValue);
     value = (newValue != null) ? newValue : dflt;
   }
 
-  protected boolean setAndFire(E newValue) {
+  public E set(E newValue) {
+    if (newValue == null)
+      throw new IllegalArgumentException("settings value must be non-null");
     if (identical(newValue, value))
-      return false;
+      return newValue;
     E chosen = ensureWithinRange(newValue);
     if (identical(value, chosen))
-      return false;
+      return newValue;
     E oldValue = value;
     value = chosen;
+    SettingsStore.put(section, name, value.toString());
     SwingUtilities.invokeLater(() ->
-        firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, chosen)));
-    return true;
+        firePrefChangeEvent(new AppPreferences.ChangeEvent<E>(this, oldValue, value)));
+    return oldValue;
   }
 
   public List<E> getEnumeratedOptions() {

@@ -57,11 +57,8 @@ public class FPGABoardlistPref implements SettingsStore.Item {
     // Register so we appear in settings.xml
     SettingsStore.registerSubsection(section, subsection, this);
 
-    // React to changes pushed by SettingsStore (e.g. from another instance or clear())
-    SettingsStore.addChangeListener(section, subsection, () -> setFromStore(true));
-
-    // Initial load from settings.xml
-    setFromStore(false);
+    // React to changes pushed by SettingsStore (e.g. from load, reload, or clear)
+    SettingsStore.addReloadListener(() -> setFromStore());
   }
 
   public List<String> get() { return Collections.unmodifiableList(paths); }
@@ -72,20 +69,17 @@ public class FPGABoardlistPref implements SettingsStore.Item {
     List<String> oldVal = new ArrayList<>(paths);
     paths.add(0, path);
     List<String> newVal = new ArrayList<>(paths);
+    SettingsStore.put(section, subsection, encode());
     SwingUtilities.invokeLater(() ->
         firePrefChangeEvent(new AppPreferences.ChangeEvent<Object>(this, oldVal, newVal)));
-    SettingsStore.put(section, subsection, encode());
   }
 
-  private void setFromStore(boolean shouldFire) {
+  private void setFromStore() {
     String s = SettingsStore.getEffective(section, subsection);
     List<String> oldVal = new ArrayList<>(paths);
     paths.clear();
     paths.addAll(List.of(s.split("|")));
     List<String> newVal = new ArrayList<>(paths);
-    if (shouldFire)
-      SwingUtilities.invokeLater(() ->
-          firePrefChangeEvent(new AppPreferences.ChangeEvent<Object>(this, oldVal, newVal)));
   }
 
   @Override
@@ -124,11 +118,11 @@ public class FPGABoardlistPref implements SettingsStore.Item {
 
   @Override
   public void writeTo(StringBuilder sb, String indent, String userVal, String effDefault) {
-    String userPaths[] = userVal.split(":");
-    if (userPaths.length == 0) {
+    if (userVal == null || userVal.isEmpty()) {
       sb.append(indent + "<"+subsection+"/>\n");
       return;
     }
+    String userPaths[] = userVal.split(":");
     sb.append(indent + "<"+subsection+">\n");
     for (String path : userPaths)
       sb.append(indent + "  <file value=\"" + BackingStore.xmlEscapeAttr(path) + "\"/>\n");

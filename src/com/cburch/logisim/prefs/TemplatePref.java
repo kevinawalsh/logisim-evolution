@@ -59,12 +59,8 @@ public class TemplatePref {
     SettingsStore.registerKey(SECTION, TYPE_KEY, "plain", new String[] { "empty", "plain", "custom"});
     SettingsStore.registerKey(SECTION, FILE_KEY, "", null);
 
-    // React to changes pushed by SettingsStore (e.g. from another instance or clear())
-    SettingsStore.addChangeListener(SECTION, TYPE_KEY, () -> setFromStore(true));
-    SettingsStore.addChangeListener(SECTION, FILE_KEY, () -> setFromStore(true));
-
-    // Initial load from settings.xml
-    setFromStore(false);
+    // React to changes pushed by SettingsStore (e.g. from load, reload, or clear)
+    SettingsStore.addReloadListener(() -> setFromStore());
   }
 
   public int getType()        { return typeValue; }
@@ -78,23 +74,18 @@ public class TemplatePref {
   public void setCustom(File file, Template template) { set(TEMPLATE_CUSTOM, file, template); }
 
   private void set(int newType, File newFile, Template newTemplate) {
-    if (setAndFire(newType, newFile, newTemplate))
-      setIntoStore();
-  }
-
-  private boolean setAndFire(int newType, File newFile, Template newTemplate) {
     if (newType == typeValue
         && (typeValue != TEMPLATE_CUSTOM || identical(newFile, fileValue)))
-      return false;
+      return;
     Object oldValue = typeValue == TEMPLATE_CUSTOM ? fileValue : (Integer) typeValue;
     Object newValue = newType  == TEMPLATE_CUSTOM ? newFile  : (Integer) newType;
     typeValue = newType;
     fileValue = newFile;
     customTemplate = newTemplate;
     customTemplateSourceFile = newFile;
+    setIntoStore();
     SwingUtilities.invokeLater(() ->
         firePrefChangeEvent(new AppPreferences.ChangeEvent<Object>(this, oldValue, newValue)));
-    return true;
   }
 
   private void setIntoStore() {
@@ -106,7 +97,7 @@ public class TemplatePref {
     } catch (IOException ex) { }
   }
 
-  private void setFromStore(boolean shouldFire) {
+  private void setFromStore() {
     String typeStr = SettingsStore.getEffective(SECTION, TYPE_KEY);
     int newType = convertTypeFromString(typeStr);
     String path = newType == TEMPLATE_CUSTOM ? SettingsStore.getEffective(SECTION, FILE_KEY) : null;
@@ -114,15 +105,10 @@ public class TemplatePref {
     if (newType == typeValue
         && (typeValue != TEMPLATE_CUSTOM || identical(newFile, fileValue)))
       return;
-    Object oldValue = typeValue == TEMPLATE_CUSTOM ? fileValue : (Integer) typeValue;
-    Object newValue = newType  == TEMPLATE_CUSTOM ? newFile  : (Integer) newType;
     typeValue = newType;
     fileValue = newFile;
     customTemplate = null;
     customTemplateSourceFile = null;
-    if (shouldFire)
-      SwingUtilities.invokeLater(() ->
-          firePrefChangeEvent(new AppPreferences.ChangeEvent<Object>(this, oldValue, newValue)));
   }
 
   // =========================================================================

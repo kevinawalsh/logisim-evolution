@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.prefs;
 
+import java.io.File;
 import java.util.Locale;
 
 import com.cburch.logisim.circuit.RadixOption;
@@ -63,13 +64,23 @@ public class AppPreferences {
     }
 
     @Override
-    public boolean setAndFire(String v) {
-      if (findLocale(v) != null && super.setAndFire(v)) {
-        if (value != null && !value.equals(""))
-          LocaleManager.setLocale(new Locale(value));
-        return true;
-      }
-      return false;
+    public String set(String v) {
+      if (v == null || findLocale(v) == null)
+        return value;
+      String oldVal = super.set(v);
+      if (v.equals(oldVal))
+        return value; // no change
+      if (value != null && !value.isEmpty())
+        LocaleManager.setLocale(new Locale(value));
+      return oldVal;
+    }
+
+    @Override
+    protected void setFromStore() {
+      String oldVal = value;
+      super.setFromStore();
+      if (value != null && !value.isEmpty() && !value.equals(oldVal))
+        LocaleManager.setLocale(new Locale(value));
     }
 
     private static Locale findLocale(String lang) {
@@ -96,12 +107,21 @@ public class AppPreferences {
     }
 
     @Override
-    public boolean setAndFire(Boolean v) {
-      if (super.setAndFire(v)) {
+    public Boolean set(Boolean v) {
+      Boolean oldVal = super.set(v);
+      if (v.equals(oldVal))
+        return value; // no change
+      if (value != null)
         LocaleManager.setReplaceAccents(value);
-        return true;
-      }
-      return false;
+      return oldVal;
+    }
+
+    @Override
+    protected void setFromStore() {
+      Boolean oldVal = value;
+      super.setFromStore();
+      if (value != null && !value.equals(oldVal))
+        LocaleManager.setReplaceAccents(value);
     }
   }
 
@@ -305,6 +325,12 @@ public class AppPreferences {
     ALTERA_64BIT = new PrefMonitor<>("altera", "64bit", Boolean.TRUE);
   public static final PrefMonitor<String>
     ALTERA_FORMAT = new PrefMonitor<>("altera", "format",
-          new String[] { "svf", "rbf"},
-          "svf");
+          new String[] { "svf", "rbf"}, "svf");
+
+  public static void initialize(File configOverride, File defaultsOverride) {
+    // Note: this trampoline is intended to force all the above PrefMonitor objects
+    // to register themselves with SettingsStore, before SettingsStore tries to load
+    // any values from files.
+    SettingsStore.initialize(configOverride, defaultsOverride);
+  }
 }

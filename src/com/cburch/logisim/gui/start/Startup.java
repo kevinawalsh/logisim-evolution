@@ -61,7 +61,6 @@ import com.cburch.logisim.gui.menu.HelpBroker;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.WindowManagers;
 import com.cburch.logisim.prefs.AppPreferences;
-import com.cburch.logisim.prefs.SettingsStore;
 import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectActions;
@@ -193,7 +192,7 @@ public class Startup {
 
     // Initialize settings and state stores before any AppPreferences access
     StateStore.initialize();
-    SettingsStore.initialize(configOverride, defaultsOverride);
+    AppPreferences.initialize(configOverride, defaultsOverride);
 
     if (doClearPreferences)
       AppPreferences.clear();

@@ -24,10 +24,10 @@ import java.io.File;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -128,7 +128,7 @@ public class SettingsStore {
       if (opts != null && opts.length >= 1) {
         sb.append("  <!-- options: ").append(BackingStore.xmlEscapeComment(opts[0]));
         for (int i = 1; i < opts.length; i++)
-          sb.append(", " + BackingStore.xmlEscapeComment(opts[0]));
+          sb.append(", " + BackingStore.xmlEscapeComment(opts[i]));
         sb.append(" -->");
       }
       sb.append("\n");
@@ -150,8 +150,8 @@ public class SettingsStore {
   private static final LinkedHashMap<String, LinkedHashMap<String, String>> defaultsValues =
       new LinkedHashMap<>();
 
-  // Change listeners: "section/key" -> list of Runnables
-  private static final Map<String, List<Runnable>> changeListeners = new LinkedHashMap<>();
+  // Reload listeners: list of Runnables
+  private static final List<Runnable> reloadListeners = new ArrayList<>();
 
   // FPGA section: managed externally by FpgaSettings FIXME
   private static String customFpgaXml = null;
@@ -168,7 +168,7 @@ public class SettingsStore {
   private static File userFile;
   private static File defaultsFile;
 
-  public static void initialize(File configOverride, File defaultsOverride) {
+  static void initialize(File configOverride, File defaultsOverride) {
     userFile = (configOverride != null) ? configOverride : new File(getDefaultConfigDir(), "settings.xml");
     defaultsFile = (defaultsOverride != null) ? defaultsOverride : getDefaultDefaultsFile();
 
@@ -301,20 +301,15 @@ public class SettingsStore {
       userValues.computeIfAbsent(section, k -> new LinkedHashMap<>()).put(key, value);
       store.markDirty();
     }
-    fireListeners(section, key);
   }
 
   public static void unset(String section, String key) {
-    boolean fire = false;
     synchronized (store.lock) {
       LinkedHashMap<String, String> m = userValues.get(section);
       if (m != null && m.remove(key) != null) {
         store.markDirty();
-        fire = true;
       }
     }
-    if (fire)
-      fireListeners(section, key);
   }
 
   public static void clear() {
@@ -322,10 +317,9 @@ public class SettingsStore {
       userValues.clear();
       store.writeNow();
     }
-    // Notify all PrefMonitors so they revert to defaults
-    for (Map.Entry<String, List<Runnable>> e : changeListeners.entrySet())
-      for (Runnable r : e.getValue())
-        r.run();
+    // Notify all listeners so they revert to defaults
+    for (Runnable r : reloadListeners)
+      r.run();
   }
 
   // =========================================================================
@@ -345,15 +339,8 @@ public class SettingsStore {
   public static Element getFpgaDefaultsElement() { return fpgaDefaultsElement; }
 
 
-  public static void addChangeListener(String section, String key, Runnable listener) {
-    String k = section + "/" + key;
-    changeListeners.computeIfAbsent(k, x -> new CopyOnWriteArrayList<>()).add(listener);
-  }
-
-  private static void fireListeners(String section, String key) {
-    List<Runnable> list = changeListeners.get(section + "/" + key);
-    if (list != null)
-      for (Runnable r : list) r.run();
+  public static void addReloadListener(Runnable listener) {
+    reloadListeners.add(listener);
   }
 
   public static void save() { store.writeNow(); }
