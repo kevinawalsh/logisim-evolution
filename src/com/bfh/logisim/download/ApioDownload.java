@@ -45,7 +45,6 @@ import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.FileUtil;
@@ -86,7 +85,7 @@ public class ApioDownload extends FPGADownload {
     + "the toolchain path to point to the apio executable or a "
     + "directory (e.g. a python virtualenv) containing bin/apio.";
 
-  public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
+  public boolean toolchainIsInstalled(FPGAReport err) {
     String tool = AppPreferences.APIO_PATH.get();
     // user wants system apio
     if (tool == null || tool.isEmpty()) {

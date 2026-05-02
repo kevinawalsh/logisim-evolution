@@ -46,22 +46,23 @@ import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public abstract class FPGADownload {
+
+  // FIXME: these need a home, duplicated in several places
+  static final String VHDL = "VHDL";
+  static final String VERILOG = "Verilog";
 
   static final String TOP_HDL = ToplevelHDLGenerator.HDL_NAME;
   static final String CLK_PORT = TickHDLGenerator.FPGA_CLK_NET;
 
   public final String name;
 
-  public Settings settings;
-
   public FPGADownload(String name) {
     this.name = name;
   }
-  public static String getToolchain(Board board, Settings settings) {
+  public static String getToolchain(Board board) {
     // First priority: user preference for given board
     String toolchain = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
     // Fall back: select toolchain based on vendor
@@ -73,12 +74,12 @@ public abstract class FPGADownload {
     return toolchain;
   }
 
-  public static FPGADownload forToolchain(String toolchain, Settings settings) {
+  public static FPGADownload forToolchain(String toolchain) {
     if (toolchain == null)
       toolchain = APIO_TOOLCHAIN;
     switch (toolchain) {
       case ALTERA_QUARTUS_TOOLCHAIN:
-        return AlteraDownload.makeNew(settings);
+        return AlteraDownload.makeNew();
       case XILINX_ISE_TOOLCHAIN:
         return new XilinxDownload();
       case LATTICE_DIAMOND_TOOLCHAIN:
@@ -106,7 +107,7 @@ public abstract class FPGADownload {
   public boolean writeToFlash;
   public boolean remoteJTAG, supportsRemoteJTAG = false;
 
-  public abstract boolean toolchainIsInstalled(Settings settings, FPGAReport err);
+  public abstract boolean toolchainIsInstalled(FPGAReport err);
 
   public boolean generateScripts(PinBindings ioResources) {
     ArrayList<String> hdlFiles = new ArrayList<>();
@@ -121,7 +122,7 @@ public abstract class FPGADownload {
   public abstract ArrayList<Stage> initiateDownload(Commander cmdr);
   
   private void enumerateHDLFiles(String path, ArrayList<String> files) {
-    if (lang == Settings.VHDL)
+    if (lang.equals(VHDL))
       enumerateHDLFiles(path, files,
           FileWriter.EntityExtension + ".vhd",
           FileWriter.ArchitectureExtension + ".vhd");
@@ -190,7 +191,7 @@ public abstract class FPGADownload {
     }
   }
 
-  public static String getLanguage(Board board, Settings settings, String toolchain) {
+  public static String getLanguage(Board board, String toolchain) {
     String lang = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredHdl(board.name);
     if (lang != null)
       return lang;
@@ -198,17 +199,17 @@ public abstract class FPGADownload {
       return AppPreferences.FPGA_SELECTED_HDL.get();
     switch (toolchain) {
       case ALTERA_QUARTUS_TOOLCHAIN:
-        return Settings.VHDL;
+        return VHDL;
       case XILINX_ISE_TOOLCHAIN:
-        return Settings.VHDL;
+        return VHDL;
       case LATTICE_DIAMOND_TOOLCHAIN:
-        return Settings.VHDL; // ??
+        return VHDL; // ??
       case LATTICE_ISPLEVER_TOOLCHAIN:
-        return Settings.VHDL; // ??
+        return VHDL; // ??
       case APIO_TOOLCHAIN:
-        return Settings.VERILOG;
+        return VERILOG;
       default:
-        return Settings.VHDL;
+        return VHDL;
     }
   }
 

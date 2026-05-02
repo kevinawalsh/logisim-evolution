@@ -38,14 +38,17 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.settings.Settings;
 
 public class FileWriter {
+  
+  // FIXME: these need a home, duplicated in several places
+  static final String VHDL = "VHDL";
+  static final String VERILOG = "Verilog";
 
 	public static boolean CopyArchitecture(String source, String dest,
 			String componentName, FPGAReport reporter, String HDLType) {
 		try {
-			if (HDLType.equals(Settings.VERILOG)) {
+			if (HDLType.equals(VERILOG)) {
 				reporter.AddFatalError("Empty VHDL box not supported in verilog.");
 				return false;
 			}
@@ -90,17 +93,17 @@ public class FileWriter {
 			}
 			FileName += ComponentName;
 			if (IsEntity && !IsMif) {
-				if (HDLType.equals(Settings.VHDL)) {
+				if (HDLType.equals(VHDL)) {
 					FileName += EntityExtension;
 				}
 			} else if (!IsMif) {
-				if (HDLType.equals(Settings.VHDL)) {
+				if (HDLType.equals(VHDL)) {
 					FileName += ArchitectureExtension;
 				}
 			}
 			if (IsMif) {
 				FileName += "_"+idx+".mif";
-			} else if (HDLType.equals(Settings.VHDL)) {
+			} else if (HDLType.equals(VHDL)) {
 				FileName += ".vhd";
 			} else {
 				FileName += ".v";

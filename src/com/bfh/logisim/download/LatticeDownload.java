@@ -52,7 +52,6 @@ import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
@@ -60,7 +59,7 @@ public class LatticeDownload extends FPGADownload {
 
   public LatticeDownload() { super("Lattice"); }
 
-  public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
+  public boolean toolchainIsInstalled(FPGAReport err) {
     String helpmsg = "It should be set to the directory where pnmainc.exe, "
       + "diamondc, or projnav.exe is installed.";
     String tool = AppPreferences.LATTICE_PATH.get();

@@ -41,7 +41,6 @@ import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
@@ -49,10 +48,10 @@ public abstract class AlteraDownload extends FPGADownload {
 
   protected AlteraDownload() { super("Altera"); }
 
-  public static AlteraDownload makeNew(Settings settings) {
-    if (isRemote(settings))
+  public static AlteraDownload makeNew() {
+    if (isRemote())
       return new AlteraDownloadRemote();
-    else if (isScript(settings))
+    else if (isScript())
       return new AlteraDownloadScript();
     else
       return new AlteraDownloadLocal();
@@ -64,21 +63,21 @@ public abstract class AlteraDownload extends FPGADownload {
         || new File(sandboxPath + TOP_HDL + ".pof").exists();
   }
  
-  static boolean isRemote(Settings settings) {
+  static boolean isRemote() {
     String tool = AppPreferences.ALTERA_PATH.get();
     if (tool == null || tool.isEmpty()) return false;
     tool = tool.toLowerCase();
     return tool.startsWith("http://") || tool.startsWith("https://");
   }
 
-  static boolean isScript(Settings settings) {
+  static boolean isScript() {
     String tool = AppPreferences.ALTERA_PATH.get();
     if (tool == null || tool.isEmpty()) return false;
     File script = new File(tool);
     return script.exists() && !script.isDirectory() && script.canExecute();
   }
   
-  public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
+  public boolean toolchainIsInstalled(FPGAReport err) {
     String helpmsg = "It should be set to the directory where " + ALTERA_QUARTUS_SH
           + " and related programs are installed, or set to a file"
           + " containing astand-alone executable script, or set to a"
@@ -88,7 +87,7 @@ public abstract class AlteraDownload extends FPGADownload {
       err.AddFatalError("Altera Quartus toolchain path not configured. " + helpmsg);
       return false;
     }
-    if (isRemote(settings) || isScript(settings))
+    if (isRemote() || isScript())
       return true;
     File prog = new File(tool + File.separator + ALTERA_QUARTUS_SH);
     if (prog.exists() && !prog.isDirectory() && prog.canExecute())

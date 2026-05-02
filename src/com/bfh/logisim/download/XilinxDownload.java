@@ -47,7 +47,6 @@ import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
@@ -101,7 +100,7 @@ public class XilinxDownload extends FPGADownload {
     return command;
   }
   
-  public boolean toolchainIsInstalled(Settings settings, FPGAReport err) {
+  public boolean toolchainIsInstalled(FPGAReport err) {
     String helpmsg = "It should be set to the directory where " + XILINX_XST
           + " and related programs are installed, or set to a file"
           + " containing a stand-alone executable script.";

@@ -34,7 +34,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -44,6 +43,7 @@ import java.util.zip.ZipFile;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class BoardList {
+
 	private static String getBoardName(String BoardIdentifier) {
 		String[] parts;
 		if (BoardIdentifier.contains("url:"))
@@ -125,7 +125,7 @@ public class BoardList {
 
 	private ArrayList<String> builtinBoards = new ArrayList<String>();
 
-	public BoardList() {
+	private BoardList() {
 		String classPath = System.getProperty("java.class.path",
 				File.pathSeparator);
 		String[] classPathElements = classPath.split(File.pathSeparator);
@@ -134,6 +134,13 @@ public class BoardList {
 			builtinBoards.addAll(getBoards(p, BoardResourcePath, element));
     builtinBoards.sort(null);
 	}
+
+  private static BoardList singleton;
+  public static BoardList known() {
+    if (singleton == null)
+      singleton = new BoardList();
+    return singleton;
+  }
 
 	public boolean BoardInCollection(String BoardName) {
     return GetBoardFilePath(BoardName) != null;
@@ -164,7 +171,7 @@ public class BoardList {
 	}
 
   public static String getSelectedBoard() {
-    BoardList kb = Settings.getSettings().knownBoards;
+    BoardList kb = known();
     String b = AppPreferences.FPGA_SELECTED_BOARD.get();
     if (kb.GetBoardNames().contains(b))
       return b;
@@ -175,13 +182,11 @@ public class BoardList {
   }
 
   public static String getSelectedPath() {
-    BoardList kb = Settings.getSettings().knownBoards;
-    return kb.GetBoardFilePath(kb.getSelectedBoard());
+    return known().GetBoardFilePath(known().getSelectedBoard());
   }
 
   public static ArrayList<String> names() {
-    BoardList kb = Settings.getSettings().knownBoards;
-    return kb.GetBoardNames();
+    return known().GetBoardNames();
   }
 
 }

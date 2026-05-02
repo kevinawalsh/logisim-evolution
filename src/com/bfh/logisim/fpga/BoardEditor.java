@@ -52,7 +52,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.bfh.logisim.settings.BoardList;
-import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.generic.ComboBox;
@@ -161,7 +160,6 @@ public class BoardEditor extends JFrame {
 
 
   private void doBuiltin() {
-    Settings settings = Settings.getSettings();
     ComboBox<String> boardsList = new ComboBox<>();
     for (String boardname : BoardList.names())
       boardsList.addItem(boardname);
@@ -170,8 +168,6 @@ public class BoardEditor extends JFrame {
       public void okClicked() {
         String name = boardsList.getSelectedValue();
         AppPreferences.FPGA_SELECTED_BOARD.set(name);
-        // settings.SetSelectedBoard(name);
-        // settings.UpdateSettingsFile();
         setBoard(BoardReader.read(BoardList.getSelectedPath()));
       }
     };

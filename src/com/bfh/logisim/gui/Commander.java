@@ -70,7 +70,7 @@ import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.settings.BoardList;
-import com.bfh.logisim.settings.Settings;
+import com.bfh.logisim.settings.Workspace;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -89,6 +89,10 @@ import com.cburch.logisim.proj.Projects;
 
 public class Commander extends JFrame
   implements LibraryListener, CircuitListener, AppPreferences.FPGASettingsListener {
+  
+  // FIXME: these need a home, duplicated in several places
+  static final String VHDL = "VHDL";
+  static final String VERILOG = "Verilog";
 
   private static final String SLASH = File.separator;
   private static final String SANDBOX_DIR = "sandbox" + SLASH;
@@ -104,7 +108,6 @@ public class Commander extends JFrame
   private int boardsListSelectedIndex;
   private final FPGAReport err = new FPGAReport(this);
   public int fatals, warns, errors;
-  private final Settings settings = Settings.getSettings();
 
   private static final String MAX_SPEED = "Maximum Speed";
   private static final String DIV_SPEED = "Reduced Speed";
@@ -166,13 +169,13 @@ public class Commander extends JFrame
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
     proj = p;
     toolchain = FPGADownload.APIO_TOOLCHAIN;
-    lang = Settings.VERILOG;
+    lang = VERILOG;
 
     board = BoardReader.read(BoardList.getSelectedPath());
     boardIcon.setImage(board == null ? null : board.image);
     if (board != null) {
-      toolchain = FPGADownload.getToolchain(board, settings);
-      lang = FPGADownload.getLanguage(board, settings, toolchain);
+      toolchain = FPGADownload.getToolchain(board);
+      lang = FPGADownload.getLanguage(board, toolchain);
     }
 
     setResizable(true);
@@ -222,8 +225,8 @@ public class Commander extends JFrame
     toolchainCombo.addActionListener(e -> setToolchain());
     
     // configure language options
-    language.addItem(Settings.VHDL);
-    language.addItem(Settings.VERILOG);
+    language.addItem(VHDL);
+    language.addItem(VERILOG);
     language.setSelectedItem(lang);
     language.addActionListener(e -> setLang());
 
@@ -743,8 +746,6 @@ public class Commander extends JFrame
       doLoadOtherBoard();
     } else {
       AppPreferences.FPGA_SELECTED_BOARD.set(boardName);
-      // settings.SetSelectedBoard(boardName);
-      // settings.UpdateSettingsFile();
       board = BoardReader.read(BoardList.getSelectedPath());
     }
     if (board == null || board == old) {
@@ -756,7 +757,7 @@ public class Commander extends JFrame
       return;
     }
     boardsListSelectedIndex = boardsList.getSelectedIndex();
-    String t = FPGADownload.getToolchain(board, settings);
+    String t = FPGADownload.getToolchain(board);
     language.setSelectedItem(t);
     settingBoard = false;
     boardIcon.setImage(board == null ? null : board.image);
@@ -777,10 +778,8 @@ public class Commander extends JFrame
           + "will no longer be available.");
       // return;
     }
-    // settings.AddExternalBoard(filename);
     AppPreferences.FPGA_BOARDLIST.add(filename);
     AppPreferences.FPGA_SELECTED_BOARD.set(board.name);
-    // settings.UpdateSettingsFile();
     boardsList.addItem(board.name);
     boardsList.setSelectedItem(board.name);
     boardsList.invalidate();
@@ -936,7 +935,7 @@ public class Commander extends JFrame
 
   private String workspacePath() {
     File projFile = proj.getLogisimFile().getLoader().getMainFile();
-    return settings.GetWorkspacePath(projFile);
+    return Workspace.pathFor(projFile);
   }
 
   private String projectWorkspace() {
@@ -962,11 +961,10 @@ public class Commander extends JFrame
     String circdir = circuitWorkspace();
     String langdir = circdir + lang.toLowerCase() + SLASH;
 
-    FPGADownload tools = FPGADownload.forToolchain(toolchain, settings);
+    FPGADownload tools = FPGADownload.forToolchain(toolchain);
     tools.err = err;
     tools.lang = lang;
     tools.board = board;
-    tools.settings = settings;
     tools.projectPath = circdir;
     tools.circuitPath = langdir;
     tools.scriptPath = circdir + SCRIPT_DIR;
@@ -1115,12 +1113,12 @@ public class Commander extends JFrame
     if (board == null) {
         eprintf("Please select an FPGA board.");
     } else {
-      FPGADownload tools = FPGADownload.forToolchain(toolchain, settings);
+      FPGADownload tools = FPGADownload.forToolchain(toolchain);
       if (tools != null)
         tools.board = board;
       if (tools == null) {
         eprintf("Please select a toolchain.");
-      } else if (!tools.toolchainIsInstalled(settings, err)) {
+      } else if (!tools.toolchainIsInstalled(err)) {
         eprintf("The " + toolchain + " toolchain is not configured properly. "
             + "Synthesis and download will not be available. "
             + "Please configure the toolchain using the \"Settings\" button above, "
@@ -1177,9 +1175,9 @@ public class Commander extends JFrame
       return;
     toolchain = t;
     if (board != null) {
-      if (!toolchain.equals(FPGADownload.getToolchain(board, settings)))
+      if (!toolchain.equals(FPGADownload.getToolchain(board)))
         AppPreferences.FPGA_BOARDPREFS.setBoardPreferredToolchain(board.name, toolchain);
-      String v = FPGADownload.getLanguage(board, settings, toolchain);
+      String v = FPGADownload.getLanguage(board, toolchain);
       language.setSelectedItem(v);
       configureActions();
     }
@@ -1191,7 +1189,7 @@ public class Commander extends JFrame
         return;
     lang = v;
     AppPreferences.FPGA_SELECTED_HDL.set(lang);
-    if (board != null && !lang.equals(FPGADownload.getLanguage(board, settings, toolchain)))
+    if (board != null && !lang.equals(FPGADownload.getLanguage(board, toolchain)))
       AppPreferences.FPGA_BOARDPREFS.setBoardPreferredHdl(board.name, lang);
   }
 
