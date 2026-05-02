@@ -344,8 +344,10 @@ class SettingsMigrator {
       sb.append("    <workspace>\n");
       // appendSetting(sb, "workspacePath",     workPath);
       SettingsStore.put("fpga", "workspace", workPath);
-      appendSetting(sb, "hdlType",           hdlType);
-      appendSetting(sb, "selectedBoard",     selectedBoard);
+      // appendSetting(sb, "hdlType",           hdlType);
+      SettingsStore.put("fpga", "selectedHdl", hdlType);
+      // appendSetting(sb, "selectedBoard",     selectedBoard);
+      SettingsStore.put("fpga", "selectedBoard", selectedBoard);
       // appendSetting(sb, "useRawBinaryFormat", rawBinary);
       SettingsStore.put("altera", "format", rawBinary.equalsIgnoreCase("true") ? "rbf" : "svf");
       // appendSetting(sb, "xilinxToolsPath",   xilinxPath);
@@ -388,7 +390,7 @@ class SettingsMigrator {
         // sb.append("    </external-boards>\n");
         String s = "";
         for (String v : externalBoards)
-          s = (s == null) ? v : s + "|" + v;
+          s = s.isEmpty() ? v : s + "|" + v;
         SettingsStore.put("fpga", "externalBoards", s);
       }
 

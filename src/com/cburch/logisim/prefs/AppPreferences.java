@@ -272,6 +272,13 @@ public class AppPreferences {
   public static final PrefMonitor<String>
     FPGA_WORKSPACE_PATH = new PrefMonitor<>("fpga", "workspace", "");
 
+  public static final PrefMonitor<String>
+    FPGA_SELECTED_HDL = new PrefMonitor<>("fpga", "selectedHdl",
+          new String[] { "Verilog", "VHDL"}, "VHDL");
+
+  public static final PrefMonitor<String>
+    FPGA_SELECTED_BOARD = new PrefMonitor<>("fpga", "selectedBoard", "");
+
   public static final FPGABoardlistPref
     FPGA_BOARDLIST = new FPGABoardlistPref("fpga", "externalBoards");
 

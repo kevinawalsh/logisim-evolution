@@ -51,15 +51,17 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import com.bfh.logisim.settings.BoardList;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.generic.ComboBox;
+import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.main.ExportImage;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
-import com.cburch.logisim.gui.generic.LFrame;
 
 public class BoardEditor extends JFrame {
 
@@ -156,18 +158,21 @@ public class BoardEditor extends JFrame {
     // clear();
   }
 
+
+
   private void doBuiltin() {
     Settings settings = Settings.getSettings();
     ComboBox<String> boardsList = new ComboBox<>();
-    for (String boardname : settings.GetBoardNames())
+    for (String boardname : BoardList.names())
       boardsList.addItem(boardname);
-    boardsList.setSelectedItem(settings.GetSelectedBoard());
+    boardsList.setSelectedItem(BoardList.getSelectedBoard());
     JDialogOk dlg = new JDialogOk("Select Built-in FPGA Board") {
       public void okClicked() {
         String name = boardsList.getSelectedValue();
-        settings.SetSelectedBoard(name);
-        settings.UpdateSettingsFile();
-        setBoard(BoardReader.read(settings.GetSelectedBoardFileName()));
+        AppPreferences.FPGA_SELECTED_BOARD.set(name);
+        // settings.SetSelectedBoard(name);
+        // settings.UpdateSettingsFile();
+        setBoard(BoardReader.read(BoardList.getSelectedPath()));
       }
     };
     JPanel p = new JPanel();

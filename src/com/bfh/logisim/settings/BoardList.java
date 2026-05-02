@@ -163,4 +163,25 @@ public class BoardList {
     return ret;
 	}
 
+  public static String getSelectedBoard() {
+    BoardList kb = Settings.getSettings().knownBoards;
+    String b = AppPreferences.FPGA_SELECTED_BOARD.get();
+    if (kb.GetBoardNames().contains(b))
+      return b;
+    else if (!kb.GetBoardNames().isEmpty())
+      return kb.GetBoardNames().get(0);
+    else
+      return "";
+  }
+
+  public static String getSelectedPath() {
+    BoardList kb = Settings.getSettings().knownBoards;
+    return kb.GetBoardFilePath(kb.getSelectedBoard());
+  }
+
+  public static ArrayList<String> names() {
+    BoardList kb = Settings.getSettings().knownBoards;
+    return kb.GetBoardNames();
+  }
+
 }

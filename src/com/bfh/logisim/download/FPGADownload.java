@@ -47,6 +47,7 @@ import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.settings.Settings;
+import com.cburch.logisim.prefs.AppPreferences;
 
 public abstract class FPGADownload {
 
@@ -194,7 +195,7 @@ public abstract class FPGADownload {
     if (lang != null)
       return lang;
     if (toolchain == null)
-      return settings.GetHDLType();
+      return AppPreferences.FPGA_SELECTED_HDL.get();
     switch (toolchain) {
       case ALTERA_QUARTUS_TOOLCHAIN:
         return Settings.VHDL;

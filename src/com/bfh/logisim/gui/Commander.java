@@ -69,6 +69,7 @@ import com.bfh.logisim.fpga.BoardReader;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
+import com.bfh.logisim.settings.BoardList;
 import com.bfh.logisim.settings.Settings;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
@@ -167,7 +168,7 @@ public class Commander extends JFrame
     toolchain = FPGADownload.APIO_TOOLCHAIN;
     lang = Settings.VERILOG;
 
-    board = BoardReader.read(settings.GetSelectedBoardFileName());
+    board = BoardReader.read(BoardList.getSelectedPath());
     boardIcon.setImage(board == null ? null : board.image);
     if (board != null) {
       toolchain = FPGADownload.getToolchain(board, settings);
@@ -227,10 +228,11 @@ public class Commander extends JFrame
     language.addActionListener(e -> setLang());
 
     // configure board list
-    for (String boardname : settings.GetBoardNames())
+    for (String boardname : BoardList.names())
       boardsList.addItem(boardname);
     boardsList.addItem(OTHER_BOARD);
-    boardsList.setSelectedItem(settings.GetSelectedBoard());
+
+    boardsList.setSelectedItem(BoardList.getSelectedBoard());
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     boardsList.addActionListener(e -> setBoard());
 
@@ -471,7 +473,7 @@ public class Commander extends JFrame
     for (double f : MenuSimulate.SupportedTickFrequencies)
       freqs.add(f);
     Circuit root = circuitsList.getSelectedValue();
-    PinBindings.Config config = root.getFPGAConfig(settings.GetSelectedBoard());
+    PinBindings.Config config = root.getFPGAConfig(BoardList.getSelectedBoard());
     for (double f : freqs) {
       int count = countForFreq(base, f);
       if (counts.contains(count))
@@ -740,9 +742,10 @@ public class Commander extends JFrame
     if (boardName == OTHER_BOARD) {
       doLoadOtherBoard();
     } else {
-      settings.SetSelectedBoard(boardName);
-      settings.UpdateSettingsFile();
-      board = BoardReader.read(settings.GetSelectedBoardFileName());
+      AppPreferences.FPGA_SELECTED_BOARD.set(boardName);
+      // settings.SetSelectedBoard(boardName);
+      // settings.UpdateSettingsFile();
+      board = BoardReader.read(BoardList.getSelectedPath());
     }
     if (board == null || board == old) {
       // load failed, cancelled, or pointless... go back to previous selection
@@ -768,7 +771,7 @@ public class Commander extends JFrame
     board = BoardReader.read(filename);
     if (board == null)
       return; // failed to load
-    if (settings.GetBoardNames().contains(board.name)) {
+    if (BoardList.names().contains(board.name)) {
       eprintf("A board with the name \""+board.name+"\" already exists. "
           + "Your new board will take precedence, and the existing board "
           + "will no longer be available.");
@@ -776,8 +779,8 @@ public class Commander extends JFrame
     }
     // settings.AddExternalBoard(filename);
     AppPreferences.FPGA_BOARDLIST.add(filename);
-    settings.SetSelectedBoard(board.name);
-    settings.UpdateSettingsFile();
+    AppPreferences.FPGA_SELECTED_BOARD.set(board.name);
+    // settings.UpdateSettingsFile();
     boardsList.addItem(board.name);
     boardsList.setSelectedItem(board.name);
     boardsList.invalidate();
@@ -1189,10 +1192,11 @@ public class Commander extends JFrame
     if (v.equals(lang))
         return;
     lang = v;
-    if (!lang.equals(settings.GetHDLType())) {
-      settings.SetHDLType(lang);
-      settings.UpdateSettingsFile();
-    }
+    AppPreferences.FPGA_SELECTED_HDL.set(lang);
+    // if (!lang.equals(settings.GetHDLType())) {
+    //   settings.SetHDLType(lang);
+    //   settings.UpdateSettingsFile();
+    // }
     if (board != null) {
       if (!lang.equals(FPGADownload.getLanguage(board, settings, toolchain))) {
         settings.SetPreferredHDLType(board.name, lang);
@@ -1207,7 +1211,7 @@ public class Commander extends JFrame
     Circuit root = circuitsList.getSelectedValue();
 
     Netlist netlist = ctx.getNetlist(root);
-    String boardname = settings.GetSelectedBoard();
+    String boardname = BoardList.getSelectedBoard();
 
     PinBindings.Config config = root.getFPGAConfig(boardname);
     PinBindings pinBindings = new PinBindings(err, board, netlist.getMappableComponents(), config);

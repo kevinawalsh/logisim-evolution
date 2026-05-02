@@ -68,8 +68,8 @@ public class Settings {
   // =========================================================================
 
   // private String  workspacePath = "";
-  private String  hdlType       = VHDL;
-  private String  selectedBoard = "";
+  // private String  hdlType       = VHDL;
+  // private String  selectedBoard = "";
   // private boolean useRBF        = false;
   // private String  xilinxPath    = "";
   // private String  alteraPath    = "";
@@ -88,7 +88,7 @@ public class Settings {
   // private final ArrayList<String> externalBoards = new ArrayList<>();
 
   // Board catalog (built-in + external)
-  private final BoardList knownBoards = new BoardList();
+  public final BoardList knownBoards = new BoardList();
 
   private final ArrayList<Listener> listeners = new ArrayList<>();
   private boolean dirty = false;
@@ -110,11 +110,11 @@ public class Settings {
     loadFromStore(SettingsStore.getFpgaUserElement(), true);
 
     // Validate selectedBoard; fall back to first known board if invalid
-    if (selectedBoard.isEmpty() || !knownBoards.BoardInCollection(selectedBoard)) {
-      Collection<String> names = knownBoards.GetBoardNames();
-      if (!names.isEmpty())
-        selectedBoard = names.iterator().next();
-    }
+    // if (selectedBoard.isEmpty() || !knownBoards.BoardInCollection(selectedBoard)) {
+    //   selectedBoard = knownBoards.GetBoardNames().get(0);
+    //   if (!names.isEmpty())
+    //     selectedBoard = names.iterator().next();
+    // }
   }
 
   // =========================================================================
@@ -251,30 +251,30 @@ public class Settings {
   // public boolean GetAltera64Bit()          { return altera64bit; }
   // public void    SetAltera64Bit(boolean v) { altera64bit = v; markDirty(); }
 
-  public String GetHDLType() { return hdlType; }
-  public void SetHDLType(String lang) {
-    if (VHDL.equalsIgnoreCase(lang))    { hdlType = VHDL;    markDirty(); }
-    else if (VERILOG.equalsIgnoreCase(lang)) { hdlType = VERILOG; markDirty(); }
-  }
+  // public String GetHDLType() { return hdlType; }
+  // public void SetHDLType(String lang) {
+  //   if (VHDL.equalsIgnoreCase(lang))    { hdlType = VHDL;    markDirty(); }
+  //   else if (VERILOG.equalsIgnoreCase(lang)) { hdlType = VERILOG; markDirty(); }
+  // }
 
   // =========================================================================
   // Board selection
   // =========================================================================
 
-  public Collection<String> GetBoardNames() { return knownBoards.GetBoardNames(); }
+  // public Collection<String> GetBoardNames() { return knownBoards.GetBoardNames(); }
 
-  public String GetSelectedBoard() { return selectedBoard; }
+  // public String GetSelectedBoard() { return selectedBoard; }
 
-  public boolean SetSelectedBoard(String name) {
-    if (!knownBoards.BoardInCollection(name)) return false;
-    selectedBoard = name;
-    markDirty();
-    return true;
-  }
+  // public boolean SetSelectedBoard(String name) {
+  //   if (!knownBoards.BoardInCollection(name)) return false;
+  //   selectedBoard = name;
+  //   markDirty();
+  //   return true;
+  // }
 
-  public String GetSelectedBoardFileName() {
-    return knownBoards.GetBoardFilePath(selectedBoard);
-  }
+  // public String GetSelectedBoardFileName() {
+  //   return knownBoards.GetBoardFilePath(selectedBoard);
+  // }
 
   // =========================================================================
   // Board-specific preferences
@@ -404,9 +404,9 @@ public class Settings {
       Element el = (Element) children.item(i);
 
       switch (el.getTagName()) {
-        case "workspace":
-          readWorkspace(el);
-          break;
+        // case "workspace":
+        //   readWorkspace(el);
+        //   break;
         case "board-preferences":
           if (isUser) readBoardPrefs(el);
           break;
@@ -418,35 +418,35 @@ public class Settings {
     }
   }
 
-  private void readWorkspace(Element ws) {
-    NodeList settings = ws.getChildNodes();
-    for (int i = 0; i < settings.getLength(); i++) {
-      if (!(settings.item(i) instanceof Element)) continue;
-      Element s = (Element) settings.item(i);
-      if (!"setting".equals(s.getTagName())) continue;
-      if (!s.hasAttribute("value")) continue; // unset — keep current value
-      String key = s.getAttribute("key");
-      String val = s.getAttribute("value");
-      switch (key) {
-        // case "workspacePath":     workspacePath = val; break;
-        case "hdlType":
-          if (VERILOG.equalsIgnoreCase(val)) hdlType = VERILOG;
-          else hdlType = VHDL;
-          break;
-        case "selectedBoard":     selectedBoard = val; break;
-        // case "useRawBinaryFormat": useRBF = "true".equalsIgnoreCase(val); break;
-        // case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
-        // case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
-        // unknown keys silently ignored
-      }
-    }
-  }
+  // private void readWorkspace(Element ws) {
+  //   NodeList settings = ws.getChildNodes();
+  //   for (int i = 0; i < settings.getLength(); i++) {
+  //     if (!(settings.item(i) instanceof Element)) continue;
+  //     Element s = (Element) settings.item(i);
+  //     if (!"setting".equals(s.getTagName())) continue;
+  //     if (!s.hasAttribute("value")) continue; // unset — keep current value
+  //     String key = s.getAttribute("key");
+  //     String val = s.getAttribute("value");
+  //     switch (key) {
+  //       // case "workspacePath":     workspacePath = val; break;
+  //       // case "hdlType":
+  //       //   if (VERILOG.equalsIgnoreCase(val)) hdlType = VERILOG;
+  //       //   else hdlType = VHDL;
+  //       //   break;
+  //       // case "selectedBoard":     selectedBoard = val; break;
+  //       // case "useRawBinaryFormat": useRBF = "true".equalsIgnoreCase(val); break;
+  //       // case "xilinxToolsPath":   xilinxPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // case "alteraToolsPath":   alteraPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // case "altera64bit":       altera64bit = "true".equalsIgnoreCase(val); break;
+  //       // case "gowinShPath":       gowinShPath  = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // case "gowinProgPath":     gowinProgPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // case "latticeToolsPath":  latticePath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // case "apioToolsPath":     apioPath    = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // case "openFPGAloaderPath": openFpgaPath = normalizePath(val) != null ? normalizePath(val) : ""; break;
+  //       // unknown keys silently ignored
+  //     }
+  //   }
+  // }
 
   private void readBoardPrefs(Element bpEl) {
     NodeList nodes = bpEl.getChildNodes();
@@ -487,10 +487,10 @@ public class Settings {
   private String buildFpgaXml() {
     StringBuilder sb = new StringBuilder();
     sb.append("  <legacy_fpga>\n");
-    sb.append("    <workspace>\n");
+    // sb.append("    <workspace>\n");
     // appendSetting(sb, "workspacePath",      workspacePath);
-    appendSetting(sb, "hdlType",            hdlType);
-    appendSetting(sb, "selectedBoard",      selectedBoard);
+    // appendSetting(sb, "hdlType",            hdlType);
+    // appendSetting(sb, "selectedBoard",      selectedBoard);
     // appendSetting(sb, "useRawBinaryFormat", "" + useRBF);
     // appendSetting(sb, "xilinxToolsPath",    xilinxPath);
     // appendSetting(sb, "alteraToolsPath",    alteraPath);
@@ -500,7 +500,7 @@ public class Settings {
     // appendSetting(sb, "latticeToolsPath",   latticePath);
     // appendSetting(sb, "apioToolsPath",      apioPath);
     // appendSetting(sb, "openFPGAloaderPath", openFpgaPath);
-    sb.append("    </workspace>\n");
+    // sb.append("    </workspace>\n");
 
     if (!boardPrefs.isEmpty()) {
       sb.append("    <board-preferences>\n");
