@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,12 +78,71 @@ import com.cburch.logisim.util.Debug;
 //   other:   ~/.logisim-hc/settings.xml
 public class SettingsStore {
 
-  // Schema: // section -> key -> [hardcoded default, optional list of options]
-  // Defines canonical write order, and specifies default and (optionall) set of valid values.
-  private static final LinkedHashMap<String, LinkedHashMap<String, String[]>> schema =
+  static interface Item {
+    String getHardcodedDefault();
+    String resolve(String userVal, String effDefault);
+    String parse(Element setting);
+    void writeTo(StringBuilder sb, String indent, String userVal, String effDefault);
+  }
+
+  private static class KeyValueItem implements Item {
+    // xml: <setting key="k" value="v"> <!-- default: x --> <!-- options: v, w, x -->
+    final String key;
+    final String dflt; // hardcoded default value, or emptystring; non-null
+    final String[] opts; // only for comment; if null, comment is omitted
+   
+    KeyValueItem(String key, String dflt, String opts[]) {
+      this.key = key;
+      this.dflt = dflt;
+      this.opts = opts;
+    }
+
+    @Override
+    public String getHardcodedDefault() { return dflt; }
+
+    @Override
+    public String resolve(String userVal, String effDefault) {
+      return (userVal != null) ? userVal : effDefault;
+    }
+
+    @Override
+    public String parse(Element setting) {
+      if (setting.hasAttribute("value"))
+        return setting.getAttribute("value");
+      else
+        return null;
+    }
+
+    @Override
+    public void writeTo(StringBuilder sb, String indent, String userVal, String effDefault) {
+      sb.append(indent + "<setting key=\"").append(BackingStore.xmlEscapeAttr(key)).append("\"");
+      if (userVal != null) {
+        sb.append(" value=\"").append(BackingStore.xmlEscapeAttr(userVal)).append("\"/>");
+      } else {
+        sb.append("/>");
+        String comment = (effDefault != null) ? effDefault : "";
+        if (comment.isEmpty() || comment.contains(" "))
+          comment = "\"" + comment.replace("\"", "\\\"") + "\""; // not precise escaping, but good enough
+        sb.append("  <!-- default: ").append(BackingStore.xmlEscapeComment(comment)).append(" -->");
+      }
+      if (opts != null && opts.length >= 1) {
+        sb.append("  <!-- options: ").append(BackingStore.xmlEscapeComment(opts[0]));
+        for (int i = 1; i < opts.length; i++)
+          sb.append(", " + BackingStore.xmlEscapeComment(opts[0]));
+        sb.append(" -->");
+      }
+      sb.append("\n");
+    }
+
+  }
+
+  // Schema: Defines canonical write order, and default and (optional) set of valid values.
+  //   section -> key -> value... [hardcoded default, optional list of options, all non-null]
+  //   section -> subsection -> null [caller will parse xml dom and write xml fragments]
+  private static final LinkedHashMap<String, LinkedHashMap<String, Item>> schema =
       new LinkedHashMap<>();
 
-  // User-set values (keys with a value xml attribute in user settings file)
+  // User-set values: keys with a (non-null) value xml attribute in user settings file
   private static final LinkedHashMap<String, LinkedHashMap<String, String>> userValues =
       new LinkedHashMap<>();
 
@@ -171,27 +229,15 @@ public class SettingsStore {
   }
 
   // =========================================================================
-  // Key registration (called by PrefMonitor constructor)
+  // Key registration (called by PrefMonitor constructor, TemplatePref, etc.)
   // =========================================================================
 
   public static void registerKey(String section, String key, String hardcodedDefault, String options[]) {
-    String vs[];
-    if (options == null || options.length == 0) {
-      vs = new String[] { hardcodedDefault };
-    } else if (Arrays.asList(options).contains(hardcodedDefault)) {
-      vs = new String[options.length];
-      vs[0] = hardcodedDefault;
-      int i = 1;
-      for (String opt : options)
-        if (!opt.equals(hardcodedDefault))
-          vs[i++] = opt;
-    } else {
-      vs = new String[1 + options.length];
-      vs[0] = hardcodedDefault;
-      for (int i = 0; i < options.length; i++)
-        vs[1+i] = options[i];
-    }
-    schema.computeIfAbsent(section, k -> new LinkedHashMap<>()).putIfAbsent(key, vs);
+    schema.computeIfAbsent(section, k -> new LinkedHashMap<>()).putIfAbsent(key, new KeyValueItem(key, hardcodedDefault, options));
+  }
+
+  public static void registerSubsection(String section, String subsection, Item item) {
+    schema.computeIfAbsent(section, k -> new LinkedHashMap<>()).putIfAbsent(subsection, item);
   }
 
   // =========================================================================
@@ -200,15 +246,18 @@ public class SettingsStore {
 
   public static String getEffective(String section, String key) {
     String v = getUserValue(section, key);
-    if (v != null) return v;
-    v = getDefaultsFileValue(section, key);
-    if (v != null) return v;
-    return getHardcodedDefault(section, key);
+    Item item = getSchemaItem(section, key);
+    if (item == null)
+      return v;
+    String d = getDefaultsFileValue(section, key);
+    if (d == null)
+      d = item.getHardcodedDefault();
+    return item.resolve(v, d);
   }
 
   public static String getDefault(String section, String key) {
-      String v = getDefaultsFileValue(section, key);
-      return (v != null) ? v : getHardcodedDefault(section, key);
+    String v = getDefaultsFileValue(section, key);
+    return (v != null) ? v : getHardcodedDefault(section, key);
   }
 
   public static boolean isUserSet(String section, String key) {
@@ -230,19 +279,16 @@ public class SettingsStore {
   }
 
   private static String getHardcodedDefault(String section, String key) {
-    String vs[] = getEnumeratedOptions(section, key);
-    return (vs == null) ? null : vs[0];
+    synchronized (store.lock) {
+      Item item = getSchemaItem(section, key);
+      return (item == null) ? null : item.getHardcodedDefault();
+    }
   }
 
-  private static String[] getEnumeratedOptions(String section, String key) {
+  private static Item getSchemaItem(String section, String key) {
     synchronized (store.lock) {
-      LinkedHashMap<String, String[]> m = schema.get(section);
-      if (m == null)
-        return null;
-      String vs[] = m.get(key);
-      if (vs == null)
-        return null;
-      return vs;
+      LinkedHashMap<String, Item> m = schema.get(section);
+      return (m == null) ? null : m.get(key);
     }
   }
 
@@ -333,31 +379,41 @@ public class SettingsStore {
               + " (schema-version=" + v + "): " + file);
       } catch (NumberFormatException ignored) { }
 
-      for (Element sectionEl : XmlIterator.forChildElements(root)) {
-        String sectionName = sectionEl.getTagName();
+      for (Element sectionElt : XmlIterator.forChildElements(root)) {
+        String section = sectionElt.getTagName();
+        if (section == null || section.isEmpty())
+          continue;
 
-        if ("legacy_fpga".equals(sectionName)) {
-          if (target == userValues) fpgaUserElement = sectionEl;
-          else fpgaDefaultsElement = sectionEl;
+        if ("legacy_fpga".equals(section)) {
+          if (target == userValues) fpgaUserElement = sectionElt;
+          else fpgaDefaultsElement = sectionElt;
           continue;
         }
 
-        // Read <setting key="..." value="..."/> elements
-        for (Element setting : XmlIterator.forChildElements(sectionEl)) {
-          if (!"setting".equals(setting.getTagName())) continue;
-          String key = setting.getAttribute("key");
-          if (key == null || key.isEmpty()) continue;
-          if (setting.hasAttribute("value")) {
-            target.computeIfAbsent(sectionName, k -> new LinkedHashMap<>())
-                  .put(key, setting.getAttribute("value"));
-          }
+        // Read <setting key="..." value="..."/> items, and <key> subsection items
+        for (Element itemElt : XmlIterator.forChildElements(sectionElt)) {
+          String key = itemElt.getTagName();
+          if ("setting".equals(key))
+            key = itemElt.getAttribute("key");
+          if (key == null || key.isEmpty())
+            continue;
+          Item item = getSchemaItem(section, key);
+          if (item != null) {
+            String val = item.parse(itemElt);
+            if (val != null)
+                target.computeIfAbsent(section, k -> new LinkedHashMap<>()).put(key, val);
+          } else if (loadPassthrough) {
+            System.out.println("here 1");
+            // Preserve unknown items as raw XML strings (for forwards compat).
+          } 
         }
 
         // Preserve unknown sections as raw XML strings (for forwards compat).
         // Use section name as key; schema may be empty now but will be checked
         // again at write time to avoid writing known sections as passthrough.
-        if (loadPassthrough && !schema.containsKey(sectionName)) {
-          passthroughXml.put(sectionName, elementToString(sectionEl));
+        if (loadPassthrough && !schema.containsKey(section)) {
+          System.out.println("here 2");
+          passthroughXml.put(section, elementToString(sectionElt));
         }
       }
     } catch (Exception e) {
@@ -380,39 +436,24 @@ public class SettingsStore {
     sb.append("\">\n\n");
 
     // Known sections in registration order
-    for (Map.Entry<String, LinkedHashMap<String, String[]>> sectionEntry : schema.entrySet()) {
+    for (Map.Entry<String, LinkedHashMap<String, Item>> sectionEntry : schema.entrySet()) {
       String section = sectionEntry.getKey();
       sb.append("  <").append(section).append(">\n");
-      for (Map.Entry<String, String[]> keyEntry : sectionEntry.getValue().entrySet()) {
+      for (Map.Entry<String, Item> keyEntry : sectionEntry.getValue().entrySet()) {
         String key = keyEntry.getKey();
+        Item item = keyEntry.getValue();
         String userVal = getUserValue(section, key);
-        sb.append("    <setting key=\"").append(store.xmlEscapeAttr(key)).append("\"");
-        if (userVal != null) {
-          sb.append(" value=\"").append(store.xmlEscapeAttr(userVal)).append("\"/>");
-        } else {
-          sb.append("/>");
-          String effDefault = getDefault(section, key);
-          String shown = (effDefault != null) ? effDefault : "";
-          if (shown.isEmpty() || shown.contains(" "))
-            shown = "\"" + shown.replace("\"", "\\\"") + "\""; // not precise escaping, but good enough
-          sb.append("  <!-- default: ").append(store.xmlEscapeComment(shown)).append(" -->");
-        }
-        String vs[] = getEnumeratedOptions(section, key);
-        if (vs != null && vs.length > 1) {
-          sb.append("  <!-- options: ").append(store.xmlEscapeComment(vs[0]));
-          for (int i = 1; i < vs.length; i++)
-            sb.append(", " + store.xmlEscapeComment(vs[0]));
-          sb.append(" -->");
-        }
-        sb.append("\n");
+        String effDefault = getDefault(section, key);
+        item.writeTo(sb, "    ", userVal, effDefault);
       }
       // Preserve any user-set keys not in schema (future-version compat, going backwards)
       LinkedHashMap<String, String> extraUserKeys = userValues.get(section);
       if (extraUserKeys != null) {
         for (Map.Entry<String, String> extra : extraUserKeys.entrySet()) {
           if (!sectionEntry.getValue().containsKey(extra.getKey())) {
-            sb.append("    <setting key=\"").append(store.xmlEscapeAttr(extra.getKey()))
-              .append("\" value=\"").append(store.xmlEscapeAttr(extra.getValue())).append("\"/>\n");
+            System.out.println("here 3");
+            // sb.append("    <setting key=\"").append(store.xmlEscapeAttr(extra.getKey()))
+            //   .append("\" value=\"").append(store.xmlEscapeAttr(extra.getValue())).append("\"/>\n");
           }
         }
       }

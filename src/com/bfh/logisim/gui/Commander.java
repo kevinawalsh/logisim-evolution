@@ -81,6 +81,7 @@ import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.gui.menu.MenuSimulate;
 import com.cburch.logisim.gui.prefs.SettingsFrame;
+import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.Projects;
@@ -769,12 +770,12 @@ public class Commander extends JFrame
       return; // failed to load
     if (settings.GetBoardNames().contains(board.name)) {
       eprintf("A board with the name \""+board.name+"\" already exists. "
-          + "Either rename your board file, or edit Logisim's XML settings file by "
-          + "hand to remove the existing board.");
-      board = null;
-      return;
+          + "Your new board will take precedence, and the existing board "
+          + "will no longer be available.");
+      // return;
     }
-    settings.AddExternalBoard(filename);
+    // settings.AddExternalBoard(filename);
+    AppPreferences.FPGA_BOARDLIST.add(filename);
     settings.SetSelectedBoard(board.name);
     settings.UpdateSettingsFile();
     boardsList.addItem(board.name);

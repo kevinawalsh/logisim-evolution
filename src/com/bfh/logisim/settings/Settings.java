@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 
-import javax.swing.JFrame;
+// import javax.swing.JFrame;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -85,7 +85,7 @@ public class Settings {
       new LinkedHashMap<>();
 
   // External board file paths (in registration order)
-  private final ArrayList<String> externalBoards = new ArrayList<>();
+  // private final ArrayList<String> externalBoards = new ArrayList<>();
 
   // Board catalog (built-in + external)
   private final BoardList knownBoards = new BoardList();
@@ -358,13 +358,13 @@ public class Settings {
   // External boards
   // =========================================================================
 
-  public void AddExternalBoard(String filename) {
-    if (!externalBoards.contains(filename)) {
-      externalBoards.add(filename);
-      knownBoards.AddExternalBoard(filename);
-      markDirty();
-    }
-  }
+  // public void AddExternalBoard(String filename) {
+  //   if (!externalBoards.contains(filename)) {
+  //     externalBoards.add(filename);
+  //     knownBoards.AddExternalBoard(filename);
+  //     markDirty();
+  //   }
+  // }
 
   // =========================================================================
   // Persistence
@@ -410,9 +410,9 @@ public class Settings {
         case "board-preferences":
           if (isUser) readBoardPrefs(el);
           break;
-        case "external-boards":
-          if (isUser) readExternalBoards(el);
-          break;
+        // case "external-boards":
+        //   if (isUser) readExternalBoards(el);
+        //   break;
         // unknown sub-elements silently ignored
       }
     }
@@ -466,19 +466,19 @@ public class Settings {
     }
   }
 
-  private void readExternalBoards(Element ebEl) {
-    NodeList nodes = ebEl.getChildNodes();
-    for (int i = 0; i < nodes.getLength(); i++) {
-      if (!(nodes.item(i) instanceof Element)) continue;
-      Element board = (Element) nodes.item(i);
-      if (!"board".equals(board.getTagName())) continue;
-      String path = board.getAttribute("path");
-      if (path != null && !path.isEmpty() && new File(path).exists()) {
-        externalBoards.add(path);
-        knownBoards.AddExternalBoard(path);
-      }
-    }
-  }
+  // private void readExternalBoards(Element ebEl) {
+  //   NodeList nodes = ebEl.getChildNodes();
+  //   for (int i = 0; i < nodes.getLength(); i++) {
+  //     if (!(nodes.item(i) instanceof Element)) continue;
+  //     Element board = (Element) nodes.item(i);
+  //     if (!"board".equals(board.getTagName())) continue;
+  //     String path = board.getAttribute("path");
+  //     if (path != null && !path.isEmpty() && new File(path).exists()) {
+  //       externalBoards.add(path);
+  //       knownBoards.AddExternalBoard(path);
+  //     }
+  //   }
+  // }
 
   // =========================================================================
   // Build XML for SettingsStore
@@ -513,12 +513,12 @@ public class Settings {
       sb.append("    </board-preferences>\n");
     }
 
-    if (!externalBoards.isEmpty()) {
-      sb.append("    <external-boards>\n");
-      for (String path : externalBoards)
-        sb.append("      <board path=\"").append(xmlAttr(path)).append("\"/>\n");
-      sb.append("    </external-boards>\n");
-    }
+    // if (!externalBoards.isEmpty()) {
+    //   sb.append("    <external-boards>\n");
+    //   for (String path : externalBoards)
+    //     sb.append("      <board path=\"").append(xmlAttr(path)).append("\"/>\n");
+    //   sb.append("    </external-boards>\n");
+    // }
 
     sb.append("  </legacy_fpga>");
     return sb.toString();

@@ -50,6 +50,13 @@ public class PrefMonitor<E> {
   }
 
   PrefMonitor(String section, String name, E[] opts, E dflt) {
+    if (dflt == null)
+      throw new IllegalArgumentException("settings value default must be non-null");
+    if (opts != null) {
+      for (E e : opts)
+        if (e == null)
+          throw new IllegalArgumentException("settings value option must be non-null");
+    }
     this.section = section;
     this.name = name;
     this.dflt = dflt;
@@ -58,12 +65,12 @@ public class PrefMonitor<E> {
 
     // Register this key so it appears in settings.xml (even when unset)
     if (opts == null || opts.length == 0) {
-      SettingsStore.registerKey(section, name, convertToString(dflt), null);
+      SettingsStore.registerKey(section, name, dflt.toString(), null);
     } else {
       String options[] = new String[opts.length];
       for (int i = 0; i < opts.length; i++)
-        options[i] = convertToString(opts[i]);
-      SettingsStore.registerKey(section, name, convertToString(dflt), options);
+        options[i] = opts[i].toString();
+      SettingsStore.registerKey(section, name, dflt.toString(), options);
     }
 
     // React to changes pushed by SettingsStore (e.g. from --config reload or clear())
@@ -86,8 +93,10 @@ public class PrefMonitor<E> {
   }
 
   public void set(E newValue) {
+    if (newValue == null)
+      throw new IllegalArgumentException("settings value must be non-null");
     if (setAndFire(newValue))
-      SettingsStore.put(section, name, convertToString(newValue));
+      SettingsStore.put(section, name, newValue.toString());
   }
 
   /** Returns true if the user has explicitly set this preference (has value= in settings.xml). */
@@ -135,7 +144,7 @@ public class PrefMonitor<E> {
   }
 
   private String convertToString(E v) {
-    if (v == null) return null;
+    if (v == null) return "";
     return v.toString();
   }
 

@@ -287,9 +287,11 @@ public class SettingsFrame extends LFrame.Dialog {
     };
     projPanels = null;
     fpgaPanels = new SettingsPanel[] {
+      new WorkspaceOptions(this),
       new QuestaOptions(this),
       new ApioOptions(this),
       new OpenFPGALoaderOptions(this),
+      new AlteraOptions(this),
       new XilinxOptions(this),
       new LatticeOptions(this),
       new GowinOptions(this),

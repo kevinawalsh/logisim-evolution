@@ -41,6 +41,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
+import com.cburch.logisim.prefs.AppPreferences;
+
 public class BoardList {
 	private static String getBoardName(String BoardIdentifier) {
 		String[] parts;
@@ -121,69 +123,44 @@ public class BoardList {
 	private static String BoardResourcePath = "resources" + File.separator
 			+ "logisim" + File.separator + "boards";
 
-	private ArrayList<String> DefinedBoards = new ArrayList<String>();
+	private ArrayList<String> builtinBoards = new ArrayList<String>();
 
 	public BoardList() {
 		String classPath = System.getProperty("java.class.path",
 				File.pathSeparator);
 		String[] classPathElements = classPath.split(File.pathSeparator);
 		Pattern p = Pattern.compile(".*.xml");
-		for (String element : classPathElements) {
-			DefinedBoards.addAll(getBoards(p, BoardResourcePath, element));
-		}
-	}
-	
-	public void AddExternalBoard(String Filename) {
-		DefinedBoards.add(Filename);
+		for (String element : classPathElements)
+			builtinBoards.addAll(getBoards(p, BoardResourcePath, element));
+    builtinBoards.sort(null);
 	}
 
 	public boolean BoardInCollection(String BoardName) {
-		for (String board : DefinedBoards) {
-			if (getBoardName(board).equals(BoardName))
-				return true;
-		}
-		return false;
+    return GetBoardFilePath(BoardName) != null;
 	}
 
 	public boolean BoardIsUrl(String BoardName) {
-		for (String board : DefinedBoards) {
-			if (getBoardName(board).equals(BoardName)) {
-				if (board.contains("url:"))
-					return true;
-				else
-					return false;
-			}
-		}
-		throw new Error();
+    String path = GetBoardFilePath(BoardName);
+    if (path == null)
+      throw new Error(); // ???
+    return path != null && path.contains("url:");
 	}
 
 	public String GetBoardFilePath(String BoardName) {
-		for (String board : DefinedBoards) {
-			if (getBoardName(board).equals(BoardName)) {
+		for (String board : AppPreferences.FPGA_BOARDLIST.get())
+			if (getBoardName(board).equals(BoardName))
 				return board;
-			}
-		}
+		for (String board : builtinBoards)
+			if (getBoardName(board).equals(BoardName))
+				return board;
 		return null;
 	}
 	
-	@SuppressWarnings("serial")
-	private class SortedArrayList<T> extends ArrayList<T> {
-
-	    @SuppressWarnings("unchecked")
-	    public void insertSorted(T value) {
-	        add(value);
-	        Comparable<T> cmp = (Comparable<T>) value;
-	        for (int i = size()-1; i > 0 && cmp.compareTo(get(i-1)) < 0; i--)
-	            Collections.swap(this, i, i-1);
-	    }
-	}
-
 	public ArrayList<String> GetBoardNames() {
-		SortedArrayList<String> ret = new SortedArrayList<String>();
-		for (String board : DefinedBoards) {
-			ret.insertSorted(getBoardName(board));
-		}
-		return ret;
+		ArrayList<String> ret = new ArrayList<>();
+    ret.addAll(AppPreferences.FPGA_BOARDLIST.get());
+    ret.addAll(builtinBoards);
+    return ret;
 	}
 
 }

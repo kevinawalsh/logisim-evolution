@@ -148,6 +148,12 @@ class SettingsMigrator {
           migrateStateKey(key, value);
         } else if (SECTION.containsKey(key)) {
           String sk[] = SECTION.get(key).split("/", 2);
+          if (key.equals("templateType")) {
+            if (value.equals("0")) value = "empty";
+            else if (value.equals("1")) value = "plain";
+            else if (value.equals("2")) value = "custom";
+            else value = "plain";
+          }
           SettingsStore.put(sk[0], sk[1], value);
         } else if (key.startsWith("recent")) {
           // handled separately below
@@ -374,12 +380,16 @@ class SettingsMigrator {
       }
 
       if (!externalBoards.isEmpty()) {
-        sb.append("    <external-boards>\n");
-        for (String path : externalBoards) {
-          sb.append("      <board path=\"").append(BackingStore.xmlEscapeAttr(path))
-            .append("\"/>\n");
-        }
-        sb.append("    </external-boards>\n");
+        // sb.append("    <external-boards>\n");
+        // for (String path : externalBoards) {
+        //   sb.append("      <board path=\"").append(BackingStore.xmlEscapeAttr(path))
+        //     .append("\"/>\n");
+        // }
+        // sb.append("    </external-boards>\n");
+        String s = "";
+        for (String v : externalBoards)
+          s = (s == null) ? v : s + "|" + v;
+        SettingsStore.put("fpga", "externalBoards", s);
       }
 
       sb.append("  </legacy_fpga>");

@@ -272,6 +272,9 @@ public class AppPreferences {
   public static final PrefMonitor<String>
     FPGA_WORKSPACE_PATH = new PrefMonitor<>("fpga", "workspace", "");
 
+  public static final FPGABoardlistPref
+    FPGA_BOARDLIST = new FPGABoardlistPref("fpga", "externalBoards");
+
   public static final PrefMonitor<String>
     APIO_PATH = new PrefMonitor<>("apio", "path", "");
 

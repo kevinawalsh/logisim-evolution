@@ -46,7 +46,7 @@ public class TemplatePref {
   private static final String TYPE_KEY  = "type";
   private static final String FILE_KEY  = "file";
 
-  public static final int TEMPLATE_UNKNOWN = -1;
+  public static final int TEMPLATE_UNKNOWN = 1;
   public static final int TEMPLATE_EMPTY   = 0;
   public static final int TEMPLATE_PLAIN   = 1;
   public static final int TEMPLATE_CUSTOM  = 2;
@@ -56,13 +56,14 @@ public class TemplatePref {
 
   public TemplatePref() {
     // Register keys so they appear in settings.xml
-    SettingsStore.registerKey(SECTION, TYPE_KEY, "" + TEMPLATE_PLAIN, new String[] { "0", "1", "2"});
+    SettingsStore.registerKey(SECTION, TYPE_KEY, "plain", new String[] { "empty", "plain", "custom"});
     SettingsStore.registerKey(SECTION, FILE_KEY, "", null);
 
     // React to changes pushed by SettingsStore (e.g. from another instance or clear())
     SettingsStore.addChangeListener(SECTION, TYPE_KEY, () -> setFromStore(true));
     SettingsStore.addChangeListener(SECTION, FILE_KEY, () -> setFromStore(true));
 
+    // Initial load from settings.xml
     setFromStore(false);
   }
 
@@ -188,12 +189,10 @@ public class TemplatePref {
   }
 
   private int convertTypeFromString(String s) {
-    if (s == null) return TEMPLATE_PLAIN;
-    try {
-      int v = Integer.parseInt(s);
-      if (v == TEMPLATE_EMPTY || v == TEMPLATE_PLAIN || v == TEMPLATE_CUSTOM)
-        return v;
-    } catch (NumberFormatException e) { }
+    if (s == null || s.isEmpty()) return TEMPLATE_PLAIN;
+    if (s.equalsIgnoreCase("empty")) return TEMPLATE_EMPTY;
+    if (s.equalsIgnoreCase("plain")) return TEMPLATE_PLAIN;
+    if (s.equalsIgnoreCase("custom")) return TEMPLATE_CUSTOM;
     return TEMPLATE_PLAIN;
   }
 
