@@ -138,6 +138,7 @@ public class Startup {
 
     // first pass: check for headless, process locale, and make note of high priority items
     boolean doClearPreferences = false;
+    String useLocale = null;
     File configOverride = null;
     File defaultsOverride = null;
     int i;
@@ -165,8 +166,10 @@ public class Startup {
       if (arg.equals("-defaults")) defaultsOverride = new File(args[i]);
       if (arg.equals("-help") || arg.equals("-?"))
         printUsage();
-      if (arg.equals("-locale"))
+      if (arg.equals("-locale")) {
+        useLocale = args[i];
         setLocale(args[i]);
+      }
       if (arg.equals("-debug"))
         Debug.enable();
       if (arg.equals("-verbose") || arg.equals("-v"))
@@ -196,6 +199,15 @@ public class Startup {
 
     if (doClearPreferences)
       AppPreferences.clear();
+
+    // Bring LocaleManager and AppPreferences.LOCALE into sync:
+    // if --locale was given, LocaleManager was updated, AppPreferences is stale
+    // if --clearprefs was given, LocaleManager has a reasonable default, AppPreferences is ""
+    // otherwise, AppPreferences has user choice, LocaleManager is stale
+    if (doClearPreferences || useLocale != null)
+      AppPreferences.LOCALE.set(Locale.getDefault().getLanguage());
+    else
+      LocaleManager.setLanguage(AppPreferences.LOCALE.get());
 
     if (!Main.headless) {
       // we're using the GUI: Set up the Look&Feel to match the platform
@@ -479,6 +491,9 @@ public class Startup {
   }
 
   private static void setLocale(String lang) {
+    // FIXME: Why does this use getLocaleOptions(), called for --locale command
+    // line arg, when other code uses Locale.getAvailableLocales(), called when
+    // taking locale from settings.xml?
     Locale[] opts = S.getLocaleOptions();
     for (int i = 0; i < opts.length; i++) {
       if (lang.equals(opts[i].toString())) {

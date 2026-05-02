@@ -170,6 +170,7 @@ public class LocaleManager {
     return ret.toString();
   }
 
+  // Note: Caller must ensure that AppPreferences.LOCALE stays in sync.
   public static void setLocale(Locale loc) {
     Locale cur = getLocale();
     if (!loc.equals(cur)) {
@@ -205,8 +206,7 @@ public class LocaleManager {
 
   // called only by prefs/AppPreferences.java
   public static void setReplaceAccents(boolean value) {
-    HashMap<Character, String> newRepl = value ? fetchReplaceAccents()
-        : null;
+    HashMap<Character, String> newRepl = value ? fetchReplaceAccents() : null;
     replaceAccents = value;
     repl = newRepl;
     fireLocaleChanged();
@@ -348,8 +348,7 @@ public class LocaleManager {
   private void loadDefault() {
     if (settings == null) {
       try {
-        settings = ResourceBundle.getBundle(dir_name + "/"
-            + SETTINGS_NAME);
+        settings = ResourceBundle.getBundle(dir_name + "/" + SETTINGS_NAME);
       } catch (java.util.MissingResourceException e) {
       }
     }
@@ -375,8 +374,21 @@ public class LocaleManager {
   }
 
   private void loadLocale(Locale loc) {
-    String bundleName = dir_name + "/" + loc.getLanguage() + "/"
-        + file_start;
+    String bundleName = dir_name + "/" + loc.getLanguage() + "/" + file_start;
     locale = ResourceBundle.getBundle(bundleName, loc);
   }
+
+  public static void setLanguage(String lang) {
+    if (lang == null || lang.isEmpty())
+      return;
+    if (lang.equals("en") || lang.equals(Locale.getDefault().getLanguage())) {
+      setLocale(new Locale(lang));
+      return;
+    }
+    for (Locale loc : Locale.getAvailableLocales()) {
+      if (lang.equals(loc.getLanguage()))
+        setLocale(new Locale(lang));
+    }
+  }
+
 }

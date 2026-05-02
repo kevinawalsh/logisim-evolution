@@ -31,7 +31,6 @@
 package com.cburch.logisim.prefs;
 
 import java.io.File;
-import java.util.Locale;
 
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.data.Direction;
@@ -52,52 +51,6 @@ public class AppPreferences {
   @FunctionalInterface
   public interface Listener<E> {
     public void prefChanged(ChangeEvent<E> event);
-  }
-
-  private static class LocalePreference extends PrefMonitor<String> {
-    public LocalePreference() {
-      super("international", "locale", "");
-      if (value != null && !value.equals(""))
-        LocaleManager.setLocale(new Locale(value));
-      LocaleManager.addLocaleListener(() -> set(LocaleManager.getLocale().getLanguage()));
-      set(LocaleManager.getLocale().getLanguage());
-    }
-
-    @Override
-    public String set(String v) {
-      if (v == null || findLocale(v) == null)
-        return value;
-      String oldVal = super.set(v);
-      if (v.equals(oldVal))
-        return value; // no change
-      if (value != null && !value.isEmpty())
-        LocaleManager.setLocale(new Locale(value));
-      return oldVal;
-    }
-
-    @Override
-    protected void setFromStore() {
-      String oldVal = value;
-      super.setFromStore();
-      if (value != null && !value.isEmpty() && !value.equals(oldVal))
-        LocaleManager.setLocale(new Locale(value));
-    }
-
-    private static Locale findLocale(String lang) {
-      Locale[] check;
-      for (int set = 0; set < 2; set++) {
-        if (set == 0)
-          check = new Locale[] { Locale.getDefault(), Locale.ENGLISH };
-        else
-          check = Locale.getAvailableLocales();
-        for (int i = 0; i < check.length; i++) {
-          Locale loc = check[i];
-          if (loc != null && loc.getLanguage().equals(lang))
-            return loc;
-        }
-      }
-      return null;
-    }
   }
 
   private static class AccentsPreference extends PrefMonitor<Boolean> {
@@ -176,7 +129,7 @@ public class AppPreferences {
           SHAPE_SHAPED);
 
   public static final PrefMonitor<String>
-      LOCALE = new LocalePreference();
+      LOCALE = new PrefMonitor<>("international", "locale", "");
 
   public static final PrefMonitor<Boolean>
       ACCENTS_REPLACE = new AccentsPreference();

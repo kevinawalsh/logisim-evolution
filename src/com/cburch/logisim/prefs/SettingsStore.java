@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,11 +159,10 @@ public class SettingsStore {
   static Element fpgaUserElement = null;
   static Element fpgaDefaultsElement = null;
 
-  // Unrecognized top-level sections from the existing user settings.xml,
-  // keyed by section name. Filtered against schema at write time, so sections
-  // that were unknown when the file was loaded (empty schema) but are now
-  // known won't be written as passthrough.
-  private static final LinkedHashMap<String, String> passthroughXml = new LinkedHashMap<>();
+  // Unrecognized top-level sections from the existing user settings.xml.
+  private static final ArrayList<String> unrecognizedSections = new ArrayList<>();
+  // Unrecognized keys within known sections from the existing user settings.xml.
+  private static final HashMap<String, ArrayList<String>> unrecognizedKeys = new HashMap<>();
 
   private static BackingStore store;
   private static File userFile;
@@ -187,6 +187,10 @@ public class SettingsStore {
     
     if (!loaded && configOverride == null)
       SettingsMigrator.migrate();
+
+    // Notify all listeners so they initialize to loaded values
+    for (Runnable r : reloadListeners)
+      r.run();
   }
 
   static File getUserSettingsFile() { return userFile; }
@@ -347,7 +351,7 @@ public class SettingsStore {
 
   private static void loadFile(File file,
       LinkedHashMap<String, LinkedHashMap<String, String>> target,
-      boolean loadPassthrough) {
+      boolean trackUnregnizedXml) {
     try {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -376,6 +380,13 @@ public class SettingsStore {
           else fpgaDefaultsElement = sectionElt;
           continue;
         }
+        LinkedHashMap<String, Item> ss = schema.get(section);
+        if (ss == null) {
+          // Preserve unrecognized sections as raw XML strings (for forwards compat).
+          if (trackUnregnizedXml)
+            unrecognizedSections.add(elementToString(sectionElt));
+          continue;
+        }
 
         // Read <setting key="..." value="..."/> items, and <key> subsection items
         for (Element itemElt : XmlIterator.forChildElements(sectionElt)) {
@@ -384,27 +395,21 @@ public class SettingsStore {
             key = itemElt.getAttribute("key");
           if (key == null || key.isEmpty())
             continue;
-          Item item = getSchemaItem(section, key);
+          // don't call getSchemaItem() here, we can't do locking during init
+          // Item item = getSchemaItem(section, key);
+          Item item = ss.get(key);
           if (item != null) {
             String val = item.parse(itemElt);
             if (val != null)
                 target.computeIfAbsent(section, k -> new LinkedHashMap<>()).put(key, val);
-          } else if (loadPassthrough) {
-            System.out.println("here 1");
-            // Preserve unknown items as raw XML strings (for forwards compat).
+          } else if (trackUnregnizedXml) {
+            // Preserve unknown keys as raw XML strings (for forwards compat).
+            unrecognizedKeys.computeIfAbsent(section, k -> new ArrayList<>()).add(elementToString(itemElt));
           } 
-        }
-
-        // Preserve unknown sections as raw XML strings (for forwards compat).
-        // Use section name as key; schema may be empty now but will be checked
-        // again at write time to avoid writing known sections as passthrough.
-        if (loadPassthrough && !schema.containsKey(section)) {
-          System.out.println("here 2");
-          passthroughXml.put(section, elementToString(sectionElt));
         }
       }
     } catch (Exception e) {
-      System.err.println("Warning: Could not read settings file: " + file + ": " + e.getMessage());
+      Debug.error("Could not read settings file: " + file, e);
     }
   }
 
@@ -433,15 +438,13 @@ public class SettingsStore {
         String effDefault = getDefault(section, key);
         item.writeTo(sb, "    ", userVal, effDefault);
       }
-      // Preserve any user-set keys not in schema (future-version compat, going backwards)
-      LinkedHashMap<String, String> extraUserKeys = userValues.get(section);
-      if (extraUserKeys != null) {
-        for (Map.Entry<String, String> extra : extraUserKeys.entrySet()) {
-          if (!sectionEntry.getValue().containsKey(extra.getKey())) {
-            System.out.println("here 3");
-            // sb.append("    <setting key=\"").append(store.xmlEscapeAttr(extra.getKey()))
-            //   .append("\" value=\"").append(store.xmlEscapeAttr(extra.getValue())).append("\"/>\n");
-          }
+      // Unrecognized keys within known section, perhaps from a newer version (preserved as xml strings).
+      if (unrecognizedKeys.containsKey(section)) {
+        for (String xml : unrecognizedKeys.get(section)) {
+          for (String line : xml.split("\n"))
+            if (!line.isBlank())
+              sb.append("    ").append(line).append("\n");
+          sb.append("\n");
         }
       }
       sb.append("  </").append(section).append(">\n\n");
@@ -459,12 +462,9 @@ public class SettingsStore {
       sb.append("\n\n");
     }
 
-    // Unknown sections from a newer version (preserved verbatim). Skip any
-    // section that is now recognized by the schema — it was only added here
-    // because the schema was empty when the file was first loaded.
-    for (Map.Entry<String, String> e : passthroughXml.entrySet()) {
-      if (schema.containsKey(e.getKey())) continue;
-      for (String line : e.getValue().split("\n"))
+    // Unrecognized sections, perhaps from a newer version (preserved as xml strings).
+    for (String xml : unrecognizedSections) {
+      for (String line : xml.split("\n"))
         if (!line.isBlank())
           sb.append("  ").append(line).append("\n");
       sb.append("\n");

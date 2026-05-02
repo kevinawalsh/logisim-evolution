@@ -367,7 +367,7 @@ public class XmlProjectReader extends XmlReader {
       // String prefix = "This file is intended to be loaded by ";
       // if (tagline != null && tagline.toLowerCase().startsWith(prefix.toLowerCase()))
       //   tagline = tagline.substring(prefix.length()).trim();
-      if (tagline.isEmpty())
+      if (tagline != null && tagline.isEmpty())
         tagline = null;
       
       // Check for known legacy website

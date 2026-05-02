@@ -46,7 +46,7 @@ public class TemplatePref {
   private static final String TYPE_KEY  = "type";
   private static final String FILE_KEY  = "file";
 
-  public static final int TEMPLATE_UNKNOWN = 1;
+  public static final int TEMPLATE_UNKNOWN = -1;
   public static final int TEMPLATE_EMPTY   = 0;
   public static final int TEMPLATE_PLAIN   = 1;
   public static final int TEMPLATE_CUSTOM  = 2;
@@ -93,7 +93,7 @@ public class TemplatePref {
       String path = fileValue == null ? "" : fileValue.getCanonicalPath();
       // write path first so that if the change listener fires mid-write it's a nop
       SettingsStore.put(SECTION, FILE_KEY, path);
-      SettingsStore.put(SECTION, TYPE_KEY, "" + typeValue);
+      SettingsStore.put(SECTION, TYPE_KEY, stringForType(typeValue));
     } catch (IOException ex) { }
   }
 
@@ -174,12 +174,21 @@ public class TemplatePref {
     return customTemplate == null ? getPlainTemplate() : customTemplate;
   }
 
-  private int convertTypeFromString(String s) {
+  private static int convertTypeFromString(String s) {
     if (s == null || s.isEmpty()) return TEMPLATE_PLAIN;
     if (s.equalsIgnoreCase("empty")) return TEMPLATE_EMPTY;
     if (s.equalsIgnoreCase("plain")) return TEMPLATE_PLAIN;
     if (s.equalsIgnoreCase("custom")) return TEMPLATE_CUSTOM;
     return TEMPLATE_PLAIN;
+  }
+
+  private static String stringForType(int typeValue) {
+    switch (typeValue) {
+      case TEMPLATE_EMPTY:  return "empty";
+      case TEMPLATE_CUSTOM: return "custom";
+      case TEMPLATE_PLAIN:
+      default:              return "plain";
+    }
   }
 
   private final WeakList<AppPreferences.Listener<Object>> listeners = new WeakList<>();
