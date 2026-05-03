@@ -190,8 +190,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
         "Click to add picture of FPGA board,",
         "or select a Built-in FPGA board below.",
         "",
-        "The board picture must be PNG format and should be",
-        " at least" + getWidth() + "x" + getHeight() + " pixels for best display." };
+        "The board picture must be PNG or JPEG format, and should be",
+        " at least " + getWidth() + "x" + getHeight() + " pixels for best display." };
 
       g.setColor(Color.black);
       g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 18));

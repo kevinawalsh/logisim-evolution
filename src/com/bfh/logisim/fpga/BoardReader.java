@@ -34,39 +34,47 @@ import java.io.File;
 import java.util.HashMap;
 
 import java.awt.image.BufferedImage;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.cburch.logisim.util.Errors;
+import com.bfh.logisim.settings.BoardList;
 
 public class BoardReader {
 
   private BoardReader() { }
 	public static Board read(String path) {
 		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      // FIXME use better name
+      String name = BoardList.nameForPath(path);
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder parser = factory.newDocumentBuilder();
       Document doc;
-      String name;
-			if (path.startsWith("url:")) {
-        name = path.substring(4);
-				doc = parser.parse(new BoardReader().getClass().getResourceAsStream("/" + name));
-      } else if (path.startsWith("file:")) {
-        name = path.substring(5);
-				doc = parser.parse(new File(name));
-      } else {
-        name = path;
-				doc = parser.parse(new File(name));
-      }
 
-      int i = Math.max(name.lastIndexOf('/'),name.lastIndexOf('\\'));
-      name = i < 0 ? name : name.substring(i+1);
-      if (name.toLowerCase().endsWith(".xml"))
-        name = name.substring(0, name.length()-4);
+			if (path.startsWith("jar|")) {
+        String parts[] = path.split("\\|", 3);
+        String jarpath = parts[1];
+        String rscpath = parts[2];
+        ZipFile zf = new ZipFile(jarpath);
+        ZipEntry entry = zf.getEntry(rscpath);
+        if (entry == null)
+          throw new Exception(jarpath + " doesn't contain " + rscpath);
+				doc = parser.parse(zf.getInputStream(entry));
+      } else if (path.startsWith("file|")) {
+        String parts[] = path.split("\\|", 2);
+        String filepath = parts[1];
+				doc = parser.parse(new File(filepath));
+      } else {
+				doc = parser.parse(new File(path));
+      }
 
 			Board b = new Board(name, parseApioName(doc), parseOpenFPGALoaderName(doc), parseChipset(doc), parsePicture(doc));
       parseComponents(doc, "PinsInformation", b); // backwards compatability	

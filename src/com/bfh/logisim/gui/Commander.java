@@ -231,11 +231,12 @@ public class Commander extends JFrame
     language.addActionListener(e -> setLang());
 
     // configure board list
-    for (String boardname : BoardList.names())
+    BoardList.refresh();
+    for (String boardname : BoardList.getAllNames())
       boardsList.addItem(boardname);
     boardsList.addItem(OTHER_BOARD);
 
-    boardsList.setSelectedItem(BoardList.getSelectedBoard());
+    boardsList.setSelectedItem(BoardList.getSelectedName());
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     boardsList.addActionListener(e -> setBoard());
 
@@ -476,7 +477,7 @@ public class Commander extends JFrame
     for (double f : MenuSimulate.SupportedTickFrequencies)
       freqs.add(f);
     Circuit root = circuitsList.getSelectedValue();
-    PinBindings.Config config = root.getFPGAConfig(BoardList.getSelectedBoard());
+    PinBindings.Config config = root.getFPGAConfig(BoardList.getSelectedName());
     for (double f : freqs) {
       int count = countForFreq(base, f);
       if (counts.contains(count))
@@ -772,7 +773,7 @@ public class Commander extends JFrame
     board = BoardReader.read(filename);
     if (board == null)
       return; // failed to load
-    if (BoardList.names().contains(board.name)) {
+    if (BoardList.hasBoardNamed(board.name)) {
       eprintf("A board with the name \""+board.name+"\" already exists. "
           + "Your new board will take precedence, and the existing board "
           + "will no longer be available.");
@@ -780,6 +781,7 @@ public class Commander extends JFrame
     }
     AppPreferences.FPGA_BOARDLIST.add(filename);
     AppPreferences.FPGA_SELECTED_BOARD.set(board.name);
+    BoardList.refresh();
     boardsList.addItem(board.name);
     boardsList.setSelectedItem(board.name);
     boardsList.invalidate();
@@ -1199,7 +1201,7 @@ public class Commander extends JFrame
     Circuit root = circuitsList.getSelectedValue();
 
     Netlist netlist = ctx.getNetlist(root);
-    String boardname = BoardList.getSelectedBoard();
+    String boardname = BoardList.getSelectedName();
 
     PinBindings.Config config = root.getFPGAConfig(boardname);
     PinBindings pinBindings = new PinBindings(err, board, netlist.getMappableComponents(), config);

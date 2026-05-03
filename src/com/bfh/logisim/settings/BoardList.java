@@ -32,15 +32,16 @@ package com.bfh.logisim.settings;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.cburch.logisim.prefs.AppPreferences;
-
+import com.cburch.logisim.util.Debug;
 
 // Tagged path: file|/Users/kwalsh//AlchitryCu_v2.xml (external board, MacOS, linux)
 //              file|C:\\Users\\kwalsh\\AlchitryCu_v2.xml (external board, Windows)
@@ -56,31 +57,16 @@ import com.cburch.logisim.prefs.AppPreferences;
 public class BoardList {
 
   private static final String RESOURCE_PATH = "resources/logisim/boards";
-	private static final ArrayList<String> builtinBoardNames = new ArrayList<>();
-	private static final ArrayList<String> builtinBoardPaths = new ArrayList<>();
-	private static final ArrayList<String> externalBoardNames = new ArrayList<>();
-	private static final ArrayList<String> externalBoardPaths = new ArrayList<>();
-  private static final TreeMap<String name, String path> boards = new TreeMap<>();
+  private static final TreeMap<String, String> boards = new TreeMap<>(); // name -> path
 	static {
     refresh();
 	}
 
-  private static void refresh() {
-    builtinBoardNames.clear();
-    builtinBoardPaths.clear();
-    externalBoardNames.clear();
-    externalBoardPaths.clear();
+  public static void refresh() {
     boards.clear();
-
+    loadExternalBoards(); // these get priority
     loadBuiltinBoards();
-    loadExternalBoards();
-
-    for (int i = 0; i < externalBoardNames.size(); i++)
-      boards.putIfAbsent(externalBoardNames.get(i), externalBoardPaths.get(i));
-    for (int i = 0; i < builtinBoardNames.size(); i++)
-      boards.putIfAbsent(builtinBoardNames.get(i), builtinBoardPaths.get(i));
   }
-
 
 	private static void loadBoardsFromDirectory(File dir, boolean recursive) {
 		File[] files = dir.listFiles();
@@ -98,10 +84,9 @@ public class BoardList {
           // FIXME: examine xml to ensure it is a board, and get a proper name
           path = "file|" + path;
           String name = nameForPath(path);
-          builtinBoardNames.add(name);
-          builtinBoardPaths.add(path);
+          boards.putIfAbsent(name, path);
 				} catch (IOException e) {
-					Debug.error("scanning fpga board definitions: " + path, e);
+					Debug.error("scanning fpga board definitions: " + file, e);
 				}
 			}
 		}
@@ -113,30 +98,34 @@ public class BoardList {
 			zf = new ZipFile(jar);
     } catch (Exception e) {
       Debug.error("scanning fpga board definitions: " + jar, e);
+      return;
 		}
 		Enumeration<? extends ZipEntry> entries = zf.entries();
 		while (entries.hasMoreElements()) {
-			ZipEntry ze = entry.nextElement();
+			ZipEntry ze = entries.nextElement();
       if (ze.isDirectory()) continue;
 			String path = ze.getName();
-      if (!path.startsWith(RESOURCE_PATH+"/") || !name.toLowerCase().endsWith(".xml"))
+      if (!path.startsWith(RESOURCE_PATH+"/") || !path.toLowerCase().endsWith(".xml"))
         continue;
       // FIXME: examine xml to ensure it is a board, and get a proper name
       path = "jar|" + jar + "|" + path;
       String name = nameForPath(path);
-      builtinBoardNames.add(name);
-      builtinBoardPaths.add(path);
+      boards.putIfAbsent(name, path);
 		}
 		try { zf.close(); }
     catch (IOException e) { }
 	}
 
   // FIXME: use better names
-	private static String nameForPath(String path) {
+	public static String nameForPath(String path) {
+		return filenameForPath(path);
+	}
+
+	private static String filenameForPath(String path) {
 		String[] parts;
-		if (path.startsWith("jar:"))
+		if (path.startsWith("jar|")) // "jar|somejar.jar|/resources/logisim/boards/some/board.xml"
 			parts = path.split("/");
-		else
+		else // "file|/some/path/board.xml"  or "/some/path/board.xml"
 			parts = path.split(Pattern.quote(File.separator));
     String name = parts[parts.length - 1];
     if (name.toLowerCase().endsWith(".xml"))
@@ -154,8 +143,8 @@ public class BoardList {
       }
       File file = new File(elt);
       if (file.isDirectory()) {
-        loadBoardsFromDirectory(file, false /* non recursive */);
-        loadBoardsFromDirectory(new File(file, RESOURCE_PATH, true /* recursive */));
+        // loadBoardsFromDirectory(file, false /* non recursive */);
+        loadBoardsFromDirectory(new File(file, RESOURCE_PATH), true /* recursive */);
       } else {
         loadBoardsfromJar(file);
       }
@@ -167,65 +156,65 @@ public class BoardList {
       path = "file|" + path;
       // FIXME: examine xml to ensure it is a board, and get a proper name
       String name = nameForPath(path);
-      externalBoardNames.add(name);
-      externalBoardPaths.add(path);
+      boards.putIfAbsent(name, path);
     }
   }
 
 	public static boolean hasBoardNamed(String name) {
-    return GetBoardFilePath(BoardName) != null;
+    return boards.containsKey(name);
 	}
 
 	public static String getPathForBoardNamed(String name) {
-		for (String board : AppPreferences.FPGA_BOARDLIST.get())
-			if (nameForPath(board).equals(BoardName))
-				return board;
-		for (String board : builtinBoards)
-			if (nameForPath(board).equals(BoardName))
-				return board;
-		return null;
+    System.out.println("path for: '" + name + "' = '"+boards.get(name)+"'");
+    return boards.get(name);
 	}
 
-  // names are unique
 	public static List<String> getAllNames() {
-		ArrayList<String> ret = new ArrayList<>();
-    for (String path : AppPreferences.FPGA_BOARDLIST.get()) {
-      path = "file|" + path;
-      String name = nameForPath(path);
-      if (!ret.contains(name))
-        ret.add(name);
-    }
-    for (String name : builtinBoardNames)
-      if (!ret.contains(name))
-        ret.add(name);
-    return ret;
-	}
+    return List.copyOf(boards.navigableKeySet());
+  }
+
+  private static String getFirstName()  {
+    if (boards.isEmpty()) System.out.println("fallback, but no boards");
+    else System.out.println("fallback to '" + boards.firstKey() +"'");
+    return boards.isEmpty() ? null : boards.firstKey();
+  }
 
   public static String getSelectedName() {
     String b = AppPreferences.FPGA_SELECTED_BOARD.get();
-    // FPGA_SELECTED_BOARD can be a name
-    // , a filename (without .xml), a file path,
-    // or a tagged path.
-    if (getAllNames().contains(b))
+    // FPGA_SELECTED_BOARD can be empty...
+    if (b == null || b.isEmpty())
+      return getFirstName(); // fallback
+    // ... or a proper board name
+    if (boards.containsKey(b))
       return b;
-    // FPGA_SELECTED_BOARD can be a filename (without the xml path)
-    //
-    // , a filename (without .xml), a file path,
-    // or a tagged path.
-
-    if (kb.GetBoardNames().contains(b))
-      return b;
-    else if (!kb.GetBoardNames().isEmpty())
-      return kb.GetBoardNames().get(0);
-    else
-      return "";
+    // ... or a tagged file path like "jar|..." or "file|..."
+    if (b.startsWith("jar|") || b.startsWith("file|")) {
+      for (Map.Entry<String, String> e : boards.entrySet()) {
+        if (e.getValue().equals(b))
+          return e.getKey();
+      }
+      return getFirstName(); // fallback
+    }
+    // ... or a plain file path
+    if (b.toLowerCase().endsWith(".xml")) {
+      for (Map.Entry<String, String> e : boards.entrySet()) {
+        if (e.getValue().equals("file|"+b))
+          return e.getKey();
+      }
+      return getFirstName(); // fallback
+    }
+    // ... or a bare file name (without the ".xml" extension)
+    for (Map.Entry<String, String> e : boards.entrySet()) {
+      if (b.equals(filenameForPath(e.getValue())))
+        return e.getKey();
+    }
+    // no valid user board preference; just use the first board
+    return getFirstName();
   }
 
   public static String getSelectedPath() {
-    System.out.println("board = " + known().getSelectedBoard());
-    System.out.println(" path = " + known().GetBoardFilePath(known().getSelectedBoard()));
-    return known().GetBoardFilePath(known().getSelectedBoard());
+    String name = getSelectedName();
+    return name == null ? null : boards.get(name);
   }
-
 
 }

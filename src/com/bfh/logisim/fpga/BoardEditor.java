@@ -29,6 +29,7 @@
  */
 
 package com.bfh.logisim.fpga;
+import static com.bfh.logisim.fpga.Strings.S;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -50,28 +51,29 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileFilter;
 
 import com.bfh.logisim.settings.BoardList;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.generic.LFrame;
-import com.cburch.logisim.gui.main.ExportImage;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
+import com.cburch.logisim.util.JFileChoosers;
 
 public class BoardEditor extends JFrame {
 
-	private JButton save, load, builtin;
+	private JButton save;
 	private JTextField name;
 	private BoardPanel image;
   private Chipset fpga;
 	public LinkedList<BoardIO> ioComponents = new LinkedList<>();
 
 	public BoardEditor() {
-    super(Strings.get("FPGABoardEditor"));
+    super(S.get("FPGABoardEditor"));
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
 
 		setResizable(false);
@@ -96,12 +98,16 @@ public class BoardEditor extends JFrame {
 		JButton chipset = new JButton("Configure FPGA Chipset");
 		chipset.addActionListener(e -> doChipsetDialog());
 		buttonsA.add(chipset);
+		
+    JButton pic = new JButton("Change Picture");
+		pic.addActionListener(e -> doChangeImage());
+		buttonsB.add(pic);
 
-		builtin = new JButton("Built-in FPGA Boards");
+		JButton builtin = new JButton("Built-in FPGA Boards");
 		builtin.addActionListener(e -> doBuiltin());
 		buttonsB.add(builtin);
 
-		load = new JButton("Load Board");
+		JButton load = new JButton("Load Board");
 		load.addActionListener(e -> doLoad());
 		buttonsB.add(load);
 
@@ -161,18 +167,20 @@ public class BoardEditor extends JFrame {
 
   private void doBuiltin() {
     ComboBox<String> boardsList = new ComboBox<>();
-    for (String boardname : BoardList.names())
+    BoardList.refresh();
+    for (String boardname : BoardList.getAllNames())
       boardsList.addItem(boardname);
-    boardsList.setSelectedItem(BoardList.getSelectedBoard());
-    JDialogOk dlg = new JDialogOk("Select Built-in FPGA Board") {
+    boardsList.setSelectedItem(BoardList.getSelectedName());
+    JDialogOk dlg = new JDialogOk("Select Existing FPGA Board") {
       public void okClicked() {
         String name = boardsList.getSelectedValue();
+        System.out.println("select '" + name + "'");
         AppPreferences.FPGA_SELECTED_BOARD.set(name);
         setBoard(BoardReader.read(BoardList.getSelectedPath()));
       }
     };
     JPanel p = new JPanel();
-    p.add(new JLabel("Select a built-in FPGA board:"));
+    p.add(new JLabel("Select existing FPGA board:"));
     p.add(boardsList);
     dlg.getContentPane().add(p, BorderLayout.CENTER);
     dlg.pack();
@@ -454,12 +462,15 @@ public class BoardEditor extends JFrame {
 		}
 		return num * multiplier;
 	}
+  
+  private static final FileFilter PNG_JPG_FILTER =
+      Loader.makeFileFilter(S.unlocalized("Images (*.png, *.jpg, ...)"),
+          ".png", ".jpg", ".jpeg", ".jpe", ".jfi", ".jfif", ".jfi");
 
   public void doChangeImage() {
-    JFileChooser fc = new JFileChooser();
-    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-    fc.setDialogTitle("Choose FPGA board picture to use");
-    fc.setFileFilter(ExportImage.PNG_FILTER);
+    JFileChooser fc = JFileChoosers.create();
+    fc.setDialogTitle("Select FPGA Board Picture");
+    fc.setFileFilter(PNG_JPG_FILTER);
     fc.setAcceptAllFileFilterUsed(false);
     int retval = fc.showOpenDialog(null);
     if (retval == JFileChooser.APPROVE_OPTION) {

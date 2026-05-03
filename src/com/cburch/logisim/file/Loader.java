@@ -48,7 +48,6 @@ import javax.swing.filechooser.FileFilter;
 
 import com.cburch.hdl.HdlFile;
 import com.cburch.logisim.Main;
-import com.cburch.logisim.gui.start.SplashScreen;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.Builtin;
 import com.cburch.logisim.tools.AddTool;
