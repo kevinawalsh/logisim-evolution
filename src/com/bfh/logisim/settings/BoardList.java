@@ -33,146 +33,186 @@ package com.bfh.logisim.settings;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import com.cburch.logisim.prefs.AppPreferences;
 
+
+// Tagged path: file|/Users/kwalsh//AlchitryCu_v2.xml (external board, MacOS, linux)
+//              file|C:\\Users\\kwalsh\\AlchitryCu_v2.xml (external board, Windows)
+//              jar|/home/logisim.jar|resources/logisim/boards/TERASIC_DE0.xml (builtin board)
+// Filename: TERASIC_DE0, AlchitryCu_v2
+//          (this is the last part of the path, may not be unique)
+// Name: "Terasic DE0", "Alchitry Cu V2",
+//          "Alchitry Cu V2 (external)", ...
+//          (from xml, modified for uniqueness)
+//
+// FIXME: for now, we are still using name = filename, but need to fix this
+
 public class BoardList {
 
-	private static String getBoardName(String BoardIdentifier) {
-		String[] parts;
-		if (BoardIdentifier.contains("url:"))
-			parts = BoardIdentifier.split("/");
-		else
-			parts = BoardIdentifier.split(Pattern.quote(File.separator));
-		return parts[parts.length - 1].replace(".xml", "");
+  private static final String RESOURCE_PATH = "resources/logisim/boards";
+	private static final ArrayList<String> builtinBoardNames = new ArrayList<>();
+	private static final ArrayList<String> builtinBoardPaths = new ArrayList<>();
+	private static final ArrayList<String> externalBoardNames = new ArrayList<>();
+	private static final ArrayList<String> externalBoardPaths = new ArrayList<>();
+  private static final TreeMap<String name, String path> boards = new TreeMap<>();
+	static {
+    refresh();
 	}
 
-	private static Collection<String> getBoards(Pattern p, String Match,
-			String Element) {
-		ArrayList<String> ret = new ArrayList<String>();
-		File file = new File(Element);
-		if (file.isDirectory()) {
-			ret.addAll(getBoardsfromDirectory(p, Match, file));
-		} else {
-			ret.addAll(getBoardsfromJar(p, Match, file));
-		}
-		return ret;
-	}
+  private static void refresh() {
+    builtinBoardNames.clear();
+    builtinBoardPaths.clear();
+    externalBoardNames.clear();
+    externalBoardPaths.clear();
+    boards.clear();
 
-	private static Collection<String> getBoardsfromDirectory(Pattern p,
-			String Match, File Dir) {
-		ArrayList<String> ret = new ArrayList<String>();
-		File[] fileList = Dir.listFiles();
-		for (File file : fileList) {
+    loadBuiltinBoards();
+    loadExternalBoards();
+
+    for (int i = 0; i < externalBoardNames.size(); i++)
+      boards.putIfAbsent(externalBoardNames.get(i), externalBoardPaths.get(i));
+    for (int i = 0; i < builtinBoardNames.size(); i++)
+      boards.putIfAbsent(builtinBoardNames.get(i), builtinBoardPaths.get(i));
+  }
+
+
+	private static void loadBoardsFromDirectory(File dir, boolean recursive) {
+		File[] files = dir.listFiles();
+    if (files == null)
+      return;
+		for (File file : files) {
 			if (file.isDirectory()) {
-				ret.addAll(getBoardsfromDirectory(p, Match, file));
+        if (recursive)
+          loadBoardsFromDirectory(file, true);
 			} else {
 				try {
-					String fileName = file.getCanonicalPath();
-					boolean accept = p.matcher(fileName).matches()
-							&& fileName.contains(Match);
-					if (accept) {
-						ret.add("file:" + fileName);
-					}
+					String path = file.getCanonicalPath();
+          if (!path.toLowerCase().endsWith(".xml"))
+            continue;
+          // FIXME: examine xml to ensure it is a board, and get a proper name
+          path = "file|" + path;
+          String name = nameForPath(path);
+          builtinBoardNames.add(name);
+          builtinBoardPaths.add(path);
 				} catch (IOException e) {
-					throw new Error(e);
+					Debug.error("scanning fpga board definitions: " + path, e);
 				}
 			}
 		}
-		return ret;
 	}
 
-	private static Collection<String> getBoardsfromJar(Pattern p, String Match,
-			File Dir) {
-		// All path separators are defined with File.Separator, but when
-		// browsing the .jar, java uses slash even in Windows
-		Match = Match.replaceAll("\\\\", "/");
-		ArrayList<String> ret = new ArrayList<String>();
+	private static void loadBoardsfromJar(File jar) {
 		ZipFile zf;
 		try {
-			zf = new ZipFile(Dir);
-		} catch (ZipException e) {
-			throw new Error(e);
-		} catch (IOException e) {
-			throw new Error(e);
+			zf = new ZipFile(jar);
+    } catch (Exception e) {
+      Debug.error("scanning fpga board definitions: " + jar, e);
 		}
-		Enumeration<? extends ZipEntry> e = zf.entries();
-		while (e.hasMoreElements()) {
-			ZipEntry ze = (ZipEntry) e.nextElement();
-			String fileName = ze.getName();
-			boolean accept = p.matcher(fileName).matches()
-					&& fileName.contains(Match);
-			if (accept) {
-				ret.add("url:" + fileName);
-			}
+		Enumeration<? extends ZipEntry> entries = zf.entries();
+		while (entries.hasMoreElements()) {
+			ZipEntry ze = entry.nextElement();
+      if (ze.isDirectory()) continue;
+			String path = ze.getName();
+      if (!path.startsWith(RESOURCE_PATH+"/") || !name.toLowerCase().endsWith(".xml"))
+        continue;
+      // FIXME: examine xml to ensure it is a board, and get a proper name
+      path = "jar|" + jar + "|" + path;
+      String name = nameForPath(path);
+      builtinBoardNames.add(name);
+      builtinBoardPaths.add(path);
 		}
-		try {
-			zf.close();
-		} catch (IOException e1) {
-			throw new Error(e1);
-		}
-		return ret;
+		try { zf.close(); }
+    catch (IOException e) { }
 	}
 
-	private static String BoardResourcePath = "resources" + File.separator
-			+ "logisim" + File.separator + "boards";
-
-	private ArrayList<String> builtinBoards = new ArrayList<String>();
-
-	private BoardList() {
-		String classPath = System.getProperty("java.class.path",
-				File.pathSeparator);
-		String[] classPathElements = classPath.split(File.pathSeparator);
-		Pattern p = Pattern.compile(".*.xml");
-		for (String element : classPathElements)
-			builtinBoards.addAll(getBoards(p, BoardResourcePath, element));
-    builtinBoards.sort(null);
+  // FIXME: use better names
+	private static String nameForPath(String path) {
+		String[] parts;
+		if (path.startsWith("jar:"))
+			parts = path.split("/");
+		else
+			parts = path.split(Pattern.quote(File.separator));
+    String name = parts[parts.length - 1];
+    if (name.toLowerCase().endsWith(".xml"))
+      name = name.substring(0, name.length() - 4);
+    return name;
 	}
 
-  private static BoardList singleton;
-  public static BoardList known() {
-    if (singleton == null)
-      singleton = new BoardList();
-    return singleton;
+  private static void loadBuiltinBoards() {
+    String classPath = System.getProperty("java.class.path", "");
+    for (String elt : classPath.split(File.pathSeparator)) {
+      if (elt.isEmpty()) continue; // empty classpath, trailing separator, etc.
+      if (elt.endsWith("*") || elt.endsWith(File.separator + "*"))  {
+        // TODO: enumerate directory for jar files. or maybe also zip and xml?
+        continue;
+      }
+      File file = new File(elt);
+      if (file.isDirectory()) {
+        loadBoardsFromDirectory(file, false /* non recursive */);
+        loadBoardsFromDirectory(new File(file, RESOURCE_PATH, true /* recursive */));
+      } else {
+        loadBoardsfromJar(file);
+      }
+    }
   }
 
-	public boolean BoardInCollection(String BoardName) {
+  private static void loadExternalBoards() {
+		for (String path : AppPreferences.FPGA_BOARDLIST.get()) {
+      path = "file|" + path;
+      // FIXME: examine xml to ensure it is a board, and get a proper name
+      String name = nameForPath(path);
+      externalBoardNames.add(name);
+      externalBoardPaths.add(path);
+    }
+  }
+
+	public static boolean hasBoardNamed(String name) {
     return GetBoardFilePath(BoardName) != null;
 	}
 
-	public boolean BoardIsUrl(String BoardName) {
-    String path = GetBoardFilePath(BoardName);
-    if (path == null)
-      throw new Error(); // ???
-    return path != null && path.contains("url:");
-	}
-
-	public String GetBoardFilePath(String BoardName) {
+	public static String getPathForBoardNamed(String name) {
 		for (String board : AppPreferences.FPGA_BOARDLIST.get())
-			if (getBoardName(board).equals(BoardName))
+			if (nameForPath(board).equals(BoardName))
 				return board;
 		for (String board : builtinBoards)
-			if (getBoardName(board).equals(BoardName))
+			if (nameForPath(board).equals(BoardName))
 				return board;
 		return null;
 	}
-	
-	public ArrayList<String> GetBoardNames() {
+
+  // names are unique
+	public static List<String> getAllNames() {
 		ArrayList<String> ret = new ArrayList<>();
-    ret.addAll(AppPreferences.FPGA_BOARDLIST.get());
-    ret.addAll(builtinBoards);
+    for (String path : AppPreferences.FPGA_BOARDLIST.get()) {
+      path = "file|" + path;
+      String name = nameForPath(path);
+      if (!ret.contains(name))
+        ret.add(name);
+    }
+    for (String name : builtinBoardNames)
+      if (!ret.contains(name))
+        ret.add(name);
     return ret;
 	}
 
-  public static String getSelectedBoard() {
-    BoardList kb = known();
+  public static String getSelectedName() {
     String b = AppPreferences.FPGA_SELECTED_BOARD.get();
+    // FPGA_SELECTED_BOARD can be a name
+    // , a filename (without .xml), a file path,
+    // or a tagged path.
+    if (getAllNames().contains(b))
+      return b;
+    // FPGA_SELECTED_BOARD can be a filename (without the xml path)
+    //
+    // , a filename (without .xml), a file path,
+    // or a tagged path.
+
     if (kb.GetBoardNames().contains(b))
       return b;
     else if (!kb.GetBoardNames().isEmpty())
@@ -182,11 +222,10 @@ public class BoardList {
   }
 
   public static String getSelectedPath() {
+    System.out.println("board = " + known().getSelectedBoard());
+    System.out.println(" path = " + known().GetBoardFilePath(known().getSelectedBoard()));
     return known().GetBoardFilePath(known().getSelectedBoard());
   }
 
-  public static ArrayList<String> names() {
-    return known().GetBoardNames();
-  }
 
 }

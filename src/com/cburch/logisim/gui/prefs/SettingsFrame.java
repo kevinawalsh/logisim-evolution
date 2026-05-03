@@ -36,8 +36,11 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.KeyEvent;
 import java.util.List;
 import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -430,6 +433,11 @@ public class SettingsFrame extends LFrame.Dialog {
     mainPanel.add(rightSide, BorderLayout.CENTER);
 
     getContentPane().add(mainPanel, BorderLayout.CENTER);
+
+    getRootPane().registerKeyboardAction(
+        e -> setVisible(false),
+        KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+        JComponent.WHEN_IN_FOCUSED_WINDOW);
   }
 
   private void showPanel(SettingsPanel panel, Section section) {

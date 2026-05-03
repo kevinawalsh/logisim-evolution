@@ -71,7 +71,7 @@ public class FPGABoardlistPref implements SettingsStore.Item {
   private void setFromStore() {
     String s = SettingsStore.getEffective(section, subsection);
     paths.clear();
-    paths.addAll(List.of(s.split("|")));
+    paths.addAll(List.of(s.split("\\|")));
     AppPreferences.fireFPGAChangeEvent();
   }
 
