@@ -155,6 +155,8 @@ public class ApioDownload extends FPGADownload {
     if (board.apio_name != null && !board.apio_name.equals(""))
       board_name = board.apio_name;
 
+    // FIXME: this isn't a property of apio;
+    // certain boards support only pull-up, or only floating, or not pull-down
     if (board.fpga.UnusedPinsBehavior != PullBehavior.UNKNOWN &&
         board.fpga.UnusedPinsBehavior != PullBehavior.PULL_UP) {
       err.AddSevereWarning("Design specifies " + board.fpga.UnusedPinsBehavior +
@@ -176,7 +178,7 @@ public class ApioDownload extends FPGADownload {
       return false;
 
     if (out.isVhdl) {
-      err.AddSevereWarning("VHDL was chosen, but apio toolchain maybe only supports Verilog.");
+      err.AddSevereWarning("VHDL was chosen, but apio toolchain only supports Verilog.");
       err.AddSevereWarning("Design will probably fail to compile.");
     }
 
