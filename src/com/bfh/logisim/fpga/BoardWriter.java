@@ -48,7 +48,7 @@ import com.cburch.logisim.util.Errors;
 
 class BoardWriter {
 
-	public static boolean write(String filename, Board board) {
+	public static boolean write(File file, Board board) {
     Document doc;
 		try {
       Chipset chip = board.fpga;
@@ -105,11 +105,10 @@ class BoardWriter {
 			Transformer aTransformer = tranFactory.newTransformer();
 			aTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			Source src = new DOMSource(doc);
-			File file = new File(filename);
 			Result dest = new StreamResult(file);
 			aTransformer.transform(src, dest);
 		} catch (Exception e) {
-      Errors.title("Error").show("Error writing XML data to "+filename+": " + e.getMessage(), e);
+      Errors.title("Error").show("Error writing XML data to "+file+": " + e.getMessage(), e);
       return false;
 		}
     return true;

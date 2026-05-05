@@ -142,22 +142,25 @@ public class BoardEditor extends JFrame {
   }
 
 	private void doSave() {
-    if (name.getText().isEmpty()) {
-      Errors.title("Error").show("Please specify a name for the board before saving.");
-      return;
-    }
     if (ioComponents.isEmpty()) {
       Errors.title("Warning").warn("No I/O resources have been specified.\n"
           + "Before saving, you may want to draw rectangles on the image\n"
           + "to specify I/O resources for this FPGA board.");
     }
-    Board board = new Board(name.getText(), null, null, fpga, image.getImage());
-    board.addComponents(ioComponents);
-    String dir = getSaveDirectory();
-    if (dir == null)
+    // if (name.getText().isEmpty()) {
+    //   Errors.title("Error").show("Please specify a name for the board before saving.");
+    //   return;
+    // }
+    File file = getSaveFile();
+    if (file == null)
       return;
-    String filename = dir + board.name + ".xml";
-    if (!BoardWriter.write(filename, board))
+    String filename = file.getName();
+    if (filename.toLowerCase().endsWith(".xml"))
+      filename = filename.substring(0, filename.length() - 4);
+    name.setText(filename);
+    Board board = new Board(filename, null, null, fpga, image.getImage());
+    board.addComponents(ioComponents);
+    if (!BoardWriter.write(file, board))
       return;
     // setVisible(false);
     // clear();
@@ -188,8 +191,7 @@ public class BoardEditor extends JFrame {
   }
 
   private void doLoad() {
-    JFileChooser fc = new JFileChooser();
-    fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+    JFileChooser fc = JFileChoosers.create();
     fc.setDialogTitle("Choose XML board description");
     fc.setFileFilter(Loader.XML_FILTER);
     fc.setAcceptAllFileFilterUsed(false);
@@ -231,18 +233,19 @@ public class BoardEditor extends JFrame {
     setEnables();
 	}
 
-	private String getSaveDirectory() {
-		JFileChooser fc = new JFileChooser();
-		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		fc.setDialogTitle("Choose directory to save XML board description:");
+	private File getSaveFile() {
+    JFileChooser fc = JFileChoosers.create();
+		fc.setDialogTitle("Choose file to save XML board description:");
+    fc.setFileFilter(Loader.XML_FILTER);
+    fc.setAcceptAllFileFilterUsed(false);
+    if (name.getText().isEmpty())
+      fc.setSelectedFile(new File("Unnamed_FPGA_board.xml"));
+    else
+      fc.setSelectedFile(new File(name.getText() + ".xml"));
 		int retval = fc.showSaveDialog(null);
 		if (retval != JFileChooser.APPROVE_OPTION)
       return null;
-    String dir = fc.getSelectedFile().getPath();
-    dir = dir.replaceAll("\\\\","/");
-    if (!dir.endsWith("/"))
-      dir += "/";
-    return dir;
+    return fc.getSelectedFile();
 	}
 
 	public void reactivate() {
