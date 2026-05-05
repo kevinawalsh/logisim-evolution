@@ -263,6 +263,21 @@ public class BoardEditor extends JFrame {
     toFront();
   }
 
+  // Open a new board editor and load the board identified by arg.  arg is
+  // resolved flexibly: a known board name, a tagged path ("file|..." or
+  // "jar|..."), a filesystem path (with or without .xml), or a bare filename
+  // stem.  An empty or null arg opens a blank editor.
+  public static void openWithBoard(String arg) {
+    BoardEditor editor = new BoardEditor();
+    if (arg != null && !arg.isEmpty()) {
+      String path = BoardList.getPathForArg(arg);
+      if (path != null)
+        editor.setBoard(BoardReader.read(path));
+      else
+        Errors.title("Warning").warn("No FPGA board found for: " + arg);
+    }
+  }
+
   private static void add(JComponent dlg, GridBagConstraints c,
       String caption, JComponent input) {
     dlg.add(new JLabel(caption + " "), c);

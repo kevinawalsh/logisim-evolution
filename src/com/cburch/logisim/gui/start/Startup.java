@@ -67,6 +67,7 @@ import com.cburch.logisim.proj.ProjectActions;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.DesktopIntegration;
 import com.cburch.logisim.util.Errors;
+import com.bfh.logisim.fpga.BoardEditor;
 import com.cburch.logisim.util.LocaleManager;
 
 public class Startup {
@@ -93,6 +94,7 @@ public class Startup {
     options.put("--config", ONEPARAM);
     options.put("--defaults", ONEPARAM);
     options.put("--questa", ONEPARAM);
+    options.put("--edit-fpga-board", ONEPARAM);
     options.put("--sub", TWOPARAM);
     options.put("--test", TWOPARAM); // is this a tty option? what is this?
 
@@ -433,6 +435,8 @@ public class Startup {
         // ignore
       } else if (arg.equals("-noupdates")) {
         // ignore
+      } else if (arg.equals("-edit-fpga-board")) {
+        ret.editFpgaBoard = param0;
       } else if (arg.equals("-questa")) {
         if (param0.equals("yes"))
           AppPreferences.QUESTA_VALIDATION.set(true);
@@ -475,7 +479,7 @@ public class Startup {
     for (int i = 1; ; i++) {
       String key = "argUsage" + i;
       String msg = S.get(key);
-      if (msg.equals(key))
+      if (msg.equals(key) || msg.equals("END"))
         break;
       if (!msg.startsWith("-") && !msg.startsWith(" ")) {
         // header
@@ -532,6 +536,8 @@ public class Startup {
   private String generateOutfile;
   private boolean doPinout = false;
   private String pinoutSpec;
+
+  private String editFpgaBoard = null;
 
   private ArrayList<File> filesToPrint = new ArrayList<>();
 
@@ -678,8 +684,11 @@ public class Startup {
 
     // load file
     if (filesToOpen.isEmpty()) {
-      Project proj = ProjectActions.doNew(monitor);
-      proj.setStartupScreen(true);
+      if (editFpgaBoard == null) {
+        // Normal startup: open a blank circuit window.
+        Project proj = ProjectActions.doNew(monitor);
+        proj.setStartupScreen(true);
+      }
       if (showSplash)
         monitor.close();
       monitor = null;
@@ -732,6 +741,9 @@ public class Startup {
 
     for (File fileToPrint : filesToPrint)
       doPrintFile(fileToPrint);
+
+    if (editFpgaBoard != null)
+      BoardEditor.openWithBoard(editFpgaBoard);
 
     if (exitAfterStartup)
       System.exit(0);

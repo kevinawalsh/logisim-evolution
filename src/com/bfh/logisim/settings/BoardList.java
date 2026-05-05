@@ -164,6 +164,42 @@ public class BoardList {
     return boards.containsKey(name);
 	}
 
+  // Resolve a command-line argument to a tagged board path, using the same
+  // flexible matching as getSelectedName(): board name, tagged path, filesystem
+  // path (with or without .xml), or bare filename stem. Returns null if arg is
+  // empty or cannot be resolved.
+  public static String getPathForArg(String arg) {
+    if (arg == null || arg.isEmpty())
+      return null;
+    // Exact board name match
+    if (boards.containsKey(arg))
+      return boards.get(arg);
+    // Already a tagged path ("jar|..." or "file|...")
+    if (arg.startsWith("jar|") || arg.startsWith("file|")) {
+      for (String path : boards.values())
+        if (path.equals(arg))
+          return path;
+      return arg; // use directly even if not in the map
+    }
+    // Filesystem path ending in .xml
+    if (arg.toLowerCase().endsWith(".xml")) {
+      String tagged = "file|" + arg;
+      for (String path : boards.values())
+        if (path.equals(tagged))
+          return path;
+      if (new File(arg).exists())
+        return tagged;
+    }
+    // Plain filesystem path without .xml
+    if (new File(arg).exists())
+      return "file|" + arg;
+    // Bare filename stem (without .xml extension)
+    for (Map.Entry<String, String> e : boards.entrySet())
+      if (arg.equals(filenameForPath(e.getValue())))
+        return e.getValue();
+    return null; // not found
+  }
+
 	public static String getPathForBoardNamed(String name) {
     System.out.println("path for: '" + name + "' = '"+boards.get(name)+"'");
     return boards.get(name);
