@@ -518,6 +518,11 @@ public class BoardEditor extends JFrame {
     sidebar.showIdle();
   }
 
+  public void moveSelectedIO(int newX, int newY) {
+    if (selectedIO == null) return;
+    sidebar.moveEditingIO(newX, newY);
+  }
+
   // Sidebar panel shown to the right of the board image.
   // Shows instructions when idle; shows I/O component properties when a rect
   // is drawn or an existing component is clicked. Changes apply immediately.
@@ -580,7 +585,7 @@ public class BoardEditor extends JFrame {
       // --- Top: type selector and optional size/orientation ---
       JPanel topPanel = new JPanel();
       topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.PAGE_AXIS));
-      topPanel.setBorder(BorderFactory.createTitledBorder("I/O Component Type"));
+      // topPanel.setBorder(BorderFactory.createTitledBorder("I/O Component Type"));
 
       typeCombo = new JComboBox<>(BoardIO.PhysicalTypes.toArray(new BoardIO.Type[0]));
       typeCombo.setRenderer(new DefaultListCellRenderer() {
@@ -617,7 +622,7 @@ public class BoardEditor extends JFrame {
 
       // Pin locations section (rebuilt dynamically)
       JPanel pinSection = new JPanel(new BorderLayout());
-      pinSection.setBorder(BorderFactory.createTitledBorder("FPGA Pin Locations"));
+      //pinSection.setBorder(BorderFactory.createTitledBorder("FPGA Pin Locations"));
       pinInner = new JPanel();
       pinInner.setLayout(new BoxLayout(pinInner, BoxLayout.PAGE_AXIS));
       pinSection.add(pinInner, BorderLayout.CENTER);
@@ -625,7 +630,7 @@ public class BoardEditor extends JFrame {
 
       // Properties section
       JPanel propSection = new JPanel(new BorderLayout());
-      propSection.setBorder(BorderFactory.createTitledBorder("Properties"));
+      // propSection.setBorder(BorderFactory.createTitledBorder("Properties"));
       JPanel propInner = new JPanel();
       propInner.setLayout(new BoxLayout(propInner, BoxLayout.PAGE_AXIS));
 
@@ -731,6 +736,17 @@ public class BoardEditor extends JFrame {
       applyCurrentValues(); // creates the initial IO immediately
     }
 
+    void moveEditingIO(int newX, int newY) {
+      if (editingIO == null) return;
+      int x = Math.max(0, Math.min(newX, Board.IMG_WIDTH  - editingIO.rect.width  - 1));
+      int y = Math.max(0, Math.min(newY, Board.IMG_HEIGHT - editingIO.rect.height - 1));
+      updating = true;
+      xField.setText("" + x);
+      yField.setText("" + y);
+      updating = false;
+      applyCurrentValues();
+    }
+
     void showEditIO(BoardIO io) {
       editingIO = io;
       selectedIO = io;
@@ -830,7 +846,12 @@ public class BoardEditor extends JFrame {
           populateWidthCombo(type, type.defaultWidth());
           populateOrientCombo(type, null, rect);
         }
+        String pinVals[] = new String[pinFields.length];
+        for (int i = 0; i < pinFields.length; i++)
+          pinVals[i] = pinFields[i].getText();
         rebuildPinPanel(type, type.defaultWidth(), null);
+        for (int i = 0; i < pinFields.length && i < pinVals.length; i++)
+          pinFields[i].setText(pinVals[i]);
         updateConditionalRows(type);
       } finally {
         updating = false;

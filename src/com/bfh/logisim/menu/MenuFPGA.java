@@ -69,7 +69,8 @@ public class MenuFPGA extends JMenu implements ActionListener {
 		add(editorMenu);
 		add(commanderMenu);
 		add(settingsMenu);
-		setEnabled(parent instanceof Frame);
+    boolean hasProject = parent instanceof Frame;
+    commanderMenu.setEnabled(hasProject);
 	}
 
 	public void actionPerformed(ActionEvent e) {

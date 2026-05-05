@@ -54,6 +54,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   private Image scaledImage;
 	private int xs, ys, w, h;
 	private BoardEditor editor;
+  private boolean moving = false;  // true when dragging a selected IO to move it
+  private int moveOffsetX, moveOffsetY; // mouse pos relative to IO top-left at drag start
 
 	public BoardPanel(BoardEditor parent) {
     scaledImage = null;
@@ -111,7 +113,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   }
         
   static final Cursor DEFAULT_CURSOR = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
-  static final Cursor CROSSHAIR = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+  static final Cursor CROSSHAIR     = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+  static final Cursor MOVE_CURSOR   = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
 
   @Override
 	public void mouseEntered(MouseEvent e) { mouseMoved(e); }
@@ -125,7 +128,12 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       setCursor(CROSSHAIR);
     } else if (scaledImage != null) {
       BoardIO io = editor.findBoardIO(e.getX(), e.getY());
-      setCursor(io == null ? CROSSHAIR : DEFAULT_CURSOR);
+      if (io == null)
+        setCursor(CROSSHAIR);
+      else if (io == editor.selectedIO)
+        setCursor(MOVE_CURSOR);
+      else
+        setCursor(DEFAULT_CURSOR);
     } else {
       setCursor(DEFAULT_CURSOR);
     }
@@ -133,32 +141,49 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mousePressed(MouseEvent e) {
-		if (scaledImage != null) {
-			xs = e.getX();
-			ys = e.getY();
-			w = h = 0;
-		}
+    if (scaledImage == null) return;
+    BoardIO sel = editor.selectedIO;
+    if (SwingUtilities.isLeftMouseButton(e)
+        && sel != null && sel.rect.contains(e.getX(), e.getY())) {
+      // Begin moving the selected IO
+      moving = true;
+      moveOffsetX = e.getX() - sel.rect.x;
+      moveOffsetY = e.getY() - sel.rect.y;
+      setCursor(MOVE_CURSOR);
+      xs = ys = w = h = 0;
+    } else {
+      // Begin drawing a new rect
+      moving = false;
+      xs = e.getX();
+      ys = e.getY();
+      w = h = 0;
+    }
 	}
 
   @Override
 	public void mouseDragged(MouseEvent e) {
-		if (scaledImage != null) {
-			w = e.getX() - xs;
-			h = e.getY() - ys;
-			repaint();
-		}
+    if (moving) {
+      editor.moveSelectedIO(e.getX() - moveOffsetX, e.getY() - moveOffsetY);
+    } else if (scaledImage != null) {
+      w = e.getX() - xs;
+      h = e.getY() - ys;
+      repaint();
+    }
 	}
 
   @Override
 	public void mouseReleased(MouseEvent e) {
-		if (scaledImage != null) {
+    if (moving) {
+      moving = false;
+      setCursor(DEFAULT_CURSOR); // mouseMoved will refine on next motion
+    } else if (scaledImage != null) {
       if (h != 0 && w != 0) {
         Bounds rect = Bounds.create(xs, ys, w, h);
         editor.doRectSelectDialog(rect, e.getX(), e.getY());
       }
       xs = ys = w = h = 0;
       repaint();
-		}
+    }
 	}
 
   private static final Color MISTY    = new Color(1f, 0f,   0f,   0.4f);
