@@ -128,12 +128,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       setCursor(CROSSHAIR);
     } else if (scaledImage != null) {
       BoardIO io = editor.findBoardIO(e.getX(), e.getY());
-      if (io == null)
-        setCursor(CROSSHAIR);
-      else if (io == editor.selectedIO)
-        setCursor(MOVE_CURSOR);
-      else
-        setCursor(DEFAULT_CURSOR);
+      setCursor(io != null ? MOVE_CURSOR : CROSSHAIR);
     } else {
       setCursor(DEFAULT_CURSOR);
     }
@@ -142,17 +137,25 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   @Override
 	public void mousePressed(MouseEvent e) {
     if (scaledImage == null) return;
-    BoardIO sel = editor.selectedIO;
-    if (SwingUtilities.isLeftMouseButton(e)
-        && sel != null && sel.rect.contains(e.getX(), e.getY())) {
-      // Begin moving the selected IO
-      moving = true;
-      moveOffsetX = e.getX() - sel.rect.x;
-      moveOffsetY = e.getY() - sel.rect.y;
-      setCursor(MOVE_CURSOR);
-      xs = ys = w = h = 0;
+    if (SwingUtilities.isLeftMouseButton(e)) {
+      BoardIO io = editor.findBoardIO(e.getX(), e.getY());
+      if (io != null) {
+        // Begin moving this IO; select it first if it isn't already
+        if (io != editor.selectedIO)
+          editor.doBoardIODialog(io);
+        moving = true;
+        moveOffsetX = e.getX() - io.rect.x;
+        moveOffsetY = e.getY() - io.rect.y;
+        setCursor(MOVE_CURSOR);
+        xs = ys = w = h = 0;
+      } else {
+        // Begin drawing a new rect
+        moving = false;
+        xs = e.getX();
+        ys = e.getY();
+        w = h = 0;
+      }
     } else {
-      // Begin drawing a new rect
       moving = false;
       xs = e.getX();
       ys = e.getY();

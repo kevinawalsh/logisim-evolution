@@ -547,6 +547,7 @@ public class BoardEditor extends JFrame {
     private final CardLayout cards = new CardLayout();
 
     private BoardIO editingIO = null;
+    private Bounds pendingNewRect = null; // set only while creating a brand-new IO
     private boolean updating = false;
 
     // Type selector and variable-width controls
@@ -712,14 +713,20 @@ public class BoardEditor extends JFrame {
     }
 
     void showIdle() {
+      if (editingIO != null)
+        applyCurrentValues(); // flush any pending text-field edits before clearing
       editingIO = null;
+      pendingNewRect = null;
       selectedIO = null;
       cards.show(this, IDLE);
       image.repaint();
     }
 
     void showNewRect(Bounds rect) {
+      if (editingIO != null)
+        applyCurrentValues(); // flush pending edits for the previous IO
       editingIO = null;
+      pendingNewRect = rect;
       selectedIO = null;
 
       updating = true;
@@ -755,14 +762,28 @@ public class BoardEditor extends JFrame {
       if (editingIO == null) return;
       int x = Math.max(0, Math.min(newX, Board.IMG_WIDTH  - editingIO.rect.width  - 1));
       int y = Math.max(0, Math.min(newY, Board.IMG_HEIGHT - editingIO.rect.height - 1));
+      // Build the moved IO directly from the last-committed editingIO — never read
+      // the text fields here, so a partially-typed value can't be accidentally committed.
+      Bounds newRect = Bounds.create(x, y, editingIO.rect.width, editingIO.rect.height);
+      BoardIO newIO = new BoardIO(editingIO.type, editingIO.width, editingIO.label, newRect,
+          editingIO.standard, editingIO.pull, editingIO.activity,
+          editingIO.strength, editingIO.orientation, editingIO.pins);
+      int idx = ioComponents.indexOf(editingIO);
+      if (idx >= 0) ioComponents.set(idx, newIO);
+      editingIO = newIO;
+      selectedIO = newIO;
+      // Update only the position fields (suppress listeners to avoid applyCurrentValues)
       updating = true;
       xField.setText("" + x);
       yField.setText("" + y);
       updating = false;
-      applyCurrentValues();
+      image.repaint();
     }
 
     void showEditIO(BoardIO io) {
+      if (editingIO != null && editingIO != io)
+        applyCurrentValues(); // flush pending edits for the previous IO before switching
+      pendingNewRect = null;
       editingIO = io;
       selectedIO = io;
 
@@ -894,7 +915,12 @@ public class BoardEditor extends JFrame {
       BoardIO.Type type = (BoardIO.Type) typeCombo.getSelectedItem();
       if (type == null) return;
 
-      // Parse geometry; fall back to current IO's rect if invalid
+      // If neither editingIO nor pendingNewRect is set this is a stale focusLost
+      // firing after showIdle() cleared the selection — ignore it.
+      Bounds refRect = editingIO != null ? editingIO.rect : pendingNewRect;
+      if (refRect == null) return;
+
+      // Parse geometry; fall back to refRect on invalid input
       int x, y, w, h;
       try {
         x = Integer.parseInt(xField.getText().trim());
@@ -905,9 +931,8 @@ public class BoardEditor extends JFrame {
             || x + w >= Board.IMG_WIDTH || y + h >= Board.IMG_HEIGHT)
           throw new NumberFormatException("out of range");
       } catch (NumberFormatException e) {
-        if (editingIO == null) return;
-        x = editingIO.rect.x; y = editingIO.rect.y;
-        w = editingIO.rect.width; h = editingIO.rect.height;
+        x = refRect.x; y = refRect.y;
+        w = refRect.width; h = refRect.height;
       }
       Bounds rect = Bounds.create(x, y, w, h);
 
@@ -953,7 +978,9 @@ public class BoardEditor extends JFrame {
         else
           ioComponents.add(newIO);
       } else {
+        // pendingNewRect != null: first time this new IO is being committed
         ioComponents.add(newIO);
+        pendingNewRect = null;
       }
       editingIO = newIO;
       selectedIO = newIO;
