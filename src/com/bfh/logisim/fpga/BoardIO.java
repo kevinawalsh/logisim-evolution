@@ -241,7 +241,7 @@ public class BoardIO {
   }
 
   // constructor for physical I/O resources
-  private BoardIO(Type t, int w, String l, Bounds r,
+  BoardIO(Type t, int w, String l, Bounds r,
       IoStandard s, PullBehavior p, PinActivity a, DriveStrength g, PinOrdering o, String[] x) {
     if (!PhysicalTypes.contains(t))
       throw new IllegalArgumentException("BoardIO type "+t+" is not meant for physical I/O resources");

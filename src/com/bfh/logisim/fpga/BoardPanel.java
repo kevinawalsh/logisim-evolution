@@ -105,6 +105,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       BoardIO io = editor.findBoardIO(e.getX(), e.getY());
       if (io != null)
         editor.doBoardIODialog(io);
+      else
+        editor.clearSelection();
     }
   }
         
@@ -159,8 +161,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 		}
 	}
 
-  private static final Color MISTY = new Color(1f, 0f, 0f, 0.4f);
-  // private static final Color HILIGHT = new Color(1f, 0f, 0f, 0.6f);
+  private static final Color MISTY    = new Color(1f, 0f,   0f,   0.4f);
+  private static final Color SELECTED = new Color(0f, 0.3f, 1f,   0.5f);
 
   @Override
   public void paint(Graphics g) {
@@ -168,11 +170,12 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     if (scaledImage != null) {
       g.drawImage(scaledImage, 0, 0, null);
       for (BoardIO io: editor.ioComponents) {
-        g.setColor(MISTY);
+        boolean sel = (io == editor.selectedIO);
+        g.setColor(sel ? SELECTED : MISTY);
         g.fillRect(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
-        g.setColor(Color.RED);
+        g.setColor(sel ? Color.BLUE : Color.RED);
         g.drawRect(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
-        io.drawOrientedPins(g, null, null, Color.RED);
+        io.drawOrientedPins(g, null, null, sel ? Color.BLUE : Color.RED);
       }
       g.setColor(Color.RED);
       if (w != 0 || h != 0) {
@@ -196,7 +199,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       g.setColor(Color.black);
       g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 18));
 
-      int ypos = 100, i = 0;
+      int ypos = 100;
       for (String msg : lines) {
         FontMetrics fm = g.getFontMetrics();
         float ascent = fm.getAscent();
