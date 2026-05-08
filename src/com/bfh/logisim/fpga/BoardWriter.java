@@ -33,6 +33,7 @@ package com.bfh.logisim.fpga;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -132,7 +133,7 @@ class BoardWriter {
       int picW = board.image.getWidth(null);
       int picH = board.image.getHeight(null);
       String fmt = board.imgFormat;
-      String base64 = ImageXmlFactory.encodeToBase64(board.imgBytes);
+      String base64 = Base64.getEncoder().encodeToString(board.imgBytes);
       sb.append("   <Picture format=\""+fmt+"\" encoding=\"base64\"")
         .append(a("width",  "" + picW))
         .append(a("height", "" + picH))

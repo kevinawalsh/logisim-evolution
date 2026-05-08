@@ -32,10 +32,7 @@ package com.bfh.logisim.fpga;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.PixelGrabber;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,154 +45,38 @@ import javax.imageio.ImageIO;
 
 public class ImageXmlFactoryOld {
 
-  private int width, height;
-  private String format; // only valid after GetPicture() was called successfully
-  private byte bytes[]; // only valid after GetPicture() was called successfully
-	private String[] CodeTable;
-	private StringBuffer AsciiStream;
-	private String[] InitialCodeTable = { "a", "b", "c", "d", "e", "f", "g",
-			"h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
-			"u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G",
-			"H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
-			"U", "V", "W", "X", "Y", "Z", "0", "1", "2", "3", "4", "5", "6",
-			"7", "8", "9", "(", ")", "+a", "+b", "+c", "+d", "+e", "+f", "+g",
-			"+h", "+i", "+j", "+k", "+l", "+m", "+n", "+o", "+p", "+q", "+r",
-			"+s", "+t", "+u", "+v", "+w", "+x", "+y", "+z", "+A", "+B", "+C",
-			"+D", "+E", "+F", "+G", "+H", "+I", "+J", "+K", "+L", "+M", "+N",
-			"+O", "+P", "+Q", "+R", "+S", "+T", "+U", "+V", "+W", "+X", "+Y",
-			"+Z", "+0", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9",
-			"+(", "+)", "-a", "-b", "-c", "-d", "-e", "-f", "-g", "-h", "-i",
-			"-j", "-k", "-l", "-m", "-n", "-o", "-p", "-q", "-r", "-s", "-t",
-			"-u", "-v", "-w", "-x", "-y", "-z", "-A", "-B", "-C", "-D", "-E",
-			"-F", "-G", "-H", "-I", "-J", "-K", "-L", "-M", "-N", "-O", "-P",
-			"-Q", "-R", "-S", "-T", "-U", "-V", "-W", "-X", "-Y", "-Z", "-0",
-			"-1", "-2", "-3", "-4", "-5", "-6", "-7", "-8", "-9", "-(", "-)",
-			"=a", "=b", "=c", "=d", "=e", "=f", "=g", "=h", "=i", "=j", "=k",
-			"=l", "=m", "=n", "=o", "=p", "=q", "=r", "=s", "=t", "=u", "=v",
-			"=w", "=x", "=y", "=z", "=A", "=B", "=C", "=D", "=E", "=F", "=G",
-			"=H", "=I", "=J", "=K", "=L", "=M", "=N", "=O", "=P", "=Q", "=R",
-			"=S", "=T", "=U", "=V", "=W", "=X", "=Y", "=Z", "=0", "=1", "=2",
-			"=3", "=4", "=5", "=6", "=7", "=8", "=9", "=(", "=)" };
-	private char V2_Identifier = '@';
+	private static final char V2_IDENTIFIER = '@';
 
-	private String[] CreateCodeTable(byte stream[]) {
-		String[] result = new String[256];
-		Long[] ocurances = new Long[256];
-		int[] index = new int[256];
-		for (int i = 0; i < 256; i++) {
-			ocurances[i] = (long) 0;
-			index[i] = i;
-		}
-		for (int i = 0; i < stream.length; i++) {
-			ocurances[stream[i] + 128]++;
-		}
-		boolean swapped = true;
-		while (swapped) {
-			swapped = false;
-			for (int i = 0; i < 255; i++) {
-				if (ocurances[i] < ocurances[i + 1]) {
-					swapped = true;
-					int temp = index[i];
-					index[i] = index[i + 1];
-					index[i + 1] = temp;
-					long swap = ocurances[i];
-					ocurances[i] = ocurances[i + 1];
-					ocurances[i + 1] = swap;
-				}
-			}
-		}
-		for (int i = 0; i < 256; i++) {
-			result[index[i]] = InitialCodeTable[i];
-		}
-		return result;
-	}
+  private final int width, height;
+  private final BufferedImage image;
+  private final String format;
+  private final byte bytes[];
+	private final String[] CodeTable;
+	private final StringBuffer AsciiStream;
 
-	// public void CreateStream(Image BoardPicture) {
-	// 	BufferedImage result = new BufferedImage(Board.IMG_WIDTH, Board.IMG_HEIGHT,
-	// 			BufferedImage.TYPE_3BYTE_BGR);
-	// 	Graphics2D g2 = result.createGraphics(); // UI, no custom rendering hints
-  //   try {
-  //     int width = BoardPicture.getWidth(null);
-  //     int hight = BoardPicture.getHeight(null);
-  //     PixelGrabber pixelGrabber = new PixelGrabber(BoardPicture, 0, 0, width,
-  //         hight, false);
-  //     try {
-  //       pixelGrabber.grabPixels();
-  //     } catch (Exception e) {
-  //       /* TODO: handle exceptions */
-  //       System.err.printf("PixelGrabber exception: %s\n", e.getMessage());
-  //     }
-  //     ColorModel color_model = pixelGrabber.getColorModel();
-  //     if (pixelGrabber.getPixels() instanceof byte[]) {
-  //       byte[] the_pixels = (byte[]) pixelGrabber.getPixels();
-  //       int index = 0;
-  //       for (int y = 0; y < hight; y++) {
-  //         for (int x = 0; x < width; x++) {
-  //           Color PixCol = new Color(
-  //               color_model.getRed(the_pixels[index]),
-  //               color_model.getGreen(the_pixels[index]),
-  //               color_model.getBlue(the_pixels[index++]));
-  //           g2.setColor(PixCol);
-  //           g2.fillRect(x, y, 1, 1);
-  //         }
-  //       }
-  //     } else {
-  //       int[] the_pixels = (int[]) pixelGrabber.getPixels();
-  //       int index = 0;
-  //       for (int y = 0; y < hight; y++) {
-  //         for (int x = 0; x < width; x++) {
-  //           Color PixCol = new Color(
-  //               color_model.getRed(the_pixels[index]),
-  //               color_model.getGreen(the_pixels[index]),
-  //               color_model.getBlue(the_pixels[index++]));
-  //           g2.setColor(PixCol);
-  //           g2.fillRect(x, y, 1, 1);
-  //         }
-  //       }
-  //     }
-  //     ByteArrayOutputStream blaat = new ByteArrayOutputStream();
-  //     try {
-  //       ImageIO.write(result, "jpg", blaat);
-  //     } catch (IOException e) {
-  //       // TODO Auto-generated catch block
-  //       System.err.printf("JPEG Writer exception: %s\n", e.getMessage());
-  //     }
-  //     byte data[] = blaat.toByteArray();
-  //     CodeTable = CreateCodeTable(data);
-  //     AsciiStream = new StringBuffer();
-  //     AsciiStream.append(V2_Identifier);
-  //     for (int i = 0; i < data.length; i++) {
-  //       String code = CodeTable[data[i] + 128];
-  //       AsciiStream.append(code);
-  //     }
-  //   } finally {
-  //     g2.dispose();
-  //   }
-	// }
+	public BufferedImage getPicture() { return image; }
+  public String getFormat() { return format; }
+  public byte[] getBytes() { return bytes; }
 
-	// public String GetCodeTable() {
-	// 	StringBuffer result = new StringBuffer();
-	// 	for (int i = 0; i < CodeTable.length; i++) {
-	// 		if (i != 0) {
-	// 			result.append(" ");
-	// 		}
-	// 		result.append(CodeTable[i]);
-	// 	}
-	// 	return result.toString();
-	// }
+  private static byte[] toPngBytes(BufferedImage img) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ImageIO.write(img, "PNG", baos);
+    return baos.toByteArray();
+  }
 
-	public String GetCompressedString() {
-		return AsciiStream.toString();
-	}
+  ImageXmlFactoryOld(int w, int h, String[] Table, String stream) throws IOException {
+    this.width = w;
+    this.height = h;
+		this.CodeTable = Table.clone();
+		this.AsciiStream = new StringBuffer();
+		this.AsciiStream.append(stream);
 
-  public void SetSize(int w, int h) { width = w; height = h; }
-	public BufferedImage GetPicture() throws IOException {
 		if (AsciiStream == null)
-			return null;
+			throw new IOException("missing stream");
 		if (CodeTable == null)
-			return null;
+			throw new IOException("missing code table");
 		if (CodeTable.length != 256)
-			return null;
+			throw new IOException("bad code table size");
 		BufferedImage result = null;
 		Map<String, Integer> CodeLookupTable = new HashMap<String, Integer>();
 		for (int i = 0; i < CodeTable.length; i++)
@@ -205,7 +86,7 @@ public class ImageXmlFactoryOld {
 		TwoCodes.add("-");
 		TwoCodes.add("+");
 		TwoCodes.add("=");
-		boolean jpegCompressed = AsciiStream.charAt(0) == V2_Identifier;
+		boolean jpegCompressed = AsciiStream.charAt(0) == V2_IDENTIFIER;
 		if (jpegCompressed) {
 			index++;
 			ByteArrayOutputStream bytestream = new ByteArrayOutputStream();
@@ -230,15 +111,15 @@ public class ImageXmlFactoryOld {
       format = "jpg";
 			ByteArrayInputStream instream = new ByteArrayInputStream(bytes);
 			try {
-				result = ImageIO.read(instream);
+				image = ImageIO.read(instream);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} else {
-			result = new BufferedImage(width, height,
+			image = new BufferedImage(width, height,
 					BufferedImage.TYPE_3BYTE_BGR);
-			Graphics2D g2 = result.createGraphics(); // UI, no custom rendering hints
+			Graphics2D g2 = image.createGraphics(); // UI, no custom rendering hints
       try {
         g2.setBackground(Color.BLACK);
         String CurRedComp, CurGreenComp, CurBlueComp;
@@ -271,7 +152,7 @@ public class ImageXmlFactoryOld {
             if (!CodeLookupTable.containsKey(CurRedComp)
                 || !CodeLookupTable.containsKey(CurGreenComp)
                 || !CodeLookupTable.containsKey(CurBlueComp)) {
-              return null;
+              throw new IOException("bad pixel data");
                 }
             Color PixCol = new Color(CodeLookupTable.get(CurRedComp),
                 CodeLookupTable.get(CurGreenComp),
@@ -280,31 +161,12 @@ public class ImageXmlFactoryOld {
             g2.fillRect(x, y, 1, 1);
           }
         }
-        bytes = toPngBytes(result);
+        bytes = toPngBytes(image);
         format = "png";
       } finally {
         g2.dispose();
       }
 		}
-		return result;
-	}
-
-  public String getFormat() { return format; }
-  public byte[] getBytes() { return bytes; }
-
-  private static byte[] toPngBytes(BufferedImage img) throws IOException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ImageIO.write(img, "PNG", baos);
-    return baos.toByteArray();
-  }
-
-	public void SetCodeTable(String[] Table) {
-		CodeTable = Table.clone();
-	}
-
-	public void SetCompressedString(String stream) {
-		AsciiStream = new StringBuffer();
-		AsciiStream.append(stream);
 	}
 
 }

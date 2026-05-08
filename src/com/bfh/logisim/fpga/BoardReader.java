@@ -79,7 +79,7 @@ public class BoardReader {
       String name = BoardList.filenameForPath(path);
 
       ImageXmlFactoryOld imgFactory = parsePicture(doc);
-      BufferedImage image = imgFactory.GetPicture();
+      BufferedImage image = imgFactory.getPicture();
       String imageFormat = imgFactory.getFormat();
       byte imageBytes[] = imgFactory.getBytes();
 			Board b = new Board(name, null, parseChipset(doc), image, imageFormat, imageBytes);
@@ -151,11 +151,7 @@ public class BoardReader {
     if (pixels == null)
       throw new Exception("missing image data");
 
-    ImageXmlFactoryOld reader = new ImageXmlFactoryOld();
-    reader.SetCodeTable(codes.split(" "));
-    reader.SetCompressedString(pixels);
-    reader.SetSize(w, h);
-    return reader;
+    return new ImageXmlFactoryOld(w, h, codes.split(" "), pixels);
   }
 
   private static HashMap<String, String> xmlToMap(NodeList xml) {
