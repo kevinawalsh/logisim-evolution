@@ -33,21 +33,11 @@ package com.bfh.logisim.fpga;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.util.EnumSet;
 import java.util.HashMap;
 
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -129,9 +119,9 @@ public class BoardIO {
       case Pin:
         return 1;
       case DIPSwitch:
-        return (DipSwitch.MIN_SWITCH + DipSwitch.MAX_SWITCH)/2;
+        return DipSwitch.DEF_SWITCH;
       case Ribbon:
-        return (PortIO.MIN_IO + PortIO.MAX_IO)/2;
+        return PortIO.DEF_IO;
       case SevenSegment:
         return 8;
       case RGBLED:
@@ -259,7 +249,14 @@ public class BoardIO {
     syntheticValue = 0;
   }
 
-  public static BoardIO parseXml(Node node) throws Exception {
+  // constructor for physical I/O resources, copies existing physical but but with new position
+  BoardIO(BoardIO io, Bounds newPosition) {
+    this(io.type, io.width, io.label, newPosition,
+        io.standard, io.pull, io.activity,
+        io.strength, io.orientation, io.pins);
+  }
+
+  public static BoardIO parseXmlOld(Node node) throws Exception {
     Type t = Type.getPhysicalType(node.getNodeName());
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + node.getNodeName());
@@ -277,6 +274,9 @@ public class BoardIO {
     String name = t.toString();
     if (label != null)
       name += " " + label;
+    // Images in old built-in xml files were 740x400. Presumably, so were all
+    // other old xml files. So coordinates here are probably in that same
+    // coordinate space.
     int x = Integer.parseInt(params.getOrDefault("LocationX", "-1"));
     int y = Integer.parseInt(params.getOrDefault("LocationY", "-1"));
     int w = Integer.parseInt(params.getOrDefault("Width", "-1"));
@@ -336,289 +336,289 @@ public class BoardIO {
     return new BoardIO(t, width, label, r, s, p, a, g, o, pins);
 	}
 
-	public Element encodeXml(Document doc) throws Exception {
-    Element elt = doc.createElement(type.toString());
-    elt.setAttribute("LocationX", ""+rect.x);
-    elt.setAttribute("LocationY", ""+rect.y);
-    elt.setAttribute("Width", ""+rect.width);
-    elt.setAttribute("Height", ""+rect.height);
-    if (label != null)
-      elt.setAttribute("Label", label);
-    if (width == 1) {
-      elt.setAttribute("FPGAPinName", pins[0]);
-    } else {
-      elt.setAttribute("NrOfPins", ""+width);
-      for (int i = 0; i < width; i++)
-        elt.setAttribute("FPGAPin_"+i, pins[i]);
-    }
-    if (strength != DriveStrength.UNKNOWN)
-      elt.setAttribute("FPGAPinDriveStrength", ""+strength);
-    if (activity != PinActivity.UNKNOWN && type != Type.Pin) // skip Pin
-      elt.setAttribute("ActivityLevel", ""+activity);
-    if (pull != PullBehavior.UNKNOWN)
-      elt.setAttribute("FPGAPinPullBehavior", ""+pull);
-    if (standard != IoStandard.UNKNOWN && standard != IoStandard.DEFAULT)
-      elt.setAttribute("FPGAPinIOStandard", ""+standard);
-    if (orientation != null)
-      elt.setAttribute("Orientation", ""+orientation);
-    return elt;
-  }
+	// public Element encodeXml(Document doc) throws Exception {
+  //   Element elt = doc.createElement(type.toString());
+  //   elt.setAttribute("LocationX", ""+rect.x);
+  //   elt.setAttribute("LocationY", ""+rect.y);
+  //   elt.setAttribute("Width", ""+rect.width);
+  //   elt.setAttribute("Height", ""+rect.height);
+  //   if (label != null)
+  //     elt.setAttribute("Label", label);
+  //   if (width == 1) {
+  //     elt.setAttribute("FPGAPinName", pins[0]);
+  //   } else {
+  //     elt.setAttribute("NrOfPins", ""+width);
+  //     for (int i = 0; i < width; i++)
+  //       elt.setAttribute("FPGAPin_"+i, pins[i]);
+  //   }
+  //   if (strength != DriveStrength.UNKNOWN)
+  //     elt.setAttribute("FPGAPinDriveStrength", ""+strength);
+  //   if (activity != PinActivity.UNKNOWN && type != Type.Pin) // skip Pin
+  //     elt.setAttribute("ActivityLevel", ""+activity);
+  //   if (pull != PullBehavior.UNKNOWN)
+  //     elt.setAttribute("FPGAPinPullBehavior", ""+pull);
+  //   if (standard != IoStandard.UNKNOWN && standard != IoStandard.DEFAULT)
+  //     elt.setAttribute("FPGAPinIOStandard", ""+standard);
+  //   if (orientation != null)
+  //     elt.setAttribute("Orientation", ""+orientation);
+  //   return elt;
+  // }
 
-	public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
-    int w = t.defaultWidth();
-    BoardIO template = new BoardIO(t, w, null/*no label*/, r,
-        defaultStandard, defaultPull, defaultActivity, defaultStrength, null /* no orientation */, null /*no pins*/);
-    if (t == Type.DIPSwitch || t == Type.Ribbon)
-      template = doSizeDialog(template, parent);
-    if (template == null)
-      return null;
-    return doInfoDialog(template, parent, false);
-  }
+	// public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
+  //   int w = t.defaultWidth();
+  //   BoardIO template = new BoardIO(t, w, null/*no label*/, r,
+  //       defaultStandard, defaultPull, defaultActivity, defaultStrength, null /* no orientation */, null /*no pins*/);
+  //   if (t == Type.DIPSwitch || t == Type.Ribbon)
+  //     template = doSizeDialog(template, parent);
+  //   if (template == null)
+  //     return null;
+  //   return doInfoDialog(template, parent, false);
+  // }
 
-  public static BoardIO redoUserDefined(BoardIO io, BoardEditor parent) {
-    BoardIO template = io;
-    if (template.type == Type.DIPSwitch || template.type == Type.Ribbon)
-      template = doSizeDialog(template, parent);
-    if (template == null)
-      return io; // user cancelled before getting to config dialog
-    return doInfoDialog(template, parent, true);
-  }
+  // public static BoardIO redoUserDefined(BoardIO io, BoardEditor parent) {
+  //   BoardIO template = io;
+  //   if (template.type == Type.DIPSwitch || template.type == Type.Ribbon)
+  //     template = doSizeDialog(template, parent);
+  //   if (template == null)
+  //     return io; // user cancelled before getting to config dialog
+  //   return doInfoDialog(template, parent, true);
+  // }
 
-  private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
-    int min = t.type == Type.DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
-    int max = t.type == Type.DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
+  // private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
+  //   int min = t.type == Type.DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
+  //   int max = t.type == Type.DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
 
-    final JDialog dlg = new JDialog(parent, t.type + " Size");
-    dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.PAGE_AXIS));
+  //   final JDialog dlg = new JDialog(parent, t.type + " Size");
+  //   dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.PAGE_AXIS));
 
-    String things = t.type == Type.DIPSwitch ? "Switches" : "Pins";
-    JLabel question = new JLabel("Number of " + things + " for " + t.type + ":");
+  //   String things = t.type == Type.DIPSwitch ? "Switches" : "Pins";
+  //   JLabel question = new JLabel("Number of " + things + " for " + t.type + ":");
 
-    JComboBox<Integer> size = new JComboBox<>();
-    for (int i = min; i <= max; i++)
-      size.addItem(i);
-    size.setSelectedItem(t.width);
+  //   JComboBox<Integer> size = new JComboBox<>();
+  //   for (int i = min; i <= max; i++)
+  //     size.addItem(i);
+  //   size.setSelectedItem(t.width);
 
-    JLabel question2 = new JLabel("Orientation:");
-    JComboBox<String> layout = new JComboBox<>();
-    for (PinOrdering po : PinOrdering.OPTIONS)
-      layout.addItem(po.desc);
-    if (t.orientation != null)
-      layout.setSelectedItem(t.orientation.desc);
-    else if (t.rect.width >= t.rect.height)
-      layout.setSelectedItem(t.type == Type.DIPSwitch ? PinOrdering.ORDER_1_LR : PinOrdering.ORDER_2_BTLR);
-    else
-      layout.setSelectedItem(t.type == Type.DIPSwitch ? PinOrdering.ORDER_1_TB : PinOrdering.ORDER_2_LRTB);
+  //   JLabel question2 = new JLabel("Orientation:");
+  //   JComboBox<String> layout = new JComboBox<>();
+  //   for (PinOrdering po : PinOrdering.OPTIONS)
+  //     layout.addItem(po.desc);
+  //   if (t.orientation != null)
+  //     layout.setSelectedItem(t.orientation.desc);
+  //   else if (t.rect.width >= t.rect.height)
+  //     layout.setSelectedItem(t.type == Type.DIPSwitch ? PinOrdering.ORDER_1_LR : PinOrdering.ORDER_2_BTLR);
+  //   else
+  //     layout.setSelectedItem(t.type == Type.DIPSwitch ? PinOrdering.ORDER_1_TB : PinOrdering.ORDER_2_LRTB);
 
-    final int[] width = new int[] { -1 };
-    final PinOrdering[] orientation = new PinOrdering[] { null };
-    JButton next = new JButton("Next");
-    next.addActionListener(e -> {
-      width[0] = (Integer)size.getSelectedItem();
-      orientation[0] = PinOrdering.get((String)layout.getSelectedItem());
-      dlg.setVisible(false);
-    });
+  //   final int[] width = new int[] { -1 };
+  //   final PinOrdering[] orientation = new PinOrdering[] { null };
+  //   JButton next = new JButton("Next");
+  //   next.addActionListener(e -> {
+  //     width[0] = (Integer)size.getSelectedItem();
+  //     orientation[0] = PinOrdering.get((String)layout.getSelectedItem());
+  //     dlg.setVisible(false);
+  //   });
 
-    JPanel options = new JPanel();
-    options.setLayout(new BoxLayout(options, BoxLayout.LINE_AXIS));
-    options.add(question);
-    options.add(size);
-    JPanel options2 = new JPanel();
-    options2.setLayout(new BoxLayout(options2, BoxLayout.LINE_AXIS));
-    options2.add(question2);
-    options2.add(layout);
+  //   JPanel options = new JPanel();
+  //   options.setLayout(new BoxLayout(options, BoxLayout.LINE_AXIS));
+  //   options.add(question);
+  //   options.add(size);
+  //   JPanel options2 = new JPanel();
+  //   options2.setLayout(new BoxLayout(options2, BoxLayout.LINE_AXIS));
+  //   options2.add(question2);
+  //   options2.add(layout);
 
-    dlg.add(options);
-    dlg.add(options2);
-    dlg.add(next);
+  //   dlg.add(options);
+  //   dlg.add(options2);
+  //   dlg.add(next);
 
-    parent.doModal(dlg, t.rect.x + t.rect.width/2, t.rect.y);
+  //   parent.doModal(dlg, t.rect.x + t.rect.width/2, t.rect.y);
 
-    if (width[0] < 0) // cancelled
-      return null;
-    if (t.width == width[0] && t.orientation == orientation[0])
-      return t; // no change
-    return new BoardIO(t.type, width[0], t.label,
-        t.rect, t.standard, t.pull, t.activity, t.strength, orientation[0], t.pins);
-  }
+  //   if (width[0] < 0) // cancelled
+  //     return null;
+  //   if (t.width == width[0] && t.orientation == orientation[0])
+  //     return t; // no change
+  //   return new BoardIO(t.type, width[0], t.label,
+  //       t.rect, t.standard, t.pull, t.activity, t.strength, orientation[0], t.pins);
+  // }
 
   private static DriveStrength defaultStrength = DriveStrength.DEFAULT;
   private static PinActivity defaultActivity = PinActivity.ACTIVE_HIGH;
   private static IoStandard defaultStandard = IoStandard.DEFAULT;
   private static PullBehavior defaultPull = PullBehavior.FLOAT;
 
-  private static void add(JDialog dlg, GridBagConstraints c,
-      String caption, JComponent input) {
-    JLabel label = new JLabel(caption + " ");
-    label.setAlignmentX(1f);
-    dlg.add(label, c);
-    c.gridx++;
-    dlg.add(input, c);
-    c.gridx--;
-    c.gridy++;
-  }
+  // private static void add(JDialog dlg, GridBagConstraints c,
+  //     String caption, JComponent input) {
+  //   JLabel label = new JLabel(caption + " ");
+  //   label.setAlignmentX(1f);
+  //   dlg.add(label, c);
+  //   c.gridx++;
+  //   dlg.add(input, c);
+  //   c.gridx--;
+  //   c.gridy++;
+  // }
 
-  private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent, boolean removable) {
-    final JDialog dlg = new JDialog(parent, t.type + " Properties");
-    dlg.setLayout(new GridBagLayout());
-    GridBagConstraints c = new GridBagConstraints();
-    c.fill = GridBagConstraints.HORIZONTAL;
+  // private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent, boolean removable) {
+  //   final JDialog dlg = new JDialog(parent, t.type + " Properties");
+  //   dlg.setLayout(new GridBagLayout());
+  //   GridBagConstraints c = new GridBagConstraints();
+  //   c.fill = GridBagConstraints.HORIZONTAL;
 
-    JComboBox<IoStandard> standard = new JComboBox<>(IoStandard.OPTIONS);
-    JComboBox<DriveStrength> strength = new JComboBox<>(DriveStrength.OPTIONS);
-    JComboBox<PinActivity> activity = new JComboBox<>(PinActivity.OPTIONS);
-    JComboBox<PullBehavior> pull = new JComboBox<>(PullBehavior.OPTIONS);
+  //   JComboBox<IoStandard> standard = new JComboBox<>(IoStandard.OPTIONS);
+  //   JComboBox<DriveStrength> strength = new JComboBox<>(DriveStrength.OPTIONS);
+  //   JComboBox<PinActivity> activity = new JComboBox<>(PinActivity.OPTIONS);
+  //   JComboBox<PullBehavior> pull = new JComboBox<>(PullBehavior.OPTIONS);
 
-    standard.setSelectedItem(t.standard);
-    strength.setSelectedItem(t.strength);
-    activity.setSelectedItem(t.activity);
-    pull.setSelectedItem(t.pull);
+  //   standard.setSelectedItem(t.standard);
+  //   strength.setSelectedItem(t.strength);
+  //   activity.setSelectedItem(t.activity);
+  //   pull.setSelectedItem(t.pull);
 
-    JTextField x = new JTextField(6);
-    JTextField y = new JTextField(6);
-    JTextField w = new JTextField(6);
-    JTextField h = new JTextField(6);
-    x.setText(""+t.rect.x);
-    y.setText(""+t.rect.y);
-    w.setText(""+t.rect.width);
-    h.setText(""+t.rect.height);
+  //   JTextField x = new JTextField(6);
+  //   JTextField y = new JTextField(6);
+  //   JTextField w = new JTextField(6);
+  //   JTextField h = new JTextField(6);
+  //   x.setText(""+t.rect.x);
+  //   y.setText(""+t.rect.y);
+  //   w.setText(""+t.rect.width);
+  //   h.setText(""+t.rect.height);
 
-    if (!OutputTypes.contains(t.type))
-      strength = null;
-    if (!InputTypes.contains(t.type) || t.type == Type.Pin)
-      pull = null;
-    if (InOutTypes.contains(t.type))
-      activity = null;
+  //   if (!OutputTypes.contains(t.type))
+  //     strength = null;
+  //   if (!InputTypes.contains(t.type) || t.type == Type.Pin)
+  //     pull = null;
+  //   if (InOutTypes.contains(t.type))
+  //     activity = null;
 
-    JTextField label = new JTextField(6);
-    if (t.label != null && t.label.length() > 0)
-      label.setText(t.label);
+  //   JTextField label = new JTextField(6);
+  //   if (t.label != null && t.label.length() > 0)
+  //     label.setText(t.label);
 
-    String[] pinLabels = t.type.pinLabels(t.width);
-    JTextField[] pinLocs = new JTextField[t.width];
-    for (int i = 0; i < t.width; i++) {
-      pinLocs[i] = new JTextField(6);
-      if (t.pins != null && t.pins[i] != null && t.pins[i].length() > 0)
-        pinLocs[i].setText(t.pins[i]);
-    }
+  //   String[] pinLabels = t.type.pinLabels(t.width);
+  //   JTextField[] pinLocs = new JTextField[t.width];
+  //   for (int i = 0; i < t.width; i++) {
+  //     pinLocs[i] = new JTextField(6);
+  //     if (t.pins != null && t.pins[i] != null && t.pins[i].length() > 0)
+  //       pinLocs[i].setText(t.pins[i]);
+  //   }
 
-    c.gridx = 0;
-    c.gridy = 0;
+  //   c.gridx = 0;
+  //   c.gridy = 0;
 
-    for (int i = 0; i < t.width; i++) {
-      add(dlg, c, "FPGA location for " + pinLabels[i] + " :", pinLocs[i]);
-      if (c.gridy == 8) {
-        c.gridx += 2;
-        c.gridy = 0;
-      }
-    }
+  //   for (int i = 0; i < t.width; i++) {
+  //     add(dlg, c, "FPGA location for " + pinLabels[i] + " :", pinLocs[i]);
+  //     if (c.gridy == 8) {
+  //       c.gridx += 2;
+  //       c.gridy = 0;
+  //     }
+  //   }
 
-    c.gridx = 0;
-    c.gridy = Math.max(t.width, 32);
+  //   c.gridx = 0;
+  //   c.gridy = Math.max(t.width, 32);
 
-    add(dlg, c, "Label (optional):", label);
-    add(dlg, c, "Geometry x coordinate:", x);
-    add(dlg, c, "Geometry y coordinate:", y);
-    add(dlg, c, "Geometry width:", w);
-    add(dlg, c, "Geometry height:", h);
-    add(dlg, c, "I/O standard:", standard);
-    if (strength != null)
-      add(dlg, c, "Drive strength:", strength);
-    if (pull != null)
-      add(dlg, c, "Pull behavior:", pull);
-    if (activity != null)
-      add(dlg, c, "Signal activity:", activity);
+  //   add(dlg, c, "Label (optional):", label);
+  //   add(dlg, c, "Geometry x coordinate:", x);
+  //   add(dlg, c, "Geometry y coordinate:", y);
+  //   add(dlg, c, "Geometry width:", w);
+  //   add(dlg, c, "Geometry height:", h);
+  //   add(dlg, c, "I/O standard:", standard);
+  //   if (strength != null)
+  //     add(dlg, c, "Drive strength:", strength);
+  //   if (pull != null)
+  //     add(dlg, c, "Pull behavior:", pull);
+  //   if (activity != null)
+  //     add(dlg, c, "Signal activity:", activity);
 
-    final char[] result = new char[] { 'S' };
+  //   final char[] result = new char[] { 'S' };
 
-    if (removable) {
-      JButton remove = new JButton("Delete Resource");
-      remove.addActionListener(e -> {
-        result[0] = 'R';
-        dlg.setVisible(false);
-      });
-      dlg.add(remove, c);
-      c.gridx++;
-    }
+  //   if (removable) {
+  //     JButton remove = new JButton("Delete Resource");
+  //     remove.addActionListener(e -> {
+  //       result[0] = 'R';
+  //       dlg.setVisible(false);
+  //     });
+  //     dlg.add(remove, c);
+  //     c.gridx++;
+  //   }
 
-    JButton cancel = new JButton("Cancel");
-    cancel.addActionListener(e -> {
-      result[0] = 'C';
-      dlg.setVisible(false);
-    });
-    dlg.add(cancel, c);
-    c.gridx++;
+  //   JButton cancel = new JButton("Cancel");
+  //   cancel.addActionListener(e -> {
+  //     result[0] = 'C';
+  //     dlg.setVisible(false);
+  //   });
+  //   dlg.add(cancel, c);
+  //   c.gridx++;
 
-    JButton ok = new JButton("Save");
-    ok.addActionListener(e -> dlg.setVisible(false));
-    dlg.add(ok, c);
-    c.gridx++;
+  //   JButton ok = new JButton("Save");
+  //   ok.addActionListener(e -> dlg.setVisible(false));
+  //   dlg.add(ok, c);
+  //   c.gridx++;
 
-    String[] pins = new String[t.width];
-    int xx, yy, ww, hh;
-    parent.doModal(dlg, t.rect.x+t.rect.width/2, t.rect.y);
-    for (;;) {
-      if (result[0] == 'R')
-        return null; // user removed resource
-      if (result[0] == 'C' && removable)
-        return t; // cancelled, but explicitly not removed, keep same one
-      if (result[0] == 'C')
-        return null; // user cancelled, we were adding a new one, so don't add it
-      // ensure all locations are specified
-      boolean missing = false;
-      for (int i = 0; i < t.width && !missing; i++) {
-        pins[i] = pinLocs[i].getText();
-        missing = pins[i] == null || pins[i].isEmpty();
-      }
-      if (missing) {
-        Errors.title("Error").show("Please specify an FPGA location for all pins.");
-        dlg.setVisible(true);
-        continue;
-      }
-      try {
-        xx = Integer.parseInt(x.getText());
-        yy = Integer.parseInt(y.getText());
-        ww = Integer.parseInt(w.getText());
-        hh = Integer.parseInt(h.getText());
-      } catch (NumberFormatException ex) {
-        Errors.title("Error").show("Error parsing geometry.", ex);
-        dlg.setVisible(true);
-        continue;
-      }
-      if (xx < 0 || yy < 0 || ww <= 0 || hh <= 0
-          || xx+ww >= Board.IMG_WIDTH || yy+hh >= Board.IMG_HEIGHT) {
-        Errors.title("Error").show("Invalid geometry.");
-        dlg.setVisible(true);
-        continue;
-      }
-      break;
-    }
+  //   String[] pins = new String[t.width];
+  //   int xx, yy, ww, hh;
+  //   parent.doModal(dlg, t.rect.x+t.rect.width/2, t.rect.y);
+  //   for (;;) {
+  //     if (result[0] == 'R')
+  //       return null; // user removed resource
+  //     if (result[0] == 'C' && removable)
+  //       return t; // cancelled, but explicitly not removed, keep same one
+  //     if (result[0] == 'C')
+  //       return null; // user cancelled, we were adding a new one, so don't add it
+  //     // ensure all locations are specified
+  //     boolean missing = false;
+  //     for (int i = 0; i < t.width && !missing; i++) {
+  //       pins[i] = pinLocs[i].getText();
+  //       missing = pins[i] == null || pins[i].isEmpty();
+  //     }
+  //     if (missing) {
+  //       Errors.title("Error").show("Please specify an FPGA location for all pins.");
+  //       dlg.setVisible(true);
+  //       continue;
+  //     }
+  //     try {
+  //       xx = Integer.parseInt(x.getText());
+  //       yy = Integer.parseInt(y.getText());
+  //       ww = Integer.parseInt(w.getText());
+  //       hh = Integer.parseInt(h.getText());
+  //     } catch (NumberFormatException ex) {
+  //       Errors.title("Error").show("Error parsing geometry.", ex);
+  //       dlg.setVisible(true);
+  //       continue;
+  //     }
+  //     if (xx < 0 || yy < 0 || ww <= 0 || hh <= 0
+  //         || xx+ww >= Board.STD_IMG_WIDTH || yy+hh >= Board.STD_IMG_HEIGHT) {
+  //       Errors.title("Error").show("Invalid geometry.");
+  //       dlg.setVisible(true);
+  //       continue;
+  //     }
+  //     break;
+  //   }
 
-    String txt = label.getText();
-    if (txt != null && txt.length() == 0)
-      txt = null;
+  //   String txt = label.getText();
+  //   if (txt != null && txt.length() == 0)
+  //     txt = null;
 
-    defaultStandard = (IoStandard)standard.getSelectedItem();
-    if (pull != null)
-      defaultPull = (PullBehavior)pull.getSelectedItem();
-    if (activity != null)
-      defaultActivity = (PinActivity)activity.getSelectedItem();
-    if (strength != null)
-      defaultStrength = (DriveStrength)strength.getSelectedItem();
+  //   defaultStandard = (IoStandard)standard.getSelectedItem();
+  //   if (pull != null)
+  //     defaultPull = (PullBehavior)pull.getSelectedItem();
+  //   if (activity != null)
+  //     defaultActivity = (PinActivity)activity.getSelectedItem();
+  //   if (strength != null)
+  //     defaultStrength = (DriveStrength)strength.getSelectedItem();
 
-    PinActivity a = activity != null ? defaultActivity : PinActivity.UNKNOWN;
-    if (t.type == Type.Pin)
-      a = PinActivity.ACTIVE_HIGH; // special case: Pin is always active high
+  //   PinActivity a = activity != null ? defaultActivity : PinActivity.UNKNOWN;
+  //   if (t.type == Type.Pin)
+  //     a = PinActivity.ACTIVE_HIGH; // special case: Pin is always active high
 
-    Bounds rect = Bounds.create(xx, yy, ww, hh);
+  //   Bounds rect = Bounds.create(xx, yy, ww, hh);
 
-    return new BoardIO(t.type, t.width, txt, rect, defaultStandard,
-        pull != null ? defaultPull : PullBehavior.UNKNOWN,
-        a,
-        strength != null ? defaultStrength : DriveStrength.UNKNOWN,
-        t.orientation,
-        pins);
-  }
+  //   return new BoardIO(t.type, t.width, txt, rect, defaultStandard,
+  //       pull != null ? defaultPull : PullBehavior.UNKNOWN,
+  //       a,
+  //       strength != null ? defaultStrength : DriveStrength.UNKNOWN,
+  //       t.orientation,
+  //       pins);
+  // }
 
   public boolean isInput() {
     return InputTypes.contains(type);
@@ -705,7 +705,8 @@ public class BoardIO {
     return type.pinLabels(width)[bit];
   }
 
-  public void drawOrientedPins(Graphics g, Color fill[], Color edge[], Color edgeDefault) {
+  public void drawOrientedPins(Graphics g, int xOffset, int yOffset, double imgScale,
+      Color fill[], Color edge[], Color edgeDefault) {
     if (width <= 1 || orientation == null)
       return;
     //   LRTB   RLBT    BTLR       TBRL       TB   BT   LR        RL
@@ -738,25 +739,22 @@ public class BoardIO {
     int yy = (dy >= 0 ? rect.y + margin/2 : rect.y + rect.height - margin - sz - 1);
     int ix = 0, iy = 0;
     for (int i = 0; i < width; i++) {
+      Rectangle2D boxy = new Rectangle2D.Double(
+          xOffset + (xx+1)*imgScale, yOffset + (yy+1)*imgScale,
+          imgScale*(sz-margin/2.0), imgScale*(sz-margin/2.0));
+      Ellipse2D oval = new Ellipse2D.Double(
+          xOffset + (xx+dx*((rect.width-margin)*ix*1.0/nx)+1)*imgScale,
+          yOffset + (yy+dy*((rect.height-margin)*iy*1.0/ny)+1)*imgScale,
+          imgScale*(sz-margin/2.0-1), imgScale*(sz-margin/2.0-1));
       if (fill != null && fill[i] != null) {
         g.setColor(fill[i]);
-        if (i == 0)
-          g.fillRect(xx+1, yy+1, sz-margin/2, sz-margin/2);
-        else
-          g.fillOval(
-              xx+dx*(int)((rect.width-margin)*ix*1.0/nx)+1,
-              yy+dy*(int)((rect.height-margin)*iy*1.0/ny)+1,
-              sz-margin/2-1, sz-margin/2-1);
+        if (i == 0) ((Graphics2D)g).fill(boxy);
+        else ((Graphics2D)g).fill(oval);
       }
       if (edge != null ? edge[i] != null : edgeDefault != null) {
         g.setColor(edge != null ? edge[i] : edgeDefault);
-        if (i == 0)
-          g.drawRect(xx+1, yy+1, sz-margin/2, sz-margin/2);
-        else
-          g.drawOval(
-              xx+dx*(int)((rect.width-margin)*ix*1.0/nx)+1,
-              yy+dy*(int)((rect.height-margin)*iy*1.0/ny)+1,
-              sz-margin/2-1, sz-margin/2-1);
+        if (i == 0) ((Graphics2D)g).draw(boxy);
+        else ((Graphics2D)g).draw(oval);
       }
       if (horizontal) {
         iy++;

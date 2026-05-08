@@ -341,7 +341,7 @@ public class Rom extends Mem {
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
-    if (RomHDLGenerator.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
+    if (RomHDLGenerator.supports(ctx.lang, ctx.attrs)) // fixme
       return new RomHDLGenerator(ctx);
     else
       return null;

@@ -39,7 +39,6 @@ import java.awt.image.PixelGrabber;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,8 +46,11 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 
-public class ImageXmlFactory {
+public class ImageXmlFactoryOld {
 
+  private int width, height;
+  private String format; // only valid after GetPicture() was called successfully
+  private byte bytes[]; // only valid after GetPicture() was called successfully
 	private String[] CodeTable;
 	private StringBuffer AsciiStream;
 	private String[] InitialCodeTable = { "a", "b", "c", "d", "e", "f", "g",
@@ -186,7 +188,8 @@ public class ImageXmlFactory {
 		return AsciiStream.toString();
 	}
 
-	public BufferedImage GetPicture(int width, int height) {
+  public void SetSize(int w, int h) { width = w; height = h; }
+	public BufferedImage GetPicture() throws IOException {
 		if (AsciiStream == null)
 			return null;
 		if (CodeTable == null)
@@ -223,8 +226,9 @@ public class ImageXmlFactory {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			ByteArrayInputStream instream = new ByteArrayInputStream(
-					bytestream.toByteArray());
+      bytes = bytestream.toByteArray();
+      format = "jpg";
+			ByteArrayInputStream instream = new ByteArrayInputStream(bytes);
 			try {
 				result = ImageIO.read(instream);
 			} catch (IOException e) {
@@ -276,12 +280,23 @@ public class ImageXmlFactory {
             g2.fillRect(x, y, 1, 1);
           }
         }
+        bytes = toPngBytes(result);
+        format = "png";
       } finally {
         g2.dispose();
       }
 		}
 		return result;
 	}
+
+  public String getFormat() { return format; }
+  public byte[] getBytes() { return bytes; }
+
+  private static byte[] toPngBytes(BufferedImage img) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ImageIO.write(img, "PNG", baos);
+    return baos.toByteArray();
+  }
 
 	public void SetCodeTable(String[] Table) {
 		CodeTable = Table.clone();
@@ -291,25 +306,5 @@ public class ImageXmlFactory {
 		AsciiStream = new StringBuffer();
 		AsciiStream.append(stream);
 	}
-
-  // Encodes the given image as a JPEG and returns the result as a Base64 string.
-  // public static String encodeToBase64Jpeg(Image image) throws IOException {
-  //   BufferedImage bi = new BufferedImage(Board.IMG_WIDTH, Board.IMG_HEIGHT,
-  //       BufferedImage.TYPE_3BYTE_BGR);
-  //   Graphics2D g2 = bi.createGraphics();
-  //   try {
-  //     g2.drawImage(image, 0, 0, Board.IMG_WIDTH, Board.IMG_HEIGHT, null);
-  //   } finally {
-  //     g2.dispose();
-  //   }
-  //   ByteArrayOutputStream baos = new ByteArrayOutputStream();
-  //   ImageIO.write(bi, "jpg", baos);
-  //   return Base64.getEncoder().encodeToString(baos.toByteArray());
-  // }
-
-  // Encodes the given image bytes and returns the result as a Base64 string.
-  public static String encodeToBase64(byte bytes[]) throws IOException {
-    return Base64.getEncoder().encodeToString(bytes);
-  }
 
 }

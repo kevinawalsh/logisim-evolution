@@ -181,7 +181,7 @@ public class XilinxDownload extends FPGADownload {
       }
     }
 
-    if (!board.fpga.USBTMCDownload) {
+    if (!board.fpga.USBTMCAvailable) {
 				String download = scriptPath.replace(projectPath, "../") + download_file;
       stages.add(new ProcessStage(
             "download", "Downloading to FPGA",

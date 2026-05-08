@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import javax.swing.SwingUtilities;
 
 import com.bfh.logisim.fpga.Board;
-import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
@@ -65,9 +64,13 @@ public abstract class FPGADownload {
   public static String getToolchain(Board board) {
     // First priority: user preference for given board
     String toolchain = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
-    // Fall back: select toolchain based on vendor
+    // FIXME: toolchains should register themselves, possibly under multiple names,
+    // or some kind of pattern matching?, e,g "altera, altera quartus, altera ise, altera quartus ii"
+    // Fall back 1: select toolchain based on board default
+    // Fall back 2: select toolchain based on any known matching toolchain
+    // Fall back 3: apio
     if (toolchain == null)
-      toolchain = vendorToolchain(board.fpga.Vendor);
+      toolchain = vendorToolchain(board.fpga.VendorName);
     // Last resort: apio
     if (toolchain == null)
       toolchain = APIO_TOOLCHAIN;
@@ -182,14 +185,14 @@ public abstract class FPGADownload {
     }
   }
 
-  public static String vendorToolchain(char chipset) {
-    switch (chipset) {
-      case Chipset.ALTERA: return ALTERA_QUARTUS_TOOLCHAIN;
-      case Chipset.XILINX: return XILINX_ISE_TOOLCHAIN;
-      case Chipset.LATTICE: return LATTICE_DIAMOND_TOOLCHAIN;
-      default: return null;
-    }
-  }
+  // public static String vendorToolchain(char chipset) {
+  //   switch (chipset) {
+  //     case Chipset.ALTERA: return ALTERA_QUARTUS_TOOLCHAIN;
+  //     case Chipset.XILINX: return XILINX_ISE_TOOLCHAIN;
+  //     case Chipset.LATTICE: return LATTICE_DIAMOND_TOOLCHAIN;
+  //     default: return null;
+  //   }
+  // }
 
   public static String getLanguage(Board board, String toolchain) {
     String lang = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredHdl(board.name);

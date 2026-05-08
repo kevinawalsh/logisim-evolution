@@ -262,7 +262,7 @@ public class PinBindings {
   }
 
   private BoardIO findBoardIO(String name, int width) {
-    for (BoardIO io : board)
+    for (BoardIO io : board.getIoComponents())
       if (io.toString().equals(name))
         return io;
     return BoardIO.decodeSynthetic(name, width);
@@ -486,7 +486,7 @@ public class PinBindings {
       err.AddError("INTERNAL ERROR: Detected I/O component with mixed direction bits.");
       return res;
     }
-    for (BoardIO io : board) {
+    for (BoardIO io : board.getIoComponents()) {
       if (io.isCompatible(compWidth, compType))
         res.add(io);
     }

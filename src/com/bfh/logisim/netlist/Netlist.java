@@ -71,7 +71,7 @@ public class Netlist {
   public static class Context {
     public final String lang;
     public final FPGAReport err;
-    public final char vendor;
+    // public final char vendor;
     public final Circuit circUnderTest;
     public final long oscFreq;
     public final int clkPeriod; // -1 means dynamic, 0 means raw, >0 means reduced speed
@@ -82,11 +82,11 @@ public class Netlist {
     public final HashMap<Object, String> uniqueHDLNames;
     public final HashSet<String> forbiddenHDLNames;
 
-    public Context(String lang, FPGAReport err, char vendor, Circuit root,
+    public Context(String lang, FPGAReport err, /* char vendor,*/ Circuit root,
         long oscFreq, int clkPeriod) {
       this.lang = lang;
       this.err = err;
-      this.vendor = vendor;
+      // this.vendor = vendor;
       this.circUnderTest = root;
       this.oscFreq = oscFreq;
       this.clkPeriod = clkPeriod;
@@ -101,7 +101,7 @@ public class Netlist {
     protected Context(Context ctx) {
       lang = ctx.lang;
       err = ctx.err;
-      vendor = ctx.vendor;
+      // vendor = ctx.vendor;
       circUnderTest = ctx.circUnderTest;
       oscFreq = ctx.oscFreq;
       clkPeriod = ctx.clkPeriod;

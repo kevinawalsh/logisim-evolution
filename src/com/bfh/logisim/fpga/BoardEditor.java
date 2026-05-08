@@ -36,16 +36,23 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Point;
+import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -62,6 +69,9 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
 import com.bfh.logisim.settings.BoardList;
@@ -79,8 +89,19 @@ import com.cburch.logisim.util.JFileChoosers;
 
 public class BoardEditor extends JFrame {
 
+  private static TreeMap<String, String> VENDORS = new TreeMap<>();
+  static {
+    VENDORS.put("Altera or Intel", "Altera");
+    VENDORS.put("Gowin", "Gowin");
+    VENDORS.put("Lattice Semiconductor", "Lattice");
+    VENDORS.put("Xilinx or AMD", "Xilinx");
+  }
+
+  private static Color DEFAULT_BG = UIManager.getColor("TextField.background");
+  private static Color ERROR_BG = Color.PINK;
+
   private JButton save;
-  private JTextField name;
+  private JTextField name, codename;
   private BoardPanel image;
   private Chipset fpga;
   public LinkedList<BoardIO> ioComponents = new LinkedList<>();
@@ -109,10 +130,24 @@ public class BoardEditor extends JFrame {
     JPanel buttonsB = new JPanel();
 
     buttonsA.add(new JLabel("Board Name:"));
-
-    name = new JTextField(20);
+    name = new PlaceholderTextField(20, () -> "required");
     name.setEnabled(true);
+    name.setToolTipText("A unique, user-friendly name or description.");
     buttonsA.add(name);
+
+    buttonsA.add(new JLabel("Code Name:"));
+    codename = new PlaceholderTextField(20, () -> {
+      if (name.getText().trim().isEmpty()) return "optional";
+      else return Board.generateCodename(name.getText(), "");
+    });
+    codename.setEnabled(true);
+    codename.setToolTipText("A short identifier, used as a fallback if a toolchain-specific name is not specified.");
+    buttonsA.add(codename);
+    name.getDocument().addDocumentListener(new DocumentListener() {
+      public void insertUpdate(DocumentEvent e)  { codename.repaint(); }
+      public void removeUpdate(DocumentEvent e)  { codename.repaint(); }
+      public void changedUpdate(DocumentEvent e) { codename.repaint(); }
+    });
 
     JButton chipset = new JButton("Configure FPGA Chipset");
     chipset.addActionListener(e -> doChipsetDialog());
@@ -149,31 +184,31 @@ public class BoardEditor extends JFrame {
     setVisible(true);
   }
 
-  public void doModal(JDialog dlg, int x, int y) {
-    dlg.pack();
-    Point p = getLocationOnScreen();
-    dlg.setLocation(p.x+x-dlg.getWidth()/2, p.y+y-10);
-    dlg.setModal(true);
-    dlg.setResizable(false);
-    dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
-    dlg.setAlwaysOnTop(true);
-    dlg.setVisible(true);
-  }
+  // public void doModal(JDialog dlg, int x, int y) {
+  //   dlg.pack();
+  //   Point p = getLocationOnScreen();
+  //   dlg.setLocation(p.x+x-dlg.getWidth()/2, p.y+y-10);
+  //   dlg.setModal(true);
+  //   dlg.setResizable(false);
+  //   dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+  //   dlg.setAlwaysOnTop(true);
+  //   dlg.setVisible(true);
+  // }
 
   private void doSave() {
+    String boardname = name.getText().trim();
+    if (boardname.isEmpty()) {
+      Errors.title("Error").warn("A board name must be specified before saving.");
+      return;
+    }
     if (ioComponents.isEmpty()) {
       Errors.title("Warning").warn("No I/O resources have been specified.\n"
           + "Before saving, you may want to draw rectangles on the image\n"
           + "to specify I/O resources for this FPGA board.");
     }
-    File file = getSaveFile();
-    if (file == null)
-      return;
-    String filename = file.getName();
-    if (filename.toLowerCase().endsWith(".xml"))
-      filename = filename.substring(0, filename.length() - 4);
-    name.setText(filename);
-    Board board = new Board(filename, null, null, fpga, image.getImage());
+    String id = codename.getText().trim();
+    File file = getSaveFile(boardname, id);
+    Board board = new Board(boardname, id, fpga, image.getOriginalImage(), image.getFormat(), image.getOriginalBytes());
     board.addComponents(ioComponents);
     if (!BoardWriter.write(file, board))
       return;
@@ -216,16 +251,17 @@ public class BoardEditor extends JFrame {
     if (board == null)
       return;
     name.setText(board.name);
+    codename.setText(board.codename);
     fpga = board.fpga;
     ioComponents.clear();
-    ioComponents.addAll(board);
-    image.setImage(board.image);
+    ioComponents.addAll(board.getIoComponents());
+    image.setImage(board.image, board.imgFormat, board.imgBytes);
     sidebar.showIdle();
     setEnables();
   }
 
   private void setEnables() {
-    save.setEnabled(image.getImage() != null && fpga != null);
+    save.setEnabled(image.getOriginalImage() != null && fpga != null && !name.getText().trim().isEmpty());
   }
 
   public void clear() {
@@ -235,20 +271,56 @@ public class BoardEditor extends JFrame {
     ioComponents.clear();
     fpga = null;
     name.setText("");
+    codename.setText("");
     selectedIO = null;
     sidebar.showIdle();
     setEnables();
   }
 
-  private File getSaveFile() {
+  private static boolean isValidFilename(String name) {
+    try {
+      Path p = Path.of(name);
+      // Path.of accepts almost anything; also check the filesystem rejects nothing
+      p.toFile().getCanonicalPath();
+      return p.getNameCount() == 1  // no path separators
+        && !name.isEmpty();
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private static String sanitizeFilename(String s) {
+    // Replace illegal characters with underscore
+    String result = s.replaceAll("[\\x00-\\x1f\\x7f/\\\\:*?\"<>|]", "_");
+
+    // Collapse multiple underscores (cosmetic)
+    result = result.replaceAll("_+", "_");
+
+    // Strip leading/trailing dots, spaces, underscores (Windows dislikes leading dots too)
+    result = result.replaceAll("^[._ ]+|[._ ]+$", "");
+
+    // Windows reserved names: CON, PRN, AUX, NUL, COM1-9, LPT1-9
+    if (result.matches("(?i)CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]")) {
+      result = "_" + result;
+    }
+
+    // Fallback if everything got stripped
+    if (result.isEmpty()) result = "board";
+
+    return result;
+  }
+
+  private File getSaveFile(String boardname, String codename) {
+    if (codename.isEmpty())
+      codename = boardname;
+    String suggestedname = codename + ".xml";
+    if (!isValidFilename(suggestedname))
+      suggestedname = sanitizeFilename(codename) + ".xml";
     JFileChooser fc = JFileChoosers.create();
     fc.setDialogTitle("Choose file to save XML board description:");
     fc.setFileFilter(Loader.XML_FILTER);
     fc.setAcceptAllFileFilterUsed(false);
-    if (name.getText().isEmpty())
-      fc.setSelectedFile(new File("Unnamed_FPGA_board.xml"));
-    else
-      fc.setSelectedFile(new File(name.getText() + ".xml"));
+    fc.setSelectedFile(new File(suggestedname));
     int retval = fc.showSaveDialog(null);
     if (retval != JFileChooser.APPROVE_OPTION)
       return null;
@@ -314,7 +386,8 @@ public class BoardEditor extends JFrame {
     JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
     JComboBox<PullBehavior> unusedPull = new JComboBox<>(PullBehavior.OPTIONS);
     JTextField jtagPos = new JTextField("1");
-    JComboBox<String> vendor = new JComboBox<>(Chipset.VENDORS);
+    JComboBox<String> vendor = new JComboBox<>(VENDORS.keySet().toArray(new String[0]));
+    vendor.setEditable(true);
     JTextField family = new JTextField();
     JTextField part = new JTextField();
     JTextField pkg = new JTextField();
@@ -332,21 +405,25 @@ public class BoardEditor extends JFrame {
       vendor.setSelectedIndex(0);
       usbTmc.setSelected(false);
     } else {
-      rate.setText(fpga.Speed.split(" ")[0]);
-      hz.setSelectedItem(fpga.Speed.split(" ")[1]);
-      clkLoc.setText(fpga.ClockPinLocation);
-      clkPull.setSelectedItem(fpga.ClockPullBehavior);
-      clkStandard.setSelectedItem(fpga.ClockIOStandard);
-      unusedPull.setSelectedItem(fpga.UnusedPinsBehavior);
+      // FIXME reorder these
       jtagPos.setText(""+fpga.JTAGPos);
       vendor.setSelectedItem(fpga.VendorName);
       family.setText(fpga.Technology);
       part.setText(fpga.Part);
       pkg.setText(fpga.Package);
       speed.setText(fpga.SpeedGrade);
+      // FIXME, split into separate clock section
+      rate.setText(fpga.Speed.split(" ")[0]);
+      hz.setSelectedItem(fpga.Speed.split(" ")[1]);
+      clkLoc.setText(fpga.ClockPinLocation);
+      clkPull.setSelectedItem(fpga.ClockPullBehavior);
+      clkStandard.setSelectedItem(fpga.ClockIOStandard);
+      unusedPull.setSelectedItem(fpga.UnusedPinsBehavior);
+      // FIXME, split into separate Flash section
       flashName.setText(fpga.FlashName);
       flashPos.setText(""+fpga.FlashPos);
-      usbTmc.setSelected(fpga.USBTMCDownload);
+      // FIXME, split into USB TMC section
+      usbTmc.setSelected(fpga.USBTMCAvailable);
     }
 
     JPanel freqPanel = new JPanel();
@@ -441,7 +518,8 @@ public class BoardEditor extends JFrame {
         params.put("FPGAInformation/Part", part.getText());
         params.put("FPGAInformation/Package", pkg.getText());
         params.put("FPGAInformation/Speedgrade", speed.getText());
-        params.put("FPGAInformation/Vendor", ""+vendor.getSelectedItem());
+        String v = (String)vendor.getSelectedItem();
+        params.put("FPGAInformation/Vendor", ""+VENDORS.getOrDefault(v, v));
         params.put("FPGAInformation/USBTMC", ""+usbTmc.isSelected());
         params.put("FPGAInformation/JTAGPos", jtagPos.getText());
         params.put("FPGAInformation/FlashPos", flashPos.getText());
@@ -497,15 +575,48 @@ public class BoardEditor extends JFrame {
     fc.setFileFilter(PNG_JPG_FILTER);
     fc.setAcceptAllFileFilterUsed(false);
     int retval = fc.showOpenDialog(null);
-    if (retval == JFileChooser.APPROVE_OPTION) {
-      File file = fc.getSelectedFile();
-      try {
-        image.setImage(file);
-      } catch (IOException ex) {
-        Errors.title("Error").show("Error loading image", ex);
+    if (retval != JFileChooser.APPROVE_OPTION)
+      return;
+    File file = fc.getSelectedFile();
+    try {
+      image.setImage(file);
+      clearSelection();
+      // ensure all I/O boxes are within bounds
+      int fixed = 0;
+      int removed = 0;
+      int iw = image.getOriginalImage().getWidth(null);
+      int ih = image.getOriginalImage().getHeight(null);
+      for (int i = 0; i < ioComponents.size(); i++) {
+        BoardIO io = ioComponents.get(i);
+        int w = Math.max(3, Math.min(io.rect.width, iw));
+        int h = Math.max(3, Math.min(io.rect.height, ih));
+        int x = Math.max(0, Math.min(io.rect.x, iw - w));
+        int y = Math.max(0, Math.min(io.rect.y, ih - h));
+        Bounds newRect = Bounds.create(x, y, w, h);
+        if (io.rect.equals(newRect))
+          continue;
+        boolean overlaps = false;
+        for (int j = 0; j < ioComponents.size() && !overlaps; j++) {
+          BoardIO io0 = ioComponents.get(j);
+          overlaps = io0.rect.overlaps(newRect);
+        }
+        if (overlaps) {
+          removed++;
+          ioComponents.remove(io);
+          i--;
+        } else {
+          fixed++;
+          BoardIO newIO = new BoardIO(io, newRect);
+          ioComponents.set(i, newIO);
+        }
       }
+      setEnables();
+      Errors.title("Warning").show("Some I/O Components fell outside the bounds of the new image, so "
+          + (fixed == 0 ? "" : fixed == 1 ? "1 was moved, " : fixed + " were moved, ")
+          + (removed == 0 ? "none were deleted." : removed == 1 ? "1 was deleted." : removed + " were deleted."));
+    } catch (IOException ex) {
+      Errors.title("Error").show("Error loading image", ex);
     }
-    setEnables();
   }
 
   public BoardIO findBoardIO(int x, int y) {
@@ -515,7 +626,7 @@ public class BoardEditor extends JFrame {
     return null;
   }
 
-  public void doRectSelectDialog(Bounds rect, int x, int y) {
+  public void doRectSelectDialog(Bounds rect) {
     for (BoardIO io : ioComponents) {
       if (io.rect.overlaps(rect)) {
         Errors.title("Error").show("Please ensure rectangles do not overlap.");
@@ -526,7 +637,10 @@ public class BoardEditor extends JFrame {
   }
 
   public void doBoardIODialog(BoardIO io) {
-    sidebar.showEditIO(io);
+    if (io != null)
+      sidebar.showEditIO(io);
+    else
+      sidebar.showIdle();
   }
 
   public void clearSelection() {
@@ -578,7 +692,7 @@ public class BoardEditor extends JFrame {
 
     IOSidebarPanel() {
       setLayout(cards);
-      setPreferredSize(new Dimension(300, Board.IMG_HEIGHT));
+      setPreferredSize(new Dimension(300, Board.STD_IMG_HEIGHT));
       setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, Color.GRAY));
 
       // Idle card
@@ -760,14 +874,12 @@ public class BoardEditor extends JFrame {
 
     void moveEditingIO(int newX, int newY) {
       if (editingIO == null) return;
-      int x = Math.max(0, Math.min(newX, Board.IMG_WIDTH  - editingIO.rect.width  - 1));
-      int y = Math.max(0, Math.min(newY, Board.IMG_HEIGHT - editingIO.rect.height - 1));
+      int x = Math.max(0, Math.min(newX, image.getOriginalImage().getWidth(null) - editingIO.rect.width));
+      int y = Math.max(0, Math.min(newY, image.getOriginalImage().getHeight(null) - editingIO.rect.height));
       // Build the moved IO directly from the last-committed editingIO — never read
       // the text fields here, so a partially-typed value can't be accidentally committed.
       Bounds newRect = Bounds.create(x, y, editingIO.rect.width, editingIO.rect.height);
-      BoardIO newIO = new BoardIO(editingIO.type, editingIO.width, editingIO.label, newRect,
-          editingIO.standard, editingIO.pull, editingIO.activity,
-          editingIO.strength, editingIO.orientation, editingIO.pins);
+      BoardIO newIO = new BoardIO(editingIO, newRect);
       int idx = ioComponents.indexOf(editingIO);
       if (idx >= 0) ioComponents.set(idx, newIO);
       editingIO = newIO;
@@ -919,21 +1031,49 @@ public class BoardEditor extends JFrame {
       // firing after showIdle() cleared the selection — ignore it.
       Bounds refRect = editingIO != null ? editingIO.rect : pendingNewRect;
       if (refRect == null) return;
+      // We are assuming refRect is valid, i.e. falls within bounds of image:
+      // editingIO came from existing i/o component, which should be valid;
+      // and pendingNewRect should have been checked by BoardPanel.
 
-      // Parse geometry; fall back to refRect on invalid input
-      int x, y, w, h;
-      try {
-        x = Integer.parseInt(xField.getText().trim());
-        y = Integer.parseInt(yField.getText().trim());
-        w = Integer.parseInt(wField.getText().trim());
-        h = Integer.parseInt(hField.getText().trim());
-        if (x < 0 || y < 0 || w <= 0 || h <= 0
-            || x + w >= Board.IMG_WIDTH || y + h >= Board.IMG_HEIGHT)
-          throw new NumberFormatException("out of range");
-      } catch (NumberFormatException e) {
-        x = refRect.x; y = refRect.y;
-        w = refRect.width; h = refRect.height;
+      // Parse geometry, or fall back to existing value on invalid input
+      int iw = image.getOriginalImage().getWidth(null);
+      int ih = image.getOriginalImage().getHeight(null);
+      int x = -1, y = -1, w = -1, h = -1;
+      try { w = Integer.parseInt(wField.getText().trim()); } catch (NumberFormatException e) { }
+      try { h = Integer.parseInt(hField.getText().trim()); } catch (NumberFormatException e) { }
+      try { x = Integer.parseInt(xField.getText().trim()); } catch (NumberFormatException e) { }
+      try { y = Integer.parseInt(yField.getText().trim()); } catch (NumberFormatException e) { }
+      boolean badW = false, badH = false, badX = false, badY = false;
+      if (w < 3 || w > iw) { // width is garbage, even by itself
+        w = refRect.width;
+        badW = true;
       }
+      if (x < 0 || x >= iw - 3) { // x is garbage, even by itself
+        x = refRect.x;
+        badX = true;
+      }
+      if (x + w > iw) { // together x+w are invalid
+        x = refRect.x;
+        w = refRect.width;
+        badX = badW = true;
+      }
+      if (h < 3 || h > ih) { // height is garbage, even by itself
+        h = refRect.height;
+        badH = true;
+      }
+      if (y < 0 || y >= ih - 3) { // y is garbage, even by itself
+        y = refRect.y;
+        badY = true;
+      }
+      if (y + h > ih) { // together y+h are invalid
+        y = refRect.y;
+        h = refRect.height;
+        badY = badH = true;
+      }
+      xField.setBackground(badX ? ERROR_BG : DEFAULT_BG);
+      yField.setBackground(badY ? ERROR_BG : DEFAULT_BG);
+      wField.setBackground(badW ? ERROR_BG : DEFAULT_BG);
+      hField.setBackground(badH ? ERROR_BG : DEFAULT_BG);
       Bounds rect = Bounds.create(x, y, w, h);
 
       // Width and orientation (only for DIPSwitch / Ribbon)
@@ -997,4 +1137,30 @@ public class BoardEditor extends JFrame {
       image.repaint();
     }
   }
+
+  public static class PlaceholderTextField extends JTextField {
+    private Supplier<String> placeholder;
+
+    public PlaceholderTextField(int cols, Supplier<String> placeholder) {
+      super(cols);
+      this.placeholder = placeholder;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+      super.paintComponent(g);
+      if (getText().isEmpty()) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(Color.GRAY);
+        g2.setFont(getFont().deriveFont(Font.ITALIC));
+        Insets ins = getInsets();
+        FontMetrics fm = g2.getFontMetrics();
+        int x = ins.left;
+        int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+        g2.drawString(placeholder.get(), x, y);
+        g2.dispose();
+      }
+    }
+  }
+
 }

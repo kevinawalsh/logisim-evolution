@@ -121,17 +121,17 @@ public class DipSwitch extends InstanceFactory {
 
   // FIXME: this should never have been a BitWidth. It should be Integer.
   public static final int MAX_SWITCH = 32;
+  public static final int DEF_SWITCH = 8;
   public static final int MIN_SWITCH = 2;
   public static final Attribute<BitWidth> ATTR_SIZE = Attributes
       .forBitWidth("number", S.getter("nrOfSwitch"), MIN_SWITCH, MAX_SWITCH);
 
   public DipSwitch() {
     super("DipSwitch", S.getter("dipswitchComponent"));
-    int dipSize = 8;
     setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC,
       StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_SIZE },
       new Object[] {Direction.NORTH, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
-        Color.BLACK, BitWidth.create(dipSize) });
+        Color.BLACK, BitWidth.create(DEF_SWITCH) });
     setFacingAttribute(StdAttr.FACING);
     setIconName("dipswitch.gif");
     setKeyConfigurator(JoinedConfigurator.create(

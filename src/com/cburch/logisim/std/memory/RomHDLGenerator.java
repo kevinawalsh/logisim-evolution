@@ -35,7 +35,7 @@ import com.cburch.logisim.hdl.Hdl;
 
 public class RomHDLGenerator extends HDLGenerator {
   
-  static boolean supports(String lang, AttributeSet attrs, char vendor) {
+  static boolean supports(String lang, AttributeSet attrs /*, char vendor*/) {
     return lang.equals("VHDL") || Mem.lineSize(attrs) == 1; // TODO: Verilog support
   }
 

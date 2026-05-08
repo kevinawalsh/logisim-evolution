@@ -48,13 +48,12 @@ import org.w3c.dom.NodeList;
 import com.cburch.logisim.util.Errors;
 import com.bfh.logisim.settings.BoardList;
 
+// Reader for the legacy xml board format
 public class BoardReader {
 
   private BoardReader() { }
 	public static Board read(String path) {
 		try {
-      // FIXME use better name
-      String name = BoardList.nameForPath(path);
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder parser = factory.newDocumentBuilder();
       Document doc;
@@ -76,7 +75,46 @@ public class BoardReader {
 				doc = parser.parse(new File(path));
       }
 
-			Board b = new Board(name, parseApioName(doc), parseOpenFPGALoaderName(doc), parseChipset(doc), parsePicture(doc));
+      // Legacy format has no name within xml, instead it uses file name as board name
+      String name = BoardList.filenameForPath(path);
+
+      ImageXmlFactoryOld imgFactory = parsePicture(doc);
+      BufferedImage image = imgFactory.GetPicture();
+      String imageFormat = imgFactory.getFormat();
+      byte imageBytes[] = imgFactory.getBytes();
+			Board b = new Board(name, null, parseChipset(doc), image, imageFormat, imageBytes);
+ 
+      // Figure out toolchains and toolchain params
+      String apio_name = parseApioName(doc);
+      String ofl_name = parseOpenFPGALoaderName(doc);
+      String vtc;
+      if ("altera".equalsIgnoreCase(b.fpga.VendorName))
+        vtc = "Altera"; // Altera Quartus II
+      else if ("xilinx".equalsIgnoreCase(b.fpga.VendorName))
+        vtc = "Xilinx"; // Xilinx ISE
+      else if ("lattice".equalsIgnoreCase(b.fpga.VendorName))
+        vtc = "Lattice"; // same backend handles Diamond and ispLEVER
+      else if ("gowin".equalsIgnoreCase(b.fpga.VendorName))
+        vtc = "Gowin";
+      else
+        vtc = null;
+      // For default toolchain, use apio if there was a name, or if no vendor toolchain known
+      b.setDefaultToolchain((apio_name != null || vtc == null) ? "Apio" : vtc);
+      if (apio_name != null || vtc == null) {
+        b.addToolchain("Apio");
+        b.setToolchainParam("Apio", "board", apio_name);
+      }
+      if (vtc != null) {
+        b.addToolchain(vtc);
+      }
+      if (ofl_name != null) {
+        b.addToolchainProgrammer("openFPGALoader");
+        b.setToolchainParam("openFPGALoader", "board", ofl_name);
+      }
+      if (b.fpga.USBTMCAvailable) {
+        b.addToolchainProgrammer("USBTMC");
+      }
+
       parseComponents(doc, "PinsInformation", b); // backwards compatability	
 			parseComponents(doc, "ButtonsInformation", b); // backwards compatability	
 			parseComponents(doc, "LEDsInformation", b); // backwards compatability	
@@ -95,7 +133,7 @@ public class BoardReader {
 		return sections.item(0).getChildNodes();
   }
 
-  private static BufferedImage parsePicture(Document doc) throws Exception {
+  private static ImageXmlFactoryOld parsePicture(Document doc) throws Exception {
     NodeList xml = getSection(doc, "BoardPicture");
     if (xml == null)
       return null;
@@ -113,11 +151,11 @@ public class BoardReader {
     if (pixels == null)
       throw new Exception("missing image data");
 
-    ImageXmlFactory reader = new ImageXmlFactory();
+    ImageXmlFactoryOld reader = new ImageXmlFactoryOld();
     reader.SetCodeTable(codes.split(" "));
     reader.SetCompressedString(pixels);
-    BufferedImage result = reader.GetPicture(w, h);
-    return result;
+    reader.SetSize(w, h);
+    return reader;
   }
 
   private static HashMap<String, String> xmlToMap(NodeList xml) {
@@ -182,7 +220,7 @@ public class BoardReader {
       String name = node.getNodeName();
       if (name == null || name.equals("#text") || name.equals("#comment"))
         continue;
-      board.addComponent(BoardIO.parseXml(node));
+      board.addComponent(BoardIO.parseXmlOld(node));
     }
   }
 

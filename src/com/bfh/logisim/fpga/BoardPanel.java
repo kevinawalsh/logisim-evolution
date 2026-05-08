@@ -35,15 +35,21 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Iterator;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -51,65 +57,111 @@ import com.cburch.logisim.data.Bounds;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
 
-  private Image scaledImage;
-	private int xs, ys, w, h;
+  static final int STD_IMG_WIDTH = Board.STD_IMG_WIDTH;
+  static final int STD_IMG_HEIGHT = Board.STD_IMG_HEIGHT;
+
+  private byte bytes[]; // original image encoding, saved to xml
+  private Image image; // unscaled, parsed from bytes
+  private Image scaledImage; // scaled to fit within STD_IMG_WIDTH x STD_IMG_HEIGHT
+  private String imgFormat; // "jpg" or "png"
+  private double imgScale; // scaledImage = image * imgScale
+  private int imgXOffset, imgYOffset; // to center scaledImage within STD_IMG_WIDTH x STD_IMG_HEIGHT
+  private int xs, ys, w, h; // within scaled image
 	private BoardEditor editor;
   private boolean moving = false;  // true when dragging a selected IO to move it
   private int moveOffsetX, moveOffsetY; // mouse pos relative to IO top-left at drag start
 
 	public BoardPanel(BoardEditor parent) {
+    bytes = null;
+    image = null;
     scaledImage = null;
+    imgFormat = null;
 		editor = parent;
 	 	xs = ys = w = h = 0;
 	 	addMouseListener(this);
 	 	addMouseMotionListener(this);
     setBackground(Color.BLACK);
-    setPreferredSize(new Dimension(Board.IMG_WIDTH, Board.IMG_HEIGHT));
+    setPreferredSize(new Dimension(STD_IMG_WIDTH, STD_IMG_HEIGHT));
 	}
 
   public void setImage(File file) throws IOException {
-    setImage(ImageIO.read(file));
+    try (ImageInputStream iis = ImageIO.createImageInputStream(file)) {
+      Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+      if (!readers.hasNext()) throw new IOException("Unknown image format");
+      ImageReader reader = readers.next();
+      try {
+        reader.setInput(iis);
+        setImage(reader.read(0), reader.getFormatName(), Files.readAllBytes(file.toPath()));
+      } finally {
+        reader.dispose();
+      }
+    }
   }
 	
-  public void setImage(Image image) {
-    if (image != null)
-      scaledImage = image.getScaledInstance(getWidth(), getHeight(), Image.SCALE_SMOOTH);
-    else
-      scaledImage = null;
+  public void setImage(Image image, String format, byte bytes[]) {
+    if (format.equalsIgnoreCase("png"))
+      this.imgFormat = "png";
+    else if (format.equalsIgnoreCase("jpg") || format.equalsIgnoreCase("jpeg"))
+      this.imgFormat = "jpg";
+    else 
+      this.imgFormat = format.toLowerCase(); // ??
+    this.bytes = bytes;
+    this.image = image;
+    scaleImage();
 		repaint();
 	}
 
-  public Image getImage() {
-    return scaledImage;
+  private void scaleImage() {
+    int iw = image.getWidth(null);
+    int ih = image.getHeight(null);
+    if ((iw == STD_IMG_WIDTH && ih <= STD_IMG_HEIGHT) || (iw <= STD_IMG_WIDTH && ih == STD_IMG_HEIGHT)) {
+      this.scaledImage = image;
+      this.imgScale = 1.0;
+    } else {
+      double sx = STD_IMG_WIDTH * 1.0 / iw;
+      double sy = STD_IMG_HEIGHT * 1.0 / ih;
+      this.imgScale = Math.min(sx, sy);
+      this.scaledImage = image.getScaledInstance(
+          Math.max(STD_IMG_WIDTH, (int)Math.round(sx * iw)),
+          Math.max(STD_IMG_HEIGHT, (int)Math.round(sx * ih)),
+          Image.SCALE_SMOOTH);
+    }
+    this.imgXOffset = (scaledImage.getWidth(null) - STD_IMG_WIDTH)/2;
+    this.imgYOffset = (scaledImage.getHeight(null) - STD_IMG_HEIGHT)/2;
   }
 
+  public Image getScaledImage() { return scaledImage; }
+  public Image getOriginalImage() { return image; }
+  public String getFormat() { return imgFormat; }
+  public byte[] getOriginalBytes() { return bytes; }
+
 	public void clear() {
+    bytes = null;
+    image = null;
+    imgFormat = null;
     scaledImage = null;
+    imgScale = 0.0;
+    imgXOffset = 0;
+    imgYOffset = 0;
 	}
 
 	public Boolean isEmpty() {
-		return scaledImage == null;
+		return image == null;
 	}
 
-
   @Override
-	public int getWidth() { return Board.IMG_WIDTH; }
+	public int getWidth() { return STD_IMG_WIDTH; } // overrides JPanel.getWidth()
   @Override
-	public int getHeight() { return Board.IMG_HEIGHT; }
+	public int getHeight() { return STD_IMG_HEIGHT; } // overrides JPanel.getHeight()
 
   @Override
 	public void mouseClicked(MouseEvent e) {
     if (!SwingUtilities.isLeftMouseButton(e))
       return;
-    if (scaledImage == null) {
+    if (image == null)
       editor.doChangeImage();
-    } else {
-      BoardIO io = editor.findBoardIO(e.getX(), e.getY());
-      if (io != null)
-        editor.doBoardIODialog(io);
-      else
-        editor.clearSelection();
-    }
+    else
+      editor.doBoardIODialog(findBoardIO(e));
   }
         
   static final Cursor DEFAULT_CURSOR = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
@@ -127,7 +179,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     if (w != 0 || h != 0) {
       setCursor(CROSSHAIR);
     } else if (scaledImage != null) {
-      BoardIO io = editor.findBoardIO(e.getX(), e.getY());
+      BoardIO io = findBoardIO(e);
       setCursor(io != null ? MOVE_CURSOR : CROSSHAIR);
     } else {
       setCursor(DEFAULT_CURSOR);
@@ -137,25 +189,26 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   @Override
 	public void mousePressed(MouseEvent e) {
     if (scaledImage == null) return;
-    if (SwingUtilities.isLeftMouseButton(e)) {
-      BoardIO io = editor.findBoardIO(e.getX(), e.getY());
-      if (io != null) {
-        // Begin moving this IO; select it first if it isn't already
-        if (io != editor.selectedIO)
-          editor.doBoardIODialog(io);
-        moving = true;
-        moveOffsetX = e.getX() - io.rect.x;
-        moveOffsetY = e.getY() - io.rect.y;
-        setCursor(MOVE_CURSOR);
-        xs = ys = w = h = 0;
-      } else {
-        // Begin drawing a new rect
-        moving = false;
-        xs = e.getX();
-        ys = e.getY();
-        w = h = 0;
-      }
+    if (!SwingUtilities.isLeftMouseButton(e))
+      return;
+    if (e.getX() < imgXOffset || e.getX() >= imgXOffset + scaledImage.getWidth(null)
+        || e.getY() < imgYOffset || e.getY() >= imgYOffset + scaledImage.getHeight(null)) {
+      editor.clearSelection();
+      return;
+    }
+    BoardIO io = findBoardIO(e);
+    if (io != null) {
+      // Begin moving this IO; select it first if it isn't already
+      if (io != editor.selectedIO)
+        editor.doBoardIODialog(io);
+      moving = true;
+      moveOffsetX = e.getX() - (int)Math.round(io.rect.x * imgScale);
+      moveOffsetY = e.getY() - (int)Math.round(io.rect.y * imgScale);
+      setCursor(MOVE_CURSOR);
+      xs = ys = w = h = 0;
     } else {
+      // Begin drawing a new rect
+      editor.clearSelection();
       moving = false;
       xs = e.getX();
       ys = e.getY();
@@ -163,10 +216,18 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     }
 	}
 
+  private BoardIO findBoardIO(MouseEvent e) {
+    int ox = (int)Math.round(e.getX() / imgScale);
+    int oy = (int)Math.round(e.getY() / imgScale);
+    return editor.findBoardIO(ox, oy);
+  }
+
   @Override
 	public void mouseDragged(MouseEvent e) {
     if (moving) {
-      editor.moveSelectedIO(e.getX() - moveOffsetX, e.getY() - moveOffsetY);
+      int ox = (int)Math.round((e.getX() - moveOffsetX)/imgScale);
+      int oy = (int)Math.round((e.getY() - moveOffsetY)/imgScale);
+      editor.moveSelectedIO(ox, oy);
     } else if (scaledImage != null) {
       w = e.getX() - xs;
       h = e.getY() - ys;
@@ -181,8 +242,12 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       setCursor(DEFAULT_CURSOR); // mouseMoved will refine on next motion
     } else if (scaledImage != null) {
       if (h != 0 && w != 0) {
-        Bounds rect = Bounds.create(xs, ys, w, h);
-        editor.doRectSelectDialog(rect, e.getX(), e.getY());
+        int ox = (int)Math.round(xs / imgScale);
+        int oy = (int)Math.round(ys / imgScale);
+        int ow = Math.max(3, (int)Math.round(w / imgScale));
+        int oh = Math.max(3, (int)Math.round(h / imgScale));
+        Bounds rect = Bounds.create(ox, oy, ow, oh);
+        editor.doRectSelectDialog(rect);
       }
       xs = ys = w = h = 0;
       repaint();
@@ -196,14 +261,19 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   public void paint(Graphics g) {
     super.paint(g);
     if (scaledImage != null) {
-      g.drawImage(scaledImage, 0, 0, null);
+      g.setColor(Color.gray);
+      g.fillRect(0, 0, getWidth(), getHeight());
+      g.drawImage(scaledImage, imgXOffset, 0, null);
       for (BoardIO io: editor.ioComponents) {
         boolean sel = (io == editor.selectedIO);
+        Rectangle2D r = new Rectangle2D.Double(
+            imgXOffset + io.rect.x * imgScale, io.rect.y * imgScale,
+            io.rect.width * imgScale, io.rect.height * imgScale);
         g.setColor(sel ? SELECTED : MISTY);
-        g.fillRect(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
+        ((Graphics2D)g).fill(r);
         g.setColor(sel ? Color.BLUE : Color.RED);
-        g.drawRect(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
-        io.drawOrientedPins(g, null, null, sel ? Color.BLUE : Color.RED);
+        ((Graphics2D)g).draw(r);
+        io.drawOrientedPins(g, imgXOffset, imgYOffset, imgScale, null, null, sel ? Color.BLUE : Color.RED);
       }
       g.setColor(Color.RED);
       if (w != 0 || h != 0) {
@@ -221,8 +291,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
         "Click to add picture of FPGA board,",
         "or select a Built-in FPGA board below.",
         "",
-        "The board picture must be PNG or JPEG format, and should be",
-        " at least " + getWidth() + "x" + getHeight() + " pixels for best display." };
+        "The board picture must be PNG or JPEG format, and ideally",
+        "fit within " + STD_IMG_WIDTH + "x" + STD_IMG_HEIGHT + " pixels for best display." };
 
       g.setColor(Color.black);
       g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 18));

@@ -907,8 +907,7 @@ public class Commander extends JFrame
         iprintf("Performing design rule checks (DRC)");
         long oscFreq = board.fpga.ClockFrequency;
         int clkPeriod = getClkPeriod();
-        Netlist.Context ctx = new Netlist.Context(lang, err, board.fpga.Vendor,
-            root, oscFreq, clkPeriod);
+        Netlist.Context ctx = new Netlist.Context(lang, err, root, oscFreq, clkPeriod);
         if (!ctx.getNetlist(root).validate() || fatals > 0) {
           eprintf("DRC failed, synthesis can't continue.");
           return;

@@ -151,9 +151,9 @@ public class ApioDownload extends FPGADownload {
     if (bin_apio == null)
       return false;
 
-    String board_name = board.name;
-    if (board.apio_name != null && !board.apio_name.equals(""))
-      board_name = board.apio_name;
+    String board_name = board.getToolchainParam("Apio", "board");
+    if (board_name == null) // fallback to generic board name?
+      board_name = board.name;
 
     // FIXME: this isn't a property of apio;
     // certain boards support only pull-up, or only floating, or not pull-down
@@ -335,7 +335,7 @@ public class ApioDownload extends FPGADownload {
 
     // upload: use openFPGALoader when the board specifies it (e.g. boards whose
     // flash chip is not supported by apio/iceprog), otherwise use apio upload.
-    if (board.openFPGALoader_name != null) {
+    if (!OpenFPGALoader.isSupportedBy(board)) {
       String bin_ofl = OpenFPGALoader.findExecutable(err);
       if (bin_ofl != null) {
         stages.add(new ProcessStage(

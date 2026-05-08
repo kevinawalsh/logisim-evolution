@@ -193,8 +193,8 @@ public class LatticeDownload extends FPGADownload {
             cmd(script),
             "Failed to synthesize Lattice project, cannot download"));
 	}
-	if (!board.fpga.USBTMCDownload) {
-	 // TODO: support LPT-Download!
+	if (!board.fpga.USBTMCAvailable) {
+	 // TODO: support LPT-Download...
 	}
 	
 	String downloadFile;

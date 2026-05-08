@@ -34,28 +34,15 @@ import java.util.HashMap;
 
 public class Chipset {
 
-	public static final char ALTERA = 'A';
-	public static final char XILINX = 'X';
-	public static final char LATTICE = 'L';
-	public static final char GOWIN = 'G';
-	public static final char UNKNOWN = '?';
+  // public static final String[] KNOWN_VENDORS = new String[] {
+  //   "Altera" /* and/or Intel */,
+  //   "Gowin",
+  //   "Lattice",
+  //   "Xilinx"  /* and/or AMD */
+  // };
 
-  public static final String[] VENDORS = { "Altera", "Xilinx", "Lattice", "Gowin" };
-
-	private static char getVendor(String desc) {
-    if (desc.equalsIgnoreCase("Altera"))
-      return ALTERA;
-    if (desc.equalsIgnoreCase("Lattice"))
-        return LATTICE;
-    if (desc.equalsIgnoreCase("Xilinx"))
-      return XILINX;
-	if (desc.equalsIgnoreCase("Gowin"))
-      	return GOWIN;
-    return UNKNOWN;
-	}
-
-  public final String Speed;
-	public final long ClockFrequency;
+  public final String Speed; // e.g. "50 MHz"
+	public final long ClockFrequency; // FIXME: non-integer frequencies are possible, e.g.  Intel MAX 10 FPGA with Si570 programmable oscillator
 	public final String ClockPinLocation;
 	public final PullBehavior ClockPullBehavior;
 	public final IoStandard ClockIOStandard;
@@ -63,13 +50,16 @@ public class Chipset {
 	public final String Part;
 	public final String Package;
 	public final String SpeedGrade;
-	public final char Vendor;
 	public final String VendorName;
 	public final PullBehavior UnusedPinsBehavior;
-	public final boolean USBTMCDownload;
-	public final int JTAGPos;
-	public final String FlashName;
-	public final int FlashPos;
+	
+  public final boolean USBTMCAvailable;
+  // FIXME: LPT as yet another option? See comment in LatticeDownload.
+
+  public final int JTAGPos;
+	
+  public final String FlashName; // optional, required for FlashDefined
+	public final Integer FlashPos; // optional, required non-zero for FlashDefined
 	public final boolean FlashDefined;
 
 	public Chipset(HashMap<String, String> params) throws Exception {
@@ -84,12 +74,11 @@ public class Chipset {
 		Package = params.get("FPGAInformation/Package");
 		SpeedGrade = params.get("FPGAInformation/Speedgrade");
     VendorName = params.get("FPGAInformation/Vendor");
-    Vendor = getVendor(VendorName);
-		USBTMCDownload = Boolean.parseBoolean(params.getOrDefault("FPGAInformation/USBTMC", "false"));
+		USBTMCAvailable = Boolean.parseBoolean(params.getOrDefault("FPGAInformation/USBTMC", "false"));
     JTAGPos = Integer.parseInt(params.getOrDefault("FPGAInformation/JTAGPos", "1"));
     FlashPos = Integer.parseInt(params.getOrDefault("FPGAInformation/FlashPos", "2"));
     FlashName = params.get("FPGAInformation/FlashName");
-		FlashDefined = FlashPos != 0 && FlashName != null && !FlashName.isEmpty();
+		FlashDefined = FlashPos != null && FlashPos != 0 && FlashName != null && !FlashName.isEmpty();
 
 		UnusedPinsBehavior = PullBehavior.get(params.get("UnusedPins/PullBehavior"));
 
@@ -111,7 +100,7 @@ public class Chipset {
       throw new Exception("invalid or missing FPGAInformation/Package");
     if (SpeedGrade == null)
       throw new Exception("invalid or missing FPGAInformation/Speedgrade");
-    if (Vendor == UNKNOWN)
+    if (VendorName == null)
       throw new Exception("invalid or missing FPGAInformation/Vendor");
 
     Speed = freqToString(ClockFrequency);

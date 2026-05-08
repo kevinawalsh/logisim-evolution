@@ -121,7 +121,7 @@ public class BoardList {
 		return filenameForPath(path);
 	}
 
-	private static String filenameForPath(String path) {
+	public static String filenameForPath(String path) {
 		String[] parts;
 		if (path.startsWith("jar|")) // "jar|somejar.jar|/resources/logisim/boards/some/board.xml"
 			parts = path.split("/");

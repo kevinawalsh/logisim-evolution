@@ -35,7 +35,6 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
 import javax.swing.Icon;
-import javax.swing.JTabbedPane;
 
 // Displays warnings and errors as badges, for console tabbed pane titles.
 public class BadgeIcon implements Icon {

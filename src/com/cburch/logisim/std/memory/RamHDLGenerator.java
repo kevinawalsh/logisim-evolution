@@ -42,7 +42,7 @@ import com.cburch.logisim.instance.StdAttr;
 
 public class RamHDLGenerator extends HDLGenerator {
 
-  static boolean supports(String lang, AttributeSet attrs, char vendor) {
+  static boolean supports(String lang, AttributeSet attrs /*, char vendor*/) {
     Object dbus = attrs.getValue(RamAttributes.ATTR_DBUS);
     boolean separate = dbus == RamAttributes.BUS_SEP;
     Object trigger = attrs.getValue(StdAttr.TRIGGER);

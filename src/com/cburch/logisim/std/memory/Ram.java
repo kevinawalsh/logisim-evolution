@@ -568,7 +568,7 @@ public class Ram extends Mem {
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
-    if (RamHDLGenerator.supports(ctx.lang, ctx.attrs, ctx.vendor)) // fixme
+    if (RamHDLGenerator.supports(ctx.lang, ctx.attrs)) // fixme
       return new RamHDLGenerator(ctx);
     else
       return null;

@@ -37,33 +37,28 @@ import java.awt.Image;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
+import com.bfh.logisim.fpga.Board;
+
 public class BoardIcon implements Icon {
   private Image image;
-  private int icon_width = 240;
-  private int icon_height = 130;
+  public static final int ICON_WIDTH = 240;
+  public static final int ICON_HEIGHT = 130;
   public final JLabel label = new JLabel();
 
   public BoardIcon() {
   }
 
-  public int getIconHeight() { return icon_height; }
-  public int getIconWidth() { return icon_width; }
+  public int getIconHeight() { return ICON_HEIGHT; }
+  public int getIconWidth() { return ICON_WIDTH; }
 
   public void paintIcon(Component c, Graphics g, int x, int y) {
-    if (image != null) {
-      g.drawImage(image, x, y, null);
-    } else {
-      g.setColor(Color.gray);
-      g.fillRect(0, 0, getIconWidth(), getIconHeight());
-    }
+    g.translate(x, y);
+    Board.drawFitted(g, image, ICON_WIDTH, ICON_HEIGHT);
+    g.translate(-x, -y);
   }
 
   public void setImage(Image img) {
-    if (img != null)
-      image = img.getScaledInstance(getIconWidth(),
-          getIconHeight(), Image.SCALE_SMOOTH);
-    else
-      image = null;
+    image = img; 
 		label.setIcon(this);
     label.repaint();
   }

@@ -64,10 +64,10 @@ import com.cburch.logisim.util.StringUtil;
 public class PortIO extends InstanceFactory {
 
   public static final int MAX_IO = 128;
+  public static final int DEF_IO = 8;
   public static final int MIN_IO = 2;
   public static final Attribute<Integer> ATTR_SIZE = Attributes
-      .forIntegerRange("number", S.getter("pioNumber"), MIN_IO,
-          MAX_IO);
+      .forIntegerRange("number", S.getter("pioNumber"), MIN_IO, MAX_IO);
   // public static final Attribute<Boolean> ATTR_BUS =
   // Attributes.forBoolean("showBus", S.getter("pioShowBus"));
   // public static final String BUSES = S.getter("pioBuses").toString();
@@ -89,11 +89,10 @@ public class PortIO extends InstanceFactory {
 
   public PortIO() {
     super("PortIO", S.getter("pioComponent"));
-    int portSize = 8;
     setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC,
       StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR, ATTR_SIZE, ATTR_DIR},
       new Object[] { Direction.EAST, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT,
-        Color.BLACK, portSize, INOUT_1 });
+        Color.BLACK, DEF_IO, INOUT_1 });
     setFacingAttribute(StdAttr.FACING);
     setIconName("pio.gif");
     setKeyConfigurator(JoinedConfigurator.create(

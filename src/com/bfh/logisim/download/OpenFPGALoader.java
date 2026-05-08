@@ -49,7 +49,7 @@ public class OpenFPGALoader {
     cmd.add(bin);
     cmd.add("--verify");
     cmd.add("-b");
-    cmd.add(board.openFPGALoader_name);
+    cmd.add(boardNameFor(board));
     cmd.add("hardware.bin");
     return cmd;
   }
@@ -115,6 +115,18 @@ public class OpenFPGALoader {
     }
     // Try just using "openFPGALoader", hope it is found on system path?
     return "openFPGALoader";
+  }
+
+  public static boolean isSupportedBy(Board board) {
+    // return board.getToolchainParam("openFPGALoader", "board") != null;
+    return board.getToolchains().contains("openFPGALoader");
+  }
+
+  public static String boardNameFor(Board board) {
+    String name = board.getToolchainParam("openFPGALoader", "board");
+    if (name == null) // fall back to board name?
+      name = board.name;
+    return name;
   }
 
 }

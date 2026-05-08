@@ -85,14 +85,17 @@ import com.bfh.logisim.fpga.BoardIO;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.Path;
+import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.util.GraphicsUtil;
 import static com.bfh.logisim.fpga.PinBindings.Dest;
 import static com.bfh.logisim.fpga.PinBindings.Source;
 
 public class BindingsDialog extends JDialog {
 
-  private Board board;
+  private final Board board;
   private PinBindings pinBindings;
+  private double imgScale;
+  private Point imgOffset;
 
   private Synthetic zeros, ones, constants, bitbucket;
   private Synthetic[] synthetics;
@@ -116,15 +119,17 @@ public class BindingsDialog extends JDialog {
     super(parentFrame, ModalityType.APPLICATION_MODAL);
     this.board = board;
     this.pinBindings = pinBindings;
+    this.imgScale = Board.scaleForFitted(board.image, Board.STD_IMG_WIDTH, Board.STD_IMG_HEIGHT);
+    this.imgOffset = Board.offsetForFitted(board.image, Board.STD_IMG_WIDTH, Board.STD_IMG_HEIGHT);
     sources = new SourceList();
 
     overlay = new JLayeredPane();
 
-    for (BoardIO io : board) {
+    for (BoardIO io : board.getIoComponents()) {
       Rect r = new Rect(io);
       rects.put(io, r);
       overlay.add(r, LAYER_TOP);
-      r.setBounds(io.rect.x, io.rect.y, io.rect.width, io.rect.height);
+      r.setBounds(scaleToFullsize(io.rect));
       r.setVisible(false);
     }
 
@@ -239,20 +244,19 @@ public class BindingsDialog extends JDialog {
 
   private class SelectionPanel extends JPanel {
     SelectionPanel() {
-      setPreferredSize(new Dimension(Board.IMG_WIDTH, Board.IMG_HEIGHT));
-      setMinimumSize(new Dimension(Board.IMG_WIDTH, Board.IMG_HEIGHT));
+      setPreferredSize(new Dimension(Board.STD_IMG_WIDTH, Board.STD_IMG_HEIGHT));
+      setMinimumSize(new Dimension(Board.STD_IMG_WIDTH, Board.STD_IMG_HEIGHT));
       setBackground(Color.BLACK);
       setOpaque(true);
     }
     @Override
-    public int getWidth() { return Board.IMG_WIDTH; }
+    public int getWidth() { return Board.STD_IMG_WIDTH; }
     @Override
-    public int getHeight() { return Board.IMG_HEIGHT; }
+    public int getHeight() { return Board.STD_IMG_HEIGHT; }
     @Override
     protected void paintComponent(Graphics g) {
       super.paintComponent(g);
-      if (board.image != null)
-        g.drawImage(board.image, 0, 0, null);
+      Board.drawFitted(g, board.image, Board.STD_IMG_WIDTH, Board.STD_IMG_HEIGHT);
     }
   }
 
@@ -290,9 +294,10 @@ public class BindingsDialog extends JDialog {
           emphasized && (emphasizeBit == -1 || io.width == 1) ? HILIGHT :
           !fullymapped ? MISTY :
           MAPPED);
-      g.fillRect(0, 0, io.rect.width, io.rect.height);
+      Rectangle rr = scaleToFullsize(io.rect);
+      g.fillRect(0, 0, rr.width, rr.height);
       g.setColor(hover ? HOVERB : emphasized ? HILIGHTB : fullymapped ? MAPPEDB : MISTYB);
-      g.drawRect(0, 0, io.rect.width-1, io.rect.height-1);
+      g.drawRect(0, 0, rr.width-1, rr.height-1);
       if (io.width > 1 && io.orientation != null) {
         Color fill[] = new Color[io.width];
         Color edge[] = new Color[io.width];
@@ -304,18 +309,18 @@ public class BindingsDialog extends JDialog {
             (emphasized && (emphasizeBit == -1 || emphasizeBit == i)) ? HILIGHTB :
             isMapped[i] ? MAPPEDB : MISTYB;
         }
-        g.translate(-io.rect.x, -io.rect.y);
-        io.drawOrientedPins(g, fill, edge, null);
-        g.translate(io.rect.y, io.rect.y);
-      } else if (io.width > 1 && io.rect.width > io.rect.height) {
+        g.translate(-rr.x, -rr.y);
+        io.drawOrientedPins(g, imgOffset.x, imgOffset.y, imgScale, fill, edge, null);
+        g.translate(rr.y, rr.y);
+      } else if (io.width > 1 && rr.width > rr.height) {
         //    _________
         //   |/_/_/_/_/|  width = 6 bit
         //
-        double dx = (io.rect.width - 1.0) / (io.width - 1.0);
+        double dx = (rr.width - 1.0) / (io.width - 1.0);
         int xt = (int)(nmapped*dx);
         int xb = (int)((nmapped-1)*dx);
-        int xr = io.rect.width - 1;
-        int yb = io.rect.height - 1;
+        int xr = rr.width - 1;
+        int yb = rr.height - 1;
         int[] x = new int[] {xt, xr, xr, xb};
         int[] y = new int[] {0,  0,  yb, yb};
         g.setColor(MISTY);
@@ -335,11 +340,11 @@ public class BindingsDialog extends JDialog {
         // |  _|
         // |_-_|
         // 
-        double dy = (io.rect.height - 1.0) / (io.width - 1.0);
-        int yb = io.rect.height - 1;
+        double dy = (rr.height - 1.0) / (io.width - 1.0);
+        int yb = rr.height - 1;
         int yl = yb - (int)((nmapped-1)*dy);
         int yr = yb - (int)(nmapped*dy);
-        int xr = io.rect.width - 1;
+        int xr = rr.width - 1;
         int[] x = new int[] {0,  0, xr, xr};
         int[] y = new int[] {yl, 0, 0,  yr};
         g.setColor(MISTY);
@@ -1107,5 +1112,16 @@ public class BindingsDialog extends JDialog {
 		*/
 	}
 
+  private Rectangle scaleToFullsize(Bounds bds) {
+    return new Rectangle(
+        imgOffset.x + (int)Math.round(bds.x*imgScale),
+        imgOffset.y + (int)Math.round(bds.y*imgScale),
+        (int)Math.round(bds.width*imgScale),
+        (int)Math.round(bds.height*imgScale));
+  }
+
+  private int scaleToFullsize(int dim) {
+    return (int)Math.round(dim*imgScale);
+  }
 
 }

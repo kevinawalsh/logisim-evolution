@@ -79,7 +79,7 @@ public abstract class HDLSupport {
   // the signals for the *parent* circuit (or null, if it is the top-level
   // circuit), not the signals within this subcircuit.
   public final AttributeSet _attrs; // context - fixme
-  public final char _vendor; // context - fixme
+  // public final char _vendor; // context - fixme
   public final boolean inlined;
   public final Hdl _hdl;
 
@@ -90,7 +90,7 @@ public abstract class HDLSupport {
     this._err = ctx.err;
     this._nets = ctx.nets; // sometimes null, i.e. for top level circuit and also for quick checks
     this._attrs = ctx.attrs; // empty for Circuit, Ticker, maybe others?
-    this._vendor = ctx.vendor;
+    // this._vendor = ctx.vendor;
     this.inlined = inlined;
     this.hdlPathName = ctx.comp == null ? null : deriveHdlPathName(ctx.comp.original);
     this._hdl = new Hdl(_lang, _err);
