@@ -36,12 +36,12 @@ import java.awt.Graphics;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.Map;
 
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.file.XmlUtil;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
@@ -256,19 +256,96 @@ public class BoardIO {
         io.strength, io.orientation, io.pins);
   }
 
-  public static BoardIO parseXmlOld(Node node) throws Exception {
-    Type t = Type.getPhysicalType(node.getNodeName());
+  public static BoardIO parseXml(Element elt) throws Exception {
+    Type t = Type.getPhysicalType(elt.getNodeName());
     if (t == Type.Unknown)
-      throw new Exception("unrecognized I/O resource type: " + node.getNodeName());
+      throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
+    String name = t.toString();
 
-    HashMap<String, String> params = new HashMap<>();
-    NamedNodeMap attrs = node.getAttributes();
-    for (int i = 0; i < attrs.getLength(); i++) {
-      Node attr = attrs.item(i);
-      String tag = attr.getNodeName();
-      String val = attr.getNodeValue();
-      params.put(tag, val);
+    Map<String, String> params = XmlUtil.getAttributeMap(elt);
+
+    String label = params.get("label");
+    if (label != null && !label.isEmpty())
+      name += " " + label;
+    
+    // Coordinates should fit within image bounds
+    int x = Integer.parseInt(params.getOrDefault("x", "-1"));
+    int y = Integer.parseInt(params.getOrDefault("y", "-1"));
+    int w = Integer.parseInt(params.getOrDefault("width", "-1"));
+    int h = Integer.parseInt(params.getOrDefault("height", "-1"));
+		if (x < 0 || y < 0 || w < 1 || h < 1)
+      throw new Exception("invalid coordinates or size for I/O resource " + name);
+		Bounds r = Bounds.create(x, y, w, h);
+    name += "@ ("+x+","+y+")";
+
+    PullBehavior p = PullBehavior.get(params.get("pull"));
+    PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
+        PinActivity.get(params.get("polarity"));
+    IoStandard s = IoStandard.get(params.get("ioStandard"));
+    DriveStrength g = DriveStrength.get(params.get("drive"));
+
+    PinOrdering o = null;
+    String[] pins;
+		int width;
+    if (params.containsKey("pin")) {
+      width = 1;
+      pins = new String[] { params.get("pin") };
+      if (pins[0] == null)
+        throw new Exception("missing pin FPGA location for " + name);
+    } else {
+      String cnt = params.get("n");
+      if (cnt == null) {
+        int max = -1;
+        for (String str : params.keySet()) {
+          if (str.length() > 3 && str.startsWith("pin") && Character.isDigit(str.charAt(3))) {
+            try {
+              max = Math.max(max, Integer.parseInt(str.substring(3)));
+            } catch (NumberFormatException ex) {
+            }
+          }
+        } 
+        cnt = "" + (max+1);
+      }
+      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+        if (cnt == null)
+          throw new Exception("missing pin count for " + name);
+        width = Integer.parseInt(cnt);
+        if (width <= 0)
+          throw new Exception("invalid pin count for " + name);
+      } else {
+        width = t.defaultWidth();
+        if (cnt != null && Integer.parseInt(cnt) != width)
+          Errors.title("Error").warn("Ignoring invalid pin count in XML for " + name);
+      }
+      pins = new String[width];
+      for (int i = 0; i < width; i++) {
+        pins[i] = params.get("pin" + i);
+        if (pins[i] == null)
+          throw new Exception("missing pin FPGA location " + i + " for " + name);
+      }
+      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+        String desc = params.get("orientation");
+        if (desc != null) {
+          o = PinOrdering.get(desc);
+          if (o == null)
+            throw new Exception("Invalid orientation " + desc + " for " + name);
+        } else if (r.width >= r.height) {
+          o = t == Type.DIPSwitch ? PinOrdering.ORDER_1_LR : PinOrdering.ORDER_2_BTLR;
+        } else {
+          o = t == Type.DIPSwitch ? PinOrdering.ORDER_1_TB : PinOrdering.ORDER_2_LRTB;
+        }
+      }
     }
+
+    return new BoardIO(t, width, label, r, s, p, a, g, o, pins);
+	}
+
+  public static BoardIO parseXmlOld(Element elt) throws Exception {
+    Type t = Type.getPhysicalType(elt.getNodeName());
+    if (t == Type.Unknown)
+      throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
+
+    Map<String, String> params = XmlUtil.getAttributeMap(elt);
 
     String label = params.get("Label");
     String name = t.toString();
@@ -317,7 +394,7 @@ public class BoardIO {
       for (int i = 0; i < width; i++) {
         pins[i] = params.get("FPGAPin_" + i);
         if (pins[i] == null)
-          throw new Exception("missing pin label " + i + " for " + name);
+          throw new Exception("missing pin FPGA location " + i + " for " + name);
       }
       if (t == Type.Ribbon || t == Type.DIPSwitch) {
         String desc = params.get("Orientation");

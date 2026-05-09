@@ -50,48 +50,49 @@ class BoardWriter {
       sb.append("<Board")
         // .append(a("id",   board.name))
         .append(a("name", board.name))
+        .append(a("codename", board.codename))
         .append(">\n");
 
       // FPGA chip, clock, and unused-pins settings
       Chipset chip = board.fpga;
-      sb.append("   <FPGA>\n");
-      sb.append("      <Chip")
+      sb.append("  <FPGA>\n");
+      sb.append("    <Chip")
         .append(a("vendor",     chip.VendorName))
         .append(a("family",     chip.Technology))
         .append(a("part",       chip.Part))
         .append(a("speedGrade", chip.SpeedGrade))
         .append(a("package",    chip.Package))
         .append("/>\n");
-      sb.append("<JTAG")
+      sb.append("    <JTAG")
         .append(a("pos", "" + chip.JTAGPos))
         .append("/>\n");
       if (chip.FlashDefined) {
-        sb.append("<Flash")
+        sb.append("    <Flash")
           .append(a("pos", "" + chip.FlashPos))
           .append(a("name", chip.FlashName))
           .append("/>\n");
       }
       if (chip.USBTMCAvailable) {
-        sb.append("<USBTMC available=\"true\"/>");
+        sb.append("    <USBTMC available=\"true\"/>\n");
       }
-      sb.append("      <Clock")
+      sb.append("    <Clock")
         .append(a("pin",        chip.ClockPinLocation))
         .append(a("frequency",  "" + chip.ClockFrequency))
         .append(a("ioStandard", "" + chip.ClockIOStandard))
         .append(a("pull",       "" + chip.ClockPullBehavior))
         .append("/>\n");
-      sb.append("      <UnusedPins")
+      sb.append("    <UnusedPins")
         .append(a("pull", "" + chip.UnusedPinsBehavior))
         .append("/>\n");
-      sb.append("   </FPGA>\n");
+      sb.append("  </FPGA>\n");
 
       // Toolchains section
       String def = board.getDefaultToolchain();
       List<String> toolchains = board.getToolchains();
       if (def == null && toolchains.isEmpty()) {
-        sb.append("   <Toolchains/>\n");
+        sb.append("  <Toolchains/>\n");
       } else {
-        sb.append("   <Toolchains");
+        sb.append("  <Toolchains");
         if (def != null)
           sb.append(a("default", def));
         if (toolchains.isEmpty()) {
@@ -99,34 +100,36 @@ class BoardWriter {
         } else {
           sb.append(">\n");
           for (String tc : toolchains) {
+            boolean progOnly = board.isOnlyProgrammer(tc);
+            String tag = progOnly ? "Programmer" : "Toolchain";
             Map<String, String> params = board.getToolchainParams(tc);
-            sb.append("     <Toolchain")
+            sb.append("    <" + tag)
               .append(a("name", tc));
             if (params.isEmpty()) {
               sb.append("/>\n");
             } else {
               sb.append(">\n");
               for (Map.Entry<String, String> kv : params.entrySet()) {
-                sb.append("        <Param")
+                sb.append("      <Param")
                   .append(a("key", kv.getKey()))
                   .append(a("value", kv.getValue()))
                   .append("/>\n");
               }
-              sb.append("      </Toolchain>\n");
+              sb.append("    </" + tag + ">\n");
             }
           }
-          sb.append("    </Toolchains>\n");
+          sb.append("  </Toolchains>\n");
         }
       }
 
       // I/O components
       if (board.getIoComponents().isEmpty()) {
-        sb.append("   <IOComponents/>\n");
+        sb.append("  <IOComponents/>\n");
       } else {
-        sb.append("   <IOComponents>\n");
+        sb.append("  <IOComponents>\n");
         for (BoardIO comp : board.getIoComponents())
           appendIO(sb, comp);
-        sb.append("   </IOComponents>\n");
+        sb.append("  </IOComponents>\n");
       }
 
       // Picture: base64-encoded, wrapped at 76 chars per line
@@ -134,13 +137,13 @@ class BoardWriter {
       int picH = board.image.getHeight(null);
       String fmt = board.imgFormat;
       String base64 = Base64.getEncoder().encodeToString(board.imgBytes);
-      sb.append("   <Picture format=\""+fmt+"\" encoding=\"base64\"")
+      sb.append("  <Picture format=\""+fmt+"\" encoding=\"base64\"")
         .append(a("width",  "" + picW))
         .append(a("height", "" + picH))
         .append(">\n");
-      for (int i = 0; i < base64.length(); i += 76)
-        sb.append("      ").append(base64, i, Math.min(i + 76, base64.length())).append("\n");
-      sb.append("   </Picture>\n");
+      for (int i = 0; i < base64.length(); i += 80)
+        sb.append(base64, i, Math.min(i + 80, base64.length())).append("\n");
+      sb.append("  </Picture>\n");
 
       sb.append("</Board>\n");
 
@@ -168,12 +171,12 @@ class BoardWriter {
   // Appends one <IOType .../> element to sb.
   // Attribute order:
   //   1. label
-  //   2. per-component params (NrOfPins, Orientation)
-  //   3. pins (pin for single-bit, FPGAPin_N for multi-bit)
+  //   2. per-component params (n, orientation)
+  //   3. pins (pin for single-bit, pinN for multi-bit)
   //   4. pin parameters (pull, polarity, drive, ioStandard)
   //   5. geometry (x, y, width, height)
   private static void appendIO(StringBuilder sb, BoardIO io) {
-    sb.append("      <").append(io.type);
+    sb.append("    <").append(io.type);
 
     // 1. Label
     if (io.label != null)
@@ -181,16 +184,16 @@ class BoardWriter {
 
     // 2. Per-component params
     if (io.width > 1)
-      sb.append(a("NrOfPins", "" + io.width));
+      sb.append(a("n", "" + io.width));
     if (io.orientation != null)
-      sb.append(a("Orientation", "" + io.orientation));
+      sb.append(a("orientation", "" + io.orientation));
 
     // 3. Pins
     if (io.width == 1) {
       sb.append(a("pin", io.pins[0]));
     } else {
       for (int i = 0; i < io.width; i++)
-        sb.append(a("FPGAPin_" + i, io.pins[i]));
+        sb.append(a("pin" + i, io.pins[i])); // todo: use labels
     }
 
     // 4. Pin parameters

@@ -56,7 +56,7 @@ public class PinOrdering {
 
   public static PinOrdering get(String desc) {
     for (PinOrdering p : OPTIONS)
-      if (p.desc.equals(desc))
+      if (p.desc.equalsIgnoreCase(desc))
         return p;
     return null;
   }

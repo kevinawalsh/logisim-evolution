@@ -45,8 +45,12 @@ public class DriveStrength {
     DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 };
 
   public static DriveStrength get(String desc) {
+    if (desc == null || desc.isEmpty())
+      return DEFAULT;
     for (DriveStrength p : OPTIONS)
-      if (p.desc.equals(desc))
+      if (p.desc.equalsIgnoreCase(desc)
+          || p.desc.replaceAll(" ", "").equalsIgnoreCase(desc)
+          || p.ma.equals(desc))
         return p;
     return UNKNOWN;
   }

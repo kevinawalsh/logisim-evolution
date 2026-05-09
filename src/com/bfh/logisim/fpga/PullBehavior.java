@@ -43,9 +43,18 @@ public class PullBehavior {
   private PullBehavior(String d, String a, String x, String l) { desc = d; altera = a; xilinx = x; lattice = l;}
 
   public static PullBehavior get(String desc) {
+    if (desc == null || desc.isEmpty() || desc.equalsIgnoreCase("none") || desc.equalsIgnoreCase("without pull"))
+      return NONE;
     for (PullBehavior p : OPTIONS)
-      if (p.desc.equals(desc))
+      if (p.desc.equalsIgnoreCase(desc)
+          || p.desc.replaceAll(" ", "-").equalsIgnoreCase(desc)
+          || p.desc.replaceAll(" ", "").equalsIgnoreCase(desc))
         return p;
+    if (desc.equalsIgnoreCase("up")) return PULL_UP;
+    if (desc.equalsIgnoreCase("down")) return PULL_DOWN;
+    if (desc.equalsIgnoreCase("float")) return FLOAT;
+    if (desc.equalsIgnoreCase("tristate")) return FLOAT;
+    if (desc.equalsIgnoreCase("tri-state")) return FLOAT;
     return UNKNOWN;
   }
 

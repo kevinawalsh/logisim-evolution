@@ -28,33 +28,40 @@
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
 
-package com.bfh.logisim.fpga;
+package com.cburch.logisim.file;
 
-public class IoStandard {
-  public final String desc;
-  private IoStandard(String d) { desc = d; }
+import java.util.LinkedHashMap;
 
-	public static final IoStandard DEFAULT  = new IoStandard("Default");
-	public static final IoStandard LVCMOS12 = new IoStandard("LVCMOS12");
-	public static final IoStandard LVCMOS15 = new IoStandard("LVCMOS15");
-	public static final IoStandard LVCMOS18 = new IoStandard("LVCMOS18");
-	public static final IoStandard LVCMOS25 = new IoStandard("LVCMOS25");
-	public static final IoStandard LVCMOS33 = new IoStandard("LVCMOS33");
-	public static final IoStandard LVTTL    = new IoStandard("LVTTL");
-	public static final IoStandard UNKNOWN =  new IoStandard("Unknown");  
-  public static final IoStandard[] OPTIONS = { DEFAULT,
-    LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-  public static IoStandard get(String desc) {
-    if (desc == null || desc.isEmpty())
-      return DEFAULT;
-    for (IoStandard p : OPTIONS)
-      if (p.desc.equalsIgnoreCase(desc))
-        return p;
-    return UNKNOWN;
+
+public class XmlUtil {
+
+  // Return the first child element with the given name, e.g.
+  // extracts the child from <Element>...<Name>...</Name>...</Element>.
+  public static Element getChildElement(Element elt, String name) {
+    NodeList children = elt.getChildNodes();
+    for (int i = 0; i < children.getLength(); i++) {
+      Node n = children.item(i);
+      if (n.getNodeType() == Node.ELEMENT_NODE && n.getNodeName().equals(name))
+        return (Element)n;
+    }
+    return null;
   }
 
-  @Override
-  public String toString() { return desc; }
+  // Return an ordered map of all attributes, e.g. extracts key/val pairs from
+  // <Element key1="val1" key2="val2" ... keyN="valN">...
+  public static LinkedHashMap<String, String> getAttributeMap(Element elt) {
+    LinkedHashMap<String, String> map = new LinkedHashMap<>();
+    NamedNodeMap attrs = elt.getAttributes();
+    for (int i = 0; i < attrs.getLength(); i++) {
+      Node attr = attrs.item(i);
+      map.put(attr.getNodeName(), attr.getNodeValue());
+    }
+    return map;
+  }
 
 }

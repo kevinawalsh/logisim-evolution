@@ -80,7 +80,6 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.prefs.AppPreferences;
-import com.cburch.logisim.proj.Projects;
 import com.cburch.logisim.std.io.DipSwitch;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.util.Errors;
@@ -481,7 +480,7 @@ public class BoardEditor extends JFrame {
     dlg.add(done, c);
 
     dlg.pack();
-    dlg.setLocation(Projects.getCenteredLoc(dlg.getWidth(), dlg.getHeight()));
+    dlg.setLocationRelativeTo(this);
     dlg.setModal(true);
     dlg.setResizable(false);
     dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
@@ -586,6 +585,7 @@ public class BoardEditor extends JFrame {
       int removed = 0;
       int iw = image.getOriginalImage().getWidth(null);
       int ih = image.getOriginalImage().getHeight(null);
+      System.out.println("new image is: " + iw + " x " + ih);
       for (int i = 0; i < ioComponents.size(); i++) {
         BoardIO io = ioComponents.get(i);
         int w = Math.max(3, Math.min(io.rect.width, iw));
@@ -593,6 +593,7 @@ public class BoardEditor extends JFrame {
         int x = Math.max(0, Math.min(io.rect.x, iw - w));
         int y = Math.max(0, Math.min(io.rect.y, ih - h));
         Bounds newRect = Bounds.create(x, y, w, h);
+        System.out.println("old rect: " + io.rect + " new rect: " + newRect);
         if (io.rect.equals(newRect))
           continue;
         boolean overlaps = false;
@@ -611,9 +612,11 @@ public class BoardEditor extends JFrame {
         }
       }
       setEnables();
-      Errors.title("Warning").show("Some I/O Components fell outside the bounds of the new image, so "
-          + (fixed == 0 ? "" : fixed == 1 ? "1 was moved, " : fixed + " were moved, ")
-          + (removed == 0 ? "none were deleted." : removed == 1 ? "1 was deleted." : removed + " were deleted."));
+      if (fixed + removed > 0) {
+        Errors.title("Warning").show("Some I/O Components fell outside the bounds of the new image, so "
+            + (fixed == 0 ? "" : fixed == 1 ? "1 was moved, " : fixed + " were moved, ")
+            + (removed == 0 ? "none were deleted." : removed == 1 ? "1 was deleted." : removed + " were deleted."));
+      }
     } catch (IOException ex) {
       Errors.title("Error").show("Error loading image", ex);
     }

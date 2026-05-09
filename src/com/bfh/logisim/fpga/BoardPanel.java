@@ -117,17 +117,18 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     if ((iw == STD_IMG_WIDTH && ih <= STD_IMG_HEIGHT) || (iw <= STD_IMG_WIDTH && ih == STD_IMG_HEIGHT)) {
       this.scaledImage = image;
       this.imgScale = 1.0;
+      this.imgXOffset = (STD_IMG_WIDTH - iw) / 2;
+      this.imgYOffset = (STD_IMG_HEIGHT - ih) / 2;
     } else {
       double sx = STD_IMG_WIDTH * 1.0 / iw;
       double sy = STD_IMG_HEIGHT * 1.0 / ih;
       this.imgScale = Math.min(sx, sy);
-      this.scaledImage = image.getScaledInstance(
-          Math.max(STD_IMG_WIDTH, (int)Math.round(sx * iw)),
-          Math.max(STD_IMG_HEIGHT, (int)Math.round(sx * ih)),
-          Image.SCALE_SMOOTH);
+      int sw = (int)Math.round(imgScale * iw);
+      int sh = (int)Math.round(imgScale * ih);
+      this.scaledImage = image.getScaledInstance(sw, sh, Image.SCALE_SMOOTH);
+      this.imgXOffset = (STD_IMG_WIDTH - sw) / 2;
+      this.imgYOffset = (STD_IMG_HEIGHT - sh) / 2;
     }
-    this.imgXOffset = (scaledImage.getWidth(null) - STD_IMG_WIDTH)/2;
-    this.imgYOffset = (scaledImage.getHeight(null) - STD_IMG_HEIGHT)/2;
   }
 
   public Image getScaledImage() { return scaledImage; }
@@ -180,10 +181,19 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       setCursor(CROSSHAIR);
     } else if (scaledImage != null) {
       BoardIO io = findBoardIO(e);
-      setCursor(io != null ? MOVE_CURSOR : CROSSHAIR);
+      setCursor(io != null
+          ? MOVE_CURSOR :
+          withinScaledImage(e)
+          ? CROSSHAIR :
+          DEFAULT_CURSOR);
     } else {
       setCursor(DEFAULT_CURSOR);
     }
+  }
+
+  private boolean withinScaledImage(MouseEvent e) {
+    return (e.getX() >= imgXOffset && e.getX() < imgXOffset + scaledImage.getWidth(null)
+        && e.getY() >= imgYOffset && e.getY() < imgYOffset + scaledImage.getHeight(null));
   }
 
   @Override
@@ -191,8 +201,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     if (scaledImage == null) return;
     if (!SwingUtilities.isLeftMouseButton(e))
       return;
-    if (e.getX() < imgXOffset || e.getX() >= imgXOffset + scaledImage.getWidth(null)
-        || e.getY() < imgYOffset || e.getY() >= imgYOffset + scaledImage.getHeight(null)) {
+    if (!withinScaledImage(e)) {
       editor.clearSelection();
       return;
     }
@@ -202,8 +211,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       if (io != editor.selectedIO)
         editor.doBoardIODialog(io);
       moving = true;
-      moveOffsetX = e.getX() - (int)Math.round(io.rect.x * imgScale);
-      moveOffsetY = e.getY() - (int)Math.round(io.rect.y * imgScale);
+      moveOffsetX = e.getX() - (int)Math.round(imgXOffset + io.rect.x * imgScale);
+      moveOffsetY = e.getY() - (int)Math.round(imgYOffset + io.rect.y * imgScale);
       setCursor(MOVE_CURSOR);
       xs = ys = w = h = 0;
     } else {
@@ -217,16 +226,16 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 	}
 
   private BoardIO findBoardIO(MouseEvent e) {
-    int ox = (int)Math.round(e.getX() / imgScale);
-    int oy = (int)Math.round(e.getY() / imgScale);
+    int ox = (int)Math.round((e.getX() - imgXOffset) / imgScale);
+    int oy = (int)Math.round((e.getY() - imgYOffset) / imgScale);
     return editor.findBoardIO(ox, oy);
   }
 
   @Override
 	public void mouseDragged(MouseEvent e) {
     if (moving) {
-      int ox = (int)Math.round((e.getX() - moveOffsetX)/imgScale);
-      int oy = (int)Math.round((e.getY() - moveOffsetY)/imgScale);
+      int ox = (int)Math.round((e.getX() - moveOffsetX - imgXOffset) / imgScale);
+      int oy = (int)Math.round((e.getY() - moveOffsetY - imgYOffset) / imgScale);
       editor.moveSelectedIO(ox, oy);
     } else if (scaledImage != null) {
       w = e.getX() - xs;
@@ -242,8 +251,8 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       setCursor(DEFAULT_CURSOR); // mouseMoved will refine on next motion
     } else if (scaledImage != null) {
       if (h != 0 && w != 0) {
-        int ox = (int)Math.round(xs / imgScale);
-        int oy = (int)Math.round(ys / imgScale);
+        int ox = (int)Math.round((xs - imgXOffset) / imgScale);
+        int oy = (int)Math.round((ys - imgYOffset) / imgScale);
         int ow = Math.max(3, (int)Math.round(w / imgScale));
         int oh = Math.max(3, (int)Math.round(h / imgScale));
         Bounds rect = Bounds.create(ox, oy, ow, oh);
@@ -261,13 +270,13 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   public void paint(Graphics g) {
     super.paint(g);
     if (scaledImage != null) {
-      g.setColor(Color.gray);
-      g.fillRect(0, 0, getWidth(), getHeight());
-      g.drawImage(scaledImage, imgXOffset, 0, null);
+      g.setColor(Color.BLACK);
+      g.fillRect(0, 0, STD_IMG_WIDTH, STD_IMG_HEIGHT);
+      g.drawImage(scaledImage, imgXOffset, imgYOffset, null);
       for (BoardIO io: editor.ioComponents) {
         boolean sel = (io == editor.selectedIO);
         Rectangle2D r = new Rectangle2D.Double(
-            imgXOffset + io.rect.x * imgScale, io.rect.y * imgScale,
+            imgXOffset + io.rect.x * imgScale, imgYOffset + io.rect.y * imgScale,
             io.rect.width * imgScale, io.rect.height * imgScale);
         g.setColor(sel ? SELECTED : MISTY);
         ((Graphics2D)g).fill(r);
@@ -285,7 +294,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
         g.drawRect(xr, yr, wr, hr);
       }
     } else {
-      g.setColor(Color.gray);
+      g.setColor(Color.BLACK);
       g.fillRect(0, 0, getWidth(), getHeight());
       String[] lines = {
         "Click to add picture of FPGA board,",

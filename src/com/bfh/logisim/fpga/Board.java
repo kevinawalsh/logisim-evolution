@@ -132,6 +132,10 @@ public class Board {
     programmers.add(toolchain);
   }
 
+  public boolean isOnlyProgrammer(String toolchain) {
+    return programmers.contains(toolchain);
+  }
+
   public void removeToolchain(String toolchain) {
     toolchainParams.remove(toolchain);
   }
@@ -193,7 +197,7 @@ public class Board {
   }
   
   public static void drawFitted(Graphics g, Image img, int w, int h) {
-    g.setColor(Color.GRAY);
+    g.setColor(Color.BLACK);
     g.fillRect(0, 0, w, h);
 
     if (img == null)

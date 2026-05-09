@@ -41,6 +41,8 @@ public class Chipset {
   //   "Xilinx"  /* and/or AMD */
   // };
 
+  // FIXME: many of these could be optional, never used for some backends
+  
   public final String Speed; // e.g. "50 MHz"
 	public final long ClockFrequency; // FIXME: non-integer frequencies are possible, e.g.  Intel MAX 10 FPGA with Si570 programmable oscillator
 	public final String ClockPinLocation;

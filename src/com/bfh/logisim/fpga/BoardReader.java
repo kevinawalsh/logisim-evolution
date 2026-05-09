@@ -31,9 +31,8 @@
 package com.bfh.logisim.fpga;
 
 import java.io.File;
+import java.util.Base64;
 import java.util.HashMap;
-
-import java.awt.image.BufferedImage;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -41,12 +40,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
 
-import com.cburch.logisim.util.Errors;
 import com.bfh.logisim.settings.BoardList;
+import com.cburch.logisim.file.XmlIterator;
+import com.cburch.logisim.file.XmlUtil;
+import com.cburch.logisim.util.Errors;
 
 // Reader for the legacy xml board format
 public class BoardReader {
@@ -62,11 +61,12 @@ public class BoardReader {
         String parts[] = path.split("\\|", 3);
         String jarpath = parts[1];
         String rscpath = parts[2];
-        ZipFile zf = new ZipFile(jarpath);
-        ZipEntry entry = zf.getEntry(rscpath);
-        if (entry == null)
-          throw new Exception(jarpath + " doesn't contain " + rscpath);
-				doc = parser.parse(zf.getInputStream(entry));
+        try (ZipFile zf = new ZipFile(jarpath)) {
+          ZipEntry entry = zf.getEntry(rscpath);
+          if (entry == null)
+            throw new Exception(jarpath + " doesn't contain " + rscpath);
+          doc = parser.parse(zf.getInputStream(entry));
+        }
       } else if (path.startsWith("file|")) {
         String parts[] = path.split("\\|", 2);
         String filepath = parts[1];
@@ -75,149 +75,152 @@ public class BoardReader {
 				doc = parser.parse(new File(path));
       }
 
-      // Legacy format has no name within xml, instead it uses file name as board name
-      String name = BoardList.filenameForPath(path);
+      // New format is: <Board name="..."> ...
+      // Old format is: <Name_of_Board>...<BoardInformation> ... <BoardPicture>...
+      // - Conceivably, some board in old format could be named "Board".
+      // - So if it start with something other than "Board" OR it contains
+      //   both <BoardInformation> and <BoardPicture>, we fall back to old format.
+      Element boardElt = doc.getDocumentElement();
+      String outerTag = boardElt.getTagName();
+      boolean oldFormat = !outerTag.equals("Board")
+        || (doc.getElementsByTagName("BoardInformation").getLength() == 1
+            && doc.getElementsByTagName("BoardPicture").getLength() == 1);
+      if (oldFormat)
+        return BoardReaderOld.parse(path, doc);
 
-      ImageXmlFactoryOld imgFactory = parsePicture(doc);
-      BufferedImage image = imgFactory.getPicture();
-      String imageFormat = imgFactory.getFormat();
-      byte imageBytes[] = imgFactory.getBytes();
-			Board b = new Board(name, null, parseChipset(doc), image, imageFormat, imageBytes);
- 
-      // Figure out toolchains and toolchain params
-      String apio_name = parseApioName(doc);
-      String ofl_name = parseOpenFPGALoaderName(doc);
-      String vtc;
-      if ("altera".equalsIgnoreCase(b.fpga.VendorName))
-        vtc = "Altera"; // Altera Quartus II
-      else if ("xilinx".equalsIgnoreCase(b.fpga.VendorName))
-        vtc = "Xilinx"; // Xilinx ISE
-      else if ("lattice".equalsIgnoreCase(b.fpga.VendorName))
-        vtc = "Lattice"; // same backend handles Diamond and ispLEVER
-      else if ("gowin".equalsIgnoreCase(b.fpga.VendorName))
-        vtc = "Gowin";
-      else
-        vtc = null;
-      // For default toolchain, use apio if there was a name, or if no vendor toolchain known
-      b.setDefaultToolchain((apio_name != null || vtc == null) ? "Apio" : vtc);
-      if (apio_name != null || vtc == null) {
-        b.addToolchain("Apio");
-        b.setToolchainParam("Apio", "board", apio_name);
-      }
-      if (vtc != null) {
-        b.addToolchain(vtc);
-      }
-      if (ofl_name != null) {
-        b.addToolchainProgrammer("openFPGALoader");
-        b.setToolchainParam("openFPGALoader", "board", ofl_name);
-      }
-      if (b.fpga.USBTMCAvailable) {
-        b.addToolchainProgrammer("USBTMC");
-      }
+      // board.name is attribute of the top element
+      String name = boardElt.getAttribute("name");
+      if (name == null)
+        name = BoardList.filenameForPath(path); // fallback: use file name instead
 
-      parseComponents(doc, "PinsInformation", b); // backwards compatability	
-			parseComponents(doc, "ButtonsInformation", b); // backwards compatability	
-			parseComponents(doc, "LEDsInformation", b); // backwards compatability	
-			parseComponents(doc, "IOComponents", b); // new format
-			return b;
-		} catch (Exception e) {
+      // board.codename is attribute of the top element (optional)
+      String codename = boardElt.getAttribute("codename");
+
+      // board.fpga is in <FPGA>
+      Chipset fpga = parseChipset(XmlUtil.getChildElement(boardElt, "FPGA"));
+
+      // board.image is in <Picture>
+      byte[] imageBytes = null;
+      Element picElt = XmlUtil.getChildElement(boardElt, "Picture");
+      if (picElt != null) {
+        // imageFormat = picElt.getAttribute("format");
+        // imageWidth = picElt.getAttribute("width");
+        // imageHeight = picElt.getAttribute("height");
+        String encoding = picElt.getAttribute("encoding");
+        if (encoding == null || encoding.isEmpty())
+          encoding = "base64";
+        if (encoding.equalsIgnoreCase("base64")) {
+          imageBytes = base64Decode(picElt);
+        } else {
+          Errors.title("Error").show("The selected xml contains a <Picture> with unrecognized encoding: " + encoding);
+        }
+      }
+      BoardImage img = BoardImage.parse(imageBytes);
+			
+      Board b = new Board(name, codename, fpga, img.image, img.format, img.bytes);
+
+      parseToolchains(b, XmlUtil.getChildElement(boardElt, "Toolchains"));
+     
+      parseIoComponents(b, XmlUtil.getChildElement(boardElt, "IOComponents"));
+      return b;
+
+    } catch (Exception e) {
       Errors.title("Error").show("The selected xml file was invalid: " + e.getMessage(), e);
       return null;
 		}
 	}
 
-  private static NodeList getSection(Document doc, String name) {
-		NodeList sections = doc.getElementsByTagName(name);
-		if (sections.getLength() != 1)
-			return null;
-		return sections.item(0).getChildNodes();
-  }
-
-  private static ImageXmlFactoryOld parsePicture(Document doc) throws Exception {
-    NodeList xml = getSection(doc, "BoardPicture");
-    if (xml == null)
+  private static Chipset parseChipset(Element elt) throws Exception {
+    if (elt == null)
       return null;
-    HashMap<String, String> params = xmlToMap(xml);
 
-    int w = Integer.parseInt(params.getOrDefault("PictureDimension/Width", "0"));
-    int h = Integer.parseInt(params.getOrDefault("PictureDimension/Height", "0"));
-    String pixels = params.get("PixelData/PixelRGB");
-    String codes = params.get("CompressionCodeTable/TableData");
+    // FIXME: Revise. For now, we create a map compatible with the old format.
+    // FIXME: many of these should be optional, or have sane defaults.
+    HashMap<String, String> map = new HashMap<>();
+    
+    Element chipElt = XmlUtil.getChildElement(elt, "Chip");
+    if (chipElt == null)
+      throw new Exception("Required element <Chip> is missing");
+    map.put("FPGAInformation/Vendor", chipElt.getAttribute("vendor"));
+    map.put("FPGAInformation/Family", chipElt.getAttribute("family"));
+    map.put("FPGAInformation/Part", chipElt.getAttribute("part"));
+    map.put("FPGAInformation/SpeedGrade", chipElt.getAttribute("speedGrade"));
+    map.put("FPGAInformation/Package", chipElt.getAttribute("package"));
 
-    if (w == 0 || h == 0)
-      throw new Exception("invalid or missing image dimensions");
-    if (codes == null)
-      throw new Exception("missing image compression code table");
-    if (pixels == null)
-      throw new Exception("missing image data");
+    Element jtagElt = XmlUtil.getChildElement(elt, "JTAG");
+    String val = jtagElt == null ? null : jtagElt.getAttribute("pos"); // optional
+    if (val != null && !val.isEmpty())
+      map.put("FPGAInformation/JTAGPos", val);
 
-    return new ImageXmlFactoryOld(w, h, codes.split(" "), pixels);
+    Element usbtmcElt = XmlUtil.getChildElement(elt, "USBTMC");
+    val = usbtmcElt == null ? null : usbtmcElt.getAttribute("available"); // optional
+    if (val != null && !val.isEmpty())
+      map.put("FPGAInformation/USBTMC", val);
+    
+    Element flashElt = XmlUtil.getChildElement(elt, "Flash");
+    val = flashElt == null ? null : flashElt.getAttribute("pos"); // optional
+    if (val != null && !val.isEmpty())
+      map.put("FPGAInformation/FlashPos", val);
+    val = flashElt == null ? null : flashElt.getAttribute("name"); // optional
+    if (val != null && !val.isEmpty())
+      map.put("FPGAInformation/FlashName", val);
+
+    Element clockElt = XmlUtil.getChildElement(elt, "Clock");
+    if (clockElt == null)
+      throw new Exception("Required element <Clock> is missing");
+    map.put("ClockInformation/FPGApin", clockElt.getAttribute("pin"));
+    map.put("ClockInformation/Frequency", clockElt.getAttribute("frequency"));
+    map.put("ClockInformation/IOStandard", clockElt.getAttribute("ioStandard"));
+    map.put("ClockInformation/PullBehavior", clockElt.getAttribute("pull"));
+
+    Element unusedpinsElt = XmlUtil.getChildElement(elt, "UnusedPins");
+    if (unusedpinsElt == null)
+      throw new Exception("Required element <UnusedPins> is missing");
+    map.put("UnusedPins/PullBehavior", unusedpinsElt.getAttribute("pull"));
+
+    return new Chipset(map);
   }
-
-  private static HashMap<String, String> xmlToMap(NodeList xml) {
-    HashMap<String, String> params = new HashMap<>();
-    // System.out.println("xml :" + xml);
-    for (int i = 0; i < xml.getLength(); i++) {
-      Node node = xml.item(i);
-      String name = node.getNodeName();
-      // System.out.printf("node(%d, %s): %s\n", i, name, node);
-      if (name == null || name.equals("#text") || name.equals("#comment"))
+  
+  private static void parseToolchains(Board board, Element tcElt) throws Exception {
+    if (tcElt == null)
+      return;
+    String def = tcElt.getAttribute("default");
+    if (def != null && !def.isEmpty())
+      board.setDefaultToolchain(def);
+    for (Element child : XmlIterator.forChildElements(tcElt)) {
+      String tag = child.getNodeName();
+      if (!tag.equals("Programmer") && !tag.equals("Toolchain"))
         continue;
-      NamedNodeMap attrs = node.getAttributes();
-      for (int j = 0; attrs != null && j < attrs.getLength(); j++) {
-        Node attr = attrs.item(j);
-        String tag = attr.getNodeName();
-        String val = attr.getNodeValue();
-        params.put(name+"/"+tag, val);
-        // System.out.printf("  attr(%d, %s): %s\n", j, tag, val);
+      String name = child.getAttribute("name");
+      if (name == null || name.isEmpty())
+        throw new Exception("Required name attribute of <"+tag+"> is missing");
+      if (tag.equals("Programmer"))
+        board.addToolchainProgrammer(name);
+      else
+        board.addToolchain(name);
+      for (Element p : XmlIterator.forChildElements(child, "Param")) {
+        String key = p.getAttribute("key");
+        String val = p.getAttribute("value");
+        if (key == null || key.isEmpty())
+          throw new Exception("Required key attribute of <Param> is missing");
+        if (val == null)
+          continue;
+        board.setToolchainParam(name, key, val);
       }
     }
-    return params;
   }
 
-  private static Chipset parseChipset(Document doc) throws Exception {
-    NodeList xml = getSection(doc, "BoardInformation");
-    if (xml == null)
-      return null;
-    return new Chipset(xmlToMap(xml));
+  private static byte[] base64Decode(Element elt) throws Exception {
+    // The writer wraps at 80 chars; strip all whitespace before decoding.
+    String encoded = elt.getTextContent().replaceAll("\\s+", "");
+    return Base64.getDecoder().decode(encoded);
   }
 
-  private static String parseApioName(Document doc) throws Exception {
-    NodeList xml = getSection(doc, "BoardInformation");
-    if (xml == null)
-      return null;
-    String apio_name = xmlToMap(xml).get("Toolchain/ApioName");
-    if (apio_name != null)
-      apio_name = apio_name.trim();
-    if (apio_name != null && apio_name.equals(""))
-      apio_name = null;
-    return apio_name;
-  }
-
-  private static String parseOpenFPGALoaderName(Document doc) throws Exception {
-    NodeList xml = getSection(doc, "BoardInformation");
-    if (xml == null)
-      return null;
-    String openFPGALoader_name = xmlToMap(xml).get("Toolchain/openFPGAloaderName");
-    if (openFPGALoader_name != null)
-      openFPGALoader_name = openFPGALoader_name.trim();
-    if (openFPGALoader_name != null && openFPGALoader_name.equals(""))
-      openFPGALoader_name = null;
-    return openFPGALoader_name;
-  }
-
-  private static void parseComponents(Document doc, String section, Board board)
-      throws Exception {
-    NodeList xml = getSection(doc, section);
-    if (xml == null)
+  private static void parseIoComponents(Board board, Element ioElt) throws Exception {
+    if (ioElt == null)
       return;
-    for (int i = 0; i < xml.getLength(); i++) {
-      Node node = xml.item(i);
-      String name = node.getNodeName();
-      if (name == null || name.equals("#text") || name.equals("#comment"))
-        continue;
-      board.addComponent(BoardIO.parseXmlOld(node));
-    }
+    for (Element child : XmlIterator.forChildElements(ioElt))
+      board.addComponent(BoardIO.parseXml(child));
   }
 
 }

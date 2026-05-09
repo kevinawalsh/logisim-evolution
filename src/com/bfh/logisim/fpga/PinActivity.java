@@ -41,9 +41,19 @@ public class PinActivity {
   private PinActivity(String d) { desc = d; }
 
   public static PinActivity get(String desc) {
+    if (desc == null || desc.isEmpty())
+      return ACTIVE_HIGH;
     for (PinActivity p : OPTIONS)
-      if (p.desc.equals(desc))
+      if (p.desc.equalsIgnoreCase(desc)
+          || p.desc.replaceAll(" ", "-").equalsIgnoreCase(desc)
+          || p.desc.replaceAll(" ", "").equalsIgnoreCase(desc))
         return p;
+    if (desc.equalsIgnoreCase("high")) return ACTIVE_HIGH;
+    if (desc.equalsIgnoreCase("low")) return ACTIVE_LOW;
+    if (desc.equalsIgnoreCase("positive")) return ACTIVE_HIGH;
+    if (desc.equalsIgnoreCase("negative")) return ACTIVE_LOW;
+    if (desc.equalsIgnoreCase("pos")) return ACTIVE_HIGH;
+    if (desc.equalsIgnoreCase("neg")) return ACTIVE_LOW;
     return UNKNOWN;
   }
   
