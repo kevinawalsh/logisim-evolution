@@ -37,7 +37,9 @@ import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
+import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.gui.Commander;
@@ -47,11 +49,45 @@ import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.FileUtil;
 
 public class ApioDownload extends FPGADownload {
 
-  public ApioDownload() { super("Apio"); }
+  public static void register() {
+    FPGADownload.register(new Toolchain("Apio CLI", "Apio", true, true) {
+      @Override
+      public boolean hasAlternateName(String altname) {
+        return 
+          altname.equalsIgnoreCase("Apio CLI")
+          || altname.equalsIgnoreCase("Apio IDE")
+          || altname.equalsIgnoreCase("FPGAwars/apio");
+      }
+      @Override
+      public boolean supports(Board b) {
+        String codename = normalizeBoardName(b.codename);
+        ArrayList<String> names = getApioBoardList();
+        for (String name : names) {
+          if (normalizeBoardName(name).equalsIgnoreCase(codename))
+            return true;
+        }
+        return false;
+      }
+      @Override
+      public FPGADownload newDownloader() { return new ApioDownload(); }
+
+    });
+  }
+
+  // Apio board names tend to follow alhpanum-kebab-case conventions.
+  private static String normalizeBoardName(String name) {
+    name = name.replaceAll("[^a-zA-Z0-9]+", "-");
+    if (name.startsWith("-")) name = name.substring(1);
+    if (name.endsWith("-")) name = name.substring(0, name.length()-1);
+    return name;
+  }
+
+  private ApioDownload() { super("Apio"); }
 
   @Override
   public boolean readyForDownload() {
@@ -69,15 +105,40 @@ public class ApioDownload extends FPGADownload {
 
   private String getApioVersion(String cmd) {
     try {
-      Process process = Runtime.getRuntime().exec(cmd + " --version");
+      Process process = new ProcessBuilder(cmd, "--version").start();
       BufferedReader reader = new BufferedReader(
           new InputStreamReader(process.getInputStream()));
       String line = reader.readLine();
       if (line.toLowerCase().startsWith("apio "))
         return line.substring("apio ".length());
     } catch (Exception e) {
+      Debug.error("Executing `"+cmd+" --version`", e);
     }
     return null;
+  }
+
+  private static ArrayList<String> getApioBoardList() {
+    ArrayList<String> ret = new ArrayList<>();
+    String prog = findApioExecutable(AppPreferences.APIO_PATH.get());
+    if (prog == null || prog.isEmpty())
+      return ret;
+    try {
+      Process process = new ProcessBuilder(prog, "boards").start();
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(process.getInputStream()));
+      String line = reader.readLine().trim();
+      String name = null;
+      if (line.startsWith("| ") && line.endsWith(" |")) {
+         name = line.substring(2).split("\\|", 2)[0].trim();
+      } else if (line.startsWith("\u2502 ") && line.endsWith(" \u2502")) {
+         name = line.substring(2).split("\u2502", 2)[0].trim();
+      }
+      if (name != null && !name.isEmpty() && !name.equalsIgnoreCase("BOARD-ID"))
+        ret.add(name);
+    } catch (Exception e) {
+      Debug.error("Executing `"+prog+" boards`", e);
+    }
+    return ret;
   }
 
   private static final String helpmsg =
@@ -152,8 +213,8 @@ public class ApioDownload extends FPGADownload {
       return false;
 
     String board_name = board.getToolchainParam("Apio", "board");
-    if (board_name == null) // fallback to generic board name?
-      board_name = board.name;
+    if (board_name == null)
+      board_name = board.codename;
 
     // FIXME: this isn't a property of apio;
     // certain boards support only pull-up, or only floating, or not pull-down
@@ -377,6 +438,11 @@ public class ApioDownload extends FPGADownload {
 
   public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {
     return new ToplevelHDLGenerator(ctx, pinBindings, false);
+  }
+  
+  @Override
+  public List<String> getLanguages() {
+    return List.of(VERILOG);
   }
 
 }

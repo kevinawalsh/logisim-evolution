@@ -90,7 +90,7 @@ public class FPGABoardPrefs implements SettingsStore.Item {
   }
 
   public String getBoardPreferredToolchain(String board) {
-    return FPGADownload.normalizeToolchain(getBoardPref(board, "toolchain"));
+    return getBoardPref(board, "toolchain");
   }
 
   public void setBoardPreferredHdl(String board, String hdl) {
@@ -101,9 +101,6 @@ public class FPGABoardPrefs implements SettingsStore.Item {
   }
 
   public void setBoardPreferredToolchain(String board, String toolchain) {
-    toolchain = FPGADownload.normalizeToolchain(toolchain);
-    if (toolchain == null)
-      return;
     setBoardPref(board, "toolchain", toolchain);
   }
 

@@ -168,13 +168,13 @@ public class Commander extends JFrame
     super("FPGA Commander : " + p.getLogisimFile().getName());
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
     proj = p;
-    toolchain = FPGADownload.APIO_TOOLCHAIN;
+    toolchain = "Apio CLI"; // FPGADownload.APIO_TOOLCHAIN;
     lang = VERILOG;
 
     board = BoardReader.read(BoardList.getSelectedPath());
     boardIcon.setImage(board == null ? null : board.image);
     if (board != null) {
-      toolchain = FPGADownload.getToolchain(board);
+      toolchain = FPGADownload.getSynthesisToolchainName(board);
       lang = FPGADownload.getLanguage(board, toolchain);
     }
 
@@ -216,11 +216,9 @@ public class Commander extends JFrame
     circuitsList.setPreferredSize(d);
 
     // configure toolchain options
-    toolchainCombo.addItem(FPGADownload.ALTERA_QUARTUS_TOOLCHAIN);
-    toolchainCombo.addItem(FPGADownload.XILINX_ISE_TOOLCHAIN);
-    toolchainCombo.addItem(FPGADownload.LATTICE_DIAMOND_TOOLCHAIN);
-    toolchainCombo.addItem(FPGADownload.LATTICE_ISPLEVER_TOOLCHAIN);
-    toolchainCombo.addItem(FPGADownload.APIO_TOOLCHAIN);
+    // FIXME: mark each as supported/unsupported, download-only, etc.
+    for (String tc : FPGADownload.getSynthesisToolchainNames())
+      toolchainCombo.addItem(tc);
     toolchainCombo.setSelectedItem(toolchain);
     toolchainCombo.addActionListener(e -> setToolchain());
     
@@ -758,7 +756,7 @@ public class Commander extends JFrame
       return;
     }
     boardsListSelectedIndex = boardsList.getSelectedIndex();
-    String t = FPGADownload.getToolchain(board);
+    String t = FPGADownload.getSynthesisToolchainName(board);
     language.setSelectedItem(t);
     settingBoard = false;
     boardIcon.setImage(board == null ? null : board.image);
@@ -963,6 +961,8 @@ public class Commander extends JFrame
     String langdir = circdir + lang.toLowerCase() + SLASH;
 
     FPGADownload tools = FPGADownload.forToolchain(toolchain);
+    if (tools == null)
+      return null;
     tools.err = err;
     tools.lang = lang;
     tools.board = board;
@@ -1176,7 +1176,7 @@ public class Commander extends JFrame
       return;
     toolchain = t;
     if (board != null) {
-      if (!toolchain.equals(FPGADownload.getToolchain(board)))
+      if (!toolchain.equals(FPGADownload.getSynthesisToolchainName(board)))
         AppPreferences.FPGA_BOARDPREFS.setBoardPreferredToolchain(board.name, toolchain);
       String v = FPGADownload.getLanguage(board, toolchain);
       language.setSelectedItem(v);

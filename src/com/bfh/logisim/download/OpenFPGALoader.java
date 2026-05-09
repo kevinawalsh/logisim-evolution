@@ -38,8 +38,39 @@ import java.util.ArrayList;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.util.Debug;
 
 public class OpenFPGALoader {
+
+  public static void register() {
+    FPGADownload.register(new FPGADownload.Toolchain("openFPGALoader", "openFPGALoader", false, true /* programmer only */) {
+      @Override
+      public boolean hasAlternateName(String altname) {
+        return altname.equalsIgnoreCase("trabucayre/openFPGALoader");
+      }
+      @Override
+      public boolean supports(Board b) {
+        String codename = normalizeBoardName(b.codename);
+        ArrayList<String> names = getOpenFPGALoaderBoardList();
+        for (String name : names) {
+          if (normalizeBoardName(name).equalsIgnoreCase(codename))
+            return true;
+        }
+        return false;
+      }
+      @Override
+      public FPGADownload newDownloader() { return null; } // FIXME: no programmer API yet
+    });
+  }
+
+  // openFPGALoader board names tend to follow alphanumplus_snake_case or,
+  // sometimes, alhpanumplus-kebab-case conventions. We normalize to snake case.
+  private static String normalizeBoardName(String name) {
+    name = name.replaceAll("[^a-zA-Z0-9+]+", "_");
+    if (name.startsWith("_")) name = name.substring(1);
+    if (name.endsWith("_")) name = name.substring(0, name.length()-1);
+    return name;
+  }
 
   private OpenFPGALoader() { }
 
@@ -124,9 +155,29 @@ public class OpenFPGALoader {
 
   public static String boardNameFor(Board board) {
     String name = board.getToolchainParam("openFPGALoader", "board");
-    if (name == null) // fall back to board name?
-      name = board.name;
+    if (name == null)
+      name = board.codename;
     return name;
+  }
+
+  private static ArrayList<String> getOpenFPGALoaderBoardList() {
+    ArrayList<String> ret = new ArrayList<>();
+    String prog = findExecutable(AppPreferences.OPENFPGALOADER_PATH.get());
+    if (prog == null || prog.isEmpty())
+      return ret;
+    try {
+      Process process = new ProcessBuilder(prog, "--list-boards").start();
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(process.getInputStream()));
+      String line = reader.readLine().trim();
+      String parts[] = line.split(" ", 2);
+      if (parts.length > 0 && !parts[0].equalsIgnoreCase("empty")
+          && !parts[0].equalsIgnoreCase("board"))
+        ret.add(parts[0]);
+    } catch (Exception e) {
+      Debug.error("Executing `"+prog+" --list-boards`", e);
+    }
+    return ret;
   }
 
 }

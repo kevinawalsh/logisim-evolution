@@ -33,7 +33,9 @@ package com.bfh.logisim.download;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
+import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
@@ -46,16 +48,37 @@ import com.cburch.logisim.prefs.AppPreferences;
 
 public abstract class AlteraDownload extends FPGADownload {
 
-  protected AlteraDownload() { super("Altera"); }
+  public static void register() {
+    FPGADownload.register(new Toolchain("Altera Quartus", "Quartus", true, true) {
+      @Override
+      public boolean hasAlternateName(String altname) {
+        return altname.toLowerCase().startsWith("quartus")
+          || altname.toLowerCase().startsWith("altera quartus")
+          || altname.toLowerCase().startsWith("intel quartus");
+      }
+      @Override
+      public boolean supports(Board b) {
+        // TODO: probably need to use fpga part to somehow determine if it is
+        // supported.
+        return b.name.toLowerCase().contains("altera")
+          || b.codename.toLowerCase().contains("altera")
+          || b.name.toLowerCase().contains("intel")
+          || b.codename.toLowerCase().contains("intel");
+      }
+      @Override
+      public FPGADownload newDownloader() {
+        if (isRemote())
+          return new AlteraDownloadRemote();
+        else if (isScript())
+          return new AlteraDownloadScript();
+        else
+          return new AlteraDownloadLocal();
+      }
 
-  public static AlteraDownload makeNew() {
-    if (isRemote())
-      return new AlteraDownloadRemote();
-    else if (isScript())
-      return new AlteraDownloadScript();
-    else
-      return new AlteraDownloadLocal();
+    });
   }
+
+  protected AlteraDownload() { super("Quartus"); }
 
   @Override
   public boolean readyForDownload() {
@@ -233,5 +256,9 @@ public abstract class AlteraDownload extends FPGADownload {
     }
     return true;
   }
-
+  
+  @Override
+  public List<String> getLanguages() {
+    return List.of(VERILOG, VHDL);
+  }
 }

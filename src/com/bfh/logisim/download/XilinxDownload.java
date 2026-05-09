@@ -37,7 +37,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
+import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.IoStandard;
@@ -51,8 +53,32 @@ import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class XilinxDownload extends FPGADownload {
+  
+  public static void register() {
+    FPGADownload.register(new Toolchain("Xilinx ISE", "Xilinx", true, true) {
+      @Override
+      public boolean hasAlternateName(String altname) {
+        return 
+          altname.equalsIgnoreCase("Xilinx ISE")
+          || altname.equalsIgnoreCase("Xilinx ISE Design Suite")
+          || altname.equalsIgnoreCase("Xilinx Design Suite");
+      }
+      @Override
+      public boolean supports(Board b) {
+        // TODO: probably need to use fpga part to somehow determine if it is
+        // supported.
+        return b.name.toLowerCase().contains("xilinx")
+          || b.codename.toLowerCase().contains("xilinx")
+          || b.name.toLowerCase().contains("amd")
+          || b.codename.toLowerCase().contains("amd");
+      }
+      @Override
+      public FPGADownload newDownloader() { return new XilinxDownload(); }
 
-  public XilinxDownload() { super("Xilinx"); }
+    });
+  }
+
+  private XilinxDownload() { super("Xilinx"); }
 
   @Override
   public boolean readyForDownload() {
@@ -361,5 +387,10 @@ public class XilinxDownload extends FPGADownload {
 	private final static String download_file = "XilinxDownload";
 	private final static String mcs_file = "XilinxProm.mcs";
 	private final static Integer BUFFER_SIZE = 16 * 1024;
+
+  @Override
+  public List<String> getLanguages() {
+    return List.of(VERILOG, VHDL);
+  }
 
 }

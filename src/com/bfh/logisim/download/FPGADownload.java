@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 import javax.swing.SwingUtilities;
 
 import com.bfh.logisim.fpga.Board;
@@ -56,48 +57,143 @@ public abstract class FPGADownload {
   static final String TOP_HDL = ToplevelHDLGenerator.HDL_NAME;
   static final String CLK_PORT = TickHDLGenerator.FPGA_CLK_NET;
 
-  public final String name;
-
-  public FPGADownload(String name) {
-    this.name = name;
-  }
-  public static String getToolchain(Board board) {
-    // First priority: user preference for given board
-    String toolchain = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
-    // FIXME: toolchains should register themselves, possibly under multiple names,
-    // or some kind of pattern matching?, e,g "altera, altera quartus, altera ise, altera quartus ii"
-    // Fall back 1: select toolchain based on board default
-    // Fall back 2: select toolchain based on any known matching toolchain
-    // Fall back 3: apio
-    if (toolchain == null)
-      toolchain = vendorToolchain(board.fpga.VendorName);
-    // Last resort: apio
-    if (toolchain == null)
-      toolchain = APIO_TOOLCHAIN;
-    return toolchain;
-  }
-
-  public static FPGADownload forToolchain(String toolchain) {
-    if (toolchain == null)
-      toolchain = APIO_TOOLCHAIN;
-    switch (toolchain) {
-      case ALTERA_QUARTUS_TOOLCHAIN:
-        return AlteraDownload.makeNew();
-      case XILINX_ISE_TOOLCHAIN:
-        return new XilinxDownload();
-      case LATTICE_DIAMOND_TOOLCHAIN:
-        return new LatticeDownload();
-      case LATTICE_ISPLEVER_TOOLCHAIN:
-        return new LatticeDownload(); // ???
-      case APIO_TOOLCHAIN:
-        return new ApioDownload();
-      case GOWIN_TOOLCHAIN:
-        return new GowinDownload();
-      default:
-        return new ApioDownload();
+  public static abstract class Toolchain {
+    public final String toolchainName; // e.g. "Altera Quartus II"
+    public final String shortName; // e.g. "Quartus"
+    public final boolean canSynthesize;
+    public final boolean canProgram;
+    public abstract boolean hasAlternateName(String altname); // e.g. "quartus 2"
+    public abstract boolean supports(Board b); // only called as a last restort,
+                                      // if no known toolchains found in board xml
+    public abstract FPGADownload newDownloader();
+    
+    Toolchain(String detailName, String shortName, boolean synth, boolean pgm) {
+      this.toolchainName = detailName;
+      this.shortName = shortName;
+      this.canSynthesize = synth;
+      this.canProgram = pgm;
     }
   }
 
+  private static final ArrayList<Toolchain> synthesisToolchains = new ArrayList<>();
+  private static final ArrayList<Toolchain> programmerToolchains = new ArrayList<>();
+  public static void register(Toolchain t) {
+    if (t.canSynthesize)
+      synthesisToolchains.add(t);
+    if (t.canProgram)
+      programmerToolchains.add(t);
+  }
+  static {
+    ApioDownload.register();
+    AlteraDownload.register();
+    XilinxDownload.register();
+    LatticeDownload.register();
+    GowinDownload.register();
+    OpenFPGALoader.register();
+    // USBTMC.register(); // FIXME: TODO
+  }
+
+  public static ArrayList<String> getSynthesisToolchainNames() {
+    ArrayList<String> ret = new ArrayList<>();
+    for (Toolchain t: synthesisToolchains)
+      if (!ret.contains(t.toolchainName))
+        ret.add(t.toolchainName);
+    // for (Toolchain t: programmerToolchains)
+    //   if (!ret.contains(t.toolchainName))
+    //     ret.add(t.toolchainName);
+    return ret;
+  }
+
+  public static Toolchain findSynthesisToolchain(String tcName) {
+    if (tcName == null || tcName.isEmpty())
+      return null;
+    // Look for exact match first, e.g. "Altera Quartus II" or "Quartus"
+    for (Toolchain t : synthesisToolchains)
+      if (t.toolchainName.equalsIgnoreCase(tcName) || t.shortName.equalsIgnoreCase(tcName))
+        return t;
+    // Then look for alternate names, e.g. "quartus ii" or "quartus 2"
+    for (Toolchain t : synthesisToolchains)
+      if (t.hasAlternateName(tcName))
+        return t;
+    // No matching toolchain
+    return null;
+  }
+
+    // FIXME: toolchains should register themselves, possibly under multiple names,
+    // or some kind of pattern matching?, e,g "altera, altera quartus, altera ise, altera quartus ii"
+
+  public static Toolchain getSynthesisToolchain(Board board) {
+    
+    // First priority: user preference for the given board
+    String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
+    Toolchain t = findSynthesisToolchain(pref);
+    if (t != null) return t;
+    
+    // Fallback 1: default toolchain listed in board xml
+    pref = board.getDefaultToolchain();
+    t = findSynthesisToolchain(pref);
+    if (t != null) return t;
+
+    // Fallback 2: other toolchains listed in board xml
+    for (String p : board.getToolchains()) {
+      t = findSynthesisToolchain(p);
+      if (t != null) return t;
+    }
+
+    // Fallback 3: any toolchain supporting this board
+    for (Toolchain tt : synthesisToolchains)
+      if (tt.supports(board))
+        return tt;
+
+    // No known toolchain supports this board
+    return null;
+  
+  }
+
+  public static String getSynthesisToolchainName(Board board) {
+    Toolchain t = getSynthesisToolchain(board);
+    return t == null ? "no toolchains available" : t.toolchainName;
+  }
+
+  public static String getLanguage(Board board, String toolchainName) {
+    Toolchain t = findSynthesisToolchain(toolchainName);
+    if (t == null)
+      return VERILOG; // FIXME: fallback
+    FPGADownload tool = t.newDownloader();
+    tool.board = board;
+    List<String> langs = tool.getLanguages();
+    if (langs.isEmpty())
+      return VERILOG; // FIXME: fallback
+    return langs.get(0); 
+  }
+  
+  public static FPGADownload forToolchain(String toolchainName) {
+    Toolchain t = findSynthesisToolchain(toolchainName);
+    return t == null ? null : t.newDownloader();
+  }
+
+  // public static FPGADownload forToolchain(String toolchain) {
+  //   if (toolchain == null)
+  //     toolchain = APIO_TOOLCHAIN;
+  //   switch (toolchain) {
+  //     case ALTERA_QUARTUS_TOOLCHAIN:
+  //       return AlteraDownload.makeNew();
+  //     case XILINX_ISE_TOOLCHAIN:
+  //       return new XilinxDownload();
+  //     case LATTICE_DIAMOND_TOOLCHAIN:
+  //       return new LatticeDownload();
+  //     case LATTICE_ISPLEVER_TOOLCHAIN:
+  //       return new LatticeDownload(); // ???
+  //     case APIO_TOOLCHAIN:
+  //       return new ApioDownload();
+  //     case GOWIN_TOOLCHAIN:
+  //       return new GowinDownload();
+  //     default:
+  //       return new ApioDownload();
+  //   }
+  // }
+
+  public final String name;
   // Parameters set by Commander
   public FPGAReport err;
   public String lang;
@@ -110,6 +206,10 @@ public abstract class FPGADownload {
   public boolean writeToFlash;
   public boolean remoteJTAG, supportsRemoteJTAG = false;
 
+  protected FPGADownload(String name) {
+    this.name = name;
+  }
+
   public abstract boolean toolchainIsInstalled(FPGAReport err);
 
   public boolean generateScripts(PinBindings ioResources) {
@@ -117,6 +217,8 @@ public abstract class FPGADownload {
     enumerateHDLFiles(circuitPath, hdlFiles);
     return generateScripts(ioResources, hdlFiles);
   }
+
+  public abstract List<String> getLanguages();
 
   public abstract boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles);
   
@@ -149,41 +251,41 @@ public abstract class FPGADownload {
     }
   }
 
-  public final static String ALTERA_QUARTUS_TOOLCHAIN = "Altera Quartus";
-  public final static String XILINX_ISE_TOOLCHAIN = "Xilinx ISE";
-  public final static String GOWIN_TOOLCHAIN = "Gowin";
-  public final static String LATTICE_DIAMOND_TOOLCHAIN = "Lattice Diamond";
-  public final static String LATTICE_ISPLEVER_TOOLCHAIN = "Lattice ispLEVER";
-  public final static String APIO_TOOLCHAIN = "Apio";
+  // public final static String ALTERA_QUARTUS_TOOLCHAIN = "Altera Quartus";
+  // public final static String XILINX_ISE_TOOLCHAIN = "Xilinx ISE";
+  // public final static String GOWIN_TOOLCHAIN = "Gowin";
+  // public final static String LATTICE_DIAMOND_TOOLCHAIN = "Lattice Diamond";
+  // public final static String LATTICE_ISPLEVER_TOOLCHAIN = "Lattice ispLEVER";
+  // public final static String APIO_TOOLCHAIN = "Apio";
 
-  public static String normalizeToolchain(String toolchain) {
-    if (toolchain == null)
-      return null;
-    toolchain = toolchain.toLowerCase().replaceAll("[ -_]+", " ").trim();
-    switch (toolchain.toLowerCase()) {
-      case "xilinx":
-      case "xilinx ise":
-      case "ise":
-        return XILINX_ISE_TOOLCHAIN;
-      case "altera":
-      case "altera quartus":
-      case "quartus":
-        return ALTERA_QUARTUS_TOOLCHAIN;
-      case "lattice":
-      case "lattice diamond":
-      case "diamond":
-        return LATTICE_DIAMOND_TOOLCHAIN;
-      case "lattice isplever":
-      case "isplever":
-        return LATTICE_ISPLEVER_TOOLCHAIN;
-      case "apio":
-        return APIO_TOOLCHAIN;
-      case "gowin":
-        return GOWIN_TOOLCHAIN;
-      default:
-        return null;
-    }
-  }
+  // public static String normalizeToolchain(String toolchain) {
+  //   if (toolchain == null)
+  //     return null;
+  //   toolchain = toolchain.toLowerCase().replaceAll("[ -_]+", " ").trim();
+  //   switch (toolchain.toLowerCase()) {
+  //     case "xilinx":
+  //     case "xilinx ise":
+  //     case "ise":
+  //       return XILINX_ISE_TOOLCHAIN;
+  //     case "altera":
+  //     case "altera quartus":
+  //     case "quartus":
+  //       return ALTERA_QUARTUS_TOOLCHAIN;
+  //     case "lattice":
+  //     case "lattice diamond":
+  //     case "diamond":
+  //       return LATTICE_DIAMOND_TOOLCHAIN;
+  //     case "lattice isplever":
+  //     case "isplever":
+  //       return LATTICE_ISPLEVER_TOOLCHAIN;
+  //     case "apio":
+  //       return APIO_TOOLCHAIN;
+  //     case "gowin":
+  //       return GOWIN_TOOLCHAIN;
+  //     default:
+  //       return null;
+  //   }
+  // }
 
   // public static String vendorToolchain(char chipset) {
   //   switch (chipset) {
@@ -193,32 +295,40 @@ public abstract class FPGADownload {
   //     default: return null;
   //   }
   // }
+ 
+  // public static String getLanguage(Board board, String toolchain) {
+  //   // TODO
+  // }
 
-  public static String getLanguage(Board board, String toolchain) {
-    String lang = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredHdl(board.name);
-    if (lang != null)
-      return lang;
-    if (toolchain == null)
-      return AppPreferences.FPGA_SELECTED_HDL.get();
-    switch (toolchain) {
-      case ALTERA_QUARTUS_TOOLCHAIN:
-        return VHDL;
-      case XILINX_ISE_TOOLCHAIN:
-        return VHDL;
-      case LATTICE_DIAMOND_TOOLCHAIN:
-        return VHDL; // ??
-      case LATTICE_ISPLEVER_TOOLCHAIN:
-        return VHDL; // ??
-      case APIO_TOOLCHAIN:
-        return VERILOG;
-      default:
-        return VHDL;
-    }
-  }
+  // public static String getLanguage(Board board, String toolchain) {
+  //   String lang = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredHdl(board.name);
+  //   if (lang != null)
+  //     return lang;
+  //   if (toolchain == null)
+  //     return AppPreferences.FPGA_SELECTED_HDL.get();
+  //   switch (toolchain) {
+  //     case ALTERA_QUARTUS_TOOLCHAIN:
+  //       return VHDL;
+  //     case XILINX_ISE_TOOLCHAIN:
+  //       return VHDL;
+  //     case LATTICE_DIAMOND_TOOLCHAIN:
+  //       return VHDL; // ??
+  //     case LATTICE_ISPLEVER_TOOLCHAIN:
+  //       return VHDL; // ??
+  //     case APIO_TOOLCHAIN:
+  //       return VERILOG;
+  //     default:
+  //       return VHDL;
+  //   }
+  // }
 
+
+  // FIXME: most of this belongs in specific toolchains, not here
+
+  // FIXME: use Main properties, don't reproduce here
   private static final String osname = System.getProperty("os.name");
   private static final boolean windowsOS = osname != null
-      && osname.toLowerCase().indexOf("windows") != -1;
+    && osname.toLowerCase().indexOf("windows") != -1;
   private static final String dotexe = windowsOS ? ".exe" : "";
 
   public static final String ALTERA_QUARTUS_SH = "quartus_sh" + dotexe;

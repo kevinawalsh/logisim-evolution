@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.IoStandard;
@@ -57,7 +58,34 @@ import com.cburch.logisim.prefs.AppPreferences;
 
 public class LatticeDownload extends FPGADownload {
 
-  public LatticeDownload() { super("Lattice"); }
+  public static void register() {
+    FPGADownload.register(new Toolchain("Lattice Diamond/ispLEVER", "Lattice", true, true) {
+      @Override
+      public boolean hasAlternateName(String altname) {
+        return 
+          altname.equalsIgnoreCase("Lattice Diamond")
+          || altname.equalsIgnoreCase("Lattice ispLEVER")
+          || altname.equalsIgnoreCase("Diamond")
+          || altname.equalsIgnoreCase("ispLEVER")
+          || altname.equalsIgnoreCase("Diamond/ispLEVER")
+          || altname.equalsIgnoreCase("Lattice Diamond/ispLEVER");
+      }
+      @Override
+      public boolean supports(Board b) {
+        // TODO: probably need to check which variant of toolchain is installed
+        // (Diamond vs ispLEVER), then use fpga part to somehow determine if it
+        // is supported.
+        return b.name.toLowerCase().contains("lattice")
+          || b.codename.toLowerCase().contains("lattice");
+      }
+      @Override
+      public FPGADownload newDownloader() { return new LatticeDownload(); }
+
+    });
+  }
+
+
+  private LatticeDownload() { super("Lattice"); }
 
   public boolean toolchainIsInstalled(FPGAReport err) {
     String helpmsg = "It should be set to the directory where pnmainc.exe, "
@@ -597,5 +625,10 @@ public class LatticeDownload extends FPGADownload {
 	private final static String PROJECT_DOWNLOAD_FILE_ISPLEVER = PROJECT_NAME+"_download_ispLEVER.cmd";
 	
 	private final static String PROJECT_DOWNLOAD_FILE_UNIX = PROJECT_NAME+"_download.sh";
+  
+  @Override
+  public List<String> getLanguages() {
+    return List.of(VHDL, VERILOG);
+  }
 
 }

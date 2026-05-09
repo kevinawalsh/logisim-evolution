@@ -101,21 +101,11 @@ public class ImageXmlFactoryOld {
 					index++;
 				}
 			}
-			try {
-				bytestream.flush();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+      bytestream.flush();
       bytes = bytestream.toByteArray();
       format = "jpg";
 			ByteArrayInputStream instream = new ByteArrayInputStream(bytes);
-			try {
-				image = ImageIO.read(instream);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+      image = ImageIO.read(instream);
 		} else {
 			image = new BufferedImage(width, height,
 					BufferedImage.TYPE_3BYTE_BGR);
