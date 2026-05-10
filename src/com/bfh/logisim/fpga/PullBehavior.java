@@ -30,17 +30,19 @@
 
 package com.bfh.logisim.fpga;
 
+// FIXME: this should be PullResistors, not PullBehavior
+// Also include an explicit keeper/latching option
 public class PullBehavior {
-  public final String desc, altera, xilinx, lattice;
+  public final String desc, xml, altera, xilinx, lattice;
 
-  public static final PullBehavior NONE = new PullBehavior("Without Pull", null, null, null);
-  public static final PullBehavior FLOAT = new PullBehavior("Float", "TRI-STATED", "FLOAT", "KEEPER");
-  public static final PullBehavior PULL_UP = new PullBehavior("Pull Up", "PULLUP", "PULLUP", "UP");
-  public static final PullBehavior PULL_DOWN = new PullBehavior("Pull Down", "PULLDOWN", "PULLDOWN", "DOWN");
-  public static final PullBehavior UNKNOWN = new PullBehavior("Unknown", "", "FLOAT", "NONE");
+  public static final PullBehavior NONE = new PullBehavior("Without Pull", "none", null, null, null);
+  public static final PullBehavior FLOAT = new PullBehavior("Float", "float", "TRI-STATED", "FLOAT", "KEEPER");
+  public static final PullBehavior PULL_UP = new PullBehavior("Pull Up", "up", "PULLUP", "PULLUP", "UP");
+  public static final PullBehavior PULL_DOWN = new PullBehavior("Pull Down", "down", "PULLDOWN", "PULLDOWN", "DOWN");
+  public static final PullBehavior UNKNOWN = new PullBehavior("Unknown", "unknown", "", "FLOAT", "NONE");
   public static final PullBehavior[] OPTIONS = { FLOAT, PULL_UP, PULL_DOWN };
 
-  private PullBehavior(String d, String a, String x, String l) { desc = d; altera = a; xilinx = x; lattice = l;}
+  private PullBehavior(String d, String m, String a, String x, String l) { desc = d; xml = m; altera = a; xilinx = x; lattice = l;}
 
   public static PullBehavior get(String desc) {
     if (desc == null || desc.isEmpty() || desc.equalsIgnoreCase("none") || desc.equalsIgnoreCase("without pull"))
@@ -55,6 +57,10 @@ public class PullBehavior {
     if (desc.equalsIgnoreCase("float")) return FLOAT;
     if (desc.equalsIgnoreCase("tristate")) return FLOAT;
     if (desc.equalsIgnoreCase("tri-state")) return FLOAT;
+    if (desc.equalsIgnoreCase("none")) return NONE;
+    if (desc.equalsIgnoreCase("without")) return NONE;
+    if (desc.equalsIgnoreCase("without-pull")) return NONE;
+    if (desc.equalsIgnoreCase("without pull")) return NONE;
     return UNKNOWN;
   }
 

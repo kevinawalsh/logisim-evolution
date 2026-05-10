@@ -356,6 +356,8 @@ public class LatticeDownload extends FPGADownload {
       String iospec = "";
       if (pull == PullBehavior.PULL_UP || pull == PullBehavior.PULL_DOWN  || pull == PullBehavior.FLOAT)
         iospec += " PULLMODE=" + pull.lattice;
+      else
+        iospec += " PULLMODE=NONE";
       if (standard != IoStandard.UNKNOWN && standard != IoStandard.DEFAULT)
           iospec += " IO_TYPE=" + standard;
       if (strength != DriveStrength.UNKNOWN && strength != DriveStrength.DEFAULT)

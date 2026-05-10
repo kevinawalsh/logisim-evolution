@@ -31,14 +31,14 @@
 package com.bfh.logisim.fpga;
 
 public class PinActivity {
-  public final String desc;
+  public final String desc, xml;
 
-  public static final PinActivity ACTIVE_LOW = new PinActivity("Active low");
-  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high");
-  public static final PinActivity UNKNOWN = new PinActivity("Unknown");
+  public static final PinActivity ACTIVE_LOW = new PinActivity("Active low", "active-low");
+  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high", "active-high");
+  public static final PinActivity UNKNOWN = new PinActivity("Unknown", "unknown");
   public static final PinActivity[] OPTIONS = { ACTIVE_LOW, ACTIVE_HIGH };
 
-  private PinActivity(String d) { desc = d; }
+  private PinActivity(String d, String x) { desc = d; xml = x; }
 
   public static PinActivity get(String desc) {
     if (desc == null || desc.isEmpty())

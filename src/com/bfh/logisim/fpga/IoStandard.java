@@ -31,17 +31,18 @@
 package com.bfh.logisim.fpga;
 
 public class IoStandard {
-  public final String desc;
-  private IoStandard(String d) { desc = d; }
+  public final String desc, xml;
+  private IoStandard(String d) { desc = xml = d; }
+  private IoStandard(String d, String x) { desc = d; xml = x; }
 
-	public static final IoStandard DEFAULT  = new IoStandard("Default");
+	public static final IoStandard DEFAULT  = new IoStandard("Default", "default");
 	public static final IoStandard LVCMOS12 = new IoStandard("LVCMOS12");
 	public static final IoStandard LVCMOS15 = new IoStandard("LVCMOS15");
 	public static final IoStandard LVCMOS18 = new IoStandard("LVCMOS18");
 	public static final IoStandard LVCMOS25 = new IoStandard("LVCMOS25");
 	public static final IoStandard LVCMOS33 = new IoStandard("LVCMOS33");
 	public static final IoStandard LVTTL    = new IoStandard("LVTTL");
-	public static final IoStandard UNKNOWN =  new IoStandard("Unknown");  
+	public static final IoStandard UNKNOWN =  new IoStandard("Unknown", "unknown");  
   public static final IoStandard[] OPTIONS = { DEFAULT,
     LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
 

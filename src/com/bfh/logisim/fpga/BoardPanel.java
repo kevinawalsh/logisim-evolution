@@ -66,9 +66,11 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   private String imgFormat; // "jpg" or "png"
   private double imgScale; // scaledImage = image * imgScale
   private int imgXOffset, imgYOffset; // to center scaledImage within STD_IMG_WIDTH x STD_IMG_HEIGHT
+  private int imgScaledWidth, imgScaledHeight;
   private int xs, ys, w, h; // within scaled image
 	private BoardEditor editor;
-  private boolean moving = false;  // true when dragging a selected IO to move it
+  private boolean making = false;  // iff drawing a new existing IO
+  private boolean moving = false;  // iff moving an existing IO
   private int moveOffsetX, moveOffsetY; // mouse pos relative to IO top-left at drag start
 
 	public BoardPanel(BoardEditor parent) {
@@ -117,18 +119,18 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     if ((iw == STD_IMG_WIDTH && ih <= STD_IMG_HEIGHT) || (iw <= STD_IMG_WIDTH && ih == STD_IMG_HEIGHT)) {
       this.scaledImage = image;
       this.imgScale = 1.0;
-      this.imgXOffset = (STD_IMG_WIDTH - iw) / 2;
-      this.imgYOffset = (STD_IMG_HEIGHT - ih) / 2;
+      this.imgScaledWidth = iw;
+      this.imgScaledHeight = ih;
     } else {
       double sx = STD_IMG_WIDTH * 1.0 / iw;
       double sy = STD_IMG_HEIGHT * 1.0 / ih;
       this.imgScale = Math.min(sx, sy);
-      int sw = (int)Math.round(imgScale * iw);
-      int sh = (int)Math.round(imgScale * ih);
-      this.scaledImage = image.getScaledInstance(sw, sh, Image.SCALE_SMOOTH);
-      this.imgXOffset = (STD_IMG_WIDTH - sw) / 2;
-      this.imgYOffset = (STD_IMG_HEIGHT - sh) / 2;
+      this.imgScaledWidth = (int)Math.round(imgScale * iw);
+      this.imgScaledHeight = (int)Math.round(imgScale * ih);
+      this.scaledImage = image.getScaledInstance(imgScaledWidth, imgScaledHeight, Image.SCALE_SMOOTH);
     }
+    this.imgXOffset = (STD_IMG_WIDTH - imgScaledWidth) / 2;
+    this.imgYOffset = (STD_IMG_HEIGHT - imgScaledHeight) / 2;
   }
 
   public Image getScaledImage() { return scaledImage; }
@@ -192,12 +194,13 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   }
 
   private boolean withinScaledImage(MouseEvent e) {
-    return (e.getX() >= imgXOffset && e.getX() < imgXOffset + scaledImage.getWidth(null)
-        && e.getY() >= imgYOffset && e.getY() < imgYOffset + scaledImage.getHeight(null));
+    return (e.getX() >= imgXOffset && e.getX() < imgXOffset + imgScaledWidth
+        && e.getY() >= imgYOffset && e.getY() < imgYOffset + imgScaledHeight);
   }
 
   @Override
 	public void mousePressed(MouseEvent e) {
+    making = moving = false;
     if (scaledImage == null) return;
     if (!SwingUtilities.isLeftMouseButton(e))
       return;
@@ -218,7 +221,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     } else {
       // Begin drawing a new rect
       editor.clearSelection();
-      moving = false;
+      making = true;
       xs = e.getX();
       ys = e.getY();
       w = h = 0;
@@ -233,13 +236,15 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
 
   @Override
 	public void mouseDragged(MouseEvent e) {
+    int ex = Math.max(imgXOffset, Math.min(imgXOffset + imgScaledWidth - 1, e.getX()));
+    int ey = Math.max(imgYOffset, Math.min(imgYOffset + imgScaledHeight - 1, e.getY()));
     if (moving) {
-      int ox = (int)Math.round((e.getX() - moveOffsetX - imgXOffset) / imgScale);
-      int oy = (int)Math.round((e.getY() - moveOffsetY - imgYOffset) / imgScale);
+      int ox = (int)Math.round((ex - moveOffsetX - imgXOffset) / imgScale);
+      int oy = (int)Math.round((ey - moveOffsetY - imgYOffset) / imgScale);
       editor.moveSelectedIO(ox, oy);
-    } else if (scaledImage != null) {
-      w = e.getX() - xs;
-      h = e.getY() - ys;
+    } else if (making) {
+      w = ex - xs;
+      h = ey - ys;
       repaint();
     }
 	}
@@ -249,7 +254,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     if (moving) {
       moving = false;
       setCursor(DEFAULT_CURSOR); // mouseMoved will refine on next motion
-    } else if (scaledImage != null) {
+    } else if (making) {
       if (h != 0 && w != 0) {
         int ox = (int)Math.round((xs - imgXOffset) / imgScale);
         int oy = (int)Math.round((ys - imgYOffset) / imgScale);
@@ -261,6 +266,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
       xs = ys = w = h = 0;
       repaint();
     }
+    moving = making = false;
 	}
 
   private static final Color MISTY    = new Color(1f, 0f,   0f,   0.4f);

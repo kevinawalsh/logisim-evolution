@@ -144,8 +144,16 @@ public class BoardReader {
     map.put("FPGAInformation/Vendor", chipElt.getAttribute("vendor"));
     map.put("FPGAInformation/Family", chipElt.getAttribute("family"));
     map.put("FPGAInformation/Part", chipElt.getAttribute("part"));
-    map.put("FPGAInformation/SpeedGrade", chipElt.getAttribute("speedGrade"));
+    map.put("FPGAInformation/Speedgrade", chipElt.getAttribute("speedGrade"));
     map.put("FPGAInformation/Package", chipElt.getAttribute("package"));
+    
+    Element clockElt = XmlUtil.getChildElement(elt, "Clock");
+    if (clockElt == null)
+      throw new Exception("Required element <Clock> is missing");
+    map.put("ClockInformation/FPGApin", clockElt.getAttribute("pin"));
+    map.put("ClockInformation/Frequency", clockElt.getAttribute("frequency"));
+    map.put("ClockInformation/IOStandard", clockElt.getAttribute("ioStandard"));
+    map.put("ClockInformation/PullBehavior", clockElt.getAttribute("pull"));
 
     Element jtagElt = XmlUtil.getChildElement(elt, "JTAG");
     String val = jtagElt == null ? null : jtagElt.getAttribute("pos"); // optional
@@ -164,14 +172,6 @@ public class BoardReader {
     val = flashElt == null ? null : flashElt.getAttribute("name"); // optional
     if (val != null && !val.isEmpty())
       map.put("FPGAInformation/FlashName", val);
-
-    Element clockElt = XmlUtil.getChildElement(elt, "Clock");
-    if (clockElt == null)
-      throw new Exception("Required element <Clock> is missing");
-    map.put("ClockInformation/FPGApin", clockElt.getAttribute("pin"));
-    map.put("ClockInformation/Frequency", clockElt.getAttribute("frequency"));
-    map.put("ClockInformation/IOStandard", clockElt.getAttribute("ioStandard"));
-    map.put("ClockInformation/PullBehavior", clockElt.getAttribute("pull"));
 
     Element unusedpinsElt = XmlUtil.getChildElement(elt, "UnusedPins");
     if (unusedpinsElt == null)

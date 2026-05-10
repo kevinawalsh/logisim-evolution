@@ -31,16 +31,17 @@
 package com.bfh.logisim.fpga;
 
 public class DriveStrength {
-  public final String desc, ma;
-  private DriveStrength(String d, String m) { desc = d; ma = m; };
+  public final String desc, xml, ma;
+  private DriveStrength(String d, String m) { desc = xml = d; ma = m; };
+  private DriveStrength(String d, String x, String m) { desc = d; xml = x; ma = m; };
 
-	public static final DriveStrength DEFAULT  = new DriveStrength("Default", "");
+	public static final DriveStrength DEFAULT  = new DriveStrength("Default", "default", "");
 	public static final DriveStrength DRIVE_2  = new DriveStrength("2 mA", "2");
 	public static final DriveStrength DRIVE_4  = new DriveStrength("4 mA", "4");
 	public static final DriveStrength DRIVE_8  = new DriveStrength("8 mA", "8");
 	public static final DriveStrength DRIVE_16 = new DriveStrength("16 mA", "16");
 	public static final DriveStrength DRIVE_24 = new DriveStrength("24 mA", "24");
-	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "");
+	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "unknown", "");
   public static final DriveStrength[] OPTIONS = { DEFAULT,
     DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 };
 

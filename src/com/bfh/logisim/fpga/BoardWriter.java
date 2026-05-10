@@ -75,12 +75,15 @@ class BoardWriter {
       if (chip.USBTMCAvailable) {
         sb.append("    <USBTMC available=\"true\"/>\n");
       }
+      // FIXME: should clock pin be optional?
       sb.append("    <Clock")
         .append(a("pin",        chip.ClockPinLocation))
-        .append(a("frequency",  "" + chip.ClockFrequency))
-        .append(a("ioStandard", "" + chip.ClockIOStandard))
-        .append(a("pull",       "" + chip.ClockPullBehavior))
-        .append("/>\n");
+        .append(a("frequency", "" + chip.ClockFrequency));
+      if (chip.ClockIOStandard != IoStandard.DEFAULT)
+        sb.append(a("ioStandard", "" + chip.ClockIOStandard));
+      if (chip.ClockPullBehavior != PullBehavior.NONE)
+        sb.append(a("pull", "" + chip.ClockPullBehavior));
+      sb.append("/>\n");
       sb.append("    <UnusedPins")
         .append(a("pull", "" + chip.UnusedPinsBehavior))
         .append("/>\n");
@@ -193,18 +196,18 @@ class BoardWriter {
       sb.append(a("pin", io.pins[0]));
     } else {
       for (int i = 0; i < io.width; i++)
-        sb.append(a("pin" + i, io.pins[i])); // todo: use labels
+        sb.append(a("pin" + i, io.pins[i])); // todo: use labels?
     }
 
     // 4. Pin parameters
-    if (io.pull != PullBehavior.UNKNOWN)
-      sb.append(a("pull", "" + io.pull));
-    if (io.activity != PinActivity.UNKNOWN && io.type != BoardIO.Type.Pin)
-      sb.append(a("polarity", "" + io.activity));
-    if (io.strength != DriveStrength.UNKNOWN)
-      sb.append(a("drive", "" + io.strength));
-    if (io.standard != IoStandard.UNKNOWN && io.standard != IoStandard.DEFAULT)
-      sb.append(a("ioStandard", "" + io.standard));
+    if (io.pull != PullBehavior.NONE)
+      sb.append(a("pull", "" + io.pull.xml));
+    if (io.activity != PinActivity.ACTIVE_HIGH && io.type != BoardIO.Type.Pin)
+      sb.append(a("polarity", "" + io.activity.xml));
+    if (io.strength != DriveStrength.DEFAULT)
+      sb.append(a("drive", "" + io.strength.xml));
+    if (io.standard != IoStandard.DEFAULT)
+      sb.append(a("ioStandard", "" + io.standard.xml));
 
     // 5. Geometry
     sb.append(a("x",      "" + io.rect.x))

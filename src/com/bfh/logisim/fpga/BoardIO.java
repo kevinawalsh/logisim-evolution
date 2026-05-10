@@ -200,7 +200,7 @@ public class BoardIO {
     else
       label = "unknown signal";
     activity = PinActivity.ACTIVE_HIGH;
-    // rest are defaults/empty
+    // rest are unused/empty
     rect = null;
     standard = IoStandard.UNKNOWN;
     pull = PullBehavior.UNKNOWN;
@@ -363,11 +363,11 @@ public class BoardIO {
 		Bounds r = Bounds.create(x, y, w, h);
     name += "@ ("+x+","+y+")";
 
-    PullBehavior p = PullBehavior.get(params.get("FPGAPinPullBehavior"));
+    PullBehavior p = PullBehavior.get(params.getOrDefault("FPGAPinPullBehavior", "Unknown"));
     PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
-        PinActivity.get(params.get("ActivityLevel"));
-    IoStandard s = IoStandard.get(params.get("FPGAPinIOStandard"));
-    DriveStrength g = DriveStrength.get(params.get("FPGAPinDriveStrength"));
+        PinActivity.get(params.getOrDefault("ActivityLevel", "Unknown"));
+    IoStandard s = IoStandard.get(params.getOrDefault("FPGAPinIOStandard", "Unknown"));
+    DriveStrength g = DriveStrength.get(params.getOrDefault("FPGAPinDriveStrength", "Unknown"));
 
     PinOrdering o = null;
     String[] pins;
