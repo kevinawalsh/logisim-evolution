@@ -5,6 +5,8 @@
       <FPGAInformation Family="iCE40" FlashName="" FlashPos="2" JTAGPos="1" Package="CB132IC" Part="iCE40HX8K" Speedgrade="i" USBTMC="true" Vendor="Altera"/>
       <ClockInformation FPGApin="P7" Frequency="100000000" IOStandard="Default" PullBehavior="Float"/>
       <UnusedPins PullBehavior="Float"/>
+      <Toolchain ApioName="alchitry-cu"/>
+      <Toolchain openFPGAloaderName="ice40_generic"/>
    </BoardInformation>
    <IOComponents>
       <!--Description of all board I/O components-->
