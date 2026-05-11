@@ -71,7 +71,9 @@ public class FPGABoardlistPref implements SettingsStore.Item {
   private void setFromStore() {
     String s = SettingsStore.getEffective(section, subsection);
     paths.clear();
-    paths.addAll(List.of(s.split("\\|")));
+    for (String p : s.split("\\|"))
+      if (!p.trim().isEmpty())
+        paths.add(p.trim());
     AppPreferences.fireFPGAChangeEvent();
   }
 
@@ -115,10 +117,11 @@ public class FPGABoardlistPref implements SettingsStore.Item {
       sb.append(indent + "<"+subsection+"/>\n");
       return;
     }
-    String userPaths[] = userVal.split(":");
+    String userPaths[] = userVal.split("\\|");
     sb.append(indent + "<"+subsection+">\n");
     for (String path : userPaths)
-      sb.append(indent + "  <file value=\"" + BackingStore.xmlEscapeAttr(path) + "\"/>\n");
+      if (!path.trim().isEmpty())
+        sb.append(indent + "  <file value=\"" + BackingStore.xmlEscapeAttr(path.trim()) + "\"/>\n");
     sb.append(indent + "</"+subsection+">\n");
   }
 

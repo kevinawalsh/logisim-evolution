@@ -40,19 +40,21 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.bfh.logisim.fpga.BoardReader;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.Debug;
 
 // Tagged path: file|/Users/kwalsh//AlchitryCu_v2.xml (external board, MacOS, linux)
 //              file|C:\\Users\\kwalsh\\AlchitryCu_v2.xml (external board, Windows)
 //              jar|/home/logisim.jar|resources/logisim/boards/TERASIC_DE0.xml (builtin board)
+//          (used as a stable unique id in settings, etc.)
 // Filename: TERASIC_DE0, AlchitryCu_v2
-//          (this is the last part of the path, may not be unique)
+//          (the last part of the path, may not be unique, used by old xml format)
 // Name: "Terasic DE0", "Alchitry Cu V2",
 //          "Alchitry Cu V2 (external)", ...
-//          (from xml, modified for uniqueness)
-//
-// FIXME: for now, we are still using name = filename, but need to fix this
+//          (from new xml format, modified for uniqueness if needed)
+// Codename: "alchitry-cu", "de0"
+//          (from new xml format)
 
 public class BoardList {
 
@@ -81,10 +83,7 @@ public class BoardList {
 					String path = file.getCanonicalPath();
           if (!path.toLowerCase().endsWith(".xml"))
             continue;
-          // FIXME: examine xml to ensure it is a board, and get a proper name
-          path = "file|" + path;
-          String name = nameForPath(path);
-          boards.putIfAbsent(name, path);
+          verifyAndAdd("file|" + path, "builtin");
 				} catch (IOException e) {
 					Debug.error("scanning fpga board definitions: " + file, e);
 				}
@@ -107,18 +106,25 @@ public class BoardList {
 			String path = ze.getName();
       if (!path.startsWith(RESOURCE_PATH+"/") || !path.toLowerCase().endsWith(".xml"))
         continue;
-      // FIXME: examine xml to ensure it is a board, and get a proper name
-      path = "jar|" + jar + "|" + path;
-      String name = nameForPath(path);
-      boards.putIfAbsent(name, path);
+      verifyAndAdd("jar|" + jar + "|" + path, "builtin");
 		}
 		try { zf.close(); }
     catch (IOException e) { }
 	}
 
-  // FIXME: use better names
-	public static String nameForPath(String path) {
-		return filenameForPath(path);
+	private static void verifyAndAdd(String path, String source) {
+    String name = BoardReader.parseFileForName(path);
+    if (boards.containsKey(name)) {
+      String alt = name + " (" + source + ")";
+      for (int i = 1; boards.containsKey(alt); i++) { 
+        if (i == 1)
+          alt = name + " (" + source + " from " + path + ")";
+        else
+          alt = name + " (" + source + " " + i + ")";
+      }
+      name = alt;
+    }
+		boards.put(name, path);
 	}
 
 	public static String filenameForPath(String path) {
@@ -152,12 +158,8 @@ public class BoardList {
   }
 
   private static void loadExternalBoards() {
-		for (String path : AppPreferences.FPGA_BOARDLIST.get()) {
-      path = "file|" + path;
-      // FIXME: examine xml to ensure it is a board, and get a proper name
-      String name = nameForPath(path);
-      boards.putIfAbsent(name, path);
-    }
+		for (String path : AppPreferences.FPGA_BOARDLIST.get())
+      verifyAndAdd("file|" + path, "external");
   }
 
 	public static boolean hasBoardNamed(String name) {
@@ -201,7 +203,7 @@ public class BoardList {
   }
 
 	public static String getPathForBoardNamed(String name) {
-    System.out.println("path for: '" + name + "' = '"+boards.get(name)+"'");
+    // System.out.println("path for: '" + name + "' = '"+boards.get(name)+"'");
     return boards.get(name);
 	}
 
@@ -210,8 +212,8 @@ public class BoardList {
   }
 
   private static String getFirstName()  {
-    if (boards.isEmpty()) System.out.println("fallback, but no boards");
-    else System.out.println("fallback to '" + boards.firstKey() +"'");
+    // if (boards.isEmpty()) System.out.println("fallback, but no boards");
+    // else System.out.println("fallback to '" + boards.firstKey() +"'");
     return boards.isEmpty() ? null : boards.firstKey();
   }
 

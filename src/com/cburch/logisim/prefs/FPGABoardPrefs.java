@@ -118,17 +118,19 @@ public class FPGABoardPrefs implements SettingsStore.Item {
     String s = SettingsStore.getEffective(section, subsection);
     prefs.clear();
     // s == "board:key=val:key=val:...|board:key=val:key=val:..."
-    for (String boardSection : s.split("\\|", -1)) {
-      String[] parts = boardSection.split(":", -1);
-      String board = unescape(parts[0]);
-      LinkedHashMap<String, String> p = new LinkedHashMap<>();
-      for (int i = 1; i < parts.length; i++) {
-        int eq = parts[i].indexOf('=');
-        String key = unescape(parts[i].substring(0, eq));
-        String val = unescape(parts[i].substring(eq + 1));
-        p.put(key, val);
+    if (!s.isEmpty()) { 
+      for (String boardSection : s.split("\\|", -1)) {
+        String[] parts = boardSection.split(":", -1);
+        String board = unescape(parts[0]);
+        LinkedHashMap<String, String> p = new LinkedHashMap<>();
+        for (int i = 1; i < parts.length; i++) {
+          int eq = parts[i].indexOf('=');
+          String key = unescape(parts[i].substring(0, eq));
+          String val = unescape(parts[i].substring(eq + 1));
+          p.put(key, val);
+        }
+        prefs.put(board, p);
       }
-      prefs.put(board, p);
     }
     AppPreferences.fireFPGAChangeEvent();
   }

@@ -51,31 +51,41 @@ import com.cburch.logisim.util.Errors;
 public class BoardReader {
 
   private BoardReader() { }
-	public static Board read(String path) {
-		try {
-      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder parser = factory.newDocumentBuilder();
-      Document doc;
 
-			if (path.startsWith("jar|")) {
-        String parts[] = path.split("\\|", 3);
-        String jarpath = parts[1];
-        String rscpath = parts[2];
-        try (ZipFile zf = new ZipFile(jarpath)) {
-          ZipEntry entry = zf.getEntry(rscpath);
-          if (entry == null)
-            throw new Exception(jarpath + " doesn't contain " + rscpath);
-          doc = parser.parse(zf.getInputStream(entry));
-        }
-      } else if (path.startsWith("file|")) {
-        String parts[] = path.split("\\|", 2);
-        String filepath = parts[1];
-				doc = parser.parse(new File(filepath));
-      } else {
-				doc = parser.parse(new File(path));
-      }
+  // returns placeholder on error, e.g. "[unavailable] filename.xml"
+  public static String parseFileForName(String path) {
+		try {
+      Document doc = getXmlDocument(path);
 
       // New format is: <Board name="..."> ...
+      // Old format is: <Name_of_Board>...<BoardInformation> ... <BoardPicture>...
+      // - Conceivably, some board in old format could be named "Board".
+      // - So if it start with something other than "Board" OR it contains
+      //   both <BoardInformation> and <BoardPicture>, we fall back to old format.
+      Element boardElt = doc.getDocumentElement();
+      String outerTag = boardElt.getTagName();
+      boolean oldFormat = !outerTag.equals("Board")
+        || (doc.getElementsByTagName("BoardInformation").getLength() == 1
+            && doc.getElementsByTagName("BoardPicture").getLength() == 1);
+      if (oldFormat)
+        return BoardList.filenameForPath(path);
+      
+      // new xml: board.name is attribute of the top element
+      String name = boardElt.getAttribute("name");
+      if (name == null)
+        name = BoardList.filenameForPath(path); // fallback: use file name instead
+      return name;
+    } catch (Exception e) {
+      System.out.println("path was: '"+path+"'");
+      e.printStackTrace();
+      return "[unavailable] " + BoardList.filenameForPath(path); // fallback: use placeholder
+		}
+  }
+
+	public static Board read(String path) {
+		try {
+      Document doc = getXmlDocument(path);
+
       // Old format is: <Name_of_Board>...<BoardInformation> ... <BoardPicture>...
       // - Conceivably, some board in old format could be named "Board".
       // - So if it start with something other than "Board" OR it contains
@@ -129,6 +139,29 @@ public class BoardReader {
       return null;
 		}
 	}
+
+  private static Document getXmlDocument(String path) throws Exception {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    DocumentBuilder parser = factory.newDocumentBuilder();
+
+    if (path.startsWith("jar|")) {
+      String parts[] = path.split("\\|", 3);
+      String jarpath = parts[1];
+      String rscpath = parts[2];
+      try (ZipFile zf = new ZipFile(jarpath)) {
+        ZipEntry entry = zf.getEntry(rscpath);
+        if (entry == null)
+          throw new Exception(jarpath + " doesn't contain " + rscpath);
+        return parser.parse(zf.getInputStream(entry));
+      }
+    } else if (path.startsWith("file|")) {
+      String parts[] = path.split("\\|", 2);
+      String filepath = parts[1];
+      return parser.parse(new File(filepath));
+    } else {
+      return parser.parse(new File(path));
+    }
+  }
 
   private static Chipset parseChipset(Element elt) throws Exception {
     if (elt == null)
