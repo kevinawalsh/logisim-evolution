@@ -61,7 +61,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
@@ -666,11 +665,13 @@ public class BoardEditor extends JFrame {
       JScrollPane paramScroll = new JScrollPane(entry.paramArea,
           JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
           JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-      paramScroll.setBorder(BorderFactory.createEmptyBorder(2, 8, 4, 4));
-      entry.panel.add(paramScroll);
+      JPanel paramPad = new JPanel(new BorderLayout());
+      paramPad.setBorder(BorderFactory.createEmptyBorder(4, 10, 10, 10));
+      paramPad.add(paramScroll, BorderLayout.CENTER);
+      entry.panel.add(paramPad);
 
       entries.add(entry);
-      scrollContent.add(entry.panel, scrollContent.getComponentCount() - 1);
+      scrollContent.add(entry.panel);
 
       removeBtn.addActionListener(ev -> {
         entries.remove(entry);
@@ -681,9 +682,6 @@ public class BoardEditor extends JFrame {
         scrollContent.repaint();
       });
     };
-
-    // Glue absorbs leftover vertical space so toolchain sections don't stretch.
-    scrollContent.add(Box.createVerticalGlue());
 
     // Populate from current member variables.
     for (int i = 0; i < toolchainNames.size(); i++) {
@@ -722,7 +720,11 @@ public class BoardEditor extends JFrame {
         e.defaultProgRadio.setSelected(true);
     }
 
-    JScrollPane scroll = new JScrollPane(scrollContent,
+    // Wrap scrollContent at NORTH so it stays at its natural height;
+    // the wrapper fills any leftover viewport space without stretching the entries.
+    JPanel scrollWrapper = new JPanel(new BorderLayout());
+    scrollWrapper.add(scrollContent, BorderLayout.NORTH);
+    JScrollPane scroll = new JScrollPane(scrollWrapper,
         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
         JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     scroll.setPreferredSize(new Dimension(520, 400));
