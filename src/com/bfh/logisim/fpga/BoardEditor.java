@@ -61,6 +61,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
@@ -244,6 +245,20 @@ public class BoardEditor extends JFrame {
     File file = getSaveFile(boardname, id);
     Board board = new Board(boardname, id, fpga, image.getOriginalImage(), image.getFormat(), image.getOriginalBytes());
     board.addComponents(ioComponents);
+    if (defaultSynthesisTool != null)
+      board.setDefaultSynthesisTool(defaultSynthesisTool);
+    if (defaultProgrammingTool != null)
+      board.setDefaultProgrammingTool(defaultProgrammingTool);
+    for (int i = 0; i < toolchainNames.size(); i++) {
+      String tc = toolchainNames.get(i);
+      int caps = toolchainCapabilities.get(i);
+      board.addToolchain(tc, 
+          i == 3 ? "synthesis,programming" :
+          i == 1 ? "synthesis" :
+          i == 2 ? "programming" :
+          "none");
+      toolchainParams.get(i).forEach((k, v) -> board.setToolchainParam(tc, k, v));
+    }
     if (!BoardWriter.write(file, board))
       return;
   }
@@ -655,7 +670,7 @@ public class BoardEditor extends JFrame {
       entry.panel.add(paramScroll);
 
       entries.add(entry);
-      scrollContent.add(entry.panel);
+      scrollContent.add(entry.panel, scrollContent.getComponentCount() - 1);
 
       removeBtn.addActionListener(ev -> {
         entries.remove(entry);
@@ -666,6 +681,9 @@ public class BoardEditor extends JFrame {
         scrollContent.repaint();
       });
     };
+
+    // Glue absorbs leftover vertical space so toolchain sections don't stretch.
+    scrollContent.add(Box.createVerticalGlue());
 
     // Populate from current member variables.
     for (int i = 0; i < toolchainNames.size(); i++) {
