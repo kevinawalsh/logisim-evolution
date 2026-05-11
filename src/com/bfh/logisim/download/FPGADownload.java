@@ -47,6 +47,7 @@ import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.cburch.logisim.util.Debug;
 
 public abstract class FPGADownload {
 
@@ -65,6 +66,14 @@ public abstract class FPGADownload {
     public abstract boolean hasAlternateName(String altname); // e.g. "quartus 2"
     public abstract boolean supports(Board b); // only called as a last restort,
                                       // if no known toolchains found in board xml
+    // Get list of default [key, value-or-description] parameter pairs for a given
+    // board (independent of any board customizations, app preferences, etc.). For
+    // example:
+    //   "board", "passed to backend, defaults to board codename"
+    //   "64bit", "slower but more memory, defaults to true"
+    //   "apikey", "api key string from website, not used if empty"
+    //   "optimize", "passed to backed, either 'memory' (default) or 'speed'"
+    public abstract List<String[]> defaultParams(/* Board board*/);
     public abstract FPGADownload newDownloader();
     
     Toolchain(String detailName, String shortName, boolean synth, boolean pgm) {
@@ -78,6 +87,10 @@ public abstract class FPGADownload {
   private static final ArrayList<Toolchain> synthesisToolchains = new ArrayList<>();
   private static final ArrayList<Toolchain> programmerToolchains = new ArrayList<>();
   public static void register(Toolchain t) {
+    if (getAllToolchainNames().contains(t.toolchainName)) {
+      Debug.error("ignoring duplicate toolchain: " + t.toolchainName);
+      return;
+    }
     if (t.canSynthesize)
       synthesisToolchains.add(t);
     if (t.canProgram)
@@ -98,9 +111,25 @@ public abstract class FPGADownload {
     for (Toolchain t: synthesisToolchains)
       if (!ret.contains(t.toolchainName))
         ret.add(t.toolchainName);
-    // for (Toolchain t: programmerToolchains)
-    //   if (!ret.contains(t.toolchainName))
-    //     ret.add(t.toolchainName);
+    return ret;
+  }
+
+  public static ArrayList<String> getProgrammerToolchainNames() {
+    ArrayList<String> ret = new ArrayList<>();
+    for (Toolchain t: programmerToolchains)
+      if (!ret.contains(t.toolchainName))
+        ret.add(t.toolchainName);
+    return ret;
+  }
+
+  public static ArrayList<String> getAllToolchainNames() {
+    ArrayList<String> ret = new ArrayList<>();
+    for (Toolchain t: synthesisToolchains)
+      if (!ret.contains(t.toolchainName))
+        ret.add(t.toolchainName);
+    for (Toolchain t: programmerToolchains)
+      if (!ret.contains(t.toolchainName))
+        ret.add(t.toolchainName);
     return ret;
   }
 
@@ -119,8 +148,26 @@ public abstract class FPGADownload {
     return null;
   }
 
-    // FIXME: toolchains should register themselves, possibly under multiple names,
-    // or some kind of pattern matching?, e,g "altera, altera quartus, altera ise, altera quartus ii"
+  public static Toolchain findAnyToolchain(String tcName) {
+    if (tcName == null || tcName.isEmpty())
+      return null;
+    // Look for exact match first, e.g. "Altera Quartus II" or "Quartus"
+    for (Toolchain t : synthesisToolchains)
+      if (t.toolchainName.equalsIgnoreCase(tcName) || t.shortName.equalsIgnoreCase(tcName))
+        return t;
+    for (Toolchain t : programmerToolchains)
+      if (t.toolchainName.equalsIgnoreCase(tcName) || t.shortName.equalsIgnoreCase(tcName))
+        return t;
+    // Then look for alternate names, e.g. "quartus ii" or "quartus 2"
+    for (Toolchain t : synthesisToolchains)
+      if (t.hasAlternateName(tcName))
+        return t;
+    for (Toolchain t : programmerToolchains)
+      if (t.hasAlternateName(tcName))
+        return t;
+    // No matching toolchain
+    return null;
+  }
 
   public static Toolchain getSynthesisToolchain(Board board) {
     
@@ -218,6 +265,8 @@ public abstract class FPGADownload {
     return generateScripts(ioResources, hdlFiles);
   }
 
+  // Get list of languages supported by this toolchain ("Verilog" and/or "VHDL").
+  // TODO: perhaps this should be specific to a board?
   public abstract List<String> getLanguages();
 
   public abstract boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles);

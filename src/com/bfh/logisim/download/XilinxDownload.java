@@ -37,6 +37,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
@@ -71,6 +72,10 @@ public class XilinxDownload extends FPGADownload {
           || b.codename.toLowerCase().contains("xilinx")
           || b.name.toLowerCase().contains("amd")
           || b.codename.toLowerCase().contains("amd");
+      }
+      @Override
+      public List<String[]> defaultParams(/*Board board*/) {
+        return Collections.emptyList();
       }
       @Override
       public FPGADownload newDownloader() { return new XilinxDownload(); }

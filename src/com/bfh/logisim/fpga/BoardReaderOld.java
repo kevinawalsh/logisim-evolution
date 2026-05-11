@@ -131,11 +131,9 @@ public class BoardReaderOld {
 
   private static HashMap<String, String> xmlToMap(NodeList xml) {
     HashMap<String, String> params = new HashMap<>();
-    // System.out.println("xml :" + xml);
     for (int i = 0; i < xml.getLength(); i++) {
       Node node = xml.item(i);
       String name = node.getNodeName();
-      // System.out.printf("node(%d, %s): %s\n", i, name, node);
       if (name == null || name.equals("#text") || name.equals("#comment"))
         continue;
       NamedNodeMap attrs = node.getAttributes();
@@ -144,7 +142,6 @@ public class BoardReaderOld {
         String tag = attr.getNodeName();
         String val = attr.getNodeValue();
         params.put(name+"/"+tag, val);
-        // System.out.printf("  attr(%d, %s): %s\n", j, tag, val);
       }
     }
     return params;

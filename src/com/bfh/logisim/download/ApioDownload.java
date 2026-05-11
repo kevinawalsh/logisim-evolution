@@ -74,6 +74,10 @@ public class ApioDownload extends FPGADownload {
         return false;
       }
       @Override
+      public List<String[]> defaultParams(/*Board board*/) {
+        return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
+      }
+      @Override
       public FPGADownload newDownloader() { return new ApioDownload(); }
 
     });

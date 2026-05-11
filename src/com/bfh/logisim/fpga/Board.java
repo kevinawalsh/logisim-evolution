@@ -68,7 +68,7 @@ public class Board {
   private final LinkedHashMap<String, LinkedHashMap<String, String>> toolchainParams
     = new LinkedHashMap<>(); // toolchain -> key -> val
   
-  // some toolchains are really only programemrs
+  // some toolchains only work for programming, not synthesis
   private final HashSet<String> programmers = new HashSet<>();
 
 	private final ArrayList<BoardIO> ios = new ArrayList<>();

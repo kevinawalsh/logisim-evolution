@@ -33,6 +33,7 @@ package com.bfh.logisim.download;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
@@ -64,6 +65,10 @@ public abstract class AlteraDownload extends FPGADownload {
           || b.codename.toLowerCase().contains("altera")
           || b.name.toLowerCase().contains("intel")
           || b.codename.toLowerCase().contains("intel");
+      }
+      @Override
+      public List<String[]> defaultParams(/*Board board*/) {
+        return Collections.emptyList();
       }
       @Override
       public FPGADownload newDownloader() {

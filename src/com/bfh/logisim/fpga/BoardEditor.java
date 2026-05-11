@@ -49,9 +49,13 @@ import java.awt.event.FocusEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
@@ -67,13 +71,17 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.ButtonGroup;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
+import com.bfh.logisim.download.FPGADownload;
 import com.bfh.logisim.settings.BoardList;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
@@ -106,6 +114,10 @@ public class BoardEditor extends JFrame {
   public LinkedList<BoardIO> ioComponents = new LinkedList<>();
   public BoardIO selectedIO = null;
   private IOSidebarPanel sidebar;
+  private String defaultToolchain = null;
+  private ArrayList<String> toolchainNames = new ArrayList<>();
+  private ArrayList<Integer> toolchainCapabilities = new ArrayList<>(); // 1=synthesis, 2=programming, 3=both
+  private ArrayList<LinkedHashMap<String, String>> toolchainParams = new ArrayList<>(); // key - > val
 
   public BoardEditor() {
     super(S.get("FPGABoardEditor"));
@@ -123,59 +135,78 @@ public class BoardEditor extends JFrame {
     center.add(sidebar, BorderLayout.EAST);
     add(center, BorderLayout.CENTER);
 
-    JPanel buttons = new JPanel();
-    buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
-    JPanel buttonsA = new JPanel();
-    JPanel buttonsB = new JPanel();
-
-    buttonsA.add(new JLabel("Board Name:"));
-    name = new PlaceholderTextField(20, () -> "required");
+    // --- "FPGA Board Settings" titled panel ---
+    name = new PlaceholderTextField(20, () -> "(required) a unique friendly name or description");
     name.setEnabled(true);
-    name.setToolTipText("A unique, user-friendly name or description.");
-    buttonsA.add(name);
+    // name.setToolTipText("A unique, user-friendly name or description.");
 
-    buttonsA.add(new JLabel("Code Name:"));
     codename = new PlaceholderTextField(20, () -> {
-      if (name.getText().trim().isEmpty()) return "optional";
+      if (name.getText().trim().isEmpty()) return "(optional) used by some toolchains as board ID, if not otherwise specified";
       else return Board.generateCodename(name.getText(), "");
     });
     codename.setEnabled(true);
     codename.setToolTipText("A short identifier, used as a fallback if a toolchain-specific name is not specified.");
-    buttonsA.add(codename);
     name.getDocument().addDocumentListener(new DocumentListener() {
       public void insertUpdate(DocumentEvent e)  { codename.repaint(); }
       public void removeUpdate(DocumentEvent e)  { codename.repaint(); }
       public void changedUpdate(DocumentEvent e) { codename.repaint(); }
     });
 
-    JButton chipset = new JButton("Configure FPGA Chipset");
+    JButton chipset = new JButton("Configure Chipset");
     chipset.addActionListener(e -> doChipsetDialog());
-    buttonsA.add(chipset);
+
+    JButton tools = new JButton("Configure Toolchains");
+    tools.addActionListener(e -> doToolchainsDialog());
 
     JButton pic = new JButton("Change Picture");
     pic.addActionListener(e -> doChangeImage());
-    buttonsB.add(pic);
 
-    JButton builtin = new JButton("Built-in FPGA Boards");
+    JPanel settingsPanel = new JPanel(new GridBagLayout());
+    settingsPanel.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createEmptyBorder(15, 15, 15, 15),
+        BorderFactory.createTitledBorder("FPGA Board Settings")));
+    GridBagConstraints sc = new GridBagConstraints();
+    sc.insets = new Insets(2, 4, 2, 4);
+    sc.fill = GridBagConstraints.HORIZONTAL;
+    sc.gridy = 0;
+    sc.gridx = 0; sc.weightx = 0; settingsPanel.add(new JLabel("Board Name:"), sc);
+    sc.gridx = 1; sc.weightx = 1; settingsPanel.add(name, sc);
+    sc.gridx = 2; sc.weightx = 0; settingsPanel.add(chipset, sc);
+    sc.gridx = 3; sc.weightx = 0; settingsPanel.add(tools, sc);
+    sc.gridy = 1;
+    sc.gridx = 0; sc.weightx = 0; settingsPanel.add(new JLabel("Code Name:"), sc);
+    sc.gridx = 1; sc.weightx = 1; settingsPanel.add(codename, sc);
+    sc.gridx = 2; sc.weightx = 0; settingsPanel.add(pic, sc);
+
+    // --- Bottom action buttons row ---
+    JPanel bottomButtons = new JPanel();
+
+    JButton builtin = new JButton("Load Built-in FPGA Board");
     builtin.addActionListener(e -> doBuiltin());
-    buttonsB.add(builtin);
+    bottomButtons.add(builtin);
 
-    JButton load = new JButton("Load Board");
+    JButton load = new JButton("Load Board from XML");
     load.addActionListener(e -> doLoad());
-    buttonsB.add(load);
+    bottomButtons.add(load);
+    
+    JButton reset = new JButton("Reset All");
+    reset.addActionListener(e -> { clear(); });
+    bottomButtons.add(reset);
 
-    JButton cancel = new JButton("Cancel");
+    JButton cancel = new JButton("Close");
     cancel.addActionListener(e -> { setVisible(false); clear(); });
-    buttonsB.add(cancel);
+    bottomButtons.add(cancel);
 
     save = new JButton("Save Board");
     save.addActionListener(e -> doSave());
     save.setEnabled(false);
-    buttonsB.add(save);
+    bottomButtons.add(save);
 
-    buttons.add(buttonsA);
-    buttons.add(buttonsB);
-    add(buttons, BorderLayout.SOUTH);
+    JPanel south = new JPanel();
+    south.setLayout(new BoxLayout(south, BoxLayout.PAGE_AXIS));
+    south.add(settingsPanel);
+    south.add(bottomButtons);
+    add(south, BorderLayout.SOUTH);
 
     pack();
     setLocationRelativeTo(null);
@@ -256,6 +287,15 @@ public class BoardEditor extends JFrame {
     ioComponents.addAll(board.getIoComponents());
     image.setImage(board.image, board.imgFormat, board.imgBytes);
     sidebar.showIdle();
+    defaultToolchain = board.getDefaultToolchain();
+    toolchainNames.clear();
+    toolchainCapabilities.clear();
+    toolchainParams.clear();
+    toolchainNames.addAll(board.getToolchains());
+    for (String tcName : toolchainNames) {
+      toolchainCapabilities.add(board.isOnlyProgrammer(tcName) ? 2 : 3);
+      toolchainParams.add(new LinkedHashMap<>(board.getToolchainParams(tcName)));
+    }
     setEnables();
   }
 
@@ -263,9 +303,7 @@ public class BoardEditor extends JFrame {
     save.setEnabled(image.getOriginalImage() != null && fpga != null && !name.getText().trim().isEmpty());
   }
 
-  public void clear() {
-    if (isVisible())
-      setVisible(false);
+  private void clear() {
     image.clear();
     ioComponents.clear();
     fpga = null;
@@ -273,6 +311,11 @@ public class BoardEditor extends JFrame {
     codename.setText("");
     selectedIO = null;
     sidebar.showIdle();
+    defaultToolchain = null;
+    toolchainNames.clear();
+    toolchainCapabilities.clear();
+    toolchainParams.clear();
+
     setEnables();
   }
 
@@ -536,6 +579,261 @@ public class BoardEditor extends JFrame {
     setEnables();
   }
 
+  private void doToolchainsDialog() {
+    final JDialog dlg = new JDialog(this, "Configure Toolchains");
+    dlg.setLayout(new BorderLayout());
+    dlg.setModal(true);
+    dlg.setResizable(true);
+    dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+
+    // Per-toolchain UI state, bundled together.
+    class Entry {
+      JPanel panel;
+      JTextField nameField = new JTextField(20);
+      JRadioButton defaultRadio = new JRadioButton("Use as default");
+      JCheckBox synthCheck = new JCheckBox("Use for synthesis", true);
+      JCheckBox progCheck  = new JCheckBox("Use for programming", true);
+      JTextArea paramArea  = new JTextArea(4, 30);
+      Entry() { paramArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12)); }
+    }
+
+    JPanel scrollContent = new JPanel();
+    scrollContent.setLayout(new BoxLayout(scrollContent, BoxLayout.PAGE_AXIS));
+    scrollContent.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+
+    ButtonGroup defaultGroup = new ButtonGroup();
+    ArrayList<Entry> entries = new ArrayList<>();
+
+    // Builds a section panel for one Entry and appends it to the scroll content.
+    Consumer<Entry> addEntry = entry -> {
+      entry.panel = new JPanel();
+      entry.panel.setLayout(new BoxLayout(entry.panel, BoxLayout.PAGE_AXIS));
+      entry.panel.setBorder(BorderFactory.createCompoundBorder(
+          BorderFactory.createEmptyBorder(4, 0, 4, 0),
+          BorderFactory.createEtchedBorder()));
+
+      JButton removeBtn = new JButton("Remove");
+      JPanel nameRow = new JPanel(new BorderLayout(4, 0));
+      nameRow.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 4));
+      nameRow.add(new JLabel("Toolchain:"), BorderLayout.WEST);
+      nameRow.add(entry.nameField, BorderLayout.CENTER);
+      nameRow.add(removeBtn, BorderLayout.EAST);
+      entry.panel.add(nameRow);
+
+      JPanel radioRow = new JPanel(new BorderLayout());
+      radioRow.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 4));
+      radioRow.add(entry.defaultRadio, BorderLayout.WEST);
+      entry.panel.add(radioRow);
+      defaultGroup.add(entry.defaultRadio);
+
+      JPanel checkRow = new JPanel(new GridLayout(1, 2));
+      checkRow.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 4));
+      checkRow.add(entry.synthCheck);
+      checkRow.add(entry.progCheck);
+      entry.panel.add(checkRow);
+
+      JPanel paramLabelRow = new JPanel(new BorderLayout());
+      paramLabelRow.setBorder(BorderFactory.createEmptyBorder(4, 8, 0, 4));
+      paramLabelRow.add(new JLabel("Toolchain parameters (key: value, one per line):"), BorderLayout.WEST);
+      entry.panel.add(paramLabelRow);
+
+      JScrollPane paramScroll = new JScrollPane(entry.paramArea,
+          JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+          JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+      paramScroll.setBorder(BorderFactory.createEmptyBorder(2, 8, 4, 4));
+      entry.panel.add(paramScroll);
+
+      entries.add(entry);
+      scrollContent.add(entry.panel);
+
+      removeBtn.addActionListener(ev -> {
+        entries.remove(entry);
+        scrollContent.remove(entry.panel);
+        defaultGroup.remove(entry.defaultRadio);
+        scrollContent.revalidate();
+        scrollContent.repaint();
+      });
+    };
+
+    // Populate from current member variables.
+    for (int i = 0; i < toolchainNames.size(); i++) {
+      Entry e = new Entry();
+      String tcName = toolchainNames.get(i);
+      e.nameField.setText(tcName);
+      int cap = toolchainCapabilities.get(i);
+      e.synthCheck.setSelected((cap & 1) != 0);
+      e.progCheck.setSelected((cap & 2) != 0);
+      FPGADownload.Toolchain t = FPGADownload.findAnyToolchain(tcName);
+      boolean knownTool = t != null;
+      String msg = "# Put key:value parameters here, one per line.\n";
+      msg += "# Lines starting with hashtag are ignored.\n";
+      HashMap<String, String> stdParams = new HashMap<>();
+      if (knownTool) {
+        List<String[]> params = t.defaultParams(/*board*/);
+        for (String[] kv : params)
+          stdParams.put(kv[0], kv[1]);
+      }
+      StringBuilder sb = new StringBuilder();
+      LinkedHashMap<String, String> params = toolchainParams.get(i);
+      params.forEach((k, v) -> {
+        sb.append(k).append(": ").append(v).append("\n");
+        stdParams.remove(k);
+      });
+      if (stdParams.size() == 1)
+        sb.append("# " + tcName + " also recognizes the following parameter.\n");
+      else if (stdParams.size() > 1)
+        sb.append("# " + tcName + " also recognizes the following parameters.\n");
+      stdParams.forEach((k, v) ->
+        sb.append("# ").append(k).append(": ").append(v).append("\n"));
+      e.paramArea.setText(msg + sb.toString());
+      addEntry.accept(e);
+      if (toolchainNames.get(i).equals(defaultToolchain))
+        e.defaultRadio.setSelected(true);
+    }
+
+    JScrollPane scroll = new JScrollPane(scrollContent,
+        JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+        JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    scroll.setPreferredSize(new Dimension(520, 400));
+    dlg.add(scroll, BorderLayout.CENTER);
+
+    // Bottom buttons.
+    JPanel bottomPanel = new JPanel();
+    JButton addBtn  = new JButton("Add Toolchain");
+    JButton doneBtn = new JButton("Done");
+    bottomPanel.add(addBtn);
+    bottomPanel.add(doneBtn);
+    dlg.add(bottomPanel, BorderLayout.SOUTH);
+
+    // "Add Toolchain": sub-dialog to pick a name, then append a new section.
+    addBtn.addActionListener(ev -> {
+      JDialog subDlg = new JDialog(dlg, "Add Toolchain");
+      subDlg.setModal(true);
+      subDlg.setLayout(new BorderLayout(8, 8));
+      subDlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+
+      ArrayList<String> toolchainNames = FPGADownload.getAllToolchainNames();
+
+      JComboBox<String> nameCombo = new JComboBox<>(toolchainNames.toArray(new String[0]));
+      nameCombo.setEditable(true);
+      JPanel pickPanel = new JPanel();
+      pickPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 0, 8));
+      pickPanel.add(new JLabel("Toolchain name:"));
+      pickPanel.add(nameCombo);
+      subDlg.add(pickPanel, BorderLayout.CENTER);
+
+      JPanel subBtns = new JPanel();
+      JButton okBtn     = new JButton("OK");
+      JButton cancelBtn = new JButton("Cancel");
+      subBtns.add(cancelBtn);
+      subBtns.add(okBtn);
+      subDlg.add(subBtns, BorderLayout.SOUTH);
+
+      cancelBtn.addActionListener(e2 -> subDlg.setVisible(false));
+      okBtn.addActionListener(e2 -> {
+        String newName = (String) nameCombo.getSelectedItem();
+        if (newName == null || newName.trim().isEmpty()) {
+          Errors.title("Error").show("Please enter a toolchain name.");
+          return;
+        }
+        newName = newName.trim();
+        // FIXME: if newName equals an existing Entry nameField.getText(), then error out.
+        subDlg.setVisible(false);
+        Entry newEntry = new Entry();
+        newEntry.nameField.setText(newName);
+        if (entries.isEmpty())
+          newEntry.defaultRadio.setSelected(true);
+        FPGADownload.Toolchain t = FPGADownload.findAnyToolchain(newName);
+        boolean knownTool = t != null;
+        newEntry.synthCheck.setSelected(!knownTool || t.canSynthesize);
+        newEntry.progCheck.setSelected(!knownTool || t.canProgram);
+        String msg = "# Put key:value parameters here, one per line.\n";
+        msg += "# Lines starting with hashtag are ignored.\n";
+        if (knownTool) {
+          List<String[]> params = t.defaultParams(/*board*/);
+          if (params.isEmpty())
+            msg += "# "+newName+" has no known parameters.\n";
+          else if (params.size() == 1)
+            msg += "# "+newName+" has one known parameter, as follows.\n";
+          else
+            msg += "# "+newName+" has " + params.size() + " known parameters, as follows.\n";
+          for (String[] kv : params)
+            msg += "# " + kv[0] + ": " + kv[1] + "\n";
+        }
+        newEntry.paramArea.setText(msg);
+        addEntry.accept(newEntry);
+        scrollContent.revalidate();
+        scrollContent.repaint();
+      });
+
+      subDlg.pack();
+      subDlg.setLocationRelativeTo(dlg);
+      subDlg.setVisible(true);
+    });
+
+    // "Done": validate param areas, then transfer everything back to member vars.
+    doneBtn.addActionListener(ev -> {
+      // Validate first; bail on the first error.
+      for (Entry entry : entries) {
+        String tcName = entry.nameField.getText().trim();
+        LinkedHashMap<String, String> seen = new LinkedHashMap<>();
+        int lineNum = 0;
+        for (String line : entry.paramArea.getText().split("\n", -1)) {
+          lineNum++;
+          line = line.trim();
+          if (line.isEmpty() || line.startsWith("#")) continue;
+          int colon = line.indexOf(':');
+          if (colon < 0) {
+            Errors.title("Error").show("Line " + lineNum + " of \"" + tcName
+                + "\" parameters is missing a colon:\n  " + line);
+            return;
+          }
+          String key = line.substring(0, colon).trim();
+          if (key.isEmpty()) {
+            Errors.title("Error").show("Line " + lineNum + " of \"" + tcName
+                + "\" parameters has an empty key:\n  " + line);
+            return;
+          }
+          if (seen.containsKey(key)) {
+            Errors.title("Error").show("Duplicate key \"" + key + "\" in \""
+                + tcName + "\" parameters.");
+            return;
+          }
+          seen.put(key, "");
+        }
+      }
+
+      // All valid — write back to member variables.
+      toolchainNames.clear();
+      toolchainCapabilities.clear();
+      toolchainParams.clear();
+      defaultToolchain = null;
+      for (Entry entry : entries) {
+        String tcName = entry.nameField.getText().trim();
+        toolchainNames.add(tcName);
+        int cap = 0;
+        if (entry.synthCheck.isSelected()) cap |= 1;
+        if (entry.progCheck.isSelected())  cap |= 2;
+        toolchainCapabilities.add(cap);
+        LinkedHashMap<String, String> parsed = new LinkedHashMap<>();
+        for (String line : entry.paramArea.getText().split("\n", -1)) {
+          if (line.trim().isEmpty()) continue;
+          int colon = line.indexOf(':');
+          parsed.put(line.substring(0, colon).trim(), line.substring(colon + 1).trim());
+        }
+        toolchainParams.add(parsed);
+        if (entry.defaultRadio.isSelected())
+          defaultToolchain = tcName;
+      }
+      dlg.setVisible(false);
+    });
+
+    dlg.pack();
+    dlg.setLocationRelativeTo(this);
+    dlg.setVisible(true);
+    dlg.dispose();
+  }
+
   private long getFrequency(String str, String speed) {
     long num = 0;
     long multiplier = 1;
@@ -585,7 +883,6 @@ public class BoardEditor extends JFrame {
       int removed = 0;
       int iw = image.getOriginalImage().getWidth(null);
       int ih = image.getOriginalImage().getHeight(null);
-      System.out.println("new image is: " + iw + " x " + ih);
       for (int i = 0; i < ioComponents.size(); i++) {
         BoardIO io = ioComponents.get(i);
         int w = Math.max(3, Math.min(io.rect.width, iw));
@@ -593,7 +890,6 @@ public class BoardEditor extends JFrame {
         int x = Math.max(0, Math.min(io.rect.x, iw - w));
         int y = Math.max(0, Math.min(io.rect.y, ih - h));
         Bounds newRect = Bounds.create(x, y, w, h);
-        System.out.println("old rect: " + io.rect + " new rect: " + newRect);
         if (io.rect.equals(newRect))
           continue;
         boolean overlaps = false;
@@ -876,7 +1172,7 @@ public class BoardEditor extends JFrame {
     }
 
     void moveEditingIO(int newX, int newY) {
-      if (editingIO == null) return;
+      if (editingIO == null || image.getOriginalImage() == null) return;
       int x = Math.max(0, Math.min(newX, image.getOriginalImage().getWidth(null) - editingIO.rect.width));
       int y = Math.max(0, Math.min(newY, image.getOriginalImage().getHeight(null) - editingIO.rect.height));
       // Build the moved IO directly from the last-committed editingIO — never read
@@ -1027,6 +1323,7 @@ public class BoardEditor extends JFrame {
     }
 
     private void applyCurrentValues() {
+      if (image.getOriginalImage() == null) return;
       BoardIO.Type type = (BoardIO.Type) typeCombo.getSelectedItem();
       if (type == null) return;
 

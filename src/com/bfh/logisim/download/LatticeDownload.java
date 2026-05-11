@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,10 @@ public class LatticeDownload extends FPGADownload {
         // is supported.
         return b.name.toLowerCase().contains("lattice")
           || b.codename.toLowerCase().contains("lattice");
+      }
+      @Override
+      public List<String[]> defaultParams(/*Board board*/) {
+        return Collections.emptyList();
       }
       @Override
       public FPGADownload newDownloader() { return new LatticeDownload(); }

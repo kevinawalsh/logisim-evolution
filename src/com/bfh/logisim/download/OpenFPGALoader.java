@@ -34,6 +34,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.gui.FPGAReport;
@@ -57,6 +58,10 @@ public class OpenFPGALoader {
             return true;
         }
         return false;
+      }
+      @Override
+      public List<String[]> defaultParams(/*Board board*/) {
+        return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
       }
       @Override
       public FPGADownload newDownloader() { return null; } // FIXME: no programmer API yet

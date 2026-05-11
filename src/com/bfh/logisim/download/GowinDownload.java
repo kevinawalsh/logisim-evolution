@@ -2,6 +2,7 @@ package com.bfh.logisim.download;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
@@ -32,6 +33,10 @@ public class GowinDownload extends FPGADownload {
         // or similar, which we could search for the given board fpga part.
         return b.name.toLowerCase().contains("gowin")
           || b.codename.toLowerCase().contains("gowin");
+      }
+      @Override
+      public List<String[]> defaultParams(/*Board board*/) {
+        return Collections.emptyList();
       }
       @Override
       public FPGADownload newDownloader() { return new GowinDownload(); }
