@@ -73,21 +73,27 @@ public class BoardReaderOld {
         vtc = "Gowin";
       else
         vtc = null;
-      // For default toolchain, use apio if there was a name, or if no vendor toolchain known
-      b.setDefaultToolchain((apio_name != null || vtc == null) ? "Apio" : vtc);
+      // For default synthesis tool, use apio if there was a name, or if no vendor toolchain known
+      b.setDefaultSynthesisTool((apio_name != null || vtc == null) ? "Apio" : vtc);
+      // For default programmer tool, use openFPGALoader if there was a name, or if no apio name or vendor toolchain known,
+      // otherwise use apio if there was a name and no vendor toolchain known
+      b.setDefaultProgrammingTool((ofl_name != null || (apio_name == null && vtc == null)) ? "openFPGALoader"
+            : (apio_name != null || vtc == null) ? "Apio" : vtc);
       if (apio_name != null || vtc == null) {
-        b.addToolchain("Apio");
-        b.setToolchainParam("Apio", "board", apio_name);
+        b.addToolchain("Apio", "synthesis,programming");
+        if (apio_name != null)
+          b.setToolchainParam("Apio", "board", apio_name);
       }
       if (vtc != null) {
-        b.addToolchain(vtc);
+        b.addToolchain(vtc, "synthesis,programming");
       }
-      if (ofl_name != null) {
-        b.addToolchainProgrammer("openFPGALoader");
-        b.setToolchainParam("openFPGALoader", "board", ofl_name);
+      if (ofl_name != null || (apio_name == null && vtc == null)) {
+        b.addToolchain("openFPGALoader", "synthesis,programming");
+        if (ofl_name != null)
+          b.setToolchainParam("openFPGALoader", "board", ofl_name);
       }
       if (b.fpga.USBTMCAvailable) {
-        b.addToolchainProgrammer("USBTMC");
+        b.addToolchain("USBTMC", "programming");
       }
 
       parseComponents(doc, "PinsInformation", b); // backwards compatability	

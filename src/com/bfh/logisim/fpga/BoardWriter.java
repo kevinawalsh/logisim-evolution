@@ -90,24 +90,39 @@ class BoardWriter {
       sb.append("  </FPGA>\n");
 
       // Toolchains section
-      String def = board.getDefaultToolchain();
+      String defSynth = board.getDefaultSynthesisTool();
+      String defProg = board.getDefaultProgrammingTool();
       List<String> toolchains = board.getToolchains();
-      if (def == null && toolchains.isEmpty()) {
+      if (defSynth == null && defProg == null && toolchains.isEmpty()) {
         sb.append("  <Toolchains/>\n");
       } else {
         sb.append("  <Toolchains");
-        if (def != null)
-          sb.append(a("default", def));
+        if (defSynth != null && defSynth.equals(defProg))
+          sb.append(a("default", defSynth));
+        else {
+          if (defSynth != null)
+            sb.append(a("defaultSynthesis", defSynth));
+          if (defProg != null)
+            sb.append(a("defaultProgramming", defProg));
+        }
         if (toolchains.isEmpty()) {
           sb.append("/>\n");
         } else {
           sb.append(">\n");
           for (String tc : toolchains) {
-            boolean progOnly = board.isOnlyProgrammer(tc);
-            String tag = progOnly ? "Programmer" : "Toolchain";
+            boolean canSynth = board.synthesisEnabled(tc);
+            boolean canProg = board.programmingEnabled(tc);
             Map<String, String> params = board.getToolchainParams(tc);
-            sb.append("    <" + tag)
+            sb.append("    <Toolchain")
               .append(a("name", tc));
+            if (canSynth && canProg)
+              sb.append(a("capabilities", "synthesis,programming"));
+            else if (canSynth)
+              sb.append(a("capabilities", "synthesis"));
+            else if (canSynth)
+              sb.append(a("capabilities", "programming"));
+            else
+              sb.append(a("capabilities", "none"));
             if (params.isEmpty()) {
               sb.append("/>\n");
             } else {
@@ -118,7 +133,7 @@ class BoardWriter {
                   .append(a("value", kv.getValue()))
                   .append("/>\n");
               }
-              sb.append("    </" + tag + ">\n");
+              sb.append("    </Toolchain>\n");
             }
           }
           sb.append("  </Toolchains>\n");

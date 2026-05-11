@@ -177,7 +177,7 @@ public abstract class FPGADownload {
     if (t != null) return t;
     
     // Fallback 1: default toolchain listed in board xml
-    pref = board.getDefaultToolchain();
+    pref = board.getDefaultSynthesisTool();
     t = findSynthesisToolchain(pref);
     if (t != null) return t;
 

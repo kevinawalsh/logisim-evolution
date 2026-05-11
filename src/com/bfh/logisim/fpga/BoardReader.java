@@ -185,19 +185,21 @@ public class BoardReader {
     if (tcElt == null)
       return;
     String def = tcElt.getAttribute("default");
+    if (def != null && !def.isEmpty()) {
+      board.setDefaultSynthesisTool(def);
+      board.setDefaultProgrammingTool(def);
+    }
+    def = tcElt.getAttribute("defaultSynthesis");
     if (def != null && !def.isEmpty())
-      board.setDefaultToolchain(def);
-    for (Element child : XmlIterator.forChildElements(tcElt)) {
-      String tag = child.getNodeName();
-      if (!tag.equals("Programmer") && !tag.equals("Toolchain"))
-        continue;
+      board.setDefaultSynthesisTool(def);
+    def = tcElt.getAttribute("defaultProgramming");
+    if (def != null && !def.isEmpty())
+      board.setDefaultProgrammingTool(def);
+    for (Element child : XmlIterator.forChildElements(tcElt, "Toolchain")) {
       String name = child.getAttribute("name");
       if (name == null || name.isEmpty())
-        throw new Exception("Required name attribute of <"+tag+"> is missing");
-      if (tag.equals("Programmer"))
-        board.addToolchainProgrammer(name);
-      else
-        board.addToolchain(name);
+        throw new Exception("Required name attribute of <Toolchain> is missing");
+      board.addToolchain(name, child.getAttribute("capabilities"));
       for (Element p : XmlIterator.forChildElements(child, "Param")) {
         String key = p.getAttribute("key");
         String val = p.getAttribute("value");

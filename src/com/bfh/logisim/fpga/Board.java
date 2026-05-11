@@ -36,7 +36,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,12 +64,12 @@ public class Board {
   public final String imgFormat; // "png" or "jpg"
   public final byte imgBytes[];
 
-  private String defaultToolchain; // e.g. "Apio"
+  private String defaultSynthesisTool, defaultProgrammingTool; // e.g. "Apio" + "openFPGALoader"
   private final LinkedHashMap<String, LinkedHashMap<String, String>> toolchainParams
     = new LinkedHashMap<>(); // toolchain -> key -> val
   
-  // some toolchains only work for programming, not synthesis
-  private final HashSet<String> programmers = new HashSet<>();
+  // with this board, some tools only work for synthesis (1), some only for programming (2), some for both (3)
+  private final HashMap<String, Integer> toolchainCapabilities = new HashMap<>();
 
 	private final ArrayList<BoardIO> ios = new ArrayList<>();
 
@@ -120,24 +120,37 @@ public class Board {
 		ios.addAll(io);
 	}
 
-  public void setDefaultToolchain(String toolchain) { defaultToolchain = toolchain != null && !toolchain.isEmpty() ? toolchain : null; }
-  public String getDefaultToolchain() { return defaultToolchain; }
+  public void setDefaultSynthesisTool(String toolchain) { defaultSynthesisTool = toolchain != null && !toolchain.isEmpty() ? toolchain : null; }
+  public String getDefaultSynthesisTool() { return defaultSynthesisTool; }
+  public void setDefaultProgrammingTool(String toolchain) { defaultProgrammingTool = toolchain != null && !toolchain.isEmpty() ? toolchain : null; }
+  public String getDefaultProgrammingTool() { return defaultProgrammingTool; }
 
-  public void addToolchain(String toolchain) {
+  public void addToolchain(String toolchain, String capabilities) {
     toolchainParams.putIfAbsent(toolchain, new LinkedHashMap<>());
+    if (capabilities == null) // if not specified, assume both
+      capabilities = "synthesis,programming";
+    for (String cap : capabilities.split(",")) {
+      cap = cap.trim();
+      if (cap.equalsIgnoreCase("synthesis"))
+        toolchainCapabilities.merge(toolchain, 1, (a, b) -> a + b);
+      else if (cap.equalsIgnoreCase("programming"))
+        toolchainCapabilities.merge(toolchain, 2, (a, b) -> a + b);
+    }
   }
 
-  public void addToolchainProgrammer(String toolchain) {
-    toolchainParams.putIfAbsent(toolchain, new LinkedHashMap<>());
-    programmers.add(toolchain);
+  public boolean synthesisEnabled(String toolchain) {
+    Integer caps = toolchainCapabilities.get(toolchain);
+    return caps != null && (caps & 1) == 1;
   }
 
-  public boolean isOnlyProgrammer(String toolchain) {
-    return programmers.contains(toolchain);
+  public boolean programmingEnabled(String toolchain) {
+    Integer caps = toolchainCapabilities.get(toolchain);
+    return caps != null && (caps & 2) == 2;
   }
 
   public void removeToolchain(String toolchain) {
     toolchainParams.remove(toolchain);
+    toolchainCapabilities.remove(toolchain);
   }
 
   public void setToolchainParam(String toolchain, String key, String val) {
@@ -152,8 +165,10 @@ public class Board {
 
   public List<String> getToolchains() {
     ArrayList<String> ret = new ArrayList<>(toolchainParams.keySet());
-    if (defaultToolchain != null && !ret.contains(defaultToolchain))
-      ret.add(defaultToolchain);
+    if (defaultSynthesisTool != null && !ret.contains(defaultSynthesisTool))
+      ret.add(defaultSynthesisTool);
+    if (defaultProgrammingTool != null && !ret.contains(defaultProgrammingTool))
+      ret.add(defaultProgrammingTool);
     return ret;
   }
   

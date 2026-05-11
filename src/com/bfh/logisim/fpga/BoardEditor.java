@@ -46,6 +46,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -109,12 +111,14 @@ public class BoardEditor extends JFrame {
 
   private JButton save;
   private JTextField name, codename;
+
+  // FIXME: make Board mutable and just use a Board here, not a bunch of member variables
   private BoardPanel image;
   private Chipset fpga;
   public LinkedList<BoardIO> ioComponents = new LinkedList<>();
   public BoardIO selectedIO = null;
   private IOSidebarPanel sidebar;
-  private String defaultToolchain = null;
+  private String defaultSynthesisTool = null, defaultProgrammingTool = null;
   private ArrayList<String> toolchainNames = new ArrayList<>();
   private ArrayList<Integer> toolchainCapabilities = new ArrayList<>(); // 1=synthesis, 2=programming, 3=both
   private ArrayList<LinkedHashMap<String, String>> toolchainParams = new ArrayList<>(); // key - > val
@@ -287,13 +291,16 @@ public class BoardEditor extends JFrame {
     ioComponents.addAll(board.getIoComponents());
     image.setImage(board.image, board.imgFormat, board.imgBytes);
     sidebar.showIdle();
-    defaultToolchain = board.getDefaultToolchain();
+    defaultSynthesisTool = board.getDefaultSynthesisTool();
+    defaultProgrammingTool = board.getDefaultProgrammingTool();
     toolchainNames.clear();
     toolchainCapabilities.clear();
     toolchainParams.clear();
     toolchainNames.addAll(board.getToolchains());
     for (String tcName : toolchainNames) {
-      toolchainCapabilities.add(board.isOnlyProgrammer(tcName) ? 2 : 3);
+      toolchainCapabilities.add(
+          (board.synthesisEnabled(tcName) ? 1 : 0)
+          + (board.programmingEnabled(tcName) ? 2 : 0));
       toolchainParams.add(new LinkedHashMap<>(board.getToolchainParams(tcName)));
     }
     setEnables();
@@ -311,7 +318,8 @@ public class BoardEditor extends JFrame {
     codename.setText("");
     selectedIO = null;
     sidebar.showIdle();
-    defaultToolchain = null;
+    defaultSynthesisTool = null;
+    defaultProgrammingTool = null;
     toolchainNames.clear();
     toolchainCapabilities.clear();
     toolchainParams.clear();
@@ -585,12 +593,16 @@ public class BoardEditor extends JFrame {
     dlg.setModal(true);
     dlg.setResizable(true);
     dlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+    
+    ButtonGroup defaultSynthGroup = new ButtonGroup();
+    ButtonGroup defaultProgGroup = new ButtonGroup();
 
     // Per-toolchain UI state, bundled together.
     class Entry {
       JPanel panel;
       JTextField nameField = new JTextField(20);
-      JRadioButton defaultRadio = new JRadioButton("Use as default");
+      OptionalRadioButton defaultSynthRadio = new OptionalRadioButton("default for synthesis", defaultSynthGroup);
+      OptionalRadioButton defaultProgRadio = new OptionalRadioButton("default for programming", defaultProgGroup);
       JCheckBox synthCheck = new JCheckBox("Use for synthesis", true);
       JCheckBox progCheck  = new JCheckBox("Use for programming", true);
       JTextArea paramArea  = new JTextArea(4, 30);
@@ -601,7 +613,6 @@ public class BoardEditor extends JFrame {
     scrollContent.setLayout(new BoxLayout(scrollContent, BoxLayout.PAGE_AXIS));
     scrollContent.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
-    ButtonGroup defaultGroup = new ButtonGroup();
     ArrayList<Entry> entries = new ArrayList<>();
 
     // Builds a section panel for one Entry and appends it to the scroll content.
@@ -620,11 +631,11 @@ public class BoardEditor extends JFrame {
       nameRow.add(removeBtn, BorderLayout.EAST);
       entry.panel.add(nameRow);
 
-      JPanel radioRow = new JPanel(new BorderLayout());
+      JPanel radioRow = new JPanel(new GridLayout(1, 2));
       radioRow.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 4));
-      radioRow.add(entry.defaultRadio, BorderLayout.WEST);
+      radioRow.add(entry.defaultSynthRadio);
+      radioRow.add(entry.defaultProgRadio);
       entry.panel.add(radioRow);
-      defaultGroup.add(entry.defaultRadio);
 
       JPanel checkRow = new JPanel(new GridLayout(1, 2));
       checkRow.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 4));
@@ -649,7 +660,8 @@ public class BoardEditor extends JFrame {
       removeBtn.addActionListener(ev -> {
         entries.remove(entry);
         scrollContent.remove(entry.panel);
-        defaultGroup.remove(entry.defaultRadio);
+        entry.defaultSynthRadio.removeFromGroup();
+        entry.defaultProgRadio.removeFromGroup();
         scrollContent.revalidate();
         scrollContent.repaint();
       });
@@ -665,8 +677,6 @@ public class BoardEditor extends JFrame {
       e.progCheck.setSelected((cap & 2) != 0);
       FPGADownload.Toolchain t = FPGADownload.findAnyToolchain(tcName);
       boolean knownTool = t != null;
-      String msg = "# Put key:value parameters here, one per line.\n";
-      msg += "# Lines starting with hashtag are ignored.\n";
       HashMap<String, String> stdParams = new HashMap<>();
       if (knownTool) {
         List<String[]> params = t.defaultParams(/*board*/);
@@ -685,10 +695,13 @@ public class BoardEditor extends JFrame {
         sb.append("# " + tcName + " also recognizes the following parameters.\n");
       stdParams.forEach((k, v) ->
         sb.append("# ").append(k).append(": ").append(v).append("\n"));
-      e.paramArea.setText(msg + sb.toString());
+      // sb.append("# Lines starting with hashtag are ignored.\n");
+      e.paramArea.setText(sb.toString());
       addEntry.accept(e);
-      if (toolchainNames.get(i).equals(defaultToolchain))
-        e.defaultRadio.setSelected(true);
+      if (toolchainNames.get(i).equals(defaultSynthesisTool))
+        e.defaultSynthRadio.setSelected(true);
+      if (toolchainNames.get(i).equals(defaultProgrammingTool))
+        e.defaultProgRadio.setSelected(true);
     }
 
     JScrollPane scroll = new JScrollPane(scrollContent,
@@ -741,14 +754,15 @@ public class BoardEditor extends JFrame {
         subDlg.setVisible(false);
         Entry newEntry = new Entry();
         newEntry.nameField.setText(newName);
-        if (entries.isEmpty())
-          newEntry.defaultRadio.setSelected(true);
         FPGADownload.Toolchain t = FPGADownload.findAnyToolchain(newName);
         boolean knownTool = t != null;
         newEntry.synthCheck.setSelected(!knownTool || t.canSynthesize);
         newEntry.progCheck.setSelected(!knownTool || t.canProgram);
-        String msg = "# Put key:value parameters here, one per line.\n";
-        msg += "# Lines starting with hashtag are ignored.\n";
+        if (entries.isEmpty() && newEntry.synthCheck.isSelected())
+          newEntry.defaultSynthRadio.setSelected(true);
+        if (entries.isEmpty() && newEntry.progCheck.isSelected())
+          newEntry.defaultProgRadio.setSelected(true);
+        String msg = "";
         if (knownTool) {
           List<String[]> params = t.defaultParams(/*board*/);
           if (params.isEmpty())
@@ -760,6 +774,7 @@ public class BoardEditor extends JFrame {
           for (String[] kv : params)
             msg += "# " + kv[0] + ": " + kv[1] + "\n";
         }
+        // msg += "# Lines starting with hashtag are ignored.\n";
         newEntry.paramArea.setText(msg);
         addEntry.accept(newEntry);
         scrollContent.revalidate();
@@ -807,7 +822,8 @@ public class BoardEditor extends JFrame {
       toolchainNames.clear();
       toolchainCapabilities.clear();
       toolchainParams.clear();
-      defaultToolchain = null;
+      defaultSynthesisTool = null;
+      defaultProgrammingTool = null;
       for (Entry entry : entries) {
         String tcName = entry.nameField.getText().trim();
         toolchainNames.add(tcName);
@@ -817,13 +833,15 @@ public class BoardEditor extends JFrame {
         toolchainCapabilities.add(cap);
         LinkedHashMap<String, String> parsed = new LinkedHashMap<>();
         for (String line : entry.paramArea.getText().split("\n", -1)) {
-          if (line.trim().isEmpty()) continue;
+          if (line.trim().isEmpty() || line.trim().startsWith("#")) continue;
           int colon = line.indexOf(':');
           parsed.put(line.substring(0, colon).trim(), line.substring(colon + 1).trim());
         }
         toolchainParams.add(parsed);
-        if (entry.defaultRadio.isSelected())
-          defaultToolchain = tcName;
+        if (entry.defaultSynthRadio.isSelected())
+          defaultSynthesisTool = tcName;
+        if (entry.defaultProgRadio.isSelected())
+          defaultProgrammingTool = tcName;
       }
       dlg.setVisible(false);
     });
@@ -1461,6 +1479,34 @@ public class BoardEditor extends JFrame {
         g2.dispose();
       }
     }
+  }
+
+
+  private static class OptionalRadioButton extends JRadioButton {
+
+    private ButtonGroup group;
+
+    public OptionalRadioButton(String text, ButtonGroup g) {
+      super(text);
+      group = g;
+      group.add(this);
+    }
+
+    @Override
+    protected void processMouseEvent(MouseEvent e) {
+      if (e.getID() == MouseEvent.MOUSE_PRESSED && isSelected()) {
+        if (group != null)
+          group.clearSelection();
+        return; // suppress the event so button doesn't re-select
+      }
+      super.processMouseEvent(e);
+    }
+
+    public void removeFromGroup() {
+      group.remove(this);
+      group = null;
+    }
+
   }
 
 }
