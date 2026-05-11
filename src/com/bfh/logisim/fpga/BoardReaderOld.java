@@ -88,7 +88,7 @@ public class BoardReaderOld {
         b.addToolchain(vtc, "synthesis,programming");
       }
       if (ofl_name != null || (apio_name == null && vtc == null)) {
-        b.addToolchain("openFPGALoader", "synthesis,programming");
+        b.addToolchain("openFPGALoader", "programming");
         if (ofl_name != null)
           b.setToolchainParam("openFPGALoader", "board", ofl_name);
       }
