@@ -92,6 +92,9 @@ public abstract class Toolchain {
 
   // Create a new downloader, to be configured and used imminently.
   public abstract FPGADownload newDownloader();
+
+  // Create a new programmer, to be configured and used imminently.
+  public abstract FPGAProgrammer newProgrammer();
   
   protected Toolchain(String canonicalName, String shortName, boolean synth, boolean pgm) {
     this.toolchainName = canonicalName;
@@ -178,10 +181,6 @@ public abstract class Toolchain {
     return null;
   }
 
-  private static Toolchain findSynthesisToolchainByApproximateName(String name) {
-    return findByApproximateName(sTools, name);
-  }
-
   public static Toolchain findToolchainByApproximateName(String name) {
     return findByApproximateName(tools, name);
   }
@@ -191,19 +190,19 @@ public abstract class Toolchain {
       return sTools.get(0); // no board selected, so any toolchain is fine, whatever
     
     // First priority: user preference for the given board
-    String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
-    Toolchain t = findSynthesisToolchainByApproximateName(pref);
+    String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredSynthesisToolchain(board.name);
+    Toolchain t = findByApproximateName(sTools, pref);
     if (t != null) return t;
     
     // Fallback 1: default toolchain listed in board xml
     pref = board.getDefaultSynthesisTool();
-    t = findSynthesisToolchainByApproximateName(pref);
+    t = findByApproximateName(sTools, pref);
     if (t != null) return t;
 
     // Fallback 2: other toolchains listed in board xml
     for (String p : board.getListedToolchains()) {
       if (!board.synthesisEnabled(p)) continue;
-      t = findSynthesisToolchainByApproximateName(p);
+      t = findByApproximateName(sTools, p);
       if (t != null) return t;
     }
 
@@ -216,7 +215,42 @@ public abstract class Toolchain {
     return sTools.get(0);
   }
 
+  public static Toolchain autoSelectProgrammingToolchain(Board board) {
+    if (board == null)
+      return null; // no board selected, so use null for "auto-select by synthesis tool"
+    
+    // First priority: user preference for the given board
+    String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredProgrammingToolchain(board.name);
+    Toolchain t = findByApproximateName(pTools, pref);
+    if (t != null) return t;
+    
+    // Fallback 1: default toolchain listed in board xml
+    pref = board.getDefaultProgrammingTool();
+    t = findByApproximateName(pTools, pref);
+    if (t != null) return t;
+
+    // Fallback 2: other toolchains listed in board xml
+    for (String p : board.getListedToolchains()) {
+      if (!board.programmingEnabled(p)) continue;
+      t = findByApproximateName(pTools, p);
+      if (t != null) return t;
+    }
+
+    // Fallback 3: any toolchain supporting this board
+    for (Toolchain tt : pTools)
+      if (tt.supports(board))
+        return tt;
+
+    // No known toolchain supports this board, so use null for "auto-select by synthesis tool"
+    return null;
+  }
+
   public static String autoSelectLanguage(Board board, Toolchain t) {
+    // First priority: user preference for the given board
+    String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredHdl(board.name);
+    if (VERILOG.equalsIgnoreCase(pref)) return VERILOG;
+    if (VHDL.equalsIgnoreCase(pref)) return VHDL;
+    // Next, see what toolchain prefers (first item listed in supported languages list)
     if (t == null)
       return VERILOG; // fallback, whatever is fine
     List<String> langs = t.getLanguages(board);

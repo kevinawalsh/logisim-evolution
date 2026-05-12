@@ -59,10 +59,12 @@ public class OpenFPGALoader {
       return List.of(VERILOG, VHDL);
     }
     @Override
-    public FPGADownload newDownloader() { return null; } // FIXME: no programmer API yet
+    public FPGADownload newProgrammer() { return new OpenFPGALoader(); }
   };
 
   public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+
+  private OpenFPGALoader() { super("openFPGALoader"); }
 
   // openFPGALoader board names tend to follow alphanumplus_snake_case or,
   // sometimes, alhpanumplus-kebab-case conventions. We normalize to snake case.
@@ -72,8 +74,6 @@ public class OpenFPGALoader {
     if (name.endsWith("_")) name = name.substring(0, name.length()-1);
     return name;
   }
-
-  private OpenFPGALoader() { }
 
   public static ArrayList<String> commandFor(Board board, String bin) {
     // FIXME: if openFPGALoader_name is unset, fall back to... name?

@@ -34,7 +34,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 import javax.swing.SwingUtilities;
 
 import com.bfh.logisim.fpga.Board;
@@ -59,7 +58,7 @@ public abstract class FPGADownload {
 
   public final String name;
 
-  // Parameters set by Commander
+  // Parameters set by Commander, used by downloader
   public FPGAReport err;
   public String lang;
   public Board board;
@@ -69,12 +68,17 @@ public abstract class FPGADownload {
   public String sandboxPath;
   public String ucfPath;
   public boolean writeToFlash;
-  public boolean remoteJTAG, supportsRemoteJTAG = false;
+  public boolean remoteJTAG;
+  public FPGAProgrammer programmer; // user-selected programmer, or null to auto-select
+
+  // Capability flag set by downloader, used by Commander
+  public boolean supportsRemoteJTAG = false;
 
   protected FPGADownload(String name) {
     this.name = name;
   }
 
+  // FIXME: this should be part of toolchain... and show status in AppPreferences too?
   public abstract boolean toolchainIsInstalled(FPGAReport err);
 
   public boolean generateScripts(PinBindings ioResources) {

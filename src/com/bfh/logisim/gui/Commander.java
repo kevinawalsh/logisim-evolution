@@ -105,7 +105,7 @@ public class Commander extends JFrame
   private final Project proj;
   private Board board;
   private String lang;
-  private Toolchain toolchain;
+  private Toolchain synthTool, progTool;
   private int boardsListSelectedIndex;
   private final FPGAReport err = new FPGAReport(this);
   public int fatals, warns, errors;
@@ -124,7 +124,8 @@ public class Commander extends JFrame
   // private static final String ANNOTATE_ALL = "Relabel all components";
 
   private final JLabel textCircuit = new JLabel("Circuit: ", SwingConstants.RIGHT);
-  private final JLabel textToolchain = new JLabel("Toolchain: ", SwingConstants.RIGHT);
+  private final JLabel textSynthTool = new JLabel("Synthesis Toolchain: ", SwingConstants.RIGHT);
+  private final JLabel textProgTool = new JLabel("Programming Toolchain: ", SwingConstants.RIGHT);
   private final JLabel textLanguage = new JLabel("Language: ", SwingConstants.RIGHT);
   private final JLabel textTargetDiv = new JLabel("Divide clock by...", SwingConstants.RIGHT);
 
@@ -144,7 +145,8 @@ public class Commander extends JFrame
   private final ComboBox<String> clockOption = new ComboBox<>();
   private final ComboBox<Object> clockDivRate = new ComboBox<>();
   private final ComboBox<Object> clockDivCount = new ComboBox<>();
-  private final ComboBox<ComboOption<Toolchain>> synthesisCombo = new ComboBox<>();
+  private final ComboBox<ComboOption<Toolchain>> synthCombo = new ComboBox<>();
+  private final ComboBox<ComboOption<Toolchain>> progCombo = new ComboBox<>();
   private final ComboBox<String> language = new ComboBox<>();
   private final JButton toolSettings = new JButton("Settings");
 
@@ -195,8 +197,9 @@ public class Commander extends JFrame
     board = BoardReader.read(BoardList.getSelectedPath());
     boardIcon.setImage(board == null ? null : board.image);
     
-    toolchain = Toolchain.autoSelectSynthesisToolchain(board);
-    lang = Toolchain.autoSelectLanguage(board, toolchain);
+    synthTool = Toolchain.autoSelectSynthesisToolchain(board);
+    progTool = Toolchain.autoSelectProgrammingToolchain(board);
+    lang = Toolchain.autoSelectLanguage(board, synthTool);
 
     setResizable(true);
     setAlwaysOnTop(false);
@@ -235,8 +238,9 @@ public class Commander extends JFrame
     circuitsList.setMinimumSize(d);
     circuitsList.setPreferredSize(d);
 
-    // configure toolchain options
-    synthesisCombo.addActionListener(e -> setToolchain());
+    // configure synthTool and progTool options
+    synthCombo.addActionListener(e -> setSynthToolchain());
+    progCombo.addActionListener(e -> setProgToolchain());
     repopulateToolchainOptions();
     
     // configure language options
@@ -394,15 +398,20 @@ public class Commander extends JFrame
     c.gridx = 0;
     synthesisOptions.add(toolSettings, c);
     c.gridx = 1;
-    synthesisOptions.add(textToolchain, c);
+    synthesisOptions.add(textSynthTool, c);
     c.gridx = 2;
-    synthesisOptions.add(synthesisCombo, c);
+    synthesisOptions.add(synthCombo, c);
     c.insets.top = 0;
     c.gridy++;
     c.gridx = 1;
     synthesisOptions.add(textLanguage, c);
     c.gridx = 2;
     synthesisOptions.add(language, c);
+    c.gridy++;
+    c.gridx = 1;
+    synthesisOptions.add(textProgTool, c);
+    c.gridx = 2;
+    synthesisOptions.add(progCombo, c);
 
     c.insets.top = c.insets.bottom = 5;
     c.insets.left = c.insets.right = 5;
@@ -470,21 +479,30 @@ public class Commander extends JFrame
   boolean updatingToolchainOptions = false;
   private void repopulateToolchainOptions() {
     updatingToolchainOptions = true;
-    synthesisCombo.removeAllItems();
+    synthCombo.removeAllItems();
+    progCombo.removeAllItems();
 
-    // String lastUsed = board == null ? null : AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
     for (Toolchain t : Toolchain.getSynthesisToolchains()) {
       String display = t.toolchainName;
       if (board != null && board.recommendsForSynthesis(t))
         display += " (recommended)";
       else if (board != null && t.supports(board))
         display += " (supported)";
-      // if (lastUsed != null && t.approximateNameMatch(lastUsed))
-      //   display += " (last used)";
-      synthesisCombo.addItem(new ComboOption<>(t, display));
+      synthCombo.addItem(new ComboOption<>(t, display));
     }
+    progCombo.addItem(new ComboOption<Toolchain>(null, "auto-select"));
+    for (Toolchain t : Toolchain.getProgrammingToolchains()) {
+      String display = t.toolchainName;
+      if (board != null && board.recommendsForProgramming(t))
+        display += " (recommended)";
+      else if (board != null && t.supports(board))
+        display += " (supported)";
+      progCombo.addItem(new ComboOption<>(t, display));
+    }
+
     updatingToolchainOptions = false;
-    synthesisCombo.setSelectedItem(toolchain);
+    synthCombo.setSelectedItem(synthTool);
+    progCombo.setSelectedItem(progTool);
   }
 
   boolean updatingClockMenus = false;
@@ -787,8 +805,9 @@ public class Commander extends JFrame
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     settingBoard = false;
 
-    toolchain = Toolchain.autoSelectSynthesisToolchain(board);
-    lang = Toolchain.autoSelectLanguage(board, toolchain);
+    synthTool = Toolchain.autoSelectSynthesisToolchain(board);
+    progTool = Toolchain.autoSelectProgrammingToolchain(board);
+    lang = Toolchain.autoSelectLanguage(board, synthTool);
     language.setSelectedItem(lang);
     boardIcon.setImage(board == null ? null : board.image);
     populateClockDivOptions();
@@ -987,13 +1006,13 @@ public class Commander extends JFrame
   }
 
   FPGADownload makeToolchainDownloader() {
-    if (toolchain == null || lang == null)
+    if (synthTool == null || lang == null)
       return null;
 
     String circdir = circuitWorkspace();
     String langdir = circdir + lang.toLowerCase() + SLASH;
 
-    FPGADownload tools = toolchain.newDownloader();
+    FPGADownload tools = synthTool.newDownloader();
     if (tools == null)
       return null;
     tools.err = err;
@@ -1006,6 +1025,7 @@ public class Commander extends JFrame
     tools.ucfPath = circdir + UCF_DIR;
     tools.writeToFlash = writeToFlash.isSelected() && board.fpga.FlashDefined;
     tools.remoteJTAG = remoteJTAG.isSelected();
+    tools.programmer = progTool == null ? null : progTool.newProgrammer();
     return tools;
   }
 
@@ -1055,8 +1075,9 @@ public class Commander extends JFrame
     clockDivCount.setEnabled(!dl);
     if (!dl)
       setClockOption();
-    synthesisCombo.setEnabled(!dl);
+    synthCombo.setEnabled(!dl);
     language.setEnabled(!dl);
+    progCombo.setEnabled(!dl);
     toolSettings.setEnabled(!dl);
 
     progressBar.setEnabled(dl);
@@ -1146,21 +1167,37 @@ public class Commander extends JFrame
     boolean toolchainSupportsRemoteJTAG = false;
     if (board == null) {
       eprintf("Please select an FPGA board.");
-    } else if (toolchain == null) {
-      eprintf("Please select a toolchain.");
+    } else if (synthTool == null) {
+      eprintf("Please select a synthesis toolchain.");
     } else {
-      FPGADownload tools = toolchain.newDownloader();
-      if (tools == null) {
-        eprintf("The " + toolchain.toolchainName + " toolchain failed to initialize.");
-      } else if (!tools.toolchainIsInstalled(err)) {
-        eprintf("The " + toolchain.toolchainName + " toolchain is not configured properly. "
+      FPGADownload sTool = synthTool.newDownloader();
+      if (sTool == null) {
+        eprintf("The " + synthTool.toolchainName + " toolchain failed to initialize.");
+      } else if (!sTool.toolchainIsInstalled(err)) {
+        eprintf("The " + synthTool.toolchainName + " toolchain is not configured properly. "
             + "Synthesis and download will not be available. "
-            + "Please configure the toolchain using the \"Settings\" button above, "
-            + "or select a different toolchain suitable for " + board.name
-            + " and " + board.fpga.VendorName + " FPGA synthesis.");
+            + "Please configure the synthesis toolchain using the \"Settings\" button above, "
+            + "or select a different synthesis toolchain suitable for " + board.name
+            + " and " + board.fpga.VendorName + " " + board.fpga.Part + " FPGA synthesis.");
       } else {
-        toolchainReady = true;
-        toolchainSupportsRemoteJTAG = tools.supportsRemoteJTAG;
+        if (progTool != null) {
+          FPGAProgrammer pTool = progTool.newProgrammer();
+          if (pTool == null) {
+            eprintf("The " + progTool.toolchainName + " programmer failed to initialize.");
+          } else if (!sTool.toolchainIsInstalled(err)) {
+            eprintf("The " + progTool.toolchainName + " programmer is not configured properly. "
+                + "Synthesis and download will not be available. "
+                + "Please configure the programmer toolchain using the \"Settings\" button above, "
+                + "or select a different programmer toolchain suitable for " + board.name
+                + " and " + board.fpga.VendorName + " " + board.fpga.Part + " FPGA programming.");
+          } else {
+            toolchainReady = true;
+            toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG; // pTool? FIXME...
+          }
+        } else {
+          toolchainReady = true;
+          toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG;
+        }
       }
     }
     if (!toolchainReady) {
@@ -1203,18 +1240,36 @@ public class Commander extends JFrame
       actionButton.setText("Just Download");
   }
 
-  private void setToolchain() {
+  private void setSynthToolchain() {
     if (updatingToolchainOptions)
       return;
     @SuppressWarnings("unchecked")
-    Toolchain t = ((ComboOption<Toolchain>)synthesisCombo.getSelectedItem()).value;
-    if (t.equals(toolchain))
+    Toolchain t = ((ComboOption<Toolchain>)synthCombo.getSelectedItem()).value;
+    if (t.equals(synthTool))
       return;
-    toolchain = t;
+    synthTool = t;
     if (board != null) {
-      // if (!toolchain.toolchainName.equals(Toolchain.getSynthesisToolchainName(board)))
-      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredToolchain(board.name, toolchain.toolchainName);
-      language.setSelectedItem(Toolchain.autoSelectLanguage(board, toolchain));
+      // if (!synthTool.toolchainName.equals(Toolchain.getSynthesisToolchainName(board)))
+      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredSynthesisToolchain(board.name, synthTool.toolchainName);
+      language.setSelectedItem(Toolchain.autoSelectLanguage(board, synthTool));
+      configureActions();
+    }
+  }
+
+  private void setProgrammingToolchain() {
+    if (updatingToolchainOptions)
+      return;
+    @SuppressWarnings("unchecked")
+    Toolchain t = ((ComboOption<Toolchain>)progCombo.getSelectedItem()).value;
+    if ((t == null && progTool == null) || (t != null && t.equals(progTool)))
+      return;
+    progTool = t;
+    if (board != null) {
+      // if (!synthTool.toolchainName.equals(Toolchain.getSynthesisToolchainName(board)))
+      if (progTool == null) 
+        AppPreferences.FPGA_BOARDPREFS.unsetBoardPreferredProgrammingToolchain(board.name);
+      else
+        AppPreferences.FPGA_BOARDPREFS.setBoardPreferredProgrammingToolchain(board.name, progTool.toolchainName);
       configureActions();
     }
   }
@@ -1225,7 +1280,7 @@ public class Commander extends JFrame
         return;
     lang = v;
     AppPreferences.FPGA_SELECTED_HDL.set(lang);
-    if (board != null && !lang.equals(Toolchain.autoSelectLanguage(board, toolchain)))
+    if (board != null) //  && !lang.equals(Toolchain.autoSelectLanguage(board, synthTool))
       AppPreferences.FPGA_BOARDPREFS.setBoardPreferredHdl(board.name, lang);
   }
 

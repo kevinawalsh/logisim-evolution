@@ -89,8 +89,12 @@ public class FPGABoardPrefs implements SettingsStore.Item {
     else return null;
   }
 
-  public String getBoardPreferredToolchain(String board) {
-    return getBoardPref(board, "toolchain");
+  public String getBoardPreferredSynthesisToolchain(String board) {
+    return getBoardPref(board, "synthesis");
+  }
+
+  public String getBoardPreferredProgrammingToolchain(String board) {
+    return getBoardPref(board, "programming");
   }
 
   public void setBoardPreferredHdl(String board, String hdl) {
@@ -100,8 +104,16 @@ public class FPGABoardPrefs implements SettingsStore.Item {
     setBoardPref(board, "hdl", hdl);
   }
 
-  public void setBoardPreferredToolchain(String board, String toolchain) {
-    setBoardPref(board, "toolchain", toolchain);
+  public void setBoardPreferredSynthesisToolchain(String board, String toolchain) {
+    setBoardPref(board, "synthesis", toolchain);
+  }
+
+  public void setBoardPreferredProgrammingToolchain(String board, String toolchain) {
+    setBoardPref(board, "programming", toolchain);
+  }
+
+  public void unsetBoardPreferredProgrammingToolchain(String board) {
+    unsetBoardPref(board, "programming");
   }
 
   private void setBoardPref(String board, String key, String val) {
@@ -110,6 +122,15 @@ public class FPGABoardPrefs implements SettingsStore.Item {
     if (val.equals(oldVal))
         return;
     p.put(key, val);
+    SettingsStore.put(section, subsection, encode(prefs));
+    AppPreferences.fireFPGAChangeEvent();
+  }
+
+  private void unsetBoardPref(String board, String key) {
+    LinkedHashMap<String, String> p = prefs.get(board);
+    if (p == null || !p.containsKey(key))
+      return;
+    p.remove(key);
     SettingsStore.put(section, subsection, encode(prefs));
     AppPreferences.fireFPGAChangeEvent();
   }

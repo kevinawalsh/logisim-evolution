@@ -334,8 +334,10 @@ class SettingsMigrator {
           String bName = attr(s, "Board", "");
           String bTc   = attr(s, "Toolchain", "");
           String bHdl  = attr(s, "HDLTypeToGenerate", "");
-          if (!bName.isEmpty() && !bTc.isEmpty())
-            boardPrefs.computeIfAbsent(bName, k -> new LinkedHashMap<>()).put("toolchain", bTc);
+          if (!bName.isEmpty() && !bTc.isEmpty()) {
+            boardPrefs.computeIfAbsent(bName, k -> new LinkedHashMap<>()).put("synthesis", bTc);
+            // boardPrefs.computeIfAbsent(bName, k -> new LinkedHashMap<>()).put("programmer", bTc); // leave blank, auto-select
+          }
           if (!bName.isEmpty() && !bHdl.isEmpty())
             boardPrefs.computeIfAbsent(bName, k -> new LinkedHashMap<>()).put("hdl", bHdl);
         }
