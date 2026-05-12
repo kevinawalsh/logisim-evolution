@@ -64,6 +64,7 @@ import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.Toolchain;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
 import com.bfh.logisim.fpga.PinBindings;
@@ -104,7 +105,7 @@ public class Commander extends JFrame
   private final Project proj;
   private Board board;
   private String lang;
-  private String toolchain;
+  private Toolchain toolchain;
   private int boardsListSelectedIndex;
   private final FPGAReport err = new FPGAReport(this);
   public int fatals, warns, errors;
@@ -113,7 +114,7 @@ public class Commander extends JFrame
   private static final String DIV_SPEED = "Reduced Speed";
   private static final String DYN_SPEED = "Dynamic Speed";
 
-  // Three steps: (1) Generate, (2) Synthesize, (3 Downlaod.
+  // Three steps: (1) Generate, (2) Synthesize, (3) Downlaod.
   // User can do choose to do just first step, just last step, or all three steps.
   private static final String HDL_GEN_ONLY = "Generate HDL only";
   private static final String HDL_GEN_AND_DOWNLOAD = "Synthesize and Download";
@@ -143,9 +144,31 @@ public class Commander extends JFrame
   private final ComboBox<String> clockOption = new ComboBox<>();
   private final ComboBox<Object> clockDivRate = new ComboBox<>();
   private final ComboBox<Object> clockDivCount = new ComboBox<>();
-  private final ComboBox<String> toolchainCombo = new ComboBox<>();
+  private final ComboBox<ComboOption<Toolchain>> synthesisCombo = new ComboBox<>();
   private final ComboBox<String> language = new ComboBox<>();
   private final JButton toolSettings = new JButton("Settings");
+
+  private static class ComboOption<E> {
+    E value;
+    String display;
+    ComboOption(E value, String display) {
+      this.value = value;
+      this.display = display;
+    }
+    @Override
+    public String toString() { return display; }
+    @Override
+    public boolean equals(Object o) {
+      if (o instanceof ComboOption)
+        return value.equals(((ComboOption)o).value);
+      else if (o instanceof String)
+        return display.equals(o);
+      else
+        return false;
+    }
+    @Override
+    public int hashCode() { throw new UnsupportedOperationException("ComboOption not suitable for hash collections"); }
+  }
 
   private final JProgressBar progressBar = new JProgressBar(0, 5);
   private final JButton stop = new JButton("Stop");
@@ -168,15 +191,12 @@ public class Commander extends JFrame
     super("FPGA Commander : " + p.getLogisimFile().getName());
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
     proj = p;
-    toolchain = "Apio CLI"; // FPGADownload.APIO_TOOLCHAIN;
-    lang = VERILOG;
 
     board = BoardReader.read(BoardList.getSelectedPath());
     boardIcon.setImage(board == null ? null : board.image);
-    if (board != null) {
-      toolchain = FPGADownload.getSynthesisToolchainName(board);
-      lang = FPGADownload.getLanguage(board, toolchain);
-    }
+    
+    toolchain = Toolchain.autoSelectSynthesisToolchain(board);
+    lang = Toolchain.autoSelectLanguage(board, toolchain);
 
     setResizable(true);
     setAlwaysOnTop(false);
@@ -216,11 +236,8 @@ public class Commander extends JFrame
     circuitsList.setPreferredSize(d);
 
     // configure toolchain options
-    // FIXME: mark each as supported/unsupported, download-only, etc.
-    for (String tc : FPGADownload.getSynthesisToolchainNames())
-      toolchainCombo.addItem(tc);
-    toolchainCombo.setSelectedItem(toolchain);
-    toolchainCombo.addActionListener(e -> setToolchain());
+    synthesisCombo.addActionListener(e -> setToolchain());
+    repopulateToolchainOptions();
     
     // configure language options
     language.addItem(VHDL);
@@ -249,7 +266,6 @@ public class Commander extends JFrame
     clockDivRate.addActionListener(e -> setClockDivRate());
     clockDivCount.addActionListener(e -> setClockDivCount());
     populateClockDivOptions();
-    updateClockOptions();
 
     // configure annotation options and button
     // for (String s : new String[] { ANNOTATE_SOME, ANNOTATE_ALL }) {
@@ -380,7 +396,7 @@ public class Commander extends JFrame
     c.gridx = 1;
     synthesisOptions.add(textToolchain, c);
     c.gridx = 2;
-    synthesisOptions.add(toolchainCombo, c);
+    synthesisOptions.add(synthesisCombo, c);
     c.insets.top = 0;
     c.gridy++;
     c.gridx = 1;
@@ -451,12 +467,24 @@ public class Commander extends JFrame
     circuitsList.invalidate();
   }
 
-  private void updateClockOptions() {
-    // Circuit root = circuitsList.getSelectedValue();
-    // int nClocks = root.getNetlist().NumberOfClockTrees();
-    // clockOption.setEnabled(nClocks > 0);
-    // clockDivRate.setEnabled(nClocks > 0);
-    // clockDivCount.setEnabled(nClocks > 0);
+  boolean updatingToolchainOptions = false;
+  private void repopulateToolchainOptions() {
+    updatingToolchainOptions = true;
+    synthesisCombo.removeAllItems();
+
+    // String lastUsed = board == null ? null : AppPreferences.FPGA_BOARDPREFS.getBoardPreferredToolchain(board.name);
+    for (Toolchain t : Toolchain.getSynthesisToolchains()) {
+      String display = t.toolchainName;
+      if (board != null && board.recommendsForSynthesis(t))
+        display += " (recommended)";
+      else if (board != null && t.supports(board))
+        display += " (supported)";
+      // if (lastUsed != null && t.approximateNameMatch(lastUsed))
+      //   display += " (last used)";
+      synthesisCombo.addItem(new ComboOption<>(t, display));
+    }
+    updatingToolchainOptions = false;
+    synthesisCombo.setSelectedItem(toolchain);
   }
 
   boolean updatingClockMenus = false;
@@ -755,12 +783,16 @@ public class Commander extends JFrame
       configureActions();
       return;
     }
+
     boardsListSelectedIndex = boardsList.getSelectedIndex();
-    String t = FPGADownload.getSynthesisToolchainName(board);
-    language.setSelectedItem(t);
     settingBoard = false;
+
+    toolchain = Toolchain.autoSelectSynthesisToolchain(board);
+    lang = Toolchain.autoSelectLanguage(board, toolchain);
+    language.setSelectedItem(lang);
     boardIcon.setImage(board == null ? null : board.image);
     populateClockDivOptions();
+    repopulateToolchainOptions();
     configureActions();
   }
 
@@ -772,10 +804,8 @@ public class Commander extends JFrame
     if (board == null)
       return; // failed to load
     if (BoardList.hasBoardNamed(board.name)) {
-      eprintf("A board with the name \""+board.name+"\" already exists. "
-          + "Your new board will take precedence, and the existing board "
-          + "will no longer be available.");
-      // return;
+      // FIXME: error path not tested yet
+      eprintf("Warning: A board with the name \""+board.name+"\" already exists.");
     }
     AppPreferences.FPGA_BOARDLIST.add(filename);
     AppPreferences.FPGA_SELECTED_BOARD.set(board.name);
@@ -957,10 +987,13 @@ public class Commander extends JFrame
   }
 
   FPGADownload makeToolchainDownloader() {
+    if (toolchain == null || lang == null)
+      return null;
+
     String circdir = circuitWorkspace();
     String langdir = circdir + lang.toLowerCase() + SLASH;
 
-    FPGADownload tools = FPGADownload.forToolchain(toolchain);
+    FPGADownload tools = toolchain.newDownloader();
     if (tools == null)
       return null;
     tools.err = err;
@@ -1022,7 +1055,7 @@ public class Commander extends JFrame
     clockDivCount.setEnabled(!dl);
     if (!dl)
       setClockOption();
-    toolchainCombo.setEnabled(!dl);
+    synthesisCombo.setEnabled(!dl);
     language.setEnabled(!dl);
     toolSettings.setEnabled(!dl);
 
@@ -1112,15 +1145,15 @@ public class Commander extends JFrame
     boolean toolchainReady = false;
     boolean toolchainSupportsRemoteJTAG = false;
     if (board == null) {
-        eprintf("Please select an FPGA board.");
+      eprintf("Please select an FPGA board.");
+    } else if (toolchain == null) {
+      eprintf("Please select a toolchain.");
     } else {
-      FPGADownload tools = FPGADownload.forToolchain(toolchain);
-      if (tools != null)
-        tools.board = board;
+      FPGADownload tools = toolchain.newDownloader();
       if (tools == null) {
-        eprintf("Please select a toolchain.");
+        eprintf("The " + toolchain.toolchainName + " toolchain failed to initialize.");
       } else if (!tools.toolchainIsInstalled(err)) {
-        eprintf("The " + toolchain + " toolchain is not configured properly. "
+        eprintf("The " + toolchain.toolchainName + " toolchain is not configured properly. "
             + "Synthesis and download will not be available. "
             + "Please configure the toolchain using the \"Settings\" button above, "
             + "or select a different toolchain suitable for " + board.name
@@ -1171,15 +1204,17 @@ public class Commander extends JFrame
   }
 
   private void setToolchain() {
-    String t = (String)toolchainCombo.getSelectedItem();
+    if (updatingToolchainOptions)
+      return;
+    @SuppressWarnings("unchecked")
+    Toolchain t = ((ComboOption<Toolchain>)synthesisCombo.getSelectedItem()).value;
     if (t.equals(toolchain))
       return;
     toolchain = t;
     if (board != null) {
-      if (!toolchain.equals(FPGADownload.getSynthesisToolchainName(board)))
-        AppPreferences.FPGA_BOARDPREFS.setBoardPreferredToolchain(board.name, toolchain);
-      String v = FPGADownload.getLanguage(board, toolchain);
-      language.setSelectedItem(v);
+      // if (!toolchain.toolchainName.equals(Toolchain.getSynthesisToolchainName(board)))
+      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredToolchain(board.name, toolchain.toolchainName);
+      language.setSelectedItem(Toolchain.autoSelectLanguage(board, toolchain));
       configureActions();
     }
   }
@@ -1190,7 +1225,7 @@ public class Commander extends JFrame
         return;
     lang = v;
     AppPreferences.FPGA_SELECTED_HDL.set(lang);
-    if (board != null && !lang.equals(FPGADownload.getLanguage(board, toolchain)))
+    if (board != null && !lang.equals(Toolchain.autoSelectLanguage(board, toolchain)))
       AppPreferences.FPGA_BOARDPREFS.setBoardPreferredHdl(board.name, lang);
   }
 

@@ -54,34 +54,38 @@ import com.cburch.logisim.util.FileUtil;
 
 public class ApioDownload extends FPGADownload {
 
-  public static void register() {
-    FPGADownload.register(new Toolchain("Apio CLI", "Apio", true, true) {
-      @Override
-      public boolean hasAlternateName(String altname) {
-        return 
-          altname.equalsIgnoreCase("Apio CLI")
-          || altname.equalsIgnoreCase("Apio IDE")
-          || altname.equalsIgnoreCase("FPGAwars/apio");
+  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Apio CLI", "Apio", true, true) {
+    @Override
+    public boolean hasAlternateName(String altname) {
+      return 
+        altname.equalsIgnoreCase("Apio CLI")
+        || altname.equalsIgnoreCase("Apio IDE")
+        || altname.equalsIgnoreCase("FPGAwars/apio");
+    }
+    @Override
+    public boolean supports(Board b) {
+      String codename = normalizeBoardName(b.codename);
+      ArrayList<String> names = getApioBoardList();
+      for (String name : names) {
+        if (normalizeBoardName(name).equalsIgnoreCase(codename))
+          return true;
       }
-      @Override
-      public boolean supports(Board b) {
-        String codename = normalizeBoardName(b.codename);
-        ArrayList<String> names = getApioBoardList();
-        for (String name : names) {
-          if (normalizeBoardName(name).equalsIgnoreCase(codename))
-            return true;
-        }
-        return false;
-      }
-      @Override
-      public List<String[]> defaultParams(/*Board board*/) {
-        return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
-      }
-      @Override
-      public FPGADownload newDownloader() { return new ApioDownload(); }
+      return false;
+    }
+    @Override
+    public List<String[]> defaultParams(/*Board board*/) {
+      return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
+    }
+    @Override
+    public List<String> getLanguages(Board board) {
+      return List.of(VERILOG);
+    }
+    @Override
+    public FPGADownload newDownloader() { return new ApioDownload(); }
 
-    });
-  }
+  };
+
+  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
 
   // Apio board names tend to follow alhpanum-kebab-case conventions.
   private static String normalizeBoardName(String name) {
@@ -216,7 +220,7 @@ public class ApioDownload extends FPGADownload {
     if (bin_apio == null)
       return false;
 
-    String board_name = board.getToolchainParam("Apio", "board");
+    String board_name = board.paramFor(MY_TOOLCHAIN, "board");
     if (board_name == null)
       board_name = board.codename;
 
@@ -400,7 +404,7 @@ public class ApioDownload extends FPGADownload {
 
     // upload: use openFPGALoader when the board specifies it (e.g. boards whose
     // flash chip is not supported by apio/iceprog), otherwise use apio upload.
-    if (!OpenFPGALoader.isSupportedBy(board)) {
+    if (!OpenFPGALoader.supports(board)) {
       String bin_ofl = OpenFPGALoader.findExecutable(err);
       if (bin_ofl != null) {
         stages.add(new ProcessStage(
@@ -444,9 +448,4 @@ public class ApioDownload extends FPGADownload {
     return new ToplevelHDLGenerator(ctx, pinBindings, false);
   }
   
-  @Override
-  public List<String> getLanguages() {
-    return List.of(VERILOG);
-  }
-
 }

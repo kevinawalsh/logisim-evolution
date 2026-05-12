@@ -30,7 +30,7 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.LatticeDownload;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class LatticeOptions extends FPGAToolchainPanel {
@@ -59,7 +59,7 @@ public class LatticeOptions extends FPGAToolchainPanel {
 
   boolean validateLatticePath(String path) {
     return path.isEmpty()
-      || someToolsPresent(path, FPGADownload.LATTICE_PROGRAMS);
+      || someToolsPresent(path, LatticeDownload.LATTICE_PROGRAMS);
   }
 
 }

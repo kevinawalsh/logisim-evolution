@@ -16,33 +16,40 @@ import com.cburch.logisim.prefs.AppPreferences;
 
 public class GowinDownload extends FPGADownload {
 
-  public static void register() {
-    FPGADownload.register(new Toolchain("Gowin EDA", "Gowin", true, true) {
-      @Override
-      public boolean hasAlternateName(String altname) {
-        return 
-          altname.equalsIgnoreCase("Gowin EDA")
-          || altname.equalsIgnoreCase("GowinFPGA")
-          || altname.equalsIgnoreCase("GowinFPGA EDA")
-          || altname.equalsIgnoreCase("Gowin FPGA")
-          || altname.equalsIgnoreCase("Gowin FPGA EDA");
-      }
-      @Override
-      public boolean supports(Board b) {
-        // TODO: gowin may have board definition files under IDE/data/device/
-        // or similar, which we could search for the given board fpga part.
-        return b.name.toLowerCase().contains("gowin")
-          || b.codename.toLowerCase().contains("gowin");
-      }
-      @Override
-      public List<String[]> defaultParams(/*Board board*/) {
-        return Collections.emptyList();
-      }
-      @Override
-      public FPGADownload newDownloader() { return new GowinDownload(); }
+  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Gowin EDA", "Gowin", true, true) {
+    @Override
+    public boolean hasAlternateName(String altname) {
+      return 
+        altname.equalsIgnoreCase("Gowin EDA")
+        || altname.equalsIgnoreCase("GowinFPGA")
+        || altname.equalsIgnoreCase("GowinFPGA EDA")
+        || altname.equalsIgnoreCase("Gowin FPGA")
+        || altname.equalsIgnoreCase("Gowin FPGA EDA");
+    }
+    @Override
+    public boolean supports(Board b) {
+      // TODO: gowin may have board definition files under IDE/data/device/
+      // or similar, which we could search for the given board fpga part.
+      return b.name.toLowerCase().contains("gowin")
+        || b.codename.toLowerCase().contains("gowin");
+    }
+    @Override
+    public List<String[]> defaultParams(/*Board board*/) {
+      return Collections.emptyList();
+    }
+    @Override
+    public List<String> getLanguages(Board board) {
+      return List.of(VERILOG, VHDL);
+    }
+    @Override
+    public FPGADownload newDownloader() { return new GowinDownload(); }
+  };
 
-    });
-  }
+  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+
+  // public static final String[] GOWIN_PROGRAMS = {"gw_sh" + dotexe};
+  public static final String GOWIN_SH = "gw_sh" + dotexe;
+  public static final String GOWIN_PROG = "programmer_cli" + dotexe;
 
   private String cableIndex;
   private GowinDownload() {
@@ -109,15 +116,15 @@ public class GowinDownload extends FPGADownload {
   }
 
   private String getGowinProgrammerPath() {
-    return resolve(AppPreferences.GOWIN_PROGRAMMER_PATH.get(), FPGADownload.GOWIN_PROG);
+    return resolve(AppPreferences.GOWIN_PROGRAMMER_PATH.get(), GOWIN_PROG);
   }
 
   private String getGowinShellPath() {
-    return resolve(AppPreferences.GOWIN_SHELL_PATH.get(), FPGADownload.GOWIN_SH);
+    return resolve(AppPreferences.GOWIN_SHELL_PATH.get(), GOWIN_SH);
   }
 
   public boolean toolchainIsInstalled(FPGAReport err) {
-    String helpmsg = "It should be set to the path of " + FPGADownload.GOWIN_SH
+    String helpmsg = "It should be set to the path of " + GOWIN_SH
       + " or of a compatible stand-alone executable script.";
     String shPath = getGowinShellPath();
     if (shPath == null) {
@@ -126,7 +133,7 @@ public class GowinDownload extends FPGADownload {
     }
     if (getGowinProgrammerPath() == null) {
       if (OpenFPGALoader.findExecutable(err) == null) {
-        err.AddFatalError("Either Gowin " + FPGADownload.GOWIN_PROG + " path must be specified in settings, or " 
+        err.AddFatalError("Either Gowin " + GOWIN_PROG + " path must be specified in settings, or " 
             + "openFPGALoader must be installed and configured.");
         return false;
       }
@@ -212,11 +219,6 @@ public class GowinDownload extends FPGADownload {
       });
     }
     return stages;
-  }
-  
-  @Override
-  public List<String> getLanguages() {
-    return List.of(VERILOG, VHDL);
   }
 
 }

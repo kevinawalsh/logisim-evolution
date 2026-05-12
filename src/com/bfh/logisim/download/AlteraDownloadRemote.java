@@ -165,7 +165,7 @@ public class AlteraDownloadRemote extends AlteraDownload {
       });
     } else {
       // FIXME: also try usb tmc?
-      if (!OpenFPGALoader.isSupportedBy(board)) {
+      if (!OpenFPGALoader.supports(board)) {
         err.AddFatalError("Board does not support openFPGAloader yet.");
         return new ArrayList<>();
       }

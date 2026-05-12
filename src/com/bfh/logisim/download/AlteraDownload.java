@@ -48,40 +48,52 @@ import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public abstract class AlteraDownload extends FPGADownload {
+  
+  public static final String ALTERA_QUARTUS_SH = "quartus_sh" + dotexe;
+  public static final String ALTERA_QUARTUS_PGM = "quartus_pgm" + dotexe;
+  public static final String ALTERA_QUARTUS_MAP = "quartus_map" + dotexe;
+  public static final String ALTERA_QUARTUS_CPF = "quartus_cpf" + dotexe;
+  public static final String[] ALTERA_PROGRAMS = {
+    ALTERA_QUARTUS_SH, ALTERA_QUARTUS_PGM, ALTERA_QUARTUS_MAP, ALTERA_QUARTUS_CPF,
+  };
 
-  public static void register() {
-    FPGADownload.register(new Toolchain("Altera Quartus", "Quartus", true, true) {
-      @Override
-      public boolean hasAlternateName(String altname) {
-        return altname.toLowerCase().startsWith("quartus")
-          || altname.toLowerCase().startsWith("altera quartus")
-          || altname.toLowerCase().startsWith("intel quartus");
-      }
-      @Override
-      public boolean supports(Board b) {
-        // TODO: probably need to use fpga part to somehow determine if it is
-        // supported.
-        return b.name.toLowerCase().contains("altera")
-          || b.codename.toLowerCase().contains("altera")
-          || b.name.toLowerCase().contains("intel")
-          || b.codename.toLowerCase().contains("intel");
-      }
-      @Override
-      public List<String[]> defaultParams(/*Board board*/) {
-        return Collections.emptyList();
-      }
-      @Override
-      public FPGADownload newDownloader() {
-        if (isRemote())
-          return new AlteraDownloadRemote();
-        else if (isScript())
-          return new AlteraDownloadScript();
-        else
-          return new AlteraDownloadLocal();
-      }
+  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Altera Quartus", "Quartus", true, true) {
+    @Override
+    public boolean hasAlternateName(String altname) {
+      return altname.toLowerCase().startsWith("quartus")
+        || altname.toLowerCase().startsWith("altera quartus")
+        || altname.toLowerCase().startsWith("intel quartus");
+    }
+    @Override
+    public boolean supports(Board b) {
+      // TODO: probably need to use fpga part to somehow determine if it is
+      // supported.
+      return b.name.toLowerCase().contains("altera")
+        || b.codename.toLowerCase().contains("altera")
+        || b.name.toLowerCase().contains("intel")
+        || b.codename.toLowerCase().contains("intel");
+    }
+    @Override
+    public List<String[]> defaultParams(/*Board board*/) {
+      return Collections.emptyList();
+    }
+    @Override
+    public List<String> getLanguages(Board board) {
+      return List.of(VERILOG, VHDL);
+    }
+    @Override
+    public FPGADownload newDownloader() {
+      if (isRemote())
+        return new AlteraDownloadRemote();
+      else if (isScript())
+        return new AlteraDownloadScript();
+      else
+        return new AlteraDownloadLocal();
+    }
 
-    });
-  }
+  };
+
+  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
 
   protected AlteraDownload() { super("Quartus"); }
 
@@ -262,8 +274,4 @@ public abstract class AlteraDownload extends FPGADownload {
     return true;
   }
   
-  @Override
-  public List<String> getLanguages() {
-    return List.of(VERILOG, VHDL);
-  }
 }

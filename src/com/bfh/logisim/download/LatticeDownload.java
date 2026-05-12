@@ -59,35 +59,46 @@ import com.cburch.logisim.prefs.AppPreferences;
 
 public class LatticeDownload extends FPGADownload {
 
-  public static void register() {
-    FPGADownload.register(new Toolchain("Lattice Diamond/ispLEVER", "Lattice", true, true) {
-      @Override
-      public boolean hasAlternateName(String altname) {
-        return 
-          altname.equalsIgnoreCase("Lattice Diamond")
-          || altname.equalsIgnoreCase("Lattice ispLEVER")
-          || altname.equalsIgnoreCase("Diamond")
-          || altname.equalsIgnoreCase("ispLEVER")
-          || altname.equalsIgnoreCase("Diamond/ispLEVER")
-          || altname.equalsIgnoreCase("Lattice Diamond/ispLEVER");
-      }
-      @Override
-      public boolean supports(Board b) {
-        // TODO: probably need to check which variant of toolchain is installed
-        // (Diamond vs ispLEVER), then use fpga part to somehow determine if it
-        // is supported.
-        return b.name.toLowerCase().contains("lattice")
-          || b.codename.toLowerCase().contains("lattice");
-      }
-      @Override
-      public List<String[]> defaultParams(/*Board board*/) {
-        return Collections.emptyList();
-      }
-      @Override
-      public FPGADownload newDownloader() { return new LatticeDownload(); }
+  public static final String LATTICE_DIAMOND_WIN = "pnmainc" + dotexe;
+  public static final String LATTICE_DIAMOND_UNIX = "diamondc";
+  public static final String LATTICE_ISPLEVER_WIN = "projnav" + dotexe;
+  public static final String[] LATTICE_PROGRAMS = {
+      LATTICE_DIAMOND_WIN, LATTICE_DIAMOND_UNIX , LATTICE_ISPLEVER_WIN
+  };
 
-    });
-  }
+  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Lattice Diamond/ispLEVER", "Lattice", true, true) {
+    @Override
+    public boolean hasAlternateName(String altname) {
+      return 
+        altname.equalsIgnoreCase("Lattice Diamond")
+        || altname.equalsIgnoreCase("Lattice ispLEVER")
+        || altname.equalsIgnoreCase("Diamond")
+        || altname.equalsIgnoreCase("ispLEVER")
+        || altname.equalsIgnoreCase("Diamond/ispLEVER")
+        || altname.equalsIgnoreCase("Lattice Diamond/ispLEVER");
+    }
+    @Override
+    public boolean supports(Board b) {
+      // TODO: probably need to check which variant of toolchain is installed
+      // (Diamond vs ispLEVER), then use fpga part to somehow determine if it
+      // is supported.
+      return b.name.toLowerCase().contains("lattice")
+        || b.codename.toLowerCase().contains("lattice");
+    }
+    @Override
+    public List<String[]> defaultParams(/*Board board*/) {
+      return Collections.emptyList();
+    }
+    @Override
+    public List<String> getLanguages(Board board) {
+      return List.of(VHDL, VERILOG);
+    }
+    @Override
+    public FPGADownload newDownloader() { return new LatticeDownload(); }
+
+  };
+
+  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
 
 
   private LatticeDownload() { super("Lattice"); }
@@ -632,10 +643,5 @@ public class LatticeDownload extends FPGADownload {
 	private final static String PROJECT_DOWNLOAD_FILE_ISPLEVER = PROJECT_NAME+"_download_ispLEVER.cmd";
 	
 	private final static String PROJECT_DOWNLOAD_FILE_UNIX = PROJECT_NAME+"_download.sh";
-  
-  @Override
-  public List<String> getLanguages() {
-    return List.of(VHDL, VERILOG);
-  }
 
 }

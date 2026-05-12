@@ -92,7 +92,7 @@ class BoardWriter {
       // Toolchains section
       String defSynth = board.getDefaultSynthesisTool();
       String defProg = board.getDefaultProgrammingTool();
-      List<String> toolchains = board.getToolchains();
+      List<String> toolchains = board.getListedToolchains();
       if (defSynth == null && defProg == null && toolchains.isEmpty()) {
         sb.append("  <Toolchains/>\n");
       } else {

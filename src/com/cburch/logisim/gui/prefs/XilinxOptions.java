@@ -30,7 +30,7 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.XilinxDownload;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class XilinxOptions extends FPGAToolchainPanel {
@@ -64,7 +64,7 @@ public class XilinxOptions extends FPGAToolchainPanel {
 
   boolean validateXilinxPath(String path) {
     return path.isEmpty()
-      || allToolsPresent(path, FPGADownload.XILINX_PROGRAMS)
+      || allToolsPresent(path, XilinxDownload.XILINX_PROGRAMS)
       || isExecutableScript(path);
   }
 

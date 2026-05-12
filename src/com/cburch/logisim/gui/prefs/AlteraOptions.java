@@ -33,7 +33,7 @@ import static com.cburch.logisim.gui.prefs.Strings.S;
 
 import java.util.Map;
 
-import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.AlteraDownload;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class AlteraOptions extends FPGAToolchainPanel {
@@ -68,7 +68,7 @@ public class AlteraOptions extends FPGAToolchainPanel {
     add(alteraFormat.createJPanel());
 
     addExplanation("Use 'Browse...' to select the directory where "
-        + pretty(FPGADownload.ALTERA_PROGRAMS, "and") + " are installed. "
+        + pretty(AlteraDownload.ALTERA_PROGRAMS, "and") + " are installed. "
         + "Or, edit the text directly to specify either that directory, a "
         + "trusted URL, or the path to a single-file script that will be called on "
         + "to do each stage of the synthesis and downloading.");
@@ -76,7 +76,7 @@ public class AlteraOptions extends FPGAToolchainPanel {
 
   boolean validateAlteraPath(String path) {
     return path.isEmpty()
-      || allToolsPresent(path, FPGADownload.ALTERA_PROGRAMS)
+      || allToolsPresent(path, AlteraDownload.ALTERA_PROGRAMS)
       || isExecutableScript(path)
       || path.toLowerCase().startsWith("https://")
       || path.toLowerCase().startsWith("http://");

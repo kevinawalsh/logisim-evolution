@@ -41,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.bfh.logisim.download.Toolchain;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.data.Bounds;
 
@@ -64,9 +65,15 @@ public class Board {
   public final String imgFormat; // "png" or "jpg"
   public final byte imgBytes[];
 
+  // NOTE: All of the tool names in this file come from the xml, and they may be:
+  // - the canonical toolchainName for some known toolchain,
+  // - the shortName for some known toolchain,
+  // - an alternate name recognized by some known toolchain,
+  // - none of the above, i.e. an unrecognized toolchain
+
   private String defaultSynthesisTool, defaultProgrammingTool; // e.g. "Apio" + "openFPGALoader"
   private final LinkedHashMap<String, LinkedHashMap<String, String>> toolchainParams
-    = new LinkedHashMap<>(); // toolchain -> key -> val
+    = new LinkedHashMap<>(); // name -> key -> val
   
   // with this board, some tools only work for synthesis (1), some only for programming (2), some for both (3)
   private final HashMap<String, Integer> toolchainCapabilities = new HashMap<>();
@@ -138,32 +145,45 @@ public class Board {
     }
   }
 
+  // Note: This method requires an exact match for the toolchain name, which must
+  // match whatever was listed in the board xml.
   public boolean synthesisEnabled(String toolchain) {
     Integer caps = toolchainCapabilities.get(toolchain);
+    System.out.println(" " + toolchain + " caps " + caps);
     return caps != null && (caps & 1) == 1;
   }
 
+  // Note: This method requires an exact match for the toolchain name, which must
+  // match whatever was listed in the board xml.
   public boolean programmingEnabled(String toolchain) {
     Integer caps = toolchainCapabilities.get(toolchain);
     return caps != null && (caps & 2) == 2;
   }
 
+  // Note: This method requires an exact match for the toolchain name, which must
+  // match whatever was listed in the board xml.
   public void removeToolchain(String toolchain) {
     toolchainParams.remove(toolchain);
     toolchainCapabilities.remove(toolchain);
   }
 
+  // Note: This method requires an exact match for the toolchain name, which must
+  // match whatever was listed in the board xml.
   public void setToolchainParam(String toolchain, String key, String val) {
     toolchainParams.computeIfAbsent(toolchain, (k) -> new LinkedHashMap<>()).put(key, val);
   }
 
+  // Note: This method requires an exact match for the toolchain name, which must
+  // match whatever was listed in the board xml.
   public void removeToolchainParam(String toolchain, String key) {
     LinkedHashMap<String, String> m = toolchainParams.get(toolchain);
     if (m != null)
       m.remove(key);
   }
 
-  public List<String> getToolchains() {
+  // Note: This method returns whatever names were in the board xml, which may not
+  // match the canonical toolchain names.
+  public List<String> getListedToolchains() {
     ArrayList<String> ret = new ArrayList<>(toolchainParams.keySet());
     if (defaultSynthesisTool != null && !ret.contains(defaultSynthesisTool))
       ret.add(defaultSynthesisTool);
@@ -171,15 +191,44 @@ public class Board {
       ret.add(defaultProgrammingTool);
     return ret;
   }
-  
+
+  // Note: This method requires an exact match for the toolchain name, which must
+  // match whatever was listed in the board xml.
   public Map<String, String> getToolchainParams(String toolchain) {
     LinkedHashMap<String, String> m = toolchainParams.get(toolchain);
     return (m != null) ? Collections.unmodifiableMap(m) : Collections.emptyMap();
   }
+  
+  public boolean mentions(Toolchain t) {
+    for (String tcName : getListedToolchains())
+      if (t.approximateNameMatch(tcName))
+        return true;
+    return false;
+  }
 
-  public String getToolchainParam(String toolchain, String key) {
-    LinkedHashMap<String, String> m = toolchainParams.get(toolchain);
-    return (m != null) ? m.get(key) : null;
+  public boolean recommendsForSynthesis(Toolchain t) {
+    if (defaultSynthesisTool != null && t.approximateNameMatch(defaultSynthesisTool))
+      return true;
+    for (Map.Entry<String, LinkedHashMap<String, String>> e : toolchainParams.entrySet()) {
+      String tcName = e.getKey();
+      if (t.approximateNameMatch(tcName)) {
+        if (synthesisEnabled(tcName))
+          return true;
+      }
+    }
+    return false;
+  }
+
+  public String paramFor(Toolchain t, String key) {
+    for (Map.Entry<String, LinkedHashMap<String, String>> e : toolchainParams.entrySet()) {
+      String tcName = e.getKey();
+      if (t.approximateNameMatch(tcName)) {
+        LinkedHashMap<String, String> m = e.getValue();
+        if (m.containsKey(key))
+          return m.get(key);
+      }
+    }
+    return null;
   }
 
   public void printStats(FPGAReport out) {

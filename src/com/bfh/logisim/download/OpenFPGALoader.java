@@ -43,30 +43,26 @@ import com.cburch.logisim.util.Debug;
 
 public class OpenFPGALoader {
 
-  public static void register() {
-    FPGADownload.register(new FPGADownload.Toolchain("openFPGALoader", "openFPGALoader", false, true /* programmer only */) {
-      @Override
-      public boolean hasAlternateName(String altname) {
-        return altname.equalsIgnoreCase("trabucayre/openFPGALoader");
-      }
-      @Override
-      public boolean supports(Board b) {
-        String codename = normalizeBoardName(b.codename);
-        ArrayList<String> names = getOpenFPGALoaderBoardList();
-        for (String name : names) {
-          if (normalizeBoardName(name).equalsIgnoreCase(codename))
-            return true;
-        }
-        return false;
-      }
-      @Override
-      public List<String[]> defaultParams(/*Board board*/) {
-        return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
-      }
-      @Override
-      public FPGADownload newDownloader() { return null; } // FIXME: no programmer API yet
-    });
-  }
+  private static Toolchain MY_TOOLCHAIN = new Toolchain("openFPGALoader", "openFPGALoader", false, true /* programmer only */) {
+    @Override
+    public boolean hasAlternateName(String altname) {
+      return altname.equalsIgnoreCase("trabucayre/openFPGALoader");
+    }
+    @Override
+    public boolean supports(Board b) { return OpenFPGALoader.supports(b); }
+    @Override
+    public List<String[]> defaultParams(/*Board board*/) {
+      return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
+    }
+    @Override
+    public List<String> getLanguages(Board board) {
+      return List.of(VERILOG, VHDL);
+    }
+    @Override
+    public FPGADownload newDownloader() { return null; } // FIXME: no programmer API yet
+  };
+
+  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
 
   // openFPGALoader board names tend to follow alphanumplus_snake_case or,
   // sometimes, alhpanumplus-kebab-case conventions. We normalize to snake case.
@@ -153,16 +149,29 @@ public class OpenFPGALoader {
     return "openFPGALoader";
   }
 
-  public static boolean isSupportedBy(Board board) {
-    // return board.getToolchainParam("openFPGALoader", "board") != null;
-    return board.getToolchains().contains("openFPGALoader");
+  public static boolean supports(Board board) {
+    // if the board xml explicitly lists openFPGALoader, then who are we to disagree?
+    if (board.mentions(MY_TOOLCHAIN))
+      return true;
+    return boardNameFor(board) != null;
   }
 
   public static String boardNameFor(Board board) {
-    String name = board.getToolchainParam("openFPGALoader", "board");
-    if (name == null)
-      name = board.codename;
-    return name;
+    // if board listed a name, then who are we to disagree?
+    String pref = board.paramFor(MY_TOOLCHAIN, "board");
+    if (pref != null)
+      return pref;
+    // next, see if codename appears in board list (ignore case, but otherwise exact match)
+    ArrayList<String> names = getOpenFPGALoaderBoardList();
+    for (String name : names)
+      if (name.equalsIgnoreCase(board.codename))
+        return name;
+    // last, try approximate matches against board list
+    String codename = normalizeBoardName(board.codename);
+    for (String name : names)
+      if (name.equalsIgnoreCase(codename))
+        return name;
+    return null;
   }
 
   private static ArrayList<String> getOpenFPGALoaderBoardList() {

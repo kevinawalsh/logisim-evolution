@@ -82,7 +82,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
-import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.Toolchain;
 import com.bfh.logisim.settings.BoardList;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.Loader;
@@ -309,7 +309,7 @@ public class BoardEditor extends JFrame {
     toolchainNames.clear();
     toolchainCapabilities.clear();
     toolchainParams.clear();
-    toolchainNames.addAll(board.getToolchains());
+    toolchainNames.addAll(board.getListedToolchains());
     for (String tcName : toolchainNames) {
       toolchainCapabilities.add(
           (board.synthesisEnabled(tcName) ? 1 : 0)
@@ -690,7 +690,7 @@ public class BoardEditor extends JFrame {
       int cap = toolchainCapabilities.get(i);
       e.synthCheck.setSelected((cap & 1) != 0);
       e.progCheck.setSelected((cap & 2) != 0);
-      FPGADownload.Toolchain t = FPGADownload.findAnyToolchain(tcName);
+      Toolchain t = Toolchain.findToolchainByApproximateName(tcName);
       boolean knownTool = t != null;
       HashMap<String, String> stdParams = new HashMap<>();
       if (knownTool) {
@@ -744,7 +744,9 @@ public class BoardEditor extends JFrame {
       subDlg.setLayout(new BorderLayout(8, 8));
       subDlg.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 
-      ArrayList<String> toolchainNames = FPGADownload.getAllToolchainNames();
+      ArrayList<String> toolchainNames = new ArrayList<>();
+      for (Toolchain t : Toolchain.getAllToolchains())
+        toolchainNames.add(t.toolchainName);
 
       JComboBox<String> nameCombo = new JComboBox<>(toolchainNames.toArray(new String[0]));
       nameCombo.setEditable(true);
@@ -773,7 +775,8 @@ public class BoardEditor extends JFrame {
         subDlg.setVisible(false);
         Entry newEntry = new Entry();
         newEntry.nameField.setText(newName);
-        FPGADownload.Toolchain t = FPGADownload.findAnyToolchain(newName);
+
+        Toolchain t = Toolchain.findToolchainByApproximateName(newName);
         boolean knownTool = t != null;
         newEntry.synthCheck.setSelected(!knownTool || t.canSynthesize);
         newEntry.progCheck.setSelected(!knownTool || t.canProgram);
