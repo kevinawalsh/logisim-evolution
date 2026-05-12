@@ -5,13 +5,13 @@
     <JTAG pos="1"/>
     <USBTMC available="true"/>
     <Clock pin="P7" frequency="100000000"/>
-    <UnusedPins pull="Without Pull"/>
+    <UnusedPins pull="none"/>
   </FPGA>
   <Toolchains defaultSynthesis="Apio CLI" defaultProgramming="openFPGALoader">
-    <Toolchain name="Apio CLI" capabilities="none">
+    <Toolchain name="Apio CLI" capabilities="synthesis,programming">
       <Param key="board" value="alchitry-cu"/>
     </Toolchain>
-    <Toolchain name="openFPGALoader" capabilities="synthesis">
+    <Toolchain name="openFPGALoader" capabilities="programming">
       <Param key="board" value="ice40_generic"/>
     </Toolchain>
   </Toolchains>

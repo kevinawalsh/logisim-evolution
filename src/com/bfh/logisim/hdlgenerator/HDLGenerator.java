@@ -317,11 +317,15 @@ public class HDLGenerator extends HDLSupport {
       //   portNames.add(tickerPort.enPortName);
       // }
       if (hiddenPort != null) {
-        hiddenPort.labels.forEach(name -> {
+        for (String name : hiddenPort.inports)
+          portNames.add(name);
+        for (String name : hiddenPort.inoutports) {
           portNames.add(name+"_in");
           portNames.add(name+"_out");
           portNames.add(name+"_en");
-        });
+        }
+        for (String name : hiddenPort.outports)
+          portNames.add(name);
       }
       out.stmt("module %s(\t %s );", hdlModuleName, String.join(",\n\t ", portNames));
 

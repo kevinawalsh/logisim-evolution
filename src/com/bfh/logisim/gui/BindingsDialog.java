@@ -270,12 +270,15 @@ public class BindingsDialog extends JDialog {
   private static final Color MAPPEDB = new Color(0.4f, 0.7f, 0.1f); // border
   private static final Color MAPPED_TEXT = new Color(0, 0x60, 0); // text
 
+  private static final int CLICK_TOLERANCE = 5; // pixels of mouse movement still counted as a click
+
   private class Rect extends JPanel implements MouseListener {
     BoardIO io;
     boolean emphasized, hover;
     int emphasizeBit; // -1 for all
     int nmapped;
     boolean isMapped[];
+    private Point pressPoint;
 
     Rect(BoardIO io) {
       this.io = io;
@@ -361,7 +364,17 @@ public class BindingsDialog extends JDialog {
       }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
+    public void mouseClicked(MouseEvent e) { } // handled in mouseReleased with tolerance
+
+    public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
+    public void mouseExited(MouseEvent e) { hover = false; repaint(); }
+    public void mousePressed(MouseEvent e) { pressPoint = e.getPoint(); }
+    public void mouseReleased(MouseEvent e) {
+      if (pressPoint == null || e.getPoint().distance(pressPoint) > CLICK_TOLERANCE) {
+        pressPoint = null;
+        return;
+      }
+      pressPoint = null;
       if (!SwingUtilities.isLeftMouseButton(e))
         return;
       if (sources.current == null)
@@ -376,11 +389,6 @@ public class BindingsDialog extends JDialog {
           sources.mapCurrent(io, -1);
       }
     }
-
-    public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
-    public void mouseExited(MouseEvent e) { hover = false; repaint(); }
-    public void mousePressed(MouseEvent e) { }
-    public void mouseReleased(MouseEvent e) { }
 
     void doBitSelectPopup(MouseEvent e) {
       JPopupMenu popup = new JPopupMenu("Select Bit");
