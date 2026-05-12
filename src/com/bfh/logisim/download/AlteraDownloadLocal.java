@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import com.bfh.logisim.gui.Commander;
 import com.cburch.logisim.prefs.AppPreferences;
 
-public class AlteraDownloadLocal extends AlteraDownload {
+public class AlteraDownloadLocal extends Altera.AlteraDownload {
 
   public AlteraDownloadLocal() { }
 
@@ -58,29 +58,34 @@ public class AlteraDownloadLocal extends AlteraDownload {
       String script = scriptPath.replace(projectPath, ".." + File.separator) + "AlteraDownload.tcl";
       stages.add(new ProcessStage(
             "init", "Creating Quartus Project",
-            cmd(ALTERA_QUARTUS_SH, "-t", script),
+            cmd(Altera.ALTERA_QUARTUS_SH, "-t", script),
             "Failed to create Quartus project, cannot download"));
       stages.add(new ProcessStage(
             "optimize", "Optimizing for Minimal Area",
-            cmd(ALTERA_QUARTUS_MAP, TOP_HDL, "--optimize=area"),
+            cmd(Altera.ALTERA_QUARTUS_MAP, TOP_HDL, "--optimize=area"),
             "Failed to optimize design, cannot download"));
       stages.add(new ProcessStage(
             "synthesize", "Synthesizing (may take a while)",
-            cmd(ALTERA_QUARTUS_SH, "--flow", "compile", TOP_HDL),
+            cmd(Altera.ALTERA_QUARTUS_SH, "--flow", "compile", TOP_HDL),
             "Failed to synthesize design, cannot download"));
       if (board.fpga.FlashDefined) { // do this even if flash wasn't requested, it's quick
         stages.add(new ProcessStage(
               "convert", "Convert JTAG bitstream (.sof) to Flash file (.pof) format",
-              cmd(ALTERA_QUARTUS_CPF, "-c", "-d", board.fpga.FlashName,
+              cmd(Altera.ALTERA_QUARTUS_CPF, "-c", "-d", board.fpga.FlashName,
                 sandboxPath + TOP_HDL + ".sof",
                 sandboxPath + TOP_HDL + ".pof"),
               "Failed to convert bitstream, cannot download"));
       }
     }
 
+    if (programmer != null && !(programmer instanceof Altera.AlteraProgrammer)) {
+      err.AddFatalError("Altera toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Altera programmer.");
+      return stages;
+    }
+
     stages.add(new ProcessStage(
           "scan", "Searching for FPGA Devices",
-          cmd(ALTERA_QUARTUS_PGM, "--list"),
+          cmd(Altera.ALTERA_QUARTUS_PGM, "--list"),
           "Could not find any FPGA devices. Did you connect the FPGA board?") {
       @Override
       protected boolean prep() {
@@ -103,9 +108,9 @@ public class AlteraDownloadLocal extends AlteraDownload {
       @Override
       protected boolean prep() {
         if (writeToFlash)
-          cmd = cmd(ALTERA_QUARTUS_PGM, "-c", cablename, "-m", "as", "-o", "P;"+flashfile);
+          cmd = cmd(Altera.ALTERA_QUARTUS_PGM, "-c", cablename, "-m", "as", "-o", "P;"+flashfile);
         else
-          cmd = cmd(ALTERA_QUARTUS_PGM, "-c", cablename, "-m", "jtag", "-o", "P;"+bitfile);
+          cmd = cmd(Altera.ALTERA_QUARTUS_PGM, "-c", cablename, "-m", "jtag", "-o", "P;"+bitfile);
         return true;
       }
     });

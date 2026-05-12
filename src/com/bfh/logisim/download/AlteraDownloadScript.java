@@ -38,7 +38,7 @@ import com.cburch.logisim.prefs.AppPreferences;
 // If AlteraToolPath is an executable file, rather than a directory or URL, then
 // use that as a single-file script to do the entire synthesis rather than using
 // the multi-step synthesis using quartus_sh, quartus_map, etc.
-public class AlteraDownloadScript extends AlteraDownload {
+public class AlteraDownloadScript extends Altera.AlteraDownload {
 
   protected AlteraDownloadScript() { }
 
@@ -66,6 +66,11 @@ public class AlteraDownloadScript extends AlteraDownload {
       stages.add(new ProcessStage(
             "synthesis", "Synthesizing (may take a while)",
             tool, "Failed to synthesize design, cannot download"));
+    }
+
+    if (programmer != null && !(programmer instanceof Altera.AlteraProgrammer)) {
+      err.AddFatalError("Altera toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Altera programmer.");
+      return stages;
     }
 
     // list-cables

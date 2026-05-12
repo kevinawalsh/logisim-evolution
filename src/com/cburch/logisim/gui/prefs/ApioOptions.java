@@ -30,7 +30,7 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import com.bfh.logisim.download.ApioDownload;
+import com.bfh.logisim.download.Apio;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class ApioOptions extends FPGAToolchainPanel {
@@ -65,7 +65,7 @@ public class ApioOptions extends FPGAToolchainPanel {
   }
 
   boolean validateApioPath(String path) {
-    return path.isEmpty() || ApioDownload.findApioExecutable(path) != null;
+    return path.isEmpty() || Apio.findApioExecutable(path) != null;
   }
 
 }

@@ -120,11 +120,11 @@ public abstract class Toolchain {
       pTools.add(t);
   }
   static {
-    ApioDownload.register();
-    AlteraDownload.register();
-    XilinxDownload.register();
-    LatticeDownload.register();
-    GowinDownload.register();
+    Apio.register();
+    Altera.register();
+    Xilinx.register();
+    Lattice.register();
+    Gowin.register();
     OpenFPGALoader.register();
     // USBTMC.register(); // FIXME: TODO
   }
@@ -137,34 +137,9 @@ public abstract class Toolchain {
     return Collections.unmodifiableList(sTools);
   }
 
-
-  //  ArrayList<String> ret = new ArrayList<>();
-  //  for (Toolchain t: sTools)
-  //    ret.add(t.toolchainName);
-  //  return ret;
-
-  // public static ArrayList<String> getSynthesisToolchainNames() {
-  //   ArrayList<String> ret = new ArrayList<>();
-  //   for (Toolchain t: sTools)
-  //     ret.add(t.toolchainName);
-  //   return ret;
-  // }
-
-  // public static ArrayList<String> getProgrammerToolchainNames() {
-  //   ArrayList<String> ret = new ArrayList<>();
-  //   for (Toolchain t: pTools)
-  //     ret.add(t.toolchainName);
-  //   return ret;
-  // }
-
-  // public static ArrayList<String> getAllToolchainNames() {
-  //   ArrayList<String> ret = new ArrayList<>();
-  //   for (Toolchain t: sTools)
-  //       ret.add(t.toolchainName);
-  //   for (Toolchain t: pTools)
-  //       ret.add(t.toolchainName);
-  //   return ret;
-  // }
+  public static List<Toolchain> getProgrammingToolchains() {
+    return Collections.unmodifiableList(pTools);
+  }
   
   private static Toolchain findByApproximateName(List<Toolchain> list, String name) {
     if (name == null || name.isEmpty())

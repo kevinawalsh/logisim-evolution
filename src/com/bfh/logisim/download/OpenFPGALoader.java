@@ -41,7 +41,7 @@ import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.Debug;
 
-public class OpenFPGALoader {
+public class OpenFPGALoader extends FPGAProgrammer {
 
   private static Toolchain MY_TOOLCHAIN = new Toolchain("openFPGALoader", "openFPGALoader", false, true /* programmer only */) {
     @Override
@@ -59,7 +59,9 @@ public class OpenFPGALoader {
       return List.of(VERILOG, VHDL);
     }
     @Override
-    public FPGADownload newProgrammer() { return new OpenFPGALoader(); }
+    public FPGADownload newDownloader() { return null; }
+    @Override
+    public FPGAProgrammer newProgrammer() { return new OpenFPGALoader(); }
   };
 
   public static void register() { Toolchain.register(MY_TOOLCHAIN); }
@@ -75,14 +77,18 @@ public class OpenFPGALoader {
     return name;
   }
 
-  public static ArrayList<String> commandFor(Board board, String bin) {
+  // FIXME: ofl_bin should not need to be a param here, should have detected earlier
+  public static ArrayList<String> commandFor(Board board, String ofl_bin, String bitstreamFile) {
     // FIXME: if openFPGALoader_name is unset, fall back to... name?
     ArrayList<String> cmd = new ArrayList<>();
-    cmd.add(bin);
+    cmd.add(ofl_bin);
     cmd.add("--verify");
-    cmd.add("-b");
-    cmd.add(boardNameFor(board));
-    cmd.add("hardware.bin");
+    String boardname = boardNameFor(board);
+    if (boardname != null) {
+      cmd.add("-b");
+      cmd.add(boardname);
+    }
+    cmd.add(bitstreamFile); // e.g. "hardware.bin"
     return cmd;
   }
   
@@ -192,6 +198,11 @@ public class OpenFPGALoader {
       Debug.error("Executing `"+prog+" --list-boards`", e);
     }
     return ret;
+  }
+   
+  @Override
+  public boolean toolchainIsInstalled(FPGAReport err) {
+    return findExecutable(err) != null;
   }
 
 }

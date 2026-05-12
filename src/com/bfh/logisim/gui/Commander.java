@@ -64,6 +64,7 @@ import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.bfh.logisim.download.FPGADownload;
+import com.bfh.logisim.download.FPGAProgrammer;
 import com.bfh.logisim.download.Toolchain;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
@@ -161,12 +162,12 @@ public class Commander extends JFrame
     public String toString() { return display; }
     @Override
     public boolean equals(Object o) {
-      if (o instanceof ComboOption)
-        return value.equals(((ComboOption)o).value);
-      else if (o instanceof String)
-        return display.equals(o);
-      else
-        return false;
+      if (o instanceof ComboOption) {
+        Object ov = ((ComboOption)o).value;
+        return (value == null && ov == null) || (value != null && ov != null && value.equals(ov));
+      }
+      return ((o instanceof String) && display.equals(o))
+        || (value == null && o == null) || (value != null && o != null && value.equals(o));
     }
     @Override
     public int hashCode() { throw new UnsupportedOperationException("ComboOption not suitable for hash collections"); }
@@ -501,8 +502,8 @@ public class Commander extends JFrame
     }
 
     updatingToolchainOptions = false;
-    synthCombo.setSelectedItem(synthTool);
-    progCombo.setSelectedItem(progTool);
+    synthCombo.setSelectedItem(new ComboOption<>(synthTool, ""));
+    progCombo.setSelectedItem(new ComboOption<>(progTool, ""));
   }
 
   boolean updatingClockMenus = false;
@@ -1256,7 +1257,7 @@ public class Commander extends JFrame
     }
   }
 
-  private void setProgrammingToolchain() {
+  private void setProgToolchain() {
     if (updatingToolchainOptions)
       return;
     @SuppressWarnings("unchecked")

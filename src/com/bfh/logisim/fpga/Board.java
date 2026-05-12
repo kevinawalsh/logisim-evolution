@@ -149,7 +149,6 @@ public class Board {
   // match whatever was listed in the board xml.
   public boolean synthesisEnabled(String toolchain) {
     Integer caps = toolchainCapabilities.get(toolchain);
-    System.out.println(" " + toolchain + " caps " + caps);
     return caps != null && (caps & 1) == 1;
   }
 
@@ -213,6 +212,19 @@ public class Board {
       String tcName = e.getKey();
       if (t.approximateNameMatch(tcName)) {
         if (synthesisEnabled(tcName))
+          return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean recommendsForProgramming(Toolchain t) {
+    if (defaultProgrammingTool != null && t.approximateNameMatch(defaultProgrammingTool))
+      return true;
+    for (Map.Entry<String, LinkedHashMap<String, String>> e : toolchainParams.entrySet()) {
+      String tcName = e.getKey();
+      if (t.approximateNameMatch(tcName)) {
+        if (programmingEnabled(tcName))
           return true;
       }
     }

@@ -37,7 +37,7 @@ import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.cburch.logisim.prefs.AppPreferences;
 
-public class AlteraDownloadRemote extends AlteraDownload {
+public class AlteraDownloadRemote extends Altera.AlteraDownload {
 
   protected AlteraDownloadRemote() {
     supportsRemoteJTAG = true;
@@ -118,7 +118,11 @@ public class AlteraDownloadRemote extends AlteraDownload {
         }
       });
     }
-
+    
+    if (programmer != null && !(programmer instanceof Altera.AlteraProgrammer)) {
+      err.AddFatalError("Altera toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Altera programmer.");
+      return stages;
+    }
 
     if (remoteJTAG) {
       stages.add(new RunnableStage(

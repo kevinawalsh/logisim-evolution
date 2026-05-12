@@ -194,6 +194,8 @@ public abstract class FPGADownload {
             t2.join();
           }
           exitValue = process.exitValue();
+          if (exitValue != 0)
+            console.printf(console.ERROR, describeExitCode(exitValue));
           if (exitValue != 0 && retry(exitValue)) {
             console.printf(console.INFO, "Command failed, retrying...");
             needRetry = true;
@@ -213,6 +215,62 @@ public abstract class FPGADownload {
       });
       thread.start();
     }
+
+    static String describeExitCode(int code) {
+      if (code == 0)
+        return "success (exit code 0)";
+
+      // Unix style signal (128+N convention, or negative signum)
+      int signum = -1;
+      if (code < 0 && code > -64) signum = -code;
+      else if (code > 128 && code <= 192) signum = code - 128;
+      if (signum > 0)
+        return String.format("Process failed via signal [exit code %d, %s]", code, signalName(signum));
+
+      // Windows structured exception codes (negative in Java due to sign)
+      if (Main.MSWindows && code < 0)
+        return String.format("Process failed [exit code 0x%s, %s]",
+            Integer.toUnsignedString(code, 16).toUpperCase(), windowsExceptionName(code));
+
+      return String.format("Process failed [exit code %d]", code);
+    }
+
+    static String windowsExceptionName(int code) {
+      switch (code) {
+        case (int)0xC0000005: return "access violation";
+        case (int)0xC000001D: return "illegal instruction";
+        case (int)0xC0000094: return "integer divide by zero";
+        case (int)0xC00000FD: return "stack overflow";
+        case (int)0xC0000135: return "DLL not found";
+        case (int)0xC0000138: return "DLL ordinal not found";
+        case (int)0xC0000139: return "DLL entry point not found";
+        case (int)0xC0000142: return "DLL initialization failed";
+        default:              return "windows exception";
+      }
+    }
+
+    private static String signalName(int signum) {
+      switch (signum) {
+        case  1: return "SIGHUP (hangup)";
+        case  2: return "SIGINT (interrupt)";
+        case  3: return "SIGQUIT (quit)";
+        case  4: return "SIGILL (illegal instruction)";
+        case  6: return "SIGABRT (abort)";
+        case  7: return "SIGBUS (bus error)";
+        case  8: return "SIGFPE (floating point exception)";
+        case  9: return "SIGKILL (killed)";
+        case 10: return "SIGUSR1";
+        case 11: return "SIGSEGV (segmentation fault)";
+        case 12: return "SIGUSR2";
+        case 13: return "SIGPIPE (broken pipe)";
+        case 14: return "SIGALRM (alarm)";
+        case 15: return "SIGTERM (terminated)";
+        case 24: return "SIGXCPU (CPU time limit exceeded)";
+        case 25: return "SIGXFSZ (file size limit exceeded)";
+        default: return String.format("signal %d", signum);
+      }
+    }
+
   }
 
   public abstract class RunnableStage extends Stage {
