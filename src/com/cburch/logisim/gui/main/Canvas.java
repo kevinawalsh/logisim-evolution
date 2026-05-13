@@ -177,10 +177,16 @@ public class Canvas extends JPanel
     @Override
     public void mouseEntered(MouseEvent e) {
       if (drag_tool != null) {
+        // Re-apply cursor: on macOS (and sometimes other platforms), the native
+        // window system can reset the cursor to default on focus/window changes.
+        setCursor(drag_tool.getCursor());
         drag_tool.mouseEntered(Canvas.this, e);
       } else {
         Tool tool = getToolFor(e);
         if (tool != null) {
+          // Re-apply cursor: on macOS (and sometimes other platforms), the native
+          // window system can reset the cursor to default on focus/window changes.
+          setCursor(tool.getCursor());
           tool.mouseEntered(Canvas.this, e);
         }
       }
@@ -211,6 +217,11 @@ public class Canvas extends JPanel
 
       Tool tool = getToolFor(e);
       if (tool != null) {
+        // Re-apply cursor on every move: on macOS (and sometimes other
+        // platforms), the native window system can reset the cursor to default
+        // after focus changes or requestFocus() calls. Re-applying here ensures
+        // the cursor stays correct without waiting for a tool-change event.
+        setCursor(tool.getCursor());
         tool.mouseMoved(Canvas.this, e);
       }
     }
