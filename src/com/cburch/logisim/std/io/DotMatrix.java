@@ -54,8 +54,6 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.std.wiring.DurationAttribute;
 import com.cburch.logisim.util.GraphicsUtil;
 
-// TODO repropagate when rows/cols change
-
 public class DotMatrix extends InstanceFactory {
   private static class State implements ComponentData {
     private int rows;
@@ -84,9 +82,8 @@ public class DotMatrix extends InstanceFactory {
     private Value get(int row, int col, long curTick) {
       int index = row * cols + col;
       Value ret = grid[index];
-      if (ret == Value.FALSE && persistTo[index] - curTick >= 0) {
+      if (ret == Value.FALSE && persistTo[index] - curTick >= 0)
         ret = Value.TRUE;
-      }
       return ret;
     }
 
@@ -94,15 +91,13 @@ public class DotMatrix extends InstanceFactory {
       int gridloc = (rows - 1) * cols + index;
       int stride = -cols;
       Value[] vals = colVector.getAll();
-      for (int i = 0; i < vals.length; i++, gridloc += stride) {
-        Value val = vals[i];
-        if (grid[gridloc] == Value.TRUE) {
+      for (int i = 0; i < rows; i++, gridloc += stride) {
+        if (grid[gridloc] == Value.TRUE)
           persistTo[gridloc] = persist - 1;
-        }
+        Value val = (i < vals.length) ? vals[i] : Value.UNKNOWN;
         grid[gridloc] = val;
-        if (val == Value.TRUE) {
+        if (val == Value.TRUE)
           persistTo[gridloc] = persist;
-        }
       }
     }
 
@@ -110,18 +105,13 @@ public class DotMatrix extends InstanceFactory {
       int gridloc = (index + 1) * cols - 1;
       int stride = -1;
       Value[] vals = rowVector.getAll();
-      for (int i = 0; i < vals.length; i++, gridloc += stride) {
-        Value val = vals[i];
-        if (gridloc < 0 || gridloc >= grid.length)
-          System.out.printf("bad gridloc=%d i=%d index=%d cols=%d stride=%d vals.length=%d grid.length=%d\n",
-              gridloc, i, index, cols, stride, vals.length, grid.length);
-        if (grid[gridloc] == Value.TRUE) {
+      for (int i = 0; i < cols; i++, gridloc += stride) {
+        if (grid[gridloc] == Value.TRUE)
           persistTo[gridloc] = persist - 1;
-        }
-        grid[gridloc] = vals[i];
-        if (val == Value.TRUE) {
+        Value val = (i < vals.length) ? vals[i] : Value.UNKNOWN;
+        grid[gridloc] = val;
+        if (val == Value.TRUE)
           persistTo[gridloc] = persist;
-        }
       }
     }
 
@@ -129,26 +119,23 @@ public class DotMatrix extends InstanceFactory {
       Value[] rowVals = rowVector.getAll();
       Value[] colVals = colVector.getAll();
       int gridloc = 0;
-      for (int i = rowVals.length - 1; i >= 0; i--) {
-        Value wholeRow = rowVals[i];
+      for (int i = rows - 1; i >= 0; i--) {
+        Value wholeRow = i < rowVals.length ? rowVals[i] : Value.UNKNOWN;
         if (wholeRow == Value.TRUE) {
-          for (int j = colVals.length - 1; j >= 0; j--, gridloc++) {
-            Value val = colVals[colVals.length - 1 - j];
-            if (grid[gridloc] == Value.TRUE) {
+          for (int j = cols - 1; j >= 0; j--, gridloc++) {
+            if (grid[gridloc] == Value.TRUE)
               persistTo[gridloc] = persist - 1;
-            }
+            Value val = cols - 1 - j < colVals.length ? colVals[cols - 1 - j] : Value.UNKNOWN;
             grid[gridloc] = val;
-            if (val == Value.TRUE) {
+            if (val == Value.TRUE)
               persistTo[gridloc] = persist;
-            }
           }
         } else {
           if (wholeRow != Value.FALSE)
             wholeRow = Value.ERROR;
-          for (int j = colVals.length - 1; j >= 0; j--, gridloc++) {
-            if (grid[gridloc] == Value.TRUE) {
+          for (int j = cols - 1; j >= 0; j--, gridloc++) {
+            if (grid[gridloc] == Value.TRUE)
               persistTo[gridloc] = persist - 1;
-            }
             grid[gridloc] = wholeRow;
           }
         }
@@ -249,8 +236,7 @@ public class DotMatrix extends InstanceFactory {
 
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
-    if (attr == ATTR_MATRIX_ROWS || attr == ATTR_MATRIX_COLS
-        || attr == ATTR_INPUT_TYPE) {
+    if (attr == ATTR_MATRIX_ROWS || attr == ATTR_MATRIX_COLS || attr == ATTR_INPUT_TYPE) {
       instance.recomputeBounds();
       updatePorts(instance);
     }
@@ -319,8 +305,7 @@ public class DotMatrix extends InstanceFactory {
         data.setColumn(i, state.getPortValue(i), persist);
       }
     } else if (type == INPUT_SELECT) {
-      data.setSelect(state.getPortValue(1), state.getPortValue(0),
-          persist);
+      data.setSelect(state.getPortValue(1), state.getPortValue(0), persist);
     } else {
       throw new RuntimeException("unexpected matrix type");
     }
@@ -346,17 +331,17 @@ public class DotMatrix extends InstanceFactory {
     } else {
       if (rows <= 1) {
         ps = new Port[] { new Port(0, 0, Port.INPUT, cols) };
-        ps[0].setToolTip(S.getter("ioRowInput", "0"));
+        ps[0].setToolTip(S.getter("ioColumnInput", "0"));
       } else if (cols <= 1) {
         ps = new Port[] { new Port(0, 0, Port.INPUT, rows) };
-        ps[0].setToolTip(S.getter("ioColumnInput", "0"));
+        ps[0].setToolTip(S.getter("ioRowInput", "0"));
       } else {
         ps = new Port[] {
           new Port(0, 0, Port.INPUT, cols),
           new Port(0, 10, Port.INPUT, rows)
         };
-        ps[0].setToolTip(S.getter("ioRowSelect"));
-        ps[1].setToolTip(S.getter("ioColumnSelect"));
+        ps[0].setToolTip(S.getter("ioColumnSelect"));
+        ps[1].setToolTip(S.getter("ioRowSelect"));
       }
     }
     instance.setPorts(ps);
@@ -398,9 +383,9 @@ public class DotMatrix extends InstanceFactory {
         return List.of(rows);
       } else { // INPUT_SELECT
         InventoryFeature.PortPosition rs, cs;
-        rs = portAt("Row_Select", "input", 0, 0);
-        cs = portAt("Column_Select", "input", 0, 10);
-        return List.of(rs,cs);
+        cs = portAt("Column_Select", "input", 0, 0);
+        rs = portAt("Row_Select", "input", 0, 10);
+        return List.of(cs, rs);
       }
     }
   }
