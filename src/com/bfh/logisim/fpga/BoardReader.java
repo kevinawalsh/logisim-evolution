@@ -76,8 +76,6 @@ public class BoardReader {
         name = BoardList.filenameForPath(path); // fallback: use file name instead
       return name;
     } catch (Exception e) {
-      System.out.println("path was: '"+path+"'");
-      e.printStackTrace();
       return "[unavailable] " + BoardList.filenameForPath(path); // fallback: use placeholder
 		}
   }

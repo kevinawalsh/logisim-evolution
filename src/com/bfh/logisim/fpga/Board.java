@@ -134,13 +134,13 @@ public class Board {
 
   public void addToolchain(String toolchain, String capabilities) {
     toolchainParams.putIfAbsent(toolchain, new LinkedHashMap<>());
-    if (capabilities == null) // if not specified, assume both
-      capabilities = "synthesis,programming";
+    if (capabilities == null || capabilities.equalsIgnoreCase("all"))
+      capabilities = "synthesis,programming"; // if not specified, assume both
     for (String cap : capabilities.split(",")) {
       cap = cap.trim();
       if (cap.equalsIgnoreCase("synthesis"))
         toolchainCapabilities.merge(toolchain, 1, (a, b) -> a + b);
-      else if (cap.equalsIgnoreCase("programming"))
+      else if (cap.equalsIgnoreCase("programming") || cap.equalsIgnoreCase("programmer"))
         toolchainCapabilities.merge(toolchain, 2, (a, b) -> a + b);
     }
   }

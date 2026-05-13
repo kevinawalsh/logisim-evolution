@@ -251,9 +251,9 @@ public class BoardEditor extends JFrame {
       String tc = toolchainNames.get(i);
       int caps = toolchainCapabilities.get(i);
       board.addToolchain(tc, 
-          i == 3 ? "synthesis,programming" :
-          i == 1 ? "synthesis" :
-          i == 2 ? "programming" :
+          caps == 1 ? "synthesis" :
+          caps == 2 ? "programming" :
+          caps == 3 ? "synthesis,programming" :
           "none");
       toolchainParams.get(i).forEach((k, v) -> board.setToolchainParam(tc, k, v));
     }

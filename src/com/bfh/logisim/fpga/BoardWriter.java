@@ -80,12 +80,12 @@ class BoardWriter {
         .append(a("pin",        chip.ClockPinLocation))
         .append(a("frequency", "" + chip.ClockFrequency));
       if (chip.ClockIOStandard != IoStandard.DEFAULT)
-        sb.append(a("ioStandard", "" + chip.ClockIOStandard));
+        sb.append(a("ioStandard", "" + chip.ClockIOStandard.xml));
       if (chip.ClockPullBehavior != PullBehavior.NONE)
-        sb.append(a("pull", "" + chip.ClockPullBehavior));
+        sb.append(a("pull", "" + chip.ClockPullBehavior.xml));
       sb.append("/>\n");
       sb.append("    <UnusedPins")
-        .append(a("pull", "" + chip.UnusedPinsBehavior))
+        .append(a("pull", "" + chip.UnusedPinsBehavior.xml))
         .append("/>\n");
       sb.append("  </FPGA>\n");
 
@@ -119,7 +119,7 @@ class BoardWriter {
               sb.append(a("capabilities", "synthesis,programming"));
             else if (canSynth)
               sb.append(a("capabilities", "synthesis"));
-            else if (canSynth)
+            else if (canProg)
               sb.append(a("capabilities", "programming"));
             else
               sb.append(a("capabilities", "none"));

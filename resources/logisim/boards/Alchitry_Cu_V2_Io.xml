@@ -4,8 +4,8 @@
     <Chip vendor="Lattice" family="iCE40" part="iCE40HX8K" speedGrade="i" package="CB132IC"/>
     <JTAG pos="1"/>
     <USBTMC available="true"/>
-    <Clock pin="P7" frequency="100000000" pull="Float"/>
-    <UnusedPins pull="Float"/>
+    <Clock pin="P7" frequency="100000000"/>
+    <UnusedPins pull="none"/>
   </FPGA>
   <Toolchains defaultSynthesis="Apio" defaultProgramming="openFPGALoader">
     <Toolchain name="Apio" capabilities="synthesis,programming">
@@ -25,44 +25,44 @@
     <LED label="led5" pin="J12" x="616" y="184" width="26" height="12"/>
     <LED label="led6" pin="L14" x="616" y="202" width="26" height="12"/>
     <LED label="led7" pin="K12" x="616" y="220" width="26" height="12"/>
-    <Button label="reset button" pin="P8" pull="float" polarity="active-low" x="606" y="264" width="35" height="45"/>
-    <Button label="DPAD_UP" pin="D1" pull="float" x="492" y="36" width="40" height="40"/>
-    <Button label="DPAD_MIDDLE" pin="E4" pull="float" x="492" y="93" width="40" height="40"/>
-    <Button label="DPAD_DOWN" pin="E1" pull="float" x="492" y="150" width="40" height="40"/>
-    <Button label="DPAD_LEFT" pin="F4" pull="float" x="435" y="93" width="40" height="40"/>
-    <Button label="DPAD_RIGHT" pin="H4" pull="float" x="548" y="93" width="40" height="40"/>
+    <Button label="reset button" pin="P8" polarity="active-low" x="606" y="264" width="35" height="45"/>
+    <Button label="DPAD_UP"      pin="D1" x="492" y="36" width="40" height="40"/>
+    <Button label="DPAD_MIDDLE"  pin="E4" x="492" y="93" width="40" height="40"/>
+    <Button label="DPAD_DOWN"    pin="E1" x="492" y="150" width="40" height="40"/>
+    <Button label="DPAD_LEFT"    pin="F4" x="435" y="93" width="40" height="40"/>
+    <Button label="DPAD_RIGHT"   pin="H4" x="548" y="93" width="40" height="40"/>
     <SevenSegment label="7Seg_x4" n="8" pin0="B1" pin1="C1" pin2="C3" pin3="D4" pin4="A1" pin5="D3" pin6="A3" pin7="A2" polarity="active-low" x="143" y="92" width="263" height="86"/>
     <LED label="DIGIT_3_ENABLE" pin="G3" polarity="active-low" x="143" y="187" width="64" height="18"/>
     <LED label="DIGIT_2_ENABLE" pin="F3" polarity="active-low" x="210" y="187" width="64" height="18"/>
     <LED label="DIGIT_0_ENABLE" pin="H3" polarity="active-low" x="343" y="187" width="64" height="18"/>
     <LED label="DIGIT_1_ENABLE" pin="J1" polarity="active-low" x="277" y="187" width="64" height="18"/>
-    <LED label="L1" pin="E12" x="561" y="215" width="10" height="23"/>
-    <LED label="L2" pin="D14" x="544" y="215" width="10" height="23"/>
-    <LED label="L3" pin="F12" x="527" y="215" width="10" height="23"/>
-    <LED label="L4" pin="E14" x="510" y="215" width="10" height="23"/>
-    <LED label="L5" pin="C14" x="492" y="215" width="10" height="23"/>
-    <LED label="L6" pin="D12" x="475" y="215" width="10" height="23"/>
-    <LED label="L7" pin="B14" x="458" y="215" width="10" height="23"/>
-    <LED label="L8" pin="C12" x="441" y="215" width="10" height="23"/>
-    <LED label="L9" pin="C11" x="407" y="215" width="10" height="23"/>
+    <LED label="L1" pin="E12"  x="561" y="215" width="10" height="23"/>
+    <LED label="L2" pin="D14"  x="544" y="215" width="10" height="23"/>
+    <LED label="L3" pin="F12"  x="527" y="215" width="10" height="23"/>
+    <LED label="L4" pin="E14"  x="510" y="215" width="10" height="23"/>
+    <LED label="L5" pin="C14"  x="492" y="215" width="10" height="23"/>
+    <LED label="L6" pin="D12"  x="475" y="215" width="10" height="23"/>
+    <LED label="L7" pin="B14"  x="458" y="215" width="10" height="23"/>
+    <LED label="L8" pin="C12"  x="441" y="215" width="10" height="23"/>
+    <LED label="L9" pin="C11"  x="407" y="215" width="10" height="23"/>
     <LED label="L10" pin="A12" x="390" y="215" width="10" height="23"/>
     <LED label="L11" pin="C10" x="372" y="215" width="10" height="23"/>
     <LED label="L12" pin="A11" x="355" y="215" width="10" height="23"/>
-    <LED label="L13" pin="C9" x="338" y="215" width="10" height="23"/>
+    <LED label="L13" pin="C9"  x="338" y="215" width="10" height="23"/>
     <LED label="L14" pin="A10" x="321" y="215" width="10" height="23"/>
-    <LED label="L15" pin="A7" x="303" y="215" width="10" height="23"/>
-    <LED label="L16" pin="C7" x="286" y="215" width="10" height="23"/>
-    <LED label="L17" pin="A6" x="252" y="215" width="10" height="23"/>
-    <LED label="L18" pin="C6" x="235" y="215" width="10" height="23"/>
-    <LED label="L19" pin="A5" x="217" y="215" width="10" height="23"/>
-    <LED label="L20" pin="C5" x="200" y="215" width="10" height="23"/>
-    <LED label="L21" pin="A4" x="183" y="215" width="10" height="23"/>
-    <LED label="L22" pin="C4" x="166" y="215" width="10" height="23"/>
-    <LED label="L23" pin="G4" x="148" y="215" width="10" height="23"/>
-    <LED label="L24" pin="D5" x="131" y="215" width="10" height="23"/>
-    <DIPSwitch label="DIP_C" n="8" orientation="1x Left-Right" pin0="H11" pin1="G11" pin2="F11" pin3="E11" pin4="D11" pin5="D10" pin6="G1" pin7="D9" pull="float" x="463" y="287" width="88" height="36"/>
-    <DIPSwitch label="DIP_B" n="8" orientation="1x Left-Right" pin0="H1" pin1="D7" pin2="D6" pin3="M6" pin4="P4" pin5="M4" pin6="P3" pin7="L4" pull="float" x="310" y="287" width="88" height="36"/>
-    <DIPSwitch label="DIP_A" n="8" orientation="1x Left-Right" pin0="P2" pin1="L1" pin2="J3" pin3="M1" pin4="K3" pin5="N1" pin6="P1" pin7="M3" pull="float" x="152" y="287" width="88" height="36"/>
+    <LED label="L15" pin="A7"  x="303" y="215" width="10" height="23"/>
+    <LED label="L16" pin="C7"  x="286" y="215" width="10" height="23"/>
+    <LED label="L17" pin="A6"  x="252" y="215" width="10" height="23"/>
+    <LED label="L18" pin="C6"  x="235" y="215" width="10" height="23"/>
+    <LED label="L19" pin="A5"  x="217" y="215" width="10" height="23"/>
+    <LED label="L20" pin="C5"  x="200" y="215" width="10" height="23"/>
+    <LED label="L21" pin="A4"  x="183" y="215" width="10" height="23"/>
+    <LED label="L22" pin="C4"  x="166" y="215" width="10" height="23"/>
+    <LED label="L23" pin="G4"  x="148" y="215" width="10" height="23"/>
+    <LED label="L24" pin="D5"  x="131" y="215" width="10" height="23"/>
+    <DIPSwitch label="DIP_C" n="8" orientation="1x Left-Right" pin0="H11" pin1="G11" pin2="F11" pin3="E11" pin4="D11" pin5="D10" pin6="G1" pin7="D9" pull="none" x="463" y="287" width="88" height="36"/>
+    <DIPSwitch label="DIP_B" n="8" orientation="1x Left-Right" pin0="H1" pin1="D7" pin2="D6" pin3="M6" pin4="P4" pin5="M4" pin6="P3" pin7="L4" pull="none" x="310" y="287" width="88" height="36"/>
+    <DIPSwitch label="DIP_A" n="8" orientation="1x Left-Right" pin0="P2" pin1="L1" pin2="J3" pin3="M1" pin4="K3" pin5="N1" pin6="P1" pin7="M3" pull="none" x="152" y="287" width="88" height="36"/>
   </IOComponents>
   <Picture format="jpg" encoding="base64" width="740" height="400">
 /9j/4AAQSkZJRgABAgAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwg
