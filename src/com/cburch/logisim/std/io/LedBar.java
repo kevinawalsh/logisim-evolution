@@ -33,23 +33,25 @@ import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.cburch.logisim.access.InventoryFeature;
-import com.cburch.logisim.comp.ComponentData;
+import com.cburch.logisim.circuit.appear.DynamicElement;
+import com.cburch.logisim.circuit.appear.DynamicElementProvider;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.data.Attributes;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
+import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
@@ -57,53 +59,27 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class LedBar extends InstanceFactory {
+public class LedBar extends InstanceFactory implements DynamicElementProvider {
 
-  private static class State implements ComponentData {
-    private int cols;
-    private Value[] grid;
-    private long[] persistTo;
-
-    public State(int cols, long curClock) {
-      this.cols = -1;
-      updateSize(cols, curClock);
-    }
-
-    State(State other) {
-      cols = other.cols;
-      grid = other.grid.clone();
-      persistTo = other.persistTo.clone();
+  public static class Logger extends InstanceLogger {
+    
+    @Override
+    public String getLogName(InstanceState state, Object option) {
+      return state.getAttributeValue(StdAttr.LABEL);
     }
 
     @Override
-    public State duplicateForNewSimulation() {
-      return new State(this);
+    public BitWidth getBitWidth(InstanceState state, Object option) {
+      return BitWidth.create(state.getAttributeValue(ATTR_SEGMENTS));
     }
 
-    private Value get(int col, long curTick) {
-      Value ret = grid[col];
-      if (ret == Value.FALSE && persistTo[col] - curTick >= 0)
-        ret = Value.TRUE;
-      return ret;
-    }
-
-    private void setColumn(int col, Value val, long persist, Value on, Value off) {
-      int stride = -cols;
-      if (grid[col] == Value.TRUE)
-        persistTo[col] = persist - 1;
-      grid[col] = (val == on ? Value.TRUE : val == off ? Value.FALSE : val);
-      if (val == on)
-        persistTo[col] = persist;
-    }
-
-    private void updateSize(int cols, long curClock) {
-      if (this.cols != cols) {
-        this.cols = cols;
-        grid = new Value[cols];
-        persistTo = new long[cols];
-        Arrays.fill(grid, Value.UNKNOWN);
-        Arrays.fill(persistTo, curClock - 1);
-      }
+    @Override
+    public Value getLogValue(InstanceState state, Object option) {
+      Value data = state.getDataAsValue();
+      if (data == null)
+        return Value.createUnknown(getBitWidth(state, option));
+      else
+        return data;
     }
   }
 
@@ -121,7 +97,6 @@ public class LedBar extends InstanceFactory {
   static final AttributeOption SHAPE_SQUARE = DotMatrix.SHAPE_SQUARE;
   static final AttributeOption SHAPE_CIRCLE = DotMatrix.SHAPE_CIRCLE;
   static final Attribute<AttributeOption> ATTR_DOT_SHAPE = DotMatrix.ATTR_DOT_SHAPE;
-  static final Attribute<Integer> ATTR_PERSIST = DotMatrix.ATTR_PERSIST;
 
   static final Color DEFAULT_ON_COLOR = new Color(0, 0xff, 0xcc);
   static final Color DEFAULT_OFF_COLOR = Color.GRAY;
@@ -130,18 +105,16 @@ public class LedBar extends InstanceFactory {
     super("LEDBar", S.getter("ledBarComponent"));
     setAttributes(new Attribute<?>[] { StdAttr.FACING,
       ATTR_INPUT_TYPE, ATTR_SEGMENTS,
-      Io.ATTR_ACTIVE, Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR,
-      ATTR_PERSIST, ATTR_DOT_SHAPE,
-      StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC,
-      StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR
+      Io.ATTR_ACTIVE, Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, ATTR_DOT_SHAPE,
+      StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR
     }, new Object[] { Direction.EAST,
       INPUT_AS_WIRES, Integer.valueOf(8),
-        true, DEFAULT_ON_COLOR, DEFAULT_OFF_COLOR,
-        Integer.valueOf(0), SHAPE_SQUARE,
+        true, DEFAULT_ON_COLOR, DEFAULT_OFF_COLOR, SHAPE_SQUARE,
         "", StdAttr.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK
     });
     setFacingAttribute(StdAttr.FACING);
     setIconName("ledbar.png");
+    setInstanceLogger(Logger.class);
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_EDGE_LOC));
   }
 
@@ -159,6 +132,10 @@ public class LedBar extends InstanceFactory {
 
   @Override
   public Bounds getOffsetBounds(AttributeSet attrs) {
+    return getLedBarOffsetBounds(attrs);
+  }
+
+  static Bounds getLedBarOffsetBounds(AttributeSet attrs) {
     Object input = attrs.getValue(ATTR_INPUT_TYPE);
     int n = attrs.getValue(ATTR_SEGMENTS).intValue();
     boolean drawSquare = attrs.getValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
@@ -169,20 +146,6 @@ public class LedBar extends InstanceFactory {
       return Bounds.create(-w/2, -h, w * n, h).rotate(Direction.EAST, facing, 0, 0);
     else // INPUT_AS_BUS
       return Bounds.create(0, -h/2, w * n, h).rotate(Direction.EAST, facing, 0, 0);
-  }
-
-  private State getState(InstanceState state) {
-    int cols = state.getAttributeValue(ATTR_SEGMENTS).intValue();
-    long clock = state.getTickCount();
-
-    State data = (State) state.getDataAsCustom();
-    if (data == null) {
-      data = new State(cols, clock);
-      state.setData(data);
-    } else {
-      data.updateSize(cols, clock);
-    }
-    return data;
   }
 
   @Override
@@ -206,44 +169,69 @@ public class LedBar extends InstanceFactory {
 
   @Override
   public void paintInstance(InstancePainter painter) {
-    Color onColor = painter.getAttributeValue(Io.ATTR_ON_COLOR);
-    Color offColor = painter.getAttributeValue(Io.ATTR_OFF_COLOR);
-    boolean drawSquare = painter.getAttributeValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
-    int w = drawSquare ? 10 : 20;
-    int h = drawSquare ? 30 : 20;
-    int x0, y0;
-    if (painter.getAttributeValue(ATTR_INPUT_TYPE) == INPUT_AS_WIRES) {
-      x0 = 0; y0 = -h/2;
-    } else {
-      x0 = w/2; y0 = 0;
-    }
-
-    State data = getState(painter);
-    long ticks = painter.getTickCount();
+    Graphics2D g = painter.getGraphics();
+    Value data = painter.getDataAsValue();
     Bounds bds = painter.getNominalBounds();
+    boolean colorized = painter.shouldDrawColor();
     boolean showState = painter.getShowState();
 
-    Graphics2D g = painter.getGraphics();
-
-    Direction facing = painter.getAttributeValue(StdAttr.FACING);
-    Location loc = painter.getLocation();
+    paintLedBar(g, data, bds, painter.getAttributeSet(), true, showState, 2);
     
-    double radians = facing.toRadians();
-    g.translate(loc.getX(), loc.getY());
-    g.rotate(-radians);
+    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
+    painter.drawLabel();
+    painter.drawPorts();
+  }
 
-    int cols = data.cols;
+  static void paintLedBar(Graphics2D g, Value data, Bounds bds,
+      AttributeSet attrs, boolean colorized, boolean showState, int borderWidth) {
+
+    int cols = attrs.getValue(ATTR_SEGMENTS);
+    boolean activeHigh = attrs.getValue(Io.ATTR_ACTIVE).booleanValue();
+    Value on = activeHigh ? Value.TRUE : Value.FALSE;
+    Value off = activeHigh ? Value.FALSE : Value.TRUE;
+    Color onColor = colorized ? attrs.getValue(Io.ATTR_ON_COLOR) : Color.DARK_GRAY;
+    Color offColor = colorized ? attrs.getValue(Io.ATTR_OFF_COLOR) : Color.WHITE;
+    Color errColor = colorized ? Value.ERROR_COLOR : Color.LIGHT_GRAY;
+    boolean drawSquare = attrs.getValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
+    int w = drawSquare ? 10 : 20;
+    int h = drawSquare ? 30 : 20;
+    Direction facing = attrs.getValue(StdAttr.FACING);
+    boolean upright = (facing == Direction.NORTH || facing == Direction.SOUTH);
+
+    int ww, hh;
+    if (drawSquare && upright) { ww = h; hh = w; }
+    else { ww = w; hh = h; }
+
+    int x0, y0, dx, dy;
+    if (facing == Direction.EAST) {
+      x0 = bds.x + ww/2; y0 = bds.y + hh/2;
+      dx = ww; dy = 0;
+    } else if (facing == Direction.WEST) {
+      x0 = bds.x + bds.width - ww/2 - 1; y0 = bds.y + hh/2;
+      dx = -ww; dy = 0;
+    } else if (facing == Direction.NORTH) {
+      x0 = bds.x + ww/2; y0 = bds.y + bds.height - hh/2 - 1;
+      dx = 0; dy = -hh;
+    } else {
+      x0 = bds.x + ww/2; y0 = bds.y + hh/2;
+      dx = 0; dy = hh;
+    }
+
+    if (data == null)
+      data = Value.UNKNOWN;
+    Value[] vals = data.getAll();
+
     for (int i = 0; i < cols; i++) {
-      int x = x0 + w * i;
-      int y = y0;
+      int x = x0 + dx * (cols - i - 1);
+      int y = y0 + dy * (cols - i - 1);
       if (showState) {
-        Value val = data.get(i, ticks);
-        if (val == Value.TRUE)
+        Value val = (i < vals.length) ? vals[i] : Value.UNKNOWN;
+        if (val == on)
           g.setColor(onColor);
-        else if (val == Value.FALSE)
+        else if (val == off || val == Value.UNKNOWN)
           g.setColor(offColor);
         else
-          g.setColor(Value.ERROR_COLOR);
+          g.setColor(errColor);
       } else {
         g.setColor(Color.GRAY);
       }
@@ -253,36 +241,32 @@ public class LedBar extends InstanceFactory {
         g.fillOval(x - 8, y - 8, 16, 16);
     }
 
-    g.rotate(radians);
-    g.translate(-loc.getX(), -loc.getY());
-
     g.setColor(Color.BLACK);
-    GraphicsUtil.switchToWidth(g, 2);
+    GraphicsUtil.switchToWidth(g, borderWidth);
     g.drawRect(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     GraphicsUtil.switchToWidth(g, 1);
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
-    painter.drawLabel();
-    painter.drawPorts();
+  }
+  
+  @Override
+  public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
+    return new LedBarShape(x, y, path);
   }
 
   @Override
   public void propagate(InstanceState state) {
     Object type = state.getAttributeValue(ATTR_INPUT_TYPE);
-    int cols = state.getAttributeValue(ATTR_SEGMENTS).intValue();
-    long clock = state.getTickCount();
-    long persist = clock + state.getAttributeValue(ATTR_PERSIST).intValue();
-    boolean activeHigh = state.getAttributeValue(Io.ATTR_ACTIVE).booleanValue();
-    Value on = activeHigh ? Value.TRUE : Value.FALSE;
-    Value off = activeHigh ? Value.FALSE : Value.TRUE;
-
-    State data = getState(state);
     if (type == INPUT_AS_WIRES) {
-      for (int i = 0; i < cols; i++)
-        data.setColumn(i, state.getPortValue(i), persist, on, off);
+      int cols = state.getAttributeValue(ATTR_SEGMENTS).intValue();
+      Value[] vals = new Value[cols];
+      for (int i = 0; i < cols; i++) {
+        vals[i] = state.getPortValue(cols - i - 1);
+        if (vals[i] == Value.NIL)
+          vals[i] = Value.UNKNOWN;
+      }
+      state.setData(Value.create(vals));
     } else { // INPUT_AS_BUS
-      Value[] vals = state.getPortValue(0).getAll();
-      for (int i = 0; i < cols; i++)
-        data.setColumn(cols - i - 1, i < vals.length ? vals[i] : Value.UNKNOWN, persist, on, off);
+      Value vals = state.getPortValue(0);
+      state.setData(vals);
     }
   }
 

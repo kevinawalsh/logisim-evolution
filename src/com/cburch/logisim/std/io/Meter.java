@@ -355,6 +355,7 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
     state.setData(val);
   }
 
+  @Override
   public DynamicElement createDynamicElement(int x, int y, DynamicElement.Path path) {
     return new MeterShape(x, y, path);
   }
