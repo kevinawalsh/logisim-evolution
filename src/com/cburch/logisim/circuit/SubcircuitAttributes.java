@@ -30,6 +30,8 @@
 
 package com.cburch.logisim.circuit;
 
+import java.awt.Color;
+
 import com.cburch.logisim.data.AttributeSets;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.Direction;
@@ -43,12 +45,12 @@ import com.cburch.logisim.instance.StdAttr;
 public class SubcircuitAttributes extends AttributeSets.ArrayBacked {
 
   private static Attribute<?>[] INSTANCE_ATTRS = {
-    StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT,
+    StdAttr.FACING, StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
   };
 
   static final Object[] INSTANCE_DEFAULTS = {
     Direction.EAST, /* overwritten below */
-    "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT
+    "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK, 
   };
 
   private Instance[] pinInstances;

@@ -456,7 +456,6 @@ public class Button extends InstanceFactory {
 
     // draw label, possibly shifted
     g.translate(labelOffset-centerAdjust, labelOffset-centerAdjust);
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     g.translate(-labelOffset+centerAdjust, -labelOffset+centerAdjust);
     painter.drawPorts();

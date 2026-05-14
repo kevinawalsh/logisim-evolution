@@ -204,7 +204,6 @@ public class Meter extends InstanceFactory implements DynamicElementProvider {
 
     paintMeter(g, data, bds, painter.getAttributeSet(), colorized, showState, 2, Color.BLACK);
 
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     painter.drawPorts();
 

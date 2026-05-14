@@ -188,7 +188,6 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
 
     paintLedBar(g, data, bds, painter.getAttributeSet(), true, showState, 2);
     
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     painter.drawPorts();
   }

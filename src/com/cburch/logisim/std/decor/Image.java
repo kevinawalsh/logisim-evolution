@@ -236,10 +236,10 @@ public class Image extends InstanceFactory implements Reshapable {
       g.drawLine(x, y+h-1, x+w-1, y);
     }
 
-    if (border) {
+    if (border) { // ghost or resizing... border and no label
       g.setColor(Color.GRAY);
       g.drawRect(x, y, bds.getWidth(), bds.getHeight());
-    } else {
+    } else { // normal... no border, with label
       painter.drawLabel();
     }
   }

@@ -96,11 +96,11 @@ public class Tty extends InstanceFactory {
     setAttributes(new Attribute[] {
       ATTR_ROWS, ATTR_COLUMNS, ATTR_WIDTH,
           StdAttr.EDGE_TRIGGER, Io.ATTR_COLOR, Io.ATTR_BACKGROUND,
-          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
+          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR},
           new Object[] {
             Integer.valueOf(8), Integer.valueOf(32), Integer.valueOf(7),
             StdAttr.TRIG_RISING, Color.BLACK, DEFAULT_BACKGROUND,
-            "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
+            "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK});
     setIconName("tty.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC));
   }

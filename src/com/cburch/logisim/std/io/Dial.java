@@ -249,7 +249,6 @@ public class Dial extends Slider {
       drawTick(g, cx, cy, t, edge/3, edge-6, pinColor, freeSpin);
     }
 
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     painter.drawPorts();
   }

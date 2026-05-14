@@ -30,6 +30,7 @@
 package com.cburch.logisim.std.memory;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +63,7 @@ public class RamAttributes extends AbstractAttributeSet {
   private static List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
         StdAttr.TRIGGER, ATTR_TYPE, ATTR_DBUS,
-        StdAttr.LABEL, StdAttr.LABEL_FONT,
+        StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
         StdAttr.APPEARANCE});
 
   private BitWidth addrBits = BitWidth.create(8);
@@ -73,6 +74,7 @@ public class RamAttributes extends AbstractAttributeSet {
   private AttributeOption Type = VOLATILE; // NONVOLATILE;
   private AttributeOption BusStyle = BUS_SEP; // BUS_BIDIR;
   private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
+  private Color LabelColor = Color.BLACK;
   private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
 
   RamAttributes() { }
@@ -85,6 +87,7 @@ public class RamAttributes extends AbstractAttributeSet {
     d.Trigger = Trigger;
     d.BusStyle = BusStyle;
     d.LabelFont = LabelFont;
+    d.LabelColor = LabelColor;
     d.Appearance = Appearance;
     d.lineSize = lineSize;
   }
@@ -113,6 +116,8 @@ public class RamAttributes extends AbstractAttributeSet {
       return (V) BusStyle;
     if (attr == StdAttr.LABEL_FONT)
       return (V) LabelFont;
+    if (attr == StdAttr.LABEL_COLOR)
+      return (V) LabelColor;
     if (attr == StdAttr.APPEARANCE)
       return (V) Appearance;
     return null;
@@ -136,6 +141,8 @@ public class RamAttributes extends AbstractAttributeSet {
       BusStyle = (AttributeOption) value;
     else if (attr == StdAttr.LABEL_FONT)
       LabelFont = (Font) value;
+    else if (attr == StdAttr.LABEL_COLOR)
+      LabelColor = (Color) value;
     else if (attr == StdAttr.APPEARANCE)
       Appearance = (AttributeOption) value;
   }

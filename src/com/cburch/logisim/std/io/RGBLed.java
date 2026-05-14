@@ -186,7 +186,6 @@ public class RGBLed extends InstanceFactory implements DynamicElementProvider {
     GraphicsUtil.switchToWidth(g, 2);
     g.drawOval(bds.getX(), bds.getY(), bds.getWidth(), bds.getHeight());
     GraphicsUtil.switchToWidth(g, 1);
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     painter.drawPorts();
   }

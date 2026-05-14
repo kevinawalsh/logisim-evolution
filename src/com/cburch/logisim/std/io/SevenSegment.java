@@ -86,7 +86,6 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
           g.fillOval(x + 28, y + 48, 5, 5); // draw decimal point
       }
     }
-    g.setColor(Color.BLACK);
     painter.drawLabel();
     painter.drawPorts();
   }
@@ -126,9 +125,9 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
     super("7-Segment Display", S.getter("sevenSegmentComponent"));
     setAttributes(new Attribute[] { Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR,
       Io.ATTR_BACKGROUND, Io.ATTR_ACTIVE, StdAttr.LABEL,
-      StdAttr.LABEL_LOC, StdAttr.LABEL_FONT }, new Object[] {
+      StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR }, new Object[] {
         new Color(240, 0, 0), DEFAULT_OFF, Io.DEFAULT_BACKGROUND,
-        Boolean.TRUE, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT });
+        Boolean.TRUE, "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     setOffsetBounds(Bounds.create(-5, 0, 40, 60));
     setIconName("7seg.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC));

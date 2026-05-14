@@ -87,14 +87,14 @@ class ControlledBuffer extends InstanceFactory {
     if (isInverter) {
       setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.WIDTH,
         NotGate.ATTR_SIZE, ATTR_CONTROL, StdAttr.LABEL,
-        StdAttr.LABEL_FONT }, new Object[] { Direction.EAST,
+        StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR }, new Object[] { Direction.EAST,
           BitWidth.ONE, NotGate.SIZE_WIDE, RIGHT_HANDED, "",
-          StdAttr.DEFAULT_LABEL_FONT });
+          StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     } else {
       setAttributes(new Attribute[] { StdAttr.FACING, StdAttr.WIDTH,
-        ATTR_CONTROL, StdAttr.LABEL, StdAttr.LABEL_FONT },
+        ATTR_CONTROL, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
         new Object[] { Direction.EAST, BitWidth.ONE, RIGHT_HANDED,
-          "", StdAttr.DEFAULT_LABEL_FONT });
+          "", StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     }
     setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));

@@ -75,10 +75,10 @@ public class ShiftRegister extends InstanceFactory {
   public ShiftRegister() {
     super("Shift Register", S.getter("shiftRegisterComponent"));
     setAttributes(new Attribute[] { StdAttr.WIDTH, ATTR_LENGTH, ATTR_LOAD,
-      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT,
+      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
       Register.ATTR_SHOW_IN_TAB, StdAttr.APPEARANCE },
       new Object[] { BitWidth.ONE, Integer.valueOf(8), Boolean.TRUE,
-        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, 
+        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, Color.BLACK,
         true, StdAttr.APPEAR_CLASSIC });
     setKeyConfigurator(JoinedConfigurator
         .create(new IntegerConfigurator(ATTR_LENGTH, 1, 32, 0),
@@ -383,7 +383,6 @@ public class ShiftRegister extends InstanceFactory {
 
   private void paintInstanceEvolution(InstancePainter painter) {
     // draw boundary, label
-    painter.drawLabel();
     int xpos = painter.getLocation().getX();
     int ypos = painter.getLocation().getY();
     BitWidth widObj = painter.getAttributeValue(StdAttr.WIDTH);

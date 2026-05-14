@@ -240,7 +240,6 @@ public class Probe extends InstanceFactory implements DynamicElementProvider, Dy
           bds.getHeight() - 2, 20, 20);
     }
 
-    g.setColor(Color.GRAY);
     painter.drawLabel();
     g.setColor(Color.DARK_GRAY);
 

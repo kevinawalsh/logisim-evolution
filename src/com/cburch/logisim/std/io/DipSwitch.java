@@ -253,7 +253,6 @@ public class DipSwitch extends InstanceFactory {
     }
     g.translate(-x, -y);
 
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     painter.drawPorts();
   }

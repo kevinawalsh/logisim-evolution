@@ -216,10 +216,10 @@ public class Random extends InstanceFactory {
   public Random() {
     super("Random", S.getter("randomComponent"));
     setAttributes(new Attribute[] { StdAttr.WIDTH, ATTR_SEED,
-      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT,
+      StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
       StdAttr.APPEARANCE, },
       new Object[] { BitWidth.create(8), Integer.valueOf(0),
-        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT,
+        StdAttr.TRIG_RISING, "", StdAttr.DEFAULT_LABEL_FONT, Color.BLACK,
         StdAttr.APPEAR_CLASSIC,});
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
 
@@ -335,7 +335,6 @@ public class Random extends InstanceFactory {
 
     // draw boundary, label
     painter.drawBounds();
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
 
     // draw input and output ports

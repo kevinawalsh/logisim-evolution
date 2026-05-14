@@ -29,6 +29,7 @@
  */
 package com.cburch.logisim.std.memory;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
@@ -46,12 +47,12 @@ class RomAttributes extends AbstractAttributeSet {
   // loading APPEARANCE must be set before the remaining attributes.
   private static List<Attribute<?>> ATTRIBUTES_CLASSIC = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
-        Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
+        Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
         StdAttr.APPEARANCE, Rom.ATTR_PROPORTIONS });
 
   private static List<Attribute<?>> ATTRIBUTES_ANSI = Arrays
       .asList(new Attribute<?>[] { Mem.ADDR_ATTR, Mem.DATA_ATTR, Mem.LINE_ATTR,
-        Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT,
+        Rom.CONTENTS_ATTR, StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
         StdAttr.APPEARANCE });
 
   private BitWidth addrBits = BitWidth.create(8);
@@ -60,6 +61,7 @@ class RomAttributes extends AbstractAttributeSet {
   private AttributeOption lineSize = Mem.SINGLE;
   private String Label = "";
   private Font LabelFont = StdAttr.DEFAULT_LABEL_FONT;
+  private Color LabelColor = Color.BLACK;
   private AttributeOption Appearance = StdAttr.APPEAR_CLASSIC;
   private AttributeOption Proportions = Rom.RECT;
 
@@ -76,6 +78,7 @@ class RomAttributes extends AbstractAttributeSet {
     d.contents.copyFrom(contents);
     d.lineSize = lineSize;
     d.LabelFont = LabelFont;
+    d.LabelColor = LabelColor;
     d.Appearance = Appearance;
     d.Proportions = Proportions;
   }
@@ -102,6 +105,8 @@ class RomAttributes extends AbstractAttributeSet {
       return (V) Label;
     if (attr == StdAttr.LABEL_FONT)
       return (V) LabelFont;
+    if (attr == StdAttr.LABEL_COLOR)
+      return (V) LabelColor;
     if (attr == StdAttr.APPEARANCE)
       return (V) Appearance;
     if (attr == Rom.ATTR_PROPORTIONS)
@@ -135,6 +140,8 @@ class RomAttributes extends AbstractAttributeSet {
       Label = (String) value;
     else if (attr == StdAttr.LABEL_FONT)
       LabelFont = (Font) value;
+    else if (attr == StdAttr.LABEL_COLOR)
+      LabelColor = (Color) value;
     else if (attr == StdAttr.APPEARANCE) {
       Appearance = (AttributeOption) value;
       fireAttributeListChanged();

@@ -378,7 +378,6 @@ public class PortIO extends InstanceFactory {
     g.translate(-x, -y);
 
     painter.drawPorts();
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
   }
 

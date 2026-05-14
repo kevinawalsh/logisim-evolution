@@ -236,7 +236,6 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
 
     // draw boundary, label
     painter.drawBounds();
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
 
     // draw input and output ports
@@ -288,8 +287,6 @@ public class Register extends InstanceFactory implements DynamicElementProvider,
           || Trigger.equals(StdAttr.TRIG_LOW);
 
       DrawRegisterEvolution(painter, x, y, width, IsLatch, NegActive, true, a);
-      Graphics2D g = painter.getGraphics();
-      g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
       painter.drawLabel();
 
       // draw input and output ports

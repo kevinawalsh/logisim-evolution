@@ -33,6 +33,8 @@ package com.cburch.logisim.std.wiring;
 import java.util.Arrays;
 import java.util.List;
 
+import java.awt.Color;
+
 import com.cburch.logisim.circuit.RadixOption;
 import com.cburch.logisim.data.AbstractAttributeSet;
 import com.cburch.logisim.data.Attribute;
@@ -49,12 +51,12 @@ class PinAttributes extends ProbeAttributes {
   private static final List<Attribute<?>> INPIN_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
         StdAttr.WIDTH, Pin.ATTR_BEHAVIOR,
-        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT,
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
         RadixOption.ATTRIBUTE });
   private static final List<Attribute<?>> OUTPIN_ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, Pin.ATTR_TYPE,
         StdAttr.WIDTH, /*Pin.ATTR_BEHAVIOR, */
-        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT,
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
         RadixOption.ATTRIBUTE });
 
   BitWidth width = BitWidth.ONE;
@@ -62,7 +64,9 @@ class PinAttributes extends ProbeAttributes {
   AttributeOption behavior = Pin.SIMPLE;
   boolean typeReadOnly; // used for AddTool/FactoryDescription in Wiring library
 
-  public PinAttributes() { }
+  public PinAttributes() {
+     labelcolor = Color.BLACK;
+  }
 
   @Override
   public List<Attribute<?>> getAttributes() {

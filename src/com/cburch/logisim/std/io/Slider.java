@@ -311,7 +311,6 @@ public class Slider extends InstanceFactory {
       drawTick(g, x, y+h, t, ctr-4, ctr+4, pinColor.brighter(), upright);
     }
 
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
     painter.drawPorts();
   }

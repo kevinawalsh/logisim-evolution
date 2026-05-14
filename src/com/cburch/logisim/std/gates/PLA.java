@@ -91,7 +91,7 @@ class PLA extends InstanceFactory {
   // setting them in any order during xml file loading should (hopefully) work.
   private static final List<Attribute<?>> ATTRIBUTES = Arrays.asList(new Attribute<?>[] {
     StdAttr.FACING, ATTR_IN_WIDTH, ATTR_OUT_WIDTH, ATTR_TABLE,
-        StdAttr.LABEL, StdAttr.LABEL_FONT
+        StdAttr.LABEL, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR,
   });
 
   private static class TruthTableAttribute extends Attribute<PLATable> {
@@ -131,6 +131,7 @@ class PLA extends InstanceFactory {
     private String label = "PLA";
     private Direction facing = Direction.EAST;
     private Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
+    private Color labelColor = Color.BLACK;
     private BitWidth widthIn = BitWidth.create(2);
     private BitWidth widthOut = BitWidth.create(2);
     private PLATable tt = new PLATable(2, 2, "PLA");
@@ -141,6 +142,7 @@ class PLA extends InstanceFactory {
       dest.label = this.label;
       dest.facing = this.facing;
       dest.labelFont = this.labelFont;
+      dest.labelColor = this.labelColor;
       dest.widthIn = this.widthIn;
       dest.widthOut = this.widthOut;
       dest.tt = new PLATable(this.tt);
@@ -165,6 +167,8 @@ class PLA extends InstanceFactory {
         return (V) label;
       if (attr == StdAttr.LABEL_FONT)
         return (V) labelFont;
+      if (attr == StdAttr.LABEL_COLOR)
+        return (V) labelColor;
       return null;
     }
   
@@ -192,6 +196,8 @@ class PLA extends InstanceFactory {
         tt.setLabel(label);
       } else if (attr == StdAttr.LABEL_FONT) {
         labelFont = (Font) value;
+      } else if (attr == StdAttr.LABEL_COLOR) {
+        labelColor = (Color) value;
       }
     }
 
@@ -300,6 +306,7 @@ class PLA extends InstanceFactory {
     GraphicsUtil.switchToWidth(g, 2);
     g.drawRect(x, y, bds.getWidth(), bds.getHeight());
 
+    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     g.setFont(painter.getAttributeValue(StdAttr.LABEL_FONT));
     String label = painter.getAttributeValue(StdAttr.LABEL);
     GraphicsUtil.drawCenteredText(g, label, x+w/2, y+h/3);

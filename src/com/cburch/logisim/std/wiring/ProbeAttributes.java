@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.std.wiring;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.Arrays;
 import java.util.List;
@@ -45,12 +46,13 @@ class ProbeAttributes extends AbstractAttributeSet {
 
   private static final List<Attribute<?>> ATTRIBUTES = Arrays
       .asList(new Attribute<?>[] { StdAttr.FACING, RadixOption.ATTRIBUTE,
-        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, });
+        StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR});
 
   Direction facing = Direction.EAST;
   String label = "";
   Direction labelloc = Direction.WEST;
   Font labelfont = StdAttr.DEFAULT_LABEL_FONT;
+  Color labelcolor = Color.GRAY;
   RadixOption radix = RadixOption.RADIX_2;
   BitWidth width = BitWidth.ONE;
 
@@ -78,6 +80,8 @@ class ProbeAttributes extends AbstractAttributeSet {
       return (E) labelloc;
     if (attr == StdAttr.LABEL_FONT)
       return (E) labelfont;
+    if (attr == StdAttr.LABEL_COLOR)
+      return (E) labelcolor;
     if (attr == RadixOption.ATTRIBUTE)
       return (E) radix;
     if (attr == StdAttr.WIDTH)
@@ -95,6 +99,8 @@ class ProbeAttributes extends AbstractAttributeSet {
       labelloc = (Direction) value;
     else if (attr == StdAttr.LABEL_FONT)
       labelfont = (Font) value;
+    else if (attr == StdAttr.LABEL_COLOR)
+      labelcolor = (Color) value;
     else if (attr == RadixOption.ATTRIBUTE)
       radix = (RadixOption) value;
   }

@@ -59,10 +59,10 @@ public class HexDigit extends InstanceFactory implements DynamicElementProvider 
     super("Hex Digit Display", S.getter("hexDigitComponent"));
     setAttributes(new Attribute[] {
       Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, Io.ATTR_BACKGROUND,
-          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
+          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
           new Object[] {
             new Color(240, 0, 0), SevenSegment.DEFAULT_OFF, Io.DEFAULT_BACKGROUND,
-            "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
+            "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     Port[] ps = new Port[2];
     ps[HEX] = new Port(0, 0, Port.INPUT, 4);
     ps[DP] = new Port(20, 0, Port.INPUT, 1);

@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.instance;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 
 import com.cburch.logisim.circuit.Circuit;
@@ -114,8 +115,14 @@ public class InstancePainter implements InstanceState {
   // within drawGhost() or any other cases where we only have a Factory and
   // AttributeSet, rather than a Component.
   public void drawLabel() { // (a)
-    if (comp != null)
+    if (comp != null) {
+      Color c = getAttributeValue(StdAttr.LABEL_COLOR);
+      Graphics2D g = getGraphics();
+      Color old = g.getColor();
+      g.setColor(c == null ? Color.BLACK : c);
       comp.drawLabel(context);
+      g.setColor(old);
+    }
   }
 
   public void drawPort(int i) { // (a)

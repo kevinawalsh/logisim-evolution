@@ -403,7 +403,6 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
 
     // draw boundary, label
     painter.drawBounds();
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
 
     // draw input and output ports
@@ -444,7 +443,6 @@ public class Counter extends InstanceFactory implements DynamicElementProvider, 
     int Xpos = painter.getLocation().getX();
     int Ypos = painter.getLocation().getY();
     Graphics2D g = painter.getGraphics();
-    g.setColor(painter.getAttributeValue(StdAttr.LABEL_COLOR));
     painter.drawLabel();
 
     DrawControl(painter, Xpos, Ypos);

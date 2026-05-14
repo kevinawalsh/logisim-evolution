@@ -31,6 +31,7 @@
 package com.cburch.logisim.std.gates;
 import static com.cburch.logisim.std.Strings.S;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.List;
 import java.util.ArrayList;
@@ -90,6 +91,7 @@ class GateAttributes extends AbstractAttributeSet {
   AttributeOption xorBehave;
   String label = "";
   Font labelFont = StdAttr.DEFAULT_LABEL_FONT;
+  Color labelColor = Color.BLACK;
 
   GateAttributes(boolean isXor) {
     xorBehave = isXor ? XOR_ODD : null;
@@ -116,6 +118,8 @@ class GateAttributes extends AbstractAttributeSet {
       return (V) label;
     if (attr == StdAttr.LABEL_FONT)
       return (V) labelFont;
+    if (attr == StdAttr.LABEL_COLOR)
+      return (V) labelColor;
     if (attr == ATTR_SIZE)
       return (V) size;
     if (attr == ATTR_INPUTS)
@@ -143,6 +147,8 @@ class GateAttributes extends AbstractAttributeSet {
       label = (String) value;
     } else if (attr == StdAttr.LABEL_FONT) {
       labelFont = (Font) value;
+    } else if (attr == StdAttr.LABEL_COLOR) {
+      labelColor = (Color) value;
     } else if (attr == ATTR_SIZE) {
       size = (AttributeOption) value;
     } else if (attr == ATTR_INPUTS) {

@@ -183,10 +183,10 @@ public class Clock extends InstanceFactory {
     super("Clock", S.getter("clockComponent"));
     setAttributes(
         new Attribute[] { StdAttr.FACING, ATTR_HIGH, ATTR_LOW, ATTR_PHASE, 
-          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT },
+          StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
           new Object[] { Direction.EAST, Integer.valueOf(1),
             Integer.valueOf(1), Integer.valueOf(0), "", Direction.WEST,
-            StdAttr.DEFAULT_LABEL_FONT });
+            StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
     setFacingAttribute(StdAttr.FACING);
     setInstanceLogger(ClockLogger.class);
     setInstancePoker(ClockPoker.class);

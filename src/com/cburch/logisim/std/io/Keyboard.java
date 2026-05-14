@@ -212,8 +212,8 @@ public class Keyboard extends InstanceFactory {
 
   public Keyboard() {
     super("Keyboard", S.getter("keyboardComponent"));
-    setAttributes(new Attribute[] { ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT},
-        new Object[] { Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING, "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT});
+    setAttributes(new Attribute[] { ATTR_BUFFER, ATTR_WIDTH, StdAttr.EDGE_TRIGGER, StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR},
+        new Object[] { Integer.valueOf(32), Integer.valueOf(7), StdAttr.TRIG_RISING, "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK});
     setOffsetBounds(Bounds.create(0, -15, WIDTH, HEIGHT));
     setIconName("keyboard.gif");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC));
