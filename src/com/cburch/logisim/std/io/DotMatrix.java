@@ -54,6 +54,10 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.std.wiring.DurationAttribute;
 import com.cburch.logisim.util.GraphicsUtil;
 
+// Future work:
+//  - StdAttr.FACING
+//  - StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR
+
 public class DotMatrix extends InstanceFactory {
   private static class State implements ComponentData {
     private int rows;

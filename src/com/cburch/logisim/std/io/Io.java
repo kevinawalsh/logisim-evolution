@@ -68,6 +68,8 @@ public class Io extends Library {
         "led.gif", "Led"),
     new FactoryDescription("RGBLED", S.getter("RGBledComponent"),
         "rgbled.gif", "RGBLed"),
+    new FactoryDescription("LEDBar", S.getter("ledBarComponent"),
+        "ledbar.png", "LedBar"),
     // fancier output
     new FactoryDescription("7-Segment Display",
         S.getter("sevenSegmentComponent"), "7seg.gif",
