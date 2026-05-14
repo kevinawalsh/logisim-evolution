@@ -128,6 +128,7 @@ class MenuFile extends Menu implements ActionListener {
     "logisim features > slider + dot matrix      : invaders.circ : main",
     "logisim features > inputs and poke tool     : interaction.circ : main",
     "logisim features > real time clock          : digital-clock.circ : main",
+    "logisim features > ledbars + counters + rng : io-examples.circ : ledbar-example",
 
     "miscellaneous > fizz-buzz                   : wiring.circ : fizz-buzz",
     "miscellaneous > ideal relay                 : IdealRelay.circ : main",

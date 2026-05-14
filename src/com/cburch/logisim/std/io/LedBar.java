@@ -57,6 +57,8 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
+import com.cburch.logisim.tools.key.IntegerConfigurator;
+import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
 public class LedBar extends InstanceFactory implements DynamicElementProvider {
@@ -115,7 +117,9 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
     setFacingAttribute(StdAttr.FACING);
     setIconName("ledbar.png");
     setInstanceLogger(Logger.class);
-    setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_EDGE_LOC));
+    setKeyConfigurator(JoinedConfigurator.create(
+          new IntegerConfigurator(ATTR_SEGMENTS, 1, Value.MAX_WIDTH, 0),
+          new DirectionConfigurator(StdAttr.LABEL_EDGE_LOC)));
   }
 
   @Override
@@ -207,10 +211,10 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
       x0 = bds.x + ww/2; y0 = bds.y + hh/2;
       dx = ww; dy = 0;
     } else if (facing == Direction.WEST) {
-      x0 = bds.x + bds.width - ww/2 - 1; y0 = bds.y + hh/2;
+      x0 = bds.x + bds.width - ww/2; y0 = bds.y + hh/2;
       dx = -ww; dy = 0;
     } else if (facing == Direction.NORTH) {
-      x0 = bds.x + ww/2; y0 = bds.y + bds.height - hh/2 - 1;
+      x0 = bds.x + ww/2; y0 = bds.y + bds.height - hh/2;
       dx = 0; dy = -hh;
     } else {
       x0 = bds.x + ww/2; y0 = bds.y + hh/2;
@@ -236,7 +240,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
         g.setColor(Color.GRAY);
       }
       if (drawSquare)
-        g.fillRect(x - 3, y - 8, 6, 16);
+        g.fillRect(x - (ww/2+1)/2, y - (hh/2+1)/2, (ww/2+1), (hh/2+1));
       else
         g.fillOval(x - 8, y - 8, 16, 16);
     }
