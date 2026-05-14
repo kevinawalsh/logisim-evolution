@@ -84,7 +84,7 @@
       <a name="labelloc" val="north"/>
     </comp>
     <comp lib="6" loc="(90,170)" name="LEDBar">
-      <a name="dotshape" val="circle"/>
+      <a name="shape" val="round"/>
       <a name="inputtype" val="bus"/>
     </comp>
     <wire from="(160,260)" to="(160,270)"/>

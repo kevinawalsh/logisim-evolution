@@ -61,6 +61,9 @@ import com.cburch.logisim.tools.key.IntegerConfigurator;
 import com.cburch.logisim.tools.key.JoinedConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
+// Future improvements:
+// - support multi-colored bars?
+
 public class LedBar extends InstanceFactory implements DynamicElementProvider {
 
   public static class Logger extends InstanceLogger {
@@ -92,13 +95,17 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
   static final Attribute<AttributeOption> ATTR_INPUT_TYPE = Attributes
       .forOption("inputtype", S.getter("ioLedBarInput"),
           new AttributeOption[] { INPUT_AS_WIRES, INPUT_AS_BUS });
-  
+
+  static final AttributeOption SHAPE_RECT = new AttributeOption("rectangular",
+      S.getter("ioLedBarShapeRectangle"));
+  static final AttributeOption SHAPE_ROUND = new AttributeOption("round",
+      S.getter("ioLedBarShapeRound"));
+  static final Attribute<AttributeOption> ATTR_LED_SHAPE = Attributes
+      .forOption("shape", S.getter("ioLedBarShape"),
+          new AttributeOption[] { SHAPE_RECT, SHAPE_ROUND });
+
   static final Attribute<Integer> ATTR_SEGMENTS = Attributes
       .forIntegerRange("segments", S.getter("ioLedBarSegments"), 1, Value.MAX_WIDTH);
-
-  static final AttributeOption SHAPE_SQUARE = DotMatrix.SHAPE_SQUARE;
-  static final AttributeOption SHAPE_CIRCLE = DotMatrix.SHAPE_CIRCLE;
-  static final Attribute<AttributeOption> ATTR_DOT_SHAPE = DotMatrix.ATTR_DOT_SHAPE;
 
   static final Color DEFAULT_ON_COLOR = new Color(0, 0xff, 0xcc);
   static final Color DEFAULT_OFF_COLOR = Color.GRAY;
@@ -107,11 +114,11 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
     super("LEDBar", S.getter("ledBarComponent"));
     setAttributes(new Attribute<?>[] { StdAttr.FACING,
       ATTR_INPUT_TYPE, ATTR_SEGMENTS,
-      Io.ATTR_ACTIVE, Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, ATTR_DOT_SHAPE,
+      Io.ATTR_ACTIVE, Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, ATTR_LED_SHAPE,
       StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR
     }, new Object[] { Direction.EAST,
       INPUT_AS_WIRES, Integer.valueOf(8),
-        true, DEFAULT_ON_COLOR, DEFAULT_OFF_COLOR, SHAPE_SQUARE,
+        true, DEFAULT_ON_COLOR, DEFAULT_OFF_COLOR, SHAPE_RECT,
         "", StdAttr.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK
     });
     setFacingAttribute(StdAttr.FACING);
@@ -142,7 +149,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
   static Bounds getLedBarOffsetBounds(AttributeSet attrs) {
     Object input = attrs.getValue(ATTR_INPUT_TYPE);
     int n = attrs.getValue(ATTR_SEGMENTS).intValue();
-    boolean drawSquare = attrs.getValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
+    boolean drawSquare = attrs.getValue(ATTR_LED_SHAPE) == SHAPE_RECT;
     int w = drawSquare ? 10 : 20;
     int h = drawSquare ? 30 : 20;
     Direction facing = attrs.getValue(StdAttr.FACING);
@@ -155,7 +162,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == ATTR_SEGMENTS || attr == ATTR_INPUT_TYPE
-        || attr == ATTR_DOT_SHAPE || attr == StdAttr.FACING) {
+        || attr == ATTR_LED_SHAPE || attr == StdAttr.FACING) {
       instance.recomputeBounds();
       updatePorts(instance);
       positionLabel(instance);
@@ -196,7 +203,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
     Color onColor = colorized ? attrs.getValue(Io.ATTR_ON_COLOR) : Color.DARK_GRAY;
     Color offColor = colorized ? attrs.getValue(Io.ATTR_OFF_COLOR) : Color.WHITE;
     Color errColor = colorized ? Value.ERROR_COLOR : Color.LIGHT_GRAY;
-    boolean drawSquare = attrs.getValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
+    boolean drawSquare = attrs.getValue(ATTR_LED_SHAPE) == SHAPE_RECT;
     int w = drawSquare ? 10 : 20;
     int h = drawSquare ? 30 : 20;
     Direction facing = attrs.getValue(StdAttr.FACING);
@@ -277,7 +284,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
   private void updatePorts(Instance instance) {
     Object input = instance.getAttributeValue(ATTR_INPUT_TYPE);
     int cols = instance.getAttributeValue(ATTR_SEGMENTS).intValue();
-    boolean drawSquare = instance.getAttributeValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
+    boolean drawSquare = instance.getAttributeValue(ATTR_LED_SHAPE) == SHAPE_RECT;
     Port[] ps;
     if (input == INPUT_AS_WIRES) {
       Direction facing = instance.getAttributeValue(StdAttr.FACING);
@@ -322,7 +329,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
     public List<InventoryFeature.PortPosition> getCustomPortLayout(AttributeSet attrs) {
       Object itype = attrs.getValue(ATTR_INPUT_TYPE);
       if (itype == INPUT_AS_WIRES) {
-        boolean drawSquare = attrs.getValue(ATTR_DOT_SHAPE) == SHAPE_SQUARE;
+        boolean drawSquare = attrs.getValue(ATTR_LED_SHAPE) == SHAPE_RECT;
         int w = drawSquare ? 10 : 20;
         InventoryFeature.PortPosition cols;
         cols = portsAt("LED_", "input", 0, "cols", 0, 0, w, 0);
