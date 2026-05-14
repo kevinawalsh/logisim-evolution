@@ -31,6 +31,7 @@ package com.cburch.logisim.gui.generic;
 import static com.cburch.logisim.gui.main.Strings.S;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -470,6 +471,7 @@ public class AttrTable extends JPanel implements LocaleListener {
         ed.cancelCellEditing();
       }
       fireTableChanged();
+      updateEmptyHint();
     }
 
     @Override
@@ -688,6 +690,9 @@ public class AttrTable extends JPanel implements LocaleListener {
   private JTable table;
   private TableModelAdapter tableModel;
   private CellEditor editor = new CellEditor();
+  private CardLayout tableAreaLayout = new CardLayout();
+  private JPanel tableArea = new JPanel(tableAreaLayout);
+  private JLabel emptyHint;
 
   public AttrTable(Window parent) {
     super(new BorderLayout());
@@ -758,11 +763,19 @@ public class AttrTable extends JPanel implements LocaleListener {
       ((JComponent) renderer).setBackground(Color.WHITE);
     }
 
+    emptyHint = new JLabel("", SwingConstants.CENTER);
+    emptyHint.setFont(emptyHint.getFont().deriveFont(Font.ITALIC));
+    emptyHint.setForeground(Color.GRAY);
+    emptyHint.setBackground(bgColor);
+    emptyHint.setOpaque(true);
+
     JPanel propPanel = new JPanel(new BorderLayout(0, 0));
     JScrollPane tableScroll = new JScrollPane(table);
+    tableArea.add(tableScroll, "table");
+    tableArea.add(emptyHint, "hint");
 
     propPanel.add(title, BorderLayout.PAGE_START);
-    propPanel.add(tableScroll, BorderLayout.CENTER);
+    propPanel.add(tableArea, BorderLayout.CENTER);
 
     this.add(propPanel, BorderLayout.CENTER);
 
@@ -782,6 +795,7 @@ public class AttrTable extends JPanel implements LocaleListener {
   public void localeChanged() {
     updateTitle();
     tableModel.fireTableChanged();
+    updateEmptyHint();
   }
 
   public void setAttrTableModel(AttrTableModel value) {
@@ -793,6 +807,20 @@ public class AttrTable extends JPanel implements LocaleListener {
 
     tableModel.setAttrTableModel(value == null ? NULL_ATTR_MODEL : value);
     updateTitle();
+    updateEmptyHint();
+  }
+
+  private void updateEmptyHint() {
+    AttrTableModel model = tableModel.attrModel;
+    if (model.getRowCount() == 0) {
+      String hint = model.getEmptyHint();
+      if (hint != null) {
+        emptyHint.setText(hint);
+        tableAreaLayout.show(tableArea, "hint");
+        return;
+      }
+    }
+    tableAreaLayout.show(tableArea, "table");
   }
 
   public void setTitleEnabled(boolean value) {

@@ -60,6 +60,11 @@ public class AttrTableToolModel extends AttributeSetTableModel {
     return S.fmt("toolAttrTitle", tool.getDisplayName());
   }
 
+  @Override
+  public String getEmptyHint() {
+    return S.get("selectionNoAttrs");
+  }
+
   public Tool getTool() {
     return tool;
   }

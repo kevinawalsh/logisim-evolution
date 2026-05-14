@@ -111,6 +111,22 @@ class AttrTableSelectionModel extends AttributeSetTableModel
     }
   }
 
+  @Override
+  public String getEmptyHint() {
+    Selection selection = frame.getCanvas().getSelection();
+    if (selection.isEmpty())
+      return null; // showing circuit attributes, shouldn't normally be empty
+    int nonWireCount = 0;
+    for (Component comp : selection.getComponents())
+      if (!(comp instanceof Wire))
+        nonWireCount++;
+    if (nonWireCount == 1)
+      return S.get("selectionNoAttrs");
+    else if (nonWireCount > 1)
+      return S.get("selectionNoCommonAttrs");
+    return null; // only wires selected
+  }
+
   public void selectionChanged(Event event) {
     fireTitleChanged();
     if (!frame.getEditorView().equals(Frame.EDIT_APPEARANCE)) {

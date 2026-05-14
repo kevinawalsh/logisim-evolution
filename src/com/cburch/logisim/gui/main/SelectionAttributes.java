@@ -332,8 +332,14 @@ class SelectionAttributes extends AbstractAttributeSet {
     boolean same = isSame(attrMap, this.attrs, this.values);
 
     if (same) {
-      if (newSel != oldSel)
+      if (newSel != oldSel) {
         this.selected = newSel;
+        // getAttributes() switches between circuit attrs and attrsView based on
+        // whether selected is empty. If that emptiness changed, the rows cached
+        // in AttributeSetTableModel are now stale, so signal a list change.
+        if (oldSel.isEmpty() != newSel.isEmpty())
+          fireAttributeListChanged();
+      }
     } else {
       Attribute<?>[] oldAttrs = this.attrs;
       Object[] oldValues = this.values;

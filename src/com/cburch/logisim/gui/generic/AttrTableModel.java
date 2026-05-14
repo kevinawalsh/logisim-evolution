@@ -39,6 +39,9 @@ public interface AttrTableModel {
 
   public String getTitle();
 
+  // Return a hint to display when getRowCount() == 0, or null for no hint.
+  default public String getEmptyHint() { return null; }
+
   public boolean isRowValueEditable(int rowIndex);
 
   public void removeAttrTableModelListener(AttrTableModelListener listener);

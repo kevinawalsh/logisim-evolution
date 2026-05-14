@@ -67,6 +67,11 @@ class AttrTableComponentModel extends AttributeSetTableModel {
   }
 
   @Override
+  public String getEmptyHint() {
+    return S.get("selectionNoAttrs");
+  }
+
+  @Override
   public <V> void setValueRequested(Attribute<V> attr, V value)
       throws AttrTableSetException {
     if (!proj.getLogisimFile().contains(circ)) {
