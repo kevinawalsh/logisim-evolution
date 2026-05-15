@@ -38,20 +38,29 @@ public class EndData {
   public static final int OUTPUT_ONLY = 2;
   public static final int INPUT_OUTPUT = 3;
 
-  private Location loc;
-  private BitWidth width;
-  private int i_o;
-  private boolean exclusive;
+  private final Location loc;
+  private final BitWidth width;
+  private final int i_o;
+  private final boolean exclusive;
 
   public EndData(Location loc, BitWidth width, int type) {
     this(loc, width, type, type == OUTPUT_ONLY);
   }
 
+  // FIXME: is this constructor really necessary? Can we eliminate it?
   public EndData(Location loc, BitWidth width, int type, boolean exclusive) {
     this.loc = loc;
     this.width = width;
     this.i_o = type;
     this.exclusive = exclusive;
+  }
+
+  @Override
+  public String toString() {
+    return "EndData{loc="+loc+", width="+width+", "+
+      (i_o == INPUT_ONLY ? "input-only" :
+       i_o == OUTPUT_ONLY ? "output-only" :
+       i_o == INPUT_OUTPUT ? "input-output" : "illegal-type")+", exclusive="+exclusive+"}";
   }
 
   public int hashCode() {

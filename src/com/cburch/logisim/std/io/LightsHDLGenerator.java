@@ -34,6 +34,7 @@ import com.bfh.logisim.netlist.NetlistComponent;
 import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.comp.EndData;
 
 public class LightsHDLGenerator extends HDLInliner {
 
@@ -70,11 +71,29 @@ public class LightsHDLGenerator extends HDLInliner {
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
     int b = comp.getLocalHiddenPortIndices().start.out;
-    for (int i = 0; i < comp.portConnections.size(); i++) {
-      Net net = comp.getConnection(i);
-      if (net != null)
-        out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", b + i, net.name);
+    int e = comp.getLocalHiddenPortIndices().end.out;
+    if (comp.original.getEnds().size() != comp.portConnections.size()) {
+      out.err.AddError("LightsHDLGenerator: Number of ports (%s) does not match number of connected netlists (%s).",
+          comp.original.getEnds().size(),
+          comp.portConnections.size());
     }
+    int o = b;
+    for (int i = 0; i < comp.original.getEnds().size(); i++) {
+      EndData end = comp.original.getEnd(i);
+      int n = end.getWidth().getWidth();
+      Net net = comp.getConnection(i);
+      if (net != null) {
+        int nn = net.bitWidth();
+        if (n != nn)
+          out.err.AddError("LightsHDLGenerator: Port %d width (%d bits) does does match netlist width (%d bits).", i, n, nn);
+        out.assign("LOGISIM_HIDDEN_FPGA_OUTPUT", o + n - 1, o, net.name);
+      } else {
+        out.err.AddWarning("LightsHDLGenerator: Port %d has no netlist connection.", i);
+      }
+      o += n;
+    }
+    if (o-1 != e)
+      out.err.AddWarning("LightsHDLGenerator: Mismatch in total width, ended on %d instead of %d.", o-1, e);
   }
 
 }

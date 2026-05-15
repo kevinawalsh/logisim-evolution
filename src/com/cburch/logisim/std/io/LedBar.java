@@ -124,7 +124,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
     }, new Object[] { Direction.EAST,
       INPUT_AS_WIRES, DEFAULT_SEGMENTS,
         true, DEFAULT_ON_COLOR, DEFAULT_OFF_COLOR, SHAPE_RECT,
-        "", StdAttr.LABEL_EAST, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK
+        "", Direction.EAST, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK
     });
     setFacingAttribute(StdAttr.FACING);
     setIconName("ledbar.png");
@@ -274,7 +274,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
       int cols = state.getAttributeValue(ATTR_SEGMENTS).intValue();
       Value[] vals = new Value[cols];
       for (int i = 0; i < cols; i++) {
-        vals[i] = state.getPortValue(cols - i - 1);
+        vals[i] = state.getPortValue(i);
         if (vals[i] == Value.NIL)
           vals[i] = Value.UNKNOWN;
       }
@@ -295,9 +295,16 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
       int w = drawSquare ? 10 : 20;
       Location dxy = Location.create(w, 0).rotate(Direction.EAST, facing, 0, 0);
       ps = new Port[cols];
+      // Note: Led0 is on the right side, LedN on the left, to match
+      // least-significant-bit expectations. For HDL generation, a bus input
+      // produces lights[n-1:0] = bus[n-1:0], and to match this with separate
+      // inputs we need need ps[0] to be input 0. So ps[0] goes on the right
+      // side, and the rotation anchor is ps[n-1]. This also makes propagate
+      // work out simpler, since Value.create({val[0], val[1], ... val[n-1]})
+      // will put val[0] in the least significant position.
       for (int i = 0; i < cols; i++) {
-        ps[i] = new Port(dxy.x * i, dxy.y * i, Port.INPUT, 1);
-        ps[i].setToolTip(S.getter("ioLedBarWireInput", ""+i));
+        ps[cols-i-1] = new Port(dxy.x * i, dxy.y * i, Port.INPUT, 1);
+        ps[cols-i-1].setToolTip(S.getter("ioLedBarWireInput", ""+(cols-i-1)));
       }
     } else { // INPUT_AS_BUS
       ps = new Port[1];
