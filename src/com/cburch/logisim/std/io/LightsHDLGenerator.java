@@ -60,6 +60,13 @@ public class LightsHDLGenerator extends HDLInliner {
     return g;
   }
 
+  public static LightsHDLGenerator forLedBar(ComponentContext ctx) {
+    LightsHDLGenerator g = new LightsHDLGenerator(ctx);
+    int n = ctx.attrs.getValue(LedBar.ATTR_SEGMENTS).intValue();
+    g.hiddenPort = HiddenPort.makeOutport(n, HiddenPort.LEDBar, HiddenPort.Ribbon, HiddenPort.Pin);
+    return g;
+  }
+
   @Override
 	protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
     int b = comp.getLocalHiddenPortIndices().start.out;

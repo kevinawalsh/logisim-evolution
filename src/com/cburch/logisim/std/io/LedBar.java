@@ -37,9 +37,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.cburch.logisim.access.InventoryFeature;
 import com.cburch.logisim.circuit.appear.DynamicElement;
 import com.cburch.logisim.circuit.appear.DynamicElementProvider;
+import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -104,8 +106,11 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
       .forOption("shape", S.getter("ioLedBarShape"),
           new AttributeOption[] { SHAPE_RECT, SHAPE_ROUND });
 
+  public static final int MIN_SEGMENTS = 1;
+  public static final int MAX_SEGMENTS = Value.MAX_WIDTH;
+  public static final int DEFAULT_SEGMENTS = 8;
   static final Attribute<Integer> ATTR_SEGMENTS = Attributes
-      .forIntegerRange("segments", S.getter("ioLedBarSegments"), 1, Value.MAX_WIDTH);
+      .forIntegerRange("segments", S.getter("ioLedBarSegments"), MIN_SEGMENTS, MAX_SEGMENTS);
 
   static final Color DEFAULT_ON_COLOR = new Color(0, 0xff, 0xcc);
   static final Color DEFAULT_OFF_COLOR = Color.GRAY;
@@ -117,9 +122,9 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
       Io.ATTR_ACTIVE, Io.ATTR_ON_COLOR, Io.ATTR_OFF_COLOR, ATTR_LED_SHAPE,
       StdAttr.LABEL, StdAttr.LABEL_EDGE_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR
     }, new Object[] { Direction.EAST,
-      INPUT_AS_WIRES, Integer.valueOf(8),
+      INPUT_AS_WIRES, DEFAULT_SEGMENTS,
         true, DEFAULT_ON_COLOR, DEFAULT_OFF_COLOR, SHAPE_RECT,
-        "", StdAttr.LABEL_CENTER, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK
+        "", StdAttr.LABEL_EAST, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK
     });
     setFacingAttribute(StdAttr.FACING);
     setIconName("ledbar.png");
@@ -303,6 +308,14 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
   }
 
   @Override
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
+    return LightsHDLGenerator.forLedBar(ctx);
+  }
+
+  @Override
+  public String getHDLNamePrefix(Component comp) { return "LEDBar"; }
+
+  @Override
   public Object getFeature(Object key, AttributeSet attrs) {
     if (key == InventoryFeature.class)
       return new MyInventoryFeature();
@@ -340,4 +353,5 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
       }
     }
   }
+
 }

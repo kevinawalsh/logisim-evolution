@@ -43,6 +43,7 @@ import org.w3c.dom.Element;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.file.XmlUtil;
 import com.cburch.logisim.std.io.DipSwitch;
+import com.cburch.logisim.std.io.LedBar;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.std.io.RGBLed;
 import com.cburch.logisim.util.Errors;
@@ -69,7 +70,7 @@ import static com.bfh.logisim.netlist.Netlist.Int3;
 // to be split into separate BoardIO resources).
 public class BoardIO {
 
-  public static final EnumSet<Type> PhysicalTypes = EnumSet.range(Type.Button, Type.SevenSegment);
+  public static final EnumSet<Type> PhysicalTypes = EnumSet.range(Type.Button, Type.LEDBar);
   public static final EnumSet<Type> InputTypes = EnumSet.range(Type.Button, Type.Ribbon);
   public static final EnumSet<Type> OutputTypes = EnumSet.range(Type.Pin, Type.LED);
   public static final EnumSet<Type> InOutTypes = EnumSet.of(Type.Pin, Type.Ribbon);
@@ -88,6 +89,7 @@ public class BoardIO {
 		LED,           // phys  out onebit
     RGBLED,        // phys  out multibit (degenerates to LED)
     SevenSegment,  // phys  out multibit (degenerates to LED)
+    LEDBar,        // phys  out multibit (degenerates to LED)
     Unconnected,   // synth out onebit/multibit
 
     Expanded, // only used by PinBindingsDialog as a placeholder 
@@ -122,10 +124,12 @@ public class BoardIO {
         return DipSwitch.DEF_SWITCH;
       case Ribbon:
         return PortIO.DEF_IO;
-      case SevenSegment:
-        return 8;
       case RGBLED:
         return 3;
+      case SevenSegment:
+        return 8;
+      case LEDBar:
+        return LedBar.DEFAULT_SEGMENTS;
       default:
         return 0;
       }
@@ -143,6 +147,7 @@ public class BoardIO {
       case LED: return "LED";
       case RGBLED: return "3-wire RGB LED";
       case SevenSegment: return "Seven Segment Display";
+      case LEDBar: return "LED Bar";
       case Unconnected: return "Unconnected";
       default: return "Unrecognized Board I/O Resource";
       }
@@ -736,8 +741,9 @@ public class BoardIO {
       num.inout = width;
       break;
     case LED:
-    case SevenSegment:
     case RGBLED:
+    case SevenSegment:
+    case LEDBar:
     case Unconnected:
       num.out = width;
       break;

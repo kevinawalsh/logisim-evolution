@@ -90,6 +90,7 @@ import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.std.io.DipSwitch;
+import com.cburch.logisim.std.io.LedBar;
 import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
@@ -1267,13 +1268,17 @@ public class BoardEditor extends JFrame {
     }
 
     private boolean needsSize(BoardIO.Type type) {
-      return type == BoardIO.Type.DIPSwitch || type == BoardIO.Type.Ribbon;
+      return type == BoardIO.Type.DIPSwitch
+        || type == BoardIO.Type.LEDBar
+        || type == BoardIO.Type.Ribbon;
     }
 
     private void populateWidthCombo(BoardIO.Type type, int selected) {
       widthCombo.removeAllItems();
-      int min = type == BoardIO.Type.DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
-      int max = type == BoardIO.Type.DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
+      int min = type == BoardIO.Type.DIPSwitch ? DipSwitch.MIN_SWITCH :
+        type == BoardIO.Type.LEDBar ? LedBar.MIN_SEGMENTS : PortIO.MIN_IO;
+      int max = type == BoardIO.Type.DIPSwitch ? DipSwitch.MAX_SWITCH : 
+        type == BoardIO.Type.LEDBar ? LedBar.MAX_SEGMENTS : PortIO.MAX_IO;
       for (int i = min; i <= max; i++)
         widthCombo.addItem(i);
       widthCombo.setSelectedItem(selected);
@@ -1287,7 +1292,7 @@ public class BoardEditor extends JFrame {
         orientCombo.setSelectedItem(orient.desc);
       } else {
         boolean wide = rect.width >= rect.height;
-        String def = type == BoardIO.Type.DIPSwitch
+        String def = type == BoardIO.Type.DIPSwitch || type == BoardIO.Type.LEDBar
             ? (wide ? PinOrdering.ORDER_1_LR.desc : PinOrdering.ORDER_1_TB.desc)
             : (wide ? PinOrdering.ORDER_2_BTLR.desc : PinOrdering.ORDER_2_LRTB.desc);
         orientCombo.setSelectedItem(def);
@@ -1416,7 +1421,7 @@ public class BoardEditor extends JFrame {
       hField.setBackground(badH ? ERROR_BG : DEFAULT_BG);
       Bounds rect = Bounds.create(x, y, w, h);
 
-      // Width and orientation (only for DIPSwitch / Ribbon)
+      // Width and orientation (only for DIPSwitch / LEDBar / Ribbon)
       boolean needsSize = needsSize(type);
       int width = needsSize && widthCombo.getSelectedItem() != null
           ? (Integer) widthCombo.getSelectedItem() : type.defaultWidth();
