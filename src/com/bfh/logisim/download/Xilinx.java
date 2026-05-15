@@ -46,6 +46,7 @@ import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
+import com.bfh.logisim.fpga.UnmentionedPinsBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
@@ -202,29 +203,39 @@ public class Xilinx {
                   "place & route", "Place & Route Design (may take a while)",
                   cmd(XILINX_PAR, "-w", "-intstyle", "ise", "-ol", "high", "logisim_map", "logisim_par", "logisim_map.pcf"),
                   "Failed to place & route design, cannot download"));
-            PullBehavior dir = board.fpga.UnusedPinsBehavior;
-            if (dir == PullBehavior.PULL_UP || dir == PullBehavior.PULL_DOWN) {
+            String unusedPinFlag = getXilinxFPGAUnusedPinFlag(board);
+            if (unusedPinFlag != null)
               stages.add(new ProcessStage(
                     "generate", "Generating Bitfile",
-                    cmd(XILINX_BITGEN, "-w", "-g", "UnusedPin:"+dir.xilinx.toUpperCase(),
+                    cmd(XILINX_BITGEN, "-w", "-g", unusedPinFlag,
                       "-g", "StartupClk:CCLK", "logisim_par", TOP_HDL + ".bit"),
                     "Failed to place & route design, cannot download"));
-            } else {
+            else
               stages.add(new ProcessStage(
                     "generate", "Generating Bitfile",
-                    cmd(XILINX_BITGEN, "-w", "-g", "StartupClk:CCLK", "logisim_par", TOP_HDL + ".bit"),
-                    "Failed to generate bitfile, cannot download"));
-            }
+                    cmd(XILINX_BITGEN, "-w",
+                      "-g", "StartupClk:CCLK", "logisim_par", TOP_HDL + ".bit"),
+                    "Failed to place & route design, cannot download"));
           } else {
             String part = board.fpga.Part.toUpperCase() + "-"
               + board.fpga.SpeedGrade + "-"
               + board.fpga.Package.toUpperCase();
-            stages.add(new ProcessStage(
-                  "CPLD fit", "Fit CPLD Design (may take a while)",
-                  cmd(XILINX_CPLDFIT, "-p", part, "-intstyle", "ise",
-                    "-terminate", board.fpga.UnusedPinsBehavior.xilinx, // TODO: do correct termination type
-                    "-loc", "on", "-log", "logisim_cpldfit.log", "logisim.ngd"),
-                  "Failed to fit CPLD design, cannot download"));
+            String unusedPinFlag = getXilinxCPLDUnusedPinFlag(board);
+            if (unusedPinFlag != null)
+              stages.add(new ProcessStage(
+                    "CPLD fit", "Fit CPLD Design (may take a while)",
+                    cmd(XILINX_CPLDFIT, "-p", part, "-intstyle", "ise",
+                      "-unused", unusedPinFlag,
+                      // "-terminate", board.fpga.UnusedPinsBehavior.xilinx, // TODO: do correct termination type
+                      "-loc", "on", "-log", "logisim_cpldfit.log", "logisim.ngd"),
+                    "Failed to fit CPLD design, cannot download"));
+            else
+              stages.add(new ProcessStage(
+                    "CPLD fit", "Fit CPLD Design (may take a while)",
+                    cmd(XILINX_CPLDFIT, "-p", part, "-intstyle", "ise",
+                      // "-terminate", board.fpga.UnusedPinsBehavior.xilinx, // TODO: do correct termination type
+                      "-loc", "on", "-log", "logisim_cpldfit.log", "logisim.ngd"),
+                    "Failed to fit CPLD design, cannot download"));
             stages.add(new ProcessStage(
                   "generate", "Generating Bitfile",
                   cmd(XILINX_HPREP6, "-i", "logisim.vm6"),
@@ -428,4 +439,51 @@ public class Xilinx {
     public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if XilinxDownload reported okay
   }
 
+  private static String getXilinxFPGAUnusedPinFlag(Board board) {
+    // first priority: use xilinx-specific param from board.xml
+    String pref = board.paramFor(MY_TOOLCHAIN, "UnusedPin");
+    if (pref != null && !pref.isEmpty())
+      return "UnusedPin:" + pref;
+    if (pref.isEmpty())
+      return null; // explicitly unset, let toolchain decide
+    // otherwise: use generic param from board.xml
+    switch (board.fpga.UnmentionedPinsBehaviorHint) {
+      case DRIVE_HIGH:
+      case INPUT_PULL_UP:
+        return "UnusedPin:PULLUP";
+      case DRIVE_LOW:
+      case INPUT_PULL_DOWN:
+        return "UnusedPin:PULLDOWN";
+      case INPUT_NO_PULL:
+        return "UnusedPin:PULLNONE"; // aka "FLOAT" maybe? docs are inconsistent...
+      case UNSPECIFIED:
+      default:
+        return "UnusedPin:PULLDOWN"; // seems to be a widely used "safe" default?
+        // return null; // let toolchain decide
+    }
+  }
+
+  private static String getXilinxCPLDUnusedPinFlag(Board board) {
+    // first priority: use xilinx-specific param from board.xml
+    String pref = board.paramFor(MY_TOOLCHAIN, "UnusedPin");
+    if (pref != null && !pref.isEmpty())
+      return pref;
+    if (pref.isEmpty())
+      return null; // explicitly unset, let toolchain decide
+    // otherwise: use generic param from board.xml
+    switch (board.fpga.UnmentionedPinsBehaviorHint) {
+      case DRIVE_HIGH:
+      case INPUT_PULL_UP:
+        return "pullup";
+      case DRIVE_LOW:
+        return "ground";
+      case INPUT_PULL_DOWN:
+        return "pulldown";
+      case INPUT_NO_PULL:
+        return "float";
+      case UNSPECIFIED:
+      default:
+        return null; // let cpldfit decide
+    }
+  }
 }

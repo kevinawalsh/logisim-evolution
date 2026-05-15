@@ -182,8 +182,9 @@ public class Altera {
       out.stmt("    set_global_assignment -name DEVICE %s", chip.Part);
       out.stmt("    set_global_assignment -name DEVICE_FILTER_PACKAGE %s", pkg[0]);
       out.stmt("    set_global_assignment -name DEVICE_FILTER_PIN_COUNT %s", pkg[1]);
-      if (chip.UnusedPinsBehavior != PullBehavior.UNKNOWN)
-        out.stmt("    set_global_assignment -name RESERVE_ALL_UNUSED_PINS \"AS INPUT %s\"", chip.UnusedPinsBehavior.altera);
+      String unusedPinsFlag = getAlteraUnusedPinsFlag(board);
+      if (unusedPinsFlag != null)
+        out.stmt("    set_global_assignment -name RESERVE_ALL_UNUSED_PINS \"%s\"", unusedPinsFlag);
       out.stmt("    set_global_assignment -name FMAX_REQUIREMENT \"%s\"", chip.Speed);
       out.stmt("    set_global_assignment -name RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
       out.stmt("    set_global_assignment -name CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
@@ -290,6 +291,30 @@ public class Altera {
     AlteraProgrammer() { super("Altera"); }
     @Override
     public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if AlteraDownload reported okay
+  }
+
+  private static String getAlteraUnusedPinsFlag(Board board) {
+    // first priority: use altera-specific param from board.xml
+    String pref = board.paramFor(MY_TOOLCHAIN, "RESERVE_ALL_UNUSED_PINS");
+    if (pref != null && !pref.isEmpty())
+      return pref;
+    if (pref.isEmpty())
+      return null; // explicitly unset, let toolchain decide
+    // otherwise: use generic param from board.xml
+    switch (board.fpga.UnmentionedPinsBehaviorHint) {
+      case DRIVE_HIGH:
+      case INPUT_PULL_UP:
+        return "AS INPUT TRI-STATED WITH WEAK PULL-UP";
+      case DRIVE_LOW:
+      case INPUT_PULL_DOWN:
+        return "AS OUTPUT DRIVING GROUND";
+      case INPUT_NO_PULL:
+        return "AS INPUT TRI-STATED";
+      case UNSPECIFIED:
+      default:
+        return "AS INPUT TRI-STATED WITH WEAK PULL-UP"; // seems safer than the toolchain default of DRIVING GROUND
+        // return null; // let toolchain decide (default seems to be DRIVING GROUND?!?)
+    }
   }
 
 }

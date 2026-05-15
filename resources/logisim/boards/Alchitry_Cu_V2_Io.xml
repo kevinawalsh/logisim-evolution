@@ -5,7 +5,7 @@
     <JTAG pos="1"/>
     <USBTMC available="true"/>
     <Clock pin="P7" frequency="100000000"/>
-    <UnusedPins pull="none"/>
+    <UnmentionedPins behavior="unspecified"/> <!-- we don't care what happens to remaining pins -->
   </FPGA>
   <Toolchains defaultSynthesis="Apio" defaultProgramming="openFPGALoader">
     <Toolchain name="Apio" capabilities="synthesis,programming">

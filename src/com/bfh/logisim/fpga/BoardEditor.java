@@ -448,7 +448,7 @@ public class BoardEditor extends JFrame {
     JTextField clkLoc = new JTextField();
     JComboBox<PullBehavior> clkPull = new JComboBox<>(PullBehavior.OPTIONS);
     JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
-    JComboBox<PullBehavior> unusedPull = new JComboBox<>(PullBehavior.OPTIONS);
+    JComboBox<UnmentionedPinsBehavior> unmentionedBehavior = new JComboBox<>(UnmentionedPinsBehavior.OPTIONS);
     JTextField jtagPos = new JTextField("1");
     JComboBox<String> vendor = new JComboBox<>(VENDORS.keySet().toArray(new String[0]));
     vendor.setEditable(true);
@@ -465,7 +465,7 @@ public class BoardEditor extends JFrame {
       hz.setSelectedIndex(2);
       clkPull.setSelectedIndex(0);
       clkStandard.setSelectedIndex(0);
-      unusedPull.setSelectedIndex(0);
+      unmentionedBehavior.setSelectedIndex(0); // UnmentionedPinBehavior.UNSPECIFIED
       vendor.setSelectedIndex(0);
       usbTmc.setSelected(false);
     } else {
@@ -482,7 +482,7 @@ public class BoardEditor extends JFrame {
       clkLoc.setText(fpga.ClockPinLocation);
       clkPull.setSelectedItem(fpga.ClockPullBehavior);
       clkStandard.setSelectedItem(fpga.ClockIOStandard);
-      unusedPull.setSelectedItem(fpga.UnusedPinsBehavior);
+      unmentionedBehavior.setSelectedItem(fpga.UnmentionedPinsBehaviorHint);
       // FIXME, split into separate Flash section
       flashName.setText(fpga.FlashName);
       flashPos.setText(""+fpga.FlashPos);
@@ -504,7 +504,7 @@ public class BoardEditor extends JFrame {
     add(clockPanel, c, "Clock pin FPGA location:", clkLoc);
     add(clockPanel, c, "Clock pin pull behavior:", clkPull);
     add(clockPanel, c, "Clock pin I/O standard:", clkStandard);
-    add(clockPanel, c, "Unused FPGA pin behavior:", unusedPull);
+    add(clockPanel, c, "Other FPGA pin behavior:", unmentionedBehavior);
     add(clockPanel, c, "FPGA position in JTAG chain:", jtagPos);
 
     JPanel devPanel = new JPanel();
@@ -588,7 +588,7 @@ public class BoardEditor extends JFrame {
         params.put("FPGAInformation/JTAGPos", jtagPos.getText());
         params.put("FPGAInformation/FlashPos", flashPos.getText());
         params.put("FPGAInformation/FlashName", flashName.getText());
-        params.put("UnusedPins/PullBehavior", ""+unusedPull.getSelectedItem());
+        params.put("UnusedPins/PullBehavior", ""+unmentionedBehavior.getSelectedItem());
         try {
           fpga = new Chipset(params);
           break;

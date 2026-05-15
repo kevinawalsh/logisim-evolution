@@ -84,8 +84,8 @@ class BoardWriter {
       if (chip.ClockPullBehavior != PullBehavior.NONE)
         sb.append(a("pull", "" + chip.ClockPullBehavior.xml));
       sb.append("/>\n");
-      sb.append("    <UnusedPins")
-        .append(a("pull", "" + chip.UnusedPinsBehavior.xml))
+      sb.append("    <UnmentionedPins")
+        .append(a("behavior", "" + chip.UnmentionedPinsBehaviorHint.xml))
         .append("/>\n");
       sb.append("  </FPGA>\n");
 

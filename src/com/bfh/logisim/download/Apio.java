@@ -42,6 +42,7 @@ import java.util.List;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.PullBehavior;
+import com.bfh.logisim.fpga.UnmentionedPinsBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
@@ -227,14 +228,20 @@ public class Apio {
       if (board_name == null)
         board_name = board.codename;
 
-      // FIXME: this isn't a property of apio;
-      // certain boards support only pull-up, or only floating, or not pull-down
-      if (board.fpga.UnusedPinsBehavior != PullBehavior.UNKNOWN &&
-          board.fpga.UnusedPinsBehavior != PullBehavior.PULL_UP) {
-        err.AddSevereWarning("Design specifies " + board.fpga.UnusedPinsBehavior +
-            " for unused pins, but apio toolchain maybe only supports pull-up.");
-        err.AddSevereWarning("Unused pins will maybe be pulled high.");
-          }
+      // Apio does not have a global unused pins flag. The behavior is probably
+      // weak pull-up for ice40 and similar boards, but we have no definitive
+      // info for any particular fpga. So just warn here.
+      if (board.fpga.UnmentionedPinsBehaviorHint == UnmentionedPinsBehavior.INPUT_PULL_UP) {
+        err.AddWarning("FPGA board specifies " + board.fpga.UnmentionedPinsBehaviorHint
+            + " for any remaining pins. This is the default for many FPGA configurations, but"
+            + " Apio toolchain can't enforce or verify this, and some FPGAs may differ."
+            + " Where critical, the board xml must explicitly reserve pins individually.");
+      } else if (board.fpga.UnmentionedPinsBehaviorHint != UnmentionedPinsBehavior.UNSPECIFIED) {
+        err.AddWarning("FPGA board specifies " + board.fpga.UnmentionedPinsBehaviorHint
+            + " for any remaining pins, but apio toolchain can't enforce this. A default behavior"
+            + " will be used instead, which may differ. Where critical, the board xml must explicitly"
+            + " reserve pins individually.");
+      }
 
       File f;
 

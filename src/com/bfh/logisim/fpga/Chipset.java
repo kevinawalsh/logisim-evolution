@@ -53,7 +53,39 @@ public class Chipset {
 	public final String Package;
 	public final String SpeedGrade;
 	public final String VendorName;
-	public final PullBehavior UnusedPinsBehavior;
+
+  // For all FPGA pins mentioned in an xml file (as physical I/O components, as
+  // the clock pin, or as otherwise reserved pins), logisim (as of version 5.20
+  // or so) will explicitly configure them, whether or not the user has chosen
+  // to map circuit elements to that FPGA pin. 
+  //
+  // Power and ground FPGA pins are not mentioned in xml files, as these are
+  // handled directly by toolchains.
+  //
+  // The remaining unmentioned pins include some combination of:
+  //  - FPGA pins not routed to anything on the board,
+  //  - FPGA pins connected only to test pads,
+  //  - and FPGA pins connnected to various perhipheral devices or components
+  //    the xml author elected to ignore.
+  // The UnmentioendPinsBehaviorHint parameter specifies how these should be handled.
+  //
+  // Because these pins are unmentioned, logisim doesn't know their names, so
+  // can't configure them individually.
+  //
+  // Some toolchains have a global flag for specifying the behavior of any pins
+  // not otherwise specified in a design. Logisim will pass options to the
+  // toolchains in an attempt to follow the UnmentioendPinsBehaviorHint, unless
+  // overridden by a toolchain-specific parameters in the board xml. This is
+  // done on a best effort basis only, because some toolchains and/or fpgas
+  // support only a limited set of options here. If no UnmentioendPinsBehaviorHint is
+  // given, or if the hint can't be followed, logisim might fall back to passing
+  // some other default flag, or to omitting the flag and letting the toolchain
+  // decide how unused pins behave.
+  //
+  // Other toolchains have no such global flag. These toolchains have some
+  // internal way of deciding how unused pins behave, which logisim makes no
+  // atttempt to override. The UnmentioendPinsBehaviorHint is ignored in this case.
+	public final UnmentionedPinsBehavior UnmentionedPinsBehaviorHint;
 	
   public final boolean USBTMCAvailable;
   // FIXME: LPT as yet another option? See comment in LatticeDownload.
@@ -82,7 +114,7 @@ public class Chipset {
     FlashName = params.get("FPGAInformation/FlashName");
 		FlashDefined = FlashPos != null && FlashPos != 0 && FlashName != null && !FlashName.isEmpty();
 
-		UnusedPinsBehavior = PullBehavior.get(params.get("UnusedPins/PullBehavior"));
+		UnmentionedPinsBehaviorHint = UnmentionedPinsBehavior.get(params.get("UnusedPins/PullBehavior"));
 
     if (ClockFrequency <= 0)
       throw new Exception("invalid ClockInformation/Frequency");
@@ -92,7 +124,7 @@ public class Chipset {
       throw new Exception("invalid or missing ClockInformation/PullBehavior");
     if (ClockIOStandard == null)
       throw new Exception("invalid or missing ClockInformation/IOStandard");
-    if (UnusedPinsBehavior == null)
+    if (UnmentionedPinsBehaviorHint == null)
       throw new Exception("invalid or missing UnusedPins/PullBehavior");
     if (Technology == null)
       throw new Exception("invalid or missing FPGAInformation/Family");
