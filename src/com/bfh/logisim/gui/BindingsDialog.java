@@ -291,7 +291,9 @@ public class BindingsDialog extends JDialog {
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
+    protected void paintComponent(Graphics g1) {
+      Graphics2D g = (Graphics2D)g1;
+      g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
       boolean fullymapped = nmapped == io.width;
       g.setColor(hover ? HOVER :
           emphasized && (emphasizeBit == -1 || io.width == 1) ? HILIGHT :
@@ -313,7 +315,7 @@ public class BindingsDialog extends JDialog {
             isMapped[i] ? MAPPEDB : MISTYB;
         }
         g.translate(-rr.x, -rr.y);
-        io.drawOrientedPins(g, imgOffset.x, imgOffset.y, imgScale, fill, edge, null);
+        io.drawOrientedPins((Graphics2D)g, imgOffset.x, imgOffset.y, imgScale, fill, edge, null);
         g.translate(rr.y, rr.y);
       } else if (io.width > 1 && rr.width > rr.height) {
         //    _________

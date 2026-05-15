@@ -1187,11 +1187,14 @@ public class BoardEditor extends JFrame {
       try {
         typeCombo.setSelectedIndex(0);
         BoardIO.Type type = (BoardIO.Type) typeCombo.getSelectedItem();
-        boolean needsSize = needsSize(type);
-        sizeOrientPanel.setVisible(needsSize);
-        if (needsSize) {
-          populateWidthCombo(type, type.defaultWidth());
+        boolean needsSize = BoardIO.VariableWidthTypes.contains(type);
+        boolean needsOrient = BoardIO.OrientableTypes.contains(type);
+        sizeOrientPanel.setVisible(needsSize || needsOrient);
+        if (needsSize || needsOrient) {
+          populateWidthCombo(type, null);
+          widthCombo.setEnabled(needsSize);
           populateOrientCombo(type, null, rect);
+          orientCombo.setEnabled(needsOrient);
         }
         labelField.setText("");
         xField.setText("" + rect.x);
@@ -1242,11 +1245,14 @@ public class BoardEditor extends JFrame {
       updating = true;
       try {
         typeCombo.setSelectedItem(io.type);
-        boolean needsSize = needsSize(io.type);
-        sizeOrientPanel.setVisible(needsSize);
-        if (needsSize) {
+        boolean needsSize = BoardIO.VariableWidthTypes.contains(io.type);
+        boolean needsOrient = BoardIO.OrientableTypes.contains(io.type);
+        sizeOrientPanel.setVisible(needsSize || needsOrient);
+        if (needsSize || needsOrient) {
           populateWidthCombo(io.type, io.width);
+          widthCombo.setEnabled(needsSize);
           populateOrientCombo(io.type, io.orientation, io.rect);
+          orientCombo.setEnabled(needsOrient);
         }
         labelField.setText(io.label != null ? io.label : "");
         xField.setText("" + io.rect.x);
@@ -1273,30 +1279,26 @@ public class BoardEditor extends JFrame {
         || type == BoardIO.Type.Ribbon;
     }
 
-    private void populateWidthCombo(BoardIO.Type type, int selected) {
+    private void populateWidthCombo(BoardIO.Type type, Integer selected) {
       widthCombo.removeAllItems();
-      int min = type == BoardIO.Type.DIPSwitch ? DipSwitch.MIN_SWITCH :
-        type == BoardIO.Type.LEDBar ? LedBar.MIN_SEGMENTS : PortIO.MIN_IO;
-      int max = type == BoardIO.Type.DIPSwitch ? DipSwitch.MAX_SWITCH : 
-        type == BoardIO.Type.LEDBar ? LedBar.MAX_SEGMENTS : PortIO.MAX_IO;
+      if (selected == null)
+        selected = type.defaultWidth();
+      int min = type.minWidth();
+      int max = type.maxWidth();
       for (int i = min; i <= max; i++)
         widthCombo.addItem(i);
       widthCombo.setSelectedItem(selected);
     }
 
     private void populateOrientCombo(BoardIO.Type type, PinOrdering orient, Bounds rect) {
+      if (orient == null)
+        orient = BoardIO.defaultPinOrdering(type, rect);
+      if (orient == null)
+        return;
       orientCombo.removeAllItems();
       for (PinOrdering po : PinOrdering.OPTIONS)
         orientCombo.addItem(po.desc);
-      if (orient != null) {
-        orientCombo.setSelectedItem(orient.desc);
-      } else {
-        boolean wide = rect.width >= rect.height;
-        String def = type == BoardIO.Type.DIPSwitch || type == BoardIO.Type.LEDBar
-            ? (wide ? PinOrdering.ORDER_1_LR.desc : PinOrdering.ORDER_1_TB.desc)
-            : (wide ? PinOrdering.ORDER_2_BTLR.desc : PinOrdering.ORDER_2_LRTB.desc);
-        orientCombo.setSelectedItem(def);
-      }
+      orientCombo.setSelectedItem(orient.desc);
     }
 
     private void updateConditionalRows(BoardIO.Type type) {
@@ -1332,11 +1334,14 @@ public class BoardEditor extends JFrame {
 
       updating = true;
       try {
-        boolean needsSize = needsSize(type);
-        sizeOrientPanel.setVisible(needsSize);
-        if (needsSize) {
-          populateWidthCombo(type, type.defaultWidth());
+        boolean needsSize = BoardIO.VariableWidthTypes.contains(type);
+        boolean needsOrient = BoardIO.OrientableTypes.contains(type);
+        sizeOrientPanel.setVisible(needsSize || needsOrient);
+        if (needsSize || needsOrient) {
+          populateWidthCombo(type, null);
+          widthCombo.setEnabled(needsSize);
           populateOrientCombo(type, null, rect);
+          orientCombo.setEnabled(needsOrient);
         }
         String pinVals[] = new String[pinFields.length];
         for (int i = 0; i < pinFields.length; i++)
@@ -1422,10 +1427,11 @@ public class BoardEditor extends JFrame {
       Bounds rect = Bounds.create(x, y, w, h);
 
       // Width and orientation (only for DIPSwitch / LEDBar / Ribbon)
-      boolean needsSize = needsSize(type);
+      boolean needsSize = BoardIO.VariableWidthTypes.contains(type);
+      boolean needsOrient = BoardIO.OrientableTypes.contains(type);
       int width = needsSize && widthCombo.getSelectedItem() != null
           ? (Integer) widthCombo.getSelectedItem() : type.defaultWidth();
-      PinOrdering orient = needsSize
+      PinOrdering orient = needsOrient && orientCombo.getSelectedItem() != null
           ? PinOrdering.get((String) orientCombo.getSelectedItem()) : null;
 
       // Collect pin locations (may be empty strings while user is still typing)

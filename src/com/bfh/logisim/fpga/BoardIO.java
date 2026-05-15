@@ -31,10 +31,12 @@
 package com.bfh.logisim.fpga;
 
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Graphics;
-import java.awt.geom.Ellipse2D;
+import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.EnumSet;
 import java.util.Map;
 
@@ -72,9 +74,11 @@ public class BoardIO {
 
   public static final EnumSet<Type> PhysicalTypes = EnumSet.range(Type.Button, Type.LEDBar);
   public static final EnumSet<Type> InputTypes = EnumSet.range(Type.Button, Type.Ribbon);
-  public static final EnumSet<Type> OutputTypes = EnumSet.range(Type.Pin, Type.LED);
+  public static final EnumSet<Type> OutputTypes = EnumSet.range(Type.Pin, Type.LEDBar);
   public static final EnumSet<Type> InOutTypes = EnumSet.of(Type.Pin, Type.Ribbon);
   public static final EnumSet<Type> OneBitTypes = EnumSet.of(Type.Button, Type.Pin, Type.LED);
+  public static final EnumSet<Type> VariableWidthTypes = EnumSet.of(Type.DIPSwitch, Type.Ribbon, Type.LEDBar);
+  public static final EnumSet<Type> OrientableTypes = EnumSet.of(Type.DIPSwitch, Type.Ribbon, Type.LEDBar);
 
 	public static enum Type {
     // Note: The order here matters, because of the EnumSet ranges above.
@@ -135,6 +139,32 @@ public class BoardIO {
       }
     }
 
+    public int minWidth() {
+      switch (this) {
+      case DIPSwitch:
+        return DipSwitch.MIN_SWITCH;
+      case Ribbon:
+        return PortIO.MIN_IO;
+      case LEDBar:
+        return LedBar.MIN_SEGMENTS;
+      default:
+        return defaultWidth();
+      }
+    }
+
+    public int maxWidth() {
+      switch (this) {
+      case DIPSwitch:
+        return DipSwitch.MAX_SWITCH;
+      case Ribbon:
+        return PortIO.MAX_IO;
+      case LEDBar:
+        return LedBar.MAX_SEGMENTS;
+      default:
+        return defaultWidth();
+      }
+    }
+
     public String getDescription() {
       switch (this) {
       case AllZeros: return "Always-zero Input";
@@ -184,7 +214,7 @@ public class BoardIO {
 	public final PullBehavior pull; // only for physical types
 	public final PinActivity activity; // only for physical types; set to ACTIVE_HIGH for synthetic
 	public final DriveStrength strength; // only for physical types
-	public final PinOrdering orientation; // only for Ribbon and DIPSwitch so far
+	public final PinOrdering orientation; // only for orientable types
   public final int syntheticValue; // only for synthetic types
 
 	public final String[] pins;
@@ -311,7 +341,7 @@ public class BoardIO {
         } 
         cnt = "" + (max+1);
       }
-      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+      if (VariableWidthTypes.contains(t)) {
         if (cnt == null)
           throw new Exception("missing pin count for " + name);
         width = Integer.parseInt(cnt);
@@ -328,16 +358,14 @@ public class BoardIO {
         if (pins[i] == null)
           throw new Exception("missing pin FPGA location " + i + " for " + name);
       }
-      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+      if (OrientableTypes.contains(t)) {
         String desc = params.get("orientation");
         if (desc != null) {
           o = PinOrdering.get(desc);
           if (o == null)
             throw new Exception("Invalid orientation " + desc + " for " + name);
-        } else if (r.width >= r.height) {
-          o = t == Type.DIPSwitch ? PinOrdering.ORDER_1_LR : PinOrdering.ORDER_2_BTLR;
         } else {
-          o = t == Type.DIPSwitch ? PinOrdering.ORDER_1_TB : PinOrdering.ORDER_2_LRTB;
+          o = defaultPinOrdering(t, r);
         }
       }
     }
@@ -384,7 +412,7 @@ public class BoardIO {
         throw new Exception("missing pin FPGA location for " + name);
     } else {
       String cnt = params.get("NrOfPins");
-      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+      if (VariableWidthTypes.contains(t)) {
         if (cnt == null)
           throw new Exception("missing pin count for " + name);
         width = Integer.parseInt(cnt);
@@ -401,16 +429,14 @@ public class BoardIO {
         if (pins[i] == null)
           throw new Exception("missing pin FPGA location " + i + " for " + name);
       }
-      if (t == Type.Ribbon || t == Type.DIPSwitch) {
+      if (OrientableTypes.contains(t)) {
         String desc = params.get("Orientation");
         if (desc != null) {
           o = PinOrdering.get(desc);
           if (o == null)
             throw new Exception("Invalid orientation " + desc + " for " + name);
-        } else if (r.width >= r.height) {
-          o = t == Type.DIPSwitch ? PinOrdering.ORDER_1_LR : PinOrdering.ORDER_2_BTLR;
         } else {
-          o = t == Type.DIPSwitch ? PinOrdering.ORDER_1_TB : PinOrdering.ORDER_2_LRTB;
+          o = defaultPinOrdering(t, r);
         }
       }
     }
@@ -710,8 +736,34 @@ public class BoardIO {
     return InOutTypes.contains(type);
   }
 
-  public boolean isOutput() {
-    return OutputTypes.contains(type);
+  // public boolean isOutput() {
+  //   return OutputTypes.contains(type);
+  // }
+  
+  // public boolean isVariableWidth() {
+  //   return VariableWidthTypes.contains(type);
+  // }
+  
+  public static boolean isVariableWidth(Type type) {
+    return VariableWidthTypes.contains(type);
+  }
+
+  public static PinOrdering defaultPinOrdering(Type type, Bounds r) {
+    if (r.width >= r.height) {
+      switch (type) {
+        case DIPSwitch: return PinOrdering.ORDER_1_LR;
+        case LEDBar: return PinOrdering.ORDER_1_RL;
+        case Ribbon: return PinOrdering.ORDER_2_BTLR;
+        default: return null;
+      }
+    } else {
+      switch (type) {
+        case DIPSwitch: return PinOrdering.ORDER_1_TB;
+        case LEDBar: return PinOrdering.ORDER_1_BT;
+        case Ribbon: return PinOrdering.ORDER_2_LRTB;
+        default: return null;
+      }
+    }
   }
   
   @Override
@@ -719,7 +771,9 @@ public class BoardIO {
     if (!PhysicalTypes.contains(type))
       return label;
     String suffix = label != null ? label : String.format("@(%d, %d)", rect.x, rect.y);
-    if (type == Type.DIPSwitch || type == Type.Ribbon) // types with variable size
+    if (OrientableTypes.contains(type))
+      suffix = orientation + " " + suffix;
+    if (VariableWidthTypes.contains(type))
       return String.format("%d-bit %s %s", width, type, suffix);
     else
       return type + " " + suffix; // single-bit and other fixed-width types
@@ -788,7 +842,7 @@ public class BoardIO {
     return type.pinLabels(width)[bit];
   }
 
-  public void drawOrientedPins(Graphics g, int xOffset, int yOffset, double imgScale,
+  public void drawOrientedPins(Graphics2D g, int xOffset, int yOffset, double imgScale,
       Color fill[], Color edge[], Color edgeDefault) {
     if (width <= 1 || orientation == null)
       return;
@@ -812,32 +866,36 @@ public class BoardIO {
       nx = gang;
       ny = (width + gang - 1) / gang;
     }
-    int margin = 4;
-    int sz = Math.min((rect.width-margin) / nx, (rect.height-margin) / ny);
-    if (sz < 10) {
-      margin = 0;
-      sz = Math.min((rect.width) / nx, (rect.height) / ny);
-    }
-    int xx = (dx >= 0 ? rect.x + margin/2 : rect.x + rect.width - margin - sz - 1);
-    int yy = (dy >= 0 ? rect.y + margin/2 : rect.y + rect.height - margin - sz - 1);
+    int xmargin = 4;
+    int xsz = (rect.width-xmargin) / nx;
+    if (xsz < 10) { xmargin = 0; xsz = (rect.width) / nx; }
+    int ymargin = 4;
+    int ysz = (rect.height-ymargin) / ny;
+    if (ysz < 10) { ymargin = 0; ysz = (rect.height) / ny; }
+
+    double pinW = (xsz-xmargin/2.0-1)*imgScale;
+    double pinH = (ysz-ymargin/2.0-1)*imgScale;
+    Font font = fitFont(g, width, pinW, pinH);
+
+    int xx = (dx >= 0 ? rect.x + xmargin/2 : rect.x + rect.width - xmargin - xsz - 1);
+    int yy = (dy >= 0 ? rect.y + ymargin/2 : rect.y + rect.height - ymargin - ysz - 1);
     int ix = 0, iy = 0;
     for (int i = 0; i < width; i++) {
-      Rectangle2D boxy = new Rectangle2D.Double(
-          xOffset + (xx+1)*imgScale, yOffset + (yy+1)*imgScale,
-          imgScale*(sz-margin/2.0), imgScale*(sz-margin/2.0));
-      Ellipse2D oval = new Ellipse2D.Double(
-          xOffset + (xx+dx*((rect.width-margin)*ix*1.0/nx)+1)*imgScale,
-          yOffset + (yy+dy*((rect.height-margin)*iy*1.0/ny)+1)*imgScale,
-          imgScale*(sz-margin/2.0-1), imgScale*(sz-margin/2.0-1));
-      if (fill != null && fill[i] != null) {
-        g.setColor(fill[i]);
-        if (i == 0) ((Graphics2D)g).fill(boxy);
-        else ((Graphics2D)g).fill(oval);
+      double pinX = xOffset + (xx+dx*((rect.width-xmargin)*ix*1.0/nx)+1)*imgScale;
+      double pinY = yOffset + (yy+dy*((rect.height-ymargin)*iy*1.0/ny)+1)*imgScale;
+      Shape pinShape = (i == 0)
+        ? new Rectangle2D.Double(pinX, pinY, pinW, pinH)
+        : new RoundRectangle2D.Double(pinX, pinY, pinW, pinH, Math.min(pinW, pinH), Math.min(pinW, pinH));
+      Color pinFill = fill != null ? fill[i] : null;
+      if (pinFill != null) {
+        g.setColor(pinFill);
+        g.fill(pinShape);
       }
-      if (edge != null ? edge[i] != null : edgeDefault != null) {
-        g.setColor(edge != null ? edge[i] : edgeDefault);
-        if (i == 0) ((Graphics2D)g).draw(boxy);
-        else ((Graphics2D)g).draw(oval);
+      Color pinBorder = edge != null ? edge[i] : edgeDefault;
+      if (pinBorder != null) {
+        g.setColor(pinBorder);
+        g.draw(pinShape);
+        drawPinNumber(g, i, font, pinX, pinY, pinW, pinH);
       }
       if (horizontal) {
         iy++;
@@ -853,6 +911,34 @@ public class BoardIO {
         }
       }
     }
+  }
+
+  private static Font fitFont(Graphics2D g, int numPins, double pinW, double pinH) {
+    String text = ""+(numPins-1);
+    float size = 2 + (float)Math.min(pinW, pinH); // start generous
+    Font baseFont = new Font("SansSerif", Font.BOLD, 12);
+    Font font;
+    FontMetrics fm;
+    do {
+      font = baseFont.deriveFont(size);
+      fm = g.getFontMetrics(font);
+      size -= 0.5f;
+    } while (size > 4 &&
+        (fm.stringWidth(text) > pinW || fm.getAscent() + fm.getDescent() > pinH));
+    return font;
+  }
+
+  private  static void drawPinNumber(Graphics2D g, int i, Font font, double pinX, double pinY, double pinW, double pinH) {
+    String text = ""+i;
+    Font oldFont = g.getFont();
+    g.setFont(font);
+    FontMetrics fm = g.getFontMetrics(font);
+    int textW = fm.stringWidth(text);
+    int textH = fm.getAscent() + fm.getDescent();
+    float x = (float)(pinX + (pinW - textW) / 2.0);
+    float y = (float)(pinY + (pinH - textH) / 2.0 + fm.getAscent());
+    g.drawString(text, x, y);
+    g.setFont(oldFont);
   }
 
 }

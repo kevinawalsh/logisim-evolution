@@ -38,6 +38,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -273,7 +274,9 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
   private static final Color SELECTED = new Color(0f, 0.3f, 1f,   0.5f);
 
   @Override
-  public void paint(Graphics g) {
+  public void paint(Graphics g1) {
+    Graphics2D g = (Graphics2D)g1;
+    g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     super.paint(g);
     if (scaledImage != null) {
       g.setColor(Color.BLACK);
@@ -285,10 +288,10 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
             imgXOffset + io.rect.x * imgScale, imgYOffset + io.rect.y * imgScale,
             io.rect.width * imgScale, io.rect.height * imgScale);
         g.setColor(sel ? SELECTED : MISTY);
-        ((Graphics2D)g).fill(r);
+        g.fill(r);
         g.setColor(sel ? Color.BLUE : Color.RED);
-        ((Graphics2D)g).draw(r);
-        io.drawOrientedPins(g, imgXOffset, imgYOffset, imgScale, null, null, sel ? Color.BLUE : Color.RED);
+        g.draw(r);
+        io.drawOrientedPins(g, imgXOffset, imgYOffset, imgScale, null, null, sel ? Color.CYAN : Color.ORANGE);
       }
       g.setColor(Color.RED);
       if (w != 0 || h != 0) {
