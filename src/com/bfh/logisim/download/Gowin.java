@@ -6,12 +6,13 @@ import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
+import com.bfh.logisim.fpga.DriveStrength;
+import com.bfh.logisim.fpga.InputBias;
+import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class Gowin {
@@ -84,22 +85,13 @@ public class Gowin {
 
     @Override
     public boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
-      Hdl cst = new Hdl(lang, err);
-      ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-        cst.stmt("IO_LOC \"%s\" %s //%s;", net, pin, label);
-        if ("Pull Up".equals(io.pull.desc)) {
-          cst.stmt("IO_PORT \"%s\" PULL_MODE=UP", net);
-        }
-        if ("Pull Down".equals(io.pull.desc)) {
-          cst.stmt("IO_PORT \"%s\" PULL_MODE=DOWN", net);
-        }
-      });
-      if (ioResources.requiresOscillator)
-        cst.stmt("IO_LOC \"%s\" %s //%s;", CLK_PORT, board.fpga.ClockPinLocation, CLK_PORT);
-      File fcst = FileWriter.GetFilePointer(scriptPath, "io_map.cst", err);
-      if (fcst == null || !FileWriter.WriteContents(fcst, cst, err))
+      System.err.println("not yet tested");
+
+      AuxFile cst = new AuxFile(scriptPath, "io_map.cst", err);
+      if (!writeGowinConstraintCST(cst, board, ioResources))
         return false;
-      Hdl sh = new Hdl(lang, err);
+
+      AuxFile sh = new AuxFile(scriptPath, "gw_download.tcl", err);
       sh.stmt("set_device %s", board.fpga.Part);
       for (String hf : hdlFiles)
         sh.stmt("add_file \"%s\"", hf);
@@ -108,10 +100,7 @@ public class Gowin {
       sh.stmt("set_option -output_base_name \"%s\"", TOP_HDL);
       sh.stmt("set_option -use_sspi_as_gpio 1");
       sh.stmt("run all");
-      File fsh = FileWriter.GetFilePointer(scriptPath, "gw_download.tcl", err);
-      if (fsh == null || !FileWriter.WriteContents(fsh, sh, err))
-        return false;
-      return true;
+      return sh.save();
     }
 
     @Override
@@ -260,6 +249,49 @@ public class Gowin {
       }
       return true;
     }
+  }
+
+  static void writeIoSpec(AuxFile cst, String net, InputBias bias, IoStandard standard, DriveStrength strength) {
+    String iospec = "";
+
+    if (bias == InputBias.PULL_UP) iospec += " PULL_MODE=UP";
+    else if (bias == InputBias.PULL_DOWN) iospec += " PULL_MODE=DOWN";
+    else if (bias == InputBias.BUS_HOLD) iospec += " PULL_MODE=KEEPER";
+    else if (bias == InputBias.PULL_NONE) iospec += " PULL_MODE=NONE";
+
+    if (standard != IoStandard.DEFAULT)
+      iospec += " IO_TYPE=" + standard;
+
+    if (strength != DriveStrength.DEFAULT)
+      iospec += " DRIVE=" + (strength.ma != null ? strength.ma : strength.desc);
+
+    if (!iospec.isEmpty())
+      cst.stmt("IO_PORT \"%s\"%s;", net, iospec);
+  }
+
+  // Create a gowin-compatible ".cst" constraint file
+  static boolean writeGowinConstraintCST(AuxFile cst, Board board, PinBindings ioResources) {
+    System.err.println("not yet tested");
+    if (ioResources.requiresOscillator) {
+      cst.stmt("IO_LOC \"%s\" %s //%s;", FPGADownload.CLK_PORT, board.fpga.ClockPinLocation, FPGADownload.CLK_PORT);
+      writeIoSpec(cst, FPGADownload.CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
+    }
+    ioResources.forEachPhysicalPin((pin, net, io, label) -> {
+      cst.stmt("IO_LOC \"%s\" %s //%s;", net, pin, label);
+      if (net.startsWith("FPGA_INPUT_PIN_")) {
+        InputBias bias = ioResources.getInputBias(net);
+        writeIoSpec(cst, net, bias, io.standard, io.strength);
+      } else if (net.startsWith("FPGA_BIDIR_PIN_")) {
+        // FIXME: use IOBUF block, and apply bias there instead of here?
+        InputBias bias = ioResources.getInputBias(net);
+        writeIoSpec(cst, net, bias, io.standard, io.strength);
+      } else if (net.startsWith("FPGA_OUTPUT_PIN_")) {
+        // output pins do not have bias
+        writeIoSpec(cst, net, null, io.standard, io.strength);
+      }
+    });
+    // FIXME: handle all unmapped pins
+    return cst.save();
   }
 
 }

@@ -407,16 +407,24 @@ public class PinBindings {
     }
   }
 
-  private HashMap<String, PullBehavior> inputPullRequests = new HashMap<>();
 
-  public void addPull(String pin, PullBehavior pull) {
-    inputPullRequests.put(pin, pull);
+  private HashMap<String, InputBias> inputBiasRequests = new HashMap<>();
+
+  // net should be "FPGA_INPUT_PIN_nnn", "FPGA_BIDIR_PIN_nnn", or "FPGA_BIDIR_PIN_nnn_IN".
+  // bias should be a concrete pull direction (up, down, none, bus-hold,
+  // do-not-specify), never one of the ambiguous cases (any, // pull-required).
+  public void setInputBias(String net, InputBias bias) {
+    inputBiasRequests.put(net, bias);
   }
-  public PullBehavior getInputPinPull(String pin) {
-    return inputPullRequests.getOrDefault(pin, PullBehavior.NONE);
-  }
-  public int countInputPinPulls() {
-    return inputPullRequests.size();
+  public InputBias getInputBias(String net) {
+    if (net.startsWith("FPGA_OUTPUT_PIN_"))
+      return InputBias.DO_NOT_SPECIFY; // output pins never have a bias, no need for warning
+    InputBias bias = inputBiasRequests.get(net);
+    if (bias == null) {
+      System.err.println("Warning: missing bias for " + net);
+      return InputBias.DO_NOT_SPECIFY; // or DEFAULT (aka PULL_UP)?
+    }
+    return bias;
   }
 
   public Source sourceFor(Path path) {

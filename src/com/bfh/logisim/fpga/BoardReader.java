@@ -32,7 +32,6 @@ package com.bfh.logisim.fpga;
 
 import java.io.File;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -164,52 +163,7 @@ public class BoardReader {
   private static Chipset parseChipset(Element elt) throws Exception {
     if (elt == null)
       return null;
-
-    // FIXME: Revise. For now, we create a map compatible with the old format.
-    // FIXME: many of these should be optional, or have sane defaults.
-    HashMap<String, String> map = new HashMap<>();
-    
-    Element chipElt = XmlUtil.getChildElement(elt, "Chip");
-    if (chipElt == null)
-      throw new Exception("Required element <Chip> is missing");
-    map.put("FPGAInformation/Vendor", chipElt.getAttribute("vendor"));
-    map.put("FPGAInformation/Family", chipElt.getAttribute("family"));
-    map.put("FPGAInformation/Part", chipElt.getAttribute("part"));
-    map.put("FPGAInformation/Speedgrade", chipElt.getAttribute("speedGrade"));
-    map.put("FPGAInformation/Package", chipElt.getAttribute("package"));
-    
-    Element clockElt = XmlUtil.getChildElement(elt, "Clock");
-    if (clockElt == null)
-      throw new Exception("Required element <Clock> is missing");
-    map.put("ClockInformation/FPGApin", clockElt.getAttribute("pin"));
-    map.put("ClockInformation/Frequency", clockElt.getAttribute("frequency"));
-    map.put("ClockInformation/IOStandard", clockElt.getAttribute("ioStandard"));
-    map.put("ClockInformation/PullBehavior", clockElt.getAttribute("pull"));
-
-    Element jtagElt = XmlUtil.getChildElement(elt, "JTAG");
-    String val = jtagElt == null ? null : jtagElt.getAttribute("pos"); // optional
-    if (val != null && !val.isEmpty())
-      map.put("FPGAInformation/JTAGPos", val);
-
-    Element usbtmcElt = XmlUtil.getChildElement(elt, "USBTMC");
-    val = usbtmcElt == null ? null : usbtmcElt.getAttribute("available"); // optional
-    if (val != null && !val.isEmpty())
-      map.put("FPGAInformation/USBTMC", val);
-    
-    Element flashElt = XmlUtil.getChildElement(elt, "Flash");
-    val = flashElt == null ? null : flashElt.getAttribute("pos"); // optional
-    if (val != null && !val.isEmpty())
-      map.put("FPGAInformation/FlashPos", val);
-    val = flashElt == null ? null : flashElt.getAttribute("name"); // optional
-    if (val != null && !val.isEmpty())
-      map.put("FPGAInformation/FlashName", val);
-
-    Element unusedpinsElt = XmlUtil.getChildElement(elt, "UnusedPins");
-    if (unusedpinsElt == null)
-      throw new Exception("Required element <UnusedPins> is missing");
-    map.put("UnusedPins/PullBehavior", unusedpinsElt.getAttribute("pull"));
-
-    return new Chipset(map);
+    return new Chipset(XmlUtil.xmlToMap(elt.getChildNodes()));
   }
   
   private static void parseToolchains(Board board, Element tcElt) throws Exception {

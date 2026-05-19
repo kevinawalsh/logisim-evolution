@@ -30,18 +30,19 @@
 
 package com.bfh.logisim.fpga;
 
+import java.util.Map;
 import java.util.HashMap;
 
 import java.awt.image.BufferedImage;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.cburch.logisim.util.Errors;
 import com.bfh.logisim.settings.BoardList;
+import com.cburch.logisim.file.XmlUtil;
+import com.cburch.logisim.util.Errors;
 
 // Reader for the legacy xml board format
 public class BoardReaderOld {
@@ -63,13 +64,13 @@ public class BoardReaderOld {
       String apio_name = parseApioName(doc);
       String ofl_name = parseOpenFPGALoaderName(doc);
       String vtc;
-      if ("altera".equalsIgnoreCase(b.fpga.VendorName))
+      if ("altera".equalsIgnoreCase(b.fpga.Vendor))
         vtc = "Altera"; // Altera Quartus II
-      else if ("xilinx".equalsIgnoreCase(b.fpga.VendorName))
+      else if ("xilinx".equalsIgnoreCase(b.fpga.Vendor))
         vtc = "Xilinx"; // Xilinx ISE
-      else if ("lattice".equalsIgnoreCase(b.fpga.VendorName))
+      else if ("lattice".equalsIgnoreCase(b.fpga.Vendor))
         vtc = "Lattice"; // same backend handles Diamond and ispLEVER
-      else if ("gowin".equalsIgnoreCase(b.fpga.VendorName))
+      else if ("gowin".equalsIgnoreCase(b.fpga.Vendor))
         vtc = "Gowin";
       else
         vtc = null;
@@ -118,7 +119,7 @@ public class BoardReaderOld {
     NodeList xml = getSection(doc, "BoardPicture");
     if (xml == null)
       return null;
-    HashMap<String, String> params = xmlToMap(xml);
+    Map<String, String> params = XmlUtil.xmlToMap(xml);
 
     int w = Integer.parseInt(params.getOrDefault("PictureDimension/Width", "0"));
     int h = Integer.parseInt(params.getOrDefault("PictureDimension/Height", "0"));
@@ -135,36 +136,45 @@ public class BoardReaderOld {
     return new ImageXmlFactoryOld(w, h, codes.split(" "), pixels);
   }
 
-  private static HashMap<String, String> xmlToMap(NodeList xml) {
-    HashMap<String, String> params = new HashMap<>();
-    for (int i = 0; i < xml.getLength(); i++) {
-      Node node = xml.item(i);
-      String name = node.getNodeName();
-      if (name == null || name.equals("#text") || name.equals("#comment"))
-        continue;
-      NamedNodeMap attrs = node.getAttributes();
-      for (int j = 0; attrs != null && j < attrs.getLength(); j++) {
-        Node attr = attrs.item(j);
-        String tag = attr.getNodeName();
-        String val = attr.getNodeValue();
-        params.put(name+"/"+tag, val);
-      }
-    }
-    return params;
+  private static HashMap<String, String> xmlConversion = new HashMap<>();
+  static {
+    xmlConversion.put("FPGAInformation/Vendor", "Chip/vendor");
+    xmlConversion.put("FPGAInformation/Family", "Chip/family");
+    xmlConversion.put("FPGAInformation/Part", "Chip/part");
+    xmlConversion.put("FPGAInformation/Speedgrade", "Chip/speedGrade");
+    xmlConversion.put("FPGAInformation/Package", "Chip/package");
+
+    xmlConversion.put("ClockInformation/Frequency", "Clock/frequency");
+    xmlConversion.put("ClockInformation/FPGApin", "Clock/pin");
+    xmlConversion.put("ClockInformation/IOStandard", "Clock/ioStandard");
+
+    xmlConversion.put("FPGAInformation/JTAGPos", "JTAG/pos");
+    xmlConversion.put("FPGAInformation/USBTMC", "USBTMC/available");
+
+    xmlConversion.put("FPGAInformation/FlashPos", "Flash/pos");
+    xmlConversion.put("FPGAInformation/FlashName", "Flash/name");
+
+    xmlConversion.put("UnusedPins/PullBehavior", "UnmentionedPins/behavior");
   }
 
   private static Chipset parseChipset(Document doc) throws Exception {
     NodeList xml = getSection(doc, "BoardInformation");
     if (xml == null)
       return null;
-    return new Chipset(xmlToMap(xml));
+    Map<String, String> oldParams = XmlUtil.xmlToMap(xml);
+    Map<String, String> newParams = new HashMap<>();
+    xmlConversion.forEach((oldkey, newkey) -> {
+      if (oldParams.containsKey(oldkey))
+        newParams.put(newkey, oldParams.get(oldkey));
+    });
+    return new Chipset(newParams);
   }
 
   private static String parseApioName(Document doc) throws Exception {
     NodeList xml = getSection(doc, "BoardInformation");
     if (xml == null)
       return null;
-    String apio_name = xmlToMap(xml).get("Toolchain/ApioName");
+    String apio_name = XmlUtil.xmlToMap(xml).get("Toolchain/ApioName");
     if (apio_name != null)
       apio_name = apio_name.trim();
     if (apio_name != null && apio_name.equals(""))
@@ -176,7 +186,7 @@ public class BoardReaderOld {
     NodeList xml = getSection(doc, "BoardInformation");
     if (xml == null)
       return null;
-    String openFPGALoader_name = xmlToMap(xml).get("Toolchain/openFPGAloaderName");
+    String openFPGALoader_name = XmlUtil.xmlToMap(xml).get("Toolchain/openFPGAloaderName");
     if (openFPGALoader_name != null)
       openFPGALoader_name = openFPGALoader_name.trim();
     if (openFPGALoader_name != null && openFPGALoader_name.equals(""))

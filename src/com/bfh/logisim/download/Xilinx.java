@@ -43,15 +43,12 @@ import java.util.List;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.DriveStrength;
+import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.fpga.PullBehavior;
-import com.bfh.logisim.fpga.UnmentionedPinsBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class Xilinx {
@@ -317,30 +314,28 @@ public class Xilinx {
     }
 
     private boolean generateVhdlListFile(ArrayList<String> hdlFiles) {
-      Hdl out = new Hdl(lang, err);
+      AuxFile out = new AuxFile(scriptPath, vhdl_list_file, err);
       String kind = lang.toUpperCase();
       for (String f : hdlFiles)
         out.stmt("%s work \"%s\"", kind, f);
-      File f = FileWriter.GetFilePointer(scriptPath, vhdl_list_file, err);
-      return f != null && FileWriter.WriteContents(f, out, err);
+      return out.save();
     }
 
     private boolean generateRunScript() {
       Chipset chip = board.fpga;
       String dev = String.format("%s-%s-%s", chip.Part, chip.Package, chip.SpeedGrade);
       String vhdlListPath = scriptPath.replace(projectPath, "../") + vhdl_list_file;
-      Hdl out = new Hdl(lang, err);
+      AuxFile out = new AuxFile(scriptPath, script_file, err);
       out.stmt("run -top %s -ofn logisim.ngc -ofmt NGC -ifn %s -ifmt mixed -p %s",
           TOP_HDL, vhdlListPath, dev);
-      File f = FileWriter.GetFilePointer(scriptPath, script_file, err);
-      return f != null && !FileWriter.WriteContents(f, out, err);
+      return out.save();
     }
 
     private boolean generateDownloadScript() {
       boolean isCPLD = isCPLD(board.fpga);
       String bitFileExt = isCPLD ? ".jed" : ".bit";
       int jtagPos = board.fpga.JTAGPos;
-      Hdl out = new Hdl(lang, err);
+      AuxFile out = new AuxFile(scriptPath, download_file, err);
       out.stmt("setmode -bscan");
       if (writeToFlash && board.fpga.FlashDefined) {
         String mcsFile = scriptPath + mcs_file;
@@ -368,50 +363,16 @@ public class Xilinx {
         out.stmt("program -p %s -onlyFpga", jtagPos);
       }
       out.stmt("quit");
-      File f = FileWriter.GetFilePointer(scriptPath, download_file, err);
-      return f != null && FileWriter.WriteContents(f, out, err);
+      return out.save();
     }
 
-    private boolean generateUcfFile(PinBindings ioResources) {
-      Hdl out = new Hdl(lang, err);
-      if (ioResources.requiresOscillator) {
-        out.stmt("NET \"%s\" %s ;", CLK_PORT, xilinxClockSpec(board.fpga));
-        out.stmt("NET \"%s\" TNM_NET = \"%s\" ;", CLK_PORT, CLK_PORT);
-        out.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 % ;",
-            CLK_PORT, CLK_PORT, board.fpga.Speed);
-        out.stmt();
-      }
-      ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-        String spec = String.format("LOC = \"%s\"", pin);
-        if (io.pull == PullBehavior.PULL_UP || io.pull == PullBehavior.PULL_DOWN)
-          spec += " | " + io.pull.xilinx;
-        if (io.strength != DriveStrength.UNKNOWN && io.strength != DriveStrength.DEFAULT)
-          spec += " | DRIVE = " + io.strength.ma;
-        if (io.standard != IoStandard.UNKNOWN && io.standard != IoStandard.DEFAULT)
-          spec += " | IOSTANDARD = " + io.standard;
-        out.stmt("NET \"%s\" %s  ;# %s", net, spec, label);
-      });
-      File f = FileWriter.GetFilePointer(ucfPath, ucf_file, err);
-      return FileWriter.WriteContents(f, out, err);
-    }
 
     @Override
     public boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
       return generateVhdlListFile(hdlFiles)
         && generateRunScript()
         && generateDownloadScript()
-        && generateUcfFile(ioResources);
-    }
-
-    private static String xilinxClockSpec(Chipset chip) {
-      String spec = String.format("LOC = \"%s\"", chip.ClockPinLocation);
-      PullBehavior pull = chip.ClockPullBehavior;
-      if (pull == PullBehavior.PULL_UP || pull == PullBehavior.PULL_DOWN)
-        spec += " | " + pull.xilinx;
-      IoStandard std = chip.ClockIOStandard;
-      if (std != IoStandard.DEFAULT && std != IoStandard.UNKNOWN)
-        spec += " | IOSTANDARD = " + std;
-      return spec;
+        && writeXilinuxConstraintUCF(new AuxFile(ucfPath, ucf_file, err), board, ioResources);
     }
 
     private static boolean isCPLD(Chipset chip) {
@@ -485,5 +446,48 @@ public class Xilinx {
       default:
         return null; // let cpldfit decide
     }
+  }
+
+  static void writeIoSpec(AuxFile lpf, String net, String pin, InputBias bias, IoStandard standard, DriveStrength strength, String label) {
+    String iospec = "LOC = \""+pin+"\"";
+
+    if (bias == InputBias.PULL_UP) iospec += " | PULLUP";
+    else if (bias == InputBias.PULL_DOWN) iospec += " | PULLDOWN";
+    else if (bias == InputBias.BUS_HOLD) iospec += " | KEEPER";
+    // else if (bias == InputBias.PULL_NONE) ; /* nop... UCF has no explicit NONE, we simply omit the pull */
+
+    if (standard != IoStandard.DEFAULT)
+      iospec += " | IOSTANDARD = " + standard;
+
+    if (strength != DriveStrength.DEFAULT)
+      iospec += " | DRIVE = " + (strength.ma != null ? strength.ma : strength.desc);
+
+    lpf.stmt("NET \"%s\" %s;# %s", net, iospec, label);
+  }
+
+  static boolean writeXilinuxConstraintUCF(AuxFile ucf, Board board, PinBindings ioResources) {
+    if (ioResources.requiresOscillator) {
+      writeIoSpec(ucf, FPGADownload.CLK_PORT, board.fpga.ClockPinLocation,
+          InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT, "primary clock");
+      ucf.stmt("NET \"%s\" TNM_NET = \"%s\" ;", FPGADownload.CLK_PORT, FPGADownload.CLK_PORT);
+      ucf.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 % ;",
+          FPGADownload.CLK_PORT, FPGADownload.CLK_PORT, board.fpga.Speed);
+      ucf.stmt();
+    }
+    ioResources.forEachPhysicalPin((pin, net, io, label) -> {
+      if (net.startsWith("FPGA_INPUT_PIN_")) {
+        InputBias bias = ioResources.getInputBias(net);
+        writeIoSpec(ucf, net, pin, bias, io.standard, io.strength, label);
+      } else if (net.startsWith("FPGA_BIDIR_PIN_")) {
+        // FIXME: use TRELLIS_IO block, and apply bias there instead of here?
+        InputBias bias = ioResources.getInputBias(net);
+        writeIoSpec(ucf, net, pin, bias, io.standard, io.strength, label);
+      } else if (net.startsWith("FPGA_OUTPUT_PIN_")) {
+        // output pins do not have bias
+        writeIoSpec(ucf, net, pin, null, io.standard, io.strength, label);
+      }
+    });
+    // FIXME: handle all unmapped pins
+    return ucf.save();
   }
 }

@@ -64,4 +64,27 @@ public class XmlUtil {
     return map;
   }
 
+  public static LinkedHashMap<String, String> xmlToMap(NodeList nodes) {
+    LinkedHashMap<String, String> params = new LinkedHashMap<>();
+    xmlToMapHelper(nodes, "", params);
+    return params;
+  }
+
+  private static void xmlToMapHelper(NodeList nodes, String prefix,
+      LinkedHashMap<String, String> params) {
+    for (int i = 0; i < nodes.getLength(); i++) {
+      Node node = nodes.item(i);
+      if (node.getNodeType() != Node.ELEMENT_NODE)
+        continue;
+      String path = prefix.isEmpty() ? node.getNodeName()
+        : prefix + "/" + node.getNodeName();
+      NamedNodeMap attrs = node.getAttributes();
+      for (int j = 0; attrs != null && j < attrs.getLength(); j++) {
+        Node attr = attrs.item(j);
+        params.put(path + "/" + attr.getNodeName(), attr.getNodeValue());
+      }
+      xmlToMapHelper(node.getChildNodes(), path, params);
+    }
+  }
+
 }

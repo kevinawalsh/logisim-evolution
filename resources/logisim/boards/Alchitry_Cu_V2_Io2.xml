@@ -18,7 +18,7 @@
   </Toolchains>
   <IOComponents>
     <LEDBar label="LEDS" n="8" orientation="1x Top-Bottom" pin0="J11" pin1="K11" pin2="G12" pin3="H12" pin4="K14" pin5="J12" pin6="L14" pin7="K12" pull="unknown" x="616" y="95" width="26" height="142"/>
-    <Button label="reset" pin="P8" pull="float" polarity="active-low" drive="unknown" x="606" y="264" width="35" height="45"/>
+    <Button label="reset" pin="P8" pull="float" polarity="active-low" x="606" y="264" width="35" height="45"/>
     <Button label="DPAD_UP" pin="D1" x="492" y="36" width="40" height="40"/>
     <Button label="DPAD_MIDDLE" pin="E4" x="492" y="93" width="40" height="40"/>
     <Button label="DPAD_DOWN" pin="E1" x="492" y="150" width="40" height="40"/>

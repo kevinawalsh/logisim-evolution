@@ -57,7 +57,7 @@ class BoardWriter {
       Chipset chip = board.fpga;
       sb.append("  <FPGA>\n");
       sb.append("    <Chip")
-        .append(a("vendor",     chip.VendorName))
+        .append(a("vendor",     chip.Vendor))
         .append(a("family",     chip.Technology))
         .append(a("part",       chip.Part))
         .append(a("speedGrade", chip.SpeedGrade))
@@ -81,8 +81,8 @@ class BoardWriter {
         .append(a("frequency", "" + chip.ClockFrequency));
       if (chip.ClockIOStandard != IoStandard.DEFAULT)
         sb.append(a("ioStandard", "" + chip.ClockIOStandard.xml));
-      if (chip.ClockPullBehavior != PullBehavior.NONE)
-        sb.append(a("pull", "" + chip.ClockPullBehavior.xml));
+      // if (chip.ClockPullBehavior != PullBehavior.NONE)
+      //  sb.append(a("pull", "" + chip.ClockPullBehavior.xml));
       sb.append("/>\n");
       sb.append("    <UnmentionedPins")
         .append(a("behavior", "" + chip.UnmentionedPinsBehaviorHint.xml))
@@ -191,7 +191,7 @@ class BoardWriter {
   //   1. label
   //   2. per-component params (n, orientation)
   //   3. pins (pin for single-bit, pinN for multi-bit)
-  //   4. pin parameters (pull, polarity, drive, ioStandard)
+  //   4. pin parameters (bias, polarity, strength, idle, standard)
   //   5. geometry (x, y, width, height)
   private static void appendIO(StringBuilder sb, BoardIO io) {
     sb.append("    <").append(io.type);
@@ -215,14 +215,16 @@ class BoardWriter {
     }
 
     // 4. Pin parameters
-    if (io.pull != PullBehavior.NONE)
-      sb.append(a("pull", "" + io.pull.xml));
-    if (io.activity != PinActivity.ACTIVE_HIGH && io.type != BoardIO.Type.Pin)
-      sb.append(a("polarity", "" + io.activity.xml));
-    if (io.strength != DriveStrength.DEFAULT)
-      sb.append(a("drive", "" + io.strength.xml));
+    if (io.bias != null & io.bias != InputBias.DEFAULT)
+      sb.append(a("bias", io.bias.xml));
+    if (io.type != BoardIO.Type.Pin && io.activity != PinActivity.DEFAULT)
+      sb.append(a("polarity", io.activity.xml));
+    if (io.strength != null && io.strength != DriveStrength.DEFAULT)
+      sb.append(a("drive", io.strength.xml));
+    if (io.idle != null && io.idle != IdleBehavior.DEFAULT)
+      sb.append(a("idle", io.idle.xml));
     if (io.standard != IoStandard.DEFAULT)
-      sb.append(a("ioStandard", "" + io.standard.xml));
+      sb.append(a("ioStandard", io.standard.xml));
 
     // 5. Geometry
     sb.append(a("x",      "" + io.rect.x))

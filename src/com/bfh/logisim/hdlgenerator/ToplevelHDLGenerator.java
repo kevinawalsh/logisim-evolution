@@ -33,9 +33,10 @@ package com.bfh.logisim.hdlgenerator;
 import java.util.ArrayList;
 
 import com.bfh.logisim.fpga.BoardIO;
+import com.bfh.logisim.fpga.IdleBehavior;
+import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.PinActivity;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.ClockBus;
 import com.bfh.logisim.netlist.Netlist;
@@ -44,7 +45,6 @@ import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
-import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
 import com.cburch.logisim.std.wiring.Pin;
@@ -239,41 +239,17 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     return boardIsActiveHigh ^ compIsActiveHigh;
   }
 
-  private static PullBehavior pullDirection(PullBehavior behavior) {
-    if (behavior == PullBehavior.PULL_UP || behavior == PullBehavior.PULL_DOWN)
-      return behavior;
-    else
-      return PullBehavior.NONE;
-  }
-  private PullBehavior pullDirection(NetlistComponent shadow) {
-    AttributeOption behavior = shadow.original.getAttributeSet().getValue(Pin.ATTR_BEHAVIOR);
-    if (behavior == Pin.PULL_UP) return PullBehavior.PULL_UP;
-    if (behavior == Pin.PULL_DOWN) return PullBehavior.PULL_DOWN;
-    if (behavior != Pin.SIMPLE)
-        _err.AddFatalError(shadow.pathName() + " is configured as " + behavior + ", which can't be synthesized.");
-      return PullBehavior.NONE;
-  }
-
-  // precondition: dest is a physical I/O device, src is a Pin requesting given pull
-  private void recordInputPullDirection(Hdl out, PullBehavior inputPinPullDir,
-      NetlistComponent shadow, PinBindings.Source src,  PinBindings.Dest dest) {
-    if (inputPinPullDir == null || inputPinPullDir == PullBehavior.NONE)
-      return;
-    PullBehavior fpgaPullDir = pullDirection(dest.io.pull);
-    if (fpgaPullDir == inputPinPullDir) {
-      out.err.AddInfo(shadow.pathName() + " " + inputPinPullDir + " satisfied by default configuration of " + dest.io);
-      return;
-    }
-    if (fpgaPullDir != PullBehavior.NONE) {
-      out.err.AddSevereWarning(shadow.pathName() + " " + inputPinPullDir + " conflicts with "
-          + dest.io + " " + fpgaPullDir +", latter will take precedence.");
-      return;
-    }
-    out.err.AddInfo(shadow.pathName() + " requires " + inputPinPullDir + " on " + dest.io);
-    Netlist.Int3 seqno = dest.seqno();
-    for (int i = 0; i < src.width.in; i++) { // TODO: verify src.width.in instead of destwidth.in
-      ioResources.addPull("FPGA_INPUT_PIN_"+(seqno.in+i), inputPinPullDir);
-    }
+  // precondition: dest is a physical input or bidir I/O device, and shadow is mapped to it
+  private InputBias determineInputBias(Hdl out, NetlistComponent shadow, PinBindings.Dest dest) {
+    InputBias bias = InputBias.resolveConflict(out.err, dest.io.bias, shadow);
+    out.err.AddInfo("%s will use input bias '%s' on %s.", shadow.pathName(), bias, dest.io);
+    // Netlist.Int3 seqno = dest.seqno();
+    // if (src.width.in != dest.io.getPinCounts().in)
+    //   System.err.printf("determineInputBias() has width mismatch: %d vs %d\n",
+    //       src.width.in, dest.io.getPinCounts().in);
+    // for (int i = 0; i < src.width.in; i++) // TODO: verify src.width.in instead of destwidth.in
+    //   ioResources.setInputBias("FPGA_INPUT_PIN_"+(seqno.in+i), bias);
+    return bias; 
   }
 
   private void generateInlinedCodeSignal(Hdl out, Path path, NetlistComponent shadow) {
@@ -291,7 +267,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     boolean isInput = false, isOutput = false;
     int srcwidth = -1;
     // System.out.println("Generating inline code signal for " + path);
-    PullBehavior inputPinPullDir = PullBehavior.NONE;
+    // InputBias logisimInputPinRequestedBias = null;
     if (shadow.original.getFactory() instanceof Pin) {
       signal = "s_" + shadow.pathName();
       bit = signal;
@@ -301,8 +277,6 @@ public class ToplevelHDLGenerator extends HDLGenerator {
       // EndData configured as an input src w.r.t. logisim circuit, and vice versa
       isInput = shadow.original.getEnd(0).canOutput();
       isOutput = shadow.original.getEnd(0).canInput();
-      if (isInput)
-        inputPinPullDir = pullDirection(shadow);
     } else {
       NetlistComponent.Range3 indices = shadow.getGlobalHiddenPortIndices(path);
       if (indices == null) {
@@ -412,11 +386,13 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         Netlist.Int3 seqno = dest.seqno();
         // Inputs
         if (isInput) {
-          recordInputPullDirection(out, inputPinPullDir, shadow, src, dest);
+          InputBias bias = determineInputBias(out, shadow, dest);
           if (src.width.in == 1) {
             out.assign(signal, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
+            ioResources.setInputBias("FPGA_INPUT_PIN_"+seqno.in, bias);
           } else for (int i = 0; i < src.width.in; i++) { // TODO: verify src.width.in instead of destwidth.in
             out.assign(bit, offset+i, maybeNot+"FPGA_INPUT_PIN_"+(seqno.in+i));
+            ioResources.setInputBias("FPGA_INPUT_PIN_"+(seqno.in+i), bias);
           }
         }
         // Outputs
@@ -479,13 +455,13 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         } else {
           // Handle physical I/O device types.
           Netlist.Int3 seqno = dest.seqno();
-          // Inputs
           if (isInput) {
-            recordInputPullDirection(out, inputPinPullDir, shadow, src, dest);
+            // Inputs
+            InputBias bias = determineInputBias(out, shadow, dest);
             out.assign(bit, offset+i, maybeNot+"FPGA_INPUT_PIN_"+seqno.in);
-          }
-          // Outputs
-          else {
+            ioResources.setInputBias("FPGA_INPUT_PIN_"+seqno.in, bias);
+          } else {
+            // Outputs
             out.assign("FPGA_OUTPUT_PIN_"+seqno.out, maybeNot+bit, offset+i);
           }
         }
@@ -509,7 +485,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     int offset;    // e.g.: 0 or 3
     int srcwidth = -1;
     // System.out.println("Generating inline code signal for " + path);
-    PullBehavior inputPinPullDir = PullBehavior.NONE;
+    // PullBehavior inputPinPullDir = PullBehavior.NONE;
     if (shadow.original.getFactory() instanceof Pin)
       return; // Pin is not bidirectional
     NetlistComponent.Range3 indices = shadow.getGlobalHiddenPortIndices(path);
@@ -566,6 +542,8 @@ public class ToplevelHDLGenerator extends HDLGenerator {
 
       boolean invert = needTopLevelInversion(shadow.original, dest.io);
       String maybeNot = (invert ? out.not + " " : "");
+      if (invert)
+        System.err.println("WARNING: input bias maybe wrong because of top-level inversion needed to adapt polarities.");
       if (dest.io.type == BoardIO.Type.Unconnected) {
         // If user assigned type "unconnected", do nothing. Synthesis will warn,
         // but optimize away the signal.
@@ -576,15 +554,16 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         // out.assign(signal, maybeNot+out.literal(constval, src.width.inout));
       } else {
         // Handle physical I/O device types.
+        InputBias bias = determineInputBias(out, shadow, dest);
         Netlist.Int3 seqno = dest.seqno();
-        // TODO: support for PortIO pullup resistors?
-        // recordInputPullDirection(out, inputPinPullDir, shadow, src, dest);
         if (useTristates) {
           // Input half
           if (src.width.inout == 1) {
             out.assign("in_"+signal, maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout);
+            ioResources.setInputBias("FPGA_BIDIR_PIN_"+seqno.inout, bias);
           } else for (int i = 0; i < src.width.inout; i++) { // TODO: verify src.width.inout instead of destwidth.inout
             out.assign("in_"+bit, offset+i, maybeNot+"FPGA_BIDIR_PIN_"+(seqno.inout+i));
+            ioResources.setInputBias("FPGA_BIDIR_PIN_"+(seqno.inout+i), bias);
           }
           // Output half
           if (src.width.inout == 1)
@@ -594,10 +573,12 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         } else {
           if (src.width.inout == 1) {
             out.assign("in_"+signal, maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout+"_IN");
+            ioResources.setInputBias("FPGA_BIDIR_PIN_"+seqno.inout+"_IN", bias);
             out.assign(maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout+"_OUT", "out_"+signal);
             out.assign(maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout+"_EN", "en_"+signal);
           } else for (int i = 0; i < src.width.inout; i++) { // TODO: verify src.width.inout instead of destwidth.inout
             out.assign("in_"+bit, offset+i, maybeNot+"FPGA_BIDIR_PIN_"+(seqno.inout+i)+"_IN");
+            ioResources.setInputBias("FPGA_BIDIR_PIN_"+(seqno.inout+i)+"_IN", bias);
             out.assign(maybeNot+"FPGA_BIDIR_PIN_"+(seqno.inout+i)+"_OUT", "out_"+bit, offset+i);
             out.assign(maybeNot+"FPGA_BIDIR_PIN_"+(seqno.inout+i)+"_EN", "en_"+bit, offset+i);
           }
@@ -646,16 +627,17 @@ public class ToplevelHDLGenerator extends HDLGenerator {
           // out.assign(bit, offset+i, maybeNot+out.literal(constval, 1));
         } else {
           // Handle physical I/O device types.
+          InputBias bias = determineInputBias(out, shadow, dest);
           Netlist.Int3 seqno = dest.seqno();
-          // todo: support for PortIO pullup resistors?
-          // recordInputPullDirection(out, inputPinPullDir, shadow, src, dest);
           if (useTristates) {
             // Input half
             out.assign("in_"+bit, offset+i, maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout);
+            ioResources.setInputBias("FPGA_BIDIR_PIN_"+seqno.inout, bias);
             // Output half
             out.assignTristate("FPGA_BIDIR_PIN_"+seqno.inout, maybeNot+"out_"+bit, offset+i, "en_"+bit, offset+i);
           } else {
             out.assign("in_"+bit, offset+i, maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout+"_IN");
+            ioResources.setInputBias("FPGA_BIDIR_PIN_"+seqno.inout+"_IN", bias);
             out.assign(maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout+"_OUT", "out_"+bit, offset+i);
             out.assign(maybeNot+"FPGA_BIDIR_PIN_"+seqno.inout+"_EN", "en_"+bit, offset+i);
           }

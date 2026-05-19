@@ -30,7 +30,7 @@
 
 package com.bfh.logisim.fpga;
 
-import java.util.HashMap;
+import java.util.Map;
 
 public class Chipset {
 
@@ -44,15 +44,19 @@ public class Chipset {
   // FIXME: many of these could be optional, never used for some backends
   
   public final String Speed; // e.g. "50 MHz"
-	public final long ClockFrequency; // FIXME: non-integer frequencies are possible, e.g.  Intel MAX 10 FPGA with Si570 programmable oscillator
+
+  // FIXME: Clock should be a BoardIO... some fpga boards have multiple clocks,
+  // user should be able to choose between them
+  public final long ClockFrequency; // FIXME: non-integer frequencies are possible, e.g.  Intel MAX 10 FPGA with Si570 programmable oscillator
 	public final String ClockPinLocation;
-	public final PullBehavior ClockPullBehavior;
+	// public final PullBehavior ClockPullBehavior;
 	public final IoStandard ClockIOStandard;
-	public final String Technology;
+
+	public final String Vendor;
+	public final String Technology; // aka Family
 	public final String Part;
-	public final String Package;
-	public final String SpeedGrade;
-	public final String VendorName;
+	public final String Package; // optional
+	public final String SpeedGrade; // optional
 
   // For all FPGA pins mentioned in an xml file (as physical I/O components, as
   // the clock pin, or as otherwise reserved pins), logisim (as of version 5.20
@@ -96,50 +100,41 @@ public class Chipset {
 	public final Integer FlashPos; // optional, required non-zero for FlashDefined
 	public final boolean FlashDefined;
 
-	public Chipset(HashMap<String, String> params) throws Exception {
+	public Chipset(Map<String, String> params) throws Exception {
 
-    ClockFrequency = Long.parseLong(params.get("ClockInformation/Frequency"));
-		ClockPinLocation = params.get("ClockInformation/FPGApin");
-		ClockPullBehavior = PullBehavior.get(params.get("ClockInformation/PullBehavior"));
-		ClockIOStandard = IoStandard.get(params.get("ClockInformation/IOStandard"));
+    ClockFrequency = Long.parseLong(params.get("Clock/frequency"));
+		ClockPinLocation = params.get("Clock/pin");
+		ClockIOStandard = IoStandard.get(params.get("Clock/ioStandard")); // optional; returns non-null
 
-		Technology = params.get("FPGAInformation/Family");
-		Part = params.get("FPGAInformation/Part");
-		Package = params.get("FPGAInformation/Package");
-		SpeedGrade = params.get("FPGAInformation/Speedgrade");
-    VendorName = params.get("FPGAInformation/Vendor");
-		USBTMCAvailable = Boolean.parseBoolean(params.getOrDefault("FPGAInformation/USBTMC", "false"));
-    JTAGPos = Integer.parseInt(params.getOrDefault("FPGAInformation/JTAGPos", "1"));
-    FlashPos = Integer.parseInt(params.getOrDefault("FPGAInformation/FlashPos", "2"));
-    FlashName = params.get("FPGAInformation/FlashName");
+    Vendor = params.get("Chip/vendor");
+		Technology = params.get("Chip/family");
+		Part = params.get("Chip/part");
+		SpeedGrade = params.getOrDefault("Chip/speedGrade", ""); // optional
+		Package = params.getOrDefault("Chip/package", ""); // optional
+
+		USBTMCAvailable = Boolean.parseBoolean(params.getOrDefault("USBTMC/available", "false")); // optional
+    JTAGPos = Integer.parseInt(params.getOrDefault("JTAG/pos", "1")); // optional
+    FlashPos = Integer.parseInt(params.getOrDefault("Flash/pos", "2")); // optional
+    FlashName = params.get("Flash/name"); // optional
 		FlashDefined = FlashPos != null && FlashPos != 0 && FlashName != null && !FlashName.isEmpty();
 
-		UnmentionedPinsBehaviorHint = UnmentionedPinsBehavior.get(params.get("UnusedPins/PullBehavior"));
+		UnmentionedPinsBehaviorHint = UnmentionedPinsBehavior.get(params.get("UnmentionedPins/behavior")); // optional; returns non-null
 
     if (ClockFrequency <= 0)
-      throw new Exception("invalid ClockInformation/Frequency");
+      throw new Exception("invalid Clock:frequency");
     if (ClockPinLocation == null)
-      throw new Exception("invalid or missing ClockInformation/FPGApin");
-    if (ClockPullBehavior == null)
-      throw new Exception("invalid or missing ClockInformation/PullBehavior");
-    if (ClockIOStandard == null)
-      throw new Exception("invalid or missing ClockInformation/IOStandard");
-    if (UnmentionedPinsBehaviorHint == null)
-      throw new Exception("invalid or missing UnusedPins/PullBehavior");
+      throw new Exception("invalid or missing Clock:pin");
+    if (Vendor == null)
+      throw new Exception("invalid or missing Chip:vendor");
     if (Technology == null)
-      throw new Exception("invalid or missing FPGAInformation/Family");
+      throw new Exception("invalid or missing Chip:family");
     if (Part == null)
-      throw new Exception("invalid or missing FPGAInformation/Part");
-    if (Package == null)
-      throw new Exception("invalid or missing FPGAInformation/Package");
-    if (SpeedGrade == null)
-      throw new Exception("invalid or missing FPGAInformation/Speedgrade");
-    if (VendorName == null)
-      throw new Exception("invalid or missing FPGAInformation/Vendor");
+      throw new Exception("invalid or missing Chip:part");
 
     Speed = freqToString(ClockFrequency);
   }
 
+  // Note: this is used by UI, and by some toolchains. Lattice only supports MHz, kHz, Hz.
 	private static String freqToString(long clkfreq) {
 		if (clkfreq % 1000000 == 0) {
 			clkfreq /= 1000000;

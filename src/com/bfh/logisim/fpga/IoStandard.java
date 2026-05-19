@@ -42,17 +42,23 @@ public class IoStandard {
 	public static final IoStandard LVCMOS25 = new IoStandard("LVCMOS25");
 	public static final IoStandard LVCMOS33 = new IoStandard("LVCMOS33");
 	public static final IoStandard LVTTL    = new IoStandard("LVTTL");
-	public static final IoStandard UNKNOWN =  new IoStandard("Unknown", "unknown");  
+  // FIXME: Implement this... 
+  // Arbitrary strings are also allowed. An aribitrary VAL is either passed
+  // through to the toolchain as-is, or mapped to some toolchain-specific FLAG
+  // through toolchain-specific mechanism, or by specifying "io-standard-VAL:
+  // FLAG" in the board's toolchain parameters.
+
   public static final IoStandard[] OPTIONS = { DEFAULT,
     LVCMOS12, LVCMOS15, LVCMOS18, LVCMOS25, LVCMOS33, LVTTL };
 
   public static IoStandard get(String desc) {
-    if (desc == null || desc.isEmpty())
+    if (desc == null || desc.trim().isEmpty())
       return DEFAULT;
+    desc = desc.trim();
     for (IoStandard p : OPTIONS)
       if (p.desc.equalsIgnoreCase(desc))
         return p;
-    return UNKNOWN;
+    return new IoStandard(desc, desc);
   }
 
   @Override

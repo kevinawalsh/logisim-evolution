@@ -1179,7 +1179,7 @@ public class Commander extends JFrame
             + "Synthesis and download will not be available. "
             + "Please configure the synthesis toolchain using the \"Settings\" button above, "
             + "or select a different synthesis toolchain suitable for " + board.name
-            + " and " + board.fpga.VendorName + " " + board.fpga.Part + " FPGA synthesis.");
+            + " and " + board.fpga.Vendor + " " + board.fpga.Part + " FPGA synthesis.");
       } else {
         if (progTool != null) {
           FPGAProgrammer pTool = progTool.newProgrammer();
@@ -1190,7 +1190,7 @@ public class Commander extends JFrame
                 + "Synthesis and download will not be available. "
                 + "Please configure the programmer toolchain using the \"Settings\" button above, "
                 + "or select a different programmer toolchain suitable for " + board.name
-                + " and " + board.fpga.VendorName + " " + board.fpga.Part + " FPGA programming.");
+                + " and " + board.fpga.Vendor + " " + board.fpga.Part + " FPGA programming.");
           } else {
             toolchainReady = true;
             toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG; // pTool? FIXME...

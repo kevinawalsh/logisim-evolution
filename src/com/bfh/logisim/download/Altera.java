@@ -38,8 +38,10 @@ import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
+import com.bfh.logisim.fpga.DriveStrength;
+import com.bfh.logisim.fpga.InputBias;
+import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
@@ -148,11 +150,11 @@ public class Altera {
     @Override
     public boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
 
-      Hdl out = new Hdl(lang, err);
+      AuxFile out = new AuxFile(scriptPath, "AlteraDownload.tcl", err);
 
       Chipset chip = board.fpga;
       String[] pkg = board.fpga.Package.split(" ");
-      String hdltype = out.isVhdl ? "VHDL_FILE" : "VERILOG_FILE";
+      String hdltype = lang.equalsIgnoreCase("VHDL") ? "VHDL_FILE" : "VERILOG_FILE";
 
       out.stmt("# Quartus II Tcl Project package loading script for Logisim");
       out.stmt("package require ::quartus::project");
@@ -197,13 +199,27 @@ public class Altera {
       }
       out.stmt();
       out.stmt("    # Map fpga_clk and ionets to fpga pins");
-      if (ioResources.requiresOscillator)
+      if (ioResources.requiresOscillator) {
         out.stmt("    set_location_assignment %s -to %s", board.fpga.ClockPinLocation, CLK_PORT);
+        writeIoSpec(out, CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
+      }
       ioResources.forEachPhysicalPin((pin, net, io, label) -> {
         out.stmt("    set_location_assignment %s -to %s  ;# %s", pin, net, label);
-        if (io.pull == PullBehavior.PULL_UP)
-          out.stmt("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to %s", net);
+
+        if (net.startsWith("FPGA_INPUT_PIN_")) {
+          InputBias bias = ioResources.getInputBias(net);
+          writeIoSpec(out, net, bias, io.standard, io.strength);
+        } else if (net.startsWith("FPGA_BIDIR_PIN_")) {
+          // FIXME: bidir pin handling in altera?
+          InputBias bias = ioResources.getInputBias(net);
+          writeIoSpec(out, net, bias, io.standard, io.strength);
+        } else if (net.startsWith("FPGA_OUTPUT_PIN_")) {
+          // output pins do not have a bias
+          writeIoSpec(out, net, null, io.standard, io.strength);
+        }
       });
+      // FIXME: unmapped pins (including unused oscillator) should get assigned anyway, and given
+      // default values
       out.stmt("    # Commit assignments");
       out.stmt("    export_assignments");
       out.stmt();
@@ -213,8 +229,24 @@ public class Altera {
       out.stmt("    }");
       out.stmt("}");
 
-      File f = FileWriter.GetFilePointer(scriptPath, "AlteraDownload.tcl", err);
-      return f != null && FileWriter.WriteContents(f, out, err);
+      return out.save();
+    }
+
+    static void writeIoSpec(AuxFile out, String net, InputBias bias, IoStandard standard, DriveStrength strength) {
+      if (bias == InputBias.PULL_UP)
+        out.stmt("    set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to %s", net);
+      else if (bias == InputBias.PULL_DOWN)
+        out.stmt("    set_instance_assignment -name WEAK_PULL_DOWN_RESISTOR ON -to %s", net);
+      else if (bias == InputBias.BUS_HOLD)
+        out.stmt("    set_instance_assignment -name ENABLE_BUS_HOLD_CIRCUITRY ON -to %s", net);
+      // else if (bias == InputBias.PULL_NONE)
+      // Default is OFF for all of the above (according to at least some online docs)
+
+      if (standard != IoStandard.DEFAULT)
+        out.stmt("    set_io_assignment -io_standard %s -to %s", standard, net);
+
+      if (strength != DriveStrength.DEFAULT)
+        out.stmt("    modify_io_current_strength %s -to %s", (strength.ma != null ? strength.ma+"mA" : strength.desc), net);
     }
 
     protected String bitfile, flashfile;

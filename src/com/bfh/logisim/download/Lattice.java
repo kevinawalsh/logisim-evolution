@@ -48,13 +48,11 @@ import java.util.stream.Collectors;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.DriveStrength;
+import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class Lattice {
@@ -122,13 +120,13 @@ public class Lattice {
 
     public enum TOOLCHAIN { DIAMOND_WIN, DIAMOND_UNIX, ISP_LEVER_WIN, ISP_LEVER_UNIX, UNKNOWN };
 
-    private static Map<String,TOOLCHAIN> toolMap;
+    private static Map<String, TOOLCHAIN> toolMap;
 
     static {
       toolMap = new HashMap<>();
-      toolMap.put("pnmainc.exe",TOOLCHAIN.DIAMOND_WIN);
-      toolMap.put("diamondc",TOOLCHAIN.DIAMOND_UNIX);
-      toolMap.put("projnav.exe",TOOLCHAIN.ISP_LEVER_WIN);
+      toolMap.put("pnmainc.exe", TOOLCHAIN.DIAMOND_WIN);
+      toolMap.put("diamondc", TOOLCHAIN.DIAMOND_UNIX);
+      toolMap.put("projnav.exe", TOOLCHAIN.ISP_LEVER_WIN);
     }
 
     private static String getTool() {
@@ -160,27 +158,27 @@ public class Lattice {
     }
 
     private String getRelativePath(String pathRoot, String... pathes) {
-      return getRelativePathAsPath(pathRoot,pathes).toString();
+      return getRelativePathAsPath(pathRoot, pathes).toString();
     }
 
     private String getAbsolutePath(String pathRoot, String... pathes) {
-      return getAbsolutePathAsPath(pathRoot,pathes).toString();
+      return getAbsolutePathAsPath(pathRoot, pathes).toString();
     }
 
     private Path getRelativePathAsPath(String pathRoot, String... pathes) {
-      return Paths.get("..").resolve(Paths.get(projectPath).relativize(Paths.get(pathRoot,pathes)));
+      return Paths.get("..").resolve(Paths.get(projectPath).relativize(Paths.get(pathRoot, pathes)));
     }
 
     private Path getAbsolutePathAsPath(String pathRoot, String... pathes) {
-      return Paths.get(pathRoot,pathes).toAbsolutePath();
+      return Paths.get(pathRoot, pathes).toAbsolutePath();
     }
 
     private String toWinPath(Path path) {
-      return path.toString().replace("/","\\");
+      return path.toString().replace("/", "\\");
     }
 
     private String toTclPath(Path path) {
-      return path.toString().replace("\\","/");
+      return path.toString().replace("\\", "/");
     }
 
     private String toUnixPath(Path path) {
@@ -196,7 +194,7 @@ public class Lattice {
       String bitFileExt = ".jed";
       //return new File(sandboxPath + TOP_HDL + bitFileExt).exists();
       //return Files.exists(Paths.get(sandboxPath).resolve("impl1").resolve(PROJECT_NAME+"_impl1"+bitFileExt));
-      return Files.exists(getAbsolutePathAsPath(sandboxPath,"impl1",PROJECT_NAME+"_impl1"+bitFileExt));
+      return Files.exists(getAbsolutePathAsPath(sandboxPath, "impl1", PROJECT_NAME+"_impl1"+bitFileExt));
     }
 
     private ArrayList<String> cmd(String prog, String... args) {
@@ -231,7 +229,7 @@ public class Lattice {
                               return stages;
         }
 
-        String script = getRelativePath(scriptPath,synthFile);
+        String script = getRelativePath(scriptPath, synthFile);
         //String log = script.subSequence(0, script.lastIndexOf('.'))+".log"; 
         stages.add(new ProcessStage(
               "synthesize", "Synthesizing (may take a while)",
@@ -259,7 +257,7 @@ public class Lattice {
         default:
                             return stages;
       }
-      downloadFile = getRelativePath(scriptPath,downloadFile);
+      downloadFile = getRelativePath(scriptPath, downloadFile);
 
       stages.add(new ProcessStage("download", "Downloading to FPGA", cmd(downloadFile),
             "Failed to download design; did you connect the board?") {
@@ -278,127 +276,72 @@ public class Lattice {
     private boolean generateProjectFile(ArrayList<String> hdlFiles) {
 
       // --- ispLEVER project file ---  
-      Hdl out = new Hdl(lang, err);
+      AuxFile out = new AuxFile(sandboxPath, PROJECT_FILE_ISPLEVER, err);
 
       Chipset chip = board.fpga;
       String device = String.format("%s%s%s", chip.Part, chip.SpeedGrade, chip.Package);
 
       out.stmt("JDF B");
       out.stmt("// Created by Version 6.1");
-      out.stmt("DESIGN %s Normal",name);
-      out.stmt("DEVKIT %s",device);
+      out.stmt("DESIGN %s Normal", name);
+      out.stmt("DEVKIT %s", device);
       String hdl_type = lang.toUpperCase();
-      out.stmt("ENTRY Schematic/%s",hdl_type);
+      out.stmt("ENTRY Schematic/%s", hdl_type);
       // File flpf = FileWriter.GetFilePointer(ucfPath, lpf_file, err);
-      // out.stmt("DOCUMENT %s",flpf.getAbsolutePath().replace("\\","/"));
+      // out.stmt("DOCUMENT %s", flpf.getAbsolutePath().replace("\\", "/"));
       for (String fname : hdlFiles) {
-        out.stmt("MODULE %s",getRelativePath(fname));
+        out.stmt("MODULE %s", getRelativePath(fname));
 
         String moduleName = fname;
         if (moduleName.endsWith(".vhdl")) moduleName = moduleName.substring(0, moduleName.length()-1);
         if (!moduleName.contains("_entity.vhd")) {
-          //moduleName = fname.replace("_entity.vhd","");
-          moduleName = moduleName.replace("_behavior.vhd","");
+          //moduleName = fname.replace("_entity.vhd", "");
+          moduleName = moduleName.replace("_behavior.vhd", "");
         }
         int idx = moduleName.lastIndexOf('\\');
         if (idx <= 0) idx = moduleName.lastIndexOf('/');
         if (idx >= 0) moduleName = moduleName.substring(idx+1);
-        out.stmt("MODSTYLE %s Normal",moduleName);
+        out.stmt("MODSTYLE %s Normal", moduleName);
       }
       out.stmt("SYNTHESIS_TOOL Synplify");
       out.stmt("TOPMODULE LogisimToplevelShell");
 
-      File f = FileWriter.GetFilePointer(sandboxPath, PROJECT_FILE_ISPLEVER, err);
-      boolean success = f != null && FileWriter.WriteContents(f, out, err);
+      boolean success = out.save();
 
       // ---- lattice diamond scripts
 
       // tcl-project
-      out = new Hdl(lang, err);
+      out = new AuxFile(scriptPath, PROJECT_CREATION_TCL_FILE, err);
       final String synth_engine = "lse";
-      out.stmt("prj_project new -name \"%s\" -lpf \"%s.lpf\" -impl \"impl1\" -dev %s -synthesis \"%s\"",PROJECT_NAME,PROJECT_NAME,device,synth_engine);
+      out.stmt("prj_project new -name \"%s\" -lpf \"%s.lpf\" -impl \"impl1\" -dev %s -synthesis \"%s\"", PROJECT_NAME, PROJECT_NAME, device, synth_engine);
 
       for (String fname : hdlFiles) {
-        //String path = fname.replace(projectPath,"../");
-        out.stmt("prj_src add \"%s\"",toTclPath(getRelativePathAsPath(fname)));
+        //String path = fname.replace(projectPath, "../");
+        out.stmt("prj_src add \"%s\"", toTclPath(getRelativePathAsPath(fname)));
       }
       out.stmt("prj_project save");
 
-      f = FileWriter.GetFilePointer(scriptPath, PROJECT_CREATION_TCL_FILE, err);
-      success &= f != null && FileWriter.WriteContents(f, out, err);
+      success &= out.save();
 
       return success;
     }
 
     private boolean generateLpfFile(PinBindings ioResources) {
-      /*
-       * BLOCK RESETPATHS ; 
-       * BLOCK ASYNCPATHS ;
-       * FREQUENCY NET "clk_c" 12.000000 MHz ;
-       * IOBUF ALLPORTS IO_TYPE=LVCMOS33 ;
-       * LOCATE COMP "count_3" SITE "U2" ;
-       * LOCATE COMP "count_2" SITE "B2" ;
-       * IOBUF PORT "reset" IO_TYPE=LVCMOS33 ;
-       */
-      Hdl out = new Hdl(lang, err);
-      if (ioResources.requiresOscillator) {
-        /*
-           out.stmt("NET \"%s\" %s ;", CLK_PORT, latticeClockSpec(board.fpga));
-           out.stmt("NET \"%s\" TNM_NET = \"%s\" ;", CLK_PORT, CLK_PORT);
-           out.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 %% ;",
-           CLK_PORT, CLK_PORT, board.fpga.Speed);
-           out.stmt();
-           */
-        out.stmt("FREQUENCY PORT \"%s\" %s;",CLK_PORT,board.fpga.Speed.toUpperCase());
-        out.stmt("LOCATE COMP \"%s\" SITE \"%s\";",CLK_PORT,board.fpga.ClockPinLocation);
+      // ispLEVER needs the constraints file next to the project file
+      AuxFile lpf = new AuxFile(sandboxPath, PROJECT_CONSTRAINT_FILE, err);
+      if (!writeLatticeConstraintLPF(lpf, board, ioResources))
+        return false;
 
-        String iospec = generateIoSpec(CLK_PORT, board.fpga.ClockPullBehavior, board.fpga.ClockIOStandard, DriveStrength.UNKNOWN);
-        if (iospec.length() > 0) {
-          out.stmt("%s;",iospec);
-        }
-      }
-      ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-        String spec = String.format("LOCATE COMP \"%s\" SITE \"%s\"", net, pin);
-        String iospec = generateIoSpec(net, io.pull, io.standard, io.strength);
-
-        out.stmt("%s; # %s", spec, label);
-        if (iospec.length() > 0) out.stmt("%s; ",iospec);
-      });
-
-      // ispLEVER needs the file next to the project file
-      String s = PROJECT_FILE_ISPLEVER; s = s.replace(".syn",".lpf");
-      if (!PROJECT_RUN_FILE.equals(s)) {
-        File f = FileWriter.GetFilePointer(sandboxPath, s, err);
-        FileWriter.WriteContents(f, out, err);
-      }
-
-      File f = FileWriter.GetFilePointer(ucfPath, PROJECT_CONSTRAINT_FILE, err);
-      return FileWriter.WriteContents(f, out, err);
+      // Also write to ucfPath... for diamond?
+      return lpf.saveAs(sandboxPath, PROJECT_CONSTRAINT_FILE);
     }
-
-    private String generateIoSpec(String net, PullBehavior pull, IoStandard standard, DriveStrength strength) {
-      String iospec = "";
-      if (pull == PullBehavior.PULL_UP || pull == PullBehavior.PULL_DOWN  || pull == PullBehavior.FLOAT)
-        iospec += " PULLMODE=" + pull.lattice;
-      else
-        iospec += " PULLMODE=NONE";
-      if (standard != IoStandard.UNKNOWN && standard != IoStandard.DEFAULT)
-        iospec += " IO_TYPE=" + standard;
-      if (strength != DriveStrength.UNKNOWN && strength != DriveStrength.DEFAULT)
-        iospec += " DRIVE=" + strength.ma;
-      if (iospec.length() > 0) {
-        iospec = "IOBUF PORT \""+net+"\" "+iospec;
-      }
-      return iospec;
-    }
-
 
     private boolean generateRunScript() {
 
       //String vhdlListPath = scriptPath.replace(projectPath, "../") + vhdl_list_file;
-      Hdl out = new Hdl(lang, err);
+      AuxFile out = new AuxFile(scriptPath, PROJECT_RUN_TCL_FILE, err);
 
-      out.stmt("prj_project open \"%s\"",PROJECT_FILE);
+      out.stmt("prj_project open \"%s\"", PROJECT_FILE);
       out.stmt("");
       out.stmt("prj_run Synthesis -impl impl1");
       out.stmt("prj_run Translate -impl impl1");
@@ -408,8 +351,7 @@ public class Lattice {
       out.stmt("prj_run Export -impl impl1 -task Bitgen");
       out.stmt("prj_project close");
 
-      File f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_TCL_FILE, err);
-      boolean success = f != null && FileWriter.WriteContents(f, out, err);
+      boolean success = out.save();
 
       // --- windows synthesis script ---
 
@@ -435,58 +377,52 @@ public class Lattice {
       } catch (IOException e) {
       }
 
-      Path tcl_prj_creation_file = getRelativePathAsPath(scriptPath,PROJECT_CREATION_TCL_FILE);
-      Path tcl_prj_synth_file = getRelativePathAsPath(scriptPath,PROJECT_RUN_TCL_FILE);
+      Path tcl_prj_creation_file = getRelativePathAsPath(scriptPath, PROJECT_CREATION_TCL_FILE);
+      Path tcl_prj_synth_file = getRelativePathAsPath(scriptPath, PROJECT_RUN_TCL_FILE);
 
       String fpgaTool = getTool();
       TOOLCHAIN toolChainTpye = getToolChainTypeFromToolname(fpgaTool);
       Path latticeTool = latticeToolPath.resolve(fpgaTool);
 
       if (toolChainTpye == TOOLCHAIN.DIAMOND_WIN) {
-        out = new Hdl(lang, err);
+        out = new AuxFile(scriptPath, PROJECT_RUN_FILE, err);
 
-        out.stmt("@echo off",toWinPath(toolPath));
-        out.stmt("set LCD_DIAMOND_PATH=%s",toWinPath(toolPath));
+        out.stmt("@echo off", toWinPath(toolPath));
+        out.stmt("set LCD_DIAMOND_PATH=%s", toWinPath(toolPath));
         out.stmt("");
         out.stmt("set LSC_INI_PATH=");
         out.stmt("set LSC_DIAMOND=true");
-        out.stmt("set TCL_LIBRARY=%s",toWinPath(tclLibPath));
-        out.stmt("set FOUNDRY=%s\\ispfpga",toWinPath(toolPath));
-        out.stmt("set PATH=%%FOUNDRY%%\\bin\\%s;%%PATH%%",binDirectory);
-        out.stmt("\"%s\" %s",toWinPath(latticeTool),toWinPath(tcl_prj_creation_file));
-        out.stmt("\"%s\" %s",toWinPath(latticeTool),toWinPath(tcl_prj_synth_file));
+        out.stmt("set TCL_LIBRARY=%s", toWinPath(tclLibPath));
+        out.stmt("set FOUNDRY=%s\\ispfpga", toWinPath(toolPath));
+        out.stmt("set PATH=%%FOUNDRY%%\\bin\\%s;%%PATH%%", binDirectory);
+        out.stmt("\"%s\" %s", toWinPath(latticeTool), toWinPath(tcl_prj_creation_file));
+        out.stmt("\"%s\" %s", toWinPath(latticeTool), toWinPath(tcl_prj_synth_file));
         out.stmt("EXIT /B %%ERRORLEVEL%%");
 
-        f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE, err);
-        success &= f != null && FileWriter.WriteContents(f, out, err);
+        success &= out.save();
       }
 
       // ---- Unix and Cygwin synthesis script ----
       if (toolChainTpye != TOOLCHAIN.ISP_LEVER_WIN) {
-        out = new Hdl(lang, err);
-
+        out = new AuxFile(scriptPath, PROJECT_RUN_FILE_UNIX, err);
         out.stmt("export TEMP=/tmp");
         out.stmt("export LSC_INI_PATH=\"\"");
         out.stmt("export LSC_DIAMOND=true");
-        out.stmt("export TCL_LIBRARY=%s",toUnixPath(tclLibPath));
-        out.stmt("export FOUNDRY=%s/ispFPGA",toUnixPath(toolPath));
-        out.stmt("export PATH=$FOUNDRY/bin/%s:$PATH",binDirectory);
-        out.stmt("%s %s",toUnixPath(latticeTool), toUnixPath(tcl_prj_creation_file));
-        out.stmt("%s %s",toUnixPath(latticeTool), toUnixPath(tcl_prj_synth_file));
-
-        f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE_UNIX, err);
-        success &= f != null && FileWriter.WriteContents(f, out, err);
+        out.stmt("export TCL_LIBRARY=%s", toUnixPath(tclLibPath));
+        out.stmt("export FOUNDRY=%s/ispFPGA", toUnixPath(toolPath));
+        out.stmt("export PATH=$FOUNDRY/bin/%s:$PATH", binDirectory);
+        out.stmt("%s %s", toUnixPath(latticeTool), toUnixPath(tcl_prj_creation_file));
+        out.stmt("%s %s", toUnixPath(latticeTool), toUnixPath(tcl_prj_synth_file));
+        success &= out.save();
       } else {
         // --- ispLEVER synthesis file => open project navigator for the user
-        String prj_isplever_file = getRelativePath(sandboxPath,PROJECT_FILE_ISPLEVER);
+        String prj_isplever_file = getRelativePath(sandboxPath, PROJECT_FILE_ISPLEVER);
         String projnav = toWinPath(latticeToolPath.resolve("projnav.exe"));
-
-        out = new Hdl(lang, err);
+        out = new AuxFile(scriptPath, PROJECT_RUN_FILE_ISPLEVER, err);
         out.stmt("@echo off");
         out.stmt("rem start project navigator and wait until it is finished. The user has to perfrom the synthesis!");
-        out.stmt("start /B /wait \"%s\" \"%s\"",projnav,prj_isplever_file);
-        f = FileWriter.GetFilePointer(scriptPath, PROJECT_RUN_FILE_ISPLEVER, err);
-        success &= f != null && FileWriter.WriteContents(f, out, err);
+        out.stmt("start /B /wait \"%s\" \"%s\"", projnav, prj_isplever_file);
+        success &= out.save();
       }
 
       return success;
@@ -495,15 +431,15 @@ public class Lattice {
     private boolean generateDownloadScript() {
 
       // --- download tcl file --- 
-      String srcXcfFile = toTclPath(getRelativePathAsPath(sandboxPath,PROJECT_NAME+".xcf"));
-      String cpyXcfFile = toTclPath(getRelativePathAsPath(sandboxPath,PROJECT_NAME+"_latest.xcf"));
-      Hdl out = new Hdl(lang, err);
-      out.stmt("pgr_project open \"%s\"",srcXcfFile);
-      out.stmt("pgr_program set -cable %s -portaddress %s","usb2","FTUSB-0");
-      out.stmt("pgr_project save \"%s\"",cpyXcfFile);
+      String srcXcfFile = toTclPath(getRelativePathAsPath(sandboxPath, PROJECT_NAME+".xcf"));
+      String cpyXcfFile = toTclPath(getRelativePathAsPath(sandboxPath, PROJECT_NAME+"_latest.xcf"));
+      AuxFile out = new AuxFile(scriptPath, PROJECT_DOWNLOAD_TCL_FILE, err);
+      out.stmt("pgr_project open \"%s\"", srcXcfFile);
+      out.stmt("pgr_program set -cable %s -portaddress %s", "usb2", "FTUSB-0");
+      out.stmt("pgr_project save \"%s\"", cpyXcfFile);
       out.stmt("pgr_project close");
       out.stmt("");
-      out.stmt("pgr_project open \"%s\"",cpyXcfFile);
+      out.stmt("pgr_project open \"%s\"", cpyXcfFile);
       out.stmt("if {[catch {");
       out.stmt("	pgr_program run");
       out.stmt("} result]} {");
@@ -512,14 +448,13 @@ public class Lattice {
       out.stmt("	pgr_program run");
       out.stmt("}");
       out.stmt("pgr_project close");
-      File f = FileWriter.GetFilePointer(scriptPath, PROJECT_DOWNLOAD_TCL_FILE, err);
-      boolean success = f != null && FileWriter.WriteContents(f, out, err);
+      boolean success = out.save();
 
       // --- download xcf-filefor Lattice Diamond ----
       Chipset chip = board.fpga;
       String chip_family = chip.Technology;
 
-      out = new Hdl(lang, err);
+      out = new AuxFile(sandboxPath, PROJECT_DOWNLOAD_CONFIG_FILE, err);
       out.stmt("<?xml version='1.0' encoding='utf-8' ?>");
       out.stmt("<!DOCTYPE  ispXCF SYSTEM \"IspXCF.dtd\" >");
       out.stmt("<ispXCF version=\"3.12\">");
@@ -527,12 +462,12 @@ public class Lattice {
       out.stmt("  <Chain>");
       out.stmt("    <Comm>JTAG</Comm>");
       out.stmt("    <Device>");
-      out.stmt("      <Pos>%d</Pos>",chip.JTAGPos);
-      out.stmt("      <Vendor>%s</Vendor>",chip.VendorName);
-      out.stmt("      <Family>%s</Family>",chip_family);
-      out.stmt("      <Name>%s</Name>",chip.Part);
+      out.stmt("      <Pos>%d</Pos>", chip.JTAGPos);
+      out.stmt("      <Vendor>%s</Vendor>", chip.Vendor);
+      out.stmt("      <Family>%s</Family>", chip_family);
+      out.stmt("      <Name>%s</Name>", chip.Part);
       out.stmt("      <Package>All</Package>");
-      out.stmt("      <PON>%s</PON>",chip.Part);
+      out.stmt("      <PON>%s</PON>", chip.Part);
 
       out.stmt("      <Bypass>");
       out.stmt("        <InstrLen>8</InstrLen>");
@@ -541,7 +476,7 @@ public class Lattice {
       out.stmt("        <BScanVal>0</BScanVal>");
       out.stmt("      </Bypass>");
 
-      out.stmt("      <File>%simpl1/%s_impl1.jed</File>","../sandbox/",PROJECT_NAME);
+      out.stmt("      <File>%simpl1/%s_impl1.jed</File>", "../sandbox/", PROJECT_NAME);
       out.stmt("      <Operation>FLASH Erase,Program,Verify</Operation>");
 
       out.stmt("      <Option>");
@@ -569,8 +504,7 @@ public class Lattice {
 
       out.stmt("</ispXCF>");
 
-      f = FileWriter.GetFilePointer(sandboxPath, PROJECT_DOWNLOAD_CONFIG_FILE, err);
-      success &= f != null && FileWriter.WriteContents(f, out, err);
+      success &= out.save();
 
       // --- download run scripts
       String fpgaTool = getTool();
@@ -583,35 +517,31 @@ public class Lattice {
 
       // --- Windows ----
       if (toolChainType == TOOLCHAIN.DIAMOND_WIN) {
-        out = new Hdl(lang, err);
-        out.stmt("\"%s\" \"%s\"",toWinPath(latticeTool),toWinPath(getRelativePathAsPath(scriptPath,PROJECT_DOWNLOAD_TCL_FILE)));
-        f = FileWriter.GetFilePointer(scriptPath, PROJECT_DOWNLOAD_FILE, err);
-        success &= f != null && FileWriter.WriteContents(f, out, err);
+        out = new AuxFile(scriptPath, PROJECT_DOWNLOAD_FILE, err);
+        out.stmt("\"%s\" \"%s\"", toWinPath(latticeTool), toWinPath(getRelativePathAsPath(scriptPath, PROJECT_DOWNLOAD_TCL_FILE)));
+        success &= out.save();
       }
 
       // --- Unix and Cygwin ---
       if (toolChainType != TOOLCHAIN.ISP_LEVER_WIN) {
-        out = new Hdl(lang, err);
-        out.stmt("%s \"%s\"",toUnixPath(latticeTool),toUnixPath(getRelativePathAsPath(scriptPath,PROJECT_DOWNLOAD_TCL_FILE)));
-        f = FileWriter.GetFilePointer(scriptPath, PROJECT_DOWNLOAD_FILE_UNIX, err);
-        success &= f != null && FileWriter.WriteContents(f, out, err);
+        out = new AuxFile(scriptPath, PROJECT_DOWNLOAD_FILE_UNIX, err);
+        out.stmt("%s \"%s\"", toUnixPath(latticeTool), toUnixPath(getRelativePathAsPath(scriptPath, PROJECT_DOWNLOAD_TCL_FILE)));
+        success &= out.save();
       } else {
         // --- ispLEVER / ispVM ---
-        out = new Hdl(lang, err);
+        out = new AuxFile(scriptPath, PROJECT_DOWNLOAD_FILE_ISPLEVER, err);
         out.stmt("@echo off");
         out.stmt("rem start ispVM and wait until it is finished. The user has to perfrom the download!");
-        out.stmt("cd \"%s\"",toWinPath(getRelativePathAsPath(sandboxPath)));
+        out.stmt("cd \"%s\"", toWinPath(getRelativePathAsPath(sandboxPath)));
         out.stmt("if not exist impl1\\ md impl1");
-        out.stmt("copy /Y %s.jed impl1\\%s_impl1.jed",PROJECT_NAME,PROJECT_NAME);
-        out.stmt("start /B /wait %s/../../ispvmsystem/ispVM.exe -infile %s -cabletype %s -portaddress %s -logfile %s -o",toWinPath(latticeToolPath),PROJECT_DOWNLOAD_CONFIG_FILE,"usb2","ftusb-0","output_download.txt");
+        out.stmt("copy /Y %s.jed impl1\\%s_impl1.jed", PROJECT_NAME, PROJECT_NAME);
+        out.stmt("start /B /wait %s/../../ispvmsystem/ispVM.exe -infile %s -cabletype %s -portaddress %s -logfile %s -o", toWinPath(latticeToolPath), PROJECT_DOWNLOAD_CONFIG_FILE, "usb2", "ftusb-0", "output_download.txt");
         // -o opens a windows with information
         out.stmt("if %%ERRORLEVEL%% == 0 goto finish");
-        out.stmt("start /B /wait %s/../../ispvmsystem/ispVM.exe -infile %s -cabletype %s -portaddress %s -logfile %s -o",toWinPath(latticeToolPath),PROJECT_DOWNLOAD_CONFIG_FILE,"usb2","ftusb-1","output_download.txt");
+        out.stmt("start /B /wait %s/../../ispvmsystem/ispVM.exe -infile %s -cabletype %s -portaddress %s -logfile %s -o", toWinPath(latticeToolPath), PROJECT_DOWNLOAD_CONFIG_FILE, "usb2", "ftusb-1", "output_download.txt");
         out.stmt(":finish");
         out.stmt("EXIT /B %%ERRORLEVEL%%");
-
-        f = FileWriter.GetFilePointer(scriptPath, PROJECT_DOWNLOAD_FILE_ISPLEVER, err);
-        success &= f != null && FileWriter.WriteContents(f, out, err);	
+        success &= out.save();
       }
 
       return success;
@@ -649,5 +579,54 @@ public class Lattice {
     @Override
     public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if LatticeDownload reported okay
   }
+
+  static void writeIoSpec(AuxFile lpf, String net, InputBias bias, IoStandard standard, DriveStrength strength) {
+    String iospec = "";
+
+    if (bias == InputBias.PULL_UP) iospec += " PULLMODE=UP";
+    else if (bias == InputBias.PULL_DOWN) iospec += " PULLMODE=DOWN";
+    else if (bias == InputBias.BUS_HOLD) iospec += " PULLMODE=KEEPER";
+    else if (bias == InputBias.PULL_NONE) iospec += " PULLMODE=NONE";
+
+    if (standard != IoStandard.DEFAULT)
+      iospec += " IO_TYPE=" + standard;
+
+    if (strength != DriveStrength.DEFAULT)
+      iospec += " DRIVE=" + (strength.ma != null ? strength.ma : strength.desc);
+
+    if (!iospec.isEmpty())
+      lpf.stmt("IOBUF PORT \"%s\"%s;", net, iospec);
+  }
+
+  // Create a Lattice ".lpf" constraint file
+  static boolean writeLatticeConstraintLPF(AuxFile lpf, Board board, PinBindings ioResources) {
+    System.err.println("not yet tested");
+    // syntax:
+    //   LOCATE COMP "net" SITE "pin";
+    //   IOBUF PORT "net" PULLMODE=UP/DOWN/KEEPER/NONE
+    if (ioResources.requiresOscillator) {
+      lpf.stmt("FREQUENCY PORT \"%s\" %s;", FPGADownload.CLK_PORT, board.fpga.Speed.toUpperCase());
+      lpf.stmt("LOCATE COMP \"%s\" SITE \"%s\";", FPGADownload.CLK_PORT, board.fpga.ClockPinLocation);
+      writeIoSpec(lpf, FPGADownload.CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
+    }
+    ioResources.forEachPhysicalPin((pin, net, io, label) -> {
+      lpf.stmt("LOCATE COMP \"%s\" SITE \"%s\";", net, pin);
+      if (net.startsWith("FPGA_INPUT_PIN_")) {
+        InputBias bias = ioResources.getInputBias(net);
+        writeIoSpec(lpf, net, bias, io.standard, io.strength);
+      } else if (net.startsWith("FPGA_BIDIR_PIN_")) {
+        // FIXME: use TRELLIS_IO block, and apply bias there instead of here?
+        InputBias bias = ioResources.getInputBias(net);
+        writeIoSpec(lpf, net, bias, io.standard, io.strength);
+      } else if (net.startsWith("FPGA_OUTPUT_PIN_")) {
+        // output pins do not have bias
+        writeIoSpec(lpf, net, null, io.standard, io.strength);
+      }
+    });
+    // FIXME: handle all unmapped pins
+    return lpf.save();
+  }
+
+
 
 }

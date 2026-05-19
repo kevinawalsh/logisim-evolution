@@ -32,14 +32,14 @@ package com.bfh.logisim.fpga;
 
 public enum UnmentionedPinsBehavior {
 
-  // unspecified/other/unknown, i.e. let toolchain decide
-  UNSPECIFIED("unspecified", "unspecified"),
+  // unspecified/other/unknown, i.e. let logisim or the toolchain decide
+  UNSPECIFIED("unspecified", "unspecified"), // the default
 
   // if possible, configure unused pins as inputs (i.e. setting the output
   // driver to "tri-state"), either with or without pull resistors
   INPUT_PULL_UP("input with pull-up", "pull-up"),
   INPUT_PULL_DOWN("input with pull-down", "pull-down"),
-  INPUT_NO_PULL("input without pull resistors", "no-pull"),
+  INPUT_NO_PULL("input without pull resistors (aka 'floating')", "pull-none"),
 
   // if possible, configure unused pins as outputs, driving either high or low
   DRIVE_LOW("drive low", "drive-low"),
@@ -48,14 +48,16 @@ public enum UnmentionedPinsBehavior {
   public final String desc, xml;
 
   public static final UnmentionedPinsBehavior[] OPTIONS = {
-    UNSPECIFIED, INPUT_PULL_UP, INPUT_PULL_DOWN, INPUT_NO_PULL, DRIVE_LOW, DRIVE_HIGH
+    UNSPECIFIED /*DEFAULT*/, INPUT_PULL_UP, INPUT_PULL_DOWN, INPUT_NO_PULL, DRIVE_LOW, DRIVE_HIGH
   };
+
+  public static final UnmentionedPinsBehavior DEFAULT = UNSPECIFIED;
 
   UnmentionedPinsBehavior(String d, String x) { desc = d; xml = x; }
 
   public static UnmentionedPinsBehavior get(String desc) {
     if (desc == null || desc.isEmpty())
-      return UNSPECIFIED;
+      return DEFAULT;
     for (UnmentionedPinsBehavior p : OPTIONS) {
       if (p.desc.equalsIgnoreCase(desc)
           || p.desc.replaceAll(" ", "-").equalsIgnoreCase(desc))
@@ -68,14 +70,14 @@ public enum UnmentionedPinsBehavior {
     if (desc.equalsIgnoreCase("up")) return INPUT_PULL_UP;
     if (desc.equalsIgnoreCase("down")) return INPUT_PULL_DOWN;
     if (desc.equalsIgnoreCase("float")) return INPUT_NO_PULL;
+    if (desc.equalsIgnoreCase("floating")) return INPUT_NO_PULL;
     if (desc.equalsIgnoreCase("none")) return INPUT_NO_PULL;
-    if (desc.equalsIgnoreCase("pullnone")) return INPUT_NO_PULL;
-    if (desc.equalsIgnoreCase("pull-none")) return INPUT_NO_PULL;
+    if (desc.equalsIgnoreCase("no-pull")) return INPUT_NO_PULL;
     if (desc.equalsIgnoreCase("tristate")) return INPUT_NO_PULL;
     if (desc.equalsIgnoreCase("tristated")) return INPUT_NO_PULL;
     if (desc.equalsIgnoreCase("tri-state")) return INPUT_NO_PULL;
     if (desc.equalsIgnoreCase("tri-stated")) return INPUT_NO_PULL;
-    return UNSPECIFIED;
+    return DEFAULT;
   }
 
   @Override

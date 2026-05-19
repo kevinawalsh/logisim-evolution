@@ -33,16 +33,18 @@ package com.bfh.logisim.fpga;
 public class PinActivity {
   public final String desc, xml;
 
+  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high", "active-high"); // default
   public static final PinActivity ACTIVE_LOW = new PinActivity("Active low", "active-low");
-  public static final PinActivity ACTIVE_HIGH = new PinActivity("Active high", "active-high");
-  public static final PinActivity UNKNOWN = new PinActivity("Unknown", "unknown");
-  public static final PinActivity[] OPTIONS = { ACTIVE_LOW, ACTIVE_HIGH };
+
+  public static final PinActivity[] OPTIONS = { ACTIVE_HIGH /* DEFAULT */, ACTIVE_LOW };
+
+  public static final PinActivity DEFAULT = ACTIVE_HIGH;
 
   private PinActivity(String d, String x) { desc = d; xml = x; }
 
   public static PinActivity get(String desc) {
     if (desc == null || desc.isEmpty())
-      return ACTIVE_HIGH;
+      return DEFAULT;
     for (PinActivity p : OPTIONS)
       if (p.desc.equalsIgnoreCase(desc)
           || p.desc.replaceAll(" ", "-").equalsIgnoreCase(desc)
@@ -54,7 +56,7 @@ public class PinActivity {
     if (desc.equalsIgnoreCase("negative")) return ACTIVE_LOW;
     if (desc.equalsIgnoreCase("pos")) return ACTIVE_HIGH;
     if (desc.equalsIgnoreCase("neg")) return ACTIVE_LOW;
-    return UNKNOWN;
+    return DEFAULT;
   }
   
   @Override

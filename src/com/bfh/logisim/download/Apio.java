@@ -40,8 +40,10 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
+import com.bfh.logisim.fpga.DriveStrength;
+import com.bfh.logisim.fpga.InputBias;
+import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.fpga.PullBehavior;
 import com.bfh.logisim.fpga.UnmentionedPinsBehavior;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
@@ -243,41 +245,51 @@ public class Apio {
             + " reserve pins individually.");
       }
 
-      File f;
-
       // Generate apio.ini
-      Hdl out = new Hdl(lang, err);
+      AuxFile ini = new AuxFile(sandboxPath, "apio.ini", err);
       // FIXME: to support apio v0.9.5 and earlier, should use "[env]" here,
       // but version 1.0.0 and later expect "[env:default]".
       // Also, the earlier versions put bitstream in sandbox/hardware.bin,
       // but current versions put bistream in sandbox/_build/default/hardware.bin.
-      out.stmt("[env:default]");
-      out.stmt("board = " + board_name);
-      out.stmt("top-module = LogisimToplevelApioShell");
-      f = FileWriter.GetFilePointer(sandboxPath, "apio.ini", err);
-      if (f == null || !FileWriter.WriteContents(f, out, err))
+      ini.stmt("[env:default]");
+      ini.stmt("board = " + board_name);
+      ini.stmt("top-module = LogisimToplevelApioShell");
+      ini.stmt("nextpnr-extra-options =");
+      ini.stmt("    --freq %f", board.fpga.ClockFrequency/1000000.0);
+      if (!ini.save())
         return false;
 
-      if (out.isVhdl) {
-        err.AddSevereWarning("VHDL was chosen, but apio toolchain only supports Verilog.");
-        err.AddSevereWarning("Design will probably fail to compile.");
+      boolean iCE40 = board.fpga.Vendor.equalsIgnoreCase("Lattice") 
+        && board.fpga.Technology.equalsIgnoreCase("iCE40");
+      boolean ECP5 = board.fpga.Vendor.equalsIgnoreCase("Lattice") 
+        && board.fpga.Technology.equalsIgnoreCase("ECP5");
+      boolean GOWIN = board.fpga.Vendor.equalsIgnoreCase("Gowin");
+
+      // FIXME: 
+      // Lattice iCE40UP/UL family has SB_HFOSC; HX/LP family requires an external clock pin.
+      boolean hasHFOSC = iCE40 &&
+        (board.fpga.Part.toUpperCase().contains("UP") ||
+         board.fpga.Part.toUpperCase().contains("UL"));
+
+      if (iCE40) {
+        // For iCE40, generate fpga.pcf
+        AuxFile pcf = new AuxFile(sandboxPath, "fpga.pcf", err);
+        if (!writeiCE40ConstraintPCF(pcf, board, ioResources, hasHFOSC))
+          return false;
+      } else if (ECP5) {
+        // For ecp5, generate fpga.lpf
+        AuxFile lpf = new AuxFile(sandboxPath, "fpga.lpf", err);
+        if (!Lattice.writeLatticeConstraintLPF(lpf, board, ioResources))
+          return false;
+      } else if (GOWIN) {
+        // For gowin, generate fpga.cst
+        AuxFile cst = new AuxFile(scriptPath, "fpga.cst", err);
+        if (!Gowin.writeGowinConstraintCST(cst, board, ioResources))
+          return false;
+      } else {
+        err.AddFatalError("Apio support for FPGA vendor '%s' family '%s' not yet implemented.",
+            board.fpga.Vendor, board.fpga.Technology);
       }
-
-      // iCE40UP/UL family has SB_HFOSC; HX/LP family requires an external clock pin.
-      boolean hasHFOSC = board.fpga.Part.toUpperCase().contains("UP") ||
-        board.fpga.Part.toUpperCase().contains("UL");
-
-      // Generate fpga.pcf
-      Hdl out2 = new Hdl(lang, err);
-      out2.stmt();
-      if (ioResources.requiresOscillator && !hasHFOSC)
-        out2.stmt("set_io --warn-no-port FPGA_CLK %s", board.fpga.ClockPinLocation);
-      ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-        out2.stmt("set_io --warn-no-port %s %s", net, pin);
-      });
-      f = FileWriter.GetFilePointer(sandboxPath, "fpga.pcf", err);
-      if (f == null || !FileWriter.WriteContents(f, out2, err))
-        return false;
 
       // Copy all HDL files to sandbox, renaming to avoid conflicts.
       HashSet<String> names = new HashSet<>();
@@ -302,97 +314,147 @@ public class Apio {
       }
 
       // Create LogisimToplevelApioShell.v
-      // todo: SB_IO for pullups, tristates, etc.
-      Hdl out3 = new Hdl(lang, err);
+      Hdl out = new Hdl(lang, err);
+      if (out.isVhdl) {
+        err.AddSevereWarning("VHDL was chosen, but apio currently only supports Verilog.");
+        err.AddSevereWarning("Design will almost certainly fail to compile.");
+      }
+
       Netlist.Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
       int n = ioPinCount.size();
       if (ioResources.requiresOscillator && !hasHFOSC) n++;  // FPGA_CLK as input port
-      out3.stmt("module LogisimToplevelApioShell(%s", (n == 0 ? " );" : ""));
+      out.stmt("module LogisimToplevelApioShell(%s", (n == 0 ? " );" : ""));
       if (ioResources.requiresOscillator && !hasHFOSC)
-        out3.stmt("              FPGA_CLK%s", (--n == 0 ? " );" : ","));
+        out.stmt("              FPGA_CLK%s", (--n == 0 ? " );" : ","));
       for (int i = 0; i < ioPinCount.in; i++)
-        out3.stmt("              FPGA_INPUT_PIN_%d%s", i, (--n == 0 ? " );" : ","));
+        out.stmt("              FPGA_INPUT_PIN_%d%s", i, (--n == 0 ? " );" : ","));
       for (int i = 0; i < ioPinCount.inout; i++)
-        out3.stmt("              FPGA_BIDIR_PIN_%d%s", i, (--n == 0 ? " );" : ","));
+        out.stmt("              FPGA_BIDIR_PIN_%d%s", i, (--n == 0 ? " );" : ","));
       for (int i = 0; i < ioPinCount.out; i++)
-        out3.stmt("              FPGA_OUTPUT_PIN_%d%s", i, (--n == 0 ? " );" : ","));
+        out.stmt("              FPGA_OUTPUT_PIN_%d%s", i, (--n == 0 ? " );" : ","));
       if (ioResources.requiresOscillator && !hasHFOSC)
-        out3.stmt("  input FPGA_CLK;");
+        out.stmt("  input FPGA_CLK;");
       for (int i = 0; i < ioPinCount.in; i++)
-        out3.stmt("  input FPGA_INPUT_PIN_%d;", i);
+        out.stmt("  input FPGA_INPUT_PIN_%d;", i);
       for (int i = 0; i < ioPinCount.inout; i++)
-        out3.stmt("  inout FPGA_BIDIR_PIN_%d;", i);
+        out.stmt("  inout FPGA_BIDIR_PIN_%d;", i);
       for (int i = 0; i < ioPinCount.out; i++)
-        out3.stmt("  output FPGA_OUTPUT_PIN_%d;", i);
-      out3.stmt();
+        out.stmt("  output FPGA_OUTPUT_PIN_%d;", i);
+      out.stmt();
 
       n = ioPinCount.size();
       if (ioResources.requiresOscillator) {
         if (hasHFOSC) {
-          out3.stmt("  wire FPGA_CLK;");
+          out.stmt("  wire FPGA_CLK;");
           // For iCE40UP/UL fpga, use the high-speed oscillator (48 MHz).
           // FIXME: the SB_HFOSC block can divide by 1, 2, 4, or 8. We should
           // probably use that feature when the design clock settings call for clock
           // division. Or, use the SB_LFOSC block instead, which runs at 10 kHz.
-          out3.stmt("  SB_HFOSC internal_oscillator(.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(FPGA_CLK));");
-          out3.stmt();
+          out.stmt("  SB_HFOSC internal_oscillator(.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(FPGA_CLK));");
+          out.stmt();
         }
         // For iCE40HX/LP, FPGA_CLK is an input port wired to the board's external
         // crystal via PCF constraint; no internal oscillator primitive is needed.
         n++;
       }
-      ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-        // todo: also handle bidirectional using SB_IO
-        PullBehavior pull = ioResources.getInputPinPull(net);
-        int pullup = 0;
-        if (pull == PullBehavior.PULL_UP) {
-          pullup = 1;
-        } else if (pull == PullBehavior.NONE) {
-          return; // handled above
-        } else {
-          err.AddSevereWarning("FPGA pin %s pull behavior specified as %s, but apio only supports pull-up.", pull);
-        }
-        out3.stmt("  wire %s;", "PULLED_"+net);
-        // PIN_TYPE = 6 bits = xxxx_yy, xxxx=1010 is tri-state output, yy=01 is
-        // simple non-clocked input, etc.
-        out3.stmt("  SB_IO #(.PIN_TYPE(6'b 0000_01), .PULLUP(1'b %d))", pullup);
-        out3.stmt("        sb_pin_%s (.PACKAGE_PIN(%s), .D_IN_0(%s));", pin, net, "PULLED_"+net);
-        out3.stmt();
-      });
+      // ioResources.forEachPhysicalPin((pin, net, io, label) -> {
+      //   // todo: also handle bidirectional using SB_IO
+      //   InputBias bias = ioResources.getInputBias(net);
+      //   int pullup = 0;
+      //   if (bias == InputBias.PULL_UP) {
+      //     pullup = 1;
+      //   } else if (bias == InputBias.PULL_DOWN) {
+      //     err.AddSevereWarning("FPGA pin %s pull behavior specified as %s, but apio only supports pull-up.", pull);
+      //   } else if (bias == InputBias.BUS_HOLD) {
+      //     todo;
+      //   } else if (bias == InputBias.NONE) {
+      //     return; // handled above (elsewhere? where??? FIXME)
+      //   } else {
+      //     // do not specify
+      //     return;
+      //   }
+      //   out.stmt("  wire %s;", "PULLED_"+net);
+      //   // PIN_TYPE = 6 bits = xxxx_yy, xxxx=1010 is tri-state output, yy=01 is
+      //   // simple non-clocked input, etc.
+      //   out.stmt("  SB_IO #(.PIN_TYPE(6'b 0000_01), .PULLUP(1'b %d))", pullup);
+      //   out.stmt("        sb_pin_%s (.PACKAGE_PIN(%s), .D_IN_0(%s));", pin, net, "PULLED_"+net);
+      //   out.stmt();
+      // });
+     
+      // For each FPGA bidir pin, emit an SB_IO block to bring together the
+      // input, output, and enable nets.
       for (int i = 0; i < ioPinCount.inout; i++) {
-        String net = "FPGA_BIDIR_PIN_" + i;
-        out3.stmt("  wire %s;", net+"_IN");
-        out3.stmt("  wire %s;", net+"_OUT");
-        out3.stmt("  wire %s;", net+"_EN");
-        out3.stmt("  SB_IO #(.PIN_TYPE(6'b 1010_01), .PULLUP(1'b 0))");
-        out3.stmt("        sb_bidir_%d (.PACKAGE_PIN(%s),", i, net);
-        out3.stmt("                    .OUTPUT_ENABLE(%s),", net+"_EN");
-        out3.stmt("                    .D_OUT_0(%s),", net+"_OUT");
-        out3.stmt("                    .D_IN_0(%s));", net+"_IN");
-        out3.stmt();
+        if (iCE40) {
+          String net = "FPGA_BIDIR_PIN_" + i;
+          String pullup;
+          InputBias bias = ioResources.getInputBias(net);
+          if (bias == InputBias.PULL_UP) {
+            pullup = ", .PULLUP(1'b 1)";
+          } else if (bias == InputBias.PULL_DOWN) {
+            err.AddSevereWarning("FPGA pin %s pull-down is not possible for iCE40 FPGA. Using pull-none instead.", net);
+            pullup = ", .PULLUP(1'b 0)";
+          } else if (bias == InputBias.BUS_HOLD) {
+            err.AddSevereWarning("FPGA pin %s bus-hold is not possible for iCE40 FPGA. Using pull-none instead.", net);
+            pullup = ", .PULLUP(1'b 0)";
+          } else if (bias == InputBias.PULL_NONE) {
+            pullup = ", .PULLUP(1'b 0)";
+          } else { // DO_NOT_SPECIFY
+            pullup = "";
+          }
+          out.stmt("  wire %s;", net+"_IN");
+          out.stmt("  wire %s;", net+"_OUT");
+          out.stmt("  wire %s;", net+"_EN");
+          out.stmt("  SB_IO #(.PIN_TYPE(6'b 1010_01)%s)", pullup);
+          out.stmt("        sb_bidir_%d (.PACKAGE_PIN(%s),", i, net);
+          out.stmt("                    .OUTPUT_ENABLE(%s),", net+"_EN");
+          out.stmt("                    .D_OUT_0(%s),", net+"_OUT");
+          out.stmt("                    .D_IN_0(%s));", net+"_IN");
+          out.stmt();
+        } else if (ECP5) {
+          err.AddFatalError("Apio support for FPGA vendor '%s' family '%s' not yet implemented.",
+              board.fpga.Vendor, board.fpga.Technology);
+          // FIXME: emit appropriate verilog for ECP5, e.g.:
+          // TRELLIS_IO #(.DIR("BIDIR"), .PULLMODE("UP/DOWN/KEEPER/NONE"))
+          //    ecp5_bidir_%d (.B(some_net),
+          //                   .T(~some_net_en),  // note: active-low tristate enable on ECP5
+          //                   .O(some_net_in),
+          //                   .I(some_net_out));
+        } else if (GOWIN) {
+          err.AddFatalError("Apio support for FPGA vendor '%s' family '%s' not yet implemented.",
+              board.fpga.Vendor, board.fpga.Technology);
+          // FIXME: emit appropriate verilog for Gowin, e.g.:
+          // IOBUF #(.PULL_MODE("UP/DOWN/KEEPER/NONE"))
+          //   gowin_bidir_%d (.IO(some_net),
+          //                   .OEN(~some_net_en),  // also active-low
+          //                   .O(some_net_in),
+          //                   .I(some_net_out));
+        } else {
+          err.AddFatalError("Apio support for FPGA vendor '%s' family '%s' not yet implemented.",
+              board.fpga.Vendor, board.fpga.Technology);
+        }
       }
 
-      out3.stmt("  LogisimToplevelShell wrappedShell( %s", (n == 0 ? " );" : ""));
+      out.stmt("  LogisimToplevelShell wrappedShell( %s", (n == 0 ? " );" : ""));
       if (ioResources.requiresOscillator)
-        out3.stmt("              .FPGA_CLK(FPGA_CLK)%s", (--n == 0 ? " );" : ","));
+        out.stmt("              .FPGA_CLK(FPGA_CLK)%s", (--n == 0 ? " );" : ","));
       for (int i = 0; i < ioPinCount.in; i++) {
         String net = "FPGA_INPUT_PIN_"+i;
-        if (ioResources.getInputPinPull(net) != PullBehavior.NONE)
-          net = "PULLED_"+net;
-        out3.stmt("              .FPGA_INPUT_PIN_%d(%s)%s", i, net, (--n == 0 ? " );" : ","));
+        // if (ioResources.getInputPinPull(net) != PullBehavior.NONE)
+        //   net = "PULLED_"+net;
+        out.stmt("              .FPGA_INPUT_PIN_%d(%s)%s", i, net, (--n == 0 ? " );" : ","));
       }
       for (int i = 0; i < ioPinCount.inout; i++) {
-        out3.stmt("              .FPGA_BIDIR_PIN_%d_IN(FPGA_BIDIR_PIN_%d_IN),", i, i);
-        out3.stmt("              .FPGA_BIDIR_PIN_%d_OUT(FPGA_BIDIR_PIN_%d_OUT),", i, i);
-        out3.stmt("              .FPGA_BIDIR_PIN_%d_EN(FPGA_BIDIR_PIN_%d_EN)%s", i, i, (--n == 0 ? " );" : ","));
+        out.stmt("              .FPGA_BIDIR_PIN_%d_IN(FPGA_BIDIR_PIN_%d_IN),", i, i);
+        out.stmt("              .FPGA_BIDIR_PIN_%d_OUT(FPGA_BIDIR_PIN_%d_OUT),", i, i);
+        out.stmt("              .FPGA_BIDIR_PIN_%d_EN(FPGA_BIDIR_PIN_%d_EN)%s", i, i, (--n == 0 ? " );" : ","));
       }
       for (int i = 0; i < ioPinCount.out; i++)
-        out3.stmt("              .FPGA_OUTPUT_PIN_%d(FPGA_OUTPUT_PIN_%d)%s", i, i, (--n == 0 ? " );" : ","));
-      out3.stmt();
+        out.stmt("              .FPGA_OUTPUT_PIN_%d(FPGA_OUTPUT_PIN_%d)%s", i, i, (--n == 0 ? " );" : ","));
+      out.stmt();
 
-      out3.stmt("endmodule");
-      f = FileWriter.GetFilePointer(sandboxPath, "LogisimToplevelApioShell.v", err);
-      if (f == null || !FileWriter.WriteContents(f, out3, err))
+      out.stmt("endmodule");
+      File f = FileWriter.GetFilePointer(sandboxPath, "LogisimToplevelApioShell.v", err);
+      if (f == null || !FileWriter.WriteContents(f, out, err))
         return false;
 
       return true;
@@ -488,5 +550,46 @@ public class Apio {
     @Override
     public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if ApioDownload reported okay
   }
+  
+  // Create an iCE40-compatible ".pcf" constraint file
+  static boolean writeiCE40ConstraintPCF(AuxFile pcf, Board board, PinBindings ioResources, boolean hasHFOSC) {
+    if (ioResources.requiresOscillator && !hasHFOSC)
+      pcf.stmt("set_io --warn-no-port %s %s", FPGADownload.CLK_PORT, board.fpga.ClockPinLocation);
+    ioResources.forEachPhysicalPin((pin, net, io, label) -> {
+      if (io.standard != IoStandard.DEFAULT)
+        pcf.err.AddSevereWarning("FPGA pin %s specifies ioStandard '%s' but this is not configurable for iCE40 FPGA in Apio. Using DEFAULT instead.", pin);
+      if (io.strength != null && io.strength != DriveStrength.DEFAULT)
+        pcf.err.AddSevereWarning("FPGA pin %s specifies drive strength '%s' but this is not configurable for iCE40 FPGA in Apio. Using DEFAULT instead.", pin);
+      if (net.startsWith("FPGA_INPUT_PIN_")) {
+        // FPGA input pins may need pull-up, pull-down, bus-hold, etc. Those
+        // are done here, in the constraints file. Or, we could emit an SB_IO
+        // block or equivalent, below. Either should work, maybe?
+        InputBias bias = ioResources.getInputBias(net);
+        if (bias == InputBias.PULL_UP) {
+          pcf.stmt("set_io --warn-no-port --pullup yes %s %s", net, pin);
+        } else if (bias == InputBias.PULL_DOWN) {
+          pcf.err.AddSevereWarning("FPGA pin %s pull-down is not possible for iCE40 FPGA. Using pull-none instead.", pin);
+          pcf.stmt("set_io --warn-no-port --pullup no %s %s", net, pin);
+        } else if (bias == InputBias.BUS_HOLD) {
+          pcf.err.AddSevereWarning("FPGA pin %s bus-hold is not possible for iCE40 FPGA. Using pull-none instead.", pin);
+          pcf.stmt("set_io --warn-no-port --pullup no %s %s", net, pin);
+        } else if (bias == InputBias.PULL_NONE) {
+          pcf.stmt("set_io --warn-no-port --pullup no %s %s", net, pin);
+        } else { // DO_NOT_SPECIFY
+          pcf.stmt("set_io --warn-no-port %s %s", net, pin);
+        }
+      } else if (net.startsWith("FPGA_BIDIR_PIN_")) {
+        // FPGA bidir pins require an SB_IO block or equivalent, emitted below, so
+        // we specify any pull-up, pull-down, or bus-hold there.
+        pcf.stmt("set_io --warn-no-port %s %s", net, pin);
+      } else if (net.startsWith("FPGA_OUTPUT_PIN_")) {
+        // FPGA output pins have no bias.
+        pcf.stmt("set_io --warn-no-port %s %s", net, pin);
+      }
+    });
+    // FIXME: handle all unmapped pins
+    return pcf.save();
+  }
+  
 
 }

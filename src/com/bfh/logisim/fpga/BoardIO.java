@@ -87,19 +87,19 @@ public class BoardIO {
     AllOnes,       // synth in  onebit/multibit
     Constant,      // synth in  onebit/multibit
     Button,        // phys  in  onebit
-    DIPSwitch,     // phys  in  multibit (degenerates to Button)
+    DIPSwitch,     // phys  in  multibit/variable (degenerates to Button)
     Pin,           // phys  any onebit
-    Ribbon,        // phys  any multibit (degenerates to Pin)
+    Ribbon,        // phys  any multibit/variable (degenerates to Pin)
 		LED,           // phys  out onebit
     RGBLED,        // phys  out multibit (degenerates to LED)
     SevenSegment,  // phys  out multibit (degenerates to LED)
-    LEDBar,        // phys  out multibit (degenerates to LED)
+    LEDBar,        // phys  out multibit/variable (degenerates to LED)
     Unconnected,   // synth out onebit/multibit
 
     Expanded, // only used by PinBindingsDialog as a placeholder 
     Unknown; // only used during parsing as temporary placeholder
 
-    // Note: The types above are used both to describe physical I/O resources
+    // Note: The types above are used to describe physical I/O resources
     // (with the characteristics as noted above). But Logisim components within
     // the circuit design under test also use the above types to describe
     // constraints on the I/O resources they are meant to be connected to. For
@@ -209,15 +209,25 @@ public class BoardIO {
 	public final Type type;
 	public final int width;
   public final String label;
-	public final Bounds rect; // only for physical types
-	public final IoStandard standard; // only for physical types
-	public final PullBehavior pull; // only for physical types
-	public final PinActivity activity; // only for physical types; set to ACTIVE_HIGH for synthetic
-	public final DriveStrength strength; // only for physical types
-	public final PinOrdering orientation; // only for orientable types
-  public final int syntheticValue; // only for synthetic types
+	public final Bounds rect;                    // only physical types
+	public final InputBias bias;                 // only physical types, in/bi/---
+	public final IoStandard standard;            // only physical types, in/bi/out
+	public final PinActivity activity;           // only physical types, in/bi/out - always ACTIVE_HIGH for Pin and for synthetic
+	public final DriveStrength strength;         // only physical types, --/bi/out
+	public final IdleBehavior idle;              // only physical types, --/bi/out
+  public final PinOrdering orientation;        // only orientable types
+  public final int syntheticValue;             // only synthetic types
 
-	public final String[] pins;
+  // NOTE: For multi-bit types, all pins use the same idle, bias, strength, etc.
+  // The exception is syntheticValue, which supports individually specifying the
+  // bit for each pin in a multi-bit synthetic input. Conceivably, an FPGA board
+  // might want to specify per-bit specs, e.g. different idle or bias specs for
+  // some of the pins of a multi-bit component. For now, that isn't supported.
+
+  // FIXME: activity for Pin is always ACTIVE_HIGH... why? Ribbon allows both
+  // ACTIVE_HIGH and ACTIVE_LOW.
+	
+  public final String[] pins;
 
   // constructor for synthetic I/O resources
   private BoardIO(Type t, int w, int val) {
@@ -237,9 +247,10 @@ public class BoardIO {
     activity = PinActivity.ACTIVE_HIGH;
     // rest are unused/empty
     rect = null;
-    standard = IoStandard.UNKNOWN;
-    pull = PullBehavior.UNKNOWN;
-    strength = DriveStrength.UNKNOWN;
+    standard = null;
+    bias = null;
+    idle = null;
+    strength = null;
     orientation = null;
     pins = null;
   }
@@ -267,17 +278,30 @@ public class BoardIO {
 
   // constructor for physical I/O resources
   BoardIO(Type t, int w, String l, Bounds r,
-      IoStandard s, PullBehavior p, PinActivity a, DriveStrength g, PinOrdering o, String[] x) {
+      IoStandard s, InputBias b, PinActivity a, DriveStrength g, IdleBehavior v, PinOrdering o, String[] x) {
     if (!PhysicalTypes.contains(t))
       throw new IllegalArgumentException("BoardIO type "+t+" is not meant for physical I/O resources");
     type = t;
     width = w;
     label = l;
     rect = r;
-    standard = s;
-    pull = p;
-    activity = a;
-    strength = g;
+    standard = s; // input, output, bidir
+    bias = b; // input, bidir
+    if (InputTypes.contains(type) && bias == null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is an input, but bias resistor spec is missing");
+    if (!InputTypes.contains(type) && bias != null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is not an input, but has a bias resistor spec");
+    activity = a; // input, output, bidir
+    strength = g; // output, bidir
+    if (OutputTypes.contains(type) && strength == null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is an output, but drive strength spec is missing");
+    if (!OutputTypes.contains(type) && strength != null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is not an output, but has a drive strength spec");
+    idle = v; // output, bidir
+    if (OutputTypes.contains(type) && idle == null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is an output, but idle spec is missing");
+    if (!OutputTypes.contains(type) && idle != null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is not an output, but has idle spec");
     orientation = o;
     pins = x;
     // rest are defaults/empty
@@ -287,8 +311,8 @@ public class BoardIO {
   // constructor for physical I/O resources, copies existing physical but but with new position
   BoardIO(BoardIO io, Bounds newPosition) {
     this(io.type, io.width, io.label, newPosition,
-        io.standard, io.pull, io.activity,
-        io.strength, io.orientation, io.pins);
+        io.standard, io.bias, io.activity,
+        io.strength, io.idle, io.orientation, io.pins);
   }
 
   public static BoardIO parseXml(Element elt) throws Exception {
@@ -296,6 +320,8 @@ public class BoardIO {
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
     String name = t.toString();
+    boolean in = InputTypes.contains(t);
+    boolean out = OutputTypes.contains(t);
 
     Map<String, String> params = XmlUtil.getAttributeMap(elt);
 
@@ -313,11 +339,24 @@ public class BoardIO {
 		Bounds r = Bounds.create(x, y, w, h);
     name += "@ ("+x+","+y+")";
 
-    PullBehavior p = PullBehavior.get(params.get("pull"));
+    if (params.containsKey("bias") && !in)
+      throw new Exception("bias resistors specified for non-input I/O resource " + name);
+    InputBias p = in ? InputBias.get(params.get("bias")) : null; // returns non-null for in
+
+    if (t == Type.Pin && params.containsKey("polarity"))
+      throw new Exception("polarity specified for Pin I/O resource " + name);
     PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
         PinActivity.get(params.get("polarity"));
-    IoStandard s = IoStandard.get(params.get("ioStandard"));
-    DriveStrength g = DriveStrength.get(params.get("drive"));
+
+    IoStandard s = IoStandard.get(params.get("ioStandard")); // returns non-null
+   
+    if (params.containsKey("drive") && !out)
+      throw new Exception("drive strength specified for non-output I/O resource " + name);
+    DriveStrength g = out ? DriveStrength.get(params.get("drive")) : null; // returns non-null for out
+    
+    if (params.containsKey("default") && !out)
+      throw new Exception("defaul drive specified for non-output I/O resource " + name);
+    IdleBehavior v = out ? IdleBehavior.get(params.get("idle")) : null; // returns non-null for out
 
     PinOrdering o = null;
     String[] pins;
@@ -370,13 +409,15 @@ public class BoardIO {
       }
     }
 
-    return new BoardIO(t, width, label, r, s, p, a, g, o, pins);
+    return new BoardIO(t, width, label, r, s, p, a, g, v, o, pins);
 	}
 
   public static BoardIO parseXmlOld(Element elt) throws Exception {
     Type t = Type.getPhysicalType(elt.getNodeName());
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
+    boolean in = InputTypes.contains(t);
+    boolean out = OutputTypes.contains(t);
 
     Map<String, String> params = XmlUtil.getAttributeMap(elt);
 
@@ -396,11 +437,22 @@ public class BoardIO {
 		Bounds r = Bounds.create(x, y, w, h);
     name += "@ ("+x+","+y+")";
 
-    PullBehavior p = PullBehavior.get(params.getOrDefault("FPGAPinPullBehavior", "Unknown"));
+    if (params.containsKey("FPGAPinPullBehavior") && !in)
+      throw new Exception("bias resistors specified for non-input I/O resource " + name);
+    InputBias p = in ? InputBias.get(params.get("FPGAPinPullBehavior")) : null; // returns non-null for in
+    
+    if (t == Type.Pin && params.containsKey("ActivityLevel"))
+      throw new Exception("polarity specified for Pin I/O resource " + name);
     PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
-        PinActivity.get(params.getOrDefault("ActivityLevel", "Unknown"));
-    IoStandard s = IoStandard.get(params.getOrDefault("FPGAPinIOStandard", "Unknown"));
-    DriveStrength g = DriveStrength.get(params.getOrDefault("FPGAPinDriveStrength", "Unknown"));
+        PinActivity.get(params.get("ActivityLevel"));
+
+    IoStandard s = IoStandard.get(params.get("FPGAPinIOStandard")); // returns non-null
+
+    if (params.containsKey("FPGAPinDriveStrength") && !out)
+      throw new Exception("drive strength specified for non-output I/O resource " + name);
+    DriveStrength g = out ? DriveStrength.get(params.get("FPGAPinDriveStrength")) : null; // returns non-null for out
+    
+    IdleBehavior v = out ? IdleBehavior.DEFAULT : null;
 
     PinOrdering o = null;
     String[] pins;
@@ -441,292 +493,8 @@ public class BoardIO {
       }
     }
 
-    return new BoardIO(t, width, label, r, s, p, a, g, o, pins);
+    return new BoardIO(t, width, label, r, s, p, a, g, v, o, pins);
 	}
-
-	// public Element encodeXml(Document doc) throws Exception {
-  //   Element elt = doc.createElement(type.toString());
-  //   elt.setAttribute("LocationX", ""+rect.x);
-  //   elt.setAttribute("LocationY", ""+rect.y);
-  //   elt.setAttribute("Width", ""+rect.width);
-  //   elt.setAttribute("Height", ""+rect.height);
-  //   if (label != null)
-  //     elt.setAttribute("Label", label);
-  //   if (width == 1) {
-  //     elt.setAttribute("FPGAPinName", pins[0]);
-  //   } else {
-  //     elt.setAttribute("NrOfPins", ""+width);
-  //     for (int i = 0; i < width; i++)
-  //       elt.setAttribute("FPGAPin_"+i, pins[i]);
-  //   }
-  //   if (strength != DriveStrength.UNKNOWN)
-  //     elt.setAttribute("FPGAPinDriveStrength", ""+strength);
-  //   if (activity != PinActivity.UNKNOWN && type != Type.Pin) // skip Pin
-  //     elt.setAttribute("ActivityLevel", ""+activity);
-  //   if (pull != PullBehavior.UNKNOWN)
-  //     elt.setAttribute("FPGAPinPullBehavior", ""+pull);
-  //   if (standard != IoStandard.UNKNOWN && standard != IoStandard.DEFAULT)
-  //     elt.setAttribute("FPGAPinIOStandard", ""+standard);
-  //   if (orientation != null)
-  //     elt.setAttribute("Orientation", ""+orientation);
-  //   return elt;
-  // }
-
-	// public static BoardIO makeUserDefined(Type t, Bounds r, BoardEditor parent) {
-  //   int w = t.defaultWidth();
-  //   BoardIO template = new BoardIO(t, w, null/*no label*/, r,
-  //       defaultStandard, defaultPull, defaultActivity, defaultStrength, null /* no orientation */, null /*no pins*/);
-  //   if (t == Type.DIPSwitch || t == Type.Ribbon)
-  //     template = doSizeDialog(template, parent);
-  //   if (template == null)
-  //     return null;
-  //   return doInfoDialog(template, parent, false);
-  // }
-
-  // public static BoardIO redoUserDefined(BoardIO io, BoardEditor parent) {
-  //   BoardIO template = io;
-  //   if (template.type == Type.DIPSwitch || template.type == Type.Ribbon)
-  //     template = doSizeDialog(template, parent);
-  //   if (template == null)
-  //     return io; // user cancelled before getting to config dialog
-  //   return doInfoDialog(template, parent, true);
-  // }
-
-  // private static BoardIO doSizeDialog(BoardIO t, BoardEditor parent) {
-  //   int min = t.type == Type.DIPSwitch ? DipSwitch.MIN_SWITCH : PortIO.MIN_IO;
-  //   int max = t.type == Type.DIPSwitch ? DipSwitch.MAX_SWITCH : PortIO.MAX_IO;
-
-  //   final JDialog dlg = new JDialog(parent, t.type + " Size");
-  //   dlg.getContentPane().setLayout(new BoxLayout(dlg.getContentPane(), BoxLayout.PAGE_AXIS));
-
-  //   String things = t.type == Type.DIPSwitch ? "Switches" : "Pins";
-  //   JLabel question = new JLabel("Number of " + things + " for " + t.type + ":");
-
-  //   JComboBox<Integer> size = new JComboBox<>();
-  //   for (int i = min; i <= max; i++)
-  //     size.addItem(i);
-  //   size.setSelectedItem(t.width);
-
-  //   JLabel question2 = new JLabel("Orientation:");
-  //   JComboBox<String> layout = new JComboBox<>();
-  //   for (PinOrdering po : PinOrdering.OPTIONS)
-  //     layout.addItem(po.desc);
-  //   if (t.orientation != null)
-  //     layout.setSelectedItem(t.orientation.desc);
-  //   else if (t.rect.width >= t.rect.height)
-  //     layout.setSelectedItem(t.type == Type.DIPSwitch ? PinOrdering.ORDER_1_LR : PinOrdering.ORDER_2_BTLR);
-  //   else
-  //     layout.setSelectedItem(t.type == Type.DIPSwitch ? PinOrdering.ORDER_1_TB : PinOrdering.ORDER_2_LRTB);
-
-  //   final int[] width = new int[] { -1 };
-  //   final PinOrdering[] orientation = new PinOrdering[] { null };
-  //   JButton next = new JButton("Next");
-  //   next.addActionListener(e -> {
-  //     width[0] = (Integer)size.getSelectedItem();
-  //     orientation[0] = PinOrdering.get((String)layout.getSelectedItem());
-  //     dlg.setVisible(false);
-  //   });
-
-  //   JPanel options = new JPanel();
-  //   options.setLayout(new BoxLayout(options, BoxLayout.LINE_AXIS));
-  //   options.add(question);
-  //   options.add(size);
-  //   JPanel options2 = new JPanel();
-  //   options2.setLayout(new BoxLayout(options2, BoxLayout.LINE_AXIS));
-  //   options2.add(question2);
-  //   options2.add(layout);
-
-  //   dlg.add(options);
-  //   dlg.add(options2);
-  //   dlg.add(next);
-
-  //   parent.doModal(dlg, t.rect.x + t.rect.width/2, t.rect.y);
-
-  //   if (width[0] < 0) // cancelled
-  //     return null;
-  //   if (t.width == width[0] && t.orientation == orientation[0])
-  //     return t; // no change
-  //   return new BoardIO(t.type, width[0], t.label,
-  //       t.rect, t.standard, t.pull, t.activity, t.strength, orientation[0], t.pins);
-  // }
-
-  private static DriveStrength defaultStrength = DriveStrength.DEFAULT;
-  private static PinActivity defaultActivity = PinActivity.ACTIVE_HIGH;
-  private static IoStandard defaultStandard = IoStandard.DEFAULT;
-  private static PullBehavior defaultPull = PullBehavior.FLOAT;
-
-  // private static void add(JDialog dlg, GridBagConstraints c,
-  //     String caption, JComponent input) {
-  //   JLabel label = new JLabel(caption + " ");
-  //   label.setAlignmentX(1f);
-  //   dlg.add(label, c);
-  //   c.gridx++;
-  //   dlg.add(input, c);
-  //   c.gridx--;
-  //   c.gridy++;
-  // }
-
-  // private static BoardIO doInfoDialog(BoardIO t, BoardEditor parent, boolean removable) {
-  //   final JDialog dlg = new JDialog(parent, t.type + " Properties");
-  //   dlg.setLayout(new GridBagLayout());
-  //   GridBagConstraints c = new GridBagConstraints();
-  //   c.fill = GridBagConstraints.HORIZONTAL;
-
-  //   JComboBox<IoStandard> standard = new JComboBox<>(IoStandard.OPTIONS);
-  //   JComboBox<DriveStrength> strength = new JComboBox<>(DriveStrength.OPTIONS);
-  //   JComboBox<PinActivity> activity = new JComboBox<>(PinActivity.OPTIONS);
-  //   JComboBox<PullBehavior> pull = new JComboBox<>(PullBehavior.OPTIONS);
-
-  //   standard.setSelectedItem(t.standard);
-  //   strength.setSelectedItem(t.strength);
-  //   activity.setSelectedItem(t.activity);
-  //   pull.setSelectedItem(t.pull);
-
-  //   JTextField x = new JTextField(6);
-  //   JTextField y = new JTextField(6);
-  //   JTextField w = new JTextField(6);
-  //   JTextField h = new JTextField(6);
-  //   x.setText(""+t.rect.x);
-  //   y.setText(""+t.rect.y);
-  //   w.setText(""+t.rect.width);
-  //   h.setText(""+t.rect.height);
-
-  //   if (!OutputTypes.contains(t.type))
-  //     strength = null;
-  //   if (!InputTypes.contains(t.type) || t.type == Type.Pin)
-  //     pull = null;
-  //   if (InOutTypes.contains(t.type))
-  //     activity = null;
-
-  //   JTextField label = new JTextField(6);
-  //   if (t.label != null && t.label.length() > 0)
-  //     label.setText(t.label);
-
-  //   String[] pinLabels = t.type.pinLabels(t.width);
-  //   JTextField[] pinLocs = new JTextField[t.width];
-  //   for (int i = 0; i < t.width; i++) {
-  //     pinLocs[i] = new JTextField(6);
-  //     if (t.pins != null && t.pins[i] != null && t.pins[i].length() > 0)
-  //       pinLocs[i].setText(t.pins[i]);
-  //   }
-
-  //   c.gridx = 0;
-  //   c.gridy = 0;
-
-  //   for (int i = 0; i < t.width; i++) {
-  //     add(dlg, c, "FPGA location for " + pinLabels[i] + " :", pinLocs[i]);
-  //     if (c.gridy == 8) {
-  //       c.gridx += 2;
-  //       c.gridy = 0;
-  //     }
-  //   }
-
-  //   c.gridx = 0;
-  //   c.gridy = Math.max(t.width, 32);
-
-  //   add(dlg, c, "Label (optional):", label);
-  //   add(dlg, c, "Geometry x coordinate:", x);
-  //   add(dlg, c, "Geometry y coordinate:", y);
-  //   add(dlg, c, "Geometry width:", w);
-  //   add(dlg, c, "Geometry height:", h);
-  //   add(dlg, c, "I/O standard:", standard);
-  //   if (strength != null)
-  //     add(dlg, c, "Drive strength:", strength);
-  //   if (pull != null)
-  //     add(dlg, c, "Pull behavior:", pull);
-  //   if (activity != null)
-  //     add(dlg, c, "Signal activity:", activity);
-
-  //   final char[] result = new char[] { 'S' };
-
-  //   if (removable) {
-  //     JButton remove = new JButton("Delete Resource");
-  //     remove.addActionListener(e -> {
-  //       result[0] = 'R';
-  //       dlg.setVisible(false);
-  //     });
-  //     dlg.add(remove, c);
-  //     c.gridx++;
-  //   }
-
-  //   JButton cancel = new JButton("Cancel");
-  //   cancel.addActionListener(e -> {
-  //     result[0] = 'C';
-  //     dlg.setVisible(false);
-  //   });
-  //   dlg.add(cancel, c);
-  //   c.gridx++;
-
-  //   JButton ok = new JButton("Save");
-  //   ok.addActionListener(e -> dlg.setVisible(false));
-  //   dlg.add(ok, c);
-  //   c.gridx++;
-
-  //   String[] pins = new String[t.width];
-  //   int xx, yy, ww, hh;
-  //   parent.doModal(dlg, t.rect.x+t.rect.width/2, t.rect.y);
-  //   for (;;) {
-  //     if (result[0] == 'R')
-  //       return null; // user removed resource
-  //     if (result[0] == 'C' && removable)
-  //       return t; // cancelled, but explicitly not removed, keep same one
-  //     if (result[0] == 'C')
-  //       return null; // user cancelled, we were adding a new one, so don't add it
-  //     // ensure all locations are specified
-  //     boolean missing = false;
-  //     for (int i = 0; i < t.width && !missing; i++) {
-  //       pins[i] = pinLocs[i].getText();
-  //       missing = pins[i] == null || pins[i].isEmpty();
-  //     }
-  //     if (missing) {
-  //       Errors.title("Error").show("Please specify an FPGA location for all pins.");
-  //       dlg.setVisible(true);
-  //       continue;
-  //     }
-  //     try {
-  //       xx = Integer.parseInt(x.getText());
-  //       yy = Integer.parseInt(y.getText());
-  //       ww = Integer.parseInt(w.getText());
-  //       hh = Integer.parseInt(h.getText());
-  //     } catch (NumberFormatException ex) {
-  //       Errors.title("Error").show("Error parsing geometry.", ex);
-  //       dlg.setVisible(true);
-  //       continue;
-  //     }
-  //     if (xx < 0 || yy < 0 || ww <= 0 || hh <= 0
-  //         || xx+ww >= Board.STD_IMG_WIDTH || yy+hh >= Board.STD_IMG_HEIGHT) {
-  //       Errors.title("Error").show("Invalid geometry.");
-  //       dlg.setVisible(true);
-  //       continue;
-  //     }
-  //     break;
-  //   }
-
-  //   String txt = label.getText();
-  //   if (txt != null && txt.length() == 0)
-  //     txt = null;
-
-  //   defaultStandard = (IoStandard)standard.getSelectedItem();
-  //   if (pull != null)
-  //     defaultPull = (PullBehavior)pull.getSelectedItem();
-  //   if (activity != null)
-  //     defaultActivity = (PinActivity)activity.getSelectedItem();
-  //   if (strength != null)
-  //     defaultStrength = (DriveStrength)strength.getSelectedItem();
-
-  //   PinActivity a = activity != null ? defaultActivity : PinActivity.UNKNOWN;
-  //   if (t.type == Type.Pin)
-  //     a = PinActivity.ACTIVE_HIGH; // special case: Pin is always active high
-
-  //   Bounds rect = Bounds.create(xx, yy, ww, hh);
-
-  //   return new BoardIO(t.type, t.width, txt, rect, defaultStandard,
-  //       pull != null ? defaultPull : PullBehavior.UNKNOWN,
-  //       a,
-  //       strength != null ? defaultStrength : DriveStrength.UNKNOWN,
-  //       t.orientation,
-  //       pins);
-  // }
 
   public boolean isInput() {
     return InputTypes.contains(type);

@@ -89,9 +89,6 @@ import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.generic.ComboBox;
 import com.cburch.logisim.gui.generic.LFrame;
 import com.cburch.logisim.prefs.AppPreferences;
-import com.cburch.logisim.std.io.DipSwitch;
-import com.cburch.logisim.std.io.LedBar;
-import com.cburch.logisim.std.io.PortIO;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.JFileChoosers;
@@ -446,7 +443,7 @@ public class BoardEditor extends JFrame {
     JTextField rate = new JTextField(10);
     JComboBox<String> hz = new JComboBox<>(new String[] { "Hz", "kHz", "MHz" });
     JTextField clkLoc = new JTextField();
-    JComboBox<PullBehavior> clkPull = new JComboBox<>(PullBehavior.OPTIONS);
+    // JComboBox<InputBias> clkPull = new JComboBox<>(InputBias.OPTIONS);
     JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
     JComboBox<UnmentionedPinsBehavior> unmentionedBehavior = new JComboBox<>(UnmentionedPinsBehavior.OPTIONS);
     JTextField jtagPos = new JTextField("1");
@@ -463,7 +460,7 @@ public class BoardEditor extends JFrame {
     if (fpga == null) {
       rate.setText("50");
       hz.setSelectedIndex(2);
-      clkPull.setSelectedIndex(0);
+      // clkPull.setSelectedIndex(0);
       clkStandard.setSelectedIndex(0);
       unmentionedBehavior.setSelectedIndex(0); // UnmentionedPinBehavior.UNSPECIFIED
       vendor.setSelectedIndex(0);
@@ -471,7 +468,7 @@ public class BoardEditor extends JFrame {
     } else {
       // FIXME reorder these
       jtagPos.setText(""+fpga.JTAGPos);
-      vendor.setSelectedItem(fpga.VendorName);
+      vendor.setSelectedItem(fpga.Vendor);
       family.setText(fpga.Technology);
       part.setText(fpga.Part);
       pkg.setText(fpga.Package);
@@ -480,7 +477,7 @@ public class BoardEditor extends JFrame {
       rate.setText(fpga.Speed.split(" ")[0]);
       hz.setSelectedItem(fpga.Speed.split(" ")[1]);
       clkLoc.setText(fpga.ClockPinLocation);
-      clkPull.setSelectedItem(fpga.ClockPullBehavior);
+      // clkPull.setSelectedItem(fpga.ClockPullBehavior);
       clkStandard.setSelectedItem(fpga.ClockIOStandard);
       unmentionedBehavior.setSelectedItem(fpga.UnmentionedPinsBehaviorHint);
       // FIXME, split into separate Flash section
@@ -502,7 +499,7 @@ public class BoardEditor extends JFrame {
     c.gridy = 0;
     add(clockPanel, c, "Clock frequency:", freqPanel);
     add(clockPanel, c, "Clock pin FPGA location:", clkLoc);
-    add(clockPanel, c, "Clock pin pull behavior:", clkPull);
+    // add(clockPanel, c, "Clock pin pull behavior:", clkPull);
     add(clockPanel, c, "Clock pin I/O standard:", clkStandard);
     add(clockPanel, c, "Other FPGA pin behavior:", unmentionedBehavior);
     add(clockPanel, c, "FPGA position in JTAG chain:", jtagPos);
@@ -576,7 +573,7 @@ public class BoardEditor extends JFrame {
         HashMap<String, String> params = new HashMap<>();
         params.put("ClockInformation/Frequency", ""+freq);
         params.put("ClockInformation/FPGApin", clkLoc.getText());
-        params.put("ClockInformation/PullBehavior", ""+clkPull.getSelectedItem());
+        // params.put("ClockInformation/PullBehavior", ""+clkPull.getSelectedItem());
         params.put("ClockInformation/IOStandard", ""+clkStandard.getSelectedItem());
         params.put("FPGAInformation/Family", family.getText() );
         params.put("FPGAInformation/Part", part.getText());
@@ -1022,13 +1019,15 @@ public class BoardEditor extends JFrame {
     private final JTextField hField = new JTextField(4);
     private final JComboBox<IoStandard> standardCombo = new JComboBox<>(IoStandard.OPTIONS);
     private final JComboBox<DriveStrength> strengthCombo = new JComboBox<>(DriveStrength.OPTIONS);
-    private final JComboBox<PullBehavior> pullCombo = new JComboBox<>(PullBehavior.OPTIONS);
+    private final JComboBox<IdleBehavior> idleCombo = new JComboBox<>(IdleBehavior.OPTIONS);
+    private final JComboBox<InputBias> biasCombo = new JComboBox<>(InputBias.OPTIONS);
     private final JComboBox<PinActivity> activityCombo = new JComboBox<>(PinActivity.OPTIONS);
 
     // Rows shown/hidden based on type
-    private JPanel strengthRow;
-    private JPanel pullRow;
-    private JPanel activityRow;
+    private JPanel strengthRow; // bidir/output only
+    private JPanel idleRow; // bidir/output only
+    private JPanel biasRow; // input/bidir only
+    private JPanel activityRow; // anything but Pin
 
     IOSidebarPanel() {
       setLayout(cards);
@@ -1116,7 +1115,8 @@ public class BoardEditor extends JFrame {
       hField.addFocusListener(applyOnFocus);
       standardCombo.addActionListener(e -> { if (!updating) applyCurrentValues(); });
       strengthCombo.addActionListener(e -> { if (!updating) applyCurrentValues(); });
-      pullCombo.addActionListener(e -> { if (!updating) applyCurrentValues(); });
+      idleCombo.addActionListener(e -> { if (!updating) applyCurrentValues(); });
+      biasCombo.addActionListener(e -> { if (!updating) applyCurrentValues(); });
       activityCombo.addActionListener(e -> { if (!updating) applyCurrentValues(); });
 
       propInner.add(makeRow("Label:", labelField));
@@ -1134,14 +1134,17 @@ public class BoardEditor extends JFrame {
 
       propInner.add(makeRow("I/O Std:", standardCombo));
 
-      strengthRow = makeRow("Drive Str:", strengthCombo);
+      strengthRow = makeRow("Strength:", strengthCombo);
       propInner.add(strengthRow);
 
-      pullRow = makeRow("Pull:", pullCombo);
-      propInner.add(pullRow);
+      biasRow = makeRow("Bias:", biasCombo);
+      propInner.add(biasRow);
 
-      activityRow = makeRow("Activity:", activityCombo);
+      activityRow = makeRow("Polarity:", activityCombo);
       propInner.add(activityRow);
+
+      idleRow = makeRow("If unmapped:", idleCombo);
+      propInner.add(idleRow);
 
       propSection.add(propInner, BorderLayout.CENTER);
       propsPanel.add(propSection);
@@ -1203,8 +1206,9 @@ public class BoardEditor extends JFrame {
         hField.setText("" + rect.height);
         standardCombo.setSelectedItem(IoStandard.DEFAULT);
         strengthCombo.setSelectedItem(DriveStrength.DEFAULT);
-        pullCombo.setSelectedItem(PullBehavior.FLOAT);
-        activityCombo.setSelectedItem(PinActivity.ACTIVE_HIGH);
+        idleCombo.setSelectedItem(IdleBehavior.DEFAULT);
+        biasCombo.setSelectedItem(InputBias.DEFAULT);
+        activityCombo.setSelectedItem(PinActivity.DEFAULT);
         rebuildPinPanel(type, type.defaultWidth(), null);
         updateConditionalRows(type);
       } finally {
@@ -1261,7 +1265,8 @@ public class BoardEditor extends JFrame {
         hField.setText("" + io.rect.height);
         standardCombo.setSelectedItem(io.standard);
         strengthCombo.setSelectedItem(io.strength);
-        pullCombo.setSelectedItem(io.pull);
+        idleCombo.setSelectedItem(io.idle);
+        biasCombo.setSelectedItem(io.bias);
         activityCombo.setSelectedItem(io.activity);
         rebuildPinPanel(io.type, io.width, io);
         updateConditionalRows(io.type);
@@ -1303,8 +1308,9 @@ public class BoardEditor extends JFrame {
 
     private void updateConditionalRows(BoardIO.Type type) {
       strengthRow.setVisible(BoardIO.OutputTypes.contains(type));
-      pullRow.setVisible(BoardIO.InputTypes.contains(type) && type != BoardIO.Type.Pin);
-      activityRow.setVisible(!BoardIO.InOutTypes.contains(type));
+      idleRow.setVisible(BoardIO.OutputTypes.contains(type));
+      biasRow.setVisible(BoardIO.InputTypes.contains(type));
+      activityRow.setVisible(type != BoardIO.Type.Pin);
     }
 
     private void rebuildPinPanel(BoardIO.Type type, int width, BoardIO io) {
@@ -1447,20 +1453,20 @@ public class BoardEditor extends JFrame {
       // Other properties, conditioned on type
       IoStandard std = (IoStandard) standardCombo.getSelectedItem();
       DriveStrength strength = BoardIO.OutputTypes.contains(type)
-          ? (DriveStrength) strengthCombo.getSelectedItem() : DriveStrength.UNKNOWN;
-      PullBehavior pull = (BoardIO.InputTypes.contains(type) && type != BoardIO.Type.Pin)
-          ? (PullBehavior) pullCombo.getSelectedItem() : PullBehavior.UNKNOWN;
+          ? (DriveStrength) strengthCombo.getSelectedItem() : null;
+      IdleBehavior idle = BoardIO.OutputTypes.contains(type)
+          ? (IdleBehavior) idleCombo.getSelectedItem() : null;
+      InputBias bias = BoardIO.InputTypes.contains(type)
+          ? (InputBias) biasCombo.getSelectedItem() : null;
       PinActivity activity;
       if (type == BoardIO.Type.Pin)
         activity = PinActivity.ACTIVE_HIGH;
-      else if (!BoardIO.InOutTypes.contains(type))
-        activity = (PinActivity) activityCombo.getSelectedItem();
       else
-        activity = PinActivity.UNKNOWN;
+        activity = (PinActivity) activityCombo.getSelectedItem();
 
       // Build the new IO object and update the list
       BoardIO newIO = new BoardIO(type, width, lbl, rect,
-          std, pull, activity, strength, orient, pins);
+          std, bias, activity, strength, idle, orient, pins);
 
       if (editingIO != null) {
         int idx = ioComponents.indexOf(editingIO);

@@ -31,7 +31,7 @@
 package com.bfh.logisim.fpga;
 
 public class DriveStrength {
-  public final String desc, xml, ma;
+  public final String desc, xml, ma /* emptystring for default, null for arbitrary */;
   private DriveStrength(String d, String m) { desc = xml = d; ma = m; };
   private DriveStrength(String d, String x, String m) { desc = d; xml = x; ma = m; };
 
@@ -41,19 +41,33 @@ public class DriveStrength {
 	public static final DriveStrength DRIVE_8  = new DriveStrength("8 mA", "8");
 	public static final DriveStrength DRIVE_16 = new DriveStrength("16 mA", "16");
 	public static final DriveStrength DRIVE_24 = new DriveStrength("24 mA", "24");
-	public static final DriveStrength UNKNOWN  = new DriveStrength("Unknown", "unknown", "");
+  // FIXME: Implement this... 
+  // Other, arbitrary integers or strings of the form "n mA" are allowed.
+  // Arbitrary strings are also allowed. An aribitrary VAL is either passed
+  // through to the toolchain as-is, or mapped to some toolchain-specific FLAG
+  // through toolchain-specific mechanism, or by specifying "drive-strength-VAL:
+  // FLAG" in the board's toolchain parameters.
+
   public static final DriveStrength[] OPTIONS = { DEFAULT,
     DRIVE_2, DRIVE_4, DRIVE_8, DRIVE_16, DRIVE_24 };
 
   public static DriveStrength get(String desc) {
-    if (desc == null || desc.isEmpty())
+    if (desc == null || desc.trim().isEmpty())
       return DEFAULT;
+    desc = desc.trim();
     for (DriveStrength p : OPTIONS)
       if (p.desc.equalsIgnoreCase(desc)
           || p.desc.replaceAll(" ", "").equalsIgnoreCase(desc)
           || p.ma.equals(desc))
         return p;
-    return UNKNOWN;
+    try {
+      String s = desc.toLowerCase();
+      if (s.endsWith("ma"))
+        s = s.substring(0, s.length() - 2).trim();
+      int ma = Integer.parseInt(s);
+      return new DriveStrength(ma + " mA", ""+ma);
+    } catch (NumberFormatException ex) { }
+    return new DriveStrength(desc, null);
   }
 
   @Override
