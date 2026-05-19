@@ -89,8 +89,8 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     if (numclk > 0)
       inPorts.add(TickHDLGenerator.FPGA_CLK_NET, 1, -1, null);
 
-    // io resources
-    Netlist.Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
+    // io resources: include both user-mapped pins and unmapped board pins
+    Netlist.Int3 ioPinCount = ioResources.countAllPhysicalIOPins();
 		for (int i = 0; i < ioPinCount.in; i++)
       inPorts.add("FPGA_INPUT_PIN_"+i, 1, -1, null);
 		for (int i = 0; i < ioPinCount.inout; i++)
@@ -210,6 +210,14 @@ public class ToplevelHDLGenerator extends HDLGenerator {
     ioResources.components.forEach((path, shadow) -> {
       generateInlinedCodeBidirSignal(out, path, shadow);
 		});
+    out.stmt();
+
+    out.comment("signal assignments for unmapped I/O board resources");
+    for (PinBindings.UnmappedPin p : ioResources.getUnmappedPins()) {
+      if (!p.isInput)
+        out.assign(p.netName(), p.drivenValue == 1 ? "1'b1" : "1'b0");
+    }
+    // Unmapped input pins appear as ports but need no internal assignment.
     out.stmt();
 
 		if (ticker != null) {

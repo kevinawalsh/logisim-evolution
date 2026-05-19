@@ -85,6 +85,39 @@ public enum IdleBehavior {
     return DEFAULT;
   }
 
+  // Returns true if this behavior converts the pin to input mode (with a pull
+  // resistor or floating). Returns false if the pin should be actively driven.
+  public boolean isInputMode() {
+    return this == PULL_UP || this == PULL_DOWN || this == PULL_INACTIVE
+        || this == PULL_ACTIVE || this == DO_NOT_DRIVE;
+  }
+
+  // For DRIVE_* modes: returns 0 or 1. Uses activity polarity for INACTIVE/ACTIVE.
+  public int drivenValue(PinActivity activity) {
+    switch (this) {
+      case DRIVE_HIGH:     return 1;
+      case DRIVE_LOW:      return 0;
+      case DRIVE_INACTIVE: return activity == PinActivity.ACTIVE_HIGH ? 0 : 1;
+      case DRIVE_ACTIVE:   return activity == PinActivity.ACTIVE_HIGH ? 1 : 0;
+      default: return 0;
+    }
+  }
+
+  // For PULL_* and DO_NOT_DRIVE modes: returns the appropriate InputBias.
+  // Uses activity polarity for PULL_INACTIVE/PULL_ACTIVE.
+  public InputBias toInputBias(PinActivity activity) {
+    switch (this) {
+      case PULL_UP:       return InputBias.PULL_UP;
+      case PULL_DOWN:     return InputBias.PULL_DOWN;
+      case PULL_INACTIVE: return activity == PinActivity.ACTIVE_HIGH
+                                 ? InputBias.PULL_DOWN : InputBias.PULL_UP;
+      case PULL_ACTIVE:   return activity == PinActivity.ACTIVE_HIGH
+                                 ? InputBias.PULL_UP : InputBias.PULL_DOWN;
+      case DO_NOT_DRIVE:  return InputBias.PULL_NONE;
+      default:            return InputBias.PULL_NONE;
+    }
+  }
+
   @Override
   public String toString() { return desc; }
 }

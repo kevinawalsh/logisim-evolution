@@ -32,9 +32,12 @@ package com.bfh.logisim.fpga;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -160,6 +163,34 @@ public class PinBindings {
     }
     public Int3 seqno() {
       return seqno.copy();
+    }
+  }
+
+  // Represents a single physical FPGA pin that is not covered by any user mapping.
+  // Computed by finalizeMappings(). Seqnos continue after the mapped pins in
+  // each namespace (FPGA_INPUT_PIN_N or FPGA_OUTPUT_PIN_N).
+  public static class UnmappedPin {
+    public final BoardIO io;       // the board resource this pin belongs to
+    public final int bit;          // bit index within io.pins[]
+    public final String fpgaPin;   // chip pin name/location, e.g. "B4"
+    public final boolean isInput;  // true → FPGA_INPUT_PIN_N; false → FPGA_OUTPUT_PIN_N
+    public final int seqno;        // sequence number for the HDL port name
+    public final InputBias pull;   // for input-mode: pull resistor config
+    public final int drivenValue;  // for output-mode: constant driven value (0 or 1)
+
+    UnmappedPin(BoardIO io, int bit, String fpgaPin,
+        boolean isInput, int seqno, InputBias pull, int drivenValue) {
+      this.io = io;
+      this.bit = bit;
+      this.fpgaPin = fpgaPin;
+      this.isInput = isInput;
+      this.seqno = seqno;
+      this.pull = pull;
+      this.drivenValue = drivenValue;
+    }
+
+    public String netName() {
+      return (isInput ? "FPGA_INPUT_PIN_" : "FPGA_OUTPUT_PIN_") + seqno;
     }
   }
 
@@ -291,6 +322,7 @@ public class PinBindings {
   // and out-pin signals higher seqno, at the end of the list.
   private Int3 finalizedCounts;
   private Int3 finalizedOpenCounts;
+  private List<UnmappedPin> unmappedPins;
   public void finalizeMappings() {
     Int3 counts = new Int3();
     Int3 opens = new Int3();
@@ -305,11 +337,66 @@ public class PinBindings {
     });
     finalizedCounts = counts;
     finalizedOpenCounts = opens;
+
+    // Enumerate all board resources and find which FPGA pins are uncovered.
+    // Build a map of BoardIO -> set of covered bit indices from existing mappings.
+    Map<BoardIO, Set<Integer>> covered = new HashMap<>();
+    mappings.forEach((s, d) -> {
+      if (!BoardIO.PhysicalTypes.contains(d.io.type)) return;
+      Set<Integer> bits = covered.computeIfAbsent(d.io, k -> new HashSet<>());
+      if (d.bit < 0) {
+        for (int i = 0; i < d.io.width; i++) bits.add(i);
+      } else {
+        bits.add(d.bit);
+      }
+    });
+
+    // Walk all board resources; for each uncovered bit, create an UnmappedPin.
+    unmappedPins = new ArrayList<>();
+    int nextInputSeqno = finalizedCounts.in;
+    int nextOutputSeqno = finalizedCounts.out;
+    for (BoardIO io : board.getIoComponents()) {
+      Set<Integer> coveredBits = covered.getOrDefault(io, Collections.emptySet());
+      for (int bit = 0; bit < io.width; bit++) {
+        if (coveredBits.contains(bit)) continue;
+        boolean isInput;
+        InputBias pull = InputBias.DO_NOT_SPECIFY;
+        int drivenValue = 0;
+        if (!BoardIO.OutputTypes.contains(io.type)) {
+          // Pure input type (Button, DIPSwitch): always treated as input.
+          isInput = true;
+          pull = io.bias;
+        } else {
+          // Output or bidir type (Pin, Ribbon, LED, LEDBar, etc.): use IdleBehavior.
+          isInput = io.idle.isInputMode();
+          if (isInput)
+            pull = io.idle.toInputBias(io.activity);
+          else
+            drivenValue = io.idle.drivenValue(io.activity);
+        }
+        int seqno = isInput ? nextInputSeqno++ : nextOutputSeqno++;
+        UnmappedPin p = new UnmappedPin(io, bit, io.pins[bit], isInput, seqno, pull, drivenValue);
+        unmappedPins.add(p);
+        // Register input bias so constraint generators can use getInputBias(net) uniformly.
+        if (isInput)
+          setInputBias(p.netName(), pull);
+      }
+    }
   }
 
-  // Counts of all I/O-related physical FPGA pins used in the design.
+  // Counts of all I/O-related physical FPGA pins used in the design (mapped only).
   public Int3 countFPGAPhysicalIOPins() {
     return finalizedCounts.copy();
+  }
+
+  // Counts of all I/O-related physical FPGA pins, including unmapped board pins.
+  public Int3 countAllPhysicalIOPins() {
+    Int3 total = finalizedCounts.copy();
+    for (UnmappedPin p : unmappedPins) {
+      if (p.isInput) total.in++;
+      else total.out++;
+    }
+    return total;
   }
 
   // Counts of all I/O-related unconnected mappings.
@@ -317,20 +404,37 @@ public class PinBindings {
     return finalizedOpenCounts.copy();
   }
 
+  // Returns the list of unmapped pins for callers that need per-pin details
+  // (e.g. ToplevelHDLGenerator, which emits assign statements for output pins).
+  public List<UnmappedPin> getUnmappedPins() {
+    return Collections.unmodifiableList(unmappedPins);
+  }
+
   public static interface PhysicalPinConsumer {
     public void process(String pin, String net, BoardIO io, String label);
   }
 
+  // Iterates ALL physical FPGA pins on the board: both user-mapped pins and
+  // unmapped board pins. Unmapped pins use "FPGA_INPUT_PIN_N" or
+  // "FPGA_OUTPUT_PIN_N" net names based on IdleBehavior (never FPGA_BIDIR_PIN_N).
+  // This means all constraint-file generators automatically cover every pin on
+  // the board with a single forEachPhysicalPin call, consistent with
+  // ToplevelHDLGenerator which declares ports for all of them.
   public void forEachPhysicalPin(PhysicalPinConsumer f) {
     err.AddInfo("Assigning input pins");
-    forEachPhysicalPin(f, w -> w.in, "FPGA_INPUT_PIN_");
+    forEachMappedPhysicalPin(f, w -> w.in, "FPGA_INPUT_PIN_");
     err.AddInfo("Assigning inout pins");
-    forEachPhysicalPin(f, w -> w.inout, "FPGA_BIDIR_PIN_");
+    forEachMappedPhysicalPin(f, w -> w.inout, "FPGA_BIDIR_PIN_");
     err.AddInfo("Assigning output pins");
-    forEachPhysicalPin(f, w -> w.out, "FPGA_OUTPUT_PIN_");
+    forEachMappedPhysicalPin(f, w -> w.out, "FPGA_OUTPUT_PIN_");
+    err.AddInfo("Assigning unmapped pins");
+    for (UnmappedPin p : unmappedPins) {
+      String label = String.format("%s of %s (unmapped)", p.io.pinLabel(p.bit), p.io);
+      f.process(p.fpgaPin, p.netName(), p.io, label);
+    }
   }
 
-  private void forEachPhysicalPin(PhysicalPinConsumer f,
+  private void forEachMappedPhysicalPin(PhysicalPinConsumer f,
       Function<Int3, Integer> selector, String signalPrefix) {
     mappings.forEach((s, d) -> {
       int w = selector.apply(s.width);

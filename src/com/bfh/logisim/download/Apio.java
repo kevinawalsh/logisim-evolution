@@ -320,7 +320,7 @@ public class Apio {
         err.AddSevereWarning("Design will almost certainly fail to compile.");
       }
 
-      Netlist.Int3 ioPinCount = ioResources.countFPGAPhysicalIOPins();
+      Netlist.Int3 ioPinCount = ioResources.countAllPhysicalIOPins();
       int n = ioPinCount.size();
       if (ioResources.requiresOscillator && !hasHFOSC) n++;  // FPGA_CLK as input port
       out.stmt("module LogisimToplevelApioShell(%s", (n == 0 ? " );" : ""));
@@ -587,9 +587,7 @@ public class Apio {
         pcf.stmt("set_io --warn-no-port %s %s", net, pin);
       }
     });
-    // FIXME: handle all unmapped pins
     return pcf.save();
   }
   
-
 }
