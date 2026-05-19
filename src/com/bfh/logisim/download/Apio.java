@@ -561,30 +561,31 @@ public class Apio {
       if (io.strength != null && io.strength != DriveStrength.DEFAULT)
         pcf.err.AddSevereWarning("FPGA pin %s specifies drive strength '%s' but this is not configurable for iCE40 FPGA in Apio. Using DEFAULT instead.", pin);
       if (net.startsWith("FPGA_INPUT_PIN_")) {
-        // FPGA input pins may need pull-up, pull-down, bus-hold, etc. Those
-        // are done here, in the constraints file. Or, we could emit an SB_IO
-        // block or equivalent, below. Either should work, maybe?
+        // FPGA input pins may need pull-up, pull-down, bus-hold, etc. Those are
+        // done here, in the constraints file. Or, we could emit an SB_IO block
+        // or equivalent, in apio shell verilog code. Either should work, maybe?
         InputBias bias = ioResources.getInputBias(net);
         if (bias == InputBias.PULL_UP) {
-          pcf.stmt("set_io --warn-no-port --pullup yes %s %s", net, pin);
+          pcf.stmt("set_io -pullup yes %s %s", net, pin);
         } else if (bias == InputBias.PULL_DOWN) {
           pcf.err.AddSevereWarning("FPGA pin %s pull-down is not possible for iCE40 FPGA. Using pull-none instead.", pin);
-          pcf.stmt("set_io --warn-no-port --pullup no %s %s", net, pin);
+          pcf.stmt("set_io -pullup no %s %s", net, pin);
         } else if (bias == InputBias.BUS_HOLD) {
           pcf.err.AddSevereWarning("FPGA pin %s bus-hold is not possible for iCE40 FPGA. Using pull-none instead.", pin);
-          pcf.stmt("set_io --warn-no-port --pullup no %s %s", net, pin);
+          pcf.stmt("set_io -pullup no %s %s", net, pin);
         } else if (bias == InputBias.PULL_NONE) {
-          pcf.stmt("set_io --warn-no-port --pullup no %s %s", net, pin);
+          pcf.stmt("set_io -pullup no %s %s", net, pin);
         } else { // DO_NOT_SPECIFY
-          pcf.stmt("set_io --warn-no-port %s %s", net, pin);
+          pcf.stmt("set_io %s %s", net, pin);
         }
       } else if (net.startsWith("FPGA_BIDIR_PIN_")) {
-        // FPGA bidir pins require an SB_IO block or equivalent, emitted below, so
-        // we specify any pull-up, pull-down, or bus-hold there.
-        pcf.stmt("set_io --warn-no-port %s %s", net, pin);
+        // FPGA bidir pins require an SB_IO block or equivalent, emitted in apio
+        // shell verilog code, so we specify any pull-up, pull-down, or bus-hold
+        // there.
+        pcf.stmt("set_io %s %s", net, pin);
       } else if (net.startsWith("FPGA_OUTPUT_PIN_")) {
         // FPGA output pins have no bias.
-        pcf.stmt("set_io --warn-no-port %s %s", net, pin);
+        pcf.stmt("set_io %s %s", net, pin);
       }
     });
     return pcf.save();

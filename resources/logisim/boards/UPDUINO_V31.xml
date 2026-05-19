@@ -10,8 +10,8 @@
    <IOComponents>
       <!--Description of all board I/O components-->
 <LED ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinName="41" Width="23" Height="23" Label="led_red" LocationX="556" LocationY="60"/>
-<Pin ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinName="39" Width="23" Height="23" Label="led_green" LocationX="528" LocationY="60"/>
-<Pin ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinName="40" Width="23" Height="23" Label="led_blue" LocationX="501" LocationY="60"/>
+<LED ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinName="39" Width="23" Height="23" Label="led_green" LocationX="528" LocationY="60"/>
+<LED ActivityLevel="Active high" FPGAPinDriveStrength="Default" FPGAPinName="40" Width="23" Height="23" Label="led_blue" LocationX="501" LocationY="60"/>
 <Pin FPGAPinDriveStrength="Default" FPGAPinName="23" Width="23" Height="23" Label="gpio_23" LocationX="392" LocationY="60"/>
 <Pin FPGAPinDriveStrength="Default" FPGAPinName="25" Width="23" Height="23" Label="gpio_25" LocationX="365" LocationY="60"/>
 <Pin FPGAPinDriveStrength="Default" FPGAPinName="26" Width="23" Height="23" Label="gpio_26" LocationX="337" LocationY="60"/>
