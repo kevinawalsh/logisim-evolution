@@ -48,6 +48,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,6 +88,7 @@ import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.Path;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.MouseListenerUtil;
 import static com.bfh.logisim.fpga.PinBindings.Dest;
 import static com.bfh.logisim.fpga.PinBindings.Source;
 
@@ -272,6 +274,8 @@ public class BindingsDialog extends JDialog {
 
   private static final int CLICK_TOLERANCE = 5; // pixels of mouse movement still counted as a click
 
+
+  private Rect pressedRect = null;
   private class Rect extends JPanel implements MouseListener {
     BoardIO io;
     boolean emphasized, hover;
@@ -286,7 +290,7 @@ public class BindingsDialog extends JDialog {
       nmapped = 0;
       setOpaque(false);
       setVisible(false);
-      addMouseListener(this);
+      addMouseListener(MouseListenerUtil.clickFix(this));
       setToolTipText("Map component to " + io);
     }
 
@@ -362,22 +366,28 @@ public class BindingsDialog extends JDialog {
         g.setColor(emphasized ? HILIGHTB : MAPPEDB);
         g.drawPolygon(x, y, 4);
       }
-
-      }
+    }
 
     @Override
-    public void mouseClicked(MouseEvent e) { } // handled in mouseReleased with tolerance
-
-    public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
-    public void mouseExited(MouseEvent e) { hover = false; repaint(); }
-    public void mousePressed(MouseEvent e) { pressPoint = e.getPoint(); }
+    public void mouseEntered(MouseEvent e) {
+      hover = (pressedRect == null || pressedRect == this);
+      repaint();
+    }
+    @Override
+    public void mouseExited(MouseEvent e) {
+      hover = false;
+      repaint();
+    }
+    @Override
+    public void mouseClicked(MouseEvent e) { }
+    @Override
+    public void mousePressed(MouseEvent e) {
+      pressedRect = this;
+    }
+    @Override
     public void mouseReleased(MouseEvent e) {
-      if (pressPoint == null || e.getPoint().distance(pressPoint) > CLICK_TOLERANCE) {
-        pressPoint = null;
-        return;
-      }
-      pressPoint = null;
-      if (!SwingUtilities.isLeftMouseButton(e))
+      pressedRect = null;
+      if (!SwingUtilities.isLeftMouseButton(e) || !hover)
         return;
       if (sources.current == null)
         return;
@@ -510,6 +520,8 @@ public class BindingsDialog extends JDialog {
 
   private class SourceRenderer extends DefaultListCellRenderer {
     public final TypeButton typeButton = new TypeButton();
+    int pressedIndex = -1;
+    int hoverIndex = -1;
 
     String typeButtonText(Source src) {
       int w = src.width.size();
@@ -529,6 +541,8 @@ public class BindingsDialog extends JDialog {
       boolean done = false;
       typeButton.text = "???";
       boolean indented = false;
+      typeButton.hover = (i == hoverIndex);
+      typeButton.pressed = (i == pressedIndex);
       if (val instanceof Source) {
         Source src = (Source)val;
         Dest dst = pinBindings.mappings.get(src);
@@ -564,6 +578,7 @@ public class BindingsDialog extends JDialog {
     Source src;
     int width, height;
     boolean rowHasFocus;
+    boolean hover, pressed;
 
     public int getIconWidth()	{ return width; }
     public int getIconHeight() { return height; }
@@ -583,7 +598,8 @@ public class BindingsDialog extends JDialog {
         b = new Rectangle(t.x-GAP, 2, t.width + GAP + 10 + 4 + GAP, height-4);
         buttonBounds.put(src, b); // cache for later, and for hitbox detection
       }
-      g2.setColor(rowHasFocus ? TYPE_BUTTON_COLOR : Color.GRAY);
+      Color fg = rowHasFocus ? TYPE_BUTTON_COLOR : Color.GRAY;
+      g2.setColor(pressed ? fg.darker() : hover ? fg.brighter() : fg);
       g2.fillRoundRect(b.x, b.y, b.width, b.height, 10, 10);
       g2.setColor(Color.WHITE);
       g2.drawRoundRect(b.x, b.y, b.width, b.height, 10, 10);
@@ -602,7 +618,7 @@ public class BindingsDialog extends JDialog {
     SourcesModel model = new SourcesModel();
     Source current;
     SourceRenderer renderer;
-    TypeButton typeButton = new TypeButton();
+    // TypeButton typeButton = new TypeButton();
 
     @SuppressWarnings("unchecked")
     SourceList() {
@@ -612,42 +628,91 @@ public class BindingsDialog extends JDialog {
       setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
       current = null;
       addListSelectionListener(e -> selected(getSelectedValue()));
-      addMouseListener(this);
+      addMouseListener(MouseListenerUtil.clickFix(this));
+      addMouseMotionListener(new MouseMotionAdapter() {
+        @Override
+        public void mouseMoved(MouseEvent e) {
+          setHoverIndex(indexOfTypeButton(e.getPoint()));
+        }
+      });
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-      Point pt = e.getPoint();
+    private void repaintRow(int row) {
+      Rectangle r = getCellBounds(row, row);
+      if (r != null) repaint(r);
+    }
+
+    private int indexOfTypeButton(Point pt) { // also move pt to bottom left corner of btn
       int idx = locationToIndex(pt);
       if (idx < 0)
-        return;
-      setSelectedIndex(idx);
+        return -1;
       Rectangle cell = getCellBounds(idx, idx);
       if (cell == null || !cell.contains(pt))
-        return;
+        return -1;
       pt.x -= cell.x;
       pt.y -= cell.y;
       Source src = (Source)model.getElementAt(idx);
       Rectangle b = renderer.typeButton.buttonBounds.get(src);
-      if (b == null)
-        return;
-      if (!b.contains(pt))
-        return;
-      pt.x += cell.x;
-      pt.y += cell.y;
-      doTypeSelectPopup(idx, src, cell.x + b.x, cell.y + b.y + b.height);
+      if (b == null || !b.contains(pt))
+        return -1;
+      pt.x = cell.x + b.x;
+      pt.y = cell.y + b.y + b.height;
+      return idx;
+    }
+
+    void setHoverIndex(int idx) {
+      int old = renderer.hoverIndex;
+      renderer.hoverIndex = idx;
+      if (old >= 0) repaintRow(old);
+      if (idx >= 0) repaintRow(idx);
+    }
+
+    void setPressedIndex(int idx) {
+      int old = renderer.pressedIndex;
+      renderer.pressedIndex = idx;
+      if (old >= 0) repaintRow(old);
+      if (idx >= 0) repaintRow(idx);
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+      // Point pt = e.getPoint();
+      // int idx = locationToIndex(pt);
+      // if (idx < 0)
+      //   return;
+      // setSelectedIndex(idx); // should not be needed, but just in case
+      // doTypeSelectPopup(idx, src, pt.x pt.y);
     }
 
     @Override
     public void mouseEntered(MouseEvent e) { }
-    @Override
-    public void mouseExited(MouseEvent e) { }
-    @Override
-    public void mousePressed(MouseEvent e) { }
-    @Override
-    public void mouseReleased(MouseEvent e) { }
 
-    void doTypeSelectPopup(int idx, Source src, int x, int y) {
+    @Override
+    public void mouseExited(MouseEvent e) {
+      setHoverIndex(-1);
+      setPressedIndex(-1);
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+      setPressedIndex(indexOfTypeButton(e.getPoint()));
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+      Point pt = e.getPoint();
+      int idx = locationToIndex(pt);
+      if (idx != renderer.pressedIndex) {
+        // mouse is no longer over the same button
+        setPressedIndex(-1);
+        return;
+      }
+      doTypeSelectPopup(idx, pt.x, pt.y);
+      setPressedIndex(-1);
+    }
+
+    void doTypeSelectPopup(int idx, int x, int y) {
+      Source src = (Source)model.getElementAt(idx);
       JPopupMenu popup = new JPopupMenu("Select I/O Type");
       List<BoardIO.Type> types = pinBindings.typesFor(src.path);
       if (src.bit < 0) {
@@ -678,7 +743,9 @@ public class BindingsDialog extends JDialog {
           popup.add(menu);
         }
       }
+      // setPressedIndex(index);
       popup.show(this, x, y);
+      // setPressedIndex(-1);
     }
 
     // Prereq: src.bit < 0

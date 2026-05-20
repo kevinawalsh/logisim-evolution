@@ -55,6 +55,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import com.cburch.logisim.data.Bounds;
+import com.cburch.logisim.util.MouseListenerUtil;
 
 public class BoardPanel extends JPanel implements MouseListener, MouseMotionListener {
 
@@ -81,7 +82,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
     imgFormat = null;
 		editor = parent;
 	 	xs = ys = w = h = 0;
-	 	addMouseListener(this);
+	 	addMouseListener(MouseListenerUtil.clickFix(this));
 	 	addMouseMotionListener(this);
     setBackground(Color.BLACK);
     setPreferredSize(new Dimension(STD_IMG_WIDTH, STD_IMG_HEIGHT));
@@ -303,7 +304,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
         g.drawRect(xr, yr, wr, hr);
       }
     } else {
-      g.setColor(Color.BLACK);
+      g.setColor(Color.GRAY);
       g.fillRect(0, 0, getWidth(), getHeight());
       String[] lines = {
         "Click to add picture of FPGA board,",
@@ -312,7 +313,7 @@ public class BoardPanel extends JPanel implements MouseListener, MouseMotionList
         "The board picture must be PNG or JPEG format, and ideally",
         "fit within " + STD_IMG_WIDTH + "x" + STD_IMG_HEIGHT + " pixels for best display." };
 
-      g.setColor(Color.black);
+      g.setColor(Color.BLACK);
       g.setFont(new Font(g.getFont().getFontName(), Font.BOLD, 18));
 
       int ypos = 100;
