@@ -42,71 +42,65 @@ import org.w3c.dom.NodeList;
 
 import com.bfh.logisim.settings.BoardList;
 import com.cburch.logisim.file.XmlUtil;
-import com.cburch.logisim.util.Errors;
 
 // Reader for the legacy xml board format
 public class BoardReaderOld {
 
   private BoardReaderOld() { }
 
-	public static Board parse(String path, Document doc) {
-		try {
-      // Legacy format has no name within xml, instead it uses file name as board name
-      String name = BoardList.filenameForPath(path);
+  public static Board tryParse(String path, Document doc) throws Exception {
+    // Legacy format has no name within xml, instead it uses file name as board name
+    String name = BoardList.filenameForPath(path);
 
-      ImageXmlFactoryOld imgFactory = parsePicture(doc);
-      BufferedImage image = imgFactory.getPicture();
-      String imageFormat = imgFactory.getFormat();
-      byte imageBytes[] = imgFactory.getBytes();
-			Board b = new Board(name, null, parseChipset(doc), image, imageFormat, imageBytes);
- 
-      // Figure out toolchains and toolchain params
-      String apio_name = parseApioName(doc);
-      String ofl_name = parseOpenFPGALoaderName(doc);
-      String vtc;
-      if ("altera".equalsIgnoreCase(b.fpga.Vendor))
-        vtc = "Altera"; // Altera Quartus II
-      else if ("xilinx".equalsIgnoreCase(b.fpga.Vendor))
-        vtc = "Xilinx"; // Xilinx ISE
-      else if ("lattice".equalsIgnoreCase(b.fpga.Vendor))
-        vtc = "Lattice"; // same backend handles Diamond and ispLEVER
-      else if ("gowin".equalsIgnoreCase(b.fpga.Vendor))
-        vtc = "Gowin";
-      else
-        vtc = null;
-      // For default synthesis tool, use apio if there was a name, or if no vendor toolchain known
-      b.setDefaultSynthesisTool((apio_name != null || vtc == null) ? "Apio" : vtc);
-      // For default programmer tool, use openFPGALoader if there was a name, or if no apio name or vendor toolchain known,
-      // otherwise use apio if there was a name and no vendor toolchain known
-      b.setDefaultProgrammingTool((ofl_name != null || (apio_name == null && vtc == null)) ? "openFPGALoader"
-            : (apio_name != null || vtc == null) ? "Apio" : vtc);
-      if (apio_name != null || vtc == null) {
-        b.addToolchain("Apio", "synthesis,programming");
-        if (apio_name != null)
-          b.setToolchainParam("Apio", "board", apio_name);
-      }
-      if (vtc != null) {
-        b.addToolchain(vtc, "synthesis,programming");
-      }
-      if (ofl_name != null || (apio_name == null && vtc == null)) {
-        b.addToolchain("openFPGALoader", "programming");
-        if (ofl_name != null)
-          b.setToolchainParam("openFPGALoader", "board", ofl_name);
-      }
-      if (b.fpga.USBTMCAvailable) {
-        b.addToolchain("USBTMC", "programming");
-      }
+    ImageXmlFactoryOld imgFactory = parsePicture(doc);
+    BufferedImage image = imgFactory != null ? imgFactory.getPicture() : null;
+    String imageFormat = imgFactory != null ? imgFactory.getFormat() : null;
+    byte imageBytes[] = imgFactory != null ? imgFactory.getBytes() : null;
+    Board b = new Board(name, null, parseChipset(doc), image, imageFormat, imageBytes);
 
-      parseComponents(doc, "PinsInformation", b); // backwards compatability	
-			parseComponents(doc, "ButtonsInformation", b); // backwards compatability	
-			parseComponents(doc, "LEDsInformation", b); // backwards compatability	
-			parseComponents(doc, "IOComponents", b); // new format
-			return b;
-		} catch (Exception e) {
-      Errors.title("Error").show("The selected xml file was invalid: " + e.getMessage(), e);
-      return null;
-		}
-	}
+    // Figure out toolchains and toolchain params
+    String apio_name = parseApioName(doc);
+    String ofl_name = parseOpenFPGALoaderName(doc);
+    String vtc;
+    if ("altera".equalsIgnoreCase(b.fpga.Vendor))
+      vtc = "Altera"; // Altera Quartus II
+    else if ("xilinx".equalsIgnoreCase(b.fpga.Vendor))
+      vtc = "Xilinx"; // Xilinx ISE
+    else if ("lattice".equalsIgnoreCase(b.fpga.Vendor))
+      vtc = "Lattice"; // same backend handles Diamond and ispLEVER
+    else if ("gowin".equalsIgnoreCase(b.fpga.Vendor))
+      vtc = "Gowin";
+    else
+      vtc = null;
+    // For default synthesis tool, use apio if there was a name, or if no vendor toolchain known
+    b.setDefaultSynthesisTool((apio_name != null || vtc == null) ? "Apio" : vtc);
+    // For default programmer tool, use openFPGALoader if there was a name, or if no apio name or vendor toolchain known,
+    // otherwise use apio if there was a name and no vendor toolchain known
+    b.setDefaultProgrammingTool((ofl_name != null || (apio_name == null && vtc == null)) ? "openFPGALoader"
+        : (apio_name != null || vtc == null) ? "Apio" : vtc);
+    if (apio_name != null || vtc == null) {
+      b.addToolchain("Apio", "synthesis,programming");
+      if (apio_name != null)
+        b.setToolchainParam("Apio", "board", apio_name);
+    }
+    if (vtc != null) {
+      b.addToolchain(vtc, "synthesis,programming");
+    }
+    if (ofl_name != null || (apio_name == null && vtc == null)) {
+      b.addToolchain("openFPGALoader", "programming");
+      if (ofl_name != null)
+        b.setToolchainParam("openFPGALoader", "board", ofl_name);
+    }
+    if (b.fpga.USBTMCAvailable) {
+      b.addToolchain("USBTMC", "programming");
+    }
+
+    parseComponents(doc, "PinsInformation", b); // backwards compatability	
+    parseComponents(doc, "ButtonsInformation", b); // backwards compatability	
+    parseComponents(doc, "LEDsInformation", b); // backwards compatability	
+    parseComponents(doc, "IOComponents", b); // new format
+    return b;
+  }
 
   private static NodeList getSection(Document doc, String name) {
 		NodeList sections = doc.getElementsByTagName(name);

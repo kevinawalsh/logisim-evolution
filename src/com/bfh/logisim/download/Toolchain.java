@@ -119,7 +119,11 @@ public abstract class Toolchain {
     if (t.canProgram)
       pTools.add(t);
   }
-  static {
+
+  private static boolean registered = false;
+  private static synchronized void ensureRegistered() {
+    if (registered) return;
+    registered = true;
     Apio.register();
     Altera.register();
     Xilinx.register();
@@ -130,17 +134,20 @@ public abstract class Toolchain {
   }
 
   public static List<Toolchain> getAllToolchains() {
+    ensureRegistered();
     return Collections.unmodifiableList(tools);
   }
-  
+
   public static List<Toolchain> getSynthesisToolchains() {
+    ensureRegistered();
     return Collections.unmodifiableList(sTools);
   }
 
   public static List<Toolchain> getProgrammingToolchains() {
+    ensureRegistered();
     return Collections.unmodifiableList(pTools);
   }
-  
+
   private static Toolchain findByApproximateName(List<Toolchain> list, String name) {
     if (name == null || name.isEmpty())
       return null;
@@ -157,10 +164,12 @@ public abstract class Toolchain {
   }
 
   public static Toolchain findToolchainByApproximateName(String name) {
+    ensureRegistered();
     return findByApproximateName(tools, name);
   }
 
   public static Toolchain autoSelectSynthesisToolchain(Board board) {
+    ensureRegistered();
     if (board == null)
       return sTools.get(0); // no board selected, so any toolchain is fine, whatever
     
@@ -191,6 +200,7 @@ public abstract class Toolchain {
   }
 
   public static Toolchain autoSelectProgrammingToolchain(Board board) {
+    ensureRegistered();
     if (board == null)
       return null; // no board selected, so use null for "auto-select by synthesis tool"
     

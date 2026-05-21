@@ -68,6 +68,13 @@ public class FPGABoardlistPref implements SettingsStore.Item {
     AppPreferences.fireFPGAChangeEvent();
   }
 
+  public void remove(String path) {
+    if (!paths.remove(path))
+      return;
+    SettingsStore.put(section, subsection, encode());
+    AppPreferences.fireFPGAChangeEvent();
+  }
+
   private void setFromStore() {
     String s = SettingsStore.getEffective(section, subsection);
     paths.clear();

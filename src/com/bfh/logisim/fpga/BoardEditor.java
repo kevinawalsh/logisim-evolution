@@ -411,6 +411,11 @@ public class BoardEditor extends JFrame {
     }
   }
 
+  public static void openWithPath(String path) {
+    BoardEditor editor = new BoardEditor();
+    editor.setBoard(BoardReader.read(path));
+  }
+
   private static void add(JComponent dlg, GridBagConstraints c,
       String caption, JComponent input) {
     dlg.add(new JLabel(caption + " "), c);

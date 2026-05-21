@@ -79,63 +79,76 @@ public class BoardReader {
 		}
   }
 
+  // validates by reading entire xml, returns null on error
+  public static String validateFileAndGetName(String path) {
+		try {
+      return tryRead(path).name;
+    } catch (Exception e) {
+      return null;
+    } 
+  }
+
 	public static Board read(String path) {
 		try {
-      Document doc = getXmlDocument(path);
-
-      // Old format is: <Name_of_Board>...<BoardInformation> ... <BoardPicture>...
-      // - Conceivably, some board in old format could be named "Board".
-      // - So if it start with something other than "Board" OR it contains
-      //   both <BoardInformation> and <BoardPicture>, we fall back to old format.
-      Element boardElt = doc.getDocumentElement();
-      String outerTag = boardElt.getTagName();
-      boolean oldFormat = !outerTag.equals("Board")
-        || (doc.getElementsByTagName("BoardInformation").getLength() == 1
-            && doc.getElementsByTagName("BoardPicture").getLength() == 1);
-      if (oldFormat)
-        return BoardReaderOld.parse(path, doc);
-
-      // board.name is attribute of the top element
-      String name = boardElt.getAttribute("name");
-      if (name == null)
-        name = BoardList.filenameForPath(path); // fallback: use file name instead
-
-      // board.codename is attribute of the top element (optional)
-      String codename = boardElt.getAttribute("codename");
-
-      // board.fpga is in <FPGA>
-      Chipset fpga = parseChipset(XmlUtil.getChildElement(boardElt, "FPGA"));
-
-      // board.image is in <Picture>
-      byte[] imageBytes = null;
-      Element picElt = XmlUtil.getChildElement(boardElt, "Picture");
-      if (picElt != null) {
-        // imageFormat = picElt.getAttribute("format");
-        // imageWidth = picElt.getAttribute("width");
-        // imageHeight = picElt.getAttribute("height");
-        String encoding = picElt.getAttribute("encoding");
-        if (encoding == null || encoding.isEmpty())
-          encoding = "base64";
-        if (encoding.equalsIgnoreCase("base64")) {
-          imageBytes = base64Decode(picElt);
-        } else {
-          Errors.title("Error").show("The selected xml contains a <Picture> with unrecognized encoding: " + encoding);
-        }
-      }
-      BoardImage img = BoardImage.parse(imageBytes);
-			
-      Board b = new Board(name, codename, fpga, img.image, img.format, img.bytes);
-
-      parseToolchains(b, XmlUtil.getChildElement(boardElt, "Toolchains"));
-     
-      parseIoComponents(b, XmlUtil.getChildElement(boardElt, "IOComponents"));
-      return b;
-
+      return tryRead(path);
     } catch (Exception e) {
       Errors.title("Error").show("The selected xml file was invalid: " + e.getMessage(), e);
       return null;
 		}
-	}
+  }
+
+  private static Board tryRead(String path) throws Exception {
+    Document doc = getXmlDocument(path);
+
+    // Old format is: <Name_of_Board>...<BoardInformation> ... <BoardPicture>...
+    // - Conceivably, some board in old format could be named "Board".
+    // - So if it start with something other than "Board" OR it contains
+    //   both <BoardInformation> and <BoardPicture>, we fall back to old format.
+    Element boardElt = doc.getDocumentElement();
+    String outerTag = boardElt.getTagName();
+    boolean oldFormat = !outerTag.equals("Board")
+      || (doc.getElementsByTagName("BoardInformation").getLength() == 1
+          && doc.getElementsByTagName("BoardPicture").getLength() == 1);
+    if (oldFormat)
+      return BoardReaderOld.tryParse(path, doc);
+
+    // board.name is attribute of the top element
+    String name = boardElt.getAttribute("name");
+    if (name == null)
+      name = BoardList.filenameForPath(path); // fallback: use file name instead
+
+    // board.codename is attribute of the top element (optional)
+    String codename = boardElt.getAttribute("codename");
+
+    // board.fpga is in <FPGA>
+    Chipset fpga = parseChipset(XmlUtil.getChildElement(boardElt, "FPGA"));
+
+    // board.image is in <Picture>
+    byte[] imageBytes = null;
+    Element picElt = XmlUtil.getChildElement(boardElt, "Picture");
+    if (picElt != null) {
+      // imageFormat = picElt.getAttribute("format");
+      // imageWidth = picElt.getAttribute("width");
+      // imageHeight = picElt.getAttribute("height");
+      String encoding = picElt.getAttribute("encoding");
+      if (encoding == null || encoding.isEmpty())
+        encoding = "base64";
+      if (encoding.equalsIgnoreCase("base64")) {
+        imageBytes = base64Decode(picElt);
+      } else {
+        // Errors.title("Error").show("The selected xml contains a <Picture> with unrecognized encoding: " + encoding);
+        throw new Exception("The selected xml contains a <Picture> with unrecognized encoding: " + encoding);
+      }
+    }
+    BoardImage img = BoardImage.parse(imageBytes);
+
+    Board b = new Board(name, codename, fpga, img.image, img.format, img.bytes);
+
+    parseToolchains(b, XmlUtil.getChildElement(boardElt, "Toolchains"));
+
+    parseIoComponents(b, XmlUtil.getChildElement(boardElt, "IOComponents"));
+    return b;
+  }
 
   private static Document getXmlDocument(String path) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
