@@ -77,8 +77,9 @@ public class JFileChoosers {
   // and gives the dialog a modern macOS appearance. The tradeoff is that there
   // is no filter-type dropdown; the active filter still restricts visible files
   // but the user cannot switch filter types mid-dialog.
-  // showDialog(Component, String) is intentionally not overridden here; those
-  // four call sites (missing-library picker, backup recovery, export image,
+  // showDialog(Component, String) falls back to Swing except when in
+  // DIRECTORIES_ONLY mode, where the native picker is cleaner. The three
+  // non-directory showDialog call sites (missing-library picker, export image,
   // print export) keep the Swing fallback.
   // Additionally, showOpenDialog/showSaveDialog fall back to Swing when the
   // chooser has multiple non-accept-all filters (i.e. accept-all was explicitly
@@ -166,6 +167,13 @@ public class JFileChoosers {
     @Override
     public int showSaveDialog(Component parent) {
       return showNativeDialog(parent, FileDialog.SAVE);
+    }
+
+    @Override
+    public int showDialog(Component parent, String approveButtonText) {
+      if (getFileSelectionMode() == JFileChooser.DIRECTORIES_ONLY)
+        return showNativeDialog(parent, FileDialog.LOAD);
+      return super.showDialog(parent, approveButtonText);
     }
   }
 
