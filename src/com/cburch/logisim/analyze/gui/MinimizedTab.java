@@ -54,7 +54,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -88,6 +87,7 @@ import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.LogisimMenuItem;
 import com.cburch.logisim.gui.menu.PrintHandler;
+import com.cburch.logisim.util.MouseListenerUtil;
 
 class MinimizedTab extends AnalyzerTab {
 
@@ -231,15 +231,12 @@ class MinimizedTab extends AnalyzerTab {
       };
       addFocusListener(f);
       prettyView.addFocusListener(f);
-      MouseAdapter m = new MouseAdapter() {
-        public void mouseClicked(MouseEvent e) {
-          if (exprBounds != null && exprBounds.contains(e.getPoint()))
-            requestFocusInWindow();
-          else
-            MinimizedTab.this.requestFocusInWindow();
-        }
-      };
-      addMouseListener(m);
+      addMouseListener(MouseListenerUtil.clickHandler(e -> {
+        if (exprBounds != null && exprBounds.contains(e.getPoint()))
+          requestFocusInWindow();
+        else
+          MinimizedTab.this.requestFocusInWindow();
+      }));
     }
     public void paintComponent(Graphics g) {
       super.paintComponent(g);
@@ -425,11 +422,7 @@ class MinimizedTab extends AnalyzerTab {
     karnaughMap.addMouseMotionListener(m);
     minimizedExpr.addMouseMotionListener(m);
 
-    pane.addMouseListener(new MouseAdapter() {
-      public void mouseClicked(MouseEvent e) {
-        requestFocusInWindow();
-      }
-    });
+    pane.addMouseListener(MouseListenerUtil.clickHandler(e -> requestFocusInWindow()));
 
     FocusListener f = new FocusListener() {
       public void focusGained(FocusEvent e) {

@@ -40,8 +40,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +60,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -90,6 +87,7 @@ import com.cburch.logisim.tools.Library;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.MouseListenerUtil;
 
 public class FindFrame extends LFrame.Dialog implements LocaleListener {
   // maybe use LFrame.SubWindow instead?
@@ -220,16 +218,11 @@ public class FindFrame extends LFrame.Dialog implements LocaleListener {
     });
 
     results.addListSelectionListener(e -> reveal(results.getSelectedValue()));
-    results.addMouseListener(new MouseAdapter() {
-      public void mouseClicked(MouseEvent e) {
-        if (SwingUtilities.isLeftMouseButton(e)) {
-          int i = results.locationToIndex(e.getPoint());
-          if (i < 0 || i >= model.data.size())
-            return;
-          reveal(model.data.get(i));
-        }
-      }
-    });
+    results.addMouseListener(MouseListenerUtil.leftClickHandler(e -> {
+      int i = results.locationToIndex(e.getPoint());
+      if (i >= 0 && i < model.data.size())
+        reveal(model.data.get(i));
+    }));
 
     LocaleManager.addLocaleListener(this);
     localeChanged();

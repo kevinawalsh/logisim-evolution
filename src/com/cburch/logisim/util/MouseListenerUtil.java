@@ -36,6 +36,8 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.SwingUtilities;
+
 public class MouseListenerUtil {
 
   // MouseListenerUtil provides helpers to addresses an issue with Swing's
@@ -90,6 +92,14 @@ public class MouseListenerUtil {
   }
 
   public static MouseListener clickHandler(Consumer<MouseEvent> handler) {
+    return clickHandler(handler, false);
+  }
+
+  public static MouseListener leftClickHandler(Consumer<MouseEvent> handler) {
+    return clickHandler(handler, true);
+  }
+
+  private static MouseListener clickHandler(Consumer<MouseEvent> handler, boolean leftClickOnly) {
     return new MouseListener() {
       private Point pressPoint;
 
@@ -102,6 +112,8 @@ public class MouseListenerUtil {
       public void mouseReleased(MouseEvent e) {
         Point pt = pressPoint;
         pressPoint = null;
+        if (leftClickOnly && !SwingUtilities.isLeftMouseButton(e))
+          return;
         if (pt != null && e.getPoint().distance(pt) <= CLICK_TOLERANCE)
           handler.accept(e);
       }

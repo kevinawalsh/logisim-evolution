@@ -74,21 +74,22 @@ public class ZoomControl extends JPanel {
       return S.get("zoomShowGrid");
     }
 
-    public void mouseClicked(MouseEvent e) {
-    }
+    @Override
+    public void mouseClicked(MouseEvent e) { }
 
-    public void mouseEntered(MouseEvent e) {
-    }
+    @Override
+    public void mouseEntered(MouseEvent e) { }
 
-    public void mouseExited(MouseEvent e) {
-    }
+    @Override
+    public void mouseExited(MouseEvent e) { }
 
+    @Override
     public void mousePressed(MouseEvent e) {
       model.setShowGrid(!state);
     }
 
-    public void mouseReleased(MouseEvent e) {
-    }
+    @Override
+    public void mouseReleased(MouseEvent e) { }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -185,10 +186,13 @@ public class ZoomControl extends JPanel {
       setFocusable(false);
     }
     protected class ZoomMouseListener extends MouseAdapter {
+      @Override
       public void mouseEntered(MouseEvent ev) { setBorderPainted(true); }
+      @Override
       public void mouseExited(MouseEvent ev) { setBorderPainted(false); }
     }
     protected class ZoomActionListener implements ActionListener {
+      @Override
       public void actionPerformed(ActionEvent e) {
         if (out) zoomOut();
         else zoomIn();

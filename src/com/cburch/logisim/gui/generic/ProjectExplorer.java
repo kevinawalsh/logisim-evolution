@@ -87,6 +87,7 @@ import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.MouseListenerUtil;
 
 public class ProjectExplorer extends JTree implements LocaleListener {
 
@@ -343,7 +344,7 @@ public class ProjectExplorer extends JTree implements LocaleListener {
           expandPath(model.getPath(node));
     }
 
-    addMouseListener(myListener);
+    addMouseListener(MouseListenerUtil.clickFix(myListener));
     ToolTipManager.sharedInstance().registerComponent(this);
 
     getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);

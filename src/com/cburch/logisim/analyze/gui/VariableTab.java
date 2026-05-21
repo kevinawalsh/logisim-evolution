@@ -47,7 +47,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,6 +86,7 @@ import com.cburch.logisim.analyze.model.ParserException;
 import com.cburch.logisim.gui.menu.EditHandler;
 import com.cburch.logisim.gui.menu.LogisimMenuBar;
 import com.cburch.logisim.gui.menu.LogisimMenuItem;
+import com.cburch.logisim.util.MouseListenerUtil;
 
 class VariableTab extends AnalyzerTab {
 
@@ -207,12 +207,10 @@ class VariableTab extends AnalyzerTab {
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scroll.setPreferredSize(new Dimension(60, 100));
 
-    scroll.addMouseListener(new MouseAdapter() {
-      public void mouseClicked(MouseEvent me) {
-        table.changeSelection(table.getRowCount()-1, 0, false, false);
-        table.grabFocus();
-      }
-    });
+    scroll.addMouseListener(MouseListenerUtil.clickHandler(e -> {
+      table.changeSelection(table.getRowCount()-1, 0, false, false);
+      table.grabFocus();
+    }));
     scroll.setTransferHandler(table.getTransferHandler());
 
     table.addFocusListener(new FocusListener() {

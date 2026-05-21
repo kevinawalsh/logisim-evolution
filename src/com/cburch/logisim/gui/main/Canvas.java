@@ -51,7 +51,6 @@ import java.awt.event.ActionEvent;
 import javax.swing.Timer;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JScrollBar;
 import javax.swing.JViewport;
 import javax.swing.event.MouseInputListener;
 import javax.swing.event.PopupMenuEvent;
@@ -92,14 +91,15 @@ import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.proj.ProjectEvent;
 import com.cburch.logisim.proj.ProjectListener;
 import com.cburch.logisim.tools.AddTool;
-import com.cburch.logisim.tools.PokeTool;
 import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.PokeTool;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.tools.ToolTipMaker;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.MouseListenerUtil;
 import com.cburch.logisim.util.StringGetter;
 
 public class Canvas extends JPanel
@@ -716,7 +716,7 @@ public class Canvas extends JPanel
     this.tickCounter = new TickCounter();
 
     setBackground(Color.white);
-    addMouseListener(myListener);
+    addMouseListener(MouseListenerUtil.clickFix(myListener));
     addMouseMotionListener(myListener);
     setFocusTraversalKeysEnabled(false);
     addKeyListener(myListener);

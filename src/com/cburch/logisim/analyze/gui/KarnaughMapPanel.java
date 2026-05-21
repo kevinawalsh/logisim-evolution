@@ -41,7 +41,6 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
@@ -59,6 +58,7 @@ import com.cburch.logisim.analyze.model.TruthTable;
 import com.cburch.logisim.analyze.model.TruthTableEvent;
 import com.cburch.logisim.analyze.model.TruthTableListener;
 import com.cburch.logisim.util.GraphicsUtil;
+import com.cburch.logisim.util.MouseListenerUtil;
 
 class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
   public static final Color ERROR_COLOR = new Color(0xa0, 0x20, 0x20);
@@ -147,11 +147,7 @@ class KarnaughMapPanel extends JPanel implements ExpressionRenderer.Colorizer {
         highlight(e);
       }
     });
-    addMouseListener(new MouseAdapter() {
-      public void mouseClicked(MouseEvent e) {
-        requestFocusInWindow();
-      }
-    });
+    addMouseListener(MouseListenerUtil.clickHandler(e -> requestFocusInWindow()));
     FocusListener f = new FocusListener() {
       public void focusGained(FocusEvent e) {
         if (e.isTemporary()) return;
