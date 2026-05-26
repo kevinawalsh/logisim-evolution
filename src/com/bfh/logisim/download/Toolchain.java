@@ -175,7 +175,7 @@ public abstract class Toolchain {
     if (registered) return;
     registered = true;
     register(Apio.TOOLCHAIN);
-    Altera.register();
+    register(Altera.TOOLCHAIN);
     register(Xilinx.TOOLCHAIN);
     register(Lattice.TOOLCHAIN);
     register(Gowin.SYNTH_TOOLCHAIN);

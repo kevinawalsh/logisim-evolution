@@ -46,7 +46,7 @@ import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 
-public class Altera {
+public class Altera extends Toolchain {
   
   public static final String ALTERA_QUARTUS_SH = "quartus_sh" + Toolchain.dotexe;
   public static final String ALTERA_QUARTUS_PGM = "quartus_pgm" + Toolchain.dotexe;
@@ -56,47 +56,58 @@ public class Altera {
     ALTERA_QUARTUS_SH, ALTERA_QUARTUS_PGM, ALTERA_QUARTUS_MAP, ALTERA_QUARTUS_CPF,
   };
 
-  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Altera Quartus", "Quartus", true, true) {
-    @Override
-    public boolean hasAlternateName(String altname) {
-      return altname.toLowerCase().startsWith("quartus")
-        || altname.toLowerCase().startsWith("altera quartus")
-        || altname.toLowerCase().startsWith("intel quartus");
-    }
-    @Override
-    public boolean supports(Board b) {
-      // TODO: probably need to use fpga part to somehow determine if it is
-      // supported.
-      return b.name.toLowerCase().contains("altera")
-        || b.codename.toLowerCase().contains("altera")
-        || b.name.toLowerCase().contains("intel")
-        || b.codename.toLowerCase().contains("intel");
-    }
-    @Override
-    public String defaultParamsAsString(/*Board board*/) {
-      return "RESERVE_ALL_UNUSED_PINS: setting to be included in tcl script\n";
-    }
-    @Override
-    public List<String> getLanguages(Board board) {
-      return List.of(VERILOG, VHDL);
-    }
-    @Override
-    public FPGADownload newDownloader() {
-      if (isRemote())
-        return new AlteraDownloadRemote();
-      else if (isScript())
-        return new AlteraDownloadScript();
-      else
-        return new AlteraDownloadLocal();
-    }
-    @Override
-    public FPGAProgrammer newProgrammer() {
-      return new AlteraProgrammer();
-    }
-  };
+  public static final Toolchain TOOLCHAIN = new Altera();
 
-  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+  private Altera() {
+    super("Altera Quartus", "Quartus", true, true);
+  }
 
+  @Override
+  public boolean hasAlternateName(String altname) {
+    return altname.toLowerCase().startsWith("quartus")
+      || altname.toLowerCase().startsWith("altera quartus")
+      || altname.toLowerCase().startsWith("intel quartus");
+  }
+
+  @Override
+  public boolean supports(Board b) {
+    // TODO: probably need to use fpga part to somehow determine if it is
+    // supported.
+    return b.name.toLowerCase().contains("altera")
+      || b.codename.toLowerCase().contains("altera")
+      || b.name.toLowerCase().contains("intel")
+      || b.codename.toLowerCase().contains("intel");
+  }
+
+  @Override
+  public String defaultParamsAsString(/*Board board*/) {
+    return "RESERVE_ALL_UNUSED_PINS: setting to be included in tcl script\n";
+  }
+
+  @Override
+  public List<String> getLanguages(Board board) {
+    return List.of(VERILOG, VHDL);
+  }
+
+  @Override
+  public FPGASynthesizer newSynthesizer(FPGAReport err) {
+    if (isRemote())
+      return new AlteraSynthesizeRemote(err);
+    else if (isScript())
+      return new AlteraSynthesizeScript(err);
+    else if (isLocal())
+      return new AlteraSynthesizeLocal(err);
+    else
+      return null;
+  }
+
+  @Override
+  public FPGAProgrammer newProgrammer(FPGAReport err) {
+    if (isRemote() || isScript() || isLocal())
+      return new AlteraProgrammer(err);
+    else
+      return null;
+  }
 
   static boolean isRemote() {
     String tool = AppPreferences.ALTERA_PATH.get();
@@ -112,11 +123,40 @@ public class Altera {
     return script.exists() && !script.isDirectory() && script.canExecute();
   }
 
+  static boolean isLocal() {
+    String tool = AppPreferences.ALTERA_PATH.get();
+    if (tool == null || tool.isEmpty()) return false;
+    File prog = new File(tool + File.separator + ALTERA_QUARTUS_SH);
+    return prog.exists() && !prog.isDirectory() && prog.canExecute();
+  }
+    
+  static final String helpmsg =
+    "Altera Quartus toolpath should be set to the directory where " + ALTERA_QUARTUS_SH
+    + " and related programs are installed, or set to a file"
+    + " containing astand-alone executable script, or set to a"
+    + " *trusted* URL to invoke for remote synthesis.";
 
+  @Override
+  public InstallStatus toolchainInstallStatus() {
+    String tool = AppPreferences.ALTERA_PATH.get();
+    if (tool == null || tool.isEmpty())
+      return InstallStatus.fromError("Altera Quartus toolchain path not configured. " + helpmsg);
+    if (isRemote())
+      return InstallStatus.fromSuccess(tool, "Quartus (remote)");
+    else if (isScript())
+      return InstallStatus.fromSuccess(tool, "Quartus (script)");
+    else if (isLocal())
+      return InstallStatus.fromSuccess(tool, "Quartus (local)");
+    else
+      return InstallStatus.fromError("Altera Quartus toolchain path is set to '%s', "
+        + "but this appears to be incorrect. %s", tool, helpmsg);
+  }
 
-  abstract static class AlteraDownload extends FPGADownload {
+  abstract static class AlteraSynthesize extends FPGASynthesizer {
 
-    protected AlteraDownload() { super(MY_TOOLCHAIN, "Quartus"); }
+    protected AlteraSynthesize(FPGAReport err) {
+      super(TOOLCHAIN, "Quartus", err);
+    }
 
     @Override
     public boolean readyForDownload() {
@@ -124,24 +164,28 @@ public class Altera {
         || new File(sandboxPath + TOP_HDL + ".pof").exists();
     }
 
-    public boolean toolchainIsInstalled(FPGAReport err) {
-      String helpmsg = "It should be set to the directory where " + ALTERA_QUARTUS_SH
-        + " and related programs are installed, or set to a file"
-        + " containing astand-alone executable script, or set to a"
-        + " *trusted* URL to invoke for remote synthesis.";
-      String tool = AppPreferences.ALTERA_PATH.get();
-      if (tool == null || tool.isEmpty()) {
-        err.AddFatalError("Altera Quartus toolchain path not configured. " + helpmsg);
-        return false;
+    private String getAlteraUnusedPinsFlag(Board board) {
+      // first priority: use altera-specific param from board.xml
+      String pref = param("RESERVE_ALL_UNUSED_PINS");
+      if (pref != null && !pref.isEmpty())
+        return pref;
+      if (pref.isEmpty())
+        return null; // explicitly unset, let toolchain decide
+                     // otherwise: use generic param from board.xml
+      switch (board.fpga.UnmentionedPinsBehaviorHint) {
+        case DRIVE_HIGH:
+        case INPUT_PULL_UP:
+          return "AS INPUT TRI-STATED WITH WEAK PULL-UP";
+        case DRIVE_LOW:
+        case INPUT_PULL_DOWN:
+          return "AS OUTPUT DRIVING GROUND";
+        case INPUT_NO_PULL:
+          return "AS INPUT TRI-STATED";
+        case UNSPECIFIED:
+        default:
+          return "AS INPUT TRI-STATED WITH WEAK PULL-UP"; // seems safer than the toolchain default of DRIVING GROUND
+                                                          // return null; // let toolchain decide (default seems to be DRIVING GROUND?!?)
       }
-      if (isRemote() || isScript())
-        return true;
-      File prog = new File(tool + File.separator + ALTERA_QUARTUS_SH);
-      if (prog.exists() && !prog.isDirectory() && prog.canExecute())
-        return true;
-      err.AddFatalError("Altera Quartus toolchain path is set to " + tool + ","
-          + " but this appears to be incorrect. " + helpmsg);
-      return false;
     }
 
     @Override
@@ -317,33 +361,7 @@ public class Altera {
   protected static class AlteraProgrammer extends FPGAProgrammer {
     // TODO: reorganize stages above, e.g. allowing for
     // openFPGALoader, separating out usb-tmc, etc.
-    AlteraProgrammer() { super("Altera"); }
-    @Override
-    public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if AlteraDownload reported okay
-  }
-
-  private static String getAlteraUnusedPinsFlag(Board board) {
-    // first priority: use altera-specific param from board.xml
-    String pref = toolchain.param("RESERVE_ALL_UNUSED_PINS");
-    if (pref != null && !pref.isEmpty())
-      return pref;
-    if (pref.isEmpty())
-      return null; // explicitly unset, let toolchain decide
-    // otherwise: use generic param from board.xml
-    switch (board.fpga.UnmentionedPinsBehaviorHint) {
-      case DRIVE_HIGH:
-      case INPUT_PULL_UP:
-        return "AS INPUT TRI-STATED WITH WEAK PULL-UP";
-      case DRIVE_LOW:
-      case INPUT_PULL_DOWN:
-        return "AS OUTPUT DRIVING GROUND";
-      case INPUT_NO_PULL:
-        return "AS INPUT TRI-STATED";
-      case UNSPECIFIED:
-      default:
-        return "AS INPUT TRI-STATED WITH WEAK PULL-UP"; // seems safer than the toolchain default of DRIVING GROUND
-        // return null; // let toolchain decide (default seems to be DRIVING GROUND?!?)
-    }
+    AlteraProgrammer(FPGAReport err) { super(TOOLCHAIN, "Altera", err); }
   }
 
 }

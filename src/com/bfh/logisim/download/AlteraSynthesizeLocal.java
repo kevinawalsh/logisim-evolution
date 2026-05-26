@@ -33,12 +33,12 @@ package com.bfh.logisim.download;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.bfh.logisim.gui.Commander;
 import com.cburch.logisim.prefs.AppPreferences;
+import com.bfh.logisim.gui.FPGAReport;
 
-public class AlteraDownloadLocal extends Altera.AlteraDownload {
+public class AlteraSynthesizeLocal extends Altera.AlteraSynthesize {
 
-  public AlteraDownloadLocal() { }
+  public AlteraSynthesizeLocal(FPGAReport err) { super(err); }
 
   private ArrayList<String> cmd(String prog, String ...args) {
     ArrayList<String> command = new ArrayList<>();
@@ -51,36 +51,39 @@ public class AlteraDownloadLocal extends Altera.AlteraDownload {
   }
 
   @Override
-  public ArrayList<Stage> initiateDownload(Commander cmdr) {
-    ArrayList<Stage> stages = new ArrayList<>();
+  public boolean createSynthesisPlan(ArrayList<Stage> stages) {
 
-    if (!readyForDownload()) {
-      String script = scriptPath.replace(projectPath, ".." + File.separator) + "AlteraDownload.tcl";
+    String script = scriptPath.replace(projectPath, ".." + File.separator) + "AlteraSynthesize.tcl";
+    stages.add(new ProcessStage(
+          "init", "Creating Quartus Project",
+          cmd(Altera.ALTERA_QUARTUS_SH, "-t", script),
+          "Failed to create Quartus project, cannot download"));
+    stages.add(new ProcessStage(
+          "optimize", "Optimizing for Minimal Area",
+          cmd(Altera.ALTERA_QUARTUS_MAP, TOP_HDL, "--optimize=area"),
+          "Failed to optimize design, cannot download"));
+    stages.add(new ProcessStage(
+          "synthesize", "Synthesizing (may take a while)",
+          cmd(Altera.ALTERA_QUARTUS_SH, "--flow", "compile", TOP_HDL),
+          "Failed to synthesize design, cannot download"));
+    if (board.fpga.FlashDefined) { // do this even if flash wasn't requested, it's quick
       stages.add(new ProcessStage(
-            "init", "Creating Quartus Project",
-            cmd(Altera.ALTERA_QUARTUS_SH, "-t", script),
-            "Failed to create Quartus project, cannot download"));
-      stages.add(new ProcessStage(
-            "optimize", "Optimizing for Minimal Area",
-            cmd(Altera.ALTERA_QUARTUS_MAP, TOP_HDL, "--optimize=area"),
-            "Failed to optimize design, cannot download"));
-      stages.add(new ProcessStage(
-            "synthesize", "Synthesizing (may take a while)",
-            cmd(Altera.ALTERA_QUARTUS_SH, "--flow", "compile", TOP_HDL),
-            "Failed to synthesize design, cannot download"));
-      if (board.fpga.FlashDefined) { // do this even if flash wasn't requested, it's quick
-        stages.add(new ProcessStage(
-              "convert", "Convert JTAG bitstream (.sof) to Flash file (.pof) format",
-              cmd(Altera.ALTERA_QUARTUS_CPF, "-c", "-d", board.fpga.FlashName,
-                sandboxPath + TOP_HDL + ".sof",
-                sandboxPath + TOP_HDL + ".pof"),
-              "Failed to convert bitstream, cannot download"));
-      }
+            "convert", "Convert JTAG bitstream (.sof) to Flash file (.pof) format",
+            cmd(Altera.ALTERA_QUARTUS_CPF, "-c", "-d", board.fpga.FlashName,
+              sandboxPath + TOP_HDL + ".sof",
+              sandboxPath + TOP_HDL + ".pof"),
+            "Failed to convert bitstream, cannot download"));
     }
+
+    return createProgrammingPlan(stages);
+  }
+
+  @Override
+  public boolean createProgrammingPlan(ArrayList<Stage> stages) {
 
     if (programmer != null && !(programmer instanceof Altera.AlteraProgrammer)) {
       err.AddFatalError("Altera toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Altera programmer.");
-      return stages;
+      return false;
     }
 
     stages.add(new ProcessStage(
@@ -114,7 +117,7 @@ public class AlteraDownloadLocal extends Altera.AlteraDownload {
         return true;
       }
     });
-    return stages;
+    return true;
   }
 
 }

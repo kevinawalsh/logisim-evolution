@@ -35,11 +35,13 @@ import java.util.ArrayList;
 
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
+import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 
-public class AlteraDownloadRemote extends Altera.AlteraDownload {
+public class AlteraSynthesizeRemote extends Altera.AlteraSynthesize {
 
-  protected AlteraDownloadRemote() {
+  protected AlteraSynthesizeRemote(FPGAReport err) {
+    super(err);
     supportsRemoteJTAG = true;
   }
 
@@ -51,77 +53,82 @@ public class AlteraDownloadRemote extends Altera.AlteraDownload {
     return new File(sandboxPath + TOP_HDL + "." + fmt).exists();
   }
 
+  String url, urlbase, urldir, zipname, bitstreamzip, use64bit;
+
   @Override
-  public ArrayList<Stage> initiateDownload(Commander cmdr) {
-    ArrayList<Stage> stages = new ArrayList<>();
+  public boolean createSynthesisPlan(ArrayList<Stage> stages) {
 
     //  example: http://some.server.org/home/quartus/synthesize.php
-    String url = AppPreferences.ALTERA_PATH.get();
+    url = AppPreferences.ALTERA_PATH.get();
     //  example: http://some.server.org/
-    String urlbase = url.substring(0, url.indexOf('/', 8)+1);
+    urlbase = url.substring(0, url.indexOf('/', 8)+1);
     //  example: http://some.server.org/home/quartus/
-    String urldir = url.substring(0, url.lastIndexOf('/')+1);
+    urldir = url.substring(0, url.lastIndexOf('/')+1);
 
     //  example: /tmp/project_fpga_workspace/foo/bar.zip
-    String zipname = projectPath.substring(0, projectPath.length()-1) + ".zip";
+    zipname = projectPath.substring(0, projectPath.length()-1) + ".zip";
     //  example: /tmp/project_fpga_workspace/foo/bar_bitstream.zip
-    String bitstreamzip = projectPath.substring(0, projectPath.length()-1) + "_bitstream.zip";
+    bitstreamzip = projectPath.substring(0, projectPath.length()-1) + "_bitstream.zip";
 
-    String use64bit = AppPreferences.ALTERA_64BIT.get() ? "1" : "0";
+    use64bit = AppPreferences.ALTERA_64BIT.get() ? "1" : "0";
 
-    if (!readyForDownload()) {
-      stages.add(new RunnableStage(
-            "synthesis", "Synthesizing (may take a while)",
-            "Failed to synthesize design, cannot download") {
-        @Override
-        protected boolean run() {
-          if (writeToFlash && !remoteJTAG) {
-            console.printf(console.ERROR, "SPI Flash not yet supported with openFPGAloader.");
-            console.printf(console.ERROR, "Uncheck the 'Use Flash?' option or the 'remote JTAG' option.");
-            return false;
-          }
-          console.printf("Compressing project before upload to " + url);
-
-          if (!Zip.compress(console, zipname, projectPath)) {
-            console.printf(console.ERROR, "Failed to compress project.");
-            return false;
-          }
-
-          // just in case of non-remote JTAG via openFPGAloader
-          String openFPGAloaderFormat = AppPreferences.ALTERA_FORMAT.get();
-
-          if (!HTTP.post(console, url, "operation", "synthesize",
-                "use64bit", use64bit,
-                "flashname", board.fpga.FlashName,
-                "format", openFPGAloaderFormat,
-                "zipfile", new File(zipname)))
-            return false;
-
-          String resulturl;
-          String lastline = console.getText().get(console.getText().size()-1);
-          if (lastline.startsWith("RESULT: /")) {
-            resulturl = urlbase + lastline.substring(9);
-          } else if (lastline.startsWith("RESULT: ")) {
-            resulturl = urldir + lastline.substring(8);
-          } else {
-            console.printf(console.ERROR, "Failed.");
-            return false;
-          }
-
-          if (!HTTP.get(console, resulturl, bitstreamzip))
-            return false;
-
-          if (!Zip.uncompress(console, bitstreamzip, projectPath))
-            return false;
-
-          return true;
+    stages.add(new RunnableStage(
+          "synthesis", "Synthesizing (may take a while)",
+          "Failed to synthesize design, cannot download") {
+      @Override
+      protected boolean run() {
+        if (writeToFlash && !remoteJTAG) {
+          console.printf(console.ERROR, "SPI Flash not yet supported with openFPGAloader.");
+          console.printf(console.ERROR, "Uncheck the 'Use Flash?' option or the 'remote JTAG' option.");
+          return false;
         }
-      });
-    }
-    
+        console.printf("Compressing project before upload to " + url);
+
+        if (!Zip.compress(console, zipname, projectPath)) {
+          console.printf(console.ERROR, "Failed to compress project.");
+          return false;
+        }
+
+        // just in case of non-remote JTAG via openFPGAloader
+        String openFPGAloaderFormat = AppPreferences.ALTERA_FORMAT.get();
+
+        if (!HTTP.post(console, url, "operation", "synthesize",
+              "use64bit", use64bit,
+              "flashname", board.fpga.FlashName,
+              "format", openFPGAloaderFormat,
+              "zipfile", new File(zipname)))
+          return false;
+
+        String resulturl;
+        String lastline = console.getText().get(console.getText().size()-1);
+        if (lastline.startsWith("RESULT: /")) {
+          resulturl = urlbase + lastline.substring(9);
+        } else if (lastline.startsWith("RESULT: ")) {
+          resulturl = urldir + lastline.substring(8);
+        } else {
+          console.printf(console.ERROR, "Failed.");
+          return false;
+        }
+
+        if (!HTTP.get(console, resulturl, bitstreamzip))
+          return false;
+
+        if (!Zip.uncompress(console, bitstreamzip, projectPath))
+          return false;
+
+        return true;
+      }
+    });
+
+    return createProgrammingPlan(stages);
+  }
+
+  @Override
+  public boolean createProgrammingPlan(ArrayList<Stage> stages) {
+
     if (programmer != null && !(programmer instanceof Altera.AlteraProgrammer)) {
       err.AddFatalError("Altera toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Altera programmer.");
-      return stages;
+      return false;
     }
 
     if (remoteJTAG) {
@@ -138,7 +145,7 @@ public class AlteraDownloadRemote extends Altera.AlteraDownload {
         protected boolean run() {
           console.printf("Listing cables from " + url);
           return HTTP.post(console, url, "operation", "list-cables",
-                  "use64bit", use64bit);
+              "use64bit", use64bit);
         }
         @Override
         protected boolean post() {
@@ -168,34 +175,35 @@ public class AlteraDownloadRemote extends Altera.AlteraDownload {
         }
       });
     } else {
-      // FIXME: also try usb tmc?
-      if (!OpenFPGALoader.supports(board)) {
-        err.AddFatalError("Board does not support openFPGAloader yet.");
-        return new ArrayList<>();
-      }
-      final String openFPGAloader = OpenFPGALoader.findExecutable(err);
-      if (openFPGAloader == null) {
-        return new ArrayList<>();
-      }
-      stages.add(new ProcessStage(
-            "download", "Downloading to Local FPGA",
-            null /* will be assigned in prep() */,
-            "Failed to download design; did you connect the board?") {
-        protected boolean prep() {
-          boolean ok = prepForScan(cmdr, console);
-          cancelled = scanWasCancelled;
-          cmd = new ArrayList<>();
-          cmd.add(openFPGAloader);
-          cmd.add("-b");
-          cmd.add(OpenFPGALoader.boardNameFor(board));
-          cmd.add(bitfile);
-          return ok;
-        }
-        int retrycount = 0;
-        protected boolean retry(int exitval) { return retrycount++ < 2; }
-      });
+      return false;
+      // // FIXME: also try usb tmc?
+      // if (!OpenFPGALoader.supports(board)) {
+      //   err.AddFatalError("Board does not support openFPGAloader yet.");
+      //   return new ArrayList<>();
+      // }
+      // final String openFPGAloader = OpenFPGALoader.findExecutable(err);
+      // if (openFPGAloader == null) {
+      //   return new ArrayList<>();
+      // }
+      // stages.add(new ProcessStage(
+      //       "download", "Downloading to Local FPGA",
+      //       null /* will be assigned in prep() */,
+      //       "Failed to download design; did you connect the board?") {
+      //   protected boolean prep() {
+      //     boolean ok = prepForScan(cmdr, console);
+      //     cancelled = scanWasCancelled;
+      //     cmd = new ArrayList<>();
+      //     cmd.add(openFPGAloader);
+      //     cmd.add("-b");
+      //     cmd.add(OpenFPGALoader.boardNameFor(board));
+      //     cmd.add(bitfile);
+      //     return ok;
+      //   }
+      //   int retrycount = 0;
+      //   protected boolean retry(int exitval) { return retrycount++ < 2; }
+      // });
     }
-    return stages;
+    return true;
   }
 
   protected boolean prepForScan(Commander cmdr, Console console) {

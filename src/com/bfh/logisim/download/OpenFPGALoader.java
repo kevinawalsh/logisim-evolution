@@ -248,7 +248,7 @@ public class OpenFPGALoader extends FPGAProgrammer {
       }
     });
 
-    return true;;
+    return true;
   }
 
   private String boardNameFor(Board board) {

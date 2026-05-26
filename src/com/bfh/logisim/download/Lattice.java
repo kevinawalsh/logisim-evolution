@@ -172,7 +172,7 @@ public class Lattice extends Toolchain {
   }
 
   public static SYSTEM getToolChainType(String toolPathBinDirectory) {
-    return getToolChainTypeFromToolname(getToolPath(toolPathBinDirectory));
+    return getToolChainTypeFromToolPath(getToolPath(toolPathBinDirectory));
   }
 
   private static String getAbsolutePath(String pathRoot, String... pathes) {

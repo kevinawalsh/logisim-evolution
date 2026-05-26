@@ -32,15 +32,15 @@ package com.bfh.logisim.download;
 
 import java.util.ArrayList;
 
-import com.bfh.logisim.gui.Commander;
+import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 
 // If AlteraToolPath is an executable file, rather than a directory or URL, then
 // use that as a single-file script to do the entire synthesis rather than using
 // the multi-step synthesis using quartus_sh, quartus_map, etc.
-public class AlteraDownloadScript extends Altera.AlteraDownload {
+public class AlteraSynthesizeScript extends Altera.AlteraSynthesize {
 
-  protected AlteraDownloadScript() { }
+  protected AlteraSynthesizeScript(FPGAReport err) { super(err); }
 
   private ArrayList<String> script(String ...args) {
     ArrayList<String> command = new ArrayList<>();
@@ -53,8 +53,7 @@ public class AlteraDownloadScript extends Altera.AlteraDownload {
   }
 
   @Override
-  public ArrayList<Stage> initiateDownload(Commander cmdr) {
-    ArrayList<Stage> stages = new ArrayList<>();
+  public boolean createSynthesisPlan(ArrayList<Stage> stages) {
 
     // synthesize
     if (!readyForDownload()) {
@@ -68,9 +67,15 @@ public class AlteraDownloadScript extends Altera.AlteraDownload {
             tool, "Failed to synthesize design, cannot download"));
     }
 
+    return createProgrammingPlan(stages);
+  }
+
+  @Override
+  public boolean createProgrammingPlan(ArrayList<Stage> stages) {
+
     if (programmer != null && !(programmer instanceof Altera.AlteraProgrammer)) {
       err.AddFatalError("Altera toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Altera programmer.");
-      return stages;
+      return false;
     }
 
     // list-cables
@@ -106,7 +111,8 @@ public class AlteraDownloadScript extends Altera.AlteraDownload {
         return true;
       }
     });
-    return stages;
+
+    return true;
   }
 
 }

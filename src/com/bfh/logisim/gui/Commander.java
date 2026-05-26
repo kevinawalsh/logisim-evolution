@@ -1077,7 +1077,7 @@ public class Commander extends JFrame
     if (board == null)
       return;
 
-    ArrayList<FPGATool.Stage> stages;
+    ArrayList<FPGATool.Stage> stages = new ArrayList<>();
     if (pinBindings != null) {
       // sanity check pin bindings
       if (pinBindings == null || !pinBindings.allPinsAssigned()) {
