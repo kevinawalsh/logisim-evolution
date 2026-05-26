@@ -72,10 +72,7 @@ class BoardWriter {
           .append(a("name", chip.FlashName))
           .append("/>\n");
       }
-      if (chip.USBTMCAvailable) {
-        sb.append("    <USBTMC available=\"true\"/>\n");
-      }
-      // FIXME: should clock pin be optional?
+      // FIXME: clock pin should be optional... some use an internal oscillator?
       sb.append("    <Clock")
         .append(a("pin",        chip.ClockPinLocation))
         .append(a("frequency", "" + chip.ClockFrequency));

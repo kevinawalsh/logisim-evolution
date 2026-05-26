@@ -32,18 +32,12 @@ package com.bfh.logisim.download;
 
 import com.bfh.logisim.gui.FPGAReport;
 
-public abstract class FPGAProgrammer {
+public abstract class FPGAProgrammer extends FPGATool {
 
-  // TODO: flesh out this api
+  // TODO: flesh out this api?
 
-  public final String name;
-
-  // Parameters set by Commander, used by programmer
-  public FPGAReport err;
-
-  protected FPGAProgrammer(String name) { this.name = name; }
-
-  // FIXME: this should be part of toolchain... and show status in AppPreferences too?
-  public abstract boolean toolchainIsInstalled(FPGAReport err);
+  protected FPGAProgrammer(Toolchain toolchain, String nickname, FPGAReport err) {
+    super(toolchain, nickname, err);
+  }
 
 }

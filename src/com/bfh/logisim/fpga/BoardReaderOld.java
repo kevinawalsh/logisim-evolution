@@ -91,9 +91,6 @@ public class BoardReaderOld {
       if (ofl_name != null)
         b.setToolchainParam("openFPGALoader", "board", ofl_name);
     }
-    if (b.fpga.USBTMCAvailable) {
-      b.addToolchain("USBTMC", "programming");
-    }
 
     parseComponents(doc, "PinsInformation", b); // backwards compatability	
     parseComponents(doc, "ButtonsInformation", b); // backwards compatability	
@@ -143,7 +140,6 @@ public class BoardReaderOld {
     xmlConversion.put("ClockInformation/IOStandard", "Clock/ioStandard");
 
     xmlConversion.put("FPGAInformation/JTAGPos", "JTAG/pos");
-    xmlConversion.put("FPGAInformation/USBTMC", "USBTMC/available");
 
     xmlConversion.put("FPGAInformation/FlashPos", "Flash/pos");
     xmlConversion.put("FPGAInformation/FlashName", "Flash/name");

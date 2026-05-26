@@ -91,8 +91,7 @@ public class Chipset {
   // atttempt to override. The UnmentioendPinsBehaviorHint is ignored in this case.
 	public final UnmentionedPinsBehavior UnmentionedPinsBehaviorHint;
 	
-  public final boolean USBTMCAvailable;
-  // FIXME: LPT as yet another option? See comment in LatticeDownload.
+  // FIXME: LPT as yet another option? See Lattice toolchain.
 
   public final int JTAGPos;
 	
@@ -112,7 +111,6 @@ public class Chipset {
 		SpeedGrade = params.getOrDefault("Chip/speedGrade", ""); // optional
 		Package = params.getOrDefault("Chip/package", ""); // optional
 
-		USBTMCAvailable = Boolean.parseBoolean(params.getOrDefault("USBTMC/available", "false")); // optional
     JTAGPos = Integer.parseInt(params.getOrDefault("JTAG/pos", "1")); // optional
     FlashPos = Integer.parseInt(params.getOrDefault("Flash/pos", "2")); // optional
     FlashName = params.get("Flash/name"); // optional

@@ -39,7 +39,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +50,10 @@ import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 
-public class Lattice {
+public class Lattice extends Toolchain {
 
   public static final String LATTICE_DIAMOND_WIN = "pnmainc" + Toolchain.dotexe;
   public static final String LATTICE_DIAMOND_UNIX = "diamondc";
@@ -64,129 +62,155 @@ public class Lattice {
     LATTICE_DIAMOND_WIN, LATTICE_DIAMOND_UNIX , LATTICE_ISPLEVER_WIN
   };
 
-  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Lattice Diamond/ispLEVER", "Lattice", true, true) {
-    @Override
-    public boolean hasAlternateName(String altname) {
-      return 
-        altname.equalsIgnoreCase("Lattice Diamond")
-        || altname.equalsIgnoreCase("Lattice ispLEVER")
-        || altname.equalsIgnoreCase("Diamond")
-        || altname.equalsIgnoreCase("ispLEVER")
-        || altname.equalsIgnoreCase("Diamond/ispLEVER")
-        || altname.equalsIgnoreCase("Lattice Diamond/ispLEVER");
-    }
-    @Override
-    public boolean supports(Board b) {
-      // TODO: probably need to check which variant of toolchain is installed
-      // (Diamond vs ispLEVER), then use fpga part to somehow determine if it
-      // is supported.
-      return b.name.toLowerCase().contains("lattice")
-        || b.codename.toLowerCase().contains("lattice");
-    }
-    @Override
-    public List<String[]> defaultParams(/*Board board*/) {
-      return Collections.emptyList();
-    }
-    @Override
-    public List<String> getLanguages(Board board) {
-      return List.of(VHDL, VERILOG);
-    }
-    @Override
-    public FPGADownload newDownloader() { return new LatticeDownload(); }
-    @Override
-    public FPGAProgrammer newProgrammer() { return new LatticeProgrammer(); }
-  };
+  public static final Lattice TOOLCHAIN = new Lattice();
 
-  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+  private Lattice() {
+    super("Lattice Diamond/ispLEVER", "Lattice", true, true);
+  }
 
-  private static class LatticeDownload extends FPGADownload {
+  @Override
+  public boolean hasAlternateName(String altname) {
+    return 
+      altname.equalsIgnoreCase("Lattice Diamond")
+      || altname.equalsIgnoreCase("Lattice ispLEVER")
+      || altname.equalsIgnoreCase("Diamond")
+      || altname.equalsIgnoreCase("ispLEVER")
+      || altname.equalsIgnoreCase("Diamond/ispLEVER")
+      || altname.equalsIgnoreCase("Lattice Diamond/ispLEVER");
+  }
 
-    private LatticeDownload() { super("Lattice"); }
+  @Override
+  public boolean supports(Board b) {
+    // TODO: probably need to check which variant of toolchain is installed
+    // (Diamond vs ispLEVER), then use fpga part to somehow determine if it
+    // is supported.
+    return b.name.toLowerCase().contains("lattice")
+      || b.codename.toLowerCase().contains("lattice");
+  }
 
-    public boolean toolchainIsInstalled(FPGAReport err) {
-      String helpmsg = "It should be set to the directory where pnmainc.exe, "
-        + "diamondc, or projnav.exe is installed.";
-      String tool = AppPreferences.LATTICE_PATH.get();
-      if (tool == null || tool.isEmpty()) {
-        err.AddFatalError("Lattice Diamond/ispLEVER toolchain path not configured. " + helpmsg);
-        return false;
-      }
-      if (getTool() != null)
-        return true;
-      err.AddFatalError("Lattice Diamond/ispLEVER toolchain path is set to " + tool + ","
-          + " but this appears to be incorrect. " + helpmsg);
-      return false;
-    }
+  @Override
+  public String defaultParamsAsString(/*Board board*/) {
+    return "";
+  }
 
-    public enum TOOLCHAIN { DIAMOND_WIN, DIAMOND_UNIX, ISP_LEVER_WIN, ISP_LEVER_UNIX, UNKNOWN };
+  @Override
+  public List<String> getLanguages(Board board) {
+    return List.of(VHDL, VERILOG);
+  }
 
-    private static Map<String, TOOLCHAIN> toolMap;
+  @Override
+  public FPGASynthesizer newSynthesizer(FPGAReport err) {
+    String cmd = getInstalledCommand(err);
+    return cmd == null ? null : new LatticeSynthesizer(err, cmd);
+  }
 
-    static {
-      toolMap = new HashMap<>();
-      toolMap.put("pnmainc.exe", TOOLCHAIN.DIAMOND_WIN);
-      toolMap.put("diamondc", TOOLCHAIN.DIAMOND_UNIX);
-      toolMap.put("projnav.exe", TOOLCHAIN.ISP_LEVER_WIN);
-    }
+  @Override
+  public FPGAProgrammer newProgrammer(FPGAReport err) {
+    String cmd = getInstalledCommand(err);
+    return cmd == null ? null : new LatticeProgrammer(err, cmd);
+  }
 
-    private static String getTool() {
-      return getTool(AppPreferences.LATTICE_PATH.get());
-    }
+  private static final String helpmsg =
+    "Set the Lattice toolchain path to the directory where pnmainc.exe, "
+    + "diamondc, or projnav.exe is installed.";
 
-    private static String getTool(String toolPathBinDirectory) {
-      if (toolPathBinDirectory == null || toolPathBinDirectory.isEmpty())
-        return null;
-      Path toolPath = Paths.get(toolPathBinDirectory);
-      for (String tool : toolMap.keySet()) {
-        if (Files.exists(toolPath.resolve(tool))) {
-          return tool;
-        }
-      }
+  @Override
+  public InstallStatus toolchainInstallStatus() {
+    String path = AppPreferences.LATTICE_PATH.get();
+    if (path == null || path.isEmpty())
+      return InstallStatus.fromError("Lattice Diamond/ispLEVER toolchain path not configured. " + helpmsg);
+    String cmd = getToolPath(path);
+    if (cmd == null)
+      return InstallStatus.fromError("Lattice Diamond/ispLEVER toolchain path is set to '%s', "
+          + "but this appears to be incorrect. %s", path, helpmsg);
+    SYSTEM toolChainType = getToolChainTypeFromToolPath(cmd);
+    if (toolChainType == SYSTEM.DIAMOND_WIN)
+      return InstallStatus.fromSuccess(cmd, "Diamond (Windows)");
+    else if (toolChainType == SYSTEM.DIAMOND_UNIX)
+      return InstallStatus.fromSuccess(cmd, "Diamond (Unix)");
+    else if (toolChainType == SYSTEM.ISP_LEVER_WIN)
+      return InstallStatus.fromSuccess(cmd, "ispLEVER (Windows)");
+    else if (toolChainType == SYSTEM.ISP_LEVER_UNIX)
+      return InstallStatus.fromSuccess(cmd, "ispLEVER (Unix)");
+    else
+      return InstallStatus.fromSuccess(cmd, "Unknown system"); // should not happen
+  }
+
+  public enum SYSTEM { DIAMOND_WIN, DIAMOND_UNIX, ISP_LEVER_WIN, ISP_LEVER_UNIX, UNKNOWN };
+
+  private static Map<String, SYSTEM> toolMap;
+  static {
+    toolMap = new HashMap<>();
+    toolMap.put("pnmainc.exe", SYSTEM.DIAMOND_WIN);
+    toolMap.put("diamondc", SYSTEM.DIAMOND_UNIX);
+    toolMap.put("projnav.exe", SYSTEM.ISP_LEVER_WIN);
+  }
+
+  private static String getToolPath() {
+    return getToolPath(AppPreferences.LATTICE_PATH.get());
+  }
+
+  private static String getToolPath(String toolPathBinDirectory) {
+    if (toolPathBinDirectory == null || toolPathBinDirectory.isEmpty())
       return null;
+    Path toolPathDir = Paths.get(toolPathBinDirectory);
+    for (String tool : toolMap.keySet()) {
+      Path toolPath = toolPathDir.resolve(tool);
+      if (Files.exists(toolPath)) {
+        return toolPath.toString();
+      }
     }
+    return null;
+  }
 
-    public static TOOLCHAIN getToolChainTypeFromToolname(String toolName) {
-      return toolName == null ? TOOLCHAIN.UNKNOWN : toolMap.get(toolName);
+  public static SYSTEM getToolChainTypeFromToolPath(String toolPath) {
+    return toolPath == null ? SYSTEM.UNKNOWN : toolMap.get(new File(toolPath).getName());
+  }
+
+  public static SYSTEM getToolChainType() {
+    return getToolChainTypeFromToolPath(getToolPath());
+  }
+
+  public static SYSTEM getToolChainType(String toolPathBinDirectory) {
+    return getToolChainTypeFromToolname(getToolPath(toolPathBinDirectory));
+  }
+
+  private static String getAbsolutePath(String pathRoot, String... pathes) {
+    return getAbsolutePathAsPath(pathRoot, pathes).toString();
+  }
+
+  private static Path getAbsolutePathAsPath(String pathRoot, String... pathes) {
+    return Paths.get(pathRoot, pathes).toAbsolutePath();
+  }
+
+  private static String toWinPath(Path path) {
+    return path.toString().replace("/", "\\");
+  }
+
+  private static String toTclPath(Path path) {
+    return path.toString().replace("\\", "/");
+  }
+
+  private static String toUnixPath(Path path) {
+    String s = toTclPath(path);
+    if (s.indexOf(':') == 1) {
+      s = "/"+Character.toLowerCase(s.charAt(0))+s.substring(2);
     }
+    return s;
+  }
 
-    public static TOOLCHAIN getToolChainType() {
-      return getToolChainTypeFromToolname(getTool());
-    }
+  private static class LatticeSynthesizer extends FPGASynthesizer {
 
-    public static TOOLCHAIN getToolChainType(String toolPathBinDirectory) {
-      return getToolChainTypeFromToolname(getTool(toolPathBinDirectory));
-    }
-
-    private String getRelativePath(String pathRoot, String... pathes) {
-      return getRelativePathAsPath(pathRoot, pathes).toString();
-    }
-
-    private String getAbsolutePath(String pathRoot, String... pathes) {
-      return getAbsolutePathAsPath(pathRoot, pathes).toString();
+    private LatticeSynthesizer(FPGAReport err, String cmd) {
+      super(TOOLCHAIN, "Lattice", err);
     }
 
     private Path getRelativePathAsPath(String pathRoot, String... pathes) {
       return Paths.get("..").resolve(Paths.get(projectPath).relativize(Paths.get(pathRoot, pathes)));
     }
 
-    private Path getAbsolutePathAsPath(String pathRoot, String... pathes) {
-      return Paths.get(pathRoot, pathes).toAbsolutePath();
-    }
-
-    private String toWinPath(Path path) {
-      return path.toString().replace("/", "\\");
-    }
-
-    private String toTclPath(Path path) {
-      return path.toString().replace("\\", "/");
-    }
-
-    private String toUnixPath(Path path) {
-      String s = toTclPath(path);
-      if (s.indexOf(':') == 1) {
-        s = "/"+Character.toLowerCase(s.charAt(0))+s.substring(2);
-      }
-      return s;
+    private String getRelativePath(String pathRoot, String... pathes) {
+      return getRelativePathAsPath(pathRoot, pathes).toString();
     }
 
     @Override
@@ -211,40 +235,38 @@ public class Lattice {
     }
 
     @Override
-    public ArrayList<Stage> initiateDownload(Commander cmdr) {
-      ArrayList<Stage> stages = new ArrayList<>();
+    public boolean createSynthesisPlan(ArrayList<Stage> stages) {
 
-      TOOLCHAIN toolChainType = getToolChainType();
+      SYSTEM toolChainType = getToolChainType();
 
-      if (!readyForDownload()) {
-
-        String synthFile;
-        switch (toolChainType) {
-          case DIAMOND_WIN: synthFile = PROJECT_RUN_FILE; break;
-          case DIAMOND_UNIX: synthFile = PROJECT_RUN_FILE_UNIX; break;
-          case ISP_LEVER_WIN: synthFile = PROJECT_RUN_FILE_ISPLEVER; break;
-          case ISP_LEVER_UNIX: 
-          case UNKNOWN:
-          default:
-                              return stages;
-        }
-
-        String script = getRelativePath(scriptPath, synthFile);
-        //String log = script.subSequence(0, script.lastIndexOf('.'))+".log"; 
-        stages.add(new ProcessStage(
-              "synthesize", "Synthesizing (may take a while)",
-              //cmd(script, ">", log),
-              cmd(script),
-              "Failed to synthesize Lattice project, cannot download"));
+      String synthFile;
+      switch (toolChainType) {
+        case DIAMOND_WIN: synthFile = PROJECT_RUN_FILE; break;
+        case DIAMOND_UNIX: synthFile = PROJECT_RUN_FILE_UNIX; break;
+        case ISP_LEVER_WIN: synthFile = PROJECT_RUN_FILE_ISPLEVER; break;
+        case ISP_LEVER_UNIX: 
+        case UNKNOWN:
+        default: return false;
       }
+
+      String script = getRelativePath(scriptPath, synthFile);
+      //String log = script.subSequence(0, script.lastIndexOf('.'))+".log"; 
+      stages.add(new ProcessStage(
+            "synthesize", "Synthesizing (may take a while)",
+            cmd(script),
+            "Failed to synthesize Lattice project, cannot download"));
+
+      return createProgrammingPlan(stages);
+    }
+
+    @Override
+    public boolean createProgrammingPlan(ArrayList<Stage> stages) {
+
+      SYSTEM toolChainType = getToolChainType();
 
       if (programmer != null && !(programmer instanceof LatticeProgrammer)) {
         err.AddFatalError("Lattice toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Lattice programmer.");
-        return stages;
-      }
-
-      if (!board.fpga.USBTMCAvailable) {
-        // TODO: support LPT-Download...
+        return false;
       }
 
       String downloadFile;
@@ -254,12 +276,12 @@ public class Lattice {
         case ISP_LEVER_WIN: downloadFile = PROJECT_DOWNLOAD_FILE_ISPLEVER; break;
         case ISP_LEVER_UNIX: 
         case UNKNOWN:
-        default:
-                            return stages;
+        default: return false;
       }
       downloadFile = getRelativePath(scriptPath, downloadFile);
 
-      stages.add(new ProcessStage("download", "Downloading to FPGA", cmd(downloadFile),
+      stages.add(new ProcessStage("download", "Downloading to FPGA",
+            cmd(downloadFile),
             "Failed to download design; did you connect the board?") {
         @Override
         protected boolean prep() {
@@ -270,7 +292,7 @@ public class Lattice {
           return true;
         }
       });
-      return stages;
+      return true;
     }
 
     private boolean generateProjectFile(ArrayList<String> hdlFiles) {
@@ -380,11 +402,11 @@ public class Lattice {
       Path tcl_prj_creation_file = getRelativePathAsPath(scriptPath, PROJECT_CREATION_TCL_FILE);
       Path tcl_prj_synth_file = getRelativePathAsPath(scriptPath, PROJECT_RUN_TCL_FILE);
 
-      String fpgaTool = getTool();
-      TOOLCHAIN toolChainTpye = getToolChainTypeFromToolname(fpgaTool);
-      Path latticeTool = latticeToolPath.resolve(fpgaTool);
+      String fpgaToolPath = getToolPath();
+      SYSTEM toolChainTpye = getToolChainTypeFromToolPath(fpgaToolPath);
+      Path latticeTool = Paths.get(fpgaToolPath); // latticeToolPath.resolve(fpgaTool);
 
-      if (toolChainTpye == TOOLCHAIN.DIAMOND_WIN) {
+      if (toolChainTpye == SYSTEM.DIAMOND_WIN) {
         out = new AuxFile(scriptPath, PROJECT_RUN_FILE, err);
 
         out.stmt("@echo off", toWinPath(toolPath));
@@ -403,7 +425,7 @@ public class Lattice {
       }
 
       // ---- Unix and Cygwin synthesis script ----
-      if (toolChainTpye != TOOLCHAIN.ISP_LEVER_WIN) {
+      if (toolChainTpye != SYSTEM.ISP_LEVER_WIN) {
         out = new AuxFile(scriptPath, PROJECT_RUN_FILE_UNIX, err);
         out.stmt("export TEMP=/tmp");
         out.stmt("export LSC_INI_PATH=\"\"");
@@ -507,23 +529,23 @@ public class Lattice {
       success &= out.save();
 
       // --- download run scripts
-      String fpgaTool = getTool();
-      TOOLCHAIN toolChainType = getToolChainTypeFromToolname(fpgaTool);
-      if (fpgaTool == null) {
+      String fpgaToolPath = getToolPath();
+      SYSTEM toolChainType = getToolChainTypeFromToolPath(fpgaToolPath);
+      if (fpgaToolPath == null || toolChainType == null) {
         return false;
       }
       Path latticeToolPath = Paths.get(AppPreferences.LATTICE_PATH.get());
-      Path latticeTool = latticeToolPath.resolve(fpgaTool);
+      Path latticeTool = Paths.get(fpgaToolPath); // latticeToolPath.resolve(fpgaTool);
 
       // --- Windows ----
-      if (toolChainType == TOOLCHAIN.DIAMOND_WIN) {
+      if (toolChainType == SYSTEM.DIAMOND_WIN) {
         out = new AuxFile(scriptPath, PROJECT_DOWNLOAD_FILE, err);
         out.stmt("\"%s\" \"%s\"", toWinPath(latticeTool), toWinPath(getRelativePathAsPath(scriptPath, PROJECT_DOWNLOAD_TCL_FILE)));
         success &= out.save();
       }
 
       // --- Unix and Cygwin ---
-      if (toolChainType != TOOLCHAIN.ISP_LEVER_WIN) {
+      if (toolChainType != SYSTEM.ISP_LEVER_WIN) {
         out = new AuxFile(scriptPath, PROJECT_DOWNLOAD_FILE_UNIX, err);
         out.stmt("%s \"%s\"", toUnixPath(latticeTool), toUnixPath(getRelativePathAsPath(scriptPath, PROJECT_DOWNLOAD_TCL_FILE)));
         success &= out.save();
@@ -574,10 +596,9 @@ public class Lattice {
 
   protected static class LatticeProgrammer extends FPGAProgrammer {
     // TODO: reorganize stages above, e.g. allowing for
-    // openFPGALoader, separating out usb-tmc, etc.
-    LatticeProgrammer() { super("Lattice"); }
-    @Override
-    public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if LatticeDownload reported okay
+    // openFPGALoader, maybe LPT download, etc.
+    LatticeProgrammer(FPGAReport err, String cmd) { super(TOOLCHAIN, "Lattice", err); }
+    // The work for lattice upload is done above, in createProgrammingPlan().
   }
 
   static void writeIoSpec(AuxFile lpf, String net, InputBias bias, IoStandard standard, DriveStrength strength) {
@@ -605,9 +626,9 @@ public class Lattice {
     //   LOCATE COMP "net" SITE "pin";
     //   IOBUF PORT "net" PULLMODE=UP/DOWN/KEEPER/NONE
     if (ioResources.requiresOscillator) {
-      lpf.stmt("FREQUENCY PORT \"%s\" %s;", FPGADownload.CLK_PORT, board.fpga.Speed.toUpperCase());
-      lpf.stmt("LOCATE COMP \"%s\" SITE \"%s\";", FPGADownload.CLK_PORT, board.fpga.ClockPinLocation);
-      writeIoSpec(lpf, FPGADownload.CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
+      lpf.stmt("FREQUENCY PORT \"%s\" %s;", CLK_PORT, board.fpga.Speed.toUpperCase());
+      lpf.stmt("LOCATE COMP \"%s\" SITE \"%s\";", CLK_PORT, board.fpga.ClockPinLocation);
+      writeIoSpec(lpf, CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
     }
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
       lpf.stmt("LOCATE COMP \"%s\" SITE \"%s\";", net, pin);

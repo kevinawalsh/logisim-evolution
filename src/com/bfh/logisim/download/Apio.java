@@ -30,10 +30,8 @@
 
 package com.bfh.logisim.download;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,53 +43,88 @@ import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.fpga.UnmentionedPinsBehavior;
-import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.FPGAReport;
 import com.bfh.logisim.hdlgenerator.FileWriter;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.prefs.AppPreferences;
-import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.FileUtil;
 
-public class Apio {
+public class Apio extends Toolchain {
 
-  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Apio CLI", "Apio", true, true) {
-    @Override
-    public boolean hasAlternateName(String altname) {
-      return 
-        altname.equalsIgnoreCase("Apio CLI")
-        || altname.equalsIgnoreCase("Apio IDE")
-        || altname.equalsIgnoreCase("FPGAwars/apio");
-    }
-    @Override
-    public boolean supports(Board b) {
-      String codename = normalizeBoardName(b.codename);
-      ArrayList<String> names = getApioBoardList();
-      for (String name : names) {
-        if (normalizeBoardName(name).equalsIgnoreCase(codename))
-          return true;
-      }
-      return false;
-    }
-    @Override
-    public List<String[]> defaultParams(/*Board board*/) {
-      return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
-    }
-    @Override
-    public List<String> getLanguages(Board board) {
-      return List.of(VERILOG);
-    }
-    @Override
-    public FPGADownload newDownloader() { return new ApioDownload(); }
-    @Override
-    public FPGAProgrammer newProgrammer() { return new ApioProgrammer(); }
-  };
+  public static final Apio TOOLCHAIN = new Apio();
 
-  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+  private Apio() {
+    super("Apio CLI", "Apio", true, true);
+  }
 
-  // Apio board names tend to follow alhpanum-kebab-case conventions.
+  @Override
+  public boolean hasAlternateName(String altname) {
+    return 
+      altname.equalsIgnoreCase("Apio CLI")
+      || altname.equalsIgnoreCase("Apio IDE")
+      || altname.equalsIgnoreCase("FPGAwars/apio");
+  }
+
+  @Override
+  public boolean supports(Board b) {
+    String codename = normalizeBoardName(b.codename);
+    ArrayList<String> names = getApioBoardList();
+    for (String name : names) {
+      if (normalizeBoardName(name).equalsIgnoreCase(codename))
+        return true;
+    }
+    return false;
+  }
+
+  @Override
+  public String defaultParamsAsString(/*Board board*/) {
+    // TODO: possible additional apio options...
+    //   programmer-cmd: custom upload command to be added to apio.ini
+    //   yosys-extra-options: extra options for yosys, separated by "\n"
+    //   nextpnr-extra-options: extra options for nextpnr, separated by "\n"
+    //   maybe defines?
+    return 
+      "board: passed to backend, defaults to board codename\n" + 
+      "verbose-synth: if true, print verbose synthesis info\n" +
+      "verbose-pnr: if true, print verbose place and route info\n";
+  }
+
+  @Override
+  public List<String> getLanguages(Board board) {
+    return List.of(VERILOG);
+  }
+
+  @Override
+  public FPGASynthesizer newSynthesizer(FPGAReport err) {
+    String apio = getInstalledCommand(err);
+    return apio == null ? null : new ApioSynthesizer(err, apio);
+  }
+
+  @Override
+  public FPGAProgrammer newProgrammer(FPGAReport err) {
+    String apio = getInstalledCommand(err);
+    return apio == null ? null : new ApioProgrammer(err, apio);
+  }
+
+  private static final String helpmsg =
+    "Either install apio to a system directory, or set "
+    + "the toolchain path to point to the apio executable or a "
+    + "directory (e.g. a python virtualenv) containing bin/apio.";
+
+  @Override
+  public InstallStatus toolchainInstallStatus() {
+    return toolchainInstallStatus(AppPreferences.APIO_PATH.get());
+  }
+
+  public InstallStatus toolchainInstallStatus(String prefPath) {
+    return simpleInstallStatusHelper(
+        prefPath, "--version",
+        helpmsg, "apio", "bin/apio");
+  }
+
+  // Apio board names tend to follow alphanum-kebab-case conventions.
   private static String normalizeBoardName(String name) {
     name = name.replaceAll("[^a-zA-Z0-9]+", "-");
     if (name.startsWith("-")) name = name.substring(1);
@@ -99,134 +132,41 @@ public class Apio {
     return name;
   }
 
-  private static ArrayList<String> getApioBoardList() {
+  private ArrayList<String> getApioBoardList() {
+    String apio = getInstalledCommand(null);
     ArrayList<String> ret = new ArrayList<>();
-    String prog = findApioExecutable(AppPreferences.APIO_PATH.get());
-    if (prog == null || prog.isEmpty())
-      return ret;
-    try {
-      Process process = new ProcessBuilder(prog, "boards").start();
-      BufferedReader reader = new BufferedReader(
-          new InputStreamReader(process.getInputStream()));
-      String line = reader.readLine().trim();
+    for (String line : FPGATool.stdoutFor(apio, "boards")) {
       String name = null;
-      if (line.startsWith("| ") && line.endsWith(" |")) {
+      if (line.startsWith("| ") && line.endsWith(" |"))
         name = line.substring(2).split("\\|", 2)[0].trim();
-      } else if (line.startsWith("\u2502 ") && line.endsWith(" \u2502")) {
+      else if (line.startsWith("\u2502 ") && line.endsWith(" \u2502"))
         name = line.substring(2).split("\u2502", 2)[0].trim();
-      }
       if (name != null && !name.isEmpty() && !name.equalsIgnoreCase("BOARD-ID"))
         ret.add(name);
-    } catch (Exception e) {
-      Debug.error("Executing `"+prog+" boards`", e);
     }
     return ret;
   }
 
-  public static String findApioExecutable(String p) {
-    if (p != null && !p.isEmpty()) {
-      File script = new File(p);
-      if (script.exists() && !script.isDirectory() && script.canExecute())
-        return p;
-      if (script.exists() && script.isDirectory()) {
-        String pp = p + "/apio";
-        script = new File(pp);
-        if (script.exists() && !script.isDirectory() && script.canExecute())
-          return pp;
-        pp = p + "/bin/apio";
-        script = new File(pp);
-        if (script.exists() && !script.isDirectory() && script.canExecute())
-          return pp;
-      }
-      return null;
+  public class ApioSynthesizer extends FPGASynthesizer {
+
+    private String apio; // verified apio command, inluding full path if needed
+
+    private ApioSynthesizer(FPGAReport err, String apio) {
+      super(TOOLCHAIN, "Apio", err);
+      this.apio = apio;
     }
-    // Try just using "apio", hope it is found on system path?
-    return "apio";
-  }
 
-  public static class ApioDownload extends FPGADownload {
-
-    private ApioDownload() { super("Apio"); }
+    private String bitstream() { return sandboxPath + "_build/default/hardware.bin"; }
 
     @Override
     public boolean readyForDownload() {
-      return new File(sandboxPath + "_build/default/hardware.bin").exists();
-    }
-
-    String bin_apio;
-    private ArrayList<String> apio(String ...args) {
-      ArrayList<String> command = new ArrayList<>();
-      command.add(bin_apio);
-      for (String arg: args)
-        command.add(arg);
-      return command;
-    }
-
-    private String getApioVersion(String cmd) {
-      try {
-        Process process = new ProcessBuilder(cmd, "--version").start();
-        BufferedReader reader = new BufferedReader(
-            new InputStreamReader(process.getInputStream()));
-        String line = reader.readLine();
-        if (line.toLowerCase().startsWith("apio "))
-          return line.substring("apio ".length());
-      } catch (Exception e) {
-        Debug.error("Executing `"+cmd+" --version`", e);
-      }
-      return null;
-    }
-
-    private static final String helpmsg =
-      "Either install apio to a system directory, or set "
-      + "the toolchain path to point to the apio executable or a "
-      + "directory (e.g. a python virtualenv) containing bin/apio.";
-
-    public boolean toolchainIsInstalled(FPGAReport err) {
-      String tool = AppPreferences.APIO_PATH.get();
-      // user wants system apio
-      if (tool == null || tool.isEmpty()) {
-        String version = getApioVersion("apio");
-        if (version != null) {
-          err.AddInfo("Using system installed apio, version " + version);
-          return true;
-        }
-        err.AddFatalError("Apio toolchain path is not configured, and apio"
-            + " does not appear to be installed in a system directory. " + helpmsg);
-        return false;
-      }
-      // user wants custom apio
-      String prog = Apio.findApioExecutable(tool);
-      if (prog != null && !prog.isEmpty()) {
-        String version = getApioVersion(prog);
-        if (version != null) {
-          err.AddInfo("Using " + prog + ", version " + version);
-          return true;
-        }
-        err.AddFatalError("Apio toolchain path is set to '" + tool + "', but "
-            + " `apio --version` still failed. " + helpmsg);
-        return false;
-      }
-      return false;
-    }
-
-    private String findApioExecutable() {
-      String p = AppPreferences.APIO_PATH.get();
-      String script = Apio.findApioExecutable(p);
-      if (script == null) {
-        err.AddFatalError("Apio toolchain path is set to '" + p + "' but"
-            + " the apio command was still not found. " + helpmsg);
-      }
-      return script;
+      return new File(bitstream()).exists();
     }
 
     @Override
     public boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles) {
 
-      bin_apio = findApioExecutable();
-      if (bin_apio == null)
-        return false;
-
-      String board_name = board.paramFor(MY_TOOLCHAIN, "board");
+      String board_name = param("board");
       if (board_name == null)
         board_name = board.codename;
 
@@ -265,7 +205,7 @@ public class Apio {
         && board.fpga.Technology.equalsIgnoreCase("ECP5");
       boolean GOWIN = board.fpga.Vendor.equalsIgnoreCase("Gowin");
 
-      // FIXME: 
+      // FIXME: board xml should define this, don't force this for every iCE40UP/UL
       // Lattice iCE40UP/UL family has SB_HFOSC; HX/LP family requires an external clock pin.
       boolean hasHFOSC = iCE40 &&
         (board.fpga.Part.toUpperCase().contains("UP") ||
@@ -319,6 +259,9 @@ public class Apio {
         err.AddSevereWarning("VHDL was chosen, but apio currently only supports Verilog.");
         err.AddSevereWarning("Design will almost certainly fail to compile.");
       }
+      
+      // FIXME can SB_IO and SB_HFOSC be generated right in the main shell, instead of the
+      // double-wrapping here?
 
       Netlist.Int3 ioPinCount = ioResources.countAllPhysicalIOPins();
       int n = ioPinCount.size();
@@ -357,29 +300,6 @@ public class Apio {
         // crystal via PCF constraint; no internal oscillator primitive is needed.
         n++;
       }
-      // ioResources.forEachPhysicalPin((pin, net, io, label) -> {
-      //   // todo: also handle bidirectional using SB_IO
-      //   InputBias bias = ioResources.getInputBias(net);
-      //   int pullup = 0;
-      //   if (bias == InputBias.PULL_UP) {
-      //     pullup = 1;
-      //   } else if (bias == InputBias.PULL_DOWN) {
-      //     err.AddSevereWarning("FPGA pin %s pull behavior specified as %s, but apio only supports pull-up.", pull);
-      //   } else if (bias == InputBias.BUS_HOLD) {
-      //     todo;
-      //   } else if (bias == InputBias.NONE) {
-      //     return; // handled above (elsewhere? where??? FIXME)
-      //   } else {
-      //     // do not specify
-      //     return;
-      //   }
-      //   out.stmt("  wire %s;", "PULLED_"+net);
-      //   // PIN_TYPE = 6 bits = xxxx_yy, xxxx=1010 is tri-state output, yy=01 is
-      //   // simple non-clocked input, etc.
-      //   out.stmt("  SB_IO #(.PIN_TYPE(6'b 0000_01), .PULLUP(1'b %d))", pullup);
-      //   out.stmt("        sb_pin_%s (.PACKAGE_PIN(%s), .D_IN_0(%s));", pin, net, "PULLED_"+net);
-      //   out.stmt();
-      // });
      
       // For each FPGA bidir pin, emit an SB_IO block to bring together the
       // input, output, and enable nets.
@@ -461,52 +381,43 @@ public class Apio {
     }
 
     @Override
-    public ArrayList<Stage> initiateDownload(Commander cmdr) {
+    public boolean createSynthesisPlan(ArrayList<Stage> stages) {
 
-      ArrayList<Stage> stages = new ArrayList<>();
-      bin_apio = findApioExecutable();
-      if (bin_apio == null)
-        return stages;
+      String verboseSynth = "true".equalsIgnoreCase(param("verbose-synth")) ? "--verbose-synth" : null;
+      String verbosePnr = "true".equalsIgnoreCase(param("verbose-pnr")) ? "--verbose-pnr" : null;
 
       // synthesize
-      if (!readyForDownload()) {
-        stages.add(new ProcessStage(
-              "synthesis", "Synthesizing (may take a while)",
-              apio("build"),
-              "Failed to synthesize design, cannot download"));
-      }
+      stages.add(new ProcessStage(
+            "synthesis", "Synthesizing (may take a while)",
+            join(apio, "build", verboseSynth, verbosePnr),
+            "Failed to synthesize design, cannot download"));
 
-      if (programmer != null && !(programmer instanceof ApioProgrammer) && !(programmer instanceof OpenFPGALoader)) {
-        err.AddFatalError("Apio toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Apio programmer or openFPGALoader.");
-        return stages;
-      }
+      return createProgrammingPlan(stages);
+    }
 
-      boolean useOFL;
+    @Override
+    public boolean createProgrammingPlan(ArrayList<Stage> stages) {
+
+      // if user (or board xml) specified OpenFPGALoader, then use it.
       if (programmer instanceof OpenFPGALoader) {
-        useOFL = true;
-      } else if (programmer instanceof ApioProgrammer) {
-        useOFL = false;
-      } else {
-        // auto-select: use openFPGALoader when the board explicitly specifies an
-        // openfpgaloader board name (indicative of boards whose flash chip is not
-        // supported by apio/iceprog), otherwise use apio upload.
-        // useOFL = bin_ofl != null && OpenFPGALoader.supports(board);
-        // Or: 
-        useOFL = false; // if board really needs openFPGA, board xml should specify it
-                        // as default and user should follow that recommendation.
+        OpenFPGALoader ofl = (OpenFPGALoader)programmer;
+        return ofl.createProgrammingPlan(stages, bitstream());
       }
 
-      // upload: use openFPGALoader when the board specifies it (e.g. boards whose
-      // flash chip is not supported by apio/iceprog), otherwise use apio upload.
-      if (useOFL) { 
-        String bin_ofl = OpenFPGALoader.findExecutable(err);
-        if (bin_ofl == null) {
-          err.AddFatalError("openFPGALoader toolchain isn't installed or isn't configured properly. Fix the settings, or try the Apio programmer instead.");
-          return stages;
-        }
+      if (programmer == null || programmer instanceof ApioProgrammer) {
+        // if user specified auto-select: use apio builtin uploader.
+        // if user specified apio, then use it.
+        
+        // NOTE: we could be more clever here, e.g. fall back to openFPGALoader
+        // if there is any inidication that openFPGALoader supports this board.
+        // But for now, we rely on user or board xml to explicitly opt-in to
+        // openFPGALoader.
+       
+        // FIXME: does apio have a cable selection command?
+        
         stages.add(new ProcessStage(
-              "upload", "Uploading to FPGA via openFPGALoader",
-              OpenFPGALoader.commandFor(board, bin_ofl, sandboxPath + "_build/default/hardware.bin"),
+              "upload", "Uploading to FPGA",
+              join(apio, "upload"),
               "Failed to upload design; did you connect the board?") {
           @Override
           protected boolean prep() {
@@ -517,24 +428,14 @@ public class Apio {
             return true;
           }
         });
-        return stages;
+
+        return true;
       }
 
-      stages.add(new ProcessStage(
-            "upload", "Uploading to FPGA",
-            apio("upload"),
-            "Failed to upload design; did you connect the board?") {
-        @Override
-        protected boolean prep() {
-          if (!cmdr.confirmDownload()) {
-            cancelled = true;
-            return false;
-          }
-          return true;
-        }
-      });
-
-      return stages;
+      err.AddFatalError("Apio toolchain isn't yet enabled to work with " + programmer.name +
+          " programmer, only the built-in Apio programmer or openFPGALoader.");
+      return false;
+    
     }
 
     public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {
@@ -544,17 +445,14 @@ public class Apio {
   }
 
   protected static class ApioProgrammer extends FPGAProgrammer {
-    // TODO: reorganize stages above, e.g. allowing for
-    // openFPGALoader, separating out usb-tmc, etc.
-    ApioProgrammer() { super("Apio"); }
-    @Override
-    public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if ApioDownload reported okay
+    ApioProgrammer(FPGAReport err, String apio) { super(TOOLCHAIN, "Apio", err); }
+    // The work for apio upload is done above, in createProgrammingPlan().
   }
   
   // Create an iCE40-compatible ".pcf" constraint file
   static boolean writeiCE40ConstraintPCF(AuxFile pcf, Board board, PinBindings ioResources, boolean hasHFOSC) {
     if (ioResources.requiresOscillator && !hasHFOSC)
-      pcf.stmt("set_io --warn-no-port %s %s", FPGADownload.CLK_PORT, board.fpga.ClockPinLocation);
+      pcf.stmt("set_io --warn-no-port %s %s", FPGASynthesizer.CLK_PORT, board.fpga.ClockPinLocation);
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
       if (io.standard != IoStandard.DEFAULT)
         pcf.err.AddSevereWarning("FPGA pin %s specifies ioStandard '%s' but this is not configurable for iCE40 FPGA in Apio. Using DEFAULT instead.", pin);
@@ -590,5 +488,5 @@ public class Apio {
     });
     return pcf.save();
   }
-  
+
 }

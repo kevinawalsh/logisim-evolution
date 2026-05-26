@@ -65,7 +65,8 @@ public class ApioOptions extends FPGAToolchainPanel {
   }
 
   boolean validateApioPath(String path) {
-    return path.isEmpty() || Apio.findApioExecutable(path) != null;
+    // TODO: show version info or error message in dialog
+    return path.isEmpty() || Apio.TOOLCHAIN.toolchainInstallStatus(path).installed();
   }
 
 }

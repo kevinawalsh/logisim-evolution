@@ -30,14 +30,8 @@
 
 package com.bfh.logisim.download;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
@@ -46,12 +40,10 @@ import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.gui.Commander;
-import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 
-public class Xilinx {
+public class Xilinx extends Toolchain {
 
   public static final String XILINX_XST = "xst" + Toolchain.dotexe;
   public static final String XILINX_NGDBUILD = "ngdbuild" + Toolchain.dotexe;
@@ -66,43 +58,100 @@ public class Xilinx {
     XILINX_BITGEN, XILINX_IMPACT, XILINX_CPLDFIT, XILINX_HPREP6,
   };
 
-  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Xilinx ISE", "Xilinx", true, true) {
-    @Override
-    public boolean hasAlternateName(String altname) {
-      return 
-        altname.equalsIgnoreCase("Xilinx ISE")
-        || altname.equalsIgnoreCase("Xilinx ISE Design Suite")
-        || altname.equalsIgnoreCase("Xilinx Design Suite");
-    }
-    @Override
-    public boolean supports(Board b) {
-      // TODO: probably need to use fpga part to somehow determine if it is
-      // supported.
-      return b.name.toLowerCase().contains("xilinx")
-        || b.codename.toLowerCase().contains("xilinx")
-        || b.name.toLowerCase().contains("amd")
-        || b.codename.toLowerCase().contains("amd");
-    }
-    @Override
-    public List<String[]> defaultParams(/*Board board*/) {
-      return Collections.emptyList();
-    }
-    @Override
-    public List<String> getLanguages(Board board) {
-      return List.of(VERILOG, VHDL);
-    }
-    @Override
-    public FPGADownload newDownloader() { return new XilinxDownload(); }
-    @Override
-    public FPGAProgrammer newProgrammer() { return new XilinxProgrammer(); }
-  };
+  public static final Toolchain TOOLCHAIN = new Xilinx();
 
-  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+  private Xilinx() {
+    super("Xilinx ISE", "Xilinx", true, true);
+  }
+
+  @Override
+  public boolean hasAlternateName(String altname) {
+    return 
+      altname.equalsIgnoreCase("Xilinx ISE")
+      || altname.equalsIgnoreCase("Xilinx ISE Design Suite")
+      || altname.equalsIgnoreCase("Xilinx Design Suite");
+  }
+
+  @Override
+  public boolean supports(Board b) {
+    // TODO: probably need to use fpga part to somehow determine if it is
+    // supported.
+    return b.name.toLowerCase().contains("xilinx")
+      || b.codename.toLowerCase().contains("xilinx")
+      || b.name.toLowerCase().contains("amd")
+      || b.codename.toLowerCase().contains("amd");
+  }
+
+  @Override
+  public String defaultParamsAsString(/*Board board*/) {
+    return "UnusedPin: passed to bitgen or cpldfit - PULLUP|PULLDOWN|PULLNONE\n";
+  }
+
+  @Override
+  public List<String> getLanguages(Board board) {
+    return List.of(VERILOG, VHDL);
+  }
+
+  @Override
+  public FPGASynthesizer newSynthesizer(FPGAReport err) {
+    String xst_or_script = getInstalledCommand(err);
+    return xst_or_script == null ? null : new XilinxSynthesizer(err, xst_or_script);
+  }
+
+  @Override
+  public FPGAProgrammer newProgrammer(FPGAReport err) {
+    String xst_or_script = getInstalledCommand(err);
+    return xst_or_script == null ? null : new XilinxProgrammer(err, xst_or_script);
+  }
+
+  private static final String helpmsg =
+    "Set the Xilinx toolchain path to the directory where " + XILINX_XST
+    + " and related programs are installed, or set it to a file"
+    + " containing a stand-alone executable script.";
+
+  @Override
+  public InstallStatus toolchainInstallStatus() {
+    String path = AppPreferences.XILINX_PATH.get();
+    if (path == null || path.isEmpty())
+      return InstallStatus.fromError("Xilinx ISE toolchain path not configured. %s", helpmsg);
+
+    // Check if path is a directory containing xst
+    File prog = new File(path, XILINX_XST);
+    if (prog.exists() && !prog.isDirectory() && prog.canExecute())
+      return InstallStatus.fromSuccess(prog.toString(), "xst: undetermined version");
+
+    // Check if path points to xst itself, or maybe an external script
+    prog = new File(path);
+    if (prog.exists() && !prog.isDirectory() && prog.canExecute()) {
+      boolean is_xst = prog.getName().equalsIgnoreCase("xst") ||
+        prog.getName().equalsIgnoreCase("xst.exe");
+      if (is_xst)
+        return InstallStatus.fromSuccess(prog.toString(), "xst: undetermined version");
+      else
+        return InstallStatus.fromSuccess(prog.toString(), "standalone-script");
+    }
+
+    return InstallStatus.fromError(
+        "Xilinx ISE toolchain path set to '%s' but no suitable program found there. %s",
+        toolchainName, path, helpmsg);
+  }
 
 
-  private static class XilinxDownload extends FPGADownload {
+  private static class XilinxSynthesizer extends FPGASynthesizer {
 
-    private XilinxDownload() { super("Xilinx"); }
+    private String xdir; // verified path to dir containing xst and other tools
+    private String standaloneScript; // stand-alone script, full path, if xst is null
+
+    private XilinxSynthesizer(FPGAReport err, String xst_or_script) {
+      super(TOOLCHAIN, "Xilinx", err);
+      File prog = new File(xst_or_script);
+      boolean is_xst = prog.getName().equalsIgnoreCase("xst") ||
+        prog.getName().equalsIgnoreCase("xst.exe");
+      if (is_xst)
+        xdir = new File(xst_or_script).getParentFile().toString() + File.separator;
+      else
+        standaloneScript = xst_or_script;
+    }
 
     @Override
     public boolean readyForDownload() {
@@ -114,202 +163,157 @@ public class Xilinx {
       return new File(sandboxPath + TOP_HDL + bitFileExt).exists();
     }
 
-    private ArrayList<String> externalSynthesisScript() {
-      // If XilinxToolPath is an executable file, rather than a directory, then
-      // use that as a single-file script to do the entire synthesis rather than
-      // using the multi-step synthesis using xst.exe, etc.
-      String tool = AppPreferences.XILINX_PATH.get();
-      if (tool == null || tool.isEmpty())
-        return null;
-      File script = new File(tool);
-      if (!script.exists() || script.isDirectory() || !script.canExecute()
-          || script.getName().equalsIgnoreCase("xst")
-          || script.getName().equalsIgnoreCase("xst.exe"))
-        return null;
-      ArrayList<String> command = new ArrayList<>();
-      command.add(tool);
-      return command;
+    private String getXilinxFPGAUnusedPinFlag(Board board) {
+      // first priority: use xilinx-specific param from board.xml
+      String pref = param("UnusedPin");
+      if (pref != null && !pref.isEmpty())
+        return "UnusedPin:" + pref;
+      if (pref.isEmpty())
+        return null; // explicitly unset, let toolchain decide
+                     // otherwise: use generic param from board.xml
+      switch (board.fpga.UnmentionedPinsBehaviorHint) {
+        case DRIVE_HIGH:
+        case INPUT_PULL_UP:
+          return "UnusedPin:PULLUP";
+        case DRIVE_LOW:
+        case INPUT_PULL_DOWN:
+          return "UnusedPin:PULLDOWN";
+        case INPUT_NO_PULL:
+          return "UnusedPin:PULLNONE"; // aka "FLOAT" maybe? docs are inconsistent...
+        case UNSPECIFIED:
+        default:
+          return "UnusedPin:PULLDOWN"; // seems to be a widely used "safe" default?
+                                       // return null; // let toolchain decide
+      }
     }
 
-    private ArrayList<String> cmd(String prog, String ...args) {
-      ArrayList<String> command = new ArrayList<>();
-      String x = AppPreferences.XILINX_PATH.get();
-      if (x == null || x.isEmpty()) {
-        command.add(prog);
+    private String getXilinxCPLDUnusedPinFlag(Board board) {
+      // first priority: use xilinx-specific param from board.xml
+      String pref = param("UnusedPin");
+      if (pref != null && !pref.isEmpty())
+        return pref;
+      if (pref.isEmpty())
+        return null; // explicitly unset, let toolchain decide
+                     // otherwise: use generic param from board.xml
+      switch (board.fpga.UnmentionedPinsBehaviorHint) {
+        case DRIVE_HIGH:
+        case INPUT_PULL_UP:
+          return "pullup";
+        case DRIVE_LOW:
+          return "ground";
+        case INPUT_PULL_DOWN:
+          return "pulldown";
+        case INPUT_NO_PULL:
+          return "float";
+        case UNSPECIFIED:
+        default:
+          return null; // let cpldfit decide
+      }
+    }
+
+
+    @Override
+    public boolean createSynthesisPlan(ArrayList<Stage> stages) {
+
+      // If the toolchain path is unusual (not to xst or xst.exe), we assume it is a
+      // standalone script that will do all synthesis steps in one go. We pass
+      // two parameters: "synthesize" and the project path.
+      if (standaloneScript != null) {
+        stages.add(new ProcessStage(
+              "synthesis", "Synthesizing (may take a while)",
+              join(standaloneScript, "synthesize", projectPath),
+              "Failed to synthesize design, cannot download"));
+        return true;
+      }
+
+      // Otherwise, we use the standard (old) xilinx toolchain programs.
+
+      String script = scriptPath.replace(projectPath, "../") + script_file;
+      stages.add(new ProcessStage(
+            "synthesize", "Synthesizing (may take a while)",
+            join(xdir + XILINX_XST, "-ifn", script, "-ofn", "logisim.log"),
+            "Failed to synthesize Xilinx project, cannot download"));
+
+      String ucf = ucfPath.replace(projectPath, "../") + ucf_file;
+      stages.add(new ProcessStage(
+            "constrain", "Adding Constraints",
+            join(xdir + XILINX_NGDBUILD, "-intstyle", "ise", "-uc", ucf, "logisim.ngc", "logisim.ngd"),
+            "Failed to add Xilinx constraints, cannot download"));
+
+      if (!isCPLD(board.fpga)) {
+        stages.add(new ProcessStage(
+              "mapping", "Mapping Design (may take a while)",
+              join(xdir + XILINX_MAP, "-intstyle", "ise", "-o", "logisim_map", "logisim.ngd"),
+              "Failed to map design, cannot download"));
+        stages.add(new ProcessStage(
+              "place & route", "Place & Route Design (may take a while)",
+              join(xdir + XILINX_PAR, "-w", "-intstyle", "ise", "-ol", "high", "logisim_map", "logisim_par", "logisim_map.pcf"),
+              "Failed to place & route design, cannot download"));
+        String unusedPinFlag = getXilinxFPGAUnusedPinFlag(board);
+        stages.add(new ProcessStage(
+              "generate", "Generating Bitfile",
+              join(xdir + XILINX_BITGEN, "-w", opt("-g", unusedPinFlag),
+                "-g", "StartupClk:CCLK", "logisim_par", TOP_HDL + ".bit"),
+              "Failed to place & route design, cannot download"));
       } else {
-        // strip off "xst" or "xst.exe", 
-        // or for standalone script (which might still be used with impact.exe)
-        // strip off the script name
-        File xdir = new File(x);
-        if (!xdir.isDirectory())
-          xdir = xdir.getParentFile();
-        command.add(xdir + File.separator + prog);
+        String part = nameForCPLD(board.fpga);
+        String unusedPinFlag = getXilinxCPLDUnusedPinFlag(board);
+        stages.add(new ProcessStage(
+              "CPLD fit", "Fit CPLD Design (may take a while)",
+              join(xdir + XILINX_CPLDFIT, "-p", part, "-intstyle", "ise",
+                opt("-unused", unusedPinFlag),
+                // "-terminate", board.fpga.UnusedPinsBehavior.xilinx, // TODO: do correct termination type
+                "-loc", "on", "-log", "logisim_cpldfit.log", "logisim.ngd"),
+              "Failed to fit CPLD design, cannot download"));
+        stages.add(new ProcessStage(
+              "generate", "Generating Bitfile",
+              join(xdir + XILINX_HPREP6, "-i", "logisim.vm6"),
+              "Failed to generate bitfile, cannot download"));
       }
-      for (String arg: args)
-        command.add(arg);
-      return command;
-    }
 
-    public boolean toolchainIsInstalled(FPGAReport err) {
-      String helpmsg = "It should be set to the directory where " + XILINX_XST
-        + " and related programs are installed, or set to a file"
-        + " containing a stand-alone executable script.";
-      String tool = AppPreferences.XILINX_PATH.get();
-      if (tool == null || tool.isEmpty()) {
-        err.AddFatalError("Xilinx ISE toolchain path not configured. " + helpmsg);
-        return false;
-      }
-      if (externalSynthesisScript() != null)
-        return true;
-      File prog = new File(tool + File.separator + XILINX_XST);
-      if (prog.exists() && !prog.isDirectory() && prog.canExecute())
-        return true;
-      err.AddFatalError("Xilinx ISE toolchain path is set to " + tool + ","
-          + " but this appears to be incorrect. " + helpmsg);
-      return false;
+      return true;
     }
 
     @Override
-    public ArrayList<Stage> initiateDownload(Commander cmdr) {
-      ArrayList<Stage> stages = new ArrayList<>();
-
-      if (!readyForDownload()) {
-        ArrayList<String> tool = externalSynthesisScript();
-        if (tool != null) {
-          tool.add(projectPath);
-          stages.add(new ProcessStage(
-                "synthesis", "Synthesizing (may take a while)",
-                tool, "Failed to synthesize design, cannot download"));
-        } else {
-          String script = scriptPath.replace(projectPath, "../") + script_file;
-          stages.add(new ProcessStage(
-                "synthesize", "Synthesizing (may take a while)",
-                cmd(XILINX_XST, "-ifn", script, "-ofn", "logisim.log"),
-                "Failed to synthesize Xilinx project, cannot download"));
-          String ucf = ucfPath.replace(projectPath, "../") + ucf_file;
-          stages.add(new ProcessStage(
-                "constrain", "Adding Constraints",
-                cmd(XILINX_NGDBUILD, "-intstyle", "ise", "-uc", ucf, "logisim.ngc", "logisim.ngd"),
-                "Failed to add Xilinx constraints, cannot download"));
-          if (!isCPLD(board.fpga)) {
-            stages.add(new ProcessStage(
-                  "mapping", "Mapping Design (may take a while)",
-                  cmd(XILINX_MAP, "-intstyle", "ise", "-o", "logisim_map", "logisim.ngd"),
-                  "Failed to map design, cannot download"));
-            stages.add(new ProcessStage(
-                  "place & route", "Place & Route Design (may take a while)",
-                  cmd(XILINX_PAR, "-w", "-intstyle", "ise", "-ol", "high", "logisim_map", "logisim_par", "logisim_map.pcf"),
-                  "Failed to place & route design, cannot download"));
-            String unusedPinFlag = getXilinxFPGAUnusedPinFlag(board);
-            if (unusedPinFlag != null)
-              stages.add(new ProcessStage(
-                    "generate", "Generating Bitfile",
-                    cmd(XILINX_BITGEN, "-w", "-g", unusedPinFlag,
-                      "-g", "StartupClk:CCLK", "logisim_par", TOP_HDL + ".bit"),
-                    "Failed to place & route design, cannot download"));
-            else
-              stages.add(new ProcessStage(
-                    "generate", "Generating Bitfile",
-                    cmd(XILINX_BITGEN, "-w",
-                      "-g", "StartupClk:CCLK", "logisim_par", TOP_HDL + ".bit"),
-                    "Failed to place & route design, cannot download"));
-          } else {
-            String part = board.fpga.Part.toUpperCase() + "-"
-              + board.fpga.SpeedGrade + "-"
-              + board.fpga.Package.toUpperCase();
-            String unusedPinFlag = getXilinxCPLDUnusedPinFlag(board);
-            if (unusedPinFlag != null)
-              stages.add(new ProcessStage(
-                    "CPLD fit", "Fit CPLD Design (may take a while)",
-                    cmd(XILINX_CPLDFIT, "-p", part, "-intstyle", "ise",
-                      "-unused", unusedPinFlag,
-                      // "-terminate", board.fpga.UnusedPinsBehavior.xilinx, // TODO: do correct termination type
-                      "-loc", "on", "-log", "logisim_cpldfit.log", "logisim.ngd"),
-                    "Failed to fit CPLD design, cannot download"));
-            else
-              stages.add(new ProcessStage(
-                    "CPLD fit", "Fit CPLD Design (may take a while)",
-                    cmd(XILINX_CPLDFIT, "-p", part, "-intstyle", "ise",
-                      // "-terminate", board.fpga.UnusedPinsBehavior.xilinx, // TODO: do correct termination type
-                      "-loc", "on", "-log", "logisim_cpldfit.log", "logisim.ngd"),
-                    "Failed to fit CPLD design, cannot download"));
-            stages.add(new ProcessStage(
-                  "generate", "Generating Bitfile",
-                  cmd(XILINX_HPREP6, "-i", "logisim.vm6"),
-                  "Failed to generate bitfile, cannot download"));
-          }
-        }
-      }
+    public boolean createProgrammingPlan(ArrayList<Stage> stages) {
 
       if (programmer != null && !(programmer instanceof XilinxProgrammer)) {
         err.AddFatalError("Xilinx ISE toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Xilinx programmer.");
-        return stages;
-      }
-
-      if (!board.fpga.USBTMCAvailable) {
-        String download = scriptPath.replace(projectPath, "../") + download_file;
-        stages.add(new ProcessStage(
-              "download", "Downloading to FPGA",
-              cmd(XILINX_IMPACT, "-batch", download),
-              "Failed to download design; did you connect the board?") {
-          @Override
-          protected boolean prep() {
-            if (!cmdr.confirmDownload()) {
-              cancelled = true;
-              return false;
-            }
-            return true;
-          }
-        });
-      } else {
-        stages.add(new RunnableStage(
-              "download", "Downloading to FPGA", 
-              "Failed to download design; did you connect the board?") {
-          File usbtmc;
-          @Override
-          protected boolean prep() {
-            if (!cmdr.confirmDownload()) {
-              failed = true;
-              cancelled = true;
-              return false;
-            }
-            File usbtmc = new File("/dev/usbtmc0");
-            if (!usbtmc.exists()) {
-              console.printf(console.ERROR, "Could not find usbtmc device: /dev/usbtmc0 not found.");
-              failed = true;
-              return false;
-            }
-            return true;
-          }
-          @Override
-          protected boolean run() {
-            String bitFileExt = isCPLD(board.fpga) ? ".jed" : ".bit";
-            File bitfile = new File(sandboxPath + TOP_HDL + bitFileExt);
-            return copyFile(console, usbtmc, bitfile);
-          }
-        });
-      }
-      return stages;
-    }
-
-    private boolean copyFile(Console console, File destfile, File srcfile) { 
-      console.printf("%s <= %s\n", destfile, srcfile);
-      byte[] buf = new byte[BUFFER_SIZE];
-      try {
-        BufferedInputStream src = new BufferedInputStream(new FileInputStream(srcfile));
-        BufferedOutputStream dest = new BufferedOutputStream(new FileOutputStream(destfile));
-        dest.write("FPGA ".getBytes());
-        int n = src.read(buf, 0, BUFFER_SIZE);
-        while (n > 0) {
-          dest.write(buf, 0, n);
-          n = src.read(buf, 0, BUFFER_SIZE);
-        }
-        dest.close();
-        src.close();
-      } catch (IOException e) {
-        console.printf(console.ERROR, "Error: " + e.getMessage());
         return false;
       }
+
+      // Support for "USBTMC" download has been removed. So far as I can tell,
+      // this was used by exactly one board: the "GECKO4LED" board using Xilinx
+      // Spartan-3 XC3S5000. Apparently this board used a xilinx usb cable that
+      // presented as /dev/usbtmc0 (on Linux, presumably), and was programmed by
+      // writing a 4 byte prefix ("FPGA"), followed by the bitstream file,
+      // directly to /dev/usbtmc0. This fpga is 20+ years old, and no public
+      // information is available about the "GECKO4LED" board.
+
+      String download = scriptPath.replace(projectPath, "../") + download_file;
+      ArrayList<String> cmd;
+
+      // If the toolchain path is unusual (not to xst or xst.exe), we assume it is a
+      // standalone script that will can do the programming. We pass
+      // two parameters: "program" and the download file.
+      if (standaloneScript != null)
+        cmd = join(standaloneScript, "program", download);
+      else
+        cmd = join(xdir + XILINX_IMPACT, "-batch", download);
+
+      stages.add(new ProcessStage(
+            "download", "Downloading to FPGA", cmd,
+            "Failed to download design; did you connect the board?") {
+        @Override
+        protected boolean prep() {
+          if (!cmdr.confirmDownload()) {
+            cancelled = true;
+            return false;
+          }
+          return true;
+        }
+      });
+
       return true;
     }
 
@@ -384,6 +388,13 @@ public class Xilinx {
         || part.startsWith("XA9500");
     }
 
+    private static String nameForCPLD(Chipset chip) {
+      return String.format("%s-%s-%s",
+          chip.Part.toUpperCase(),
+          chip.SpeedGrade,
+          chip.Package.toUpperCase());
+    }
+
     private final static String vhdl_list_file = "XilinxVHDLList.prj";
     private final static String script_file = "XilinxScript.cmd";
     private final static String ucf_file = "XilinxConstraints.ucf";
@@ -393,59 +404,10 @@ public class Xilinx {
   }
 
   protected static class XilinxProgrammer extends FPGAProgrammer {
-    // TODO: reorganize stages above, e.g. allowing for
-    // openFPGALoader, separating out usb-tmc, etc.
-    XilinxProgrammer() { super("Xilinx"); }
-    @Override
-    public boolean toolchainIsInstalled(FPGAReport err) { return true; } // only relevant if XilinxDownload reported okay
-  }
-
-  private static String getXilinxFPGAUnusedPinFlag(Board board) {
-    // first priority: use xilinx-specific param from board.xml
-    String pref = board.paramFor(MY_TOOLCHAIN, "UnusedPin");
-    if (pref != null && !pref.isEmpty())
-      return "UnusedPin:" + pref;
-    if (pref.isEmpty())
-      return null; // explicitly unset, let toolchain decide
-    // otherwise: use generic param from board.xml
-    switch (board.fpga.UnmentionedPinsBehaviorHint) {
-      case DRIVE_HIGH:
-      case INPUT_PULL_UP:
-        return "UnusedPin:PULLUP";
-      case DRIVE_LOW:
-      case INPUT_PULL_DOWN:
-        return "UnusedPin:PULLDOWN";
-      case INPUT_NO_PULL:
-        return "UnusedPin:PULLNONE"; // aka "FLOAT" maybe? docs are inconsistent...
-      case UNSPECIFIED:
-      default:
-        return "UnusedPin:PULLDOWN"; // seems to be a widely used "safe" default?
-        // return null; // let toolchain decide
+    XilinxProgrammer(FPGAReport err, String xst_or_script) {
+      super(TOOLCHAIN, "Xilinx", err);
     }
-  }
-
-  private static String getXilinxCPLDUnusedPinFlag(Board board) {
-    // first priority: use xilinx-specific param from board.xml
-    String pref = board.paramFor(MY_TOOLCHAIN, "UnusedPin");
-    if (pref != null && !pref.isEmpty())
-      return pref;
-    if (pref.isEmpty())
-      return null; // explicitly unset, let toolchain decide
-    // otherwise: use generic param from board.xml
-    switch (board.fpga.UnmentionedPinsBehaviorHint) {
-      case DRIVE_HIGH:
-      case INPUT_PULL_UP:
-        return "pullup";
-      case DRIVE_LOW:
-        return "ground";
-      case INPUT_PULL_DOWN:
-        return "pulldown";
-      case INPUT_NO_PULL:
-        return "float";
-      case UNSPECIFIED:
-      default:
-        return null; // let cpldfit decide
-    }
+    // The work for xilinx upload is done above, in createProgrammingPlan().
   }
 
   static void writeIoSpec(AuxFile lpf, String net, String pin, InputBias bias, IoStandard standard, DriveStrength strength, String label) {
@@ -467,11 +429,11 @@ public class Xilinx {
 
   static boolean writeXilinuxConstraintUCF(AuxFile ucf, Board board, PinBindings ioResources) {
     if (ioResources.requiresOscillator) {
-      writeIoSpec(ucf, FPGADownload.CLK_PORT, board.fpga.ClockPinLocation,
+      writeIoSpec(ucf, FPGASynthesizer.CLK_PORT, board.fpga.ClockPinLocation,
           InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT, "primary clock");
-      ucf.stmt("NET \"%s\" TNM_NET = \"%s\" ;", FPGADownload.CLK_PORT, FPGADownload.CLK_PORT);
+      ucf.stmt("NET \"%s\" TNM_NET = \"%s\" ;", FPGASynthesizer.CLK_PORT, FPGASynthesizer.CLK_PORT);
       ucf.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 % ;",
-          FPGADownload.CLK_PORT, FPGADownload.CLK_PORT, board.fpga.Speed);
+          FPGASynthesizer.CLK_PORT, FPGASynthesizer.CLK_PORT, board.fpga.Speed);
       ucf.stmt();
     }
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {

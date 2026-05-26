@@ -30,43 +30,100 @@
 
 package com.bfh.logisim.download;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
+import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
-import com.cburch.logisim.util.Debug;
 
 public class OpenFPGALoader extends FPGAProgrammer {
 
-  private static Toolchain MY_TOOLCHAIN = new Toolchain("openFPGALoader", "openFPGALoader", false, true /* programmer only */) {
+  public static OFLToolchain TOOLCHAIN = new OFLToolchain();
+
+  public static class OFLToolchain extends Toolchain {
+
+    OFLToolchain() {
+      super("openFPGALoader", "openFPGALoader", false, true /* programmer only */);
+    }
+
     @Override
     public boolean hasAlternateName(String altname) {
       return altname.equalsIgnoreCase("trabucayre/openFPGALoader");
     }
+
     @Override
-    public boolean supports(Board b) { return OpenFPGALoader.supports(b); }
-    @Override
-    public List<String[]> defaultParams(/*Board board*/) {
-      return List.<String[]>of(new String[] { "board", "passed to backend, defaults to board codename" });
+    public boolean supports(Board board) {
+      // if the board xml explicitly lists openFPGALoader, then who are we to disagree?
+      if (board.mentions(this) || board.paramFor(this, "board") != null)
+        return true;
+      // otherwise, check if we know the name for this board
+      String openFPGALoader = getInstalledCommand(null);
+      return boardNameFromBackendList(openFPGALoader, board) != null;
     }
+
+    @Override
+    public String defaultParamsAsString(/*Board board*/) {
+      return
+        "board: passed to backend, defaults to board codename\n" +
+        "verify: whether to verify after upload (default: true)\n" +
+        "reset: whether to reset after upload (default: false)\n" +
+        "verbose: verbosity level (default: 0 or false)\n";
+      // FIXME: Maybe also support...
+      // --write-flash vs --write-sram
+      // --detect
+      // --freq N to change the jtag programming speed
+      // --verbose
+      // --index-chain
+      // --offset
+      // etc.
+    }
+
     @Override
     public List<String> getLanguages(Board board) {
       return List.of(VERILOG, VHDL);
     }
+
+    private static final String helpmsg =
+      "Either install openFPGALoader to a system directory, or set "
+      + "the toolchain path to point to the 'openFPGALoader' executable or a "
+      + "directory (e.g. a python virtualenv) containing it.";
+
+   
     @Override
-    public FPGADownload newDownloader() { return null; }
+    public InstallStatus toolchainInstallStatus() {
+      return toolchainInstallStatus(AppPreferences.APIO_PATH.get());
+    }
+
+    public InstallStatus toolchainInstallStatus(String prefPath) {
+      return simpleInstallStatusHelper(
+          prefPath, "--Version",
+          helpmsg, "openFPGALoader", "bin/openFPGALoader");
+    }
+
+
     @Override
-    public FPGAProgrammer newProgrammer() { return new OpenFPGALoader(); }
+    public FPGASynthesizer newSynthesizer(FPGAReport err) { return null; }
+
+    @Override
+    public FPGAProgrammer newProgrammer(FPGAReport err) {
+      String openFPGALoader = getInstalledCommand(err);
+      return openFPGALoader == null ? null : new OpenFPGALoader(err, openFPGALoader);
+    }
+
   };
 
-  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
+  private String openFPGALoader; // verified openFPGALoader command, inluding full path if needed
+  private String bitstream; // set by createProgrammingPlan()
+  private String cableIndex; // set by ScanStage.post()
+  private boolean confirmed;
 
-  private OpenFPGALoader() { super("openFPGALoader"); }
+  private OpenFPGALoader(FPGAReport err, String openFPGALoader) {
+    super(TOOLCHAIN, "openFPGALoader", err);
+    this.openFPGALoader = openFPGALoader;
+  }
 
   // openFPGALoader board names tend to follow alphanumplus_snake_case or,
   // sometimes, alhpanumplus-kebab-case conventions. We normalize to snake case.
@@ -77,102 +134,139 @@ public class OpenFPGALoader extends FPGAProgrammer {
     return name;
   }
 
-  // FIXME: ofl_bin should not need to be a param here, should have detected earlier
-  public static ArrayList<String> commandFor(Board board, String ofl_bin, String bitstreamFile) {
-    // FIXME: if openFPGALoader_name is unset, fall back to... name?
+  private class ScanStage extends ProcessStage {
+
+    ScanStage() {
+      super("scan", "Scaning for FPGA Devices",
+          join(openFPGALoader, "--detect"),
+          "Could not find any FPGA devices.");
+    }
+
+    @Override
+    protected boolean prep() {
+      if (!new File(bitstream).exists()) {
+        console.printf(Console.ERROR, "Error: Design must be synthesized before download.");
+        return false;
+      }
+      if (!confirmed && !cmdr.confirmDownload()) {
+        cancelled = true;
+        return false;
+      }
+      confirmed = true;
+      return true;
+    }
+
+    @Override
+    protected boolean post() {
+      ArrayList<String> dev = new ArrayList<>();
+      StringBuilder curdev = null;
+
+      for (String line : console.getText()) {
+        if (line.trim().matches("^index \\d+:")) {
+          if (curdev != null)
+            dev.add(curdev.toString());
+          curdev = new StringBuilder(line.trim());
+        }
+        if (line.trim().matches("^idcode\\s+0x[0-9a-f]+")) {
+          curdev.append(" " + line.trim().split("\\s+")[1]);
+        }
+        if (line.trim().matches("^model\\s+.*")) {
+          curdev.append(" " + line.trim().split("\\s+")[1]);
+        }
+      }
+      if (curdev != null)
+        dev.add(curdev.toString());
+
+      String devsel = dev.size() > 1 ? cmdr.chooseDevice(dev) : dev.get(0);
+      cableIndex = devsel.split(":")[0].split("\\s+")[1];
+      return super.post();
+    }
+
+  }
+
+  private ArrayList<String> uploadCommand() {
     ArrayList<String> cmd = new ArrayList<>();
-    cmd.add(ofl_bin);
-    cmd.add("--verify");
+
+    cmd.add(openFPGALoader);
+    
+    String verbosePref = param("verbose");
+    if (verbosePref != null && !verbosePref.equalsIgnoreCase("false")) {
+      if (verbosePref.equalsIgnoreCase("true")) {
+        cmd.add("--verbose");
+      } else {
+        try {
+          int level = Integer.parseInt(verbosePref);
+          cmd.add("--verbose-level");
+          cmd.add(""+level);
+        } catch (NumberFormatException e) {
+        }
+      }
+    }
+
+    String verifyPref = param("verify");
+    if (verifyPref == null || !verifyPref.equalsIgnoreCase("false"))
+      cmd.add("--verify");
+
+    String resetPref = param("reset");
+    if (resetPref != null && resetPref.equalsIgnoreCase("true"))
+      cmd.add("--reset");
+
     String boardname = boardNameFor(board);
     if (boardname != null) {
       cmd.add("-b");
       cmd.add(boardname);
     }
-    cmd.add(bitstreamFile); // e.g. "hardware.bin"
+
+    if (cableIndex != null) {
+      cmd.add("--cable-index");
+      cmd.add(cableIndex);
+    }
+
+    cmd.add(bitstream);
+
     return cmd;
   }
-  
-  private static final String helpmsg =
-    "Either install openFPGALoader to a system directory, or set "
-    + "the toolchain path to point to the 'openFPGALoader' executable or a "
-    + "directory (e.g. a python virtualenv) containing it.";
 
-  private static String getVersion(String cmd) {
-    try {
-      Process process = Runtime.getRuntime().exec(cmd + " --Version");
-      BufferedReader reader = new BufferedReader(
-          new InputStreamReader(process.getInputStream()));
-      String line = reader.readLine();
-      if (line.toLowerCase().startsWith("openfpgaloader "))
-        return line.substring("openfpgaloader ".length());
-    } catch (Exception e) {
-    }
-    return null;
-  }
 
-  public static String findExecutable(FPGAReport err) {
-    String tool = AppPreferences.OPENFPGALOADER_PATH.get();
-    // user wants system openFPGALoader
-    if (tool == null || tool.isEmpty()) {
-      String version = getVersion("openFPGALoader");
-      if (version != null) {
-        err.AddInfo("Using system installed openFPGALoader, " + version);
-        return "openFPGALoader";
+  public boolean createProgrammingPlan(ArrayList<Stage> stages, String bitstream) {
+
+    this.bitstream = bitstream; // e.g. hardware.bin
+
+    stages.add(new ScanStage());
+
+    stages.add(new ProcessStage(
+          "upload", "Uploading to FPGA via openFPGALoader", uploadCommand(),
+          "Failed to upload design; did you connect the board?") {
+      @Override
+      protected boolean prep() {
+        if (!confirmed && !cmdr.confirmDownload()) {
+          cancelled = true;
+          return false;
+        }
+        confirmed = true;
+        return true;
       }
-      err.AddSevereWarning("openFPGALoader toolchain path is not configured, and openFPGALoader"
-          + " does not appear to be installed in a system directory. " + helpmsg);
-      return null;
-    }
-    // user wants custom openFPGALoader
-    String prog = findExecutable(tool);
-    if (prog != null && !prog.isEmpty()) {
-      String version = getVersion(prog);
-      if (version != null) {
-        err.AddInfo("Using " + prog + ", " + version);
-        return prog;
-      }
-      err.AddSevereWarning("openFPGALoader path is set to '" + tool + "', but "
-          + " `openFPGALoader --Version` still failed. " + helpmsg);
-      return null;
-    }
-    return null;
+    });
+
+    return true;;
   }
 
-  public static String findExecutable(String p) {
-    if (p != null && !p.isEmpty()) {
-      File script = new File(p);
-      if (script.exists() && !script.isDirectory() && script.canExecute())
-        return p;
-      if (script.exists() && script.isDirectory()) {
-        String pp = p + "/openFPGALoader";
-        script = new File(pp);
-        if (script.exists() && !script.isDirectory() && script.canExecute())
-          return pp;
-      }
-      return null;
-    }
-    // Try just using "openFPGALoader", hope it is found on system path?
-    return "openFPGALoader";
-  }
-
-  public static boolean supports(Board board) {
-    // if the board xml explicitly lists openFPGALoader, then who are we to disagree?
-    if (board.mentions(MY_TOOLCHAIN))
-      return true;
-    return boardNameFor(board) != null;
-  }
-
-  public static String boardNameFor(Board board) {
-    // if board listed a name, then who are we to disagree?
-    String pref = board.paramFor(MY_TOOLCHAIN, "board");
+  private String boardNameFor(Board board) {
+    // if custom params, or board, listed a name, then who are we to disagree?
+    String pref = param("board");
     if (pref != null)
       return pref;
     // next, see if codename appears in board list (ignore case, but otherwise exact match)
-    ArrayList<String> names = getOpenFPGALoaderBoardList();
+    return boardNameFromBackendList(openFPGALoader, board);
+  }
+
+  private static String boardNameFromBackendList(String openFPGALoader, Board board) {
+    // see if codename appears in board list (ignore case, but otherwise exact match)
+    ArrayList<String> names = getOpenFPGALoaderBoardList(openFPGALoader);
     for (String name : names)
       if (name.equalsIgnoreCase(board.codename))
         return name;
-    // last, try approximate matches against board list
+    // try approximate matches against board list
     String codename = normalizeBoardName(board.codename);
     for (String name : names)
       if (name.equalsIgnoreCase(codename))
@@ -180,29 +274,16 @@ public class OpenFPGALoader extends FPGAProgrammer {
     return null;
   }
 
-  private static ArrayList<String> getOpenFPGALoaderBoardList() {
+
+  private static ArrayList<String> getOpenFPGALoaderBoardList(String openFPGALoader) {
     ArrayList<String> ret = new ArrayList<>();
-    String prog = findExecutable(AppPreferences.OPENFPGALOADER_PATH.get());
-    if (prog == null || prog.isEmpty())
-      return ret;
-    try {
-      Process process = new ProcessBuilder(prog, "--list-boards").start();
-      BufferedReader reader = new BufferedReader(
-          new InputStreamReader(process.getInputStream()));
-      String line = reader.readLine().trim();
+    for (String line : FPGATool.stdoutFor(openFPGALoader, "--list-boards")) {
       String parts[] = line.split(" ", 2);
       if (parts.length > 0 && !parts[0].equalsIgnoreCase("empty")
           && !parts[0].equalsIgnoreCase("board"))
         ret.add(parts[0]);
-    } catch (Exception e) {
-      Debug.error("Executing `"+prog+" --list-boards`", e);
     }
     return ret;
-  }
-   
-  @Override
-  public boolean toolchainIsInstalled(FPGAReport err) {
-    return findExecutable(err) != null;
   }
 
 }

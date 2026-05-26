@@ -456,11 +456,10 @@ public class BoardEditor extends JFrame {
     vendor.setEditable(true);
     JTextField family = new JTextField();
     JTextField part = new JTextField();
-    JTextField pkg = new JTextField();
     JTextField speed = new JTextField();
+    JTextField pkg = new JTextField();
     JTextField flashName = new JTextField();
     JTextField flashPos = new JTextField("2");
-    JCheckBox usbTmc = new JCheckBox("USBTMC Download");
 
     if (fpga == null) {
       rate.setText("50");
@@ -469,15 +468,14 @@ public class BoardEditor extends JFrame {
       clkStandard.setSelectedIndex(0);
       unmentionedBehavior.setSelectedIndex(0); // UnmentionedPinBehavior.UNSPECIFIED
       vendor.setSelectedIndex(0);
-      usbTmc.setSelected(false);
     } else {
       // FIXME reorder these
       jtagPos.setText(""+fpga.JTAGPos);
       vendor.setSelectedItem(fpga.Vendor);
       family.setText(fpga.Technology);
       part.setText(fpga.Part);
-      pkg.setText(fpga.Package);
       speed.setText(fpga.SpeedGrade);
+      pkg.setText(fpga.Package);
       // FIXME, split into separate clock section
       rate.setText(fpga.Speed.split(" ")[0]);
       hz.setSelectedItem(fpga.Speed.split(" ")[1]);
@@ -488,8 +486,6 @@ public class BoardEditor extends JFrame {
       // FIXME, split into separate Flash section
       flashName.setText(fpga.FlashName);
       flashPos.setText(""+fpga.FlashPos);
-      // FIXME, split into USB TMC section
-      usbTmc.setSelected(fpga.USBTMCAvailable);
     }
 
     JPanel freqPanel = new JPanel();
@@ -516,8 +512,8 @@ public class BoardEditor extends JFrame {
     add(devPanel, c, "FPGA vendor:", vendor);
     add(devPanel, c, "FPGA family:", family);
     add(devPanel, c, "FPGA part:", part);
-    add(devPanel, c, "FPGA package:", pkg);
     add(devPanel, c, "FPGA speed grade:", speed);
+    add(devPanel, c, "FPGA package:", pkg);
     add(devPanel, c, "Flash name:", flashName);
     add(devPanel, c, "Flash position in JTAG chain:", flashPos);
 
@@ -534,15 +530,10 @@ public class BoardEditor extends JFrame {
     c.gridx = 0;
     c.gridy = 1;
     c.fill = GridBagConstraints.HORIZONTAL;
-    dlg.add(usbTmc, c);
-
-    c.gridx = 0;
-    c.gridy = 2;
-    c.fill = GridBagConstraints.HORIZONTAL;
     dlg.add(cancel, c);
 
     c.gridx = 1;
-    c.gridy = 2;
+    c.gridy = 1;
     c.fill = GridBagConstraints.HORIZONTAL;
     dlg.add(done, c);
 
@@ -570,27 +561,25 @@ public class BoardEditor extends JFrame {
         Errors.title("Error").show("Please specify FPGA family.");
       } else if (part.getText().isEmpty()) {
         Errors.title("Error").show("Please specify FPGA part.");
-      } else if (pkg.getText().isEmpty()) {
-        Errors.title("Error").show("Please specify FPGA package.");
       } else if (speed.getText().isEmpty()) {
         Errors.title("Error").show("Please specify FPGA speed grade.");
+      } else if (pkg.getText().isEmpty()) {
+        Errors.title("Error").show("Please specify FPGA package.");
       } else {
         HashMap<String, String> params = new HashMap<>();
-        params.put("ClockInformation/Frequency", ""+freq);
-        params.put("ClockInformation/FPGApin", clkLoc.getText());
-        // params.put("ClockInformation/PullBehavior", ""+clkPull.getSelectedItem());
-        params.put("ClockInformation/IOStandard", ""+clkStandard.getSelectedItem());
-        params.put("FPGAInformation/Family", family.getText() );
-        params.put("FPGAInformation/Part", part.getText());
-        params.put("FPGAInformation/Package", pkg.getText());
-        params.put("FPGAInformation/Speedgrade", speed.getText());
+        params.put("Clock/frequency", ""+freq);
+        params.put("Clock/pin", clkLoc.getText());
+        params.put("Clock/ioStandard", ""+clkStandard.getSelectedItem());
         String v = (String)vendor.getSelectedItem();
-        params.put("FPGAInformation/Vendor", ""+VENDORS.getOrDefault(v, v));
-        params.put("FPGAInformation/USBTMC", ""+usbTmc.isSelected());
-        params.put("FPGAInformation/JTAGPos", jtagPos.getText());
-        params.put("FPGAInformation/FlashPos", flashPos.getText());
-        params.put("FPGAInformation/FlashName", flashName.getText());
-        params.put("UnusedPins/PullBehavior", ""+unmentionedBehavior.getSelectedItem());
+        params.put("Chip/vendor", ""+VENDORS.getOrDefault(v, v));
+        params.put("Chip/family", family.getText() );
+        params.put("Chip/part", part.getText());
+        params.put("Chip/speedGrade", speed.getText());
+        params.put("Chip/package", pkg.getText());
+        params.put("JTAG/pos", jtagPos.getText());
+        params.put("FLASH/pos", flashPos.getText());
+        params.put("Flash/name", flashName.getText());
+        params.put("UnmentionedPins/behavior", ""+unmentionedBehavior.getSelectedItem());
         try {
           fpga = new Chipset(params);
           break;

@@ -30,12 +30,14 @@
 
 package com.bfh.logisim.download;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
+import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.Main;
 import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.Debug;
@@ -44,6 +46,7 @@ public abstract class Toolchain {
 
   public static final String VHDL = "VHDL";
   public static final String VERILOG = "Verilog";
+  public static final String CLK_PORT = FPGASynthesizer.CLK_PORT; // convenience
 
 
   // A unique, canonical name for the toolchain. This is displayed in some UI
@@ -85,17 +88,64 @@ public abstract class Toolchain {
   //   "apikey", "api key string from website, not used if empty"
   //   "optimize", "passed to backed, either 'memory' (default) or 'speed'"
   // This is used by BoardEditor, only as a hint for the user.
-  public abstract List<String[]> defaultParams(/* Board board*/);
+  public List<String[]> defaultParams(/* Board board*/) {
+    return splitKeyValueLines(defaultParamsAsString());
+  }
+
+  public abstract String defaultParamsAsString(/* Board board */);
 
   // Get a list of languages supported for a given board, e.g. VERLOG and/or VHDL.
   public abstract List<String> getLanguages(Board board);
 
-  // Create a new downloader, to be configured and used imminently.
-  public abstract FPGADownload newDownloader();
+  public record InstallStatus(boolean installed, String cmd, String detail) {
+    // installed: toolchain appears to be installed and working
+    // cmd: verified command to run, including path if needed
+    // detail: version info, or error message
+    
+    static InstallStatus fromSuccess(String cmd, String versionFormatString, Object ...args) {
+      return new InstallStatus(true, cmd, String.format(versionFormatString, args));
+    }
+
+    static InstallStatus fromError(String errorFormatString, Object ...args) {
+      return new InstallStatus(false, null, String.format(errorFormatString, args));
+    }
+  }
+
+  // Checks status of toolchain, prints the version and returns true on success,
+  // or prints fatal error and returns false on failure.
+  public boolean toolchainIsInstalled(FPGAReport err) {
+    InstallStatus status = toolchainInstallStatus();
+    if (status.installed()) {
+      err.AddInfo(status.detail());
+      return true;
+    } else {
+      err.AddFatalError(status.detail());
+      return false;
+    }
+  }
+
+  // Checks status of toolchain, discards the version info and returns the
+  // command on success, or prints fatal error (if err is non null) and returns
+  // null on failure.
+  protected String getInstalledCommand(FPGAReport err) {
+    InstallStatus status = toolchainInstallStatus();
+    if (status.installed()) return status.cmd();
+    // if (err != null) err.AddFatalError(status.detail());
+    if (err != null) err.AddFatalError(toolchainName + " toolchain isn't installed or configured properly. Install the necessary software, fix the settings, or try a different toolchain.");
+    return null;
+  }
+
+  // Check status of toolchain installation, returns either
+  // "YES: <version info>" or "NO: <error message>"
+  public abstract InstallStatus toolchainInstallStatus();
+
+  // Create a new synthesizer, to be configured and used imminently.
+  public abstract FPGASynthesizer newSynthesizer(FPGAReport err);
 
   // Create a new programmer, to be configured and used imminently.
-  public abstract FPGAProgrammer newProgrammer();
-  
+  public abstract FPGAProgrammer newProgrammer(FPGAReport err);
+
+
   protected Toolchain(String canonicalName, String shortName, boolean synth, boolean pgm) {
     this.toolchainName = canonicalName;
     this.shortName = shortName;
@@ -124,13 +174,13 @@ public abstract class Toolchain {
   private static synchronized void ensureRegistered() {
     if (registered) return;
     registered = true;
-    Apio.register();
+    register(Apio.TOOLCHAIN);
     Altera.register();
-    Xilinx.register();
-    Lattice.register();
-    Gowin.register();
-    OpenFPGALoader.register();
-    // USBTMC.register(); // FIXME: TODO
+    register(Xilinx.TOOLCHAIN);
+    register(Lattice.TOOLCHAIN);
+    register(Gowin.SYNTH_TOOLCHAIN);
+    register(Gowin.PROG_TOOLCHAIN);
+    register(OpenFPGALoader.TOOLCHAIN);
   }
 
   public static List<Toolchain> getAllToolchains() {
@@ -168,38 +218,43 @@ public abstract class Toolchain {
     return findByApproximateName(tools, name);
   }
 
-  public static Toolchain autoSelectSynthesisToolchain(Board board) {
+  public record ToolchainParameterPair(Toolchain tool, String params) {}
+
+  public static ToolchainParameterPair autoSelectSynthesisToolchain(Board board) {
     ensureRegistered();
     if (board == null)
-      return sTools.get(0); // no board selected, so any toolchain is fine, whatever
+      return new ToolchainParameterPair(sTools.get(0), null); // no board selected, so any toolchain is fine, whatever
     
     // First priority: user preference for the given board
     String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredSynthesisToolchain(board.name);
     Toolchain t = findByApproximateName(sTools, pref);
-    if (t != null) return t;
+    if (t != null) {
+      String p = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredSynthesisParams(board.name);
+      return new ToolchainParameterPair(t, p);
+    }
     
     // Fallback 1: default toolchain listed in board xml
     pref = board.getDefaultSynthesisTool();
     t = findByApproximateName(sTools, pref);
-    if (t != null) return t;
+    if (t != null) return new ToolchainParameterPair(t, null);
 
     // Fallback 2: other toolchains listed in board xml
     for (String p : board.getListedToolchains()) {
       if (!board.synthesisEnabled(p)) continue;
       t = findByApproximateName(sTools, p);
-      if (t != null) return t;
+      if (t != null) return new ToolchainParameterPair(t, null);
     }
 
     // Fallback 3: any toolchain supporting this board
     for (Toolchain tt : sTools)
       if (tt.supports(board))
-        return tt;
+        return new ToolchainParameterPair(tt, null);
 
     // No known toolchain supports this board, just return anything, whatever
-    return sTools.get(0);
+    return new ToolchainParameterPair(sTools.get(0), null);
   }
 
-  public static Toolchain autoSelectProgrammingToolchain(Board board) {
+  public static ToolchainParameterPair autoSelectProgrammingToolchain(Board board) {
     ensureRegistered();
     if (board == null)
       return null; // no board selected, so use null for "auto-select by synthesis tool"
@@ -207,24 +262,27 @@ public abstract class Toolchain {
     // First priority: user preference for the given board
     String pref = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredProgrammingToolchain(board.name);
     Toolchain t = findByApproximateName(pTools, pref);
-    if (t != null) return t;
+    if (t != null) {
+      String p = AppPreferences.FPGA_BOARDPREFS.getBoardPreferredProgrammingParams(board.name);
+      return new ToolchainParameterPair(t, p);
+    }
     
     // Fallback 1: default toolchain listed in board xml
     pref = board.getDefaultProgrammingTool();
     t = findByApproximateName(pTools, pref);
-    if (t != null) return t;
+    if (t != null) return new ToolchainParameterPair(t, null);
 
     // Fallback 2: other toolchains listed in board xml
     for (String p : board.getListedToolchains()) {
       if (!board.programmingEnabled(p)) continue;
       t = findByApproximateName(pTools, p);
-      if (t != null) return t;
+      if (t != null) return new ToolchainParameterPair(t, null);
     }
 
     // Fallback 3: any toolchain supporting this board
     for (Toolchain tt : pTools)
       if (tt.supports(board))
-        return tt;
+        return new ToolchainParameterPair(tt, null);
 
     // No known toolchain supports this board, so use null for "auto-select by synthesis tool"
     return null;
@@ -244,28 +302,117 @@ public abstract class Toolchain {
     return langs.get(0); 
   }
 
-  // public static String getLanguage(Board board, String toolchainName) {
-  //   Toolchain t = findSynthesisToolchain(toolchainName);
-  //   if (t == null)
-  //     return VERILOG; // FIXME: fallback
-  //   FPGADownload tool = t.newDownloader();
-  //   tool.board = board;
-  //   List<String> langs = tool.getLanguages();
-  //   if (langs.isEmpty())
-  //     return VERILOG; // FIXME: fallback
-  //   return langs.get(0); 
-  // }
-
-  // public static String getSynthesisToolchainName(Board board) {
-  //   Toolchain t = getSynthesisToolchain(board);
-  //   return t == null ? "no toolchains available" : t.toolchainName;
-  // }
-  
-  // public static FPGADownload forToolchain(String toolchainName) {
-  //   Toolchain t = findSynthesisToolchain(toolchainName);
-  //   return t == null ? null : t.newDownloader();
-  // }
-
   protected static final String dotexe = Main.MSWindows ? ".exe" : ""; // convenience
+
+
+  private List<String[]> splitKeyValueLines(String input) {
+    ArrayList<String[]> result = new ArrayList<>();
+    boolean lastWasBlankLine = false;
+    for (String line : input.split("\n", -1)) {
+      int colon = line.indexOf(':');
+      if (colon >= 0) {
+        String key = line.substring(0, colon).trim();
+        String value = line.substring(colon + 1).trim();
+        if (!key.isEmpty()) {
+          result.add(new String[]{key, value});
+          lastWasBlankLine = false;
+          continue;
+        }
+      }
+      result.add(new String[]{line});
+      lastWasBlankLine = line.trim().isEmpty();
+    }
+    if (lastWasBlankLine)
+      result.remove(result.size()-1);
+    return result;
+  }
+
+  // Helper: Given a path (e.g. from settings) and a program name (e.g. "apio"),
+  // and one or more alternative program names (e.g. "bin/apio", "Apio"), choose
+  // which one should be used for execution. Priority order:
+  // 1. Use path alone, if it exists and is executable
+  // 2. Use path/prog, if that exists and is executable
+  // 3. Use path/altname[i], if that exists and is executable
+  // Returns null if none of these are available.
+  // Precondition: path must be non-null and non-empty
+  static String chooseExecutable(String path, String prog, String ...altprog)  {
+    if (path == null || path.isEmpty())
+      return null;
+    File exe;
+    // 1. Use path alone?
+    exe = new File(path);
+    if (exe.exists() && !exe.isDirectory() && exe.canExecute())
+      return exe.toString();
+    // 2. Use path/prog?
+    exe = new File(path, prog);
+    if (exe.exists() && !exe.isDirectory() && exe.canExecute())
+      return exe.toString();
+    // 3. Use path/altname[i]?
+    for (String alt : altprog) {
+      exe = new File(path, alt);
+      if (exe.exists() && !exe.isDirectory() && exe.canExecute())
+        return exe.toString();
+    }
+    // Not found.
+    return null;
+  }
+
+  // Helper: Given an optional path (e.g. from settings), a version argument, a
+  // program name (e.g. "apio"), and one or more alternative program names (e.g.
+  // "bin/apio", "Apio"):
+  // - try to find the executable (using path, if set, or trying
+  //   system-installed version if unset)
+  // - invoke the program with the version flag
+  // - if first line of stdout starts with program name, then consider it a success
+  protected InstallStatus simpleInstallStatusHelper(String path,
+      String versionFlag, String helpmsg, String prog, String ...altprog) {
+    if (path == null || path.isEmpty()) {
+      // no pref path, user apparently wants to try system-installed executable
+      String cmd = prog;
+      return simpleGetVersionHelper(cmd, versionFlag, prog, true);
+    } else {
+      // pref path is set, use it to find executable
+      String cmd = chooseExecutable(path, prog, altprog);
+      if (cmd == null) {
+        return InstallStatus.fromError(
+            "%s toolchain path set to '%s' but no suitable program found there. %s",
+            toolchainName, path, helpmsg);
+      }
+      return simpleGetVersionHelper(cmd, versionFlag, prog, false);
+    }
+  }
+
+  protected InstallStatus simpleGetVersionHelper(String cmd, String versionFlag, String prog, boolean isFromSystem) {
+    try {
+      List<String> lines = FPGATool.stdoutOrFail(cmd, versionFlag);
+      if (lines.isEmpty())
+        return InstallStatus.fromError("Executing `%s %s`: no text found in standard output", cmd, versionFlag);
+      for (String line : lines) {
+        String version = simpleParseVersionHelper(prog, line);
+        if (version != null)
+          return InstallStatus.fromSuccess(cmd, "Using %s, version %s",
+              isFromSystem ? "system-installed " + prog  : "`" + cmd + "`", version);
+      }
+      return InstallStatus.fromError("Executing `%s %s`: unexpected output: '%s'", cmd, versionFlag, lines.get(0));
+    } catch (Exception e) {
+      return InstallStatus.fromError("Executing `%s %s`: %s", cmd, versionFlag, e.getMessage());
+    }
+  }
+
+  // This checks the first line of stdout, looking for "prog: versionstring" or similar.
+  // Otherwise, it fails immediately.
+  protected String simpleParseVersionHelper(String prog, String line) throws Exception {
+    if (line.toLowerCase().startsWith(prog.toLowerCase())) {
+      String version = line.substring(prog.length());
+      int numPunct = 0;
+      while (!version.isEmpty() && " :,;".indexOf(version.charAt(0)) >= 0) {
+        numPunct++;
+        version = version.substring(1);
+      }
+      if (numPunct > 0 && !version.isEmpty())
+        return version;
+    }
+    throw new Exception(String.format("unexpected output: '%s'", line));
+  }
 
 }

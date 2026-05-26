@@ -30,36 +30,38 @@
 
 package com.bfh.logisim.download;
 
+import java.io.BufferedReader;
+import java.io.OutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import javax.swing.SwingUtilities;
 
 import com.bfh.logisim.fpga.Board;
-import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.gui.Commander;
 import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
-import com.bfh.logisim.hdlgenerator.FileWriter;
-import com.bfh.logisim.hdlgenerator.TickHDLGenerator;
-import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
-import com.bfh.logisim.netlist.Netlist;
 import com.cburch.logisim.Main;
+import com.cburch.logisim.util.Debug;
 
-public abstract class FPGADownload {
-
+// Parent class for FPGASynthesizer and FPGAProgrammer
+public class FPGATool {
+  
   // FIXME: these need a home, duplicated in several places
   static final String VHDL = "VHDL";
   static final String VERILOG = "Verilog";
 
-  static final String TOP_HDL = ToplevelHDLGenerator.HDL_NAME;
-  static final String CLK_PORT = TickHDLGenerator.FPGA_CLK_NET;
+  public final Toolchain toolchain;
+  public final String name; // can be a nickname, only used for printing status messages
+  public final FPGAReport err;
 
-  public final String name;
-
-  // Parameters set by Commander, used by downloader
-  public FPGAReport err;
+  // Parameters set by Commander, available for use by tool
+  public Commander cmdr;
   public String lang;
   public Board board;
   public String projectPath;
@@ -69,54 +71,24 @@ public abstract class FPGADownload {
   public String ucfPath;
   public boolean writeToFlash;
   public boolean remoteJTAG;
-  public FPGAProgrammer programmer; // user-selected programmer, or null to auto-select
+  public HashMap<String, String> customParams;
 
-  // Capability flag set by downloader, used by Commander
-  public boolean supportsRemoteJTAG = false;
-
-  protected FPGADownload(String name) {
-    this.name = name;
+  protected FPGATool(Toolchain toolchain, String nickname, FPGAReport err) {
+    this.toolchain = toolchain;
+    this.name = nickname;
+    this.err = err;
   }
 
-  // FIXME: this should be part of toolchain... and show status in AppPreferences too?
-  public abstract boolean toolchainIsInstalled(FPGAReport err);
-
-  public boolean generateScripts(PinBindings ioResources) {
-    ArrayList<String> hdlFiles = new ArrayList<>();
-    enumerateHDLFiles(circuitPath, hdlFiles);
-    return generateScripts(ioResources, hdlFiles);
+  protected String param(String key) {
+    // First priority: user-defined parameters
+    if (customParams != null && customParams.containsKey(key))
+      return customParams.get(key);
+    // Second priority: board-defined parameters
+    if (board != null)
+      return board.paramFor(toolchain, key);
+    return null;
   }
 
-  public abstract boolean generateScripts(PinBindings ioResources, ArrayList<String> hdlFiles);
-  
-  public abstract boolean readyForDownload();
-
-  public abstract ArrayList<Stage> initiateDownload(Commander cmdr);
-  
-  private void enumerateHDLFiles(String path, ArrayList<String> files) {
-    if (lang.equals(VHDL))
-      enumerateHDLFiles(path, files,
-          FileWriter.EntityExtension + ".vhd",
-          FileWriter.ArchitectureExtension + ".vhd");
-    else
-      enumerateHDLFiles(path, files, ".v", null);
-  }
-  
-  private void enumerateHDLFiles(String path, ArrayList<String> files,
-    String entityEnding, String behaviorEnding) {
-    File dir = new File(path);
-    if (!path.endsWith(File.separator))
-      path += File.separator;
-    for (File f : dir.listFiles()) {
-      String subpath = path + f.getName();
-      if (f.isDirectory())
-        enumerateHDLFiles(subpath, files, entityEnding, behaviorEnding);
-      else if (f.getName().endsWith(entityEnding))
-        files.add(subpath.replace("\\", "/"));
-      else if (f.getName().endsWith(behaviorEnding))
-        files.add(subpath.replace("\\", "/"));
-    }
-  }
 
   protected static final String dotexe = Main.MSWindows ? ".exe" : ""; // convenience
 
@@ -322,8 +294,68 @@ public abstract class FPGADownload {
     return s;
   }
 
-  public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {
-    return new ToplevelHDLGenerator(ctx, pinBindings);
+  // Helper: Sentinel to group a flag with its value -- skip both if value is null
+  protected static String[] opt(String flag, String value) {
+    return value != null ? new String[]{flag, value} : null;
+  }
+
+  // Helper: join strings (or string arrays, flattened) to make a command array,
+  // ignoring null elements.
+  // Example: join("apio", "--verbose", "build")
+  // Example: join("apio", optFlag, "build")
+  //          where optFlag may be null, or a string
+  // Example: join("openFPGALoader", opt("--cable-index", idx), "-b", boardname);
+  //          where idx may be null, or a string
+  protected static ArrayList<String> join(String cmd, Object ...args) {
+    ArrayList<String> command = new ArrayList<>();
+    command.add(cmd);
+    for (Object arg : args) {
+      if (arg == null) continue;
+      if (arg instanceof String) command.add((String)arg);
+      else if (arg instanceof String[])
+        for (String s : (String[])arg)
+          command.add(s);
+    }
+    return command;
+  }
+
+  // Helper: run command with arguments, return stdout lines.
+  // Errors are discarded, or printed to debug console, and stderr is ignored.
+  public static List<String> stdoutFor(String cmd, Object ...args) {
+    if (cmd == null || cmd.isEmpty())
+      return Collections.emptyList();
+    ArrayList<String> cmdline = join(cmd, args);
+    ArrayList<String> lines = new ArrayList<>();
+    try {
+      Process process = new ProcessBuilder(cmdline).start();
+      process.getErrorStream().transferTo(OutputStream.nullOutputStream());
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(process.getInputStream()));
+      String line;
+      while ((line = reader.readLine()) != null)
+        lines.add(line);
+      process.waitFor();
+    } catch (Exception e) {
+      Debug.error("Executing `"+shellEscape(cmdline)+"`", e);
+    }
+    return lines;
+  }
+
+  // Same, but throws in case of error.
+  public static List<String> stdoutOrFail(String cmd, Object ...args) throws Exception {
+    if (cmd == null || cmd.isEmpty())
+      return Collections.emptyList();
+    ArrayList<String> cmdline = join(cmd, args);
+    ArrayList<String> lines = new ArrayList<>();
+    Process process = new ProcessBuilder(cmdline).start();
+    process.getErrorStream().transferTo(OutputStream.nullOutputStream());
+    BufferedReader reader = new BufferedReader(
+        new InputStreamReader(process.getInputStream()));
+    String line;
+    while ((line = reader.readLine()) != null)
+      lines.add(line);
+    process.waitFor();
+    return lines;
   }
 
 }

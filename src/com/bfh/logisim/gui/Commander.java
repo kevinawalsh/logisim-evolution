@@ -30,18 +30,23 @@
 
 package com.bfh.logisim.gui;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -50,6 +55,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -58,13 +64,16 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.bfh.logisim.download.FPGADownload;
 import com.bfh.logisim.download.FPGAProgrammer;
+import com.bfh.logisim.download.FPGASynthesizer;
+import com.bfh.logisim.download.FPGATool;
 import com.bfh.logisim.download.Toolchain;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
@@ -108,6 +117,7 @@ public class Commander extends JFrame
   private String lang;
   private Toolchain synthTool, progTool;
   private int boardsListSelectedIndex;
+  private boolean writeToFlashAvailable = false; // , remoteJTAGAvailable = false;
   private final FPGAReport err = new FPGAReport(this);
   public int fatals, warns, errors;
 
@@ -139,7 +149,7 @@ public class Commander extends JFrame
   private final JPopupMenu actionPopup = new JPopupMenu("Options");
   private final HashMap<String, JCheckBoxMenuItem> actionItems = new HashMap<>();
   private final JCheckBox writeToFlash = new JCheckBox("Flash?");
-  private final JCheckBox remoteJTAG = new JCheckBox("Remote JTAG?");
+  // private final JCheckBox remoteJTAG = new JCheckBox("Remote JTAG?");
 
   private final ComboBox<String> boardsList = new ComboBox<>();
   private final ComboBox<Circuit> circuitsList = new ComboBox<>();
@@ -148,8 +158,11 @@ public class Commander extends JFrame
   private final ComboBox<Object> clockDivCount = new ComboBox<>();
   private final ComboBox<ComboOption<Toolchain>> synthCombo = new ComboBox<>();
   private final ComboBox<ComboOption<Toolchain>> progCombo = new ComboBox<>();
+  private final JButton synthParamsButton = new JButton("Edit Params");
+  private final JButton progParamsButton = new JButton("Edit Params");
   private final ComboBox<String> language = new ComboBox<>();
-  private final JButton toolSettings = new JButton("Settings");
+  private final JButton toolSettings = new JButton("App & FPGA Settings");
+  private final HashMap<Toolchain, String> toolchainParams = new HashMap<>();
 
   private static class ComboOption<E> {
     E value;
@@ -196,11 +209,7 @@ public class Commander extends JFrame
     proj = p;
 
     board = BoardReader.read(BoardList.getSelectedPath());
-    boardIcon.setImage(board == null ? null : board.image);
-    
-    synthTool = Toolchain.autoSelectSynthesisToolchain(board);
-    progTool = Toolchain.autoSelectProgrammingToolchain(board);
-    lang = Toolchain.autoSelectLanguage(board, synthTool);
+    autoSelectFrom(board);
 
     setResizable(true);
     setAlwaysOnTop(false);
@@ -242,6 +251,8 @@ public class Commander extends JFrame
     // configure synthTool and progTool options
     synthCombo.addActionListener(e -> setSynthToolchain());
     progCombo.addActionListener(e -> setProgToolchain());
+    synthParamsButton.addActionListener(e -> editSynthParams());
+    progParamsButton.addActionListener(e -> editProgParams());
     repopulateToolchainOptions();
     
     // configure language options
@@ -297,7 +308,7 @@ public class Commander extends JFrame
     buttons.add(annotateButton);
     buttons.add(new JDropdownButton(actionButton, actionPopup, getIcon("dropdown.png")));
     buttons.add(writeToFlash);
-    buttons.add(remoteJTAG);
+    // buttons.add(remoteJTAG);
 
     // layout board options
     JPanel boardOptions = new JPanel();
@@ -378,14 +389,16 @@ public class Commander extends JFrame
     c.gridx = 0;
     c.weightx = 0.0;
     c.anchor = GridBagConstraints.EAST;
+    add(toolSettings, c);
+    c.gridx++;
     add(textCircuit, c);
     c.insets.left = 0;
     c.gridx++;
-    c.gridwidth = 2;
+    // c.gridwidth = 2;
     c.weightx = 1.0;
     c.anchor = GridBagConstraints.WEST;
     add(circuitsList, c);
-    c.gridwidth = 1;
+    // c.gridwidth = 1;
 
     // layout synthesis options
     JPanel synthesisOptions = new JPanel();
@@ -397,11 +410,13 @@ public class Commander extends JFrame
     c.insets.left = c.insets.right = 5;
     c.gridy = 0;
     c.gridx = 0;
-    synthesisOptions.add(toolSettings, c);
+    // synthesisOptions.add(toolSettings, c);
     c.gridx = 1;
     synthesisOptions.add(textSynthTool, c);
     c.gridx = 2;
     synthesisOptions.add(synthCombo, c);
+    c.gridx = 3;
+    synthesisOptions.add(synthParamsButton, c);
     c.insets.top = 0;
     c.gridy++;
     c.gridx = 1;
@@ -413,6 +428,8 @@ public class Commander extends JFrame
     synthesisOptions.add(textProgTool, c);
     c.gridx = 2;
     synthesisOptions.add(progCombo, c);
+    c.gridx = 3;
+    synthesisOptions.add(progParamsButton, c);
 
     c.insets.top = c.insets.bottom = 5;
     c.insets.left = c.insets.right = 5;
@@ -491,7 +508,7 @@ public class Commander extends JFrame
         display += " (supported)";
       synthCombo.addItem(new ComboOption<>(t, display));
     }
-    progCombo.addItem(new ComboOption<Toolchain>(null, "auto-select"));
+    progCombo.addItem(new ComboOption<Toolchain>(null, "use synthesis toolchain"));
     for (Toolchain t : Toolchain.getProgrammingToolchains()) {
       String display = t.toolchainName;
       if (board != null && board.recommendsForProgramming(t))
@@ -805,15 +822,25 @@ public class Commander extends JFrame
 
     boardsListSelectedIndex = boardsList.getSelectedIndex();
     settingBoard = false;
-
-    synthTool = Toolchain.autoSelectSynthesisToolchain(board);
-    progTool = Toolchain.autoSelectProgrammingToolchain(board);
-    lang = Toolchain.autoSelectLanguage(board, synthTool);
+    autoSelectFrom(board);
     language.setSelectedItem(lang);
-    boardIcon.setImage(board == null ? null : board.image);
     populateClockDivOptions();
     repopulateToolchainOptions();
     configureActions();
+  }
+
+  private void autoSelectFrom(Board board) {
+    boardIcon.setImage(board == null ? null : board.image);
+    Toolchain.ToolchainParameterPair tp;
+    tp = Toolchain.autoSelectSynthesisToolchain(board);
+    synthTool = tp.tool();
+    if (tp.params() != null)
+      toolchainParams.put(synthTool, tp.params());
+    tp = Toolchain.autoSelectProgrammingToolchain(board);
+    progTool = tp == null ? null : tp.tool();
+    if (progTool != null && tp.params() != null)
+      toolchainParams.put(progTool, tp.params());
+    lang = Toolchain.autoSelectLanguage(board, synthTool);
   }
 
   private void doLoadOtherBoard() {
@@ -946,7 +973,7 @@ public class Commander extends JFrame
         return;
       }
       iprintf("Workspace directory for HDL synthesis: " + path);
-      FPGADownload tools = makeToolchainDownloader();
+      FPGASynthesizer tools = makeToolchainDownloader();
       if (actionItems.get(HDL_DOWNLOAD_ONLY).isSelected()) {
         iprintf("*** NOTE *** Skipping both HDL generation and synthesis.");
         iprintf("*** NOTE *** Recent changes to circuits will not take effect.");
@@ -1006,34 +1033,51 @@ public class Commander extends JFrame
     return projectWorkspace() + safename + SLASH;
   }
 
-  FPGADownload makeToolchainDownloader() {
+  FPGASynthesizer makeToolchainDownloader() {
     if (synthTool == null || lang == null)
       return null;
+
+    FPGASynthesizer sTool = synthTool.newSynthesizer(err);
+    if (sTool == null)
+      return null;
+
+    configure(sTool);
+
+    if (progTool != null) {
+      FPGAProgrammer pTool = progTool.newProgrammer(err);
+      if (pTool == null)
+        return null;
+      sTool.programmer = pTool;
+      configure(pTool);
+    }
+
+    return sTool;
+  }
+
+  public void configure(FPGATool tool) {
 
     String circdir = circuitWorkspace();
     String langdir = circdir + lang.toLowerCase() + SLASH;
 
-    FPGADownload tools = synthTool.newDownloader();
-    if (tools == null)
-      return null;
-    tools.err = err;
-    tools.lang = lang;
-    tools.board = board;
-    tools.projectPath = circdir;
-    tools.circuitPath = langdir;
-    tools.scriptPath = circdir + SCRIPT_DIR;
-    tools.sandboxPath = circdir + SANDBOX_DIR;
-    tools.ucfPath = circdir + UCF_DIR;
-    tools.writeToFlash = writeToFlash.isSelected() && board.fpga.FlashDefined;
-    tools.remoteJTAG = remoteJTAG.isSelected();
-    tools.programmer = progTool == null ? null : progTool.newProgrammer();
-    return tools;
+    // tool.err = err; // already set in constructor
+    tool.cmdr = this;
+    tool.lang = lang;
+    tool.board = board;
+    tool.projectPath = circdir;
+    tool.circuitPath = langdir;
+    tool.scriptPath = circdir + SCRIPT_DIR;
+    tool.sandboxPath = circdir + SANDBOX_DIR;
+    tool.ucfPath = circdir + UCF_DIR;
+    tool.writeToFlash = writeToFlash.isSelected() && board.fpga.FlashDefined;
+    // tool.remoteJTAG = remoteJTAG.isSelected();
+    tool.customParams = parseParams(tool.toolchain);
   }
 
-  private void doSynthesisAndDownload(PinBindings pinBindings, FPGADownload tools) {
+  private void doSynthesisAndDownload(PinBindings pinBindings, FPGASynthesizer tools) {
     if (board == null)
       return;
 
+    ArrayList<FPGATool.Stage> stages;
     if (pinBindings != null) {
       // sanity check pin bindings
       if (pinBindings == null || !pinBindings.allPinsAssigned()) {
@@ -1045,6 +1089,10 @@ public class Commander extends JFrame
         eprintf("Can't generate Tool-specific download scripts");
         return;
       }
+      if (!tools.createSynthesisPlan(stages)) {
+        eprintf("Can't create synthesis plan");
+        return;
+      }
     } else {
       // don't generate or synthesize, just sanity-check that project is ready
       if (!tools.readyForDownload()) {
@@ -1054,21 +1102,24 @@ public class Commander extends JFrame
       }
     }
     // download
-    String tool = tools.name;
-    ArrayList<FPGADownload.Stage> stages = tools.initiateDownload(this);
+    if (!tools.createProgrammingPlan(stages)) {
+      eprintf("Can't create programming plan");
+      return;
+    }
     progressBar.setValue(0);
-    progressBar.setString(String.format("(%d of %d) %s: Initializing", 0, stages.size(), tool));
+    progressBar.setString(String.format("(%d of %d) %s: Initializing", 0, stages.size(), tools.name));
     progressBar.setMaximum(stages.size());
     setDownloadMode(true);
-    doDownload(tool, stages, 0);
+    doDownload(tools.name, stages, 0);
   }
 
   private void setDownloadMode(boolean dl) {
     annotateButton.setEnabled(!dl);
     actionButton.setEnabled(!dl && board != null);
-    writeToFlash.setEnabled(!dl && board != null && board.fpga.FlashDefined
-        && !actionItems.get(HDL_GEN_ONLY).isSelected());
-    remoteJTAG.setEnabled(true);
+    // writeToFlash.setEnabled(!dl && board != null && board.fpga.FlashDefined
+    //     && !actionItems.get(HDL_GEN_ONLY).isSelected());
+    writeToFlash.setEnabled(!dl && writeToFlashAvailable);
+    // remoteJTAG.setEnabled(!dl && remoteJTAGAvailable);
     boardsList.setEnabled(!dl);
     circuitsList.setEnabled(!dl);
     clockOption.setEnabled(!dl);
@@ -1085,7 +1136,7 @@ public class Commander extends JFrame
     stop.setEnabled(dl);
   }
 
-  private FPGADownload.Stage downloader;
+  private FPGATool.Stage downloader;
 
   public boolean confirmDownload() { return confirmDownload(null); }
   public boolean confirmDownload(String extramsg) {
@@ -1108,10 +1159,10 @@ public class Commander extends JFrame
     return choice;
   }
 
-  private void doDownload(String tool, ArrayList<FPGADownload.Stage> stages, int i) {
+  private void doDownload(String tool, ArrayList<FPGATool.Stage> stages, int i) {
     downloader = null;
     int n = stages.size();
-    FPGADownload.Stage prev = i == 0 ? null : stages.get(i-1);
+    FPGATool.Stage prev = i == 0 ? null : stages.get(i-1);
     if (prev != null && prev.failed) {
       progressBar.setValue(i);
       if (prev.cancelled) {
@@ -1165,16 +1216,13 @@ public class Commander extends JFrame
     clearConsoles();
     actionButton.setEnabled(board != null);
     boolean toolchainReady = false;
-    boolean toolchainSupportsRemoteJTAG = false;
+    // boolean toolchainSupportsRemoteJTAG = false;
     if (board == null) {
       eprintf("Please select an FPGA board.");
     } else if (synthTool == null) {
       eprintf("Please select a synthesis toolchain.");
     } else {
-      FPGADownload sTool = synthTool.newDownloader();
-      if (sTool == null) {
-        eprintf("The " + synthTool.toolchainName + " toolchain failed to initialize.");
-      } else if (!sTool.toolchainIsInstalled(err)) {
+      if (!synthTool.toolchainIsInstalled(err)) {
         eprintf("The " + synthTool.toolchainName + " toolchain is not configured properly. "
             + "Synthesis and download will not be available. "
             + "Please configure the synthesis toolchain using the \"Settings\" button above, "
@@ -1182,10 +1230,7 @@ public class Commander extends JFrame
             + " and " + board.fpga.Vendor + " " + board.fpga.Part + " FPGA synthesis.");
       } else {
         if (progTool != null) {
-          FPGAProgrammer pTool = progTool.newProgrammer();
-          if (pTool == null) {
-            eprintf("The " + progTool.toolchainName + " programmer failed to initialize.");
-          } else if (!sTool.toolchainIsInstalled(err)) {
+          if (!progTool.toolchainIsInstalled(err)) {
             eprintf("The " + progTool.toolchainName + " programmer is not configured properly. "
                 + "Synthesis and download will not be available. "
                 + "Please configure the programmer toolchain using the \"Settings\" button above, "
@@ -1193,11 +1238,11 @@ public class Commander extends JFrame
                 + " and " + board.fpga.Vendor + " " + board.fpga.Part + " FPGA programming.");
           } else {
             toolchainReady = true;
-            toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG; // pTool? FIXME...
+            // toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG; // pTool? FIXME...
           }
         } else {
           toolchainReady = true;
-          toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG;
+          // toolchainSupportsRemoteJTAG = sTool.supportsRemoteJTAG;
         }
       }
     }
@@ -1214,17 +1259,19 @@ public class Commander extends JFrame
     }
     writeToFlash.setEnabled(toolchainReady && board.fpga.FlashDefined
         && !actionItems.get(HDL_GEN_ONLY).isSelected());
+    writeToFlashAvailable = writeToFlash.isEnabled();
     if (!writeToFlash.isEnabled())
       writeToFlash.setSelected(false);
     if (writeToFlash.isEnabled())
       writeToFlash.setToolTipText("Download bitstream to FPGA board flash device?");
     else
       writeToFlash.setToolTipText("Selected FPGA board does not support downloading to flash device.");
-    remoteJTAG.setEnabled(toolchainSupportsRemoteJTAG);
-    if (toolchainSupportsRemoteJTAG)
-      remoteJTAG.setToolTipText("Download bitstream to remotely-connected FPGA device?");
-    else
-      remoteJTAG.setToolTipText("Selected toolchain does not support remotely-connected FPGA devices.");
+    // remoteJTAGAvailable = toolchainSupportsRemoteJTAG;
+    // remoteJTAG.setEnabled(toolchainSupportsRemoteJTAG);
+    // if (toolchainSupportsRemoteJTAG)
+    //   remoteJTAG.setToolTipText("Download bitstream to remotely-connected FPGA device?");
+    // else
+    //   remoteJTAG.setToolTipText("Selected toolchain does not support remotely-connected FPGA devices.");
   }
 
   // private void setAnnotate(String choice) {
@@ -1251,10 +1298,116 @@ public class Commander extends JFrame
     synthTool = t;
     if (board != null) {
       // if (!synthTool.toolchainName.equals(Toolchain.getSynthesisToolchainName(board)))
-      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredSynthesisToolchain(board.name, synthTool.toolchainName);
+      String params = getCleanedParamString(synthTool);
+      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredSynthesisToolchain(board.name,
+          synthTool.toolchainName, params);
       language.setSelectedItem(Toolchain.autoSelectLanguage(board, synthTool));
       configureActions();
     }
+  }
+
+  private String getCleanedParamString(Toolchain tool) {
+    String params = toolchainParams.getOrDefault(tool, "");
+    String cleanedParams = "";
+    for (String line : params.split("\n", -1)) {
+      line = line.trim();
+      if (line.isEmpty() || line.startsWith("#") || line.indexOf(':') < 0) continue;
+      if (cleanedParams.isEmpty())
+        cleanedParams += "\n";
+      cleanedParams += line;
+    }
+    return cleanedParams;
+  }
+
+  private HashMap<String, String> parseParams(Toolchain tool) {
+    String params = toolchainParams.getOrDefault(tool, "");
+    HashMap<String, String> map = new HashMap<>();
+    for (String line : params.split("\n", -1)) {
+      line = line.trim();
+      if (line.isEmpty() || line.startsWith("#"))
+        continue;
+      int colon = line.indexOf(':');
+      if (colon < 0)
+        continue;
+      String key = line.substring(0, colon).trim();
+      String val = line.substring(colon + 1).trim();
+      if (key.isEmpty())
+        continue;
+      if (map.containsKey(key))
+        continue;
+      map.put(key, val);
+    }
+    return map;
+  }
+
+  private void setParams(Toolchain tool, String text) {
+    toolchainParams.put(tool, text);
+    if (board != null && tool == synthTool) {
+      String params = getCleanedParamString(synthTool);
+      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredSynthesisToolchain(board.name,
+          synthTool.toolchainName, params);
+    }
+    if (board != null && tool == progTool) {
+      String params = getCleanedParamString(progTool);
+      AppPreferences.FPGA_BOARDPREFS.setBoardPreferredProgrammingToolchain(board.name,
+          progTool.toolchainName, params);
+    }
+  }
+
+  private void editParams(Toolchain tool) {
+    String title = "Parameters for " + tool.toolchainName;
+    JDialog dlg = new JDialog(this, title, true);
+    dlg.setLayout(new BorderLayout(0, 4));
+
+    JLabel info = new JLabel("<html>Toolchain parameters (key: value, one per line)."
+        + " Values here override those normally associated with this FPGA board.</html>");
+    info.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
+
+    String initial = toolchainParams.getOrDefault(tool, "");
+    if (initial.isEmpty())
+      initial = "# Lines starting with hashtag are ignored.\n";
+    JTextArea text = new JTextArea(initial);
+    text.setRows(12);
+    text.setColumns(40);
+    JScrollPane scroll = new JScrollPane(text);
+    scroll.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createEmptyBorder(0, 8, 0, 8),
+        scroll.getBorder()));
+
+    JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    JButton ok = new JButton("OK");
+    ok.addActionListener(e -> {
+      setParams(tool, text.getText());
+      dlg.dispose();
+    });
+    south.add(ok);
+
+    dlg.getRootPane().setDefaultButton(ok);
+    dlg.addWindowListener(new WindowAdapter() {
+      @Override
+      public void windowClosing(WindowEvent e) {
+        setParams(tool, text.getText());
+      }
+    });
+
+    dlg.add(info, BorderLayout.NORTH);
+    dlg.add(scroll, BorderLayout.CENTER);
+    dlg.add(south, BorderLayout.SOUTH);
+    dlg.pack();
+    dlg.setLocationRelativeTo(this);
+    dlg.setVisible(true);
+  }
+
+  private void editSynthParams() {
+    if (synthTool != null)
+      editParams(synthTool);
+  }
+
+  private void editProgParams() {
+    if (progTool != null)
+      editParams(progTool);
+    else if (synthTool != null)
+      editParams(synthTool);
   }
 
   private void setProgToolchain() {
@@ -1270,7 +1423,8 @@ public class Commander extends JFrame
       if (progTool == null) 
         AppPreferences.FPGA_BOARDPREFS.unsetBoardPreferredProgrammingToolchain(board.name);
       else
-        AppPreferences.FPGA_BOARDPREFS.setBoardPreferredProgrammingToolchain(board.name, progTool.toolchainName);
+        AppPreferences.FPGA_BOARDPREFS.setBoardPreferredProgrammingToolchain(board.name, progTool.toolchainName,
+            getCleanedParamString(progTool));
       configureActions();
     }
   }
@@ -1361,7 +1515,7 @@ public class Commander extends JFrame
     return Integer.parseInt(item.toString());
   }
 
-  private boolean writeHDL(Netlist.Context ctx, PinBindings pinBindings, FPGADownload tools) {
+  private boolean writeHDL(Netlist.Context ctx, PinBindings pinBindings, FPGASynthesizer tools) {
     String circdir = circuitWorkspace();
     if (!cleanDirectory(circdir))
       return false;

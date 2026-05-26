@@ -30,7 +30,6 @@
 
 package com.cburch.logisim.gui.prefs;
 
-import com.bfh.logisim.download.FPGADownload;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class GowinOptions extends FPGAToolchainPanel {

@@ -33,7 +33,6 @@ package com.bfh.logisim.download;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
@@ -74,8 +73,8 @@ public class Altera {
         || b.codename.toLowerCase().contains("intel");
     }
     @Override
-    public List<String[]> defaultParams(/*Board board*/) {
-      return Collections.emptyList();
+    public String defaultParamsAsString(/*Board board*/) {
+      return "RESERVE_ALL_UNUSED_PINS: setting to be included in tcl script\n";
     }
     @Override
     public List<String> getLanguages(Board board) {
@@ -117,7 +116,7 @@ public class Altera {
 
   abstract static class AlteraDownload extends FPGADownload {
 
-    protected AlteraDownload() { super("Quartus"); }
+    protected AlteraDownload() { super(MY_TOOLCHAIN, "Quartus"); }
 
     @Override
     public boolean readyForDownload() {
@@ -325,7 +324,7 @@ public class Altera {
 
   private static String getAlteraUnusedPinsFlag(Board board) {
     // first priority: use altera-specific param from board.xml
-    String pref = board.paramFor(MY_TOOLCHAIN, "RESERVE_ALL_UNUSED_PINS");
+    String pref = toolchain.param("RESERVE_ALL_UNUSED_PINS");
     if (pref != null && !pref.isEmpty())
       return pref;
     if (pref.isEmpty())

@@ -41,9 +41,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import com.bfh.logisim.download.FPGADownload;
 import com.cburch.logisim.file.XmlIterator;
-// import com.cburch.logisim.util.WeakList;
 
 public class FPGABoardPrefs implements SettingsStore.Item {
 
@@ -93,8 +91,16 @@ public class FPGABoardPrefs implements SettingsStore.Item {
     return getBoardPref(board, "synthesis");
   }
 
+  public String getBoardPreferredSynthesisParams(String board) {
+    return getBoardPref(board, "synthesisParams");
+  }
+
   public String getBoardPreferredProgrammingToolchain(String board) {
     return getBoardPref(board, "programming");
+  }
+
+  public String getBoardPreferredProgrammingParams(String board) {
+    return getBoardPref(board, "programmingParams");
   }
 
   public void setBoardPreferredHdl(String board, String hdl) {
@@ -104,16 +110,19 @@ public class FPGABoardPrefs implements SettingsStore.Item {
     setBoardPref(board, "hdl", hdl);
   }
 
-  public void setBoardPreferredSynthesisToolchain(String board, String toolchain) {
+  public void setBoardPreferredSynthesisToolchain(String board, String toolchain, String params) {
     setBoardPref(board, "synthesis", toolchain);
+    setBoardPref(board, "programmingParams", params);
   }
 
-  public void setBoardPreferredProgrammingToolchain(String board, String toolchain) {
+  public void setBoardPreferredProgrammingToolchain(String board, String toolchain, String params) {
     setBoardPref(board, "programming", toolchain);
+    setBoardPref(board, "programmingParams", params);
   }
 
   public void unsetBoardPreferredProgrammingToolchain(String board) {
     unsetBoardPref(board, "programming");
+    unsetBoardPref(board, "programmingParams");
   }
 
   private void setBoardPref(String board, String key, String val) {

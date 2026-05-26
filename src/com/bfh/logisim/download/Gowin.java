@@ -2,7 +2,6 @@ package com.bfh.logisim.download;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.bfh.logisim.fpga.Board;
@@ -10,14 +9,23 @@ import com.bfh.logisim.fpga.DriveStrength;
 import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.IoStandard;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.gui.Commander;
-import com.bfh.logisim.gui.Console;
 import com.bfh.logisim.gui.FPGAReport;
 import com.cburch.logisim.prefs.AppPreferences;
 
 public class Gowin {
 
-  private static final Toolchain MY_TOOLCHAIN = new Toolchain("Gowin EDA", "Gowin", true, true) {
+  public static final Toolchain SYNTH_TOOLCHAIN = new GowinSynthToolchain();
+  public static final Toolchain PROG_TOOLCHAIN = new GowinProgToolchain();
+
+  public static final String GOWIN_SH = "gw_sh" + Toolchain.dotexe;
+  public static final String GOWIN_PROG = "programmer_cli" + Toolchain.dotexe;
+
+  private static class GowinSynthToolchain extends Toolchain {
+
+    private GowinSynthToolchain() {
+      super("Gowin EDA", "Gowin", true, false);
+    }
+
     @Override
     public boolean hasAlternateName(String altname) {
       return 
@@ -27,60 +35,147 @@ public class Gowin {
         || altname.equalsIgnoreCase("Gowin FPGA")
         || altname.equalsIgnoreCase("Gowin FPGA EDA");
     }
+
     @Override
     public boolean supports(Board b) {
-      // TODO: gowin may have board definition files under IDE/data/device/
-      // or similar, which we could search for the given board fpga part.
+      // TODO: gowin may have board definition files under IDE/data/device/ or
+      // similar, which we could mabye search for the given board fpga part.
       return b.name.toLowerCase().contains("gowin")
         || b.codename.toLowerCase().contains("gowin");
     }
-    @Override
-    public List<String[]> defaultParams(/*Board board*/) {
-      return Collections.emptyList();
-    }
+
     @Override
     public List<String> getLanguages(Board board) {
       return List.of(VERILOG, VHDL);
     }
+
     @Override
-    public FPGADownload newDownloader() { return new GowinDownload(); }
-    @Override
-    public FPGAProgrammer newProgrammer() { return new GowinProgrammer(); }
-  };
-
-  public static void register() { Toolchain.register(MY_TOOLCHAIN); }
-
-  // public static final String[] GOWIN_PROGRAMS = {"gw_sh" + dotexe};
-  public static final String GOWIN_SH = "gw_sh" + Toolchain.dotexe;
-  public static final String GOWIN_PROG = "programmer_cli" + Toolchain.dotexe;
-
-  private static String resolve(String path, String progname) {
-    if (path == null || path.isEmpty())
-      return null;
-    File prog = new File(path);
-    // backwards compatibility: maybe it is a directory?
-    if (prog.exists() && prog.isDirectory()) {
-      path += File.separator + progname;
-      prog = new File(path);
+    public String defaultParamsAsString(/*Board board*/) {
+      // TODO: Does gowin shell have any useful options?
+      return "";
     }
-    if (prog.exists() && !prog.isDirectory() && prog.canExecute())
-      return path;
-    return null;
+
+    @Override
+    public FPGASynthesizer newSynthesizer(FPGAReport err) {
+      String gowin_sh = getInstalledCommand(err);
+      return gowin_sh == null ? null : new GowinSynthesizer(err, gowin_sh);
+    }
+
+    @Override
+    public FPGAProgrammer newProgrammer(FPGAReport err) {
+      return null;
+    }
+
+    // FIXME: on MacOS, we probably need to set up proper zsh env,
+    // and should take path to .app directory to do that properly.
+    private static final String helpmsg =
+      "Either install " + GOWIN_SH + " to a system directory, "
+      + "or set the toolchain path to point to a directory containing, "
+      + "or to point to a stand-alone executable script.";
+
+    @Override
+    public InstallStatus toolchainInstallStatus() {
+      return simpleInstallStatusHelper(
+          AppPreferences.GOWIN_SHELL_PATH.get(), "SENTINEL_INVALID_FILE_ARGUMENT",
+          helpmsg, GOWIN_SH);
+    }
+
+    @Override
+    protected String simpleParseVersionHelper(String prog, String line) {
+      // Typical output: "*** GOWIN Tcl Command Line Console  ***"
+      if (line.toLowerCase().contains("gowin"))
+        return "OK";
+      else
+        return null;
+      // FIXME: we might be able to get version info from the directory name?
+    }
+
   }
 
-  private static String getGowinProgrammerPath() {
-    return resolve(AppPreferences.GOWIN_PROGRAMMER_PATH.get(), GOWIN_PROG);
+  private static class GowinProgToolchain extends Toolchain {
+
+    private GowinProgToolchain() {
+      super("Gowin Programmer", "Gowin", false, true);
+    }
+
+    @Override
+    public boolean hasAlternateName(String altname) {
+      return 
+        altname.equalsIgnoreCase("Gowin Programmer")
+        || altname.equalsIgnoreCase("Gowin programmer_cli");
+    }
+
+    @Override
+    public boolean supports(Board b) {
+      // TODO: gowin may have board definition files under IDE/data/device/ or
+      // similar, which we could mabye search for the given board fpga part.
+      return b.name.toLowerCase().contains("gowin")
+        || b.codename.toLowerCase().contains("gowin");
+    }
+
+    @Override
+    public List<String> getLanguages(Board board) {
+      return List.of(VERILOG, VHDL);
+    }
+
+    @Override
+    public String defaultParamsAsString(/*Board board*/) {
+      // TODO: Does gowin programmer have any useful options?
+      return "";
+    }
+
+    @Override
+    public FPGASynthesizer newSynthesizer(FPGAReport err) {
+      return null;
+    }
+
+    @Override
+    public FPGAProgrammer newProgrammer(FPGAReport err) {
+      String programmer_cli = getInstalledCommand(err);
+      return programmer_cli == null ? null : new GowinProgrammer(err, programmer_cli);
+    }
+
+    // FIXME: on MacOS, we probably need to set up proper zsh env,
+    // and should take path to .app directory to do that properly.
+    private static final String helpmsg =
+      "Either install " + GOWIN_PROG + " to a system directory, "
+      + "or set the toolchain path to point to a directory containing it.";
+
+    @Override
+    public InstallStatus toolchainInstallStatus() {
+      return simpleInstallStatusHelper(
+          AppPreferences.GOWIN_PROGRAMMER_PATH.get(), "--help",
+          helpmsg, GOWIN_PROG);
+    }
+
+    @Override
+    protected String simpleParseVersionHelper(String prog, String line) {
+      // Typical output: "Gowin FPGA Programmer command-line interface. Version V1.9.11.03 Education (64-bit) build(2536);"
+      if (line.toLowerCase().contains("gowin")
+          && line.toLowerCase().contains("programmer")
+          && line.toLowerCase().contains("version")) {
+        int i = line.toLowerCase().indexOf("version");
+        String version = line.substring(i);
+        if (version.startsWith(" "))
+          version = version.substring(1);
+        if (version.endsWith(";"))
+          version = version.substring(0, version.length() - 1);
+        if (!version.isEmpty())
+          return "OK";
+      }
+      return null;
+    }
+
   }
 
-  private static String getGowinShellPath() {
-    return resolve(AppPreferences.GOWIN_SHELL_PATH.get(), GOWIN_SH);
-  }
 
-  private static class GowinDownload extends FPGADownload {
+  private static class GowinSynthesizer extends FPGASynthesizer {
+    
+    private String gw_sh; // verified gw_sh command, inluding full path if needed
 
-    private String cableIndex;
-    private GowinDownload() {
-      super("Gowin");
+    private GowinSynthesizer(FPGAReport err, String gw_sh) {
+      super(SYNTH_TOOLCHAIN, "Gowin", err);
+      this.gw_sh = gw_sh;
     }
 
     @Override
@@ -103,153 +198,93 @@ public class Gowin {
       return sh.save();
     }
 
+    private String bitstream() { return sandboxPath + "impl/pnr/"+TOP_HDL+".fs"; }
+
     @Override
     public boolean readyForDownload() {
-      return new File(sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs").exists();
+      return new File(bitstream()).exists();
     }
 
-    private ArrayList<String> cmd(String prog, String... args) {
-      ArrayList<String> command = new ArrayList<>();
-      command.add(prog);
-      for (String arg : args)
-        command.add(arg);
-      return command;
-    }
-
-    public boolean toolchainIsInstalled(FPGAReport err) {
-      String helpmsg = "It should be set to the path of " + GOWIN_SH
-        + " or of a compatible stand-alone executable script.";
-      String shPath = getGowinShellPath();
-      if (shPath == null) {
-        err.AddFatalError("Gowin shell tool path not configured, or configured incorrectly. " + helpmsg);
-        return false;
-      }
-      if (getGowinProgrammerPath() == null) {
-        if (OpenFPGALoader.findExecutable(err) == null) {
-          err.AddFatalError("Either Gowin " + GOWIN_PROG + " path must be specified in settings, or " 
-              + "openFPGALoader must be installed and configured.");
-          return false;
-        }
-      }
-      return true;
-    }
     @Override
-    public ArrayList<Stage> initiateDownload(Commander cmdr) {
-      ArrayList<Stage> stages = new ArrayList<>();
+    public boolean createSynthesisPlan(ArrayList<Stage> stages) {
       if (!readyForDownload()) {
         String script = scriptPath.replace(projectPath, ".." + File.separator) + "gw_download.tcl";
         stages.add(new ProcessStage(
               "compile", "Executing Gowin syn & pnr",
-              cmd(getGowinShellPath(), script),
+              join(gw_sh, script),
               "Failed to to execute gowin syn & pnr"));
       }
 
-      if (programmer != null && !(programmer instanceof GowinProgrammer) && !(programmer instanceof OpenFPGALoader)) {
-        err.AddFatalError("Gowin toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Gowin programmer or openFPGALoader.");
-        return stages;
-      }
+      return createProgrammingPlan(stages);
+    }
+
+    @Override
+    public boolean createProgrammingPlan(ArrayList<Stage> stages) {
+
+      String bitstream = sandboxPath + "impl/pnr/"+TOP_HDL+".fs";
       
-      String gwprog = getGowinProgrammerPath();
-
-      boolean useOFL;
-      if (programmer instanceof OpenFPGALoader) {
-        useOFL = true;
-      } else if (programmer instanceof GowinProgrammer) {
-        useOFL = false;
-        if (gwprog == null) {
-          err.AddFatalError("Gowin toolchain internal programmer isn't available or isn't configured properly. Fix the settings, or try openFPGALoader instead.");
-          return stages;
+      // auto-select toolchain: gowin if installed, else openFPGALoader
+      if (programmer == null) {
+        Toolchain.InstallStatus status = PROG_TOOLCHAIN.toolchainInstallStatus();
+        if (status.installed())
+          programmer = new GowinProgrammer(err, status.cmd());
+        else if (OpenFPGALoader.TOOLCHAIN.toolchainInstallStatus().installed())
+          programmer = OpenFPGALoader.TOOLCHAIN.newProgrammer(err);
+        else {
+          err.AddFatalError("Gowin programmer and openFPGALoader aren't available or aren't configured properly. Install them, fix the settings, or try a different programmer.");
+          return false;
         }
-      } else {
-        // auto-select: only use OFL if internal programmer isn't available
-        useOFL = (gwprog == null);
+        cmdr.configure(programmer);
       }
 
-      if (useOFL) { // try openFPGALoader
-        String ofl = OpenFPGALoader.findExecutable(err);
-        stages.add(new ProcessStage("scan", "Scaning for FPGA Devices",
-              cmd(ofl, "--detect"),
-              "Could not find any FPGA devices.") {
-          @Override
-          protected boolean prep() {
-            if (!readyForDownload()) {
-              console.printf(Console.ERROR, "Error: Design must be synthesized before download.");
-              return false;
-            }
-            if (!cmdr.confirmDownload()) {
-              cancelled = true;
-              return false;
-            }
-            return true;
-          }
-
-          @Override
-          protected boolean post() {
-            ArrayList<String> dev = new ArrayList<>();
-            StringBuilder curdev = null;
-
-            for (String line : console.getText()) {
-              if (line.trim().matches("^index \\d+:")) {
-                if (curdev != null)
-                  dev.add(curdev.toString());
-                curdev = new StringBuilder(line.trim());
-              }
-              if (line.trim().matches("^idcode\\s+0x[0-9a-f]+")) {
-                curdev.append(" " + line.trim().split("\\s+")[1]);
-              }
-              if (line.trim().matches("^model\\s+.*")) {
-                curdev.append(" " + line.trim().split("\\s+")[1]);
-              }
-            }
-            if (curdev != null)
-              dev.add(curdev.toString());
-
-
-            String devsel = dev.size() > 1 ? cmdr.chooseDevice(dev) : dev.get(0);
-            cableIndex = devsel.split(":")[0].split("\\s+")[1];
-            return super.post();
-          }
-        });
-        stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
-          @Override
-          protected boolean prep() {
-            cmd = cmd(ofl,
-                sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
-                "--cable-index", cableIndex);
-            return true;
-          }
-        });
-      } else {
-        stages.add(new ProcessStage("download", "Download to selected FPGA", null, "Failed to download design") {
-          @Override
-          protected boolean prep() {
-            cmd = cmd(gwprog,
-                "--fsFile", sandboxPath + "impl" + File.separator + "pnr" + File.separator + TOP_HDL + ".fs",
-                "-r", "2",
-                "--device", board.fpga.Technology);
-            return true;
-          }
-        });
+      // If user (or board xml) specified OpenFPGALoader, then use it.
+      if (programmer instanceof OpenFPGALoader) {
+        OpenFPGALoader ofl = (OpenFPGALoader)programmer;
+        return ofl.createProgrammingPlan(stages, bitstream);
       }
-      return stages;
+
+      if (programmer instanceof GowinProgrammer) {
+        GowinProgrammer gwp = (GowinProgrammer)programmer;
+        return gwp.createProgrammingPlan(stages, bitstream);
+      }
+
+      err.AddFatalError("Gowin toolchain isn't yet enabled to work with " + programmer.name + " programmer, only the built-in Gowin programmer or openFPGALoader.");
+      return false;
     }
 
   }
 
-  protected static class GowinProgrammer extends FPGAProgrammer {
-    // TODO: reorganize stages above, e.g. allowing for
-    // openFPGALoader, separating out usb-tmc, etc.
-    GowinProgrammer() { super("Gowin"); }
-    @Override
-    public boolean toolchainIsInstalled(FPGAReport err) {
-      String gwprog = getGowinProgrammerPath();
-      if (gwprog == null) {
-        err.AddFatalError("Gowin toolchain internal programmer isn't available or isn't configured properly. Fix the settings, or try openFPGALoader instead.");
-        return false;
-      }
+
+  private static class GowinProgrammer extends FPGAProgrammer {
+
+    private String programmer_cli; // verified programmer_cli command, inluding full path if needed
+    private String cableIndex;
+
+    private GowinProgrammer(FPGAReport err, String programmer_cli) {
+      super(PROG_TOOLCHAIN, "Gowin", err);
+      this.programmer_cli = programmer_cli;
+    }
+
+    private String bitstream() { return sandboxPath + "impl/pnr/"+FPGASynthesizer.TOP_HDL+".fs"; }
+
+    public boolean createProgrammingPlan(ArrayList<Stage> stages, String bitstream) {
+      stages.add(new ProcessStage("download", "Download to selected FPGA", 
+            join(programmer_cli, bitstream(), "--fsFile", bitstream(), "-r", "2", "--device", board.fpga.Technology),
+            "Failed to download design") {
+        @Override
+        protected boolean prep() {
+          if (!cmdr.confirmDownload()) {
+            cancelled = true;
+            return false;
+          }
+          return true;
+        }
+      });
       return true;
     }
+
   }
+
 
   static void writeIoSpec(AuxFile cst, String net, InputBias bias, IoStandard standard, DriveStrength strength) {
     String iospec = "";
@@ -273,8 +308,8 @@ public class Gowin {
   static boolean writeGowinConstraintCST(AuxFile cst, Board board, PinBindings ioResources) {
     System.err.println("not yet tested");
     if (ioResources.requiresOscillator) {
-      cst.stmt("IO_LOC \"%s\" %s //%s;", FPGADownload.CLK_PORT, board.fpga.ClockPinLocation, FPGADownload.CLK_PORT);
-      writeIoSpec(cst, FPGADownload.CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
+      cst.stmt("IO_LOC \"%s\" %s //%s;", FPGASynthesizer.CLK_PORT, board.fpga.ClockPinLocation, FPGASynthesizer.CLK_PORT);
+      writeIoSpec(cst, FPGASynthesizer.CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
     }
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {
       cst.stmt("IO_LOC \"%s\" %s //%s;", net, pin, label);

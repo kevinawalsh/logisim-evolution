@@ -63,7 +63,7 @@ public class OpenFPGALoaderOptions extends FPGAToolchainPanel {
   }
 
   boolean validateOpenFPGALoaderPath(String path) {
-    return path.isEmpty() || OpenFPGALoader.findExecutable(path) != null;
+    return path.isEmpty() || OpenFPGALoader.TOOLCHAIN.toolchainInstallStatus(path).installed();
   }
 
 }
