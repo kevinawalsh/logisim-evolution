@@ -256,7 +256,7 @@ public class Lattice extends Toolchain {
             cmd(script),
             "Failed to synthesize Lattice project, cannot download"));
 
-      return createProgrammingPlan(stages);
+      return true;
     }
 
     @Override

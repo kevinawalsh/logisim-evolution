@@ -31,6 +31,7 @@
 package com.bfh.logisim.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -46,7 +47,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -70,6 +70,7 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.plaf.basic.BasicProgressBarUI;
 
 import com.bfh.logisim.download.FPGAProgrammer;
 import com.bfh.logisim.download.FPGASynthesizer;
@@ -82,6 +83,7 @@ import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.settings.BoardList;
 import com.bfh.logisim.settings.Workspace;
+import com.cburch.logisim.Main;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitEvent;
 import com.cburch.logisim.circuit.CircuitListener;
@@ -360,6 +362,22 @@ public class Commander extends JFrame
     progressBar.setString("Ready");
     progressBar.setStringPainted(true);
     progressBar.setEnabled(false);
+
+    if (Main.MacOS) {
+      // On MacOS, the progress bar is far too thin, the text spills over, let's override it.
+      progressBar.setForeground(new Color(70, 130, 180));
+      progressBar.setBackground(new Color(220, 220, 220));
+      progressBar.setOpaque(true);
+      progressBar.setUI(new BasicProgressBarUI() {
+        @Override
+        protected Color getSelectionForeground() { return Color.WHITE; }
+        @Override
+        protected Color getSelectionBackground() { return Color.DARK_GRAY; }
+      });
+      progressBar.setPreferredSize(new Dimension(progressBar.getPreferredSize().width, 20));
+      progressBar.setStringPainted(true);
+    }
+
     stop.addActionListener(e -> stopDownloading());
     stop.setEnabled(false);
     JPanel progressPanel = new JPanel();
@@ -1308,15 +1326,16 @@ public class Commander extends JFrame
 
   private String getCleanedParamString(Toolchain tool) {
     String params = toolchainParams.getOrDefault(tool, "");
-    String cleanedParams = "";
-    for (String line : params.split("\n", -1)) {
-      line = line.trim();
-      if (line.isEmpty() || line.startsWith("#") || line.indexOf(':') < 0) continue;
-      if (cleanedParams.isEmpty())
-        cleanedParams += "\n";
-      cleanedParams += line;
-    }
-    return cleanedParams;
+    return params;
+    // String cleanedParams = "";
+    // for (String line : params.split("\n", -1)) {
+    //   line = line.trim();
+    //   if (line.isEmpty() || line.startsWith("#") || line.indexOf(':') < 0) continue;
+    //   if (!cleanedParams.isEmpty())
+    //     cleanedParams += "\n";
+    //   cleanedParams += line;
+    // }
+    // return cleanedParams;
   }
 
   private HashMap<String, String> parseParams(Toolchain tool) {
@@ -1366,6 +1385,8 @@ public class Commander extends JFrame
     String initial = toolchainParams.getOrDefault(tool, "");
     if (initial.isEmpty())
       initial = "# Lines starting with hashtag are ignored.\n";
+    for (String[] defparam : tool.defaultParams())
+      initial += "# " + defparam[0] + ": " + defparam[1] + "\n";
     JTextArea text = new JTextArea(initial);
     text.setRows(12);
     text.setColumns(40);

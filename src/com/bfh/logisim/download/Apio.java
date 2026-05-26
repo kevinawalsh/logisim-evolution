@@ -392,7 +392,7 @@ public class Apio extends Toolchain {
             join(apio, "build", verboseSynth, verbosePnr),
             "Failed to synthesize design, cannot download"));
 
-      return createProgrammingPlan(stages);
+      return true;
     }
 
     @Override

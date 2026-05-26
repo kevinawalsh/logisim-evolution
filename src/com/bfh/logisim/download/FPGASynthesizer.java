@@ -95,9 +95,10 @@ public abstract class FPGASynthesizer extends FPGATool {
   //  2. Do pin assignments                     2. skip pin assignment
   //  3. Generate HDL files                     3. skip HDL generation
   //  4. tool.generateScripts(bindings)         4. skip generating scripts
-  //  5. stages = tool.createSynthesizerPlan()  5. check tool.readyForDownload()
-  //  6. execute each stage                     6. stages = tool.createProgrammingPlan()
-  //                                            7. execute each stage
+  //  5. tool.createSynthesisPlan(stages)       5. no plan for synthesis
+  //                                               instead check tool.readyForDownload()
+  //  6. tool.createProgrammingPlan(stages)     6. tool.createProgrammingPlan(stages)
+  //  7. execute each stage                     7. execute each stage
   
   public boolean generateScripts(PinBindings ioResources) {
     return generateScripts(ioResources, enumerateHDLFiles(circuitPath));

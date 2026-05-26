@@ -94,7 +94,10 @@ class BackingStore {
     return s.replace("&", "&amp;")
             .replace("\"", "&quot;")
             .replace("<", "&lt;")
-            .replace(">", "&gt;");
+            .replace(">", "&gt;")
+            .replace("\t", "&#x9;")
+            .replace("\n", "&#xA;")
+            .replace("\r", "&#xD;");
   }
   
   static String xmlEscapeComment(String s) {

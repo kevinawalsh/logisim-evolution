@@ -120,7 +120,7 @@ public class AlteraSynthesizeRemote extends Altera.AlteraSynthesize {
       }
     });
 
-    return createProgrammingPlan(stages);
+    return true;
   }
 
   @Override

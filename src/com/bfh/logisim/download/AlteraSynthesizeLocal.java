@@ -75,7 +75,7 @@ public class AlteraSynthesizeLocal extends Altera.AlteraSynthesize {
             "Failed to convert bitstream, cannot download"));
     }
 
-    return createProgrammingPlan(stages);
+    return true;
   }
 
   @Override

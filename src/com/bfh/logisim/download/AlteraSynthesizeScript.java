@@ -56,18 +56,16 @@ public class AlteraSynthesizeScript extends Altera.AlteraSynthesize {
   public boolean createSynthesisPlan(ArrayList<Stage> stages) {
 
     // synthesize
-    if (!readyForDownload()) {
-      ArrayList<String> tool;
-      if (board.fpga.FlashDefined)
-        tool = script("--synthesize", "--flash", board.fpga.FlashName, projectPath);
-      else
-        tool = script("--synthesize", projectPath);
-      stages.add(new ProcessStage(
-            "synthesis", "Synthesizing (may take a while)",
-            tool, "Failed to synthesize design, cannot download"));
-    }
+    ArrayList<String> tool;
+    if (board.fpga.FlashDefined)
+      tool = script("--synthesize", "--flash", board.fpga.FlashName, projectPath);
+    else
+      tool = script("--synthesize", projectPath);
+    stages.add(new ProcessStage(
+          "synthesis", "Synthesizing (may take a while)",
+          tool, "Failed to synthesize design, cannot download"));
 
-    return createProgrammingPlan(stages);
+    return true;
   }
 
   @Override

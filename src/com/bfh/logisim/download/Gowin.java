@@ -207,15 +207,13 @@ public class Gowin {
 
     @Override
     public boolean createSynthesisPlan(ArrayList<Stage> stages) {
-      if (!readyForDownload()) {
-        String script = scriptPath.replace(projectPath, ".." + File.separator) + "gw_download.tcl";
-        stages.add(new ProcessStage(
-              "compile", "Executing Gowin syn & pnr",
-              join(gw_sh, script),
-              "Failed to to execute gowin syn & pnr"));
-      }
+      String script = scriptPath.replace(projectPath, ".." + File.separator) + "gw_download.tcl";
+      stages.add(new ProcessStage(
+            "compile", "Executing Gowin syn & pnr",
+            join(gw_sh, script),
+            "Failed to execute gowin syn & pnr"));
 
-      return createProgrammingPlan(stages);
+      return true;
     }
 
     @Override

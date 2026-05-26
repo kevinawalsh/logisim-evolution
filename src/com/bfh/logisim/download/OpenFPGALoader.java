@@ -94,7 +94,7 @@ public class OpenFPGALoader extends FPGAProgrammer {
    
     @Override
     public InstallStatus toolchainInstallStatus() {
-      return toolchainInstallStatus(AppPreferences.APIO_PATH.get());
+      return toolchainInstallStatus(AppPreferences.OPENFPGALOADER_PATH.get());
     }
 
     public InstallStatus toolchainInstallStatus(String prefPath) {
@@ -117,7 +117,8 @@ public class OpenFPGALoader extends FPGAProgrammer {
 
   private String openFPGALoader; // verified openFPGALoader command, inluding full path if needed
   private String bitstream; // set by createProgrammingPlan()
-  private String cableIndex; // set by ScanStage.post()
+  // private String cableIndex; // set by ScanDetectStage.post()
+  private String busDev; // set by ScanUSBStage.post()
   private boolean confirmed;
 
   private OpenFPGALoader(FPGAReport err, String openFPGALoader) {
@@ -134,12 +135,12 @@ public class OpenFPGALoader extends FPGAProgrammer {
     return name;
   }
 
-  private class ScanStage extends ProcessStage {
+  private class ScanUSBStage extends ProcessStage {
 
-    ScanStage() {
-      super("scan", "Scaning for FPGA Devices",
-          join(openFPGALoader, "--detect"),
-          "Could not find any FPGA devices.");
+    ScanUSBStage() {
+      super("scan", "Scaning for usb-connected FPGA Devices",
+          join(openFPGALoader, "--scan-usb"),
+          "Could not find any usb-connected FPGA devices.");
     }
 
     @Override
@@ -158,31 +159,80 @@ public class OpenFPGALoader extends FPGAProgrammer {
 
     @Override
     protected boolean post() {
+      // Typical output:
+      // empty
+      // Bus device vid:pid       probe type      manufacturer serial      product
+      // 001 001    0x0403:0x6010 FTDI2232        Alchitry     FTA4W6HP    Alchitry Cu V2
+      // nnn nnn    ......:...... ........        name|"none"  str|absent  ...
+      // <1> <2>    <3>           <4>             <5+>
       ArrayList<String> dev = new ArrayList<>();
-      StringBuilder curdev = null;
-
       for (String line : console.getText()) {
-        if (line.trim().matches("^index \\d+:")) {
-          if (curdev != null)
-            dev.add(curdev.toString());
-          curdev = new StringBuilder(line.trim());
-        }
-        if (line.trim().matches("^idcode\\s+0x[0-9a-f]+")) {
-          curdev.append(" " + line.trim().split("\\s+")[1]);
-        }
-        if (line.trim().matches("^model\\s+.*")) {
-          curdev.append(" " + line.trim().split("\\s+")[1]);
-        }
+        String[] parts = line.trim().split("\\s+", 5);
+        // We need bus and device, and we hide vid:pid and probe-type
+        if (parts.length != 5) continue;
+        if (!parts[0].matches("\\d\\d\\d")) continue;
+        if (!parts[1].matches("\\d\\d\\d")) continue;
+        // "nnn:nnn Alchitry FTA4W6HP Alnchitry Cu V2"
+        dev.add(String.format("%s:%s %s", parts[0], parts[1], parts[4]));
       }
-      if (curdev != null)
-        dev.add(curdev.toString());
-
+      if (dev.isEmpty())
+        return false;
       String devsel = dev.size() > 1 ? cmdr.chooseDevice(dev) : dev.get(0);
-      cableIndex = devsel.split(":")[0].split("\\s+")[1];
+      busDev = devsel.substring(0, 7);
       return super.post();
     }
 
   }
+
+  // private class ScanDetectStage extends ProcessStage {
+
+  //   ScanDetectStage() {
+  //     super("scan", "Scaning for FPGA Devices",
+  //         join(openFPGALoader, "--detect"),
+  //         "Could not find any FPGA devices.");
+  //   }
+
+  //   @Override
+  //   protected boolean prep() {
+  //     if (!new File(bitstream).exists()) {
+  //       console.printf(Console.ERROR, "Error: Design must be synthesized before download.");
+  //       return false;
+  //     }
+  //     if (!confirmed && !cmdr.confirmDownload()) {
+  //       cancelled = true;
+  //       return false;
+  //     }
+  //     confirmed = true;
+  //     return true;
+  //   }
+
+  //   @Override
+  //   protected boolean post() {
+  //     ArrayList<String> dev = new ArrayList<>();
+  //     StringBuilder curdev = null;
+
+  //     for (String line : console.getText()) {
+  //       if (line.trim().matches("^index \\d+:")) {
+  //         if (curdev != null)
+  //           dev.add(curdev.toString());
+  //         curdev = new StringBuilder(line.trim());
+  //       }
+  //       if (line.trim().matches("^idcode\\s+0x[0-9a-f]+")) {
+  //         curdev.append(" " + line.trim().split("\\s+")[1]);
+  //       }
+  //       if (line.trim().matches("^model\\s+.*")) {
+  //         curdev.append(" " + line.trim().split("\\s+")[1]);
+  //       }
+  //     }
+  //     if (curdev != null)
+  //       dev.add(curdev.toString());
+
+  //     String devsel = dev.size() > 1 ? cmdr.chooseDevice(dev) : dev.get(0);
+  //     cableIndex = devsel.split(":")[0].split("\\s+")[1];
+  //     return super.post();
+  //   }
+
+  // }
 
   private ArrayList<String> uploadCommand() {
     ArrayList<String> cmd = new ArrayList<>();
@@ -217,9 +267,13 @@ public class OpenFPGALoader extends FPGAProgrammer {
       cmd.add(boardname);
     }
 
-    if (cableIndex != null) {
-      cmd.add("--cable-index");
-      cmd.add(cableIndex);
+    // if (cableIndex != null) {
+    //   cmd.add("--cable-index");
+    //   cmd.add(cableIndex);
+    // }
+    if (busDev != null) {
+      cmd.add("--busdev-num");
+      cmd.add(busDev);
     }
 
     cmd.add(bitstream);
@@ -227,15 +281,14 @@ public class OpenFPGALoader extends FPGAProgrammer {
     return cmd;
   }
 
-
   public boolean createProgrammingPlan(ArrayList<Stage> stages, String bitstream) {
 
     this.bitstream = bitstream; // e.g. hardware.bin
 
-    stages.add(new ScanStage());
+    stages.add(new ScanUSBStage());
 
     stages.add(new ProcessStage(
-          "upload", "Uploading to FPGA via openFPGALoader", uploadCommand(),
+          "upload", "Uploading to FPGA via openFPGALoader", null,
           "Failed to upload design; did you connect the board?") {
       @Override
       protected boolean prep() {
@@ -243,6 +296,7 @@ public class OpenFPGALoader extends FPGAProgrammer {
           cancelled = true;
           return false;
         }
+        cmd = uploadCommand(); // compute late, b/c busDev available only after ScanUSBStage executes
         confirmed = true;
         return true;
       }
