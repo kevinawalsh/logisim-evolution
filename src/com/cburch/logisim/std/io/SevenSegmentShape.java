@@ -50,6 +50,14 @@ public class SevenSegmentShape extends DynamicElement {
 
   public SevenSegmentShape(int x, int y, DynamicElement.Path p) {
     super(p, Bounds.create(x, y, 14, 20));
+    calculateBounds();
+  }
+
+  void calculateBounds() {
+    int digits = path.leaf().getAttributeSet().getValue(SevenSegment.ATTR_DIGITS).intValue();
+    int x = bounds.getX();
+    int y = bounds.getY();
+    bounds = Bounds.create(x, y, 14*digits, 20);
   }
 
   private static final List<Attribute<?>> ATTRIBUTES
@@ -63,9 +71,9 @@ public class SevenSegmentShape extends DynamicElement {
 
   @Override
   public void paintDynamic(Graphics2D g, CircuitState state) {
-    Color offColor = path.leaf().getAttributeSet().getValue(Io.ATTR_OFF_COLOR);
-    Color onColor = path.leaf().getAttributeSet().getValue(Io.ATTR_ON_COLOR);
-    Color bgColor = path.leaf().getAttributeSet().getValue(Io.ATTR_BACKGROUND);
+    calculateBounds();
+    SevenSegmentAttributes attrs = (SevenSegmentAttributes)path.leaf().getAttributeSet();
+    Color bgColor = attrs.getValue(Io.ATTR_BACKGROUND);
     int x = bounds.getX();
     int y = bounds.getY();
     int w = bounds.getWidth();
@@ -78,24 +86,30 @@ public class SevenSegmentShape extends DynamicElement {
     g.setColor(Color.BLACK);
     g.drawRect(x, y, w, h);
     g.setColor(Color.DARK_GRAY);
-    int summ = 0, desired = 1;
+
+    int digits = attrs.getValue(SevenSegment.ATTR_DIGITS);
+
+    SevenSegment.State data = null;
+    long ticks = 0;
+    int persistDuration = 0;
     if (state != null) {
-      Integer data = (Integer)getData(state);
-      summ = (data == null ? 0 : data.intValue());
-      Boolean activ = path.leaf().getAttributeSet().getValue(Io.ATTR_ACTIVE);
-      desired = activ == null || activ.booleanValue() ? 1 : 0;
+      data = (SevenSegment.State)getData(state);
+      ticks = state.getPropagator().getTickCount();
+      persistDuration = digits == 1 ? 0 : attrs.getValue(SevenSegment.ATTR_PERSIST).intValue();
     }
-    g.setColor(Color.DARK_GRAY);
-    for (int i = 0; i <= 7; i++) {
-      if (state != null) {
-        g.setColor(((summ >> i) & 1) == desired ? onColor : offColor);
+    for (int digit = 0; digit < digits; digit++) {
+      for (int i = 0; i <= 7; i++) {
+        if (data != null) {
+          g.setColor(attrs.getColor(data.get(digit, i, ticks, persistDuration)));
+        }
+        if (i < 7) {
+          int[] seg = SEGMENTS[i];
+          g.fillRect(x + seg[0], y + seg[1], seg[2], seg[3]);
+        } else {
+          g.fillOval(x + 11, y + 17, 2, 2); // draw decimal point
+        }
       }
-      if (i < 7) {
-        int[] seg = SEGMENTS[i];
-        g.fillRect(x + seg[0], y + seg[1], seg[2], seg[3]);
-      } else {
-        g.fillOval(x + 11, y + 17, 2, 2); // draw decimal point
-      }
+      x += 14;
     }
     drawLabel(g);
   }

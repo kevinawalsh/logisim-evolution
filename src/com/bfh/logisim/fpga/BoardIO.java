@@ -72,32 +72,70 @@ import static com.bfh.logisim.netlist.Netlist.Int3;
 // to be split into separate BoardIO resources).
 public class BoardIO {
 
-  public static final EnumSet<Type> PhysicalTypes = EnumSet.range(Type.Button, Type.LEDBar);
-  public static final EnumSet<Type> InputTypes = EnumSet.range(Type.Button, Type.Ribbon);
-  public static final EnumSet<Type> OutputTypes = EnumSet.range(Type.Pin, Type.LEDBar);
-  public static final EnumSet<Type> InOutTypes = EnumSet.of(Type.Pin, Type.Ribbon);
-  public static final EnumSet<Type> OneBitTypes = EnumSet.of(Type.Button, Type.Pin, Type.LED);
-  public static final EnumSet<Type> VariableWidthTypes = EnumSet.of(Type.DIPSwitch, Type.Ribbon, Type.LEDBar);
-  public static final EnumSet<Type> OrientableTypes = EnumSet.of(Type.DIPSwitch, Type.Ribbon, Type.LEDBar);
+  public static enum Type {
 
-	public static enum Type {
-    // Note: The order here matters, because of the EnumSet ranges above.
-                   // Physical and synthetic I/O resource characteristics:
-    AllZeros,      // synth in  onebit/multibit
-    AllOnes,       // synth in  onebit/multibit
-    Constant,      // synth in  onebit/multibit
-    Button,        // phys  in  onebit
-    DIPSwitch,     // phys  in  multibit/variable (degenerates to Button)
-    Pin,           // phys  any onebit
-    Ribbon,        // phys  any multibit/variable (degenerates to Pin)
-		LED,           // phys  out onebit
-    RGBLED,        // phys  out multibit (degenerates to LED)
-    SevenSegment,  // phys  out multibit (degenerates to LED)
-    LEDBar,        // phys  out multibit/variable (degenerates to LED)
-    Unconnected,   // synth out onebit/multibit
+    // NOTE: Careful of ordering, the last argument can't use a forward reference.
 
-    Expanded, // only used by PinBindingsDialog as a placeholder 
-    Unknown; // only used during parsing as temporary placeholder
+    // name           description,                          assn,         reality,   orient, dir,      min/max/def width,  degneratesTo
+    AllZeros         ("Always-zero Input",                  ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.IN,   -1, -1, -1,         null),
+    AllOnes          ("Always-one Input",                   ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.IN,   -1, -1, -1,         null),
+    Constant         ("User-defined Constant Input",        ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.IN,   -1, -1, -1,         null),
+    Unconnected      ("Unconnected",                        ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.OUT,  -1, -1, -1,         null),
+
+    InReserved       ("Reserved Input Pin",                 UNASSIGNABLE, PHYSICAL,  UNORIENTABLE,  DIR.IN,   1, 32, 1,           null),
+    OutReserved      ("Reserved Output Pin",                UNASSIGNABLE, PHYSICAL,  UNORIENTABLE,  DIR.OUT,  1, 32, 1,           null),
+
+    InPin            ("Generic Input Pin",                  ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.IN,   1, 1, 1,            null),
+    BiPin            ("Generic Bidirectional Pin",          ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.BI,   1, 1, 1,            null),
+    OutPin           ("Generic Output Pin",                 ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  1, 1, 1,            null),
+
+    Button           ("Button or Switch",                   ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.IN,   1, 1, 1,            InPin),
+    DIPSwitch        ("DIP Switch",                         ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.IN,   DipSwitch.MIN_SWITCH, DipSwitch.MAX_SWITCH, DipSwitch.DEF_SWITCH, Button),
+
+    InRibbon         ("Input Bus or Ribbon Cable",          ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.IN,   1, 32, 8,           InPin),
+    BiRibbon         ("Bidirectional Bus or Ribbon Cable",  ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.BI,   PortIO.MIN_IO, PortIO.MAX_IO, PortIO.DEF_IO, BiPin),
+    OutRibbon        ("Output Bus or Ribbon Cable",         ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.OUT,  1, 32, 8,           OutPin),
+
+    LED              ("LED",                                ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  1, 1, 1,            OutPin),
+    RGBLED           ("3-wire RGB LED",                     ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  3, 3, 3,            LED),
+    SevenSegment     ("Seven Segment Display",              ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  8, 8, 8,            LED),
+    SevenSegmentGang ("Seven Segment Multi-Digit Display",  ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  8+2, 8+SevenSegment.MAX_DIGITS, 8+4, null /* degneratesTo: special case */),
+    LEDBar           ("LED Bar",                            ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.OUT,  LedBar.MIN_SEGMENTS, LedBar.MAX_SEGMENTS, LedBar.DEFAULT_SEGMENTS, LED),
+
+    Expanded         ("Expanded", UNASSIGNABLE, null, null, null, -1, -1, -1, null),  // only used by PinBindingsDialog as a placeholder 
+    Unknown          ("Unknown", null, null, null, -1, -1, -1, null);  // only used during parsing as temporary placeholder
+
+    private enum ASSN    { ASSIGNABLE, UNASSIGNABLE }
+    private enum REALITY { PHYSICAL, SYNTHETIC }
+    private enum ORIENT  { ORIENTABLE, UNORIENTABLE }
+    private enum DIR     { IN, OUT, BI }
+
+    public final String description;
+    public final boolean assignable;
+    public final boolean physical, synthetic;
+    public final boolean orientable;
+    public final boolean inputOnly, outputOnly, anyDirection;
+    public final int minWidth, maxWidth, defWidth;
+    public final boolean oneBit; // min = max = def = 1
+    public final boolean variableWidth; // min != max
+    private final Type degeneratesTo;
+
+    Type(String descr, ASSN assignable, REALITY reality, ORIENT orientable, DIR dir, int minWidth, int maxWidth, int defWidth, Type degeneratesTo) {
+      this.description = descr;
+      this.assignable = (assignable == ASSIGNABLE);
+      this.physical == (reality == REALITY.PHYSICAL);
+      this.synthetic == (reality == REALITY.SYNTHETIC);
+      this.orientable = (orientable == ORIENTABLE);
+      this.inputOnly = (dir == DIR.IN);
+      this.outputOnly = (dir == DIR.OUT);
+      this.anyDirection = (dir == DIR.BIDIR);
+      this.minWidth = minWidth;
+      this.maxWidth = maxWidth;
+      this.defWidth = defWidth;
+      this.oneBit = (minWidth == 1 && maxWidth == 1 && defWidth == 1);
+      this.variableWidth = (minWidth != maxWidth);
+      this.degeneratesTo = degeneratesTo;
+    }
 
     // Note: The types above are used to describe physical I/O resources
     // (with the characteristics as noted above). But Logisim components within
@@ -113,98 +151,72 @@ public class BoardIO {
 			for (Type t : PhysicalTypes)
 				if (t.name().equalsIgnoreCase(str))
 					return t;
-      if (str.equalsIgnoreCase("PortIO")) // old name for backwards compatibility
-        return Ribbon;
 			return Type.Unknown;
 		}
 
-    public int defaultWidth() {
-      switch (this) {
-      case LED:
-      case Button:
-      case Pin:
-        return 1;
-      case DIPSwitch:
-        return DipSwitch.DEF_SWITCH;
-      case Ribbon:
-        return PortIO.DEF_IO;
-      case RGBLED:
-        return 3;
-      case SevenSegment:
-        return 8;
-      case LEDBar:
-        return LedBar.DEFAULT_SEGMENTS;
-      default:
-        return 0;
-      }
-    }
+    public int minWidth() { return minWidth; }
 
-    public int minWidth() {
-      switch (this) {
-      case DIPSwitch:
-        return DipSwitch.MIN_SWITCH;
-      case Ribbon:
-        return PortIO.MIN_IO;
-      case LEDBar:
-        return LedBar.MIN_SEGMENTS;
-      default:
-        return defaultWidth();
-      }
-    }
+    public int maxWidth() { return maxWidth; }
 
-    public int maxWidth() {
-      switch (this) {
-      case DIPSwitch:
-        return DipSwitch.MAX_SWITCH;
-      case Ribbon:
-        return PortIO.MAX_IO;
-      case LEDBar:
-        return LedBar.MAX_SEGMENTS;
-      default:
-        return defaultWidth();
-      }
-    }
-
-    public String getDescription() {
-      switch (this) {
-      case AllZeros: return "Always-zero Input";
-      case AllOnes: return "Always-one Input";
-      case Constant: return "User-defined Constant Input";
-      case Button: return "Button or Switch";
-      case DIPSwitch: return "DIP Switch";
-      case Pin: return "Bi-directional Pin";
-      case Ribbon: return "Bi-directional Bus";
-      case LED: return "LED";
-      case RGBLED: return "3-wire RGB LED";
-      case SevenSegment: return "Seven Segment Display";
-      case LEDBar: return "LED Bar";
-      case Unconnected: return "Unconnected";
-      default: return "Unrecognized Board I/O Resource";
-      }
-    }
+    public String getDescription() { return description; }
 
     public String[] pinLabels(int width) {
       switch (this) {
-      case SevenSegment:
-        return com.cburch.logisim.std.io.SevenSegment.pinLabels();
-      case RGBLED:
-        return RGBLed.pinLabels();
-      default:
-        return genericPinLabels(width);
+        case SevenSegment:
+        case SevenSegmentGang:
+          return com.cburch.logisim.std.io.SevenSegment.pinLabels(width);
+        case RGBLED:
+          return RGBLed.pinLabels();
+        default:
+          return genericPinLabels(width);
       }
     }
 
-    private String[] genericPinLabels(int width) {
-      String[] labels = new String[width];
-      if (width == 1)
-        labels[0] = "Pin";
-      else
-        for (int i = 0; i < width; i++)
-          labels[i] = "Pin_" + i;
-      return labels;
+    public PinOrdering defaultPinOrdering(Bounds r) {
+      if (r.width >= r.height) {
+        switch (this) {
+          case DIPSwitch: return PinOrdering.ORDER_1_LR;
+          case LEDBar: return PinOrdering.ORDER_1_RL;
+          case Ribbon: return PinOrdering.ORDER_2_BTLR;
+          default: return null;
+        }
+      } else {
+        switch (type) {
+          case DIPSwitch: return PinOrdering.ORDER_1_TB;
+          case LEDBar: return PinOrdering.ORDER_1_BT;
+          case Ribbon: return PinOrdering.ORDER_2_LRTB;
+          default: return null;
+        }
+      }
     }
 
-	}
+  }
+
+  public static final EnumSet<Type> PhysicalTypes = deriveSet(t -> t.physical);
+  // public static final EnumSet<Type> SyntheticTypes = deriveSet(t -> t.synthetic);
+  // public static final EnumSet<Type> InputTypes = deriveSet(t -> t.inputOnly);
+  // public static final EnumSet<Type> OutputTypes = deriveSet(t -> t.outputOnly);
+  // public static final EnumSet<Type> InOutTypes = deriveSet(t -> t.anyDirection);
+  // public static final EnumSet<Type> OneBitTypes = deriveSet(t -> t.oneBit);
+  // public static final EnumSet<Type> VariableWidthTypes = deriveSet(t -> t.variableWidth);
+  // public static final EnumSet<Type> OrientableTypes = deriveSet(t -> t.orientable);
+
+  private static EnumSet<Type> deriveSet(Predicate<Type> pred) {
+    EnumSet<Type> set = EnumSet.noneOf(Type.class);
+    for (Type t : Type.values())
+      if (pred.test(t))
+        set.add(t);
+    return set;
+  }
+
+  private static String[] genericPinLabels(int width) {
+    if (width == 1)
+      return new String[] { "Pin" };
+    String[] labels = new String[width];
+    for (int i = 0; i < width; i++)
+      labels[i] = "Pin_" + i;
+    return labels;
+  }
 
 	public final Type type;
 	public final int width;
@@ -256,7 +268,7 @@ public class BoardIO {
   }
 
   public static BoardIO makeSynthetic(Type t, int w, int val) {
-    if (PhysicalTypes.contains(t))
+    if (!t.synthetic)
       throw new IllegalArgumentException("BoardIO type "+t+" is not meant for synthetic I/O resources");
     return new BoardIO(t, w, val);
   }
@@ -279,7 +291,7 @@ public class BoardIO {
   // constructor for physical I/O resources
   BoardIO(Type t, int w, String l, Bounds r,
       IoStandard s, InputBias b, PinActivity a, DriveStrength g, IdleBehavior v, PinOrdering o, String[] x) {
-    if (!PhysicalTypes.contains(t))
+    if (!t.physical)
       throw new IllegalArgumentException("BoardIO type "+t+" is not meant for physical I/O resources");
     type = t;
     width = w;
@@ -287,21 +299,27 @@ public class BoardIO {
     rect = r;
     standard = s; // input, output, bidir
     bias = b; // input, bidir
-    if (InputTypes.contains(type) && bias == null)
+    if (type.inputOnly && bias == null)
       throw new IllegalArgumentException("BoardIO type "+t+" is an input, but bias resistor spec is missing");
-    if (!InputTypes.contains(type) && bias != null)
-      throw new IllegalArgumentException("BoardIO type "+t+" is not an input, but has a bias resistor spec");
+    if (type.anyDirection && bias == null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is bidirectional, but bias resistor spec is missing");
+    if (type.outputOnly && bias != null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is an output, but has a bias resistor spec");
     activity = a; // input, output, bidir
     strength = g; // output, bidir
-    if (OutputTypes.contains(type) && strength == null)
+    if (type.outputOnly && strength == null)
       throw new IllegalArgumentException("BoardIO type "+t+" is an output, but drive strength spec is missing");
-    if (!OutputTypes.contains(type) && strength != null)
-      throw new IllegalArgumentException("BoardIO type "+t+" is not an output, but has a drive strength spec");
+    if (type.anyDirection && strength == null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is bidirectional, but drive strength spec is missing");
+    if (type.inputOnly && strength != null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is an input, but has a drive strength spec");
     idle = v; // output, bidir
-    if (OutputTypes.contains(type) && idle == null)
+    if (type.outputOnly && idle == null)
       throw new IllegalArgumentException("BoardIO type "+t+" is an output, but idle spec is missing");
-    if (!OutputTypes.contains(type) && idle != null)
-      throw new IllegalArgumentException("BoardIO type "+t+" is not an output, but has idle spec");
+    if (type.anyDirection && idle == null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is bidirectional, but idle spec is missing");
+    if (type.inputOnly && idle != null)
+      throw new IllegalArgumentException("BoardIO type "+t+" is an input, but has idle spec");
     orientation = o;
     pins = x;
     // rest are defaults/empty
@@ -316,14 +334,28 @@ public class BoardIO {
   }
 
   public static BoardIO parseXml(Element elt) throws Exception {
-    Type t = Type.getPhysicalType(elt.getNodeName());
+    Map<String, String> params = XmlUtil.getAttributeMap(elt);
+
+    String typeName = elt.getNodeName();
+    if (typeName.equalsIgnoreCase("Pin") || typeName.equalsIgnoreCase("Ribbon")) {
+      // These types come in three variants: In_, Out_, and Bi_.
+      String use = params.getOrDefault("use", params.getOrDefault("dir", params.getOrDefault("direction", "any")));
+      if (use.equalsIgnoreCase("input") || use.equalsIgnoreCase("in"))
+        typeName = "In"+typeName; // InPin, InRibbon
+      else if (use.equalsIgnoreCase("output") || use.equalsIgnoreCase("out"))
+        typeName = "Out"+typeName; // OutPin, OutRibbon
+      else if (use.equalsIgnoreCase("any") || use.equalsIgnoreCase("bi") || use.equalsIgnoreCase("bidir") || use.equalsIgnoreCase("bidirectional"))
+        typeName = "Bi"+typeName; // BiPin, BiRibbon
+      else
+        throw new Exception("unrecognized I/O use constraint for '"+typeName+"': '" + use + "'");
+    }
+
+    Type t = Type.getPhysicalType(typeName);
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
     String name = t.toString();
-    boolean in = InputTypes.contains(t);
-    boolean out = OutputTypes.contains(t);
-
-    Map<String, String> params = XmlUtil.getAttributeMap(elt);
+    boolean in = t.inputOnly || t.anyDirection;
+    boolean out = t.outputOnly || t.anyDirection;
 
     String label = params.get("label");
     if (label != null && !label.isEmpty())
@@ -380,7 +412,7 @@ public class BoardIO {
         } 
         cnt = "" + (max+1);
       }
-      if (VariableWidthTypes.contains(t)) {
+      if (t.variableWidth) {
         if (cnt == null)
           throw new Exception("missing pin count for " + name);
         width = Integer.parseInt(cnt);
@@ -397,7 +429,7 @@ public class BoardIO {
         if (pins[i] == null)
           throw new Exception("missing pin FPGA location " + i + " for " + name);
       }
-      if (OrientableTypes.contains(t)) {
+      if (t.orientable) {
         String desc = params.get("orientation");
         if (desc != null) {
           o = PinOrdering.get(desc);
@@ -413,11 +445,17 @@ public class BoardIO {
 	}
 
   public static BoardIO parseXmlOld(Element elt) throws Exception {
-    Type t = Type.getPhysicalType(elt.getNodeName());
+    
+    // fixup old names
+    String typeName = elt.getNodeName();
+    if (typeName.equalsIgnoreCase("PortIO")) typeName = "BiRibbon";
+    else if (type.equalsIgnoreCase("Pin")) typeName = "BiPin";
+
+    Type t = Type.getPhysicalType(typeName);
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
-    boolean in = InputTypes.contains(t);
-    boolean out = OutputTypes.contains(t);
+    boolean in = t.inputOnly || t.anyDirection; 
+    boolean out = t.outputOnly || t.anyDirection;
 
     Map<String, String> params = XmlUtil.getAttributeMap(elt);
 
@@ -464,7 +502,7 @@ public class BoardIO {
         throw new Exception("missing pin FPGA location for " + name);
     } else {
       String cnt = params.get("NrOfPins");
-      if (VariableWidthTypes.contains(t)) {
+      if (t.variableWidth) {
         if (cnt == null)
           throw new Exception("missing pin count for " + name);
         width = Integer.parseInt(cnt);
@@ -481,7 +519,7 @@ public class BoardIO {
         if (pins[i] == null)
           throw new Exception("missing pin FPGA location " + i + " for " + name);
       }
-      if (OrientableTypes.contains(t)) {
+      if (t.orientable) {
         String desc = params.get("Orientation");
         if (desc != null) {
           o = PinOrdering.get(desc);
@@ -496,52 +534,22 @@ public class BoardIO {
     return new BoardIO(t, width, label, r, s, p, a, g, v, o, pins);
 	}
 
-  public boolean isInput() {
-    return InputTypes.contains(type);
-  }
+  public boolean canBeInput() { return type.inputOnly || type.anyDirection; }
 
-  public boolean isInputOutput() {
-    return InOutTypes.contains(type);
-  }
+  public boolean isInputOutput() { return type.anyDirection; }
 
-  // public boolean isOutput() {
-  //   return OutputTypes.contains(type);
-  // }
-  
-  // public boolean isVariableWidth() {
-  //   return VariableWidthTypes.contains(type);
-  // }
-  
-  public static boolean isVariableWidth(Type type) {
-    return VariableWidthTypes.contains(type);
-  }
-
-  public static PinOrdering defaultPinOrdering(Type type, Bounds r) {
-    if (r.width >= r.height) {
-      switch (type) {
-        case DIPSwitch: return PinOrdering.ORDER_1_LR;
-        case LEDBar: return PinOrdering.ORDER_1_RL;
-        case Ribbon: return PinOrdering.ORDER_2_BTLR;
-        default: return null;
-      }
-    } else {
-      switch (type) {
-        case DIPSwitch: return PinOrdering.ORDER_1_TB;
-        case LEDBar: return PinOrdering.ORDER_1_BT;
-        case Ribbon: return PinOrdering.ORDER_2_LRTB;
-        default: return null;
-      }
-    }
-  }
+  // public boolean canBeOutput() { return type.outputOnly || type.anyDirection; ]
   
   @Override
   public String toString() {
-    if (!PhysicalTypes.contains(type))
+    if (!type.physical)
       return label;
     String suffix = label != null ? label : String.format("@(%d, %d)", rect.x, rect.y);
-    if (OrientableTypes.contains(type))
+    if (type.orientable) {
       suffix = orientation + " " + suffix;
-    if (VariableWidthTypes.contains(type))
+    if (type == SevenSegmentGang)
+      return String.format("%d-digit Seven Segment Display %s", width - 8, suffix);
+    else if (type.variableWidth)
       return String.format("%d-bit %s %s", width, type, suffix);
     else
       return type + " " + suffix; // single-bit and other fixed-width types
@@ -550,26 +558,12 @@ public class BoardIO {
   // Postcondition: of the counts returned, at least two will be zero.
   public Int3 getPinCounts() {
     Int3 num = new Int3();
-    switch (type) {
-    case Button:
-    case DIPSwitch:
-    case AllZeros:
-    case AllOnes:
-    case Constant:
+    if (type.inputOnly)
       num.in = width;
-      break;
-    case Pin:
-    case Ribbon:
-      num.inout = width;
-      break;
-    case LED:
-    case RGBLED:
-    case SevenSegment:
-    case LEDBar:
-    case Unconnected:
+    else if (type.outputOnly)
       num.out = width;
-      break;
-    }
+    else if (type.anyDirection)
+      num.inout = width;
     return num;
   }
 
@@ -577,10 +571,15 @@ public class BoardIO {
   public boolean isCompatible(Int3 compWidth, Type compType) {
     if (compWidth.size() > 1) {
       // Component is multi-bit, such as PortIO, DipSwitch, Keyboard, Tty,
-      // RGBLed, SevenSegment, or a multi-bit top-level input or output Ribbon.
-      // Ribbon can connect to anything (so long as the directions are
-      // compatible), but others must connect to the exactly matching type.
-      if (compType != Type.Ribbon && compType != type)
+      // RGBLed, SevenSegment, or a multi-bit top-level input or output pin.
+      // The generic pin types (represented by InRibbon, OutRibbon) and PortIO
+      // (represented by BiRibon) can connect to anything (so long as the
+      // directions are compatible), but others must connect to the exactly
+      // matching type.
+      if (compType != type &&
+          compType != Type.InRibbon /* Generic input Pin */ &&
+          compType != Type.OutRibbon /* Generic output Pin */  &&
+          compType != Type.BiRibbon /* PortIO */)
         return false;
       // Widths must match exactly, directions must be compatible.
       Int3 rsrc = getPinCounts();
@@ -589,10 +588,13 @@ public class BoardIO {
           || (compWidth.inout > 0 && compWidth.inout == rsrc.inout);
     } else {
       // Component is single-bit, such as Button, LED, or single-bit top-level
-      // input or output Pin. Pin can connect to anything (so long as the
-      // directions are compatible), but others must connect to the exactly
-      // matching type.
-      if (compType != Type.Pin && compType != type)
+      // input or output Pin. The generic pin types (represented by InPin and
+      // OutPin) can connect to anything (so long as the directions are
+      // compatible), but others must connect to the exactly matching type.
+      // FIXME: what about 1-bit PortIO?
+      if (compType != type &&
+          compType != Type.InPin /* Generic input Pin */&& 
+          compType != Type.OutPin /* Generic output Pin */)
         return false;
       // Widths must be sufficient, directions must be compatible.
       Int3 rsrc = getPinCounts();
@@ -609,6 +611,8 @@ public class BoardIO {
   public String pinLabel(int bit) {
     return type.pinLabels(width)[bit];
   }
+
+  // TODO: Add orientation attribute for 7segment, and draw pins for it when appropriate.
 
   public void drawOrientedPins(Graphics2D g, int xOffset, int yOffset, double imgScale,
       Color fill[], Color edge[], Color edgeDefault) {
