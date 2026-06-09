@@ -43,14 +43,14 @@ public class ButtonHDLGenerator extends HDLInliner {
   
   public static ButtonHDLGenerator forButton(ComponentContext ctx) {
     ButtonHDLGenerator g = new ButtonHDLGenerator(ctx);
-    g.hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.Pin);
+    g.hiddenPort = HiddenPort.makeInport(1, HiddenPort.Button, HiddenPort.InPin);
     return g;
   }
 
   public static ButtonHDLGenerator forDipSwitch(ComponentContext ctx) {
     ButtonHDLGenerator g = new ButtonHDLGenerator(ctx);
     int n = ctx.attrs.getValue(DipSwitch.ATTR_SIZE).getWidth();
-    g.hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.Ribbon, HiddenPort.Pin);
+    g.hiddenPort = HiddenPort.makeInport(n, HiddenPort.DIPSwitch, HiddenPort.Button, HiddenPort.InRibbon, HiddenPort.InPin);
     return g;
   }
 

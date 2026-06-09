@@ -35,8 +35,12 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+
+
 import java.util.EnumSet;
 import java.util.Map;
 
@@ -76,59 +80,60 @@ public class BoardIO {
 
     // NOTE: Careful of ordering, the last argument can't use a forward reference.
 
-    // name           description,                          assn,         reality,   orient, dir,      min/max/def width,  degneratesTo
-    AllZeros         ("Always-zero Input",                  ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.IN,   -1, -1, -1,         null),
-    AllOnes          ("Always-one Input",                   ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.IN,   -1, -1, -1,         null),
-    Constant         ("User-defined Constant Input",        ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.IN,   -1, -1, -1,         null),
-    Unconnected      ("Unconnected",                        ASSIGNABLE,   SYNTHETIC, UNORIENTABLE,  DIR.OUT,  -1, -1, -1,         null),
+    // name           description,                          assn,           reality,   orient, dir,      min/max/def width,  degneratesTo
+    AllZeros         ("Always-zero Input",                  ASSIGNABLE.YES, REALITY.SYNTHETIC, ORIENTABLE.NO,  DIR.IN,   -1, -1, -1,         null),
+    AllOnes          ("Always-one Input",                   ASSIGNABLE.YES, REALITY.SYNTHETIC, ORIENTABLE.NO,  DIR.IN,   -1, -1, -1,         null),
+    Constant         ("User-defined Constant Input",        ASSIGNABLE.YES, REALITY.SYNTHETIC, ORIENTABLE.NO,  DIR.IN,   -1, -1, -1,         null),
+    Unconnected      ("Unconnected",                        ASSIGNABLE.YES, REALITY.SYNTHETIC, ORIENTABLE.NO,  DIR.OUT,  -1, -1, -1,         null),
 
-    InReserved       ("Reserved Input Pin",                 UNASSIGNABLE, PHYSICAL,  UNORIENTABLE,  DIR.IN,   1, 32, 1,           null),
-    OutReserved      ("Reserved Output Pin",                UNASSIGNABLE, PHYSICAL,  UNORIENTABLE,  DIR.OUT,  1, 32, 1,           null),
+    InReserved       ("Reserved Input Pin",                 ASSIGNABLE.NO,  REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.IN,   1, 32, 1,           null),
+    OutReserved      ("Reserved Output Pin",                ASSIGNABLE.NO,  REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.OUT,  1, 32, 1,           null),
 
-    InPin            ("Generic Input Pin",                  ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.IN,   1, 1, 1,            null),
-    BiPin            ("Generic Bidirectional Pin",          ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.BI,   1, 1, 1,            null),
-    OutPin           ("Generic Output Pin",                 ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  1, 1, 1,            null),
+    InPin            ("Generic Input Pin",                  ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.IN,   1, 1, 1,            null),
+    BiPin            ("Generic Bidirectional Pin",          ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.BI,   1, 1, 1,            null),
+    OutPin           ("Generic Output Pin",                 ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.OUT,  1, 1, 1,            null),
+    InRibbon         ("Input Bus or Ribbon Cable",          ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.IN,   1, 32, 8,           InPin),
+    BiRibbon         ("Bidirectional Bus or Ribbon Cable",  ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.BI,   PortIO.MIN_IO, PortIO.MAX_IO, PortIO.DEF_IO, BiPin),
+    OutRibbon        ("Output Bus or Ribbon Cable",         ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.OUT,  1, 32, 8,           OutPin),
 
-    Button           ("Button or Switch",                   ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.IN,   1, 1, 1,            InPin),
-    DIPSwitch        ("DIP Switch",                         ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.IN,   DipSwitch.MIN_SWITCH, DipSwitch.MAX_SWITCH, DipSwitch.DEF_SWITCH, Button),
+    Button           ("Button or Switch",                   ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.IN,   1, 1, 1,            InPin),
+    DIPSwitch        ("DIP Switch",                         ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.IN,   DipSwitch.MIN_SWITCH, DipSwitch.MAX_SWITCH, DipSwitch.DEF_SWITCH, Button),
 
-    InRibbon         ("Input Bus or Ribbon Cable",          ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.IN,   1, 32, 8,           InPin),
-    BiRibbon         ("Bidirectional Bus or Ribbon Cable",  ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.BI,   PortIO.MIN_IO, PortIO.MAX_IO, PortIO.DEF_IO, BiPin),
-    OutRibbon        ("Output Bus or Ribbon Cable",         ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.OUT,  1, 32, 8,           OutPin),
+    LED              ("LED",                                ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.OUT,  1, 1, 1,            OutPin),
+    RGBLED           ("3-wire RGB LED",                     ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.NO,  DIR.OUT,  3, 3, 3,            LED),
+    SevenSegment     ("Seven Segment Display",              ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.OUT,  8, 8, 8,            LED),
+    SevenSegmentGang ("Seven Segment Multi-Digit Display",  ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.OUT,  8+2, 8+com.cburch.logisim.std.io.SevenSegment.MAX_DIGITS, 8+4, null /* degneratesTo: special case */),
+    LEDBar           ("LED Bar",                            ASSIGNABLE.YES, REALITY.PHYSICAL,  ORIENTABLE.YES, DIR.OUT,  LedBar.MIN_SEGMENTS, LedBar.MAX_SEGMENTS, LedBar.DEFAULT_SEGMENTS, LED),
 
-    LED              ("LED",                                ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  1, 1, 1,            OutPin),
-    RGBLED           ("3-wire RGB LED",                     ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  3, 3, 3,            LED),
-    SevenSegment     ("Seven Segment Display",              ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  8, 8, 8,            LED),
-    SevenSegmentGang ("Seven Segment Multi-Digit Display",  ASSIGNABLE,   PHYSICAL,  UNORIENTABLE,  DIR.OUT,  8+2, 8+SevenSegment.MAX_DIGITS, 8+4, null /* degneratesTo: special case */),
-    LEDBar           ("LED Bar",                            ASSIGNABLE,   PHYSICAL,  ORIENTABLE,    DIR.OUT,  LedBar.MIN_SEGMENTS, LedBar.MAX_SEGMENTS, LedBar.DEFAULT_SEGMENTS, LED),
+    Expanded         ("Expanded", null, null, null, null, -1, -1, -1, null),  // only used by PinBindingsDialog as a placeholder 
+    Unknown          ("Unknown", null, null, null, null, -1, -1, -1, null);  // only used during parsing as temporary placeholder
 
-    Expanded         ("Expanded", UNASSIGNABLE, null, null, null, -1, -1, -1, null),  // only used by PinBindingsDialog as a placeholder 
-    Unknown          ("Unknown", null, null, null, -1, -1, -1, null);  // only used during parsing as temporary placeholder
-
-    private enum ASSN    { ASSIGNABLE, UNASSIGNABLE }
+    private enum ASSIGNABLE { YES, NO }
     private enum REALITY { PHYSICAL, SYNTHETIC }
-    private enum ORIENT  { ORIENTABLE, UNORIENTABLE }
+    private enum ORIENTABLE  { YES, NO }
     private enum DIR     { IN, OUT, BI }
 
     public final String description;
     public final boolean assignable;
     public final boolean physical, synthetic;
     public final boolean orientable;
-    public final boolean inputOnly, outputOnly, anyDirection;
+    public final boolean inputOnly, outputOnly, anyDirection, canInput, canOutput;
     public final int minWidth, maxWidth, defWidth;
     public final boolean oneBit; // min = max = def = 1
     public final boolean variableWidth; // min != max
     private final Type degeneratesTo;
 
-    Type(String descr, ASSN assignable, REALITY reality, ORIENT orientable, DIR dir, int minWidth, int maxWidth, int defWidth, Type degeneratesTo) {
+    Type(String descr, ASSIGNABLE assignable, REALITY reality, ORIENTABLE orientable, DIR dir, int minWidth, int maxWidth, int defWidth, Type degeneratesTo) {
       this.description = descr;
-      this.assignable = (assignable == ASSIGNABLE);
-      this.physical == (reality == REALITY.PHYSICAL);
-      this.synthetic == (reality == REALITY.SYNTHETIC);
-      this.orientable = (orientable == ORIENTABLE);
+      this.assignable = (assignable == ASSIGNABLE.YES);
+      this.physical = (reality == REALITY.PHYSICAL);
+      this.synthetic = (reality == REALITY.SYNTHETIC);
+      this.orientable = (orientable == ORIENTABLE.YES);
       this.inputOnly = (dir == DIR.IN);
       this.outputOnly = (dir == DIR.OUT);
-      this.anyDirection = (dir == DIR.BIDIR);
+      this.anyDirection = (dir == DIR.BI);
+      this.canInput = inputOnly || anyDirection;
+      this.canOutput = outputOnly || anyDirection;
       this.minWidth = minWidth;
       this.maxWidth = maxWidth;
       this.defWidth = defWidth;
@@ -160,6 +165,12 @@ public class BoardIO {
 
     public String getDescription() { return description; }
 
+    // In/Out/BiPin, In/Out/BiRibbon can't have polarity... why?? FIXME
+    public boolean alwaysActiveHigh() {
+      return this == Type.InPin || this == Type.OutPin || this == Type.BiPin ||
+        this == Type.InRibbon || this == Type.OutRibbon || this == Type.BiRibbon;
+    }
+
     public String[] pinLabels(int width) {
       switch (this) {
         case SevenSegment:
@@ -175,16 +186,23 @@ public class BoardIO {
     public PinOrdering defaultPinOrdering(Bounds r) {
       if (r.width >= r.height) {
         switch (this) {
+          case SevenSegment: return PinOrdering.ORDER_1_BT;
+          case SevenSegmentGang: return PinOrdering.ORDER_1_LR;
           case DIPSwitch: return PinOrdering.ORDER_1_LR;
           case LEDBar: return PinOrdering.ORDER_1_RL;
-          case Ribbon: return PinOrdering.ORDER_2_BTLR;
+          case InRibbon:
+          case OutRibbon:
+          case BiRibbon: return PinOrdering.ORDER_2_BTLR;
           default: return null;
         }
       } else {
-        switch (type) {
-          case DIPSwitch: return PinOrdering.ORDER_1_TB;
+        switch (this) {
+          case SevenSegment: return PinOrdering.ORDER_1_LR;
+          case DIPSwitch: return PinOrdering.ORDER_1_BT;
           case LEDBar: return PinOrdering.ORDER_1_BT;
-          case Ribbon: return PinOrdering.ORDER_2_LRTB;
+          case InRibbon:
+          case OutRibbon:
+          case BiRibbon: return PinOrdering.ORDER_2_LRTB;
           default: return null;
         }
       }
@@ -201,7 +219,7 @@ public class BoardIO {
   // public static final EnumSet<Type> VariableWidthTypes = deriveSet(t -> t.variableWidth);
   // public static final EnumSet<Type> OrientableTypes = deriveSet(t -> t.orientable);
 
-  private static EnumSet<Type> deriveSet(Predicate<Type> pred) {
+  private static EnumSet<Type> deriveSet(java.util.function.Predicate<Type> pred) {
     EnumSet<Type> set = EnumSet.noneOf(Type.class);
     for (Type t : Type.values())
       if (pred.test(t))
@@ -354,8 +372,6 @@ public class BoardIO {
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
     String name = t.toString();
-    boolean in = t.inputOnly || t.anyDirection;
-    boolean out = t.outputOnly || t.anyDirection;
 
     String label = params.get("label");
     if (label != null && !label.isEmpty())
@@ -371,24 +387,24 @@ public class BoardIO {
 		Bounds r = Bounds.create(x, y, w, h);
     name += "@ ("+x+","+y+")";
 
-    if (params.containsKey("bias") && !in)
+    if (params.containsKey("bias") && !t.canInput)
       throw new Exception("bias resistors specified for non-input I/O resource " + name);
-    InputBias p = in ? InputBias.get(params.get("bias")) : null; // returns non-null for in
+    InputBias p = t.canInput ? InputBias.get(params.get("bias")) : null; // returns non-null for in
 
-    if (t == Type.Pin && params.containsKey("polarity"))
+    if (t.alwaysActiveHigh() && params.containsKey("polarity"))
       throw new Exception("polarity specified for Pin I/O resource " + name);
-    PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
+    PinActivity a = t.alwaysActiveHigh() ? PinActivity.ACTIVE_HIGH :
         PinActivity.get(params.get("polarity"));
 
     IoStandard s = IoStandard.get(params.get("ioStandard")); // returns non-null
-   
-    if (params.containsKey("drive") && !out)
+
+    if (params.containsKey("drive") && !t.canOutput)
       throw new Exception("drive strength specified for non-output I/O resource " + name);
-    DriveStrength g = out ? DriveStrength.get(params.get("drive")) : null; // returns non-null for out
-    
-    if (params.containsKey("default") && !out)
+    DriveStrength g = t.canOutput ? DriveStrength.get(params.get("drive")) : null; // returns non-null for out
+
+    if (params.containsKey("default") && !t.canOutput)
       throw new Exception("defaul drive specified for non-output I/O resource " + name);
-    IdleBehavior v = out ? IdleBehavior.get(params.get("idle")) : null; // returns non-null for out
+    IdleBehavior v = t.canOutput ? IdleBehavior.get(params.get("idle")) : null; // returns non-null for out
 
     PinOrdering o = null;
     String[] pins;
@@ -419,7 +435,7 @@ public class BoardIO {
         if (width <= 0)
           throw new Exception("invalid pin count for " + name);
       } else {
-        width = t.defaultWidth();
+        width = t.defWidth;
         if (cnt != null && Integer.parseInt(cnt) != width)
           Errors.title("Error").warn("Ignoring invalid pin count in XML for " + name);
       }
@@ -436,7 +452,7 @@ public class BoardIO {
           if (o == null)
             throw new Exception("Invalid orientation " + desc + " for " + name);
         } else {
-          o = defaultPinOrdering(t, r);
+          o = t.defaultPinOrdering(r);
         }
       }
     }
@@ -449,13 +465,11 @@ public class BoardIO {
     // fixup old names
     String typeName = elt.getNodeName();
     if (typeName.equalsIgnoreCase("PortIO")) typeName = "BiRibbon";
-    else if (type.equalsIgnoreCase("Pin")) typeName = "BiPin";
+    else if (typeName.equalsIgnoreCase("Pin")) typeName = "BiPin";
 
     Type t = Type.getPhysicalType(typeName);
     if (t == Type.Unknown)
       throw new Exception("unrecognized I/O resource type: " + elt.getNodeName());
-    boolean in = t.inputOnly || t.anyDirection; 
-    boolean out = t.outputOnly || t.anyDirection;
 
     Map<String, String> params = XmlUtil.getAttributeMap(elt);
 
@@ -475,22 +489,23 @@ public class BoardIO {
 		Bounds r = Bounds.create(x, y, w, h);
     name += "@ ("+x+","+y+")";
 
-    if (params.containsKey("FPGAPinPullBehavior") && !in)
+    if (params.containsKey("FPGAPinPullBehavior") && !t.canInput)
       throw new Exception("bias resistors specified for non-input I/O resource " + name);
-    InputBias p = in ? InputBias.get(params.get("FPGAPinPullBehavior")) : null; // returns non-null for in
-    
-    if (t == Type.Pin && params.containsKey("ActivityLevel"))
+    InputBias p = t.canInput ? InputBias.get(params.get("FPGAPinPullBehavior")) : null; // returns non-null for in
+   
+    // FIXME: why can't the Pin types have a polarity? Or what about ribbon?
+    if (t.alwaysActiveHigh() && params.containsKey("ActivityLevel"))
       throw new Exception("polarity specified for Pin I/O resource " + name);
-    PinActivity a = (t == Type.Pin) ? PinActivity.ACTIVE_HIGH :
+    PinActivity a = t.alwaysActiveHigh() ? PinActivity.ACTIVE_HIGH :
         PinActivity.get(params.get("ActivityLevel"));
 
     IoStandard s = IoStandard.get(params.get("FPGAPinIOStandard")); // returns non-null
 
-    if (params.containsKey("FPGAPinDriveStrength") && !out)
+    if (params.containsKey("FPGAPinDriveStrength") && !t.canOutput)
       throw new Exception("drive strength specified for non-output I/O resource " + name);
-    DriveStrength g = out ? DriveStrength.get(params.get("FPGAPinDriveStrength")) : null; // returns non-null for out
+    DriveStrength g = t.canOutput ? DriveStrength.get(params.get("FPGAPinDriveStrength")) : null; // returns non-null for out
     
-    IdleBehavior v = out ? IdleBehavior.DEFAULT : null;
+    IdleBehavior v = t.canOutput ? IdleBehavior.DEFAULT : null;
 
     PinOrdering o = null;
     String[] pins;
@@ -509,7 +524,7 @@ public class BoardIO {
         if (width <= 0)
           throw new Exception("invalid pin count for " + name);
       } else {
-        width = t.defaultWidth();
+        width = t.defWidth;
         if (cnt != null && Integer.parseInt(cnt) != width)
           Errors.title("Error").warn("Ignoring invalid pin count in XML for " + name);
       }
@@ -526,7 +541,7 @@ public class BoardIO {
           if (o == null)
             throw new Exception("Invalid orientation " + desc + " for " + name);
         } else {
-          o = defaultPinOrdering(t, r);
+          o = t.defaultPinOrdering(r);
         }
       }
     }
@@ -537,17 +552,15 @@ public class BoardIO {
   public boolean canBeInput() { return type.inputOnly || type.anyDirection; }
 
   public boolean isInputOutput() { return type.anyDirection; }
-
-  // public boolean canBeOutput() { return type.outputOnly || type.anyDirection; ]
   
   @Override
   public String toString() {
     if (!type.physical)
       return label;
     String suffix = label != null ? label : String.format("@(%d, %d)", rect.x, rect.y);
-    if (type.orientable) {
+    if (type.orientable)
       suffix = orientation + " " + suffix;
-    if (type == SevenSegmentGang)
+    if (type == Type.SevenSegmentGang)
       return String.format("%d-digit Seven Segment Display %s", width - 8, suffix);
     else if (type.variableWidth)
       return String.format("%d-bit %s %s", width, type, suffix);
@@ -612,74 +625,163 @@ public class BoardIO {
     return type.pinLabels(width)[bit];
   }
 
-  // TODO: Add orientation attribute for 7segment, and draw pins for it when appropriate.
-
   public void drawOrientedPins(Graphics2D g, int xOffset, int yOffset, double imgScale,
       Color fill[], Color edge[], Color edgeDefault) {
     if (width <= 1 || orientation == null)
       return;
+    boolean seg7 = (type == Type.SevenSegment || type == Type.SevenSegmentGang);
+    int gang = seg7 ? 1 : orientation.gang;
+    // SevenSegment and SevenSegmentGang:
+    //  LR           RL              TB               BT
+    //  .--A--.      (P) .--D--.     ,--E--,--F--,    
+    //  F     B          C     E     D     G     A              (P)
+    //  |--G--|          |--G--|     '--C--'--B--'    ,--B--,--C--,
+    //  E     C          B     F     (P)              A     G     D     
+    //  '--D--' (P)      '--A--'                      '--F--'--E--'
+    //
+    // Ribbon, DipSwitch, LEDBar:
     //   LRTB   RLBT    BTLR       TBRL       TB   BT   LR        RL
     //   0 1       6    1 3 5      6 4 2 0    0    3    0 1 2 3   3 2 1 0
     //   2 3     5 4    0 2 4 6      5 3 1    1    2
     //   4 5     3 2                          2    1
     //   6       1 0                          3    0
-    int gang = orientation.gang;
     int dx = orientation.order.contains("Left-Right") ? +1
       : orientation.order.contains("Right-Left") ? -1 : 0;
     int dy = orientation.order.contains("Top-Bottom") ? +1
       : orientation.order.contains("Bottom-Top") ? -1 : 0;
-    int nx, ny;
     boolean horizontal =
       orientation.order.endsWith("Left-Right") || orientation.order.endsWith("Right-Left");
-    if (horizontal) {
-      nx = (width + gang - 1) / gang;
-      ny = gang;
-    } else {
-      nx = gang;
-      ny = (width + gang - 1) / gang;
-    }
-    int xmargin = 4;
-    int xsz = (rect.width-xmargin) / nx;
-    if (xsz < 10) { xmargin = 0; xsz = (rect.width) / nx; }
-    int ymargin = 4;
-    int ysz = (rect.height-ymargin) / ny;
-    if (ysz < 10) { ymargin = 0; ysz = (rect.height) / ny; }
-
-    double pinW = (xsz-xmargin/2.0-1)*imgScale;
-    double pinH = (ysz-ymargin/2.0-1)*imgScale;
-    Font font = fitFont(g, width, pinW, pinH);
-
-    int xx = (dx >= 0 ? rect.x + xmargin/2 : rect.x + rect.width - xmargin - xsz - 1);
-    int yy = (dy >= 0 ? rect.y + ymargin/2 : rect.y + rect.height - ymargin - ysz - 1);
-    int ix = 0, iy = 0;
-    for (int i = 0; i < width; i++) {
-      double pinX = xOffset + (xx+dx*((rect.width-xmargin)*ix*1.0/nx)+1)*imgScale;
-      double pinY = yOffset + (yy+dy*((rect.height-ymargin)*iy*1.0/ny)+1)*imgScale;
-      Shape pinShape = (i == 0)
-        ? new Rectangle2D.Double(pinX, pinY, pinW, pinH)
-        : new RoundRectangle2D.Double(pinX, pinY, pinW, pinH, Math.min(pinW, pinH), Math.min(pinW, pinH));
-      Color pinFill = fill != null ? fill[i] : null;
-      if (pinFill != null) {
-        g.setColor(pinFill);
-        g.fill(pinShape);
-      }
-      Color pinBorder = edge != null ? edge[i] : edgeDefault;
-      if (pinBorder != null) {
-        g.setColor(pinBorder);
-        g.draw(pinShape);
-        drawPinNumber(g, i, font, pinX, pinY, pinW, pinH);
-      }
+    if (seg7) {
+      int digits = (width == 8) ? 1 : width - 8;
+      int nx, ny;
       if (horizontal) {
-        iy++;
-        if (iy == gang) {
-          iy = 0;
-          ix++;
-        }
+        nx = digits;
+        ny = 1;
       } else {
-        ix++;
-        if (ix == gang) {
-          ix = 0;
+        nx = 1;
+        ny = digits;
+      }
+      // digit box size is (dxsz, dysz)
+      double dxsz = rect.width * 1.0 / nx;
+      double dysz = rect.height * 1.0 / ny;
+      // horizontal segment (A, D, G) and vertical segment sizes (B, C, E, F)
+      double hslen, vslen, segwidth;
+      if (horizontal) {
+        segwidth = Math.min(0.125 * dysz, 0.125 * dxsz);
+        hslen = Math.max(segwidth*1.5, 0.45 * dxsz);
+        vslen = Math.max(segwidth*1.5, 0.30 * dysz);
+      } else {
+        segwidth = Math.min(0.125 * dxsz, 0.125 * dysz);
+        hslen = Math.max(segwidth*1.5, 0.45 * dysz);
+        vslen = Math.max(segwidth*1.5, 0.30 * dxsz);
+      }
+      double[][] layout = new double[][] { // {cx, cy, angle}, ...
+        {0.56, 0.1025, 0},    // A
+        {0.85, 0.30125, 100}, // B
+        {0.80, 0.69875, 100}, // C
+        {0.44, 0.8975, 0},    // D
+        {0.15, 0.69875, 100}, // E
+        {0.20, 0.30125, 100}, // F
+        {0.52, 0.500, 0},     // G
+        {0.8975, 0.8975, 0},  // DP
+      };
+      String[] labels = {"A", "B", "C", "D", "E", "F", "G", "DP" };
+      Font font = fitFont(g, 1, segwidth*imgScale, segwidth*imgScale);
+      double xx = (dx >= 0 ? rect.x + dxsz / 2 : rect.x + rect.width - dxsz / 2 - 1);
+      double yy = (dy >= 0 ? rect.y + dysz / 2 : rect.y + rect.height - dysz / 2- 1);
+      int ix = 0, iy = 0;
+      double rot;
+      if (dx == +1) rot = 0;
+      else if (dy == +1) rot = 90;
+      else if (dx == -1) rot = 180;
+      else rot = 270;
+      for (int digit = 0; digit < digits; digit++) {
+        double cX = xOffset + (xx+rect.width*ix*1.0/nx)*imgScale;
+        double cY = yOffset + (yy+rect.height*iy*1.0/ny)*imgScale;
+        for (int i = 0; i < 8; i++) {
+          double[] digitLayout = layout[i];
+          double seglen = i == 7 ? segwidth : digitLayout[2] == 0 ? hslen : vslen;
+          Color pinFill = fill != null ? fill[i] : null;
+          if (pinFill != null) {
+            g.setColor(pinFill);
+            segmentShape(g, true, digitLayout, seglen*imgScale, segwidth*imgScale, rot,
+                cX, cY, dxsz*imgScale, dysz*imgScale, null, null);
+          }
+          Color pinBorder = edge != null ? edge[i] : edgeDefault;
+          if (pinBorder != null) {
+            g.setColor(pinBorder);
+            segmentShape(g, false, digitLayout, seglen*imgScale, segwidth*imgScale, rot,
+                cX, cY, dxsz*imgScale, dysz*imgScale, labels[i], font);
+          }
+        }
+        if (digits > 1) {
+          int i = 8 + digit;
+          Color pinFill = fill != null ? fill[i] : null;
+          if (pinFill != null) {
+            g.setColor(pinFill);
+            digitEnableShape(g, true, 2.5*segwidth*imgScale, rot, cX, cY, dxsz*imgScale, dysz*imgScale, null, null);
+          }
+          Color pinBorder = edge != null ? edge[i] : edgeDefault;
+          if (pinBorder != null) {
+            g.setColor(pinBorder);
+            digitEnableShape(g, false, 2.5*segwidth*imgScale, rot, cX, cY, dxsz*imgScale, dysz*imgScale, ""+(1+digit), font);
+          }
+        }
+        ix += dx;
+        iy += dy;
+      }
+    } else {
+      int nx, ny;
+      if (horizontal) {
+        nx = (width + gang - 1) / gang;
+        ny = gang;
+      } else {
+        nx = gang;
+        ny = (width + gang - 1) / gang;
+      }
+      int xmargin = 4;
+      int xsz = (rect.width-xmargin) / nx;
+      if (xsz < 10) { xmargin = 0; xsz = (rect.width) / nx; }
+      int ymargin = 4;
+      int ysz = (rect.height-ymargin) / ny;
+      if (ysz < 10) { ymargin = 0; ysz = (rect.height) / ny; }
+
+      double pinW = (xsz-xmargin/2.0-1)*imgScale;
+      double pinH = (ysz-ymargin/2.0-1)*imgScale;
+      Font font = fitFont(g, width, pinW, pinH);
+
+      int xx = (dx >= 0 ? rect.x + xmargin/2 : rect.x + rect.width - xmargin - xsz - 1);
+      int yy = (dy >= 0 ? rect.y + ymargin/2 : rect.y + rect.height - ymargin - ysz - 1);
+      int ix = 0, iy = 0;
+      for (int i = 0; i < width; i++) {
+        double pinX = xOffset + (xx+dx*((rect.width-xmargin)*ix*1.0/nx)+1)*imgScale;
+        double pinY = yOffset + (yy+dy*((rect.height-ymargin)*iy*1.0/ny)+1)*imgScale;
+        Shape pinShape = (i == 0)
+          ? new Rectangle2D.Double(pinX, pinY, pinW, pinH)
+          : new RoundRectangle2D.Double(pinX, pinY, pinW, pinH, Math.min(pinW, pinH), Math.min(pinW, pinH));
+        Color pinFill = fill != null ? fill[i] : null;
+        if (pinFill != null) {
+          g.setColor(pinFill);
+          g.fill(pinShape);
+        }
+        Color pinBorder = edge != null ? edge[i] : edgeDefault;
+        if (pinBorder != null) {
+          g.setColor(pinBorder);
+          g.draw(pinShape);
+          drawPinNumber(g, i, font, pinX, pinY, pinW, pinH);
+        }
+        if (horizontal) {
           iy++;
+          if (iy == gang) {
+            iy = 0;
+            ix++;
+          }
+        } else {
+          ix++;
+          if (ix == gang) {
+            ix = 0;
+            iy++;
+          }
         }
       }
     }
@@ -699,18 +801,78 @@ public class BoardIO {
         (fm.stringWidth(text) > pinW || fm.getAscent() + fm.getDescent() > pinH));
     return font;
   }
-
+  
   private  static void drawPinNumber(Graphics2D g, int i, Font font, double pinX, double pinY, double pinW, double pinH) {
-    String text = ""+i;
+    drawPinLabel(g, ""+i, font, pinX + pinW/2, pinY + pinH/2);
+  }
+
+  private  static void drawPinLabel(Graphics2D g, String text, Font font, double pinCX, double pinCY) {
     Font oldFont = g.getFont();
     g.setFont(font);
     FontMetrics fm = g.getFontMetrics(font);
     int textW = fm.stringWidth(text);
     int textH = fm.getAscent() + fm.getDescent();
-    float x = (float)(pinX + (pinW - textW) / 2.0);
-    float y = (float)(pinY + (pinH - textH) / 2.0 + fm.getAscent());
+    float x = (float)(pinCX - textW / 2.0);
+    float y = (float)(pinCY - textH / 2.0 + fm.getAscent());
     g.drawString(text, x, y);
     g.setFont(oldFont);
+  }
+
+  // Draws one segment of a seven-segment display as a rounded rectangle.
+  // layout[] = {rx, ry, angle}: relative position within digit box [0,1] and
+  // orientation angle in degrees (0=horizontal, 90=vertical). rot applies an
+  // overall CW rotation (0/90/180/270) to the entire digit layout.
+  private static void segmentShape(Graphics2D g, boolean fill, double[] layout,
+      double seglen, double segwidth, double rot,
+      double cX, double cY, double dxsz, double dysz, String label, Font font) {
+    double rx = layout[0], ry = layout[1], angle = layout[2];
+    double relX, relY;
+    switch ((int) rot) {
+      case 90:  relX = 1.0 - ry; relY = rx;        angle += 90;  break;
+      case 180: relX = 1.0 - rx; relY = 1.0 - ry;  angle += 180; break;
+      case 270: relX = ry;       relY = 1.0 - rx;  angle += 270; break;
+      default:  relX = rx;       relY = ry;                      break;
+    }
+    double segCX = cX + (relX - 0.5) * dxsz;
+    double segCY = cY + (relY - 0.5) * dysz;
+    AffineTransform saved = g.getTransform();
+    g.translate(segCX, segCY);
+    g.rotate(Math.toRadians(angle));
+    Shape seg = new RoundRectangle2D.Double(
+        -seglen / 2, -segwidth / 2, seglen, segwidth, segwidth, segwidth);
+    if (fill)
+      g.fill(seg);
+    else
+      g.draw(seg);
+    g.setTransform(saved);
+    if (!fill && label != null && font != null)
+      drawPinLabel(g, label, font, segCX, segCY);
+  }
+
+  // Draws a triangle and label in the corner of a seven-segment digit bounding
+  // box.
+  private static void digitEnableShape(Graphics2D g, boolean fill, double legLen, double rot,
+      double cX, double cY, double dxsz, double dysz, String label, Font font) {
+    double cornerX, cornerY, legDX, legDY;
+    switch ((int) rot) {
+      case 90:  cornerX = cX + dxsz / 2; cornerY = cY - dysz / 2; legDX = -1; legDY = +1; break;
+      case 180: cornerX = cX + dxsz / 2; cornerY = cY + dysz / 2; legDX = -1; legDY = -1; break;
+      case 270: cornerX = cX - dxsz / 2; cornerY = cY + dysz / 2; legDX = +1; legDY = -1; break;
+      default:  cornerX = cX - dxsz / 2; cornerY = cY - dysz / 2; legDX = +1; legDY = +1; break;
+    }
+    Path2D.Double tri = new Path2D.Double();
+    tri.moveTo(cornerX, cornerY);
+    tri.lineTo(cornerX + legDX * legLen, cornerY);
+    tri.lineTo(cornerX, cornerY + legDY * legLen);
+    tri.closePath();
+    if (fill)
+      g.fill(tri);
+    else
+      g.draw(tri);
+    if (!fill && label != null && font != null)
+      drawPinLabel(g, label, font,
+          cornerX + legDX * legLen / 3.0,
+          cornerY + legDY * legLen / 3.0);
   }
 
 }

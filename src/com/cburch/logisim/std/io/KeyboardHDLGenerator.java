@@ -66,7 +66,9 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     outPorts.add("Available", 1, Keyboard.AVL, null);
 
     String[] labels = new String[] { "ps2kb_clk", "ps2kb_dat", "ps2ms_clk", "ps2ms_dat" };
-    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
+    // clk is output, dat is bidir, but hiddenport doesn't have a way to be that
+    // specific, so we use bidir for both.
+    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.BiRibbon, HiddenPort.BiPin);
   }
 
   @Override

@@ -57,7 +57,7 @@ import com.cburch.logisim.tools.key.JoinedConfigurator;
 
 public class SevenSegment extends InstanceFactory implements DynamicElementProvider {
 
-  static final int MAX_DIGITS = 8; // more than 8 digits not available in real components?
+  public static final int MAX_DIGITS = 8; // more than 8 digits not available in real components?
 
   static class State implements ComponentData {
     private boolean segOn[] = new boolean[MAX_DIGITS*8];
@@ -166,10 +166,10 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
     if (numPins == 8)
       return basePins;
     int numDigits = numPins - 8;
-    String[] labels[] = new String[numPins];
+    String[] labels = new String[numPins];
     for (int i = 0; i < 8; i++)
       labels[i] = basePins[i];
-    for (int i = 1; i <= numPins; i++)
+    for (int i = 1; i <= numDigits; i++)
       labels[8+i-1] = "Digit_"+i+"_Enable";
     return labels;
   }
@@ -255,10 +255,7 @@ public class SevenSegment extends InstanceFactory implements DynamicElementProvi
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
-    if (ctx.attrs.getValue(ATTR_DIGITS).intValue() == 1)
-      return LightsHDLGenerator.forSevenSegment(ctx);
-    else
-      return null; // TODO
+    return LightsHDLGenerator.forSevenSegment(ctx);
   }
 
   @Override

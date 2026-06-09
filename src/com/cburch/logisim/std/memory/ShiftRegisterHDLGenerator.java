@@ -29,8 +29,6 @@
  */
 package com.cburch.logisim.std.memory;
 
-import java.util.ArrayList;
-
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;

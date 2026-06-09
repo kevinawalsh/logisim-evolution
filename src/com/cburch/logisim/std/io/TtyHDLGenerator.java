@@ -64,7 +64,9 @@ public class TtyHDLGenerator extends HDLGenerator {
       "lcd_en",
       "lcd_rw",
       "lcd_rs" };
-    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.Ribbon, HiddenPort.Pin);
+    // note: signals are a mix of inputs, outputs, and bidirectional, but
+    // hiddenport doesn't support being more specific, so we use bidir for all.
+    hiddenPort = HiddenPort.makeInOutport(labels, HiddenPort.BiRibbon, HiddenPort.BiPin);
   }
 
   @Override

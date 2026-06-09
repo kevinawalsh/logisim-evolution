@@ -214,7 +214,7 @@ class BoardWriter {
     // 4. Pin parameters
     if (io.bias != null & io.bias != InputBias.DEFAULT)
       sb.append(a("bias", io.bias.xml));
-    if (io.type != BoardIO.Type.Pin && io.activity != PinActivity.DEFAULT)
+    if (!io.type.alwaysActiveHigh() && io.activity != PinActivity.DEFAULT)
       sb.append(a("polarity", io.activity.xml));
     if (io.strength != null && io.strength != DriveStrength.DEFAULT)
       sb.append(a("drive", io.strength.xml));

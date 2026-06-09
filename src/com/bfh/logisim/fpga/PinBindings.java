@@ -245,7 +245,7 @@ public class PinBindings {
       throw new Exception("I/O resource " + destName + " no longer exists");
     if (!typesFor(comp).contains(type))
       throw new Exception(type + " is no longer a supported type");
-    if (BoardIO.OneBitTypes.contains(type)) {
+    if (type.oneBit) {
       if (compWidth.size() > 1 && srcPin == null)
         throw new Exception(type + " is only one bit, but " + compWidth.size() +
             " bits needed for " + path);
@@ -362,7 +362,7 @@ public class PinBindings {
         boolean isInput;
         InputBias pull = InputBias.DO_NOT_SPECIFY;
         int drivenValue = 0;
-        if (!BoardIO.OutputTypes.contains(io.type)) {
+        if (io.type.inputOnly) {
           // Pure input type (Button, DIPSwitch): always treated as input.
           isInput = true;
           pull = io.bias;
@@ -461,17 +461,12 @@ public class PinBindings {
     if (comp.hiddenPort == null) {
       // Top-level input or output port.
       int w = comp.original.getEnd(0).getWidth().getWidth();
-      return BoardIO.Type.Ribbon.pinLabels(w);
+      return BoardIO.Type.BiRibbon.pinLabels(w); // In/Out/BiRibbon and In/Out/BiPin all have same generic labels
     } else {
       // Button, LED, PortIO, and other I/O-related components.
-      return comp.hiddenPort.labels.toArray(new String[comp.hiddenPort.labels.size()]);
+      return comp.hiddenPort.labels.toArray(new String[0]);
     }
   }
-
-  public static final List<BoardIO.Type> SINGLE_BIT_PIN_TYPES =
-      Arrays.asList(new BoardIO.Type[] { BoardIO.Type.Pin });
-  public static final List<BoardIO.Type> MULTI_BIT_PIN_TYPES =
-      Arrays.asList(new BoardIO.Type[] { BoardIO.Type.Ribbon, BoardIO.Type.Pin });
 
   public List<BoardIO.Type> typesFor(Path path) {
     return typesFor(components.get(path));
@@ -479,9 +474,19 @@ public class PinBindings {
 
   public List<BoardIO.Type> typesFor(NetlistComponent comp) {
     if (comp.hiddenPort == null) {
-      // Top-level input or output port.
+      // Top-level input or output port.Bidirectional is supported here? (FIXME: just added, but why?)
       int w = comp.original.getEnd(0).getWidth().getWidth();
-      return w > 1 ? MULTI_BIT_PIN_TYPES : SINGLE_BIT_PIN_TYPES;
+      boolean i = comp.original.getEnd(0).canOutput(); // output to circuit, input from board
+      boolean o = comp.original.getEnd(0).canInput(); // input to circuit, output from board
+      if (w > 1) {
+        if (i && o) return List.of(BoardIO.Type.BiRibbon, BoardIO.Type.BiPin);
+        else if (i) return List.of(BoardIO.Type.InRibbon, BoardIO.Type.InPin);
+        else return List.of(BoardIO.Type.OutRibbon, BoardIO.Type.OutPin);
+      } else {
+        if (i && o) return List.of(BoardIO.Type.BiPin);
+        else if (i) return List.of(BoardIO.Type.InPin);
+        else return List.of(BoardIO.Type.OutPin);
+      }
     } else {
       // Button, LED, PortIO, and other I/O-related types.
       return comp.hiddenPort.types;
@@ -569,18 +574,23 @@ public class PinBindings {
   }
 
   private BoardIO.Type selectDefaultType(List<BoardIO.Type> types, int width) {
+    System.out.println("FIXME: broken code path");
     if (width == 1) {
-      // Pick first type meant for single-bit inputs.
+      // Pick first type meant for single-bit inputs. // FIXME: or outputs/bidirs?
       for (BoardIO.Type t : types)
-        if (BoardIO.OneBitTypes.contains(t))
+        if (t.oneBit)
           return t;
-      return BoardIO.Type.Pin; // default if nothing appropriate
+      // FIXME: if nothing appropriate, fall back to one of the Pin types.. but which one?
+      // return BoardIO.Type.Pin; // default if nothing appropriate
+      throw new IllegalArgumentException("tbd");
     } else {
-      // Pick first type meant for multi-bit inputs.
+      // Pick first type meant for multi-bit inputs. // FIXME: or outputs/bidirs?
       for (BoardIO.Type t : types)
-        if (!BoardIO.OneBitTypes.contains(t))
+        if (!t.oneBit)
           return t;
-      return BoardIO.Type.Ribbon; // default if nothing appropriate
+      // FIXME: if nothing appropriate, fall back to one of the Ribbon types.. but which one?
+      // return BoardIO.Type.Ribbon; // default if nothing appropriate
+      throw new IllegalArgumentException("tbd");
     }
   }
 

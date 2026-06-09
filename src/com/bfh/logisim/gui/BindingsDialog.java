@@ -719,7 +719,7 @@ public class BindingsDialog extends JDialog {
         // Show menu for single-bit or un-expanded row of multi-bit I/O component
         int w = pinBindings.widthFor(src.path).size();
         for (BoardIO.Type t : types) {
-          if (w > 1 && BoardIO.OneBitTypes.contains(t))
+          if (w > 1 && t.oneBit)
             continue;
           JRadioButtonMenuItem menu = new JRadioButtonMenuItem(t.toString());
           menu.setSelected(src.type == t);
@@ -735,7 +735,7 @@ public class BindingsDialog extends JDialog {
       } else {
         // show menu for one bit of an expanded multi-bit I/O component
         for (BoardIO.Type t : types) {
-          if (!BoardIO.OneBitTypes.contains(t))
+          if (!t.oneBit)
             continue;
           JRadioButtonMenuItem menu = new JRadioButtonMenuItem(t.toString());
           menu.setSelected(src.type == t);
@@ -824,7 +824,7 @@ public class BindingsDialog extends JDialog {
           Netlist.Int3 bitWidth = src.width.forSingleBit();
           BoardIO.Type bitType = null;
           for (BoardIO.Type tt : pinBindings.typesFor(src.path)) {
-            if (BoardIO.OneBitTypes.contains(tt) && old.io.isCompatible(bitWidth, tt)) {
+            if (tt.oneBit && old.io.isCompatible(bitWidth, tt)) {
               bitType = tt;
               break;
             }

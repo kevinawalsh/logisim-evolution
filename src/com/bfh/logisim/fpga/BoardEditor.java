@@ -1184,8 +1184,8 @@ public class BoardEditor extends JFrame {
       try {
         typeCombo.setSelectedIndex(0);
         BoardIO.Type type = (BoardIO.Type) typeCombo.getSelectedItem();
-        boolean needsSize = BoardIO.VariableWidthTypes.contains(type);
-        boolean needsOrient = BoardIO.OrientableTypes.contains(type);
+        boolean needsSize = type.variableWidth;
+        boolean needsOrient = type.orientable;
         sizeOrientPanel.setVisible(needsSize || needsOrient);
         if (needsSize || needsOrient) {
           populateWidthCombo(type, null);
@@ -1203,7 +1203,7 @@ public class BoardEditor extends JFrame {
         idleCombo.setSelectedItem(IdleBehavior.DEFAULT);
         biasCombo.setSelectedItem(InputBias.DEFAULT);
         activityCombo.setSelectedItem(PinActivity.DEFAULT);
-        rebuildPinPanel(type, type.defaultWidth(), null);
+        rebuildPinPanel(type, type.defWidth, null);
         updateConditionalRows(type);
       } finally {
         updating = false;
@@ -1243,8 +1243,8 @@ public class BoardEditor extends JFrame {
       updating = true;
       try {
         typeCombo.setSelectedItem(io.type);
-        boolean needsSize = BoardIO.VariableWidthTypes.contains(io.type);
-        boolean needsOrient = BoardIO.OrientableTypes.contains(io.type);
+        boolean needsSize = io.type.variableWidth;
+        boolean needsOrient = io.type.orientable;
         sizeOrientPanel.setVisible(needsSize || needsOrient);
         if (needsSize || needsOrient) {
           populateWidthCombo(io.type, io.width);
@@ -1272,26 +1272,18 @@ public class BoardEditor extends JFrame {
       image.repaint();
     }
 
-    private boolean needsSize(BoardIO.Type type) {
-      return type == BoardIO.Type.DIPSwitch
-        || type == BoardIO.Type.LEDBar
-        || type == BoardIO.Type.Ribbon;
-    }
-
     private void populateWidthCombo(BoardIO.Type type, Integer selected) {
       widthCombo.removeAllItems();
       if (selected == null)
-        selected = type.defaultWidth();
-      int min = type.minWidth();
-      int max = type.maxWidth();
-      for (int i = min; i <= max; i++)
+        selected = type.defWidth;
+      for (int i = type.minWidth; i <= type.maxWidth; i++)
         widthCombo.addItem(i);
       widthCombo.setSelectedItem(selected);
     }
 
     private void populateOrientCombo(BoardIO.Type type, PinOrdering orient, Bounds rect) {
       if (orient == null)
-        orient = BoardIO.defaultPinOrdering(type, rect);
+        orient = type.defaultPinOrdering(rect);
       if (orient == null)
         return;
       orientCombo.removeAllItems();
@@ -1301,10 +1293,11 @@ public class BoardEditor extends JFrame {
     }
 
     private void updateConditionalRows(BoardIO.Type type) {
-      strengthRow.setVisible(BoardIO.OutputTypes.contains(type));
-      idleRow.setVisible(BoardIO.OutputTypes.contains(type));
-      biasRow.setVisible(BoardIO.InputTypes.contains(type));
-      activityRow.setVisible(type != BoardIO.Type.Pin);
+      strengthRow.setVisible(type.canOutput);
+      idleRow.setVisible(type.canOutput);
+      biasRow.setVisible(type.canInput);
+      // FIXME: why can't the Pin types have a polarity?
+      activityRow.setVisible(!type.alwaysActiveHigh());
     }
 
     private void rebuildPinPanel(BoardIO.Type type, int width, BoardIO io) {
@@ -1334,8 +1327,8 @@ public class BoardEditor extends JFrame {
 
       updating = true;
       try {
-        boolean needsSize = BoardIO.VariableWidthTypes.contains(type);
-        boolean needsOrient = BoardIO.OrientableTypes.contains(type);
+        boolean needsSize = type.variableWidth;
+        boolean needsOrient = type.orientable;
         sizeOrientPanel.setVisible(needsSize || needsOrient);
         if (needsSize || needsOrient) {
           populateWidthCombo(type, null);
@@ -1346,7 +1339,7 @@ public class BoardEditor extends JFrame {
         String pinVals[] = new String[pinFields.length];
         for (int i = 0; i < pinFields.length; i++)
           pinVals[i] = pinFields[i].getText();
-        rebuildPinPanel(type, type.defaultWidth(), null);
+        rebuildPinPanel(type, type.defWidth, null);
         for (int i = 0; i < pinFields.length && i < pinVals.length; i++)
           pinFields[i].setText(pinVals[i]);
         updateConditionalRows(type);
@@ -1427,10 +1420,10 @@ public class BoardEditor extends JFrame {
       Bounds rect = Bounds.create(x, y, w, h);
 
       // Width and orientation (only for DIPSwitch / LEDBar / Ribbon)
-      boolean needsSize = BoardIO.VariableWidthTypes.contains(type);
-      boolean needsOrient = BoardIO.OrientableTypes.contains(type);
+      boolean needsSize = type.variableWidth;
+      boolean needsOrient = type.orientable;
       int width = needsSize && widthCombo.getSelectedItem() != null
-          ? (Integer) widthCombo.getSelectedItem() : type.defaultWidth();
+          ? (Integer) widthCombo.getSelectedItem() : type.defWidth;
       PinOrdering orient = needsOrient && orientCombo.getSelectedItem() != null
           ? PinOrdering.get((String) orientCombo.getSelectedItem()) : null;
 
@@ -1446,14 +1439,11 @@ public class BoardEditor extends JFrame {
 
       // Other properties, conditioned on type
       IoStandard std = (IoStandard) standardCombo.getSelectedItem();
-      DriveStrength strength = BoardIO.OutputTypes.contains(type)
-          ? (DriveStrength) strengthCombo.getSelectedItem() : null;
-      IdleBehavior idle = BoardIO.OutputTypes.contains(type)
-          ? (IdleBehavior) idleCombo.getSelectedItem() : null;
-      InputBias bias = BoardIO.InputTypes.contains(type)
-          ? (InputBias) biasCombo.getSelectedItem() : null;
+      DriveStrength strength = type.canOutput ? (DriveStrength) strengthCombo.getSelectedItem() : null;
+      IdleBehavior idle = type.canOutput ? (IdleBehavior) idleCombo.getSelectedItem() : null;
+      InputBias bias = type.canInput ? (InputBias) biasCombo.getSelectedItem() : null;
       PinActivity activity;
-      if (type == BoardIO.Type.Pin)
+      if (type.alwaysActiveHigh())
         activity = PinActivity.ACTIVE_HIGH;
       else
         activity = (PinActivity) activityCombo.getSelectedItem();

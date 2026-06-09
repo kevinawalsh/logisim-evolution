@@ -44,27 +44,32 @@ public class LightsHDLGenerator extends HDLInliner {
 
   public static LightsHDLGenerator forLed(ComponentContext ctx) {
     LightsHDLGenerator g = new LightsHDLGenerator(ctx);
-    g.hiddenPort = HiddenPort.makeOutport(1, HiddenPort.LED, HiddenPort.Pin);
+    g.hiddenPort = HiddenPort.makeOutport(1, HiddenPort.LED, HiddenPort.OutPin);
     return g;
   }
 
   public static LightsHDLGenerator forRGBLed(ComponentContext ctx) {
     LightsHDLGenerator g = new LightsHDLGenerator(ctx);
-    g.hiddenPort = HiddenPort.makeOutport(RGBLed.pinLabels(), HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.Ribbon, HiddenPort.Pin);
+    g.hiddenPort = HiddenPort.makeOutport(RGBLed.pinLabels(), HiddenPort.RGBLED, HiddenPort.LED, HiddenPort.OutRibbon, HiddenPort.OutPin);
     return g;
   }
 
   public static LightsHDLGenerator forSevenSegment(ComponentContext ctx) {
+    int digits = ctx.attrs.getValue(SevenSegment.ATTR_DIGITS).intValue();
     LightsHDLGenerator g = new LightsHDLGenerator(ctx);
-    g.hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(),
-        HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.Pin);
+    if (digits == 1)
+      g.hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(8),
+          HiddenPort.SevenSegment, HiddenPort.OutRibbon, HiddenPort.LED, HiddenPort.OutPin);
+    else
+      g.hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(8+digits),
+          HiddenPort.SevenSegmentGang, HiddenPort.OutRibbon, HiddenPort.LED, HiddenPort.OutPin);
     return g;
   }
 
   public static LightsHDLGenerator forLedBar(ComponentContext ctx) {
     LightsHDLGenerator g = new LightsHDLGenerator(ctx);
     int n = ctx.attrs.getValue(LedBar.ATTR_SEGMENTS).intValue();
-    g.hiddenPort = HiddenPort.makeOutport(n, HiddenPort.LEDBar, HiddenPort.Ribbon, HiddenPort.Pin);
+    g.hiddenPort = HiddenPort.makeOutport(n, HiddenPort.LEDBar, HiddenPort.OutRibbon, HiddenPort.OutPin);
     return g;
   }
 

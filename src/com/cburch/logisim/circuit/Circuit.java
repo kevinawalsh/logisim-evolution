@@ -198,7 +198,7 @@ public class Circuit implements AttributeDefaultProvider {
       if (comp.getFactory().HDLIgnore())
         continue; // ignore components that do not end up in HDL
       if (comp.getFactory().getHDLNamePrefix(comp) == null)
-        continue; // ignore ocmponents that do not need a Path name
+        continue; // ignore components that do not need a Path name
       comps.add(comp);
     }
 

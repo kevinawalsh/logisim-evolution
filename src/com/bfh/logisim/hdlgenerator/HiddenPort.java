@@ -53,21 +53,23 @@ import static com.bfh.logisim.netlist.Netlist.Int3;
 public class HiddenPort {
 
   // Note: Type constants are here merely for convenience in generator classes.
+  public static final BoardIO.Type InPin = BoardIO.Type.InPin;
+  public static final BoardIO.Type BiPin = BoardIO.Type.BiPin;
+  public static final BoardIO.Type OutPin = BoardIO.Type.OutPin;
+  public static final BoardIO.Type InRibbon = BoardIO.Type.InRibbon;
+  public static final BoardIO.Type BiRibbon = BoardIO.Type.BiRibbon;
+  public static final BoardIO.Type OutRibbon = BoardIO.Type.OutRibbon;
 
-  // Input types
-  public static final BoardIO.Type Button = BoardIO.Type.Button; // single-bit
-  public static final BoardIO.Type DIPSwitch = BoardIO.Type.DIPSwitch; // multi-bit
+  public static final BoardIO.Type Button = BoardIO.Type.Button;
+  public static final BoardIO.Type DIPSwitch = BoardIO.Type.DIPSwitch;
 
-  // Input, Output, or Bidirectional
-  public static final BoardIO.Type Pin = BoardIO.Type.Pin; // single-bit
-  public static final BoardIO.Type Ribbon = BoardIO.Type.Ribbon; // multi-bit
+  public static final BoardIO.Type LED = BoardIO.Type.LED;
+  public static final BoardIO.Type RGBLED = BoardIO.Type.RGBLED;
+  public static final BoardIO.Type SevenSegment = BoardIO.Type.SevenSegment;
+  public static final BoardIO.Type SevenSegmentGang = BoardIO.Type.SevenSegmentGang;
+  public static final BoardIO.Type LEDBar = BoardIO.Type.LEDBar;
 
-  // Output types
-  public static final BoardIO.Type LED = BoardIO.Type.LED; // single-bit
-  public static final BoardIO.Type RGBLED = BoardIO.Type.RGBLED; // multi-bit
-  public static final BoardIO.Type SevenSegment = BoardIO.Type.SevenSegment; // multi-bit
-  public static final BoardIO.Type LEDBar = BoardIO.Type.LEDBar; // multi-bit
-  
+
   public final boolean in, out, inout;
   public final List<String> labels;
   public final List<String> inports, inoutports, outports; // labels by category, for convenience
