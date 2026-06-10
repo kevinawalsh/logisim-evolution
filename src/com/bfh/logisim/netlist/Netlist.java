@@ -986,9 +986,9 @@ public class Netlist {
   private String uid(int i) {
     String s = "";
     do {
-      s = ('A' + (i % 26)) + s;
-      i /= 26;
-    } while (i > 0);
+      s = (char)('A' + (i % 26)) + s;
+      i = (i / 26) - 1;
+    } while (i >= 0);
     return s;
   }
 

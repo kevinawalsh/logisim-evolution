@@ -31,23 +31,37 @@ package com.cburch.logisim.std.io;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HiddenPort;
+import com.cburch.logisim.data.AttributeSet;
 import com.cburch.logisim.hdl.Hdl;
 
 public class HexDigitHDLGenerator extends HDLGenerator {
   
   public HexDigitHDLGenerator(ComponentContext ctx) {
-    super(ctx, "io", "HexDigit", "i_Hex");
+    super(ctx, "io", deriveHDLName(ctx.attrs), "i_Hex");
 
     inPorts.add("Hex", 4, HexDigit.HEX, false);
     inPorts.add("DecimalPoint", 1, HexDigit.DP, false);
+    int digits = ctx.attrs.getValue(HexDigit.ATTR_DIGITS).intValue();
+    if (digits > 1) {
+      for (int i = 1; i <= digits; i++)
+        inPorts.add("Hex_Digit_Enable_" + i, 1, HexDigit.DP+i, false);
+      hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(8 + digits),
+          HiddenPort.SevenSegmentGang, HiddenPort.OutRibbon, HiddenPort.LED, HiddenPort.OutPin);
+    } else {
+      hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(8),
+          HiddenPort.SevenSegment, HiddenPort.OutRibbon, HiddenPort.LED, HiddenPort.OutPin);
+    }
     wires.add("s_pattern", 7);
+  }
 
-    hiddenPort = HiddenPort.makeOutport(SevenSegment.pinLabels(8),
-        HiddenPort.SevenSegment, HiddenPort.LED, HiddenPort.OutRibbon, HiddenPort.OutPin);
+  private static String deriveHDLName(AttributeSet attrs) {
+    int digits = attrs.getValue(HexDigit.ATTR_DIGITS).intValue();
+    return "HexDigit_" + digits + "_Gang";
   }
 
   @Override
   protected void generateBehavior(Hdl out) {
+    int digits = _attrs.getValue(HexDigit.ATTR_DIGITS).intValue();
     if (out.isVhdl) {
       out.stmt("Segment_A <= s_pattern(0);");
       out.stmt("Segment_B <= s_pattern(1);");
@@ -58,6 +72,11 @@ public class HexDigitHDLGenerator extends HDLGenerator {
       out.stmt("Segment_G <= s_pattern(6);");
       out.stmt("Segment_DP <= DecimalPoint;");
       out.stmt();
+      if (digits > 1) {
+        for (int i = 1; i <= digits; i++)
+          out.stmt("Digit_"+i+"_Enable <= Hex_Digit_Enable_" + i + ";");
+        out.stmt();
+      }
       out.stmt("MakeSegments : process( Hex )");
       out.stmt("begin");
       out.stmt("   case (Hex) is");
@@ -90,6 +109,11 @@ public class HexDigitHDLGenerator extends HDLGenerator {
       out.stmt("assign Segment_G = s_pattern[6];");
       out.stmt("assign Segment_DP = DecimalPoint;");
       out.stmt();
+      if (digits > 1) {
+        for (int i = 1; i <= digits; i++)
+          out.stmt("assign Digit_"+i+"_Enable = Hex_Digit_Enable_" + i + ";");
+        out.stmt();
+      }
       out.stmt("assign s_pattern =");
       out.stmt("    (Hex == 4'b0000) ? 7'b0111111 :");
       out.stmt("    (Hex == 4'b0001) ? 7'b0000110 :");

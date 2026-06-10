@@ -31,7 +31,6 @@
 package com.bfh.logisim.fpga;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
@@ -530,7 +529,8 @@ public class PinBindings {
       return InputBias.DO_NOT_SPECIFY; // output pins never have a bias, no need for warning
     InputBias bias = inputBiasRequests.get(net);
     if (bias == null) {
-      System.err.println("Warning: missing bias for " + net);
+      // System.err.println("Warning: missing bias for " + net);
+      err.AddWarning("missing bias for " + net);
       return InputBias.DO_NOT_SPECIFY; // or DEFAULT (aka PULL_UP)?
     }
     return bias;
@@ -574,23 +574,36 @@ public class PinBindings {
   }
 
   private BoardIO.Type selectDefaultType(List<BoardIO.Type> types, int width) {
-    System.out.println("FIXME: broken code path");
     if (width == 1) {
       // Pick first type meant for single-bit inputs. // FIXME: or outputs/bidirs?
       for (BoardIO.Type t : types)
         if (t.oneBit)
           return t;
-      // FIXME: if nothing appropriate, fall back to one of the Pin types.. but which one?
-      // return BoardIO.Type.Pin; // default if nothing appropriate
-      throw new IllegalArgumentException("tbd");
+      // should never happen...
+      err.AddSevereError("Bug in I/O component: no appropriate I/O type for width="+width);
+      // if nothing appropriate, fall back to one of the Pin types...
+      for (BoardIO.Type t : types) {
+        if (t.inputOnly) return BoardIO.Type.InPin;
+        else if (t.outputOnly) return BoardIO.Type.OutPin;
+        else return BoardIO.Type.BiPin;
+      }
+      // or BiPin as last resort
+      return BoardIO.Type.BiPin;
     } else {
       // Pick first type meant for multi-bit inputs. // FIXME: or outputs/bidirs?
       for (BoardIO.Type t : types)
         if (!t.oneBit)
           return t;
-      // FIXME: if nothing appropriate, fall back to one of the Ribbon types.. but which one?
-      // return BoardIO.Type.Ribbon; // default if nothing appropriate
-      throw new IllegalArgumentException("tbd");
+      // should never happen...
+      err.AddSevereError("Bug in I/O component: no appropriate I/O type for width="+width);
+      // if nothing appropriate, fall back to one of the Ribbon types...
+      for (BoardIO.Type t : types) {
+        if (t.inputOnly) return BoardIO.Type.InRibbon;
+        else if (t.outputOnly) return BoardIO.Type.OutRibbon;
+        else return BoardIO.Type.BiRibbon;
+      }
+      // or BiRibbon as last resort
+      return BoardIO.Type.BiRibbon;
     }
   }
 
