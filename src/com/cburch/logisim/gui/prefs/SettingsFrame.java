@@ -206,7 +206,7 @@ public class SettingsFrame extends LFrame.Dialog {
     }
     @Override
     public JFrame getJFrame(boolean create, java.awt.Component parent) {
-      return INSTANCE;
+      return create ? getInstance() : INSTANCE;
     }
     @Override
     public void localeChanged() {
