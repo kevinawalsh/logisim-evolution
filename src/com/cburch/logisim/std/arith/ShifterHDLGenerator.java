@@ -77,7 +77,7 @@ public class ShifterHDLGenerator extends HDLGenerator {
       out.stmt("assign s_0_in = ((Mode == 1) || (Mode == 3)) ? DataA[%d] :", w-1);
       out.stmt("                 (Mode == 4)                 ? DataA[0] :");
       out.stmt("                                               0;");
-      out.stmt("assign s_0_out = (Shift == 0)                 ? DataA :");
+      out.stmt("assign s_0_out = (Shift[0] == 0)              ? DataA :");
       out.stmt("                 ((Mode == 0) || (Mode == 1)) ? { DataA[%d:0], s_0_in } :", w-2);
       out.stmt("                                                { s_0_in, DataA[%d:1] };", w-1);
     } else {
