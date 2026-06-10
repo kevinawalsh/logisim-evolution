@@ -362,6 +362,10 @@ public final class PokeTool extends Tool {
     char ch = e.getKeyChar();
     if (ch == KeyEvent.CHAR_UNDEFINED)
       return;
+    // Only fire for plain keypresses (with or without Shift), not Command/Ctrl/Alt combos.
+    int mods = e.getModifiersEx() & ~KeyEvent.SHIFT_DOWN_MASK;
+    if (mods != 0)
+      return;
     Circuit circ = canvas.getCircuit();
     Set<Component> hits = circ.getByLabelCaseInsensitive("" + ch);
     if (hits == null || hits.isEmpty())
