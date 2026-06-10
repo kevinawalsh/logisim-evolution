@@ -272,9 +272,6 @@ public class BindingsDialog extends JDialog {
   private static final Color MAPPEDB = new Color(0.4f, 0.7f, 0.1f); // border
   private static final Color MAPPED_TEXT = new Color(0, 0x60, 0); // text
 
-  private static final int CLICK_TOLERANCE = 5; // pixels of mouse movement still counted as a click
-
-
   private Rect pressedRect = null;
   private class Rect extends JPanel implements MouseListener {
     BoardIO io;
@@ -395,10 +392,12 @@ public class BindingsDialog extends JDialog {
         doBitSelectPopup(e);
       else {
         Dest dest = pinBindings.mappings.get(sources.current);
-        if (dest != null && dest.io == io)
-          sources.unmapCurrent();
-        else
+        if (dest != null && dest.io == io) {
+          // new behavior: do not unmap if re-clicking, leave it alone
+          // sources.unmapCurrent();
+        } else {
           sources.mapCurrent(io, -1);
+        }
       }
     }
 

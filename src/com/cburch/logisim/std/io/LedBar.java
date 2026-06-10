@@ -178,7 +178,7 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
 
   private void positionLabel(Instance instance) {
     if (instance.getAttributeValue(ATTR_INPUT_TYPE) == INPUT_AS_WIRES)
-      instance.computeLabelTextField(Instance.AVOID_BOTTOM);
+      instance.computeLabelTextField(0);
     else
       instance.computeLabelTextField(Instance.AVOID_RIGHT);
   }
@@ -254,6 +254,23 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
         g.fillRect(x - (ww/2+1)/2, y - (hh/2+1)/2, (ww/2+1), (hh/2+1));
       else
         g.fillOval(x - 8, y - 8, 16, 16);
+
+      if (i == 0 && cols > 1) {
+        // draw an orientation marker near LED 0
+        g.setColor(Color.DARK_GRAY);
+        if (drawSquare) {
+          g.fillOval(x - (ww/2-4)*(dy/hh) - 2, y + (hh/2-4)*(dx/ww) - 2, 4, 4);
+        } else {
+          if (facing == Direction.EAST)
+            g.fillPolygon(new int[]{x+4, x+8, x+8}, new int[]{y+8, y+8, y+4}, 3);
+          else if (facing == Direction.WEST)
+            g.fillPolygon(new int[]{x-4, x-8, x-8}, new int[]{y-8, y-8, y-4}, 3);
+          else if (facing == Direction.NORTH)
+            g.fillPolygon(new int[]{x+4, x+8, x+8}, new int[]{y-8, y-8, y-4}, 3);
+          else
+            g.fillPolygon(new int[]{x-4, x-8, x-8}, new int[]{y+8, y+8, y+4}, 3);
+        }
+      }
     }
 
     g.setColor(Color.BLACK);
@@ -277,6 +294,8 @@ public class LedBar extends InstanceFactory implements DynamicElementProvider {
         vals[i] = state.getPortValue(i);
         if (vals[i] == Value.NIL)
           vals[i] = Value.UNKNOWN;
+        else if (vals[i] != Value.TRUE && vals[i] != Value.FALSE && vals[i] != Value.ERROR && vals[i] != Value.UNKNOWN)
+          System.out.println("vals["+i+"] = <"+vals[i]+">");
       }
       state.setData(Value.create(vals));
     } else { // INPUT_AS_BUS

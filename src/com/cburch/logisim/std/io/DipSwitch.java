@@ -164,10 +164,24 @@ public class DipSwitch extends InstanceFactory {
     }
     Port[] ps = new Port[n];
     for (int i = 0; i < ps.length; i++) {
-      ps[i] = new Port(cx+(i+1)*dx, cy+(i+1)*dy, Port.OUTPUT, 1);
-      ps[i].setToolTip(S.getter("DIP"+(i+1)));
+      ps[i] = new Port(cx+(n-i)*dx, cy+(n-i)*dy, Port.OUTPUT, 1);
+      ps[i].setToolTip(S.getter("SW"+(n-i)));
     }
     instance.setPorts(ps);
+  }
+
+  public static String[] pinLabels(int numPins) {
+    // Paint markings on DIP switches are almost always 1-N, left-to-right
+    // but circuit schematics seem to more commonly name the connected signals
+    // and pins with 0-based numbering right-to-left. For example with n=8:
+    //     sw1   sw2   sw3   sw4   sw5   sw6   sw7   sw8   
+    //    pin7  pin6  pin5  pin4  pin3  pin2  pin1  pin0
+    // We number backwards here, so the fpga board editor shows the labels
+    // using the backwards (left-to-right) order.
+    String[] labels = new String[numPins];
+    for (int i = 0; i < numPins; i++)
+      labels[i] = "SW" + (numPins-i);
+    return labels;
   }
 
   @Override
@@ -267,7 +281,7 @@ public class DipSwitch extends InstanceFactory {
     }
     for (int i = 0; i < pins.size; i++) {
       Value pinstate = (pins.BitSet(i)) ? Value.TRUE : Value.FALSE;
-      state.setPort(i, pinstate, 1);
+      state.setPort(pins.size-i-1, pinstate, 1);
     }
   }
 
@@ -299,13 +313,13 @@ public class DipSwitch extends InstanceFactory {
       InventoryFeature.PortPosition out;
 
       if (facing == Direction.EAST) {
-        out = portsAt("DIP", "output", 1, "number", 0, 10, 0, 10);
+        out = portsAt("SW", "output", 1, "number", 0, 10, 0, 10);
       } else if (facing == Direction.WEST) {
-        out = portsAt("DIP", "output", 1, "number", 0, -10, 0, -10);
+        out = portsAt("SW", "output", 1, "number", 0, -10, 0, -10);
       } else if (facing == Direction.NORTH) {
-        out = portsAt("DIP", "output", 1, "number", 10, 0, 10, 0);
+        out = portsAt("SW", "output", 1, "number", 10, 0, 10, 0);
       } else { // SOUTH
-        out = portsAt("DIP", "output", 1, "number", "-10*number", 0, 10, 0);
+        out = portsAt("SW", "output", 1, "number", "-10*number", 0, 10, 0);
       }
 
       return List.of(out);

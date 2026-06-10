@@ -178,6 +178,8 @@ public class BoardIO {
           return com.cburch.logisim.std.io.SevenSegment.pinLabels(width);
         case RGBLED:
           return RGBLed.pinLabels();
+        case DIPSwitch:
+          return DipSwitch.pinLabels(width);
         default:
           return genericPinLabels(width);
       }
@@ -748,7 +750,9 @@ public class BoardIO {
 
       double pinW = (xsz-xmargin/2.0-1)*imgScale;
       double pinH = (ysz-ymargin/2.0-1)*imgScale;
-      Font font = fitFont(g, width, pinW, pinH);
+
+      boolean backwardsFromOne = (type == Type.DIPSwitch);
+      Font font = fitFont(g, backwardsFromOne ? width+1 : width, pinW, pinH);
 
       int xx = (dx >= 0 ? rect.x + xmargin/2 : rect.x + rect.width - xmargin - xsz - 1);
       int yy = (dy >= 0 ? rect.y + ymargin/2 : rect.y + rect.height - ymargin - ysz - 1);
@@ -768,7 +772,7 @@ public class BoardIO {
         if (pinBorder != null) {
           g.setColor(pinBorder);
           g.draw(pinShape);
-          drawPinNumber(g, i, font, pinX, pinY, pinW, pinH);
+          drawPinNumber(g, backwardsFromOne ? width-i : i, font, pinX, pinY, pinW, pinH);
         }
         if (horizontal) {
           iy++;
