@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -285,6 +286,61 @@ public class ReplacementLog {
       ws.addAll(wsNew);
       ws.remove(null);
       wireChanged.put(w, ws);
+    }
+  }
+
+  // Like moveWireSelection, but handles a batch of simultaneous pair-wise wire
+  // moves (as in REPLACE_PAIRS). This is pairwise: if wire i in oldWiresList
+  // was selected before the transaction, then wire i in the newWiresList should
+  // be selected after the transaction. The difference from calling
+  // moveWireSelection once per pair is in the first-loop chaining: if an old
+  // wire w appears as a value in some existing mapping, we chain it to its new
+  // position only when w is NOT also a new destination in the batch. If w is
+  // both an old source and a new destination (e.g. A_new==B_old), it stays in
+  // the circuit (removed as B_old, re-added as A's destination), so existing
+  // mappings that point to it must be left unchanged.
+  public void moveWireSelectionBatch(List<Wire> oldWiresList, List<Wire> newWiresList) {
+
+    // Sanity check: only process pairs where both are non-null and not equal.
+    HashMap<Wire, Wire> replacement = new HashMap<>();
+    for (int i = 0; i < oldWiresList.size(); i++) {
+      Wire oldW = oldWiresList.get(i);
+      Wire newW = newWiresList.get(i);
+      if (oldW != null && newW != null && !oldW.equals(newW))
+        replacement.put(oldW, newW);
+    }
+    if (replacement.isEmpty()) return;
+
+    // Wires in newSet stay in the circuit after the batch (their position remains
+    // occupied). Do not chain past them in existing mappings.
+    Set<Wire> newSet = new HashSet<>(replacement.values());
+
+    for (HashSet<Wire> ws : wireChanged.values()) {
+      Set<Wire> toRemove = new HashSet<>();
+      Set<Wire> toAdd = new HashSet<>();
+      for (Wire w : ws) {
+        Wire wNew = replacement.get(w);
+        if (wNew != null && !newSet.contains(w)) {
+          toRemove.add(w);
+          toAdd.add(wNew);
+        }
+      }
+      if (!toRemove.isEmpty()) {
+        ws.removeAll(toRemove);
+        ws.addAll(toAdd);
+        ws.remove(null);
+      }
+    }
+
+    for (Map.Entry<Wire, Wire> e : replacement.entrySet()) {
+      Wire oldW = e.getKey();
+      Wire newW = e.getValue();
+      if (wireChanged.get(oldW) == null) {
+        HashSet<Wire> ws = new HashSet<>();
+        ws.add(newW);
+        wireChanged.put(oldW, ws);
+      }
+      // If already a key: already tracked from a prior step; skip (same as moveWireSelection).
     }
   }
 

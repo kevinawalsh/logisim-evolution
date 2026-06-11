@@ -30,6 +30,7 @@
 
 package com.cburch.logisim.circuit;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -283,6 +284,9 @@ abstract class CircuitChange {
         }
       }
       // Phase 2: wire additions and ReplacementLog updates.
+      // Collect all wire pairs so selection can be updated as a simultaneous batch.
+      ArrayList<Wire> wOld = new ArrayList<>();
+      ArrayList<Wire> wNew = new ArrayList<>();
       for (int i = 0; i < oldComps.length; i++) {
         Component c = oldComps[i];
         Component r = newComps[i];
@@ -291,9 +295,9 @@ abstract class CircuitChange {
         if (c == null || r == null || c instanceof Wire || r instanceof Wire) {
           if (r != null && circuit.mutatorAdd(r)) status[i] |= 2;
           if (c instanceof Wire && r instanceof Wire) {
-            // if both are wires, then selection follows the replacement,
-            // regardless of whether the operation succeeded or failed
-            repl.moveWireSelection((Wire)c, Collections.singleton((Wire)r));
+            // Collect for batch selection update below.
+            wOld.add((Wire)c);
+            wNew.add((Wire)r);
           } else {
             // All other cases, treat as separate operations.
             //  - one of them is null, so this is a plain add or remove
@@ -305,6 +309,11 @@ abstract class CircuitChange {
           }
         }
       }
+      // Update wire selection as one simultaneous batch. This correctly handles
+      // the case where a new wire position equals another old wire position
+      // (e.g. A_new == B_old), which sequential moveWireSelection calls get wrong
+      // by over-eagerly chaining the selection update for A through to B's target.
+      repl.moveWireSelectionBatch(wOld, wNew);
     }
 
     @Override

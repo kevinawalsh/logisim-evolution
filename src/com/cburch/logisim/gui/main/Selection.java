@@ -96,19 +96,24 @@ public class Selection {
 
         ArrayList<Component> oldAnchored;
         oldAnchored = new ArrayList<Component>(getComponents());
+        // Two-phase update: remove all old first, then add all new.
+        // If done in one interleaved pass, selected.remove(B_old) can evict A_new
+        // when B_old == A_new (same wire object, same endpoints via Wire cache).
+        ArrayList<Component> toAdd = new ArrayList<>();
         for (Component comp : oldAnchored) {
           Collection<Component> replacedBy = repl.getSelectionUpdatesFor(comp);
           if (replacedBy != null) {
             change = true;
             selected.remove(comp);
             lifted.remove(comp);
-            for (Component add : replacedBy) {
-              if (circuit.contains(add)) {
-                selected.add(add);
-              } else {
-                lifted.add(add);
-              }
-            }
+            toAdd.addAll(replacedBy);
+          }
+        }
+        for (Component add : toAdd) {
+          if (circuit.contains(add)) {
+            selected.add(add);
+          } else {
+            lifted.add(add);
           }
         }
 
