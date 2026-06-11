@@ -98,7 +98,7 @@ import com.cburch.logisim.util.LocaleListener;
 import com.cburch.logisim.util.LocaleManager;
 import com.cburch.logisim.util.WindowMenuItemManager;
 
-public class BoardEditor extends JFrame {
+public class BoardEditor extends LFrame.Dialog {
 
   private static class WinMenuManager extends WindowMenuItemManager implements LocaleListener {
     WinMenuManager() {
@@ -169,7 +169,8 @@ public class BoardEditor extends JFrame {
   private boolean dirty = false;
 
   private BoardEditor() {
-    super(S.get("FPGABoardEditor"));
+    super(null);
+    setTitle(S.get("FPGABoardEditor"));
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
 
     setResizable(false);
