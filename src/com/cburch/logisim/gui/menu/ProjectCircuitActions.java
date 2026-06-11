@@ -62,12 +62,30 @@ import com.cburch.logisim.file.LogisimFileActions;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
+import com.cburch.logisim.file.ToolbarData;
 import com.cburch.logisim.std.hdl.VhdlContent;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.tools.AddTool;
+import com.cburch.logisim.tools.EditTool;
 import com.cburch.logisim.tools.Library;
+import com.cburch.logisim.tools.PokeTool;
+import com.cburch.logisim.tools.Tool;
 
 public class ProjectCircuitActions {
+  // Poke tool is useless on a blank circuit; switch to Edit tool instead.
+  private static void switchAwayFromPokeTool(Project proj) {
+    if (!(proj.getTool() instanceof PokeTool))
+      return;
+    // Search ToolbarData so we get the exact instance the toolbar uses for its == check.
+    ToolbarData data = proj.getLogisimFile().getOptions().getToolbarData();
+    for (Tool tool : data.getContents()) {
+      if (tool instanceof EditTool) {
+        proj.setTool(tool);
+        return;
+      }
+    }
+  }
+
   private static void analyzeError(Project proj, String message) {
     JOptionPane.showMessageDialog(proj.getFrame(), message,
         S.get("analyzeErrorTitle"), JOptionPane.ERROR_MESSAGE);
@@ -107,6 +125,7 @@ public class ProjectCircuitActions {
       Circuit circuit = new Circuit(name, proj.getLogisimFile());
       proj.doAction(LogisimFileActions.addCircuit(circuit));
       proj.setCurrentCircuit(circuit);
+      switchAwayFromPokeTool(proj);
     }
   }
 
@@ -139,6 +158,7 @@ public class ProjectCircuitActions {
       Circuit circuit = new Circuit(name, file);
       proj.doAction(LogisimFileActions.addCircuit(circuit));
       proj.setCurrentCircuit(circuit);
+      switchAwayFromPokeTool(proj);
     }
   }
 
