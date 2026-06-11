@@ -262,8 +262,12 @@ abstract class CircuitChange {
     @Override
     public void apply(ReplacementLog repl) {
       status = new int[oldComps.length];
+      // Phase 1: wire removals and atomic non-wire replacements.
+      // Wire removes must all happen before wire adds: if new wire X has the
+      // same endpoints as old wire Y (e.g. during a multi-wire move where X's
+      // new position equals Y's old position), adding X while Y is still
+      // present silently fails, and then removing Y later leaves X missing.
       for (int i = 0; i < oldComps.length; i++) {
-        status[i] = 0;
         Component c = oldComps[i];
         Component r = newComps[i];
         // Skip no-op replacements, so ReplacementLog doesn't have to deal with them.
@@ -271,9 +275,23 @@ abstract class CircuitChange {
           continue;
         if (c == null || r == null || c instanceof Wire || r instanceof Wire) {
           if (c != null && circuit.mutatorRemove(c)) status[i] |= 1;
+        } else {
+          if (circuit.mutatorReplaceNonWire(c, r)) {
+            status[i] = 3;
+            repl.logNonWireReplacement(c, r);
+          }
+        }
+      }
+      // Phase 2: wire additions and ReplacementLog updates.
+      for (int i = 0; i < oldComps.length; i++) {
+        Component c = oldComps[i];
+        Component r = newComps[i];
+        if (c == r || (c != null && r != null && c.equals(r)))
+          continue;
+        if (c == null || r == null || c instanceof Wire || r instanceof Wire) {
           if (r != null && circuit.mutatorAdd(r)) status[i] |= 2;
           if (c instanceof Wire && r instanceof Wire) {
-            // if both are wires, then selection follows the replaceemnt,
+            // if both are wires, then selection follows the replacement,
             // regardless of whether the operation succeeded or failed
             repl.moveWireSelection((Wire)c, Collections.singleton((Wire)r));
           } else {
@@ -284,11 +302,6 @@ abstract class CircuitChange {
             //    (never happens, selection doesn't matter)
             if ((status[i] & 1) != 0) repl.logRemoval(c);
             if ((status[i] & 2) != 0) repl.logAddition(r);
-          }
-        } else {
-          if (circuit.mutatorReplaceNonWire(c, r)) {
-            status[i] = 3;
-            repl.logNonWireReplacement(c, r);
           }
         }
       }
