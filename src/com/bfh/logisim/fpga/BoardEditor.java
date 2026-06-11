@@ -167,11 +167,14 @@ public class BoardEditor extends LFrame.Dialog {
   private ArrayList<Integer> toolchainCapabilities = new ArrayList<>(); // 1=synthesis, 2=programming, 3=both
   private ArrayList<LinkedHashMap<String, String>> toolchainParams = new ArrayList<>(); // key - > val
   private boolean dirty = false;
+  private File currentFile = null;
 
   private BoardEditor() {
     super(null);
     setTitle(S.get("FPGABoardEditor"));
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
+    if (getLogisimMenuBar() != null)
+      getLogisimMenuBar().setSaveHandler(() -> doSave(), () -> doSaveAs());
 
     setResizable(false);
     setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -278,21 +281,9 @@ public class BoardEditor extends LFrame.Dialog {
   //   dlg.setVisible(true);
   // }
 
-  private boolean doSave() {
+  private boolean saveToFile(File file) {
     String boardname = name.getText().trim();
-    if (boardname.isEmpty()) {
-      Errors.title("Error").warn("A board name must be specified before saving.");
-      return false;
-    }
-    if (ioComponents.isEmpty()) {
-      Errors.title("Warning").warn("No I/O resources have been specified.\n"
-          + "Before saving, you may want to draw rectangles on the image\n"
-          + "to specify I/O resources for this FPGA board.");
-    }
     String id = codename.getText().trim();
-    File file = getSaveFile(boardname, id);
-    if (file == null)
-      return false;
     Board board = new Board(boardname, id, fpga, image.getOriginalImage(), image.getFormat(), image.getOriginalBytes());
     board.addComponents(ioComponents);
     if (defaultSynthesisTool != null)
@@ -311,9 +302,48 @@ public class BoardEditor extends LFrame.Dialog {
     }
     if (!BoardWriter.write(file, board))
       return false;
+    currentFile = file;
     dirty = false;
     Projects.projectCleaned();
     return true;
+  }
+
+  private boolean doSave() {
+    String boardname = name.getText().trim();
+    if (boardname.isEmpty()) {
+      Errors.title("Error").warn("A board name must be specified before saving.");
+      return false;
+    }
+    File file = currentFile;
+    if (file != null) {
+      if (saveToFile(file)) return true;
+      // retained path failed; fall back to picker
+    } else if (ioComponents.isEmpty()) {
+      Errors.title("Warning").warn("No I/O resources have been specified.\n"
+          + "Before saving, you may want to draw rectangles on the image\n"
+          + "to specify I/O resources for this FPGA board.");
+    }
+    String id = codename.getText().trim();
+    file = getSaveFile(boardname, id);
+    if (file == null) return false;
+    return saveToFile(file);
+  }
+
+  private boolean doSaveAs() {
+    String boardname = name.getText().trim();
+    if (boardname.isEmpty()) {
+      Errors.title("Error").warn("A board name must be specified before saving.");
+      return false;
+    }
+    if (ioComponents.isEmpty()) {
+      Errors.title("Warning").warn("No I/O resources have been specified.\n"
+          + "Before saving, you may want to draw rectangles on the image\n"
+          + "to specify I/O resources for this FPGA board.");
+    }
+    String id = codename.getText().trim();
+    File file = getSaveFile(boardname, id);
+    if (file == null) return false;
+    return saveToFile(file);
   }
 
   private void markDirty() {
@@ -349,6 +379,7 @@ public class BoardEditor extends LFrame.Dialog {
         String name = boardsList.getSelectedValue();
         AppPreferences.FPGA_SELECTED_BOARD.set(name);
         setBoard(BoardReader.read(BoardList.getSelectedPath()));
+        currentFile = null;
       }
     };
     JPanel p = new JPanel();
@@ -367,8 +398,9 @@ public class BoardEditor extends LFrame.Dialog {
     int retval = fc.showOpenDialog(null);
     if (retval != JFileChooser.APPROVE_OPTION)
       return;
-    String path = fc.getSelectedFile().getPath();
-    setBoard(BoardReader.read(path));
+    File file = fc.getSelectedFile();
+    setBoard(BoardReader.read(file.getPath()));
+    currentFile = file;
   }
 
   private void setBoard(Board board) {
@@ -416,6 +448,7 @@ public class BoardEditor extends LFrame.Dialog {
     toolchainParams.clear();
 
     setEnables();
+    currentFile = null;
     dirty = false;
     Projects.projectCleaned();
   }
@@ -491,10 +524,13 @@ public class BoardEditor extends LFrame.Dialog {
     BoardEditor editor = getInstance();
     if (arg != null && !arg.isEmpty()) {
       String path = BoardList.getPathForArg(arg);
-      if (path != null)
+      if (path != null) {
+        if (!editor.confirmClose()) return;
         editor.setBoard(BoardReader.read(path));
-      else
+        editor.currentFile = path.startsWith("file|") ? new File(path.substring(5)) : null;
+      } else {
         Errors.title("Warning").warn("No FPGA board found for: " + arg);
+      }
     }
     editor.setVisible(true);
     editor.toFront();
@@ -502,7 +538,9 @@ public class BoardEditor extends LFrame.Dialog {
 
   public static void openWithPath(String path) {
     BoardEditor editor = getInstance();
+    if (!editor.confirmClose()) return;
     editor.setBoard(BoardReader.read(path));
+    editor.currentFile = new File(path);
     editor.setVisible(true);
     editor.toFront();
   }

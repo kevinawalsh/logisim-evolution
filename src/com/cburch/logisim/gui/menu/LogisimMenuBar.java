@@ -213,6 +213,10 @@ public class LogisimMenuBar extends JMenuBar {
       item.removeActionListener(l);
   }
 
+  public void setSaveHandler(Runnable save, Runnable saveAs) {
+    file.setSaveHandler(save, saveAs);
+  }
+
   public void removeEnableListener(ChangeListener l) {
     enableListeners.remove(l);
   }

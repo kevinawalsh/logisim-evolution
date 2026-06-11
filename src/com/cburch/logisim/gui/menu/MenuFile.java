@@ -308,6 +308,17 @@ class MenuFile extends Menu implements ActionListener {
     }
   }
 
+  void setSaveHandler(Runnable saveHandler, Runnable saveAsHandler) {
+    if (saveHandler != null) {
+      save.setEnabled(true);
+      save.addActionListener(e -> saveHandler.run());
+    }
+    if (saveAsHandler != null) {
+      saveAs.setEnabled(true);
+      saveAs.addActionListener(e -> saveAsHandler.run());
+    }
+  }
+
   @Override
   void computeEnabled() {
     setEnabled(true);
