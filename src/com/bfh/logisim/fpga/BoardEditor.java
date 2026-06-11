@@ -61,6 +61,7 @@ import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JOptionPane;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -92,8 +93,54 @@ import com.cburch.logisim.prefs.AppPreferences;
 import com.cburch.logisim.util.Errors;
 import com.cburch.logisim.util.JDialogOk;
 import com.cburch.logisim.util.JFileChoosers;
+import com.cburch.logisim.proj.Projects;
+import com.cburch.logisim.util.LocaleListener;
+import com.cburch.logisim.util.LocaleManager;
+import com.cburch.logisim.util.WindowMenuItemManager;
 
 public class BoardEditor extends JFrame {
+
+  private static class WinMenuManager extends WindowMenuItemManager implements LocaleListener {
+    WinMenuManager() {
+      super(S.get("FPGABoardEditor"), true);
+      LocaleManager.addLocaleListener(this);
+    }
+    @Override
+    public JFrame getJFrame(boolean create, java.awt.Component parent) {
+      return create ? getInstance() : INSTANCE;
+    }
+    @Override
+    public void localeChanged() {
+      setText(S.get("FPGABoardEditor"));
+    }
+  }
+
+  private static BoardEditor INSTANCE = null;
+  private static WinMenuManager MENU_MANAGER = null;
+
+  public static void initializeManager() {
+    MENU_MANAGER = new WinMenuManager();
+  }
+
+  public static void open() {
+    BoardEditor f = getInstance();
+    f.setVisible(true);
+    f.toFront();
+  }
+
+  private static BoardEditor getInstance() {
+    if (INSTANCE == null)
+      INSTANCE = new BoardEditor();
+    return INSTANCE;
+  }
+
+  public static boolean confirmCloseForQuit() {
+    return INSTANCE == null || INSTANCE.confirmClose();
+  }
+
+  public static boolean isOpenAndDirty() {
+    return INSTANCE != null && INSTANCE.isVisible() && INSTANCE.dirty;
+  }
 
   private static TreeMap<String, String> VENDORS = new TreeMap<>();
   static {
@@ -119,13 +166,19 @@ public class BoardEditor extends JFrame {
   private ArrayList<String> toolchainNames = new ArrayList<>();
   private ArrayList<Integer> toolchainCapabilities = new ArrayList<>(); // 1=synthesis, 2=programming, 3=both
   private ArrayList<LinkedHashMap<String, String>> toolchainParams = new ArrayList<>(); // key - > val
+  private boolean dirty = false;
 
-  public BoardEditor() {
+  private BoardEditor() {
     super(S.get("FPGABoardEditor"));
     LFrame.attachIcon(this, "resources/logisim/img/fpga-icon-%d.png");
 
     setResizable(false);
-    setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+    setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+    addWindowListener(new java.awt.event.WindowAdapter() {
+      @Override public void windowClosing(java.awt.event.WindowEvent e) {
+        if (BoardEditor.this.confirmClose()) BoardEditor.this.setVisible(false);
+      }
+    });
     setLayout(new BorderLayout());
 
     image = new BoardPanel(this);
@@ -148,9 +201,9 @@ public class BoardEditor extends JFrame {
     codename.setEnabled(true);
     codename.setToolTipText("A short identifier, used as a fallback if a toolchain-specific name is not specified.");
     name.getDocument().addDocumentListener(new DocumentListener() {
-      public void insertUpdate(DocumentEvent e)  { codename.repaint(); }
-      public void removeUpdate(DocumentEvent e)  { codename.repaint(); }
-      public void changedUpdate(DocumentEvent e) { codename.repaint(); }
+      public void insertUpdate(DocumentEvent e)  { codename.repaint(); BoardEditor.this.markDirty(); }
+      public void removeUpdate(DocumentEvent e)  { codename.repaint(); BoardEditor.this.markDirty(); }
+      public void changedUpdate(DocumentEvent e) { codename.repaint(); BoardEditor.this.markDirty(); }
     });
 
     JButton chipset = new JButton("Configure Chipset");
@@ -195,7 +248,7 @@ public class BoardEditor extends JFrame {
     bottomButtons.add(reset);
 
     JButton cancel = new JButton("Close");
-    cancel.addActionListener(e -> { setVisible(false); clear(); });
+    cancel.addActionListener(e -> { if (confirmClose()) setVisible(false); });
     bottomButtons.add(cancel);
 
     save = new JButton("Save Board");
@@ -211,8 +264,6 @@ public class BoardEditor extends JFrame {
 
     pack();
     setLocationRelativeTo(null);
-
-    setVisible(true);
   }
 
   // public void doModal(JDialog dlg, int x, int y) {
@@ -226,11 +277,11 @@ public class BoardEditor extends JFrame {
   //   dlg.setVisible(true);
   // }
 
-  private void doSave() {
+  private boolean doSave() {
     String boardname = name.getText().trim();
     if (boardname.isEmpty()) {
       Errors.title("Error").warn("A board name must be specified before saving.");
-      return;
+      return false;
     }
     if (ioComponents.isEmpty()) {
       Errors.title("Warning").warn("No I/O resources have been specified.\n"
@@ -239,6 +290,8 @@ public class BoardEditor extends JFrame {
     }
     String id = codename.getText().trim();
     File file = getSaveFile(boardname, id);
+    if (file == null)
+      return false;
     Board board = new Board(boardname, id, fpga, image.getOriginalImage(), image.getFormat(), image.getOriginalBytes());
     board.addComponents(ioComponents);
     if (defaultSynthesisTool != null)
@@ -248,7 +301,7 @@ public class BoardEditor extends JFrame {
     for (int i = 0; i < toolchainNames.size(); i++) {
       String tc = toolchainNames.get(i);
       int caps = toolchainCapabilities.get(i);
-      board.addToolchain(tc, 
+      board.addToolchain(tc,
           caps == 1 ? "synthesis" :
           caps == 2 ? "programming" :
           caps == 3 ? "synthesis,programming" :
@@ -256,7 +309,32 @@ public class BoardEditor extends JFrame {
       toolchainParams.get(i).forEach((k, v) -> board.setToolchainParam(tc, k, v));
     }
     if (!BoardWriter.write(file, board))
-      return;
+      return false;
+    dirty = false;
+    Projects.projectCleaned();
+    return true;
+  }
+
+  private void markDirty() {
+    dirty = true;
+    Projects.projectDirtied();
+  }
+
+  private boolean confirmClose() {
+    if (!dirty)
+      return true;
+    toFront();
+    boolean canSave = save.isEnabled();
+    String[] options = canSave
+        ? new String[] { S.get("boardEditorSaveOption"), S.get("boardEditorDiscardOption"), S.get("boardEditorCancelOption") }
+        : new String[] { S.get("boardEditorDiscardOption"), S.get("boardEditorCancelOption") };
+    int result = JOptionPane.showOptionDialog(this,
+        S.get("boardEditorUnsavedMessage"),
+        S.get("boardEditorUnsavedTitle"),
+        0, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+    if (canSave && result == 0)
+      return doSave();
+    return result == (canSave ? 1 : 0);
   }
 
   private void doBuiltin() {
@@ -315,6 +393,7 @@ public class BoardEditor extends JFrame {
       toolchainParams.add(new LinkedHashMap<>(board.getToolchainParams(tcName)));
     }
     setEnables();
+    dirty = false;
   }
 
   private void setEnables() {
@@ -336,6 +415,8 @@ public class BoardEditor extends JFrame {
     toolchainParams.clear();
 
     setEnables();
+    dirty = false;
+    Projects.projectCleaned();
   }
 
   private static boolean isValidFilename(String name) {
@@ -388,20 +469,25 @@ public class BoardEditor extends JFrame {
     return fc.getSelectedFile();
   }
 
-  public void reactivate() {
-    if (!isVisible()) {
+  @Override
+  public void setVisible(boolean value) {
+    if (value && MENU_MANAGER != null)
+      MENU_MANAGER.frameOpened(this);
+    if (!value)
       clear();
-      setVisible(true);
-    }
-    toFront();
+    super.setVisible(value);
   }
 
-  // Open a new board editor and load the board identified by arg.  arg is
+  public void reactivate() {
+    open();
+  }
+
+  // Open the board editor and load the board identified by arg.  arg is
   // resolved flexibly: a known board name, a tagged path ("file|..." or
   // "jar|..."), a filesystem path (with or without .xml), or a bare filename
   // stem.  An empty or null arg opens a blank editor.
   public static void openWithBoard(String arg) {
-    BoardEditor editor = new BoardEditor();
+    BoardEditor editor = getInstance();
     if (arg != null && !arg.isEmpty()) {
       String path = BoardList.getPathForArg(arg);
       if (path != null)
@@ -409,11 +495,15 @@ public class BoardEditor extends JFrame {
       else
         Errors.title("Warning").warn("No FPGA board found for: " + arg);
     }
+    editor.setVisible(true);
+    editor.toFront();
   }
 
   public static void openWithPath(String path) {
-    BoardEditor editor = new BoardEditor();
+    BoardEditor editor = getInstance();
     editor.setBoard(BoardReader.read(path));
+    editor.setVisible(true);
+    editor.toFront();
   }
 
   private static void add(JComponent dlg, GridBagConstraints c,
@@ -590,6 +680,7 @@ public class BoardEditor extends JFrame {
     }
     dlg.dispose();
     setEnables();
+    markDirty();
   }
 
   private void doToolchainsDialog() {
@@ -858,6 +949,7 @@ public class BoardEditor extends JFrame {
           defaultProgrammingTool = tcName;
       }
       dlg.setVisible(false);
+      markDirty();
     });
 
     dlg.pack();
@@ -940,6 +1032,7 @@ public class BoardEditor extends JFrame {
         }
       }
       setEnables();
+      markDirty();
       if (fixed + removed > 0) {
         Errors.title("Warning").show("Some I/O Components fell outside the bounds of the new image, so "
             + (fixed == 0 ? "" : fixed == 1 ? "1 was moved, " : fixed + " were moved, ")
@@ -1225,6 +1318,7 @@ public class BoardEditor extends JFrame {
       if (idx >= 0) ioComponents.set(idx, newIO);
       editingIO = newIO;
       selectedIO = newIO;
+      markDirty();
       // Update only the position fields (suppress listeners to avoid applyCurrentValues)
       updating = true;
       xField.setText("" + x);
@@ -1465,6 +1559,7 @@ public class BoardEditor extends JFrame {
       }
       editingIO = newIO;
       selectedIO = newIO;
+      markDirty();
 
       image.repaint();
     }
@@ -1474,6 +1569,7 @@ public class BoardEditor extends JFrame {
         ioComponents.remove(editingIO);
       editingIO = null;
       selectedIO = null;
+      markDirty();
       cards.show(this, IDLE);
       image.repaint();
     }

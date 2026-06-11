@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.WeakHashMap;
 
+import com.bfh.logisim.fpga.BoardEditor;
 import com.cburch.logisim.file.Loader;
 import com.cburch.logisim.gui.main.Frame;
 import com.cburch.logisim.util.DesktopIntegration;
@@ -96,7 +97,8 @@ public class Projects {
           ProjectActions.doQuit();
         } else {
           saveTopFramePreferences();
-          DesktopIntegration.setSuddenTerminationAllowed(true);
+          if (!BoardEditor.isOpenAndDirty())
+            DesktopIntegration.setSuddenTerminationAllowed(true);
         }
       }
     }
@@ -200,6 +202,10 @@ public class Projects {
         DesktopIntegration.setSuddenTerminationAllowed(false);
         return;
       }
+    }
+    if (BoardEditor.isOpenAndDirty()) {
+      DesktopIntegration.setSuddenTerminationAllowed(false);
+      return;
     }
     saveTopFramePreferences();
     DesktopIntegration.setSuddenTerminationAllowed(true);

@@ -40,6 +40,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
+import com.bfh.logisim.fpga.BoardEditor;
 import com.cburch.logisim.analyze.gui.AnalyzerManager;
 import com.cburch.logisim.file.LibraryEvent;
 import com.cburch.logisim.file.LibraryListener;
@@ -109,6 +110,7 @@ public class WindowManagers {
       AnalyzerManager.initialize();
       FindManager.initialize();
       SettingsFrame.initializeManager();
+      BoardEditor.initializeManager();
       Projects.addListChangeWeakListener(PERMANENT, () -> computeListeners());
       computeListeners();
     }

@@ -48,6 +48,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import com.bfh.logisim.fpga.BoardEditor;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.file.LoadCanceledByUser;
 import com.cburch.logisim.file.LoadFailedException;
@@ -60,6 +61,7 @@ import com.cburch.logisim.prefs.StateStore;
 import com.cburch.logisim.tools.Tool;
 import com.cburch.logisim.util.Debug;
 import com.cburch.logisim.util.JFileChoosers;
+
 
 public class ProjectActions {
   private static class CreateFrame implements Runnable {
@@ -463,6 +465,8 @@ public class ProjectActions {
 
   public static boolean doQuit() {
     Projects.saveTopFramePreferences();
+    if (!BoardEditor.confirmCloseForQuit())
+      return false;
     for (Project proj : new ArrayList<Project>(Projects.getOpenProjects())) {
       if (!proj.confirmClose(S.get("confirmQuitTitle")))
         return false;

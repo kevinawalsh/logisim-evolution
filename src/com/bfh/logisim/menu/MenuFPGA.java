@@ -51,7 +51,6 @@ public class MenuFPGA extends JMenu implements ActionListener {
 	private JMenuItem editorMenu = new JMenuItem();
 	private JMenuItem commanderMenu = new JMenuItem();
 	private JMenuItem settingsMenu = new JMenuItem();
-	private BoardEditor editor = null;
 	private Commander commander = null;
   private JFrame parent;
 
@@ -76,10 +75,7 @@ public class MenuFPGA extends JMenu implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		Object src = e.getSource();
 		if (src == editorMenu) {
-			if (editor == null)
-				editor = new BoardEditor();
-			else
-        editor.reactivate();
+      BoardEditor.open();
 		} else if (src == commanderMenu) {
 			if (commander == null)
 				commander = new Commander(proj);
