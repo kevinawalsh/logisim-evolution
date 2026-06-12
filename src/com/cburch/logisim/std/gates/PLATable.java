@@ -410,7 +410,7 @@ public class PLATable {
         int w = (int)d.getWidth()+50;
         int h = (int)d.getHeight()+20*newTable.rows.size()+140;
         int ww = Math.max(Math.min(w, 800), 300);
-        int hh = Math.max(Math.min(h, 500), 200);
+        int hh = Math.max(Math.min(h, 600), 400);
         repack(new Dimension(ww, hh));
       }
     }

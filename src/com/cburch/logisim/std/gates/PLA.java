@@ -69,6 +69,7 @@ import com.cburch.logisim.instance.Port;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.util.GraphicsUtil;
 import com.cburch.logisim.tools.MenuExtender;
+import com.cburch.logisim.tools.SetAttributeAction;
 import com.cburch.logisim.proj.Project;
 
 class PLA extends InstanceFactory {
@@ -343,6 +344,7 @@ class PLA extends InstanceFactory {
   class PLAMenu implements ActionListener, MenuExtender {
     private Instance instance;
     private Frame frame;
+    private Project proj;
     private JMenuItem edit;
 
     PLAMenu(PLA factory, Instance instance) {
@@ -357,6 +359,7 @@ class PLA extends InstanceFactory {
 
     public void configureMenu(JPopupMenu menu, Project proj) {
       this.frame = proj.getFrame();
+      this.proj = proj;
 
       edit = new JMenuItem(S.get("plaEditMenuItem"));
       edit.setEnabled(true);
@@ -371,7 +374,13 @@ class PLA extends InstanceFactory {
       PLATable.EditorDialog dialog = new PLATable.EditorDialog(frame);
       dialog.setValue(tt);
       dialog.setVisible(true);
-      dialog.toFront();
+      PLATable newTable = dialog.getValue();
+      if (newTable != null) {
+        SetAttributeAction act = new SetAttributeAction(
+            proj.getCurrentCircuit(), S.getter("plaEditTable"));
+        act.set(instance.getComponent(), ATTR_TABLE, newTable);
+        proj.doAction(act);
+      }
     }
 
   }
