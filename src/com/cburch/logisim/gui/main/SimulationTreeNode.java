@@ -118,7 +118,9 @@ public class SimulationTreeNode implements TreeNode,
       model.fire(model.getPath(this), new int[0], null,
           (l,e) -> l.treeNodesChanged(e));
     } else {
-      int[] indices = new int[] { parent.getIndex(this) };
+      int idx = parent.getIndex(this);
+      if (idx < 0) return; // node was orphaned by a concurrent computeChildren(), skip
+      int[] indices = new int[] { idx };
       SimulationTreeNode[] nodes = new SimulationTreeNode[] { this };
       model.fire(model.getPath(parent), indices, nodes,
           (l,e) -> l.treeNodesChanged(e));
@@ -165,6 +167,16 @@ public class SimulationTreeNode implements TreeNode,
     return a.getLocation().toString().compareTo(b.getLocation().toString());
   }
 
+  private void dispose() {
+    circuitState.getCircuit().removeCircuitWeakListener(null, this);
+    if (subcircComp != null)
+      subcircComp.getAttributeSet().removeAttributeWeakListener(null, this);
+    else
+      circuitState.getCircuit().getStaticAttributes().removeAttributeWeakListener(null, this);
+    for (TreeNode child : children)
+      ((SimulationTreeNode) child).dispose();
+  }
+
   // FIXME: compute this only on-demand, caching results when circuit has not changed.
   // returns true if changed
   private boolean computeChildren() {
@@ -186,6 +198,9 @@ public class SimulationTreeNode implements TreeNode,
     if (mismatches == 0 && newChildren.size() == children.size()) {
       return false; // no changes
     } else {
+      for (TreeNode old : children)
+        if (!newChildren.contains(old))
+          ((SimulationTreeNode) old).dispose();
       children = newChildren;
       return true; // changed
     }
