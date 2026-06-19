@@ -58,7 +58,7 @@ public class SelectionPanel extends LogPanel {
 
   public SelectionPanel(LogFrame window) {
     super(window);
-    selector = new ComponentSelector(getModel().getCircuit(), ComponentSelector.ANY_SIGNAL);
+    selector = new ComponentSelector(getModel().getCircuit(), ComponentSelector.ANY_SIGNAL_DEDUPED_CLOCKS);
     list = new SelectionList();
     list.setLogModel(getModel());
 

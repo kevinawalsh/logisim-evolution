@@ -82,6 +82,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   private ArrayList<SignalInfo> info = new ArrayList<>();
   private ArrayList<Signal> signals = new ArrayList<>();
   private long tEnd = -1; // signals go from 0 <= t < tEnd
+  private long tEndInit = -1; // tEnd immediately after the most recent simulatorReset
   private Signal spotlight;
   private SignalInfo clockSource;
   private Value curClockVal;
@@ -193,9 +194,10 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       int i = info.indexOf(item);
       if (i < 0) {
         info.add(idx, item); // put new item at idx
+        long[] timing = newSignalTiming();
         signals.add(idx,
             new Signal(idx, item, item.fetchValue(circuitState),
-              1, tEnd - 1, historyLimit));
+              timing[1], timing[0], historyLimit));
         idx++;
         item.setListener(this);
       } else if (i > idx) {
@@ -277,8 +279,9 @@ public class Model implements CircuitListener, SignalInfo.Listener {
             int idx = info.indexOf(s);
             s.setListener(null);
             info.set(idx, candidate);
+            long t0 = getStartTime();
             signals.set(idx, new Signal(idx, candidate,
-                candidate.fetchValue(circuitState), 1, tEnd - 1, historyLimit));
+                candidate.fetchValue(circuitState), Math.max(1, tEnd - t0), t0, historyLimit));
             candidate.setListener(this);
             if (s == clockSource)
               clockSource = candidate;
@@ -309,9 +312,11 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       item.setListener(null);
     }
     if (count > 0) {
-      if (spotlight != null && items.contains(spotlight))
+      if (spotlight != null && items.contains(spotlight.info))
         spotlight = null;
       renumberSignals();
+      if (signals.isEmpty())
+        simulatorReset();
       fireSelectionChanged(null);
     }
     return count;
@@ -351,6 +356,8 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     info.remove(idx).setListener(null);
     signals.remove(idx);
     renumberSignals();
+    if (signals.isEmpty())
+      simulatorReset();
     fireSelectionChanged(null);
   }
 
@@ -447,9 +454,10 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       // Add the clock as a courtesy, even though this is not required.
       if (!info.contains(clockSource)) {
         info.add(0, clockSource); // put it at the top of the list
+        long[] timing = newSignalTiming();
         signals.add(0,
             new Signal(0, clockSource, clockSource.fetchValue(circuitState),
-              1, tEnd - 1, historyLimit));
+              timing[1], timing[0], historyLimit));
         clockSource.setListener(this);
         fireSelectionChanged(null);
       }
@@ -506,13 +514,26 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       return signals.get(idx);
     idx = info.size();
     info.add(item);
+    long[] timing = newSignalTiming();
     Signal s = new Signal(idx, item, item.fetchValue(circuitState),
-        1, tEnd - 1, historyLimit);
+        timing[1], timing[0], historyLimit);
     signals.add(idx, s);
     item.setListener(this);
     if (fireUpdate)
       fireSelectionChanged(null);
     return s;
+  }
+
+  // Returns {tStart, duration} for a Signal being added mid-session.
+  // If the simulation is still at its initial position (no advancement yet),
+  // fill the full initial lead-in so the new signal aligns with existing ones.
+  // Otherwise start at tEnd with no history, so nothing shows until the next tick.
+  private long[] newSignalTiming() {
+    if (tEnd <= tEndInit) {
+      long t0 = getStartTime();
+      return new long[]{ t0, Math.max(1, tEnd - t0) };
+    }
+    return new long[]{ tEnd, 1 };
   }
 
 	// public void addSignalValues(Value[] vals, long duration) {
@@ -622,7 +643,6 @@ public class Model implements CircuitListener, SignalInfo.Listener {
 
   private void extendWithOldValues(long duration) {
     for (Signal s : signals) {
-      Value v = s.info.fetchValue(circuitState);
       s.extend(duration);
     }
     elapsedSinceTrigger += duration;
@@ -786,7 +806,6 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       if (captureContinuous()) { // fine-grained, or active level-sensitive clock
           duration = gateDelay;
       } else if (mode == CLOCK_HIGH || mode == CLOCK_LOW) { // inactive level-sensitive
-        long activeDuration = (mode == CLOCK_HIGH ? cc.hi : cc.lo) * timeScale;
         long stableDuration = (mode == CLOCK_HIGH ? cc.lo : cc.hi) * timeScale;
         duration = isFine() ? gateDelay : stableDuration;
       } else { // edge-triggered clock, fine or coarse
@@ -810,6 +829,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     }
     elapsedSinceTrigger += duration;
     tEnd = duration;
+    tEndInit = duration;
 	}
 
   public void setFile(File value) {

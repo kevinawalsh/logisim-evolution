@@ -233,12 +233,10 @@ public class TimedPulse extends InstanceFactory implements Circuit.TickSubscribe
       if (go && now - s.lastPulseStartNanos >= delta) {
         s.active = true;
         s.tickCountAtActivation = tickCount;
-        s.lastPulseStartNanos = now;
+        s.lastPulseStartNanos += delta;
+        if (now - s.lastPulseStartNanos > delta)
+          s.lastPulseStartNanos = now - delta;
         dirty = true;
-      } else if (!go) {
-        // System.out.println("no go");
-      } else {
-        // System.out.println("too early");
       }
     }
 

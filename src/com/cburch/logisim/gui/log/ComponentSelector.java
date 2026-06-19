@@ -38,6 +38,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 
 import javax.swing.DropMode;
 import javax.swing.Icon;
@@ -258,6 +259,8 @@ public class ComponentSelector extends JTable {
       ArrayList<TreeNode<?>> newChildren = new ArrayList<>();
       ArrayList<Component> subcircs = new ArrayList<>();
       boolean changed = false;
+      ArrayList<Component> clockComps = (mode == ANY_SIGNAL_DEDUPED_CLOCKS) ? new ArrayList<>() : null;
+      ArrayList<Component> nonClockComps = (mode == ANY_SIGNAL_DEDUPED_CLOCKS) ? new ArrayList<>() : null;
       // todo: hide from display any unselectable things that also have no children
       for (Component c : circ.getNonWires()) {
         // For DRIVEABLE_CLOCKS do not recurse into subcircuits
@@ -286,16 +289,55 @@ public class ComponentSelector extends JTable {
           bw = c.getAttributeSet().getValue(StdAttr.WIDTH);
         if (bw == null)
           continue;
-        if (mode != ANY_SIGNAL && bw.getWidth() != 1)
-          continue; // signal is too wide to be a used as a clock
-        ComponentNode toAdd = findChildFor(c);
-        if (toAdd == null) {
-          toAdd = new ComponentNode(this, c);
-          changed = true;
+        if (mode != ANY_SIGNAL_DEDUPED_CLOCKS && bw.getWidth() != 1)
+          continue; // signal is too wide to be used as a clock
+        if (mode == ANY_SIGNAL_DEDUPED_CLOCKS) {
+          if (factory instanceof Clock)
+            clockComps.add(c);
+          else
+            nonClockComps.add(c);
+        } else {
+          ComponentNode toAdd = findChildFor(c);
+          if (toAdd == null) {
+            toAdd = new ComponentNode(this, c);
+            changed = true;
+          }
+          newChildren.add(toAdd);
         }
-        newChildren.add(toAdd);
       }
-      Collections.sort(newChildren, compareNames);
+      if (mode == ANY_SIGNAL_DEDUPED_CLOCKS) {
+        // Add one representative per Clock equivalence class (sorted by location), clocks first.
+        Collections.sort(clockComps, compareComponents);
+        HashSet<String> seenKeys = new HashSet<>();
+        ArrayList<TreeNode<?>> clockNodes = new ArrayList<>();
+        for (Component c : clockComps) {
+          int hi = c.getAttributeSet().getValue(Clock.ATTR_HIGH);
+          int lo = c.getAttributeSet().getValue(Clock.ATTR_LOW);
+          int phase = c.getAttributeSet().getValue(Clock.ATTR_PHASE);
+          if (!seenKeys.add(hi + ":" + lo + ":" + phase))
+            continue;
+          ComponentNode toAdd = findChildFor(c);
+          if (toAdd == null) {
+            toAdd = new ComponentNode(this, c);
+            changed = true;
+          }
+          clockNodes.add(toAdd);
+        }
+        Collections.sort(clockNodes, compareNames);
+        newChildren.addAll(clockNodes);
+        // Then add non-Clock components (sorted by name).
+        for (Component c : nonClockComps) {
+          ComponentNode toAdd = findChildFor(c);
+          if (toAdd == null) {
+            toAdd = new ComponentNode(this, c);
+            changed = true;
+          }
+          newChildren.add(toAdd);
+        }
+        Collections.sort(newChildren.subList(clockNodes.size(), newChildren.size()), compareNames);
+      } else {
+        Collections.sort(newChildren, compareNames);
+      }
       Collections.sort(subcircs, compareComponents);
       for (Component c : subcircs) {
         SubcircuitFactory factory = (SubcircuitFactory) c.getFactory();
@@ -426,7 +468,7 @@ public class ComponentSelector extends JTable {
   private TableTreeModel tableModel = new TableTreeModel();
   private int mode;
 
-  public static final int ANY_SIGNAL = 1;
+  public static final int ANY_SIGNAL_DEDUPED_CLOCKS = 1; // all signals; one Clock per equivalence class, listed first
   public static final int OBSERVEABLE_CLOCKS = 2; // only 1-bit signals (pins, wires, clocks, etc.)
   public static final int DRIVEABLE_CLOCKS = 3; // only top-level 1-bit inputs
   public static final int ACTUAL_CLOCKS = 4; // only clocks
@@ -437,7 +479,7 @@ public class ComponentSelector extends JTable {
     setRootCircuit(circ);
     setModel(tableModel);
     setDefaultRenderer(TreeNode.class, new TreeNodeRenderer());
-    if (mode == ANY_SIGNAL)
+    if (mode == ANY_SIGNAL_DEDUPED_CLOCKS)
       setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     else
       setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

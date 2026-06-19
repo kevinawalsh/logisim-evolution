@@ -666,11 +666,12 @@ public class RightPanel extends JPanel {
         GraphicsUtil.useDefaultStrokeRendering(g); // no need to restore, g will be disposed
         boolean bold = model.getSpotlight() == signal;
         Color[] colors = chronoPanel.rowColors(signal.info, selected);
+        int dataWidth = (int)(tickWidth * (tNextDraw - tStartDraw) / model.getTimeScale());
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, width, ChronoPanel.GAP-1);
         g.fillRect(0, LOW, width, ChronoPanel.GAP-1);
         g.setColor(colors[0]);
-        g.fillRect(0, HIGH, width, LOW - HIGH);
+        g.fillRect(0, HIGH, dataWidth, LOW - HIGH);
         g.setColor(Color.BLACK);
         drawSignal(g, bold, colors);
       } finally {
@@ -768,7 +769,7 @@ public class RightPanel extends JPanel {
       int x = getSignalCursorX();
       long t = getCurrentTime();
 
-      Font f = g.getFont();
+      Font savedFont = g.getFont();
       g.setFont(TIME_FONT);
 
       String s = Model.formatDuration(t);
@@ -779,13 +780,13 @@ public class RightPanel extends JPanel {
       g.fillRect(x+2 + (int)r.getX()-1, y + (int)r.getY()-1, (int)r.getWidth()+2, (int)r.getHeight()+2);
       g.setColor(Color.RED);
       g.drawString(s, x+2, y);
+      g.setFont(savedFont);
       g.setStroke(new BasicStroke(1));
       g.drawLine(x, 0, x, height);
     }
 
     void paintScale(Graphics2D g)  {
       long timeScale = model.getTimeScale();
-      double timePerPixel = timeScale / tickWidth;
       double pixelPerTime = tickWidth / timeScale;
 
       // Pick the smallest unit among:
