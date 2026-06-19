@@ -33,7 +33,9 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
+import com.bfh.logisim.hdlgenerator.HDLInliner;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
+import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
@@ -47,6 +49,7 @@ import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceFactory;
 import com.cburch.logisim.instance.InstancePainter;
@@ -250,12 +253,28 @@ public class TimedPulse extends InstanceFactory implements Circuit.TickSubscribe
     return super.getFeature(key, attrs);
   }
 
-  // @Override
-  // public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
-  //   if (ctx.lang.equals("VHDL"))
-  //     return new bin2bcdHDLGenerator(ctx);
-  //   else
-  //     return null;
-  // }
+  @Override
+  public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
+    // return new TimerPulseHDLInliner(ctx);
+    return null;
+  }
+
+  private static class TimerPulseHDLInliner extends HDLInliner {
+
+    public TimerPulseHDLInliner(ComponentContext ctx) {
+      super(ctx);
+    }
+
+    @Override
+    protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
+      // TODO
+      // Net outNet = comp.getConnection(0);
+      // if (net != null) {
+      //   int clkid = _nets.getClockId(net);
+      //   out.assign(net.name, CLK_TREE_NET + clkid, CLK_USR);
+      // }
+    }
+
+  }
 
 }
