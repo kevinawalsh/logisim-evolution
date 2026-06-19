@@ -72,7 +72,6 @@ import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.proj.Project;
 import com.cburch.logisim.std.hdl.VhdlEntity;
-import com.cburch.logisim.std.memory.Rom;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.CollectionUtil;
@@ -158,10 +157,11 @@ public class Circuit implements AttributeDefaultProvider {
   private AttributeSet staticAttrs;
   private SubcircuitFactory subcircuitFactory;
   private WeakList<CircuitListener> listeners = new WeakList<>();
-  private HashSet<Component> comps = new HashSet<Component>(); // doesn't include wires
+  private HashSet<Component> comps = new HashSet<>(); // doesn't include wires
   CircuitWires wires = new CircuitWires();
   // wires is package-protected for CircuitState and Analyze only.
-  private ArrayList<Component> clocks = new ArrayList<Component>();
+  private ArrayList<Component> clocks = new ArrayList<>();
+  private ArrayList<TickSubscription> tickSubscriptions = new ArrayList<>();
   private CircuitLocker locker;
 
   private WeakHashMap<Component, Circuit> circuitsUsingThis;
@@ -445,6 +445,10 @@ public class Circuit implements AttributeDefaultProvider {
     return clocks;
   }
 
+  public ArrayList<TickSubscription> getTickSubscriptions() {
+    return tickSubscriptions;
+  }
+
   public Set<Component> getComponents() {
     return CollectionUtil.createUnmodifiableSetUnion(comps,
         wires.getWires());
@@ -601,6 +605,11 @@ public class Circuit implements AttributeDefaultProvider {
         VhdlEntity vhdl = (VhdlEntity)factory;
         // logiFile.addVhdlContent(vhdl.getContent());
         vhdl.addCircuitUsing(c, this);
+      } else {
+        TickSubscriber ts;
+        ts = (TickSubscriber)factory.getFeature(ComponentFactory.TICK_SUBSCRIPTION, c.getAttributeSet());
+        if (ts != null)
+          tickSubscriptions.add(new TickSubscription(ts, c));
       }
       c.addComponentWeakListener(null, myComponentListener);
     }
@@ -767,6 +776,13 @@ public class Circuit implements AttributeDefaultProvider {
       }
     }
     fpgaConfigs.add(config);
+  }
+
+  public interface TickSubscriber {
+    boolean tick(CircuitState cs, int ticks, Component comp);
+  }
+
+  public record TickSubscription(TickSubscriber subscriber, Component component) {
   }
 
 }

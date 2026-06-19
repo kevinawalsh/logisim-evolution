@@ -1120,6 +1120,11 @@ public final class CircuitState /* implements ComponentData */ {
         queueForPropagationNoNudge(clock);
     }
 
+    for (Circuit.TickSubscription ts : circuit.getTickSubscriptions()) {
+      if (ts.subscriber().tick(this, ticks, ts.component()))
+        queueForPropagationNoNudge(ts.component());
+    }
+
     synchronized (dirtyLock) {
       if (substatesDirty) {
         substatesDirty = false;

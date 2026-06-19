@@ -88,7 +88,8 @@ public class Apio extends Toolchain {
     return 
       "board: passed to backend, defaults to board codename\n" + 
       "verbose-synth: if true, print verbose synthesis info\n" +
-      "verbose-pnr: if true, print verbose place and route info\n";
+      "verbose-pnr: if true, print verbose place and route info\n" +
+      "timing-allow-fail: if true, generate timing.json and continue on failure\n";
   }
 
   @Override
@@ -196,6 +197,10 @@ public class Apio extends Toolchain {
       ini.stmt("top-module = LogisimToplevelApioShell");
       ini.stmt("nextpnr-extra-options =");
       ini.stmt("    --freq %f", board.fpga.ClockFrequency/1000000.0);
+      if ("true".equalsIgnoreCase(param("timing-allow-fail"))) {
+        ini.stmt("    --timing-allow-fail");
+        // ini.stmt("    --report timing.json"); // apio inserts this automatically
+      }
       if (!ini.save())
         return false;
 
