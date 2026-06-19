@@ -39,6 +39,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -154,6 +155,17 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
         System.out.println("chrono clear");
         leftPanel.clearSelection();
       }
+    });
+
+    int cmd = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, cmd), "zoomIn");
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, cmd | KeyEvent.SHIFT_DOWN_MASK), "zoomIn");
+    inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, cmd), "zoomOut");
+    actionMap.put("zoomIn", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) { rightPanel.zoomKeyboard(+1); }
+    });
+    actionMap.put("zoomOut", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) { rightPanel.zoomKeyboard(-1); }
     });
 
   }

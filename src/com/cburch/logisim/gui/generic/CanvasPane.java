@@ -34,15 +34,20 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseWheelEvent;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.AbstractAction;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
@@ -159,6 +164,24 @@ public class CanvasPane extends JScrollPane {
     magnify(m.getX(), m.getY(), false, amt);
   }
 
+  public void zoomIn() {
+    if (zoomModel == null) return;
+    double[] choices = zoomModel.getZoomOptions();
+    double factor = zoomModel.getZoomFactor() * 100.0 * 1.001;
+    for (double choice : choices) {
+      if (choice > factor) { zoomModel.setZoomFactor(choice / 100.0); return; }
+    }
+  }
+
+  public void zoomOut() {
+    if (zoomModel == null) return;
+    double[] choices = zoomModel.getZoomOptions();
+    double factor = zoomModel.getZoomFactor() * 100.0 * 0.999;
+    for (int i = choices.length - 1; i >= 0; i--) {
+      if (choices[i] < factor) { zoomModel.setZoomFactor(choices[i] / 100.0); return; }
+    }
+  }
+
   public void mouseWheelMoved(MouseWheelEvent mwe, boolean relative) {
     if (mwe.isControlDown() || (Main.MacOS && mwe.isMetaDown())) {
       magnify(mwe.getX(), mwe.getY(), relative, -1.0*mwe.getPreciseWheelRotation());
@@ -229,6 +252,20 @@ public class CanvasPane extends JScrollPane {
     addMouseWheelListener((mwe) -> mouseWheelMoved(mwe, false));
     GestureUtilities.addMagnificationListenerTo(this, (e) -> magnify(25*e.getMagnification()));
     contents.setCanvasPane(this);
+
+    int cmd = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+    getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, cmd), "zoomIn");
+    getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, cmd | KeyEvent.SHIFT_DOWN_MASK), "zoomIn");
+    getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+        KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, cmd), "zoomOut");
+    getActionMap().put("zoomIn", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) { zoomIn(); }
+    });
+    getActionMap().put("zoomOut", new AbstractAction() {
+      public void actionPerformed(ActionEvent e) { zoomOut(); }
+    });
   }
 
   public Dimension getViewportSize() {

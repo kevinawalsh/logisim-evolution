@@ -38,6 +38,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -57,6 +58,7 @@ import javax.swing.UIManager;
 
 import com.cburch.logisim.gui.log.Model;
 import com.cburch.logisim.gui.log.Signal;
+import com.cburch.logisim.util.GestureUtilities;
 import com.cburch.logisim.util.GraphicsUtil;
 
 // Right panel has timeline on top and multiple Waveform components.
@@ -81,6 +83,7 @@ public class RightPanel extends JPanel {
   private long tStartDraw = 0; // drawing started at this time, inclusive
   private long tNextDraw = 0; // done drawing up to this time, exclusive 
   private int width, height;
+  private double pinchAccum = 0;
   private MyListener myListener = new MyListener();
   private Timeline header;
 
@@ -132,6 +135,11 @@ public class RightPanel extends JPanel {
     };
     header.addMouseListener(tracker);
     header.addMouseMotionListener(tracker);
+
+    GestureUtilities.addMagnificationListenerTo(this,
+        e -> zoomPinch(getMousePosition(true), e.getMagnification()));
+    GestureUtilities.addMagnificationListenerTo(header,
+        e -> zoomPinch(header.getMousePosition(true), e.getMagnification()));
 
     updateSignals();
 	}
@@ -739,6 +747,35 @@ public class RightPanel extends JPanel {
     flushWaveforms();
     header.repaint();
     repaint();
+  }
+
+  public void zoomPinch(Point pos, double magnification) {
+    int posX = (pos != null) ? pos.x : (getWidth() / 2);
+    pinchAccum += magnification / 0.15;
+    while (pinchAccum >= 1.0) { zoom(+1, posX); pinchAccum -= 1.0; }
+    while (pinchAccum <= -1.0) { zoom(-1, posX); pinchAccum += 1.0; }
+  }
+
+  public void zoomKeyboard(int sens) {
+    JScrollBar sb = chronoPanel.getHorizontalScrollBar();
+    JViewport vp = chronoPanel.getRightViewport();
+    int focusPanelX;
+    if (sb == null || vp == null) {
+      focusPanelX = width / 2;
+    } else {
+      int viewLeft = sb.getValue();
+      int viewRight = viewLeft + vp.getWidth();
+      int cursorPanelX = getSignalCursorX();
+      int dataEndPanelX = width - EXTRA_SPACE;
+      if (cursorPanelX >= viewLeft && cursorPanelX <= viewRight) {
+        focusPanelX = cursorPanelX; // (a) cursor is visible
+      } else if (dataEndPanelX <= viewRight) {
+        focusPanelX = dataEndPanelX; // (b) right edge of data is visible
+      } else {
+        focusPanelX = viewLeft + vp.getWidth() / 2; // (c) center of viewport
+      }
+    }
+    zoom(sens, focusPanelX);
   }
 
   static final long[] unit = new long[] { 10, 20, 25, 50 };
