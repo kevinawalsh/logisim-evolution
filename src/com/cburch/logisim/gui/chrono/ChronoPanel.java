@@ -59,7 +59,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JViewport;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -95,10 +94,6 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 
   public ChronoPanel(LogFrame logFrame) {
     super(logFrame);
-
-    SELECT_BG = UIManager.getDefaults().getColor("List.selectionBackground");
-    SELECT_HI = darker(SELECT_BG);
-    SELECT = new Color[] { SELECT_BG, SELECT_HI, SELECT_LINE, SELECT_ERR, SELECT_ERRLINE, SELECT_UNK, SELECT_UNKLINE };
 
     simulator = getProject().getSimulator();
 
@@ -311,6 +306,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 
 	@Override
 	public void selectionChanged(Model.Event event) {
+    changeSpotlight(null); // clear before rows are updated
     leftPanel.updateSignals();
     rightPanel.updateSignals();
     editHandler.computeEnabled();
@@ -345,8 +341,8 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 	private static final Color SPOT_UNK = new Color(0xea, 0x98, 0x49);
 	private static final Color SPOT_UNKLINE = Color.BLACK;
 
-  private final Color SELECT_BG; // set in constructor
-  private final Color SELECT_HI; // set in constructor
+  private static final Color SELECT_BG = new Color(0xb0, 0xc8, 0xff);
+  private static final Color SELECT_HI = darker(SELECT_BG);
 	private static final Color SELECT_LINE = Color.BLACK;
 	private static final Color SELECT_ERR = new Color(0xe5, 0x80, 0x80);
 	private static final Color SELECT_ERRLINE = Color.BLACK;
@@ -355,7 +351,7 @@ public class ChronoPanel extends LogPanel implements Model.Listener {
 
   private static final Color[] SPOT = { SPOT_BG, SPOT_HI, SPOT_LINE, SPOT_ERR, SPOT_ERRLINE, SPOT_UNK, SPOT_UNKLINE };
   private static final Color[] PLAIN = { PLAIN_BG, PLAIN_HI, PLAIN_LINE, PLAIN_ERR, PLAIN_ERRLINE, PLAIN_UNK, PLAIN_UNKLINE };
-  private final Color[] SELECT; // set in constructor
+  private static final Color[] SELECT = { SELECT_BG, SELECT_HI, SELECT_LINE, SELECT_ERR, SELECT_ERRLINE, SELECT_UNK, SELECT_UNKLINE };
 
   public Color[] rowColors(SignalInfo item, boolean isSelected) {
     if (isSelected)

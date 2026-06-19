@@ -176,6 +176,10 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
         if (cNew == c) {
           // component replaced by itself (should never happen)
           continue;
+        } else if (cNew == null) {
+          // component deleted with no replacement
+          remove();
+          return;
         } else if (cNew.getFactory() == c.getFactory()) {
           // FIXME - check getFactory().getClass() instead? Are there every
           // multiple instances of the Factory for some kinds of components?
@@ -313,6 +317,11 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
   public int getDepth() {
     return n;
   }
+
+  // Package-private accessors for ClockSource dialog label building
+  int getPathLength() { return n; }
+  Component getPathComponent(int i) { return path[i]; }
+  Circuit getPathCircuit(int i) { return circ[i]; }
   
   public boolean isInput(Object option) {
     Loggable log = (Loggable)path[n-1].getFeature(Loggable.class);

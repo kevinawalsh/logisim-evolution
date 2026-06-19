@@ -174,7 +174,11 @@ public class LeftPanel extends JTable {
     // popup on right click
 		addMouseListener(new MouseAdapter() {
 			@Override
-			public void mousePressed(MouseEvent e) { checkForPopup(e); }
+			public void mousePressed(MouseEvent e) {
+        if (rowAtPoint(e.getPoint()) < 0)
+          clearSelection();
+        checkForPopup(e);
+      }
 			@Override
 			public void mouseReleased(MouseEvent e) { checkForPopup(e); }
 			void checkForPopup(MouseEvent e) {
@@ -298,6 +302,14 @@ public class LeftPanel extends JTable {
     requestFocusInWindow();
 	}
 
+  @Override
+  public void changeSelection(int row, int col, boolean toggle, boolean extend) {
+    if (!toggle && !extend && isRowSelected(row) && getSelectedRowCount() == 1)
+      clearSelection();
+    else
+      super.changeSelection(row, col, toggle, extend);
+  }
+
   public void setModel(Model m) {
     model = m;
     updateSignals();
@@ -364,11 +376,7 @@ public class LeftPanel extends JTable {
       items.add(s.info);
       idx = Math.max(idx, s.idx);
     }
-    int count = model.remove(items);
-    if (count > 0 && model.getSignalCount() > 0) {
-      idx = Math.min(idx+1-count, model.getSignalCount() - 1);
-      setRowSelectionInterval(idx, idx);
-    }
+    model.remove(items);
     repaint();
   }
 

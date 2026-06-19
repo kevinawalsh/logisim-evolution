@@ -268,6 +268,8 @@ public class ComponentSelector extends JTable {
         }
         if (mode == ACTUAL_CLOCKS && !(factory instanceof Clock))
             continue;
+        if (mode == OBSERVEABLE_NON_CLOCKS && factory instanceof Clock)
+            continue;
         Loggable log = (Loggable)c.getFeature(Loggable.class);
         if (log == null)
           continue;
@@ -428,6 +430,7 @@ public class ComponentSelector extends JTable {
   public static final int OBSERVEABLE_CLOCKS = 2; // only 1-bit signals (pins, wires, clocks, etc.)
   public static final int DRIVEABLE_CLOCKS = 3; // only top-level 1-bit inputs
   public static final int ACTUAL_CLOCKS = 4; // only clocks
+  public static final int OBSERVEABLE_NON_CLOCKS = 5; // only 1-bit non-Clock signals
 
   public ComponentSelector(Circuit circ, int mode) {
     this.mode = mode;

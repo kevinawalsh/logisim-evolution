@@ -280,12 +280,12 @@ public class RightPanel extends JPanel {
   }
 
   public void changeSpotlight(Signal oldSignal, Signal newSignal) {
-    if (oldSignal != null) {
+    if (oldSignal != null && oldSignal.idx < rows.size()) {
       Waveform w = rows.get(oldSignal.idx);
       w.flush();
       repaint(w.getBounds());
     }
-    if (newSignal != null) {
+    if (newSignal != null && newSignal.idx < rows.size()) {
       Waveform w = rows.get(newSignal.idx);
       w.flush();
       repaint(w.getBounds());

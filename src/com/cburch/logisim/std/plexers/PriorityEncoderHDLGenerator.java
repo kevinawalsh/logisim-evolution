@@ -47,9 +47,10 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
     outPorts.add("Sel", 1, n + PriorityEncoder.GS, null);
     outPorts.add("EnableOut", 1, n + PriorityEncoder.EN_OUT, null);
     outPorts.add("Address", ws, n + PriorityEncoder.OUT, null);
+    wires.add("In", n);
     wires.add("s_in_is_zero", 1);
     wires.add("s_addr", 5);
-    wires.add("v_sel_1", 33);
+    wires.add("v_sel_1", 33); // extra bit prevents hdl syntax error in "33:InWidth" slice (if InWidth=n=32)
     wires.add("v_sel_2", 16);
     wires.add("v_sel_3", 8);
     wires.add("v_sel_4", 4);
@@ -58,6 +59,13 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
   private static String deriveHDLName(AttributeSet attrs) {
     int w = 1 << attrs.getValue(Plexers.ATTR_SELECT).getWidth();
     return "PriorityEncoder_" + w + "_Way";
+  }
+
+  @Override
+  protected void generateVhdlTypes(Hdl out) {
+    // slight abuse, but this puts the VHDL constant in the right place
+    if (out.isVhdl)
+      out.stmt("constant InWidth : integer := %d;", 1<<selWidth());
   }
 
   @Override
@@ -111,6 +119,9 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
       ArrayList<String> inputs = new ArrayList<>();
       for (int i = n-1; i >= 0; i--)
         inputs.add("In"+i);
+
+      out.stmt("localparam InWidth = %d;", 1<<selWidth());
+
       out.stmt("assign In        = {%s};", String.join(", ", inputs));
       out.stmt("assign Sel       = Enable & ~s_in_is_zero;");
       out.stmt("assign EnableOut = Enable & s_in_is_zero;");
@@ -124,7 +135,7 @@ public class PriorityEncoderHDLGenerator extends HDLGenerator {
       out.stmt("assign s_addr[3] = (v_sel_2[15:8] == 0) ? 1'b0 : 1'b1;");
       out.stmt("assign v_sel_3 = (v_sel_2[15:8] == 0) ? v_sel_2[7:0] : v_sel_2[15:8];");
       out.stmt("assign s_addr[2] = (v_sel_3[7:4] == 0) ? 1'b0 : 1'b1;");
-      out.stmt("assign v_sel_4 = (v_sel_3[7:4] == 0) ? v_sel_3[3:0] : v_sel_2[7:4];");
+      out.stmt("assign v_sel_4 = (v_sel_3[7:4] == 0) ? v_sel_3[3:0] : v_sel_3[7:4];");
       out.stmt("assign s_addr[1] = (v_sel_4[3:2] == 0) ? 1'b0 : 1'b1;");
       out.stmt("assign s_addr[0] = (v_sel_4[3:2] == 0) ? v_sel_4[1] : v_sel_4[3];");
     }

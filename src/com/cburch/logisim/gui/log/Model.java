@@ -34,6 +34,8 @@ import static com.cburch.logisim.gui.log.Strings.S;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import com.cburch.logisim.circuit.Circuit;
@@ -46,6 +48,7 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.util.WeakList;
 
@@ -125,12 +128,17 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       // If one clock is present, we use CLOCK mode with that as the source.
       clockSource = clocks.get(0);
     } else if (clocks != null && clocks.size() > 1) {
-      // If multiple are present, ask user to select one, with STEP as fallback.
-      clockSource = ClockSource.doClockMultipleObserverDialog(circ);
-      if (clockSource != null
-          && (clockSource.getComponent().getFactory() instanceof Pin)
-          && (clockSource.getDepth() == 1))
-        circuitState.setTemporaryClock(clockSource.getComponent());
+      if (ClockSource.allEquivalent(clocks)) {
+        // All clocks share the same hi:lo:phase, so treat as a single clock source.
+        clockSource = clocks.get(0);
+      } else {
+        // Truly different clocks: ask user to select one, with STEP as fallback.
+        clockSource = ClockSource.doClockMultipleObserverDialog(circ, clocks);
+        if (clockSource != null
+            && (clockSource.getComponent().getFactory() instanceof Pin)
+            && (clockSource.getDepth() == 1))
+          circuitState.setTemporaryClock(clockSource.getComponent());
+      }
     }
     if (clockSource == null) {
       Component clk = circuitState.getTemporaryClock();
@@ -144,6 +152,19 @@ public class Model implements CircuitListener, SignalInfo.Listener {
         info.add(0, info.remove(info.indexOf(clockSource)));
       mode = CLOCK_DUAL;
       curClockVal = clockSource.fetchValue(circuitState);
+    }
+
+    // Collapse equivalent Clock components: keep one representative per hi:lo:phase group.
+    // clockSource (if it's a Clock) is already at position 0, so it wins as representative.
+    HashSet<String> seenClockKeys = new HashSet<>();
+    for (Iterator<SignalInfo> it = info.iterator(); it.hasNext(); ) {
+      SignalInfo item = it.next();
+      if (!(item.getComponent().getFactory() instanceof Clock))
+        continue;
+      ClockSource.CycleInfo ci = ClockSource.getCycleInfo(item);
+      String key = ci.hi + ":" + ci.lo + ":" + ci.phase;
+      if (!seenClockKeys.add(key))
+        it.remove();
     }
 
     // set up initial signal values (after sorting and adding clock source)
@@ -244,6 +265,29 @@ public class Model implements CircuitListener, SignalInfo.Listener {
 
   @Override
   public void signalInfoObsoleted(SignalInfo s) {
+    // If a Clock was deleted, try to substitute an equivalent Clock in-place.
+    if (s.getComponent().getFactory() instanceof Clock) {
+      Circuit circ = circuitState.getCircuit();
+      ArrayList<SignalInfo> remaining = ComponentSelector.findClocks(circ);
+      if (remaining != null) {
+        ClockSource.CycleInfo ci = ClockSource.getCycleInfo(s);
+        for (SignalInfo candidate : remaining) {
+          ClockSource.CycleInfo cci = ClockSource.getCycleInfo(candidate);
+          if (cci.hi == ci.hi && cci.lo == ci.lo && cci.phase == ci.phase) {
+            int idx = info.indexOf(s);
+            s.setListener(null);
+            info.set(idx, candidate);
+            signals.set(idx, new Signal(idx, candidate,
+                candidate.fetchValue(circuitState), 1, tEnd - 1, historyLimit));
+            candidate.setListener(this);
+            if (s == clockSource)
+              clockSource = candidate;
+            fireSelectionChanged(null);
+            return;
+          }
+        }
+      }
+    }
     if (s == clockSource) {
       clockSource.setListener(null); // redundant if info contains s
       clockSource = null;
@@ -381,8 +425,10 @@ public class Model implements CircuitListener, SignalInfo.Listener {
         // If one clock is present, just use that.
         clockSource = clocks.get(0);
       } else if (clocks != null && clocks.size() > 1) {
-        // If multiple are present, ask user to select
-        clockSource = ClockSource.doClockMultipleObserverDialog(circ);
+        if (ClockSource.allEquivalent(clocks))
+          clockSource = clocks.get(0);
+        else
+          clockSource = ClockSource.doClockMultipleObserverDialog(circ, clocks);
       } else if (tmpClk != null) {
         // No clocks, but user already chose a temporary clock.
         clockSource = new SignalInfo(circ, new Component[] { tmpClk }, null);
@@ -628,9 +674,35 @@ public class Model implements CircuitListener, SignalInfo.Listener {
 
   private void updateSignalsRealMode() {
     long now = System.nanoTime();
-    double duration = (now - lastRealtimeUpdate) * (double)timeScale / 1000000000;
-    extendWithNewValues(Math.max((long)duration, 1));
+    long elapsed = Math.max((long)((now - lastRealtimeUpdate) * (double)timeScale / 1000000000), 1);
     lastRealtimeUpdate = now;
+
+    // Fetch post-change values and detect whether anything actually changed.
+    Value[] values = new Value[signals.size()];
+    boolean changed = tEnd <= 0;
+    for (int i = 0; i < signals.size(); i++) {
+      Signal s = signals.get(i);
+      values[i] = s.info.fetchValue(circuitState);
+      if (!changed) {
+        Value prev = s.getValue(tEnd - 1);
+        changed = prev == null || !prev.equals(values[i]);
+      }
+    }
+
+    // Extend existing (pre-change) segments by the elapsed wall-clock duration.
+    for (Signal s : signals)
+      s.extend(elapsed);
+
+    // If values changed, append a short transition segment with the new values.
+    long eventDuration = changed ? Math.min(gateDelay, timeScale) : 0;
+    if (changed) {
+      for (int i = 0; i < signals.size(); i++)
+        signals.get(i).extend(values[i], eventDuration);
+    }
+
+    elapsedSinceTrigger += elapsed + eventDuration;
+    tEnd += elapsed + eventDuration;
+    fireSignalsExtended(null);
   }
 
   private void updateSignalsClockMode() {
@@ -727,7 +799,7 @@ public class Model implements CircuitListener, SignalInfo.Listener {
     } else if (mode == STEP) {
       duration = timeScale;
     } else { // mode == REAL
-      duration = gateDelay;
+      duration = Math.min(gateDelay, timeScale);
     }
     if (mode == REAL)
       lastRealtimeUpdate = System.nanoTime();

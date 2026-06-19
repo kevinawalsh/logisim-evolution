@@ -129,12 +129,6 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState.getDataAsInteger(component);
   }
 
-//   public Long getDataAsLong() {
-//     if (circuitState == null)
-//       return null;
-//     return circuitState.getDataAsLong(component);
-//   }
-// 
   public Value getDataAsValue() {
     if (circuitState == null)
       return null;
@@ -153,12 +147,6 @@ public class InstanceStateImpl implements InstanceState {
     return circuitState.getDataOrDefault(component, defaultData);
   }
 
-//  public long getDataOrDefault(long defaultData) {
-//    if (circuitState == null)
-//      return defaultData;
-//    return circuitState.getDataOrDefault(component, defaultData);
-//  }
-//
   public Value getDataOrDefault(Value defaultData) {
     if (circuitState == null)
       return defaultData;
