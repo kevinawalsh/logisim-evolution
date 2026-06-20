@@ -27,7 +27,7 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.bfh.logisim.library;
+package com.cburch.logisim.std.bfh;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.cburch.logisim.hdl.Hdl;

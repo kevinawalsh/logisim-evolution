@@ -35,15 +35,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.bfh.logisim.library.BFHPraktika;
 import com.cburch.logisim.std.arith.Arithmetic;
 import com.cburch.logisim.std.audio.Audio;
-import com.cburch.logisim.std.mouse.MouseTools;
+import com.cburch.logisim.std.bfh.BFHPraktika;
 import com.cburch.logisim.std.decor.Decor;
 import com.cburch.logisim.std.ext.Ext;
 import com.cburch.logisim.std.gates.Gates;
 import com.cburch.logisim.std.io.Io;
 import com.cburch.logisim.std.memory.Memory;
+import com.cburch.logisim.std.mouse.MouseTools;
 import com.cburch.logisim.std.plexers.Plexers;
 import com.cburch.logisim.std.wiring.Analog;
 import com.cburch.logisim.std.wiring.Wiring;

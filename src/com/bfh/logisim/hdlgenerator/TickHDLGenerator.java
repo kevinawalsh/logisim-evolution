@@ -31,8 +31,8 @@
 package com.bfh.logisim.hdlgenerator;
 
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.bfh.logisim.library.DynamicClock;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.std.bfh.DynamicClock;
 
 public class TickHDLGenerator extends HDLGenerator {
 

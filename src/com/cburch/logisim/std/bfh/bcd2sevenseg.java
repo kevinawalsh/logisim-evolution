@@ -27,7 +27,7 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.bfh.logisim.library;
+package com.cburch.logisim.std.bfh;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
@@ -43,7 +43,7 @@ import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
 
-public class hex2sevenseg extends InstanceFactory {
+public class bcd2sevenseg extends InstanceFactory {
 
 	static final int PER_DELAY = 1;
 	public static final int Segment_A = 0;
@@ -53,10 +53,10 @@ public class hex2sevenseg extends InstanceFactory {
 	public static final int Segment_E = 4;
 	public static final int Segment_F = 5;
 	public static final int Segment_G = 6;
-	public static final int Hexin = 7;
+	public static final int BCDin = 7;
 
-	public hex2sevenseg() {
-		super("Hex_to_7_Segment_decoder", S.getter("Hex2SevenSegment"));
+	public bcd2sevenseg() {
+		super("BCD_to_7_Segment_decoder", S.getter("BCD2SevenSegment"));
 		setOffsetBounds(Bounds.create(-10, -20, 50, 100));
 		Port[] ps = new Port[8];
 		ps[Segment_A] = new Port(20, 0, Port.OUTPUT, 1);
@@ -66,7 +66,7 @@ public class hex2sevenseg extends InstanceFactory {
 		ps[Segment_E] = new Port(0, 60, Port.OUTPUT, 1);
 		ps[Segment_F] = new Port(10, 0, Port.OUTPUT, 1);
 		ps[Segment_G] = new Port(0, 0, Port.OUTPUT, 1);
-		ps[Hexin] = new Port(10,80,Port.INPUT,4);
+		ps[BCDin] = new Port(10,80,Port.INPUT,4);
 		ps[Segment_A].setToolTip(S.getter("Segment_A"));
 		ps[Segment_B].setToolTip(S.getter("Segment_B"));
 		ps[Segment_C].setToolTip(S.getter("Segment_C"));
@@ -74,7 +74,7 @@ public class hex2sevenseg extends InstanceFactory {
 		ps[Segment_E].setToolTip(S.getter("Segment_E"));
 		ps[Segment_F].setToolTip(S.getter("Segment_F"));
 		ps[Segment_G].setToolTip(S.getter("Segment_G"));
-		ps[Hexin].setToolTip(S.getter("Value: Integer to be displayed in hex"));
+		ps[BCDin].setToolTip(S.getter("BCD Value: value to be converted to 7-segment format"));
 		setPorts(ps);
 	}
 	
@@ -84,7 +84,7 @@ public class hex2sevenseg extends InstanceFactory {
 		Bounds MyBounds = painter.getNominalBounds();
 		g.setColor(Color.BLUE);
 		painter.drawRectangle(MyBounds, "");
-		painter.drawPort(Hexin, "HEX", Direction.SOUTH);
+		painter.drawPort(BCDin, "BCD", Direction.SOUTH);
 		for (int i = 0 ; i < 7 ; i++)
 			painter.drawPort(i);
 		g.setColor(Color.BLACK);
@@ -94,11 +94,11 @@ public class hex2sevenseg extends InstanceFactory {
 
 	@Override
 	public void propagate(InstanceState state) {
-		if (state.getPortValue(Hexin).isFullyDefined()&
-			!state.getPortValue(Hexin).isErrorValue()&
-			!state.getPortValue(Hexin).isUnknown()) {
-			int value = state.getPortValue(Hexin).toIntValue();
-      switch (value) {
+		if (state.getPortValue(BCDin).isFullyDefined()&
+			!state.getPortValue(BCDin).isErrorValue()&
+			!state.getPortValue(BCDin).isUnknown()) {
+			int value = state.getPortValue(BCDin).toIntValue();
+			switch (value) {
       case 0 : state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
@@ -179,54 +179,6 @@ public class hex2sevenseg extends InstanceFactory {
                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
                break;
-      case 0xA: state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_D, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_E, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                break;
-      case 0xB: state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_D, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_E, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                break;
-      case 0xC: state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_D, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_E, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                break;
-      case 0xD: state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_D, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_E, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                break;
-      case 0xE: state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_D, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_E, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                break;
-      case 0xF: state.setPort(Segment_A, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_B, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_C, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_D, Value.createKnown(BitWidth.create(1), 0), PER_DELAY);
-                state.setPort(Segment_E, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_F, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                state.setPort(Segment_G, Value.createKnown(BitWidth.create(1), 1), PER_DELAY);
-                break;
       default: state.setPort(Segment_A, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
                state.setPort(Segment_B, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
                state.setPort(Segment_C, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
@@ -235,7 +187,7 @@ public class hex2sevenseg extends InstanceFactory {
                state.setPort(Segment_F, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
                state.setPort(Segment_G, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
                break;
-      }
+			}
 		} else {
 			for (int i = 0 ; i < 7 ; i++)
 				state.setPort(i, Value.createUnknown(BitWidth.create(1)), PER_DELAY);
@@ -244,9 +196,6 @@ public class hex2sevenseg extends InstanceFactory {
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
-    if (ctx.lang.equals("VHDL"))
-      return new hex2sevensegHDLGenerator(ctx);
-    else
-      return null;
+    return new bcd2sevensegHDLGenerator(ctx);
   }
 }

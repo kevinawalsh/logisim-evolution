@@ -37,7 +37,6 @@ import com.bfh.logisim.fpga.IdleBehavior;
 import com.bfh.logisim.fpga.InputBias;
 import com.bfh.logisim.fpga.PinActivity;
 import com.bfh.logisim.fpga.PinBindings;
-import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.ClockBus;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
@@ -46,6 +45,7 @@ import com.cburch.logisim.circuit.Circuit;
 import com.cburch.logisim.circuit.CircuitState;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.hdl.Hdl;
+import com.cburch.logisim.std.bfh.DynamicClock;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
 import com.cburch.logisim.std.wiring.Pin;
 

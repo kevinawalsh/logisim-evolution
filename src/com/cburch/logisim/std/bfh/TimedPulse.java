@@ -27,7 +27,7 @@
  * This version of the project is currently maintained by:
  *   + Kevin Walsh (kwalsh@holycross.edu, http://mathcs.holycross.edu/~kwalsh)
  */
-package com.bfh.logisim.library;
+package com.cburch.logisim.std.bfh;
 import static com.cburch.logisim.std.Strings.S;
 
 import java.awt.Color;
@@ -111,14 +111,14 @@ public class TimedPulse extends InstanceFactory {
       new Port(0, 0, Port.OUTPUT, BitWidth.ONE),  // OUT
       new Port(-10, 10, Port.INPUT, BitWidth.ONE) // CLK
     });
-    instance.computeLabelTextField(Instance.AVOID_LEFT | Instance.AVOID_TOP);
+    instance.computeLabelTextField(Instance.AVOID_RIGHT | Instance.AVOID_BOTTOM);
 		instance.addAttributeListener();
 	}
 	
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.LABEL_LOC) {
-      instance.computeLabelTextField(Instance.AVOID_LEFT | Instance.AVOID_TOP);
+      instance.computeLabelTextField(Instance.AVOID_RIGHT | Instance.AVOID_BOTTOM);
     }
   }
 

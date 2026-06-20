@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
-import com.bfh.logisim.library.DynamicClock;
 import com.bfh.logisim.netlist.Net;
 import com.bfh.logisim.netlist.Netlist;
 import com.bfh.logisim.netlist.NetlistComponent;
@@ -50,6 +49,7 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.EndData;
 import com.cburch.logisim.hdl.Hdl;
 import com.cburch.logisim.instance.Instance;
+import com.cburch.logisim.std.bfh.DynamicClock;
 import com.cburch.logisim.std.wiring.ClockHDLGenerator;
 import com.cburch.logisim.std.wiring.Pin;
 

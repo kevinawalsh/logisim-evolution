@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project source="5.1.5-HC" version="1.0" website="https://kevinawalsh.github.com/logisim-evolution">
+<project source="5.2.0-HC" version="1.0" website="https://kevinawalsh.github.com/logisim-evolution">
   This file is intended to be loaded by Logisim-evolution (https://github.com/kevinawalsh/logisim-evolution).
 
   <lib desc="#Base" name="0"/>
@@ -233,22 +233,22 @@
       <a name="valign" val="top"/>
     </comp>
     <comp lib="11" loc="(220,500)" name="Callout">
-      <a name="background" val="#81e6df80"/>
-      <a name="dx" val="-22"/>
-      <a name="dy" val="-14"/>
-      <a name="foreground" val="#2e5c56"/>
-      <a name="format" val="wrapped"/>
-      <a name="text" val="taps"/>
-      <a name="textwidth" val="37"/>
-      <a name="valign" val="top"/>
-    </comp>
-    <comp lib="11" loc="(220,500)" name="Callout">
       <a name="background" val="#81e6df00"/>
       <a name="dx" val="-18"/>
       <a name="dy" val="39"/>
       <a name="foreground" val="#2e5c56"/>
       <a name="format" val="wrapped"/>
       <a name="text" val=" "/>
+      <a name="textwidth" val="37"/>
+      <a name="valign" val="top"/>
+    </comp>
+    <comp lib="11" loc="(220,500)" name="Callout">
+      <a name="background" val="#81e6df80"/>
+      <a name="dx" val="-22"/>
+      <a name="dy" val="-14"/>
+      <a name="foreground" val="#2e5c56"/>
+      <a name="format" val="wrapped"/>
+      <a name="text" val="taps"/>
       <a name="textwidth" val="37"/>
       <a name="valign" val="top"/>
     </comp>
@@ -1376,5 +1376,88 @@ DQJzXYAYMidbutLr1oZcQ0+DEOhHmP5SV+SKdDdyxYmAACv/2Q==</a>
     <wire from="(490,130)" to="(490,140)"/>
     <wire from="(500,240)" to="(500,300)"/>
     <wire from="(500,240)" to="(510,240)"/>
+  </circuit>
+  <circuit name="timedpulse-example">
+    <comp lib="1" loc="(270,180)" name="Clock">
+      <a name="facing" val="north"/>
+    </comp>
+    <comp lib="11" loc="(140,100)" name="Callout">
+      <a name="background" val="#ff59fc8c"/>
+      <a name="dx" val="109"/>
+      <a name="dy" val="32"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="Timed Pulse component generates one single-cycle pulse each second"/>
+      <a name="textwidth" val="158"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(140,180)" name="Callout">
+      <a name="background" val="#fffe578c"/>
+      <a name="dx" val="108"/>
+      <a name="dy" val="11"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="Clock in simulation, or on FPGA, can be running at a higher frequency."/>
+      <a name="textwidth" val="158"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="11" loc="(480,180)" name="Callout">
+      <a name="background" val="#b6f7ff8c"/>
+      <a name="dx" val="-93"/>
+      <a name="dy" val="-20"/>
+      <a name="format" val="wrapped"/>
+      <a name="halign" val="center"/>
+      <a name="style" val="margin: 4px;"/>
+      <a name="text" val="Counts up only once per second, even though clock rate is faster."/>
+      <a name="textwidth" val="158"/>
+      <a name="valign" val="base"/>
+    </comp>
+    <comp lib="3" loc="(430,140)" name="Decoder">
+      <a name="enable" val="false"/>
+      <a name="facing" val="north"/>
+      <a name="select" val="3"/>
+    </comp>
+    <comp lib="5" loc="(390,120)" name="Counter">
+      <a name="label" val="Counter"/>
+      <a name="max" val="0x7"/>
+      <a name="width" val="3"/>
+    </comp>
+    <comp lib="6" loc="(320,120)" name="LED">
+      <a name="facing" val="south"/>
+      <a name="label" val="Blink"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="6" loc="(430,110)" name="LEDBar">
+      <a name="label" val="Lights"/>
+      <a name="labelloc" val="north"/>
+    </comp>
+    <comp lib="9" loc="(280,130)" name="TimedPulse">
+      <a name="interval" val="1.0"/>
+      <a name="label" val="1.0 hz"/>
+    </comp>
+    <fpgaconfig board="Alchitry Cu V2 with Io">
+      <clock mode="reduced" period="10"/>
+      <map dest="8-bit LEDBar 1x Right-Left L1_8" src="LEDBar at (290,150)" type="LEDBar"/>
+    </fpgaconfig>
+    <wire from="(270,140)" to="(270,160)"/>
+    <wire from="(270,160)" to="(270,180)"/>
+    <wire from="(270,160)" to="(370,160)"/>
+    <wire from="(280,130)" to="(320,130)"/>
+    <wire from="(320,120)" to="(320,130)"/>
+    <wire from="(320,130)" to="(360,130)"/>
+    <wire from="(370,140)" to="(370,160)"/>
+    <wire from="(390,120)" to="(410,120)"/>
+    <wire from="(410,120)" to="(410,140)"/>
+    <wire from="(410,140)" to="(430,140)"/>
+    <wire from="(430,110)" to="(430,120)"/>
+    <wire from="(440,110)" to="(440,120)"/>
+    <wire from="(450,110)" to="(450,120)"/>
+    <wire from="(460,110)" to="(460,120)"/>
+    <wire from="(470,110)" to="(470,120)"/>
+    <wire from="(480,110)" to="(480,120)"/>
+    <wire from="(490,110)" to="(490,120)"/>
+    <wire from="(500,110)" to="(500,120)"/>
   </circuit>
 </project>
