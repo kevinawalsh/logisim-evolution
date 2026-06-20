@@ -33,14 +33,10 @@ import static com.cburch.logisim.std.Strings.S;
 import java.awt.Color;
 import java.awt.Graphics;
 
-import com.bfh.logisim.hdlgenerator.HDLInliner;
+import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
 import com.bfh.logisim.netlist.NetlistComponent;
-import com.cburch.logisim.circuit.Circuit;
-import com.cburch.logisim.circuit.CircuitState;
-import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentData;
-import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
 import com.cburch.logisim.data.AttributeSet;
@@ -59,7 +55,30 @@ import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.tools.key.DirectionConfigurator;
 import com.cburch.logisim.util.GraphicsUtil;
 
-public class TimedPulse extends InstanceFactory implements Circuit.TickSubscriber {
+public class TimedPulse extends InstanceFactory {
+
+  // This component periodically (at a rate chosen by the user, specified in
+  // real time units like seconds, milliseconds, Hz, kHz, etc.) sends a high
+  // pulse for one "cycle", where "cycle" can mean:
+  //  * from one rising edge of the connected clock, to the next rising edge
+  //  * from one falling edge of the connected clock, to the next falling edge
+  //  * for the duration of the high phase of the connected clock
+  //  * for the duration of the low phase of the connected clock
+  //
+  // In all cases, there is a slight delay, which would normally ensure that
+  // before the timer pulses arrive at other components, clock signals will
+  // arrive at those components. This allows a timer pulse to be used reliably
+  // as a register's clock enable, for example, even when the timer pulse
+  // changes at the same clock edge as the register uses for it's trigger.
+  // Without any delay, we might worry that the timer pulse's 0->1 transition
+  // arrives a little too early (causing the register to be enabled one cycle
+  // earlier than expected), or the timer pulse's 1->0 transition arrives a
+  // little too early (causing the register to be disabled on the cycle it was
+  // intended to be enabled).
+
+  static final int DELAY = 3; // Most primitive gates use DELAY=1. Hopefully 3 is plenty but not too
+                              // much. In theory, any delay should work, since clocks should be
+                              // processed, and propagate, before any TimedPulse or other component.
 
   static final AttributeOption MHZ = new AttributeOption("MHz", S.unlocalized("MHz"));
   static final AttributeOption KHZ = new AttributeOption("kHz", S.unlocalized("kHz"));
@@ -76,50 +95,37 @@ public class TimedPulse extends InstanceFactory implements Circuit.TickSubscribe
 
 	public TimedPulse() {
 		super("TimedPulse", S.getter("timedPulseComponent"));
-    // We pulse high for one "cycle", where "cycle" can mean:
-    //  * from one rising edge of the default 1:1:0 clock, to the next rising edge
-    //  * from one falling edge of the default 1:1:0 clock, to the next falling edge
-    //  * for the duration of the high phase of the default 1:1:0 clock
-    //  * for the duration of the low phase of the default 1:1:0 clock
-    // FIXME: maybe we also need to allow customizable high:low:phase parameters?
-    setAttributes(new Attribute[] { StdAttr.FACING, ATTR_INTERVAL, ATTR_UNIT, StdAttr.TRIGGER, 
+    setAttributes(new Attribute[] { ATTR_INTERVAL, ATTR_UNIT, StdAttr.TRIGGER, 
       StdAttr.LABEL, StdAttr.LABEL_LOC, StdAttr.LABEL_FONT, StdAttr.LABEL_COLOR },
-      new Object[] { Direction.EAST, 10.0, HZ, StdAttr.TRIG_RISING,
+      new Object[] { 10.0, HZ, StdAttr.TRIG_RISING,
         "", Direction.NORTH, StdAttr.DEFAULT_LABEL_FONT, Color.BLACK });
-    setFacingAttribute(StdAttr.FACING);
     setIconName("timedpulse.png");
     setKeyConfigurator(new DirectionConfigurator(StdAttr.LABEL_LOC));
 	}
+
+  static final int OUT = 0;
+  static final int CLK = 1;
 	
 	@Override
 	protected void configureNewInstance(Instance instance) {
-    instance.setPorts(new Port[] { new Port(0, 0, Port.OUTPUT, BitWidth.ONE) });
-    instance.computeLabelTextField(Instance.AVOID_LEFT);
+    instance.setPorts(new Port[] {
+      new Port(0, 0, Port.OUTPUT, BitWidth.ONE),  // OUT
+      new Port(-10, 10, Port.INPUT, BitWidth.ONE) // CLK
+    });
+    instance.computeLabelTextField(Instance.AVOID_LEFT | Instance.AVOID_TOP);
 		instance.addAttributeListener();
 	}
 	
   @Override
   protected void instanceAttributeChanged(Instance instance, Attribute<?> attr) {
     if (attr == StdAttr.LABEL_LOC) {
-      instance.computeLabelTextField(Instance.AVOID_LEFT);
-    } else if (attr == StdAttr.FACING) {
-      instance.recomputeBounds();
-      instance.computeLabelTextField(Instance.AVOID_LEFT);
+      instance.computeLabelTextField(Instance.AVOID_LEFT | Instance.AVOID_TOP);
     }
   }
 
 	@Override
 	public Bounds getOffsetBounds(AttributeSet attrs) {
-    int w = 20, h = 20;
-    Direction dir = attrs.getValue(StdAttr.FACING);
-    if (dir == Direction.WEST)
-      return Bounds.create(0, -h/2, w, h);
-    else if (dir == Direction.SOUTH)
-      return Bounds.create(-w/2, -h, w, h);
-    else if (dir == Direction.NORTH)
-      return Bounds.create(-w/2, 0, w, h);
-    else
-      return Bounds.create(-w, -h/2, w, h);
+    return Bounds.create(-20, -10, 20, 20);
 	}
 
   @Override
@@ -138,13 +144,13 @@ public class TimedPulse extends InstanceFactory implements Circuit.TickSubscribe
 
     painter.drawLabel();
 		painter.drawBounds();
-		painter.drawPorts();
+		painter.drawPort(OUT);
+		painter.drawClock(CLK, Direction.NORTH);
 	}
 
   private static class State implements ComponentData {
     long lastPulseStartNanos;
     boolean active;
-    int tickCountAtActivation;
     Value lastClock = Value.UNKNOWN;
 
     public Value setLastClock(Value newClock) {
@@ -159,7 +165,6 @@ public class TimedPulse extends InstanceFactory implements Circuit.TickSubscribe
       dup.lastClock = this.lastClock;
       dup.lastPulseStartNanos = this.lastPulseStartNanos;
       dup.active = this.active;
-      dup.tickCountAtActivation = this.tickCountAtActivation;
       return dup;
     }
   }
@@ -176,103 +181,166 @@ public class TimedPulse extends InstanceFactory implements Circuit.TickSubscribe
 
 	@Override
 	public void propagate(InstanceState state) {
-    State s = (State)state.getDataAsCustom();
-    state.setPort(0, s != null && s.active ? Value.TRUE : Value.FALSE, 1);
-	}
-
-  @Override
-  public boolean tick(CircuitState cs, int tickCount, Component comp) {
-    boolean dirty = false;
     long now = System.nanoTime();
 
-    AttributeSet attrs = comp.getAttributeSet();
-    double interval = attrs.getValue(ATTR_INTERVAL);
-    AttributeOption unit = attrs.getValue(ATTR_UNIT);
-    AttributeOption trigger = attrs.getValue(StdAttr.TRIGGER);
+    Value clk = state.getPortValue(CLK);
+    if (clk != Value.TRUE && clk != Value.FALSE) {
+      state.setPort(OUT, Value.ERROR, DELAY);
+      return;
+    }
+
+    double interval = state.getAttributeValue(ATTR_INTERVAL);
+    AttributeOption unit = state.getAttributeValue(ATTR_UNIT);
+    AttributeOption trigger = state.getAttributeValue(StdAttr.TRIGGER);
     long delta = delta(interval, unit);
 
-    State s = (State)cs.getDataAsCustom(comp);
+    State s = (State)state.getDataAsCustom();
     if (s == null) {
       s = new State();
       // initialize as if a pulse occurred a little while ago
       s.active = false;
       s.lastPulseStartNanos = now - delta/2;
-      cs.setData(comp, s);
-      dirty = true;
+      state.setData(s);
     }
 
-    int clockLevel = (tickCount % 2); // FIXME: move this calculation to Clock, to ensure it
-                                         // stays in sync with the calculations there.
-    Value clock = clockLevel == 1 ? Value.TRUE : Value.FALSE;
-    Value lastClock = s.setLastClock(clock);
+    Value lastClock = s.setLastClock(clk);
+    boolean ticked = (lastClock != clk);
+    // Normally, ticked=true, unless we got a spurrious propagate invoation (in
+    // which case we should aim to be idempotent).
 
     if (s.active) {
       // pulse is active
-      boolean a;
       if (trigger == StdAttr.TRIG_HIGH)
-        a = (tickCount == s.tickCountAtActivation && clockLevel == 1);
+        s.active = (!ticked && clk == Value.TRUE); // either condition alone would work here
       else if (trigger == StdAttr.TRIG_LOW)
-        a = (tickCount == s.tickCountAtActivation && clockLevel == 0);
+        s.active = (!ticked && clk == Value.FALSE); // either condition alone would work here
       else if (trigger == StdAttr.TRIG_FALLING)
-        a = (tickCount == s.tickCountAtActivation && clockLevel == 0) ||
-          (tickCount == s.tickCountAtActivation+1 && clockLevel == 1);
+        s.active = !(ticked && clk == Value.FALSE); // both conditions needed here
       else
-        a = (tickCount == s.tickCountAtActivation && clockLevel == 1) ||
-          (tickCount == s.tickCountAtActivation+1 && clockLevel == 0);
-      if (s.active != a) {
-        s.active = a;
-        dirty = true;
-      }
+        s.active = !(ticked && clk == Value.TRUE); // both conditions needed here
     }
 
     if (!s.active) {
       // pulse was already inactive, or just became inactive
       boolean go;
       if (trigger == StdAttr.TRIG_FALLING || trigger == StdAttr.TRIG_LOW)
-        go = lastClock == Value.TRUE && clock == Value.FALSE;
+        go = lastClock == Value.TRUE && clk == Value.FALSE;
       else
-        go = lastClock == Value.FALSE && clock == Value.TRUE;
+        go = lastClock == Value.FALSE && clk == Value.TRUE;
       // if clock is a go, and enough time has elapsed, begin a pulse
       if (go && now - s.lastPulseStartNanos >= delta) {
         s.active = true;
-        s.tickCountAtActivation = tickCount;
         s.lastPulseStartNanos += delta;
         if (now - s.lastPulseStartNanos > delta)
           s.lastPulseStartNanos = now - delta;
-        dirty = true;
       }
     }
 
-    return dirty;
-  }
-
-  @Override
-  public Object getFeature(Object key, AttributeSet attrs) {
-    if (key == ComponentFactory.TICK_SUBSCRIPTION)
-      return (Circuit.TickSubscriber)this;
-    return super.getFeature(key, attrs);
+    state.setPort(OUT, s.active ? Value.TRUE : Value.FALSE, DELAY);
   }
 
   @Override
   public HDLSupport getHDLSupport(HDLSupport.ComponentContext ctx) {
-    // return new TimerPulseHDLInliner(ctx);
-    return null;
+    return new TimerPulseHDLGenerator(ctx);
   }
 
-  private static class TimerPulseHDLInliner extends HDLInliner {
+  private static class TimerPulseHDLGenerator extends HDLGenerator {
 
-    public TimerPulseHDLInliner(ComponentContext ctx) {
-      super(ctx);
+    public TimerPulseHDLGenerator(ComponentContext ctx) {
+      super(ctx, "bfh", "TimedPulse", "i_Timer");
+
+      clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", CLK);
+      outPorts.add("Pulse", 1, OUT, null);
+
+      // TODO: Ideally, we could determine the rate of the clock connected to
+      // this TimedPulse component. This is not necessarily the same as the
+      // underlying fpga oscillator, because (a) the user may have chosen an
+      // option other than "max frequency" in the fpga options window, and (b)
+      // within the user's circuit the clock component connected to this
+      // TimedPulse component may have custom high:low:phase parameters, making
+      // it run slower than the other clocks components with the default 1:1:0
+      // parameters. If either or both of those occur, this TimedPulse
+      // component's behavior should be based on the connected clock's behavior.
+      //
+      // Special case 1: within the user's circuit, the signal connected to the
+      // clock input might no be directly from a Clock component. That is, the
+      // user has "gated the clock signal", against Logisim recommendations, or
+      // is using some ill-advised logic or inputs to drive the timer's clock
+      // input. In this case, there may not be a fixed frequency, or even a
+      // well-defined notion of frequency at all, for the timer's incoming
+      // clock.
+      //
+      // Special case 2: if the user's circuit has a "dynamic clock control"
+      // component, then the frequency of the timer's clock input might change
+      // dynamically. So again in this case, there is no fixed frequency for the
+      // timer's incoming clock.
+      //
+      // Workaround: For now, let's drive our counter entirely by the underlying
+      // fpga oscillator, which has a fixed, known frequency, and from which we
+      // can determine the necessary counter bit-width and target counter value
+      // to get the desired pulse-to-pulse timing.
+      //
+      // Possible sketch of HDL:
+      //  * a register, of the necessary bit width, counting from 0 upwards to
+      //    target (or target-1?) then resetting back to 0. Maybe we count to
+      //    target-1, and reset based on the "go" register, to avoid having the
+      //    addition and comparison take place in the same critical path?
+      //  * three other registers, 1-bit each:
+      //    - "go", driven by the raw fpga clock. A 1 in "go" acts as a token
+      //      that indicates that it is time for another pulse.
+      //    - "pending", driven by the raw fpga clock. A 1 in "pending" also
+      //      acts as a token to indicates that a pulse will be generated during
+      //      the next user-clock cycle
+      //    - "active", driven by the connected user-clock input signal (i.e. by
+      //      GlobalClock and ClockEnable), which indicates that this user-clock
+      //      cycle is one in which a pulse occurs.
+      //  * Rationale: depending on the relative speeds of the user-clock and
+      //    the target pulse rate, we don't need "go" tokens piling up faster
+      //    than pulses can be generated. On the other hand, since a pulse might
+      //    be only slightly slower than "go" tokens get generated, we don't
+      //    want to miss a "go" token simply because an earlier pulse was still
+      //    in progress. So "go" is basically a queue of waiting pulses, but we
+      //    cap the queue length at 1 token.
+      //  * "go" gets set to 1 whenever the counter value equals target (or
+      //     target-1?), and it is stiky, keeping that 1 until it can be moved into
+      //     "pending".
+      //  * Whenever "pending" is 0, or about to become 0, it grabs a new token,
+      //    if available, from "go" (clearing "go" in the process, unless "go"
+      //    is about to be set to 1 again because of the counter value reaching
+      //    the target).
+      //  * "active" only changes when triggered by the user-clock, on either
+      //    rising or on falling edges (as appropriate, depending on which edge
+      //    the user wants the pulses to be on). It always just grabs a token
+      //    from "pending" and clears the pending register (unless pending is
+      //    getting set to 1 again because of the state of "go").
+      //  * The final output is either:
+      //    - the value of "active" (for edge-triggered pulses)
+      //    - the value of "active" AND'ed with the user clock or its inverse
+      //      (for level-sensitive pulses).
+      //
+      // Special case: if the target count is determined to be 0, that means the
+      // user wants pulses all the time, and we don't need a counter at all. The
+      // output can just be either: 1 (for edge-triggered cases), or the input
+      // clock signal (for TRIG_HIGH cases), or the inverted input clock signal
+      // (for TRIG_LOW) cases.
+      //
+      // Special case: if the user-clock is equivalent to the raw fpga clock
+      // (i.e. the user selected "max frequency" in the fpga options window, and
+      // isn't using unusual parameters for the connected Clock component), we
+      // can probably simplify some of this, perhaps collapsing "active" and
+      // "pending" into a single register. But it probably doesn't really
+      // matter?
     }
 
     @Override
-    protected void generateInlinedCode(Hdl out, NetlistComponent comp) {
-      // TODO
-      // Net outNet = comp.getConnection(0);
-      // if (net != null) {
-      //   int clkid = _nets.getClockId(net);
-      //   out.assign(net.name, CLK_TREE_NET + clkid, CLK_USR);
-      // }
+    protected void generateGenerator(Hdl out, NetlistComponent comp) {
+      // TODO: Generate HDL code.
+      //
+      // * See std/mem/Register's HDL generation code (or std/mem/Counter's)
+      //   for inspiration.
+      //
+      // * Also see std/io/Keyboard or std/io/Tty for details about crossing
+      //   clock domains, since that is relevant here.
     }
 
   }
