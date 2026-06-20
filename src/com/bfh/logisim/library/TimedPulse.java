@@ -35,7 +35,6 @@ import java.awt.Graphics;
 
 import com.bfh.logisim.hdlgenerator.HDLGenerator;
 import com.bfh.logisim.hdlgenerator.HDLSupport;
-import com.bfh.logisim.netlist.NetlistComponent;
 import com.cburch.logisim.comp.ComponentData;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeOption;
@@ -252,95 +251,93 @@ public class TimedPulse extends InstanceFactory {
       clockPort = new ClockPortInfo("GlobalClock", "ClockEnable", CLK);
       outPorts.add("Pulse", 1, OUT, null);
 
-      // TODO: Ideally, we could determine the rate of the clock connected to
-      // this TimedPulse component. This is not necessarily the same as the
-      // underlying fpga oscillator, because (a) the user may have chosen an
-      // option other than "max frequency" in the fpga options window, and (b)
-      // within the user's circuit the clock component connected to this
-      // TimedPulse component may have custom high:low:phase parameters, making
-      // it run slower than the other clocks components with the default 1:1:0
-      // parameters. If either or both of those occur, this TimedPulse
-      // component's behavior should be based on the connected clock's behavior.
-      //
-      // Special case 1: within the user's circuit, the signal connected to the
-      // clock input might no be directly from a Clock component. That is, the
-      // user has "gated the clock signal", against Logisim recommendations, or
-      // is using some ill-advised logic or inputs to drive the timer's clock
-      // input. In this case, there may not be a fixed frequency, or even a
-      // well-defined notion of frequency at all, for the timer's incoming
-      // clock.
-      //
-      // Special case 2: if the user's circuit has a "dynamic clock control"
-      // component, then the frequency of the timer's clock input might change
-      // dynamically. So again in this case, there is no fixed frequency for the
-      // timer's incoming clock.
-      //
-      // Workaround: For now, let's drive our counter entirely by the underlying
-      // fpga oscillator, which has a fixed, known frequency, and from which we
-      // can determine the necessary counter bit-width and target counter value
-      // to get the desired pulse-to-pulse timing.
-      //
-      // Possible sketch of HDL:
-      //  * a register, of the necessary bit width, counting from 0 upwards to
-      //    target (or target-1?) then resetting back to 0. Maybe we count to
-      //    target-1, and reset based on the "go" register, to avoid having the
-      //    addition and comparison take place in the same critical path?
-      //  * three other registers, 1-bit each:
-      //    - "go", driven by the raw fpga clock. A 1 in "go" acts as a token
-      //      that indicates that it is time for another pulse.
-      //    - "pending", driven by the raw fpga clock. A 1 in "pending" also
-      //      acts as a token to indicates that a pulse will be generated during
-      //      the next user-clock cycle
-      //    - "active", driven by the connected user-clock input signal (i.e. by
-      //      GlobalClock and ClockEnable), which indicates that this user-clock
-      //      cycle is one in which a pulse occurs.
-      //  * Rationale: depending on the relative speeds of the user-clock and
-      //    the target pulse rate, we don't need "go" tokens piling up faster
-      //    than pulses can be generated. On the other hand, since a pulse might
-      //    be only slightly slower than "go" tokens get generated, we don't
-      //    want to miss a "go" token simply because an earlier pulse was still
-      //    in progress. So "go" is basically a queue of waiting pulses, but we
-      //    cap the queue length at 1 token.
-      //  * "go" gets set to 1 whenever the counter value equals target (or
-      //     target-1?), and it is stiky, keeping that 1 until it can be moved into
-      //     "pending".
-      //  * Whenever "pending" is 0, or about to become 0, it grabs a new token,
-      //    if available, from "go" (clearing "go" in the process, unless "go"
-      //    is about to be set to 1 again because of the counter value reaching
-      //    the target).
-      //  * "active" only changes when triggered by the user-clock, on either
-      //    rising or on falling edges (as appropriate, depending on which edge
-      //    the user wants the pulses to be on). It always just grabs a token
-      //    from "pending" and clears the pending register (unless pending is
-      //    getting set to 1 again because of the state of "go").
-      //  * The final output is either:
-      //    - the value of "active" (for edge-triggered pulses)
-      //    - the value of "active" AND'ed with the user clock or its inverse
-      //      (for level-sensitive pulses).
-      //
-      // Special case: if the target count is determined to be 0, that means the
-      // user wants pulses all the time, and we don't need a counter at all. The
-      // output can just be either: 1 (for edge-triggered cases), or the input
-      // clock signal (for TRIG_HIGH cases), or the inverted input clock signal
-      // (for TRIG_LOW) cases.
-      //
-      // Special case: if the user-clock is equivalent to the raw fpga clock
-      // (i.e. the user selected "max frequency" in the fpga options window, and
-      // isn't using unusual parameters for the connected Clock component), we
-      // can probably simplify some of this, perhaps collapsing "active" and
-      // "pending" into a single register. But it probably doesn't really
-      // matter?
+      AttributeOption trigger = _attrs.getValue(StdAttr.TRIGGER);
+      if (trigger == StdAttr.TRIG_HIGH || trigger == StdAttr.TRIG_LOW) {
+        _err.AddFatalError("TimedPulse: TRIG_HIGH and TRIG_LOW are not supported for HDL "
+            + "synthesis. Use TRIG_RISING or TRIG_FALLING instead.");
+        return;
+      }
+
+      // The counter is driven by GlobalClock, which always oscillates at oscFreq Hz
+      // for TRIG_RISING/FALLING — it is FPGA_CLKp or FPGA_CLKn depending on mode,
+      // but both run at the same rate. The getClockPortMappings() adapter handles
+      // the inversion so this module always uses posedge GlobalClock.
+      // ClockEnable pulses once per user-clock period (POS_EDGE or NEG_EDGE, or
+      // constant 1 in raw mode), synchronizing the output to the user's clock domain.
+      double interval = _attrs.getValue(ATTR_INTERVAL);
+      AttributeOption unit = _attrs.getValue(ATTR_UNIT);
+      long intervalNanos = delta(interval, unit);
+      long maxCount = intervalNanos * ctx.oscFreq / 1_000_000_000L;
+      maxCount = Math.max(1, maxCount);
+      if (maxCount > Integer.MAX_VALUE) {
+        _err.AddSevereWarning("TimedPulse: interval is too long for HDL synthesis at "
+            + "this oscillator frequency. Clamping MaxCount to 32-bit limit.");
+        maxCount = Integer.MAX_VALUE;
+      }
+
+      int ctrWidth = 0;
+      for (long p = maxCount; p > 0; p >>= 1) ctrWidth++;
+
+      parameters.add("CtrWidth", ctrWidth);
+      parameters.add("MaxCount", (int) maxCount);
+
+      String ctrInit = ctx.hdl.isVhdl
+          ? "std_logic_vector(to_unsigned(0, CtrWidth))" : "0";
+      registers.add("s_count_reg", "CtrWidth", ctrInit);
+      registers.add("s_go_reg",    1, ctx.hdl.zero);
+      wires.add("s_wrap",      1);
+      wires.add("s_go_taking", 1);
     }
 
     @Override
-    protected void generateGenerator(Hdl out, NetlistComponent comp) {
-      // TODO: Generate HDL code.
+    protected void generateBehavior(Hdl out) {
+      // GlobalClock oscillates at oscFreq Hz in all supported modes:
+      //   TRIG_RISING, slow mode:  GlobalClock = FPGA_CLKp, ClockEnable = POS_EDGE
+      //   TRIG_RISING, raw mode:   GlobalClock = FPGA_CLKp, ClockEnable = 1 (always)
+      //   TRIG_FALLING, slow mode: GlobalClock = FPGA_CLKp, ClockEnable = NEG_EDGE
+      //   TRIG_FALLING, raw mode:  GlobalClock = FPGA_CLKn, ClockEnable = 1 (always)
+      // In the last case, the adapter in getClockPortMappings() inverts FPGA_CLKp
+      // before passing it in, so the module always uses posedge GlobalClock without
+      // needing to know which physical edge it is. The counter counts at oscFreq Hz
+      // in all four cases.
       //
-      // * See std/mem/Register's HDL generation code (or std/mem/Counter's)
-      //   for inspiration.
-      //
-      // * Also see std/io/Keyboard or std/io/Tty for details about crossing
-      //   clock domains, since that is relevant here.
+      // s_go is a sticky 1-token queue: set when the counter wraps, held until
+      // ClockEnable fires. Pulse is driven combinationally as s_go & ClockEnable
+      // so it is visible on the same cycle that ClockEnable fires. This is
+      // essential: downstream components (e.g. a Counter) gate their own
+      // ClockEnable with Pulse, so both must be high simultaneously.
+      // If the counter wraps again while s_go is already set, the token is
+      // preserved (not lost and not doubled); excess wraps while s_go=1 are
+      // silently merged into the existing token (queue depth = 1).
+      if (out.isVhdl) {
+        out.stmt("s_wrap      <= '1' WHEN s_count_reg = std_logic_vector(to_unsigned(MaxCount-1, CtrWidth)) ELSE '0';");
+        out.stmt("s_go_taking <= s_go_reg AND ClockEnable;");
+        out.stmt("");
+        out.stmt("make_pulse : PROCESS(GlobalClock)");
+        out.stmt("BEGIN");
+        out.stmt("   IF (GlobalClock'event AND GlobalClock = '1') THEN");
+        out.stmt("      IF (s_wrap = '1') THEN");
+        out.stmt("         s_count_reg <= (others => '0');");
+        out.stmt("      ELSE");
+        out.stmt("         s_count_reg <= std_logic_vector(unsigned(s_count_reg) + 1);");
+        out.stmt("      END IF;");
+        out.stmt("      s_go_reg     <= s_wrap OR (s_go_reg AND NOT s_go_taking);");
+        out.stmt("   END IF;");
+        out.stmt("END PROCESS make_pulse;");
+        out.stmt("");
+        out.stmt("Pulse <= s_go_taking;");
+      } else {
+        out.stmt("assign s_wrap      = (s_count_reg == MaxCount - 1);");
+        out.stmt("assign s_go_taking = s_go_reg & ClockEnable;");
+        out.stmt("");
+        out.stmt("always @(posedge GlobalClock)");
+        out.stmt("begin");
+        out.stmt("   s_count_reg  <= s_wrap ? 0 : s_count_reg + 1;");
+        out.stmt("   s_go_reg     <= s_wrap | (s_go_reg & ~s_go_taking);");
+        out.stmt("end");
+        out.stmt("");
+        out.stmt("assign Pulse = s_go_taking;");
+      }
     }
 
   }
