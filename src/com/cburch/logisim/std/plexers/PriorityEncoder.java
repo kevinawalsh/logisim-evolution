@@ -155,20 +155,16 @@ public class PriorityEncoder extends InstanceFactory {
     boolean enabled = state.getPortValue(n + EN_IN) != Value.FALSE;
 
     int out = -1;
-    Value outDefault;
+    Object opt = state.getAttributeValue(Plexers.ATTR_DISABLED);
+    Value base = opt == Plexers.DISABLED_ZERO ? Value.FALSE : Value.UNKNOWN;
+    Value outDefault = Value.repeat(base, select.getWidth());
     if (enabled) {
-      outDefault = Value.createUnknown(select);
       for (int i = n - 1; i >= 0; i--) {
         if (state.getPortValue(i) == Value.TRUE) {
           out = i;
           break;
         }
       }
-    } else {
-      Object opt = state.getAttributeValue(Plexers.ATTR_DISABLED);
-      Value base = opt == Plexers.DISABLED_ZERO ? Value.FALSE
-          : Value.UNKNOWN;
-      outDefault = Value.repeat(base, select.getWidth());
     }
     if (out < 0) {
       state.setPort(n + OUT, outDefault, Plexers.DELAY);
