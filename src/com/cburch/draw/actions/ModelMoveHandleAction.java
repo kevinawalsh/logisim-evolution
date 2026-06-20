@@ -69,6 +69,7 @@ public class ModelMoveHandleAction extends ModelAction {
 
 	@Override
 	void undoSub(CanvasModel model) {
+		if (newHandle == null) return; // forward action was a no-op (e.g. snapped to zero delta)
 		Handle oldHandle = gesture.getHandle();
 		int dx = oldHandle.getX() - newHandle.getX();
 		int dy = oldHandle.getY() - newHandle.getY();
