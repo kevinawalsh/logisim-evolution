@@ -73,6 +73,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.HyperlinkEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import com.cburch.logisim.Main;
 import com.cburch.logisim.proj.Project;
@@ -364,6 +366,11 @@ public class Debug {
   private static int numLoggedErrors = 0;
   private static int numSurfacedErrors = 0;
 
+  private static final long NONFATAL_DIALOG_COOLDOWN_MS = 4000;
+  private static long lastNonfatalDialogMs = 0;
+  private static final int MAX_OPEN_DIALOGS = 3;
+  private static int numOpenDialogs = 0; // guarded by lock
+
   // These are less severe and are not surfaced in GUI until shutdown.
   // All other classes should call this rather than dumping stuff to stderr.
   public static void error(String what) { error(what, null); }
@@ -377,21 +384,34 @@ public class Debug {
       ex.printStackTrace();
   }
 
-  // These are severe and get surfaced in GUI immediately, but are not fatal.
+  // These are severe and get surfaced in GUI immediately, but are not fatal. A
+  // tight loop causing an error can cause runaway errors. To avoid spamming the
+  // user with dozens or hundreds of rapid-fire error dialogs, we have a few
+  // seconds of cooldown before showing another error.
   private static void nonfatalUncaughtException(Throwable ex, String where) {
-    int recent;
+    int recent = 0;
+    boolean suppress;
     synchronized(lock) {
-      recent = Math.max(0, numLoggedErrors - numSurfacedErrors);
       numLoggedErrors++;
-      numSurfacedErrors = numLoggedErrors;
+      long now = System.currentTimeMillis();
+      if (numOpenDialogs >= MAX_OPEN_DIALOGS) {
+        suppress = true;
+      } else if (now - lastNonfatalDialogMs >= NONFATAL_DIALOG_COOLDOWN_MS) {
+        suppress = false;
+        recent = numLoggedErrors - numSurfacedErrors;
+        numSurfacedErrors = numLoggedErrors;
+        lastNonfatalDialogMs = now;
+      } else {
+        suppress = true;
+      }
     }
     String desc = "Uncaught exception " + ex + " in " + where + " @ " + Instant.now();
     System.err.println("\n*** " + desc);
     ex.printStackTrace();
+    if (suppress)
+      return;  // skip thread dump and dialog
     dumpAllThreads();
-    // cleanup(); // non-fatal, no cleanup, we keep running
     surfaceError(desc, ex, recent);
-    // removeCanary(); // non-fatal, no clenaup, we keep running
   }
 
   // These are fatal and are surfaced immediately, then we exit.
@@ -668,6 +688,13 @@ public class Debug {
         "<li>or a circuit file that can reproduce the issue.</li></ul>";
 
     JDialog d = new JDialog((Frame)null, "Logisim Error", false);
+    d.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+    synchronized(lock) { numOpenDialogs++; }
+    d.addWindowListener(new WindowAdapter() {
+      @Override public void windowClosed(WindowEvent e) {
+        synchronized(lock) { numOpenDialogs--; }
+      }
+    });
 
     JEditorPane linkPane = new JEditorPane("text/html",
         "<html><body style='font-family:sans-serif;'>" +
