@@ -531,9 +531,19 @@ public class RightPanel extends JPanel {
           lineColor = colors[2];
         }
 
+        if (x1 == x0) {
+          // sub-pixel segment: update state for next transition but don't draw
+          prevHi = hi;
+          prevLo = lo;
+          prevFill = fillColor;
+          if (!cur.advance())
+            break;
+          continue;
+        }
+
         // __________       _____ __________       ______
         //     \_____\_____/_____X_____/    \_____/
-        //    |     |     |     |     |    |     |   
+        //    |     |     |     |     |    |     |
 
         if (prevFill != null) {
           // draw left transition
