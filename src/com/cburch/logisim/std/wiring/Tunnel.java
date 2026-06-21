@@ -39,12 +39,15 @@ import java.awt.Rectangle;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Attribute;
 import com.cburch.logisim.data.AttributeSet;
+import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
 import com.cburch.logisim.data.Location;
+import com.cburch.logisim.data.Value;
 import com.cburch.logisim.instance.Instance;
 import com.cburch.logisim.instance.InstanceComponent;
 import com.cburch.logisim.instance.InstanceFactory;
+import com.cburch.logisim.instance.InstanceLogger;
 import com.cburch.logisim.instance.InstancePainter;
 import com.cburch.logisim.instance.InstanceState;
 import com.cburch.logisim.instance.Port;
@@ -83,11 +86,32 @@ public class Tunnel extends InstanceFactory {
   //        margin     label width    margin
   //          1                         5
 
+  public static class TunnelLogger extends InstanceLogger {
+    @Override
+    public String getLogName(InstanceState state, Object option) {
+      String label = state.getAttributeValue(StdAttr.LABEL);
+      if (label == null || label.isEmpty())
+        return "Tunnel" + state.getInstance().getLocation();
+      return label;
+    }
+
+    @Override
+    public BitWidth getBitWidth(InstanceState state, Object option) {
+      return state.getAttributeValue(StdAttr.WIDTH);
+    }
+
+    @Override
+    public Value getLogValue(InstanceState state, Object option) {
+      return state.getPortValue(0);
+    }
+  }
+
   public Tunnel() {
     super("Tunnel", S.getter("tunnelComponent"));
     setIconName("tunnel.gif");
     setFacingAttribute(StdAttr.FACING);
     setKeyConfigurator(new BitWidthConfigurator(StdAttr.WIDTH));
+    setInstanceLogger(TunnelLogger.class);
   }
 
   private void configureLabel(Instance instance) {

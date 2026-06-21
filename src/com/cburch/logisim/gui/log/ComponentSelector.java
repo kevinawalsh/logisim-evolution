@@ -58,8 +58,9 @@ import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.comp.ComponentFactory;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.instance.StdAttr;
-import com.cburch.logisim.std.wiring.Pin;
 import com.cburch.logisim.std.wiring.Clock;
+import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.wiring.Tunnel;
 
 // This is more like a JTree, but wedged into a JTable because it looks more
 // reasonable sitting next to the SelectionList JTable .
@@ -325,8 +326,16 @@ public class ComponentSelector extends JTable {
         }
         Collections.sort(clockNodes, compareNames);
         newChildren.addAll(clockNodes);
-        // Then add non-Clock components (sorted by name).
+        // Then add non-Clock components (sorted by name), deduplicating Tunnels by label.
+        // Sort tunnels by location first so the representative chosen is stable.
+        Collections.sort(nonClockComps, compareComponents);
+        HashSet<String> seenTunnelLabels = new HashSet<>();
         for (Component c : nonClockComps) {
+          if (c.getFactory() instanceof Tunnel) {
+            String label = c.getAttributeSet().getValue(StdAttr.LABEL);
+            if (label != null && !label.isEmpty() && !seenTunnelLabels.add(label))
+              continue; // skip duplicate tunnel labels within this circuit
+          }
           ComponentNode toAdd = findChildFor(c);
           if (toAdd == null) {
             toAdd = new ComponentNode(this, c);

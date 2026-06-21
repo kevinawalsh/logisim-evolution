@@ -34,6 +34,7 @@ import static com.cburch.logisim.gui.log.Strings.S;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -48,8 +49,10 @@ import com.cburch.logisim.circuit.SubcircuitFactory;
 import com.cburch.logisim.comp.Component;
 import com.cburch.logisim.data.Location;
 import com.cburch.logisim.data.Value;
+import com.cburch.logisim.instance.StdAttr;
 import com.cburch.logisim.std.wiring.Clock;
 import com.cburch.logisim.std.wiring.Pin;
+import com.cburch.logisim.std.wiring.Tunnel;
 import com.cburch.logisim.util.WeakList;
 
 public class Model implements CircuitListener, SignalInfo.Listener {
@@ -102,9 +105,18 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   public Model(CircuitState root) {
     circuitState = root;
 
-    // Add top-level pins, clocks, etc.
+    // Add top-level pins, clocks, etc. Sort by location first so the tunnel
+    // representative chosen per label is stable (smallest location wins).
     Circuit circ = circuitState.getCircuit();
-    for (Component comp : circ.getNonWires()) {
+    ArrayList<Component> nonWires = new ArrayList<>(circ.getNonWires());
+    Collections.sort(nonWires, ComponentSelector.compareComponents);
+    HashSet<String> seenTunnelLabels = new HashSet<>();
+    for (Component comp : nonWires) {
+      if (comp.getFactory() instanceof Tunnel) {
+        String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
+        if (label != null && !label.isEmpty() && !seenTunnelLabels.add(label))
+          continue; // skip duplicate tunnel labels at init time
+      }
       SignalInfo item = makeIfDefaultComponent(comp);
       if (item == null)
         continue;
@@ -288,6 +300,36 @@ public class Model implements CircuitListener, SignalInfo.Listener {
             fireSelectionChanged(null);
             return;
           }
+        }
+      }
+    }
+    // If a Tunnel was deleted, try to substitute an equivalent Tunnel in-place
+    // (same label, same circuit within the hierarchy).
+    if (s.getComponent().getFactory() instanceof Tunnel) {
+      String label = s.getComponent().getAttributeSet().getValue(StdAttr.LABEL);
+      if (label != null && !label.isEmpty()) {
+        int n = s.getPathLength();
+        Circuit tunnelCirc = s.getPathCircuit(n - 1);
+        for (Component c : tunnelCirc.getNonWires()) {
+          if (!(c.getFactory() instanceof Tunnel))
+            continue;
+          if (!label.equals(c.getAttributeSet().getValue(StdAttr.LABEL)))
+            continue;
+          // Found a surviving tunnel with the same label — build replacement path.
+          Component[] newPath = new Component[n];
+          for (int i = 0; i < n - 1; i++)
+            newPath[i] = s.getPathComponent(i);
+          newPath[n - 1] = c;
+          SignalInfo candidate = new SignalInfo(s.getTopLevelCircuit(), newPath, null);
+          int idx = info.indexOf(s);
+          s.setListener(null);
+          info.set(idx, candidate);
+          long t0 = getStartTime();
+          signals.set(idx, new Signal(idx, candidate,
+              candidate.fetchValue(circuitState), Math.max(1, tEnd - t0), t0, historyLimit));
+          candidate.setListener(this);
+          fireSelectionChanged(null);
+          return;
         }
       }
     }
@@ -485,12 +527,27 @@ public class Model implements CircuitListener, SignalInfo.Listener {
       for (Component comp : repl.getFreshNonWireAdditions()) {
         // if (mode == STEP && containsAnyClock(comp))
         //   setMode(CLOCK, granularity);
+        if (comp.getFactory() instanceof Tunnel) {
+          String label = comp.getAttributeSet().getValue(StdAttr.LABEL);
+          if (label != null && !label.isEmpty() && hasTunnelLabel(label))
+            continue; // equivalent tunnel already tracked
+        }
         SignalInfo item = makeIfDefaultComponent(comp);
         if (item == null)
           continue;
         addAndInitialize(item, true);
       }
     }
+  }
+
+  private boolean hasTunnelLabel(String label) {
+    for (SignalInfo si : info) {
+      Component c = si.getComponent();
+      if (c.getFactory() instanceof Tunnel
+          && label.equals(c.getAttributeSet().getValue(StdAttr.LABEL)))
+        return true;
+    }
+    return false;
   }
 
   // Make top-level pins, clocks, and any other loggable component that doesn't
