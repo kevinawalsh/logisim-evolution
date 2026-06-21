@@ -116,8 +116,8 @@ public class Signal {
       long[][] dur2 = new long[c+1][];
       System.arraycopy(val, 0, val2, 0, c);
       System.arraycopy(dur, 0, dur2, 0, c);
-      val2[c+1] = new Value[maxSize == 0 || (maxSize-cap) > CHUNK ? CHUNK : (maxSize-cap)];
-      dur2[c+1] = new long[maxSize == 0 || (maxSize-cap) > CHUNK ? CHUNK : (maxSize-cap)];
+      val2[c] = new Value[maxSize == 0 || (maxSize-cap) > CHUNK ? CHUNK : (maxSize-cap)];
+      dur2[c] = new long[maxSize == 0 || (maxSize-cap) > CHUNK ? CHUNK : (maxSize-cap)];
       val = val2;
       dur = dur2;
       val[curSize/CHUNK][curSize%CHUNK] = v;
@@ -258,6 +258,7 @@ public class Signal {
     last = null;
     curSize = 0;
     firstIndex = 0;
+    tStart = 0;
     extend(v, duration);
   }
 

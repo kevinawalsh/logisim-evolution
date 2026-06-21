@@ -181,6 +181,8 @@ public class RightPanel extends JPanel {
   public void updateWaveforms(boolean force) {
     long t0 = model.getStartTime();
     long t1 = model.getEndTime();
+    if (t1 < t0)
+      return; // model is transiently inconsistent (sim thread mid-update), skip
     if (!force && t0 == tStartDraw && t1 == tNextDraw)
       return; // already drawn all signal values
     tStartDraw = t0;
@@ -202,6 +204,7 @@ public class RightPanel extends JPanel {
     Dimension d = getPreferredSize();
     if (d.width == width && d.height == height)
       return;
+    // System.out.printf("numTicks=%d, tickWidth=%f --> width=%d\n", numTicks, tickWidth, width);
 
     int oldWidth = d.width;
     JViewport v = chronoPanel.getRightViewport();
@@ -340,7 +343,9 @@ public class RightPanel extends JPanel {
         g.setFont(f);
         return;
       }
-      if (width > 32000) {
+      if (width <= 0) {
+        // transient state (e.g. during reset), nothing to draw
+      } else if (width > 32000) {
         g.setColor(Color.BLACK);
         g.setFont(MSG_FONT);
         g.drawString("Oops! Chronogram is too large to display.", 15, 15);
@@ -677,6 +682,8 @@ public class RightPanel extends JPanel {
     }
 
     private void createOffscreen() {
+      if (width <= 0)
+        return;
       buf = (BufferedImage)createImage(width, WAVE_HEIGHT);
       Graphics2D g = buf.createGraphics();
       try {

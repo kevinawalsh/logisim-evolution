@@ -584,13 +584,13 @@ public class Model implements CircuitListener, SignalInfo.Listener {
   // Returns {tStart, duration} for a Signal being added mid-session.
   // If the simulation is still at its initial position (no advancement yet),
   // fill the full initial lead-in so the new signal aligns with existing ones.
-  // Otherwise start at tEnd with no history, so nothing shows until the next tick.
+  // Otherwise start at tEnd-1 so the signal's initial value shows at the current cursor.
   private long[] newSignalTiming() {
     if (tEnd <= tEndInit) {
       long t0 = getStartTime();
       return new long[]{ t0, Math.max(1, tEnd - t0) };
     }
-    return new long[]{ tEnd, 1 };
+    return new long[]{ tEnd - 1, 1 };
   }
 
 	// public void addSignalValues(Value[] vals, long duration) {
