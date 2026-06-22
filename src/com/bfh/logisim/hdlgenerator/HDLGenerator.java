@@ -597,7 +597,24 @@ public class HDLGenerator extends HDLSupport {
 	protected final String getInstanceNamePrefix() { return hdlInstanceNamePrefix; }
 
   // Return an instance name by combining the prefix with a unique ID.
-	public final String getInstanceName(long id) { return hdlInstanceNamePrefix + "_" + id; }
+	public final String getInstanceName(long id) {
+    String u = hdlInstanceNamePrefix + "_" + id;
+    if (ctx != null && ctx.comp != null && ctx.comp.original != null) {
+      // Append label (optional)
+      if (ctx.comp.original.getAttributeSet() != null) {
+        String label = ctx.comp.original.getAttributeSet().getValueOrElse(StdAttr.LABEL, "");
+        if (!label.isEmpty()) {
+          label = label.replaceAll("[^a-zA-Z0-9]{1,}", "_");
+          u += "_" + label;
+        }
+      }
+      // Append location
+      Location loc = ctx.comp.original.getLocation();
+      if (loc != null)
+        u += "_" + loc.x + "_" + loc.y;
+    }
+    return u;
+  }
 
 
   // Returns mappings of all input, inout, and output ports to signal names
