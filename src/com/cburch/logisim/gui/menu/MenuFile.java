@@ -134,6 +134,7 @@ class MenuFile extends Menu implements ActionListener {
     "fpga > Alchitry > counter                   : alchitry-cu-demo.circ : simple counter",
     "fpga > Alchitry > snake digits game         : alchitry-cu-demo.circ : snake-on-digits",
 
+    "miscellaneous > custom GPU                  : mark-craig-gpu.circ : main",
     "miscellaneous > button debouncing           : alchitry-cu-demo.circ : debounce",
     "miscellaneous > multi-digit display driver  : alchitry-cu-demo.circ : SevenSegmentMultiplexer4",
     "miscellaneous > fizz-buzz                   : wiring.circ : fizz-buzz",
