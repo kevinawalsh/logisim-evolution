@@ -303,7 +303,10 @@ public class SignalInfo implements AttributeListener, CircuitListener, Location.
     for (int i = 0; i < n-1; i++)
       cur = cur.getCircuitSubstateFor(path[i]);
 
-    return log.getLogValue(cur, option);
+    Value v = log.getLogValue(cur, option);
+    if (v != null && v.getWidth() > 0 && v.getWidth() != width)
+      recomputeName(); // e.g. probe connected to wider bus during simulation
+    return v;
   }
 
   public Component getComponent() {

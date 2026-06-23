@@ -58,29 +58,28 @@ class InstanceLoggerAdapter implements Loggable {
     }
   }
 
+  private InstanceStateImpl instanceStateFor(CircuitState circuitState) {
+      state.repurpose(circuitState, comp);
+      return state;
+  }
+
   public String getLogName(Object option) {
-    return logger == null ? null : logger.getLogName(state, option);
+    return logger == null ? null : logger.getLogName(instanceStateFor(null), option);
   }
 
   public BitWidth getBitWidth(Object option) {
-    return logger == null ? null : logger.getBitWidth(state, option);
+    return logger == null ? null : logger.getBitWidth(instanceStateFor(null), option);
   }
 
   public boolean isInput(Object option) {
-    return logger == null ? false : logger.isInput(state, option);
+    return logger == null ? false : logger.isInput(instanceStateFor(null), option);
   }
 
   public Object[] getLogOptions() {
-    return logger == null ? null : logger.getLogOptions(state);
+    return logger == null ? null : logger.getLogOptions(instanceStateFor(null));
   }
 
   public Value getLogValue(CircuitState circuitState, Object option) {
-    if (logger != null) {
-      if (state.getCircuitState() != circuitState)
-        state.repurpose(circuitState, comp);
-      return logger.getLogValue(state, option);
-    } else {
-      return Value.UNKNOWN;
-    }
+    return logger == null ? Value.UNKNOWN : logger.getLogValue(instanceStateFor(circuitState), option);
   }
 }

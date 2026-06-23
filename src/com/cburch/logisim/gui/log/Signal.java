@@ -93,9 +93,17 @@ public class Signal {
   public void extend(Value v, long duration) {
     if (v.getWidth() == 0)
       v = Value.createUnknown(info.getWidth());
-    if (v.getWidth() != info.getWidth())
-      System.out.printf("*** notice: value width mismatch for %s: width=%d bits, newVal=%s (%d bits)\n",
+    if (v.getWidth() != info.getWidth()) {
+      System.err.printf("*** notice: value width mismatch for %s: width=%d bits, newVal=%s (%d bits)\n",
           info, info.getWidth(), v, v.getWidth());
+      // System.out.printf("  displayname: " + info.getDisplayName() + "\n");
+      // System.out.printf("    shortname: " + info.getShortName() + "\n");
+      // System.out.printf("     location: " + info.getLocation() + "\n");
+      // System.out.printf("        width: " + info.getWidth() + "\n");
+      // System.out.printf("       option: " + info.getOption() + "\n");
+      // System.out.printf("    component: " + info.getComponent() + "\n");
+      // Thread.dumpStack();
+    }
     if (last != null && last.equals(v)) {
       // firstIndex != 0 iff maxSize>0 && curSize == maxSize
       int i = (firstIndex + curSize - 1) % curSize;
