@@ -45,9 +45,9 @@ public class KeyboardHDLGenerator extends HDLGenerator {
     parameters.add("AsciiWidth", w);
     parameters.add("FIFO_DEPTH", d);
     // See HDL code below for explanation of these parameters.
-    long freq = ctx.oscFreq;
+    int freq = (int)Math.round(ctx.fpgaFreq);
     int counter_size = (int)Math.ceil(Math.log(5.0*freq/1e6) / Math.log(2));
-    parameters.add("clk_freq", (int)freq);
+    parameters.add("clk_freq", freq);
     parameters.add("counter_size", counter_size);
     vhdlLibraries.add(IEEE_UNSIGNED); // for addition on std_logic_vector
 

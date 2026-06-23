@@ -64,6 +64,7 @@ public class FPGATool {
   public Commander cmdr;
   public String lang;
   public Board board;
+  public double fpgaFreq; // same as or derived from board.fpga.ClockFrequency (e.g. via PLL block or similar)
   public String projectPath;
   public String circuitPath;
   public String scriptPath;

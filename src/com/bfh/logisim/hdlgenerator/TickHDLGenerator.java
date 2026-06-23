@@ -192,14 +192,14 @@ public class TickHDLGenerator extends HDLGenerator {
   // TRIG_FALLING events :  |     |     |     |     |     |     |     |     |
   //
 
-  private long freq; // not currently used
+  // private double freq;
   private int period;
   private NetlistComponent dynClock;
 
   public TickHDLGenerator(ComponentContext ctx, NetlistComponent dynClock) {
     super(ctx, "base", deriveHdlName(ctx.clkPeriod), "i_TickGenerator");
     this.dynClock = dynClock;
-    freq = ctx.oscFreq;
+    // freq = ctx.fpgaFreq;
     period = ctx.clkPeriod; // negative means dynamically adjustable period
 
     inPorts.add("FPGA_CLK", 1, -1, null); // see getPortMappings below

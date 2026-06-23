@@ -73,7 +73,7 @@ public class Netlist {
     public final FPGAReport err;
     // public final char vendor;
     public final Circuit circUnderTest;
-    public final long oscFreq;
+    public final double rawFreq, fpgaFreq;
     public final int clkPeriod; // -1 means dynamic, 0 means raw, >0 means reduced speed
     private final HashMap<Circuit, Netlist> circNets;
     public final ClockBus clockbus;
@@ -83,15 +83,16 @@ public class Netlist {
     public final HashSet<String> forbiddenHDLNames;
 
     public Context(String lang, FPGAReport err, /* char vendor,*/ Circuit root,
-        long oscFreq, int clkPeriod) {
+        double rawFreq, double fpgaFreq, int clkPeriod) {
       this.lang = lang;
       this.err = err;
       // this.vendor = vendor;
       this.circUnderTest = root;
-      this.oscFreq = oscFreq;
+      this.rawFreq = rawFreq;
+      this.fpgaFreq = fpgaFreq;
       this.clkPeriod = clkPeriod;
       this.circNets = new HashMap<>();
-      this.clockbus = new ClockBus(oscFreq, clkPeriod);
+      this.clockbus = new ClockBus(fpgaFreq, clkPeriod);
       this.hdl = new Hdl(lang, err);
       this.prevSeqno = new int[1];
       this.uniqueHDLNames = new HashMap<>();
@@ -103,7 +104,8 @@ public class Netlist {
       err = ctx.err;
       // vendor = ctx.vendor;
       circUnderTest = ctx.circUnderTest;
-      oscFreq = ctx.oscFreq;
+      rawFreq = ctx.rawFreq;
+      fpgaFreq = ctx.fpgaFreq;
       clkPeriod = ctx.clkPeriod;
       circNets = ctx.circNets;
       clockbus = ctx.clockbus;

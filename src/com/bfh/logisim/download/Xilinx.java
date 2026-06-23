@@ -433,7 +433,7 @@ public class Xilinx extends Toolchain {
           InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT, "primary clock");
       ucf.stmt("NET \"%s\" TNM_NET = \"%s\" ;", FPGASynthesizer.CLK_PORT, FPGASynthesizer.CLK_PORT);
       ucf.stmt("TIMESPEC \"TS_%s\" = PERIOD \"%s\" %s HIGH 50 % ;",
-          FPGASynthesizer.CLK_PORT, FPGASynthesizer.CLK_PORT, board.fpga.Speed);
+          FPGASynthesizer.CLK_PORT, FPGASynthesizer.CLK_PORT, Altera.formatFreqForFMAX(board.fpga.ClockFrequency));
       ucf.stmt();
     }
     ioResources.forEachPhysicalPin((pin, net, io, label) -> {

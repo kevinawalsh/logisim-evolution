@@ -39,8 +39,8 @@ public class TtyHDLGenerator extends HDLGenerator {
     super(ctx, "io", "Tty", "i_Tty");
     int w = Tty.getWidth(_attrs.getValue(Tty.ATTR_WIDTH));
     parameters.add("AsciiWidth", w);
-    long period_ns = 1000000000 / ctx.oscFreq;
-    parameters.add("CLK_PERIOD_NS", (int)period_ns);
+    int period_ns = (int)Math.round(1000000000 / ctx.fpgaFreq);
+    parameters.add("CLK_PERIOD_NS", period_ns);
 
     // todo: support CLR
     _err.AddWarning("Note: Clear signal, if used, is likely broken for TTY component in HDL");

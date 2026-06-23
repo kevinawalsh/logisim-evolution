@@ -172,7 +172,7 @@ public class Apio extends Toolchain {
         board_name = board.codename;
 
       // Apio does not have a global unused pins flag. The behavior is probably
-      // weak pull-up for ice40 and similar boards, but we have no definitive
+      // weak pull-up for iCE40 and similar boards, but we have no definitive
       // info for any particular fpga. So just warn here.
       if (board.fpga.UnmentionedPinsBehaviorHint == UnmentionedPinsBehavior.INPUT_PULL_UP) {
         err.AddWarning("FPGA board specifies " + board.fpga.UnmentionedPinsBehaviorHint
@@ -196,7 +196,7 @@ public class Apio extends Toolchain {
       ini.stmt("board = " + board_name);
       ini.stmt("top-module = LogisimToplevelApioShell");
       ini.stmt("nextpnr-extra-options =");
-      ini.stmt("    --freq %f", board.fpga.ClockFrequency/1000000.0);
+      ini.stmt("    --freq %f", fpgaFreq/1000000.0);
       if ("true".equalsIgnoreCase(param("timing-allow-fail"))) {
         ini.stmt("    --timing-allow-fail");
         // ini.stmt("    --report timing.json"); // apio inserts this automatically
@@ -210,9 +210,70 @@ public class Apio extends Toolchain {
         && board.fpga.Technology.equalsIgnoreCase("ECP5");
       boolean GOWIN = board.fpga.Vendor.equalsIgnoreCase("Gowin");
 
+      boolean usePLL = fpgaFreq != board.fpga.ClockFrequency;
+      String pll_divr = "", pll_divf = "", pll_divq = "", pll_frange = "";
+      if (usePLL) {
+        // TODO: calculate these as needed? Use a table somewhere?
+        // See also: availableFpgaFrequencies() below.
+        double mhz = 1000000;
+        if (fpgaFreq == 275*mhz) {
+          pll_divr = "4'b0001";
+          pll_divf = "7'b0001010";
+          pll_divq = "3'b001";
+          pll_frange = "3'b100";
+        } else if (fpgaFreq == 200*mhz) {
+          pll_divr = "4'b0000";
+          pll_divf = "7'b0000111";
+          pll_divq = "3'b010";
+          pll_frange = "3'b101";
+        } else if (fpgaFreq == 150*mhz) {
+          pll_divr = "4'b0000";
+          pll_divf = "7'b0000101";
+          pll_divq = "3'b010";
+          pll_frange = "3'b101";
+        } else if (fpgaFreq == 100*mhz) {
+          pll_divr = "4'b0000";
+          pll_divf = "7'b0000111";
+          pll_divq = "3'b011";
+          pll_frange = "3'b101";
+        } else if (fpgaFreq == 75*mhz) {
+          pll_divr = "4'b0000";
+          pll_divf = "7'b0000101";
+          pll_divq = "3'b011";
+          pll_frange = "3'b101";
+        } else if (fpgaFreq == 50*mhz) {
+          pll_divr = "4'b0000";
+          pll_divf = "7'b0000111";
+          pll_divq = "3'b100";
+          pll_frange = "3'b101";
+        } else if (fpgaFreq == 40*mhz) {
+          pll_divr = "4'b0100";
+          pll_divf = "7'b0011111";
+          pll_divq = "3'b100";
+          pll_frange = "3'b010";
+        } else if (fpgaFreq == 30*mhz) {
+          pll_divr = "4'b0100";
+          pll_divf = "7'b0101111";
+          pll_divq = "3'b101";
+          pll_frange = "3'b010";
+        } else if (fpgaFreq == 20*mhz) {
+          pll_divr = "4'b0100";
+          pll_divf = "7'b0011111";
+          pll_divq = "3'b101";
+          pll_frange = "3'b010";
+        } else if (fpgaFreq == 16*mhz) {
+          pll_divr = "4'b0011";
+          pll_divf = "7'b0101000";
+          pll_divq = "3'b110";
+          pll_frange = "3'b010";
+        } else {
+          err.AddFatalError("PLL parameters could not be determined for output frequency %f", fpgaFreq);
+        }
+      }
+
       // FIXME: board xml should define this, don't force this for every iCE40UP/UL
       // Lattice iCE40UP/UL family has SB_HFOSC; HX/LP family requires an external clock pin.
-      boolean hasHFOSC = iCE40 &&
+      boolean hasHFOSC = !usePLL && iCE40 &&
         (board.fpga.Part.toUpperCase().contains("UP") ||
          board.fpga.Part.toUpperCase().contains("UL"));
 
@@ -292,7 +353,25 @@ public class Apio extends Toolchain {
 
       n = ioPinCount.size();
       if (ioResources.requiresOscillator) {
-        if (hasHFOSC) {
+        n++;
+        if (usePLL) {
+          out.stmt("wire pll_clk;");
+          out.stmt("wire pll_lock;");
+          out.stmt();
+          out.stmt("SB_PLL40_CORE #(");
+          out.stmt("  .FEEDBACK_PATH(\"SIMPLE\"),");
+          out.stmt("  .DIVR(%s),", pll_divr);
+          out.stmt("  .DIVF(%s),", pll_divf);
+          out.stmt("  .DIVQ(%s),", pll_divq);
+          out.stmt("  .FILTER_RANGE(%s)", pll_frange);
+          out.stmt(") pll (");
+          out.stmt("  .REFERENCECLK(FPGA_CLK),");
+          out.stmt("  .PLLOUTGLOBAL(pll_clk),");
+          out.stmt("  .LOCK(pll_lock),");
+          out.stmt("  .RESETB(1'b1),");
+          out.stmt("  .BYPASS(1'b0)");
+          out.stmt(");");
+        } else if (hasHFOSC) {
           out.stmt("  wire FPGA_CLK;");
           // For iCE40UP/UL fpga, use the high-speed oscillator (48 MHz).
           // FIXME: the SB_HFOSC block can divide by 1, 2, 4, or 8. We should
@@ -303,7 +382,6 @@ public class Apio extends Toolchain {
         }
         // For iCE40HX/LP, FPGA_CLK is an input port wired to the board's external
         // crystal via PCF constraint; no internal oscillator primitive is needed.
-        n++;
       }
      
       // For each FPGA bidir pin, emit an SB_IO block to bring together the
@@ -361,7 +439,7 @@ public class Apio extends Toolchain {
 
       out.stmt("  LogisimToplevelShell wrappedShell( %s", (n == 0 ? " );" : ""));
       if (ioResources.requiresOscillator)
-        out.stmt("              .FPGA_CLK(FPGA_CLK)%s", (--n == 0 ? " );" : ","));
+        out.stmt("              .FPGA_CLK(%s)%s", usePLL ? "pll_clk" : "FPGA_CLK", (--n == 0 ? " );" : ","));
       for (int i = 0; i < ioPinCount.in; i++) {
         String net = "FPGA_INPUT_PIN_"+i;
         // if (ioResources.getInputPinPull(net) != PullBehavior.NONE)
@@ -445,6 +523,29 @@ public class Apio extends Toolchain {
 
     public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {
       return new ToplevelHDLGenerator(ctx, pinBindings, false);
+    }
+
+    public double[] availableFpgaFrequencies() {
+      // TODO: handle more variety of cases for iCE40 PLL
+      // TODO: handle SB_HFOSC, which can divide by 1, 2, 4, or 8
+      // For now, we only handle one single
+      // case: PLL type "iCE40" with ClockFrequency 100 MHz.
+      if ("iCE40".equalsIgnoreCase(board.fpga.PLLType)) {
+        if (board.fpga.ClockFrequency == 100000000.0) {
+          double mhz = 1000000;
+          return new double[] {
+            275*mhz, 200*mhz, 150*mhz, 100*mhz,
+              75*mhz, 50*mhz, 40*mhz, 30*mhz, 20*mhz, 16*mhz
+          };
+        } else {
+          err.AddWarning("Board has iCE40 type PLL, driven by %f Hz oscillator, but "
+              + "Apio toolchain currently only handles 100 MHz precisely.");
+        }
+      } else if (board.fpga.PLLType != null) {
+        err.AddWarning("Board allows for \"%s\" type PLL, but "
+            + "Apio toolchain currently only supports \"iCE40\" type PLL.");
+      }
+      return new double[] { board.fpga.ClockFrequency };
     }
 
   }

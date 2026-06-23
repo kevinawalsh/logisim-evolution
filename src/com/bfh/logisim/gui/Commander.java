@@ -78,6 +78,7 @@ import com.bfh.logisim.download.FPGATool;
 import com.bfh.logisim.download.Toolchain;
 import com.bfh.logisim.fpga.Board;
 import com.bfh.logisim.fpga.BoardReader;
+import com.bfh.logisim.fpga.Chipset;
 import com.bfh.logisim.fpga.PinBindings;
 import com.bfh.logisim.hdlgenerator.ToplevelHDLGenerator;
 import com.bfh.logisim.netlist.Netlist;
@@ -140,7 +141,8 @@ public class Commander extends JFrame
   private final JLabel textSynthTool = new JLabel("Synthesis Toolchain: ", SwingConstants.RIGHT);
   private final JLabel textProgTool = new JLabel("Programming Toolchain: ", SwingConstants.RIGHT);
   private final JLabel textLanguage = new JLabel("Language: ", SwingConstants.RIGHT);
-  private final JLabel textTargetDiv = new JLabel("Divide clock by...", SwingConstants.RIGHT);
+  private final JLabel textFpgaFreq = new JLabel("FPGA Frequency: ", SwingConstants.RIGHT);
+  private final JLabel textTargetDiv = new JLabel("Divide clock by counting to...", SwingConstants.RIGHT);
 
   private final BoardIcon boardIcon = new BoardIcon();
   private final JButton annotateButton = new JButton("Annotate");
@@ -155,6 +157,7 @@ public class Commander extends JFrame
 
   private final ComboBox<String> boardsList = new ComboBox<>();
   private final ComboBox<Circuit> circuitsList = new ComboBox<>();
+  private final ComboBox<String> fpgaFreqOption = new ComboBox<>();
   private final ComboBox<String> clockOption = new ComboBox<>();
   private final ComboBox<Object> clockDivRate = new ComboBox<>();
   private final ComboBox<Object> clockDivCount = new ComboBox<>();
@@ -274,16 +277,18 @@ public class Commander extends JFrame
     boardsList.addActionListener(e -> setBoard());
 
     // configure clock speed options
+    populateFpgaFreqOptions();
     clockOption.addItem(MAX_SPEED);
     clockOption.addItem(DIV_SPEED);
     clockOption.addItem(DYN_SPEED);
     clockOption.setSelectedItem(DIV_SPEED);
     clockDivRate.setEditable(true);
     clockDivCount.setEditable(true);
+    fpgaFreqOption.addActionListener(e -> { if (!updatingFpgaFreqMenu) populateClockDivOptions(true); });
     clockOption.addActionListener(e -> setClockOption());
     clockDivRate.addActionListener(e -> setClockDivRate());
     clockDivCount.addActionListener(e -> setClockDivCount());
-    populateClockDivOptions();
+    populateClockDivOptions(false);
 
     // configure annotation options and button
     // for (String s : new String[] { ANNOTATE_SOME, ANNOTATE_ALL }) {
@@ -338,10 +343,15 @@ public class Commander extends JFrame
     c.insets.left = c.insets.right = 5;
     c.gridy = 0;
     c.gridx = 0;
+    clockOptions.add(textFpgaFreq, c);
+    c.gridx++;
+    clockOptions.add(fpgaFreqOption, c);
+    c.insets.top = 0;
+    c.gridy++;
+    c.gridx = 0;
     clockOptions.add(clockOption, c);
     c.gridx++;
     clockOptions.add(clockDivRate, c);
-    c.insets.top = 0;
     c.gridy++;
     c.gridx = 0;
     clockOptions.add(textTargetDiv, c);
@@ -541,21 +551,96 @@ public class Commander extends JFrame
     progCombo.setSelectedItem(new ComboOption<>(progTool, ""));
   }
 
+  private double[] determineFpgaFreqOptions() {
+    // No board, return placeholder
+    if (board == null)
+      return new double[] { 50000000.0 };
+    FPGASynthesizer tools = makeToolchainDownloader();
+    // No toolchain, return just the board's oscillator frequency
+    if (tools == null)
+      return new double[] { board.fpga.ClockFrequency };
+    return tools.availableFpgaFrequencies();
+  }
+
+  static String formatFrequency(double f) {
+    double[] thresholds = { 1e9, 1e6, 1e3, 1.0 };
+    String[] units = { "GHz", "MHz", "kHz", "Hz" };
+    for (int i = 0; true ; i++) {
+      if (f >= thresholds[i] || i == thresholds.length-1) {
+        double scaled = f / thresholds[i];
+        String s = String.format("%.6f", scaled);
+        // Strip trailing zeros after decimal point, and bare decimal point
+        s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
+        return s + " " + units[i];
+      }
+    }
+  }
+
+  boolean updatingFpgaFreqMenu = false;
+  private double[] fpgaFreqOptions = null;
+
+  private double getEffectiveFpgaFreq() {
+    if (fpgaFreqOptions != null) {
+      int idx = fpgaFreqOption.getSelectedIndex();
+      if (idx >= 0 && idx < fpgaFreqOptions.length)
+        return fpgaFreqOptions[idx];
+    }
+    return board == null ? 50000000.0 : board.fpga.ClockFrequency;
+  }
+
+  private void populateFpgaFreqOptions() {
+    updatingFpgaFreqMenu = true;
+    fpgaFreqOption.removeAllItems();
+    double[] opts = determineFpgaFreqOptions();
+    fpgaFreqOptions = opts;
+    double base = board == null ? 50000000.0 : board.fpga.ClockFrequency;
+    int defaultIndex = 0;
+    for (int i = 0; i < opts.length; i++) {
+      double f = opts[i];
+      String s = formatFrequency(f);
+      if (f > base) {
+        s += " (multiplied)";
+      } else if (f < base) {
+        s += " (divided)";
+      } else {
+        s += " (base rate)";
+        defaultIndex = i;
+      }
+      fpgaFreqOption.addItem(s);
+    }
+    fpgaFreqOption.setSelectedIndex(defaultIndex);
+    fpgaFreqOption.setEnabled(opts.length > 1);
+    updatingFpgaFreqMenu = false;
+  }
+
   boolean updatingClockMenus = false;
-  private void populateClockDivOptions() {
+  private void populateClockDivOptions(boolean preserveSelection) {
     updatingClockMenus = true;
+
+    // Capture current UI selection before clearing, so we can restore it below.
+    // prevSelectedDivRate is a DerivedRate whose .base is the old FPGA freq, so
+    // dividing by prevSelectedDivCount recovers the old rate in Hz.
+    String preservedMode = preserveSelection ? clockOption.getSelectedValue() : null;
+    double preservedRateHz = 0;
+    if (DIV_SPEED.equals(preservedMode) && prevSelectedDivCount > 0
+        && prevSelectedDivRate instanceof DerivedRate) {
+      preservedRateHz = ((DerivedRate)prevSelectedDivRate).base / 2.0 / prevSelectedDivCount;
+    }
+
     clockDivCount.removeAllItems();
     clockDivRate.removeAllItems();
-    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
+    double base = getEffectiveFpgaFreq();
     ArrayList<Integer> counts = new ArrayList<>();
     ArrayList<Double> freqs = new ArrayList<>();
-    double ff = (double)base/2.0; // reduced speed baseline is half of actual base speed
+    double ff = base/2.0; // reduced speed baseline is half of actual base speed
     while (ff >= MenuSimulate.SupportedTickFrequencies[0]*2) {
       freqs.add(ff);
       ff /= 2;
     }
-    for (double f : MenuSimulate.SupportedTickFrequencies)
-      freqs.add(f);
+    for (double f : MenuSimulate.SupportedTickFrequencies) {
+      if (f < ff)
+        freqs.add(f);
+    }
     Circuit root = circuitsList.getSelectedValue();
     PinBindings.Config config = root.getFPGAConfig(BoardList.getSelectedName());
     for (double f : freqs) {
@@ -563,16 +648,38 @@ public class Commander extends JFrame
       if (counts.contains(count))
         continue;
       counts.add(count);
-      String rate = rateForCount(base, count);
       clockDivCount.addItem(count);
-      clockDivRate.addItem(new ExactRate(base, count));
-      if (config == null 
+      clockDivRate.addItem(new DerivedRate(base, count));
+      if (!preserveSelection && config == null
           && Math.abs((proj.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
         clockDivCount.setSelectedItem(count);
-        clockDivRate.setSelectedItem(new ExactRate(base, count));
+        clockDivRate.setSelectedItem(new DerivedRate(base, count));
       }
     }
-    if (config != null) {
+
+    if (preservedMode != null) {
+      // Restore the previously-selected mode, adjusting for the new FPGA freq.
+      if (MAX_SPEED.equals(preservedMode)) {
+        clockOption.setSelectedItem(MAX_SPEED);
+      } else if (DYN_SPEED.equals(preservedMode)) {
+        clockOption.setSelectedItem(DYN_SPEED);
+      } else {
+        // Find the count that gets closest to the previously-chosen Hz rate.
+        // If that rate is now at or above the FPGA freq, promote to maximum.
+        if (preservedRateHz == 0 || preservedRateHz >= base) {
+          clockOption.setSelectedItem(MAX_SPEED);
+        } else {
+          int bestCount = countForFreq(base, preservedRateHz);
+          if (!counts.contains(bestCount)) {
+            clockDivCount.addItem(bestCount);
+            clockDivRate.addItem(new DerivedRate(base, bestCount));
+          }
+          clockOption.setSelectedItem(DIV_SPEED);
+          clockDivCount.setSelectedItem(bestCount);
+          clockDivRate.setSelectedItem(new DerivedRate(base, bestCount));
+        }
+      }
+    } else if (config != null) {
       if (config.clkmode.equals("maximum")) {
         clockOption.setSelectedItem(MAX_SPEED);
       } else if (config.clkmode.equals("dynamic")) {
@@ -582,12 +689,13 @@ public class Commander extends JFrame
         int count = config.clkdiv;
         if (!counts.contains(count)) {
           clockDivCount.addItem(count);
-          clockDivRate.addItem(new ExactRate(base, count));
+          clockDivRate.addItem(new DerivedRate(base, count));
         }
         clockDivCount.setSelectedItem(count);
-        clockDivRate.setSelectedItem(new ExactRate(base, count));
+        clockDivRate.setSelectedItem(new DerivedRate(base, count));
       }
     }
+
     if (clockDivCount.getSelectedValue() == null && clockDivCount.getItemCount() > 0)
       clockDivCount.setSelectedIndex(0);
     if (clockDivRate.getSelectedValue() == null && clockDivRate.getItemCount() > 0)
@@ -603,9 +711,9 @@ public class Commander extends JFrame
     boolean max = clockOption.getSelectedValue().equals(MAX_SPEED);
     clockDivRate.setEnabled(div);
     clockDivCount.setEnabled(div);
-    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
+    double base = getEffectiveFpgaFreq();
     if (max) {
-      clockDivRate.setSelectedItem(new ExactRate(base, 0));
+      clockDivRate.setSelectedItem(new DerivedRate(base, 0));
       clockDivCount.setSelectedItem("undivided");
     } else if (div) {
       if (prevSelectedDivCount > 0 && prevSelectedDivRate != null) {
@@ -615,7 +723,7 @@ public class Commander extends JFrame
         useTickSpeedFromSimulator();
       }
     } else {
-      clockDivRate.setSelectedItem(new ExactRate(base, -1));
+      clockDivRate.setSelectedItem(new DerivedRate(base, -1));
       clockDivCount.setSelectedItem("set in circuit");
     }
   }
@@ -623,35 +731,37 @@ public class Commander extends JFrame
   private int prevSelectedDivCount = 0;
   private Object prevSelectedDivRate = null;
 
-  private static class ExactRate {
-    long base;
+  private static class DerivedRate {
+    double base;
     int count;
-    String rate;
-    public ExactRate(long base, int count) {
+    String asString;
+    public DerivedRate(double base, int count) {
       this.base = base;
       this.count = count;
       if (count < 0)
-        rate = "varies";
+        asString = "varies";
       else if (count == 0)
-        rate = rateForFreq(base);
+        asString = formatFrequency(base);
       else
-        rate = rateForCount(base, count);
+        asString = formatRateForCount(base, count);
     }
     @Override
     public String toString() {
-      return rate;
+      return asString;
     }
     @Override
     public boolean equals(Object other) {
-      if (other instanceof ExactRate) {
-        ExactRate that = (ExactRate)other;
+      if (other instanceof DerivedRate) {
+        DerivedRate that = (DerivedRate)other;
         return (base == that.base && count == that.count);
       }
       return false;
     }
     @Override
     public int hashCode() {
-      return (int)(39 * (base + 27) + count);
+      long base64 = Double.doubleToLongBits(base);
+      int base32 = (int)(base64 ^ (base64 >>> 32));
+      return (int)(39 * (base32 + 27) + count);
     }
   }
 
@@ -660,11 +770,11 @@ public class Commander extends JFrame
       return;
     if (!clockOption.getSelectedValue().equals(DIV_SPEED))
       return;
-    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
+    double base = getEffectiveFpgaFreq();
     Object o = clockDivRate.getSelectedValue();
     Integer i;
-    if (o instanceof ExactRate) {
-      i = ((ExactRate)o).count;
+    if (o instanceof DerivedRate) {
+      i = ((DerivedRate)o).count;
     } else {
       // approximate
       i = countForRate(base, o.toString());
@@ -677,7 +787,7 @@ public class Commander extends JFrame
         }
         return;
       }
-      String rate = rateForCount(base, i);
+      String rate = formatRateForCount(base, i);
       clockDivRate.setSelectedItem(rate); // rounds to nearest acceptable value
     }
     if (clockDivCount.getSelectedValue() == null || !clockDivCount.getSelectedValue().equals(i))
@@ -691,7 +801,7 @@ public class Commander extends JFrame
       return;
     if (!clockOption.getSelectedValue().equals(DIV_SPEED))
       return;
-    long base = board == null ? 50000000 : board.fpga.ClockFrequency;
+    double base = getEffectiveFpgaFreq();
     Object item = clockDivCount.getSelectedValue();
     String s = item == null ? "-1" : item.toString();
     int count = -1;
@@ -705,83 +815,50 @@ public class Commander extends JFrame
         useTickSpeedFromSimulator();
       }
     } else {
-      clockDivRate.setSelectedItem(new ExactRate(base, count));
+      clockDivRate.setSelectedItem(new DerivedRate(base, count));
       prevSelectedDivRate = clockDivRate.getSelectedValue();
       prevSelectedDivCount = count;
     }
   }
 
   private void useTickSpeedFromSimulator() {
-    long base = board.fpga.ClockFrequency;
+    double base = getEffectiveFpgaFreq();
     for (double f : MenuSimulate.SupportedTickFrequencies) {
       int count = countForFreq(base, f);
       if (Math.abs((proj.getSimulator().getTickFrequency() - f)/f) < 0.0001) {
         clockDivCount.setSelectedItem(count);
-        clockDivRate.setSelectedItem(new ExactRate(base, count));
+        clockDivRate.setSelectedItem(new DerivedRate(base, count));
       }
     }
   }
 
-  private static Integer countForRate(long base, String rate) {
-    rate = rate.toLowerCase().trim();
-    int multiplier = 1;
-    if (rate.endsWith("khz")) {
-      multiplier = 1000;
-      rate = rate.substring(0, rate.length() - 3);
-    } else if (rate.endsWith("mhz")) {
-      multiplier = 1000000;
-      rate = rate.substring(0, rate.length() - 3);
-    } else if (rate.endsWith("hz")) {
-      multiplier = 1;
-      rate = rate.substring(0, rate.length() - 2);
-    }
-    double freq;
+  private static Integer countForRate(double base, String rate) {
     try {
-      freq = Double.parseDouble(rate) * multiplier;
+      double freq = Chipset.freqFromString(rate);
+      return countForFreq(base, freq);
     } catch (NumberFormatException e) {
       return null;
     }
-    if (freq <= 0)
-      return null;
-    return countForFreq(base, freq);
   }
 
   // base=50mhz, reduced=25mhz, count=1 --> 0 0 0 0 0 0 --> 25mhz = 25/1
   // base=50mhz, reduced=25mhz, count=2 --> 1 0 1 0 1 0 --> 12.5mhz = 25/2
   // base=50mhz, reduced=25mhz, count=3 --> 2 1 0 2 1 0 --> 8.3mhz = 25/3
-  private static int countForFreq(long base, double freq) {
+  private static int countForFreq(double base, double freq) {
+    // note: our HDL tick reducer only supports 32-bit counts?
     double reduced = base / 2.0;
-    long count = (long)(reduced / freq);
-    if ((count > (long) 0x7FFFFFFF) | (count < 0))
+    long count = (long)Math.round(reduced / freq);
+    if ((count > (long) 0x7FFFFFFF) || (count < 0))
       count = (long) 0x7FFFFFFF;
     else if (count == 0)
       count = 1;
     return (int)count;
   }
 
-  private static String rateForCount(long base, int count) {
+  private static String formatRateForCount(double base, int count) {
     double reduced = base / 2.0; // reduced speed baseline is half of actual base speed
     double f = reduced / count;
-    return rateForFreq(f);
-  }
-
-  private static String rateForFreq(double f) {
-    String suffix;
-    if (f < 0.1) {
-      return String.format("%g Hz", f);
-    } else if (f < 1000) {
-      suffix = "Hz";
-    } else if (f < 1000000) {
-      f /= 1000;
-      suffix = "kHz";
-    } else {
-      suffix = "MHz";
-      f /= 1000000;
-    }
-    if (Math.abs(f - Math.round(f)) < 0.1)
-      return String.format("%.0f %s", f, suffix);
-    else
-      return String.format("%.2f %s", f, suffix);
+    return formatFrequency(f);
   }
 
   public void repaintConsoles() {
@@ -842,7 +919,8 @@ public class Commander extends JFrame
     settingBoard = false;
     autoSelectFrom(board);
     language.setSelectedItem(lang);
-    populateClockDivOptions();
+    populateFpgaFreqOptions();
+    populateClockDivOptions(false);
     repopulateToolchainOptions();
     configureActions();
   }
@@ -998,9 +1076,10 @@ public class Commander extends JFrame
         doSynthesisAndDownload(null, tools);
       } else {
         iprintf("Performing design rule checks (DRC)");
-        long oscFreq = board.fpga.ClockFrequency;
+        double oscFreq = board.fpga.ClockFrequency;
+        double fpgaFreq = getEffectiveFpgaFreq();
         int clkPeriod = getClkPeriod();
-        Netlist.Context ctx = new Netlist.Context(lang, err, root, oscFreq, clkPeriod);
+        Netlist.Context ctx = new Netlist.Context(lang, err, root, oscFreq, fpgaFreq, clkPeriod);
         if (!ctx.getNetlist(root).validate() || fatals > 0) {
           eprintf("DRC failed, synthesis can't continue.");
           return;
@@ -1081,6 +1160,7 @@ public class Commander extends JFrame
     tool.cmdr = this;
     tool.lang = lang;
     tool.board = board;
+    tool.fpgaFreq = getEffectiveFpgaFreq();
     tool.projectPath = circdir;
     tool.circuitPath = langdir;
     tool.scriptPath = circdir + SCRIPT_DIR;
@@ -1322,6 +1402,8 @@ public class Commander extends JFrame
       language.setSelectedItem(Toolchain.autoSelectLanguage(board, synthTool));
       configureActions();
     }
+    populateFpgaFreqOptions();
+    populateClockDivOptions(true);
   }
 
   private String getCleanedParamString(Toolchain tool) {

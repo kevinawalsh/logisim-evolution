@@ -4,7 +4,8 @@
     <Chip vendor="Lattice" family="iCE40" part="iCE40HX8K" speedGrade="i" package="CB132IC"/>
     <JTAG pos="1"/>
     <USBTMC available="true"/>
-    <Clock pin="P7" frequency="100000000"/>
+    <Clock pin="P7" frequency="100 MHz"/>
+    <PLL type="iCE40"/>
     <UnmentionedPins behavior="unspecified"/> <!-- we don't care what happens to remaining pins -->
   </FPGA>
   <Toolchains defaultSynthesis="Apio CLI" defaultProgramming="openFPGALoader">

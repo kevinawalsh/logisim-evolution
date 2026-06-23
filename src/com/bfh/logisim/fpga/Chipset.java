@@ -43,14 +43,15 @@ public class Chipset {
 
   // FIXME: many of these could be optional, never used for some backends
   
-  public final String Speed; // e.g. "50 MHz"
+  public final String ClockSpeed; // e.g. "50 MHz" or "50000.0 kHz" (from xml, may not be normalized, may be missing units)
 
   // FIXME: Clock should be a BoardIO... some fpga boards have multiple clocks,
   // user should be able to choose between them
-  public final long ClockFrequency; // FIXME: non-integer frequencies are possible, e.g.  Intel MAX 10 FPGA with Si570 programmable oscillator
+  public final double ClockFrequency; // note: hz, but non-integer frequencies are possible, e.g. Intel MAX 10 FPGA with Si570 programmable oscillator
 	public final String ClockPinLocation;
 	// public final PullBehavior ClockPullBehavior;
 	public final IoStandard ClockIOStandard;
+  public final String PLLType; // optional
 
 	public final String Vendor;
 	public final String Technology; // aka Family
@@ -101,9 +102,16 @@ public class Chipset {
 
 	public Chipset(Map<String, String> params) throws Exception {
 
-    ClockFrequency = Long.parseLong(params.get("Clock/frequency"));
+    ClockSpeed = params.get("Clock/frequency");
+    try {
+      ClockFrequency = freqFromString(ClockSpeed);
+    } catch (NumberFormatException ex) {
+      throw new Exception("invalid Clock:frequency: " + ex.getMessage());
+    }
+
 		ClockPinLocation = params.get("Clock/pin");
 		ClockIOStandard = IoStandard.get(params.get("Clock/ioStandard")); // optional; returns non-null
+		PLLType = params.get("PLL/type"); // optional
 
     Vendor = params.get("Chip/vendor");
 		Technology = params.get("Chip/family");
@@ -118,8 +126,6 @@ public class Chipset {
 
 		UnmentionedPinsBehaviorHint = UnmentionedPinsBehavior.get(params.get("UnmentionedPins/behavior")); // optional; returns non-null
 
-    if (ClockFrequency <= 0)
-      throw new Exception("invalid Clock:frequency");
     if (ClockPinLocation == null)
       throw new Exception("invalid or missing Clock:pin");
     if (Vendor == null)
@@ -128,20 +134,34 @@ public class Chipset {
       throw new Exception("invalid or missing Chip:family");
     if (Part == null)
       throw new Exception("invalid or missing Chip:part");
-
-    Speed = freqToString(ClockFrequency);
   }
 
-  // Note: this is used by UI, and by some toolchains. Lattice only supports MHz, kHz, Hz.
-	private static String freqToString(long clkfreq) {
-		if (clkfreq % 1000000 == 0) {
-			clkfreq /= 1000000;
-			return clkfreq + " MHz";
-		} else if (clkfreq % 1000 == 0) {
-			clkfreq /= 1000;
-			return clkfreq + " kHz";
-		}
-		return clkfreq + " Hz";
-	}
+  // Convert a string like "30.5 MHz" to a frequency in Hz as a double. For all
+  // integer frequencies up to several GHz, this should be exact. For some
+  // fractional frequencies, like 0.1 Hz, the result may be inexact because of
+  // floating point representation.
+  public static double freqFromString(String rate) throws NumberFormatException {
+    rate = rate.toLowerCase().trim();
+    double multiplier = 1.0;
+    if (rate.endsWith("khz")) {
+      multiplier = 1000.0;
+      rate = rate.substring(0, rate.length() - 3);
+    } else if (rate.endsWith("mhz")) {
+      multiplier = 1000000.0;
+      rate = rate.substring(0, rate.length() - 3);
+    } else if (rate.endsWith("ghz")) {
+      multiplier = 10000000000.0;
+      rate = rate.substring(0, rate.length() - 3);
+    } else if (rate.endsWith("hz")) {
+      multiplier = 1.0;
+      rate = rate.substring(0, rate.length() - 2);
+    }
+    double freq = Double.parseDouble(rate) * multiplier; // may throw
+    if (freq <= 0)
+      throw new NumberFormatException("clock frequencies must be positive");
+    if (!Double.isFinite(freq))
+      throw new NumberFormatException("clock frequencies must be finite");
+    return freq;
+  }
 
 }

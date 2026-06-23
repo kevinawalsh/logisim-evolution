@@ -168,14 +168,14 @@ public class TimedPulse extends InstanceFactory {
     }
   }
 
-  static long delta(double interval, AttributeOption unit) {
-    if (unit == SEC)  return (long)(interval * 1_000_000_000.0);
-    if (unit == MSEC) return (long)(interval * 1_000_000.0);
-    if (unit == USEC) return (long)(interval * 1_000.0);
-    if (unit == NSEC) return (long)(interval);
-    if (unit == HZ)   return (long)(1_000_000_000.0 / interval);
-    if (unit == KHZ)  return (long)(1_000_000.0 / interval);
-    /* MHZ */         return (long)(1_000.0 / interval);
+  static double delta(double interval, AttributeOption unit) {
+    if (unit == SEC)  return (interval * 1_000_000_000.0);
+    if (unit == MSEC) return (interval * 1_000_000.0);
+    if (unit == USEC) return (interval * 1_000.0);
+    if (unit == NSEC) return (interval);
+    if (unit == HZ)   return (1_000_000_000.0 / interval);
+    if (unit == KHZ)  return (1_000_000.0 / interval);
+    /* MHZ */         return (1_000.0 / interval);
   }
 
 	@Override
@@ -191,7 +191,7 @@ public class TimedPulse extends InstanceFactory {
     double interval = state.getAttributeValue(ATTR_INTERVAL);
     AttributeOption unit = state.getAttributeValue(ATTR_UNIT);
     AttributeOption trigger = state.getAttributeValue(StdAttr.TRIGGER);
-    long delta = delta(interval, unit);
+    long delta = (long)Math.round(delta(interval, unit));
 
     State s = (State)state.getDataAsCustom();
     if (s == null) {
@@ -258,7 +258,7 @@ public class TimedPulse extends InstanceFactory {
         return;
       }
 
-      // The counter is driven by GlobalClock, which always oscillates at oscFreq Hz
+      // The counter is driven by GlobalClock, which always oscillates at fpgaFreq Hz
       // for TRIG_RISING/FALLING — it is FPGA_CLKp or FPGA_CLKn depending on mode,
       // but both run at the same rate. The getClockPortMappings() adapter handles
       // the inversion so this module always uses posedge GlobalClock.
@@ -266,8 +266,8 @@ public class TimedPulse extends InstanceFactory {
       // constant 1 in raw mode), synchronizing the output to the user's clock domain.
       double interval = _attrs.getValue(ATTR_INTERVAL);
       AttributeOption unit = _attrs.getValue(ATTR_UNIT);
-      long intervalNanos = delta(interval, unit);
-      long maxCount = intervalNanos * ctx.oscFreq / 1_000_000_000L;
+      double intervalNanos = delta(interval, unit);
+      long maxCount = (long)Math.round(intervalNanos * (ctx.fpgaFreq / 1_000_000_000L));
       maxCount = Math.max(1, maxCount);
       if (maxCount > Integer.MAX_VALUE) {
         _err.AddSevereWarning("TimedPulse: interval is too long for HDL synthesis at "

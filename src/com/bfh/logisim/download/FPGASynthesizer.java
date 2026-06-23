@@ -55,13 +55,12 @@ public abstract class FPGASynthesizer extends FPGATool {
     super(toolchain, nickname, err);
   }
 
-
   // Subclasses can override this to generate a custom top-level HDL file
   public ToplevelHDLGenerator toplevelHDLGenerator(Netlist.Context ctx, PinBindings pinBindings) {
     return new ToplevelHDLGenerator(ctx, pinBindings);
   }
 
-  private ArrayList<String>  enumerateHDLFiles(String path) {
+  private ArrayList<String> enumerateHDLFiles(String path) {
     ArrayList<String> files = new ArrayList<>();
     if (lang.equals(VHDL))
       enumerateHDLFilesRecursive(path, files,
@@ -119,5 +118,17 @@ public abstract class FPGASynthesizer extends FPGATool {
   // Create plan for quick programming-only sequence
   // Returns true on success.
   public abstract boolean createProgrammingPlan(ArrayList<Stage> stages);
+
+  // Determine allowable fpga clock frequencies. If a PLL or similar block is
+  // available and supported, the parameters of that block, together with the
+  // base oscillator frequency, determine which clock frequencies are available.
+  // The returned list may be incomplete, perhaps just including a few of the
+  // likely useful frequencies or parameter combinations. If no PLL or simlar
+  // block is available, or the toolchain doesn't support it (yet), then we
+  // return a list with just the oscillator frequency instead.
+  public double[] availableFpgaFrequencies() {
+    // default: no PLL or similar block available or supported
+    return new double[] { board.fpga.ClockFrequency };
+  }
 
 }

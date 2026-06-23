@@ -98,13 +98,13 @@ public class ClockBus {
   }
 
 	public final boolean RawFPGAClock;
-  public final long RawFPGAClockFreq;
+  public final double RawFPGAClockFreq_;
   public final int TickerPeriod; // 0:"use fpga clock", -1:"dynamic", >0:"divided clock"
 	private ArrayList<Shape> shapes = new ArrayList<>();
   private HashMap<Point, Integer> points = new HashMap<>();
 
-	public ClockBus(long oscFreq, int clkPeriod) {
-    RawFPGAClockFreq = oscFreq;
+	public ClockBus(double fpgaFreq, int clkPeriod) {
+    RawFPGAClockFreq_ = fpgaFreq;
     TickerPeriod = clkPeriod;
     RawFPGAClock = (clkPeriod == 0);
   }

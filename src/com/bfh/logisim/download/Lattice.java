@@ -626,7 +626,7 @@ public class Lattice extends Toolchain {
     //   LOCATE COMP "net" SITE "pin";
     //   IOBUF PORT "net" PULLMODE=UP/DOWN/KEEPER/NONE
     if (ioResources.requiresOscillator) {
-      lpf.stmt("FREQUENCY PORT \"%s\" %s;", CLK_PORT, board.fpga.Speed.toUpperCase());
+      lpf.stmt("FREQUENCY PORT \"%s\" %s;", CLK_PORT, Altera.formatFreqForFMAX(board.fpga.ClockFrequency).toUpperCase());
       lpf.stmt("LOCATE COMP \"%s\" SITE \"%s\";", CLK_PORT, board.fpga.ClockPinLocation);
       writeIoSpec(lpf, CLK_PORT, InputBias.PULL_NONE, board.fpga.ClockIOStandard, DriveStrength.DEFAULT);
     }

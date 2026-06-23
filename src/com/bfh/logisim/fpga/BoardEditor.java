@@ -575,7 +575,7 @@ public class BoardEditor extends LFrame.Dialog {
     });
 
     JTextField rate = new JTextField(10);
-    JComboBox<String> hz = new JComboBox<>(new String[] { "Hz", "kHz", "MHz" });
+    JComboBox<String> hz = new JComboBox<>(new String[] { "Hz", "kHz", "MHz", "GHz" });
     JTextField clkLoc = new JTextField();
     // JComboBox<InputBias> clkPull = new JComboBox<>(InputBias.OPTIONS);
     JComboBox<IoStandard> clkStandard = new JComboBox<>(IoStandard.OPTIONS);
@@ -605,9 +605,19 @@ public class BoardEditor extends LFrame.Dialog {
       part.setText(fpga.Part);
       speed.setText(fpga.SpeedGrade);
       pkg.setText(fpga.Package);
-      // FIXME, split into separate clock section
-      rate.setText(fpga.Speed.split(" ")[0]);
-      hz.setSelectedItem(fpga.Speed.split(" ")[1]);
+      String numpart = "50.0";
+      String unit = "Hz";
+      String str = fpga.ClockSpeed.trim();
+      for (int i = hz.getItemCount() - 1; i >= 0; i--) { // reverse: do Hz last
+        String u = hz.getItemAt(i);
+        if (str.toLowerCase().endsWith(u)) {
+          numpart = str.substring(0, str.length() - u.length()).trim();
+          unit = u;
+          break;
+        }
+      }
+      rate.setText(numpart);
+      hz.setSelectedItem(unit);
       clkLoc.setText(fpga.ClockPinLocation);
       // clkPull.setSelectedItem(fpga.ClockPullBehavior);
       clkStandard.setSelectedItem(fpga.ClockIOStandard);

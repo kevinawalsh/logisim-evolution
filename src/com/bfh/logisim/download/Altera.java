@@ -152,6 +152,29 @@ public class Altera extends Toolchain {
         + "but this appears to be incorrect. %s", tool, helpmsg);
   }
 
+  // Convert an fpga frequency to a string like "50 MHz" suitable for Quartus
+  // FMAX_REQUIREMENT parameter. This method is also used by some other
+  // toolchain backends that use a similar format.
+  // NOTES:
+  //  - Does Quartus (and other toolchains) require whole-number of MHz? Can it
+  //    be kHz or Hz? Can it be fractional? Who knows?!
+  //  - Previously, all of these backends assumed the frequency is a whole
+  //    number, so we enforce that here, in case it's actually a requirement.
+  //  - None of these backends currently support PLL-based clock speed changes,
+  //    so this can be called using Chipset.ClockFrequency, the base oscillator
+  //    speed for the fpga.
+  public static String formatFreqForFMAX(double freq) {
+    long clkfreq = (long)Math.round(freq);
+    if (clkfreq % 1000000 == 0) {
+      clkfreq /= 1000000;
+      return clkfreq + " MHz";
+    } else if (clkfreq % 1000 == 0) {
+      clkfreq /= 1000;
+      return clkfreq + " kHz";
+    }
+    return clkfreq + " Hz";
+  }
+
   abstract static class AlteraSynthesize extends FPGASynthesizer {
 
     protected AlteraSynthesize(FPGAReport err) {
@@ -228,7 +251,7 @@ public class Altera extends Toolchain {
       String unusedPinsFlag = getAlteraUnusedPinsFlag(board);
       if (unusedPinsFlag != null)
         out.stmt("    set_global_assignment -name RESERVE_ALL_UNUSED_PINS \"%s\"", unusedPinsFlag);
-      out.stmt("    set_global_assignment -name FMAX_REQUIREMENT \"%s\"", chip.Speed);
+      out.stmt("    set_global_assignment -name FMAX_REQUIREMENT \"%s\"", formatFreqForFMAX(chip.ClockFrequency));
       out.stmt("    set_global_assignment -name RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
       out.stmt("    set_global_assignment -name CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION \"USE AS REGULAR IO\"");
       out.stmt();
