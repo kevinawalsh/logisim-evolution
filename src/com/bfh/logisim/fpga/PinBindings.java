@@ -681,8 +681,8 @@ public class PinBindings {
     return true;
   }
 
-  public Config makeConfig(String boardname, String clkmode, int clkdiv) {
-    Config c = new Config(boardname, clkmode, clkdiv);
+  public Config makeConfig(String boardname, String clkmode, int clkdiv, double fpgaFreq) {
+    Config c = new Config(boardname, clkmode, clkdiv, fpgaFreq);
     mappings.forEach((s, d) -> {
       String src = s.path.relstr();
       if (s.bit >= 0)
@@ -698,6 +698,7 @@ public class PinBindings {
       throw new Exception("missing boardname");
     String clkmode = "reduced";
     int clkdiv = 0;
+    double fpgaFreq = 0;
     for (Element clk : XmlIterator.forChildElements(xml, "clock")) {
       clkmode = clk.getAttribute("mode");
       if (clkmode == null || clkmode.isEmpty())
@@ -716,8 +717,12 @@ public class PinBindings {
           throw new Exception("invalid period for reduced clock mode: " + s);
         }
       }
+      String s = clk.getAttribute("fpgafreq");
+      if (s != null && !s.isEmpty()) {
+        try { fpgaFreq = Double.parseDouble(s); } catch (Exception e) { /* ignore, treat as unset */ }
+      }
     }
-    Config c = new Config(boardname, clkmode, clkdiv);
+    Config c = new Config(boardname, clkmode, clkdiv, fpgaFreq);
     for (Element m : XmlIterator.forChildElements(xml, "map")) {
       String src = m.getAttribute("src");
       if (src == null || src.isEmpty())
@@ -738,6 +743,7 @@ public class PinBindings {
     public final ArrayList<Mapping> mappings = new ArrayList<>();
     public String clkmode; // "maximum", "reduced", or "dynamic"
     public int clkdiv; // only for "reduced" mode
+    public double fpgaFreq; // 0 means "not set / use board base rate"
     
     public static class Mapping {
       public final String src, type, dest;
@@ -748,10 +754,11 @@ public class PinBindings {
       }
     }
 
-    public Config(String boardname, String clkmode, int clkdiv) {
+    public Config(String boardname, String clkmode, int clkdiv, double fpgaFreq) {
       this.boardname = boardname;
       this.clkmode = clkmode;
       this.clkdiv = clkdiv;
+      this.fpgaFreq = fpgaFreq;
     }
 
     public Element toXml(Document doc) {
@@ -761,6 +768,8 @@ public class PinBindings {
       clk.setAttribute("mode", clkmode);
       if (clkmode.equals("reduced"))
         clk.setAttribute("period", ""+clkdiv);
+      if (fpgaFreq > 0)
+        clk.setAttribute("fpgafreq", ""+fpgaFreq);
       config.appendChild(clk);
       for (Mapping m : mappings) {
         Element map = doc.createElement("map");

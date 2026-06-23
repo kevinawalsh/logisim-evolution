@@ -608,6 +608,18 @@ public class Commander extends JFrame
       }
       fpgaFreqOption.addItem(s);
     }
+    // If there's a saved fpgaFreq, restore the closest available option; otherwise use base rate.
+    Circuit root = circuitsList.getSelectedValue();
+    PinBindings.Config config = root == null ? null : root.getFPGAConfig(BoardList.getSelectedName());
+    if (config != null && config.fpgaFreq > 0 && opts.length > 0) {
+      int bestIndex = 0;
+      double bestDist = Double.MAX_VALUE;
+      for (int i = 0; i < opts.length; i++) {
+        double dist = Math.abs(opts[i] - config.fpgaFreq);
+        if (dist < bestDist) { bestDist = dist; bestIndex = i; }
+      }
+      defaultIndex = bestIndex;
+    }
     fpgaFreqOption.setSelectedIndex(defaultIndex);
     fpgaFreqOption.setEnabled(opts.length > 1);
     updatingFpgaFreqMenu = false;
@@ -1566,7 +1578,7 @@ public class Commander extends JFrame
         : clockOption.getSelectedValue().equals(DIV_SPEED) ? "reduced"
         : "dynamic";
     int clkdiv = getClkPeriod();
-    root.saveFPGAConfig(pinBindings.makeConfig(boardname, clkmode, clkdiv));
+    root.saveFPGAConfig(pinBindings.makeConfig(boardname, clkmode, clkdiv, getEffectiveFpgaFreq()));
     proj.getLogisimFile().setDirty(true);
     if (pinBindings.allPinsAssigned()) {
       pinBindings.finalizeMappings();

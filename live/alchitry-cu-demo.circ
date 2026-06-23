@@ -1345,8 +1345,8 @@ Map R to the side button.</a>
       <a name="label" val="Digit 3 (right)"/>
     </comp>
     <fpgaconfig board="Alchitry Cu V2 with Io">
-      <clock mode="maximum"/>
-      <map dest="4-digit Seven Segment Display 1x Left-Right 7Seg_x4" src="SevenSegment at (300,50)" type="SevenSegmentGang"/>
+      <clock fpgafreq="5.0E7" mode="maximum"/>
+      <map dest="4-digit Seven Segment Display 1x Left-Right 7Seg_x4" src="SevenSegment at (230,210)" type="SevenSegmentGang"/>
       <map dest="8-bit LEDBar 1x Right-Left L17_24" src="LEDBar left" type="LEDBar"/>
       <map dest="8-bit LEDBar 1x Right-Left L1_8" src="LEDBar right" type="LEDBar"/>
       <map dest="8-bit LEDBar 1x Right-Left L9_16" src="LEDBar middle" type="LEDBar"/>
