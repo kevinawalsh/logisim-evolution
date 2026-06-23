@@ -303,7 +303,7 @@ public class ToplevelHDLGenerator extends HDLGenerator {
         offset = indices.start.in;
         bit = "s_LOGISIM_HIDDEN_FPGA_INPUT";
         signal = String.format(bit+out.range, indices.end.in, offset);
-        srcwidth = indices.end.in - indices.start.in;
+        srcwidth = indices.end.in - indices.start.in + 1;
         isInput = true;
       } else if (indices.end.out == indices.start.out) {
         // foo[5] is the only bit
