@@ -130,11 +130,18 @@ class MenuFile extends Menu implements ActionListener {
     "logisim features > real time clock          : digital-clock.circ : main",
     "logisim features > ledbars + counters + rng : io-examples.circ : ledbar-example",
 
+    "fpga > Alchitry > I/O                       : alchitry-cu-demo.circ : simple-io-demo",
+    "fpga > Alchitry > counter                   : alchitry-cu-demo.circ : simple counter",
+    "fpga > Alchitry > snake digits game         : alchitry-cu-demo.circ : snake-on-digits",
+
+    "miscellaneous > button debouncing           : alchitry-cu-demo.circ : debounce",
+    "miscellaneous > multi-digit display driver  : alchitry-cu-demo.circ : SevenSegmentMultiplexer4",
     "miscellaneous > fizz-buzz                   : wiring.circ : fizz-buzz",
     "miscellaneous > ideal relay                 : IdealRelay.circ : main",
     "miscellaneous > invaders game               : invaders.circ : main",
     "miscellaneous > bouncing ball               : bounce.circ : main",
     "miscellaneous > digital clock demo          : digital-clock.circ : main",
+    "miscellaneous > snake digits game           : alchitry-cu-demo.circ : snake-on-digits",
 
   };
 
