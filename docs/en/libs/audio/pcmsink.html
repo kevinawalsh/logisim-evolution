@@ -47,7 +47,7 @@ will show as red.
 
 <blockquote class="hint"><b>Simulation Tick Rate:</b> Because audio data must be
 feed to the the sound system at a fixed rate, you must set Logisim's simulation
-clock tick rate and the PCM Sink's Sample Rate attribute to match. If the simulation tick
+clock tick rate and the PCM Sink's Sample Rate property to match. If the simulation tick
 rate runs faster than the PCM audio Sample Rate, the playback buffer will
 overflow and audible glitches will be heard. If the simulation runs slower than
 the PCM audio Sample Rate, the playback buffer will nearly always be empty,
@@ -58,7 +58,7 @@ resulting in little or no audio produced.
 
 <dl>
 
-<dt>West edge (input, bit width matches Data Bits attribute)</dt>
+<dt>West edge (input, bit width matches Data Bits property)</dt>
 <dd>Sample: When the clock triggers, the value found at this input is copied
 into the the real-time audio playback buffer. If the value contains undefined or
 error bits, the entire sample value is discarded.</dd>
@@ -70,16 +70,16 @@ and playback is enabled. When the value is 0, the <em>Sample</em> and
 
 <dt>South edge, right pin marked with triangle (input, bit width 1)</dt>
 <dd>Clock: At the instant that this is triggered as specified by the
-Trigger attribute, the component adds the <em>Sample</em> input value, if it is
+Trigger property, the component adds the <em>Sample</em> input value, if it is
 fully defined and not an error value, to the playback buffer for conversion and
 audio playback.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property.</p>
 
 <dl>
 
@@ -103,7 +103,7 @@ unsigned.</dd>
 <dt>Buffer Capacity</dt>
 <dd>The capacity, in number of samples, of the audio playback system. This
 provides buffering to account for differences between the audio playback
-rate, defined by the Sample Rate attribute, and Logisim's simulation tick rate,
+rate, defined by the Sample Rate property, and Logisim's simulation tick rate,
 which can vary unpredictably depending on many factors. However, larger buffer
 capacity can also result in higher latency, a lag between when data is captured
 from the <em>Sample</em> pin and when it is played back as audio.</dd>

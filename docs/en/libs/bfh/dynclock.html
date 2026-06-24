@@ -33,7 +33,7 @@ top-level of the circuit. The input to this component controls the clock speed
 of the circuit, when synthesized on an FPGA, as follows. The input is
 interpreted as an unsigned binary number, between zero and
 <var>2<sup><small><var>w</var></small></sup>-1</var>, where <var>w</var> is the
-width specified by the Tick Resolution attribute. When the input is zero, all
+width specified by the Tick Resolution property. When the input is zero, all
 FPGA clock ticks will be disabled, effectively stopping the clock entirely. When
 the input is <var>n &gt; 0</var>, then only one out of every <var>n</var> FPGA
 clock ticks will be enabled, giving an effective clock that is only
@@ -64,13 +64,13 @@ option allowing the user to select a clock speed, which must be set to the
 <h2>Pins</h2>
 
 <p>There is only one pin, an input whose bit width matches the Tick Resolution
-attribute. This input determines the clock speed when synthesized for an FPGA.
+property. This input determines the clock speed when synthesized for an FPGA.
 Zero disables the FPGA clock. Other values divide the clock, with larger values
 making the clock slower.
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <dl>
 

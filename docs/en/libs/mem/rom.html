@@ -26,16 +26,16 @@
 <h2>Behavior</h2>
 
 <p>The ROM component stores up to 16,777,216 values (specified in the Address
-Bit Width attribute), each of which can include up to to 32 bits
-(specified in the Data Bit Width attribute). It behaves similarly to a
+Bit Width property), each of which can include up to to 32 bits
+(specified in the Data Bit Width property). It behaves similarly to a
 <a href="ram.html"><img class="icon" src="/logisim-evolution/icons/ram.gif"> RAM</a> with
-the 'Non-Volatile' attribute set, but with a greatly simplified interface: a
+the 'Non-Volatile' property set, but with a greatly simplified interface: a
 circuit can access the current values in ROM, but it cannot change them, so
 there is no clock, no control inputs, and there is only one output-only data
 bus. The user can modify individual values interactively via the Poke Tool, or
 the user can edit, export, or import the contents via the Menu Tool.</p>
 
-<p>The ROM component's contents are stored as an attribute of the component.
+<p>The ROM component's contents are stored as a property of the component.
 This allows the ROM contents to be set before placing the component into the
 circuit. Multiple ROM components can be kept in the toolbar, each configured
 with different contents. The contents are non-volatile, and persist across
@@ -48,7 +48,7 @@ text (white on dark gray).</p>
 
 <h2>Single, Dual, and Quad Lines Modes</h2>
 
-<p>Logisim ROM has a 'Line Size' attribute that controls how many locations
+<p>Logisim ROM has a 'Line Size' property that controls how many locations
 ("lines") of memory are accessed at a time. Setting 'Line Size' to 'Single' is
 the simplest case: at most one location is accessed at a time, and there is one
 output labeled <var>D</var>. When 'Line Size' is set to 'Dual', however, the ROM
@@ -85,19 +85,19 @@ href="../../guide/mem/importexport.html">Memory Import/Export Format</a> in the
 
 <dl>
 
-<dt><var>A</var> on west edge (input, bit width matches Address Bit Width attribute)</dt>
+<dt><var>A</var> on west edge (input, bit width matches Address Bit Width property)</dt>
 <dd>Selects which of the values is currently being accessed by the circuit.</dd>
 
-<dt><var>D</var> on east edge (input/output, bit width matches Data Bit Width attribute)</dt>
+<dt><var>D</var> on east edge (input/output, bit width matches Data Bit Width property)</dt>
 <dd>Outputs the value at the currently selected address.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Address Bit Width</q> attribute
-and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> attribute.</p>
+the digits '0' through '9' alter its <q>Address Bit Width</q> property
+and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> property.</p>
 
 <dl>
 

@@ -109,9 +109,9 @@ transformation bitwise on its inputs.</p>
 
 <dl>
 
-<dt>West edge (inputs, bit width according to Data Bits attribute)</dt>
+<dt>West edge (inputs, bit width according to Data Bits property)</dt>
 <dd><p>The inputs into the component. There will be as many of these as
-specified in the Number of Inputs attribute.</p>
+specified in the Number of Inputs property.</p>
 
 <p>Note that if you are using shaped gates, the west side of OR and NOR
 gates will be curved. Nonetheless, the input pins are in a line. Logisim
@@ -120,18 +120,18 @@ will silently assume that you did not mean to overshoot it. In "printer
 view", these stubs will not be drawn unless they are connected to
 wires.</p></dd>
 
-<dt>East edge (output, bit width according to Data Bits attribute)</dt>
+<dt>East edge (output, bit width according to Data Bits property)</dt>
 <dd><p>The gate's output, whose value is computed based on the current
 inputs as described above.</p></dd>
 
 </dl>
 
-<h2>Attribute</h2>
+<h2>Property</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Number of Inputs</q> attribute,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute,
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+the digits '0' through '9' alter its <q>Number of Inputs</q> property,
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property,
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 
@@ -144,7 +144,7 @@ and the arrow keys alter its <q>Facing</q> attribute.</p>
 <dt>Gate Size</dt>
 <dd>Determines whether to draw a wider or narrower version of the
 component. This does not affect the number of inputs, which is specified
-by the Number of Inputs attribute. However, if shaped gates are selected,
+by the Number of Inputs property. However, if shaped gates are selected,
 then the gate will be drawn with <q>wings</q> to accommodate additional inputs
 beyond what the shape naturally accommodates.</dd>
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>LED Bar</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body>
+
+<h1><img src="/logisim-evolution/icons/ledbar.png">
+<em>LED Bar</em></h1>
+
+<p>Found in <a href="index.html">Input/Output Library</a></p>
+
+<img src="/logisim-evolution/img-libs/ledbar-example.png">
+
+<ul>
+<li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=io-examples.circ&circuit=ledbar-example">Live Circuit: LED Bar</a></li>
+</ul>
+
+<h2>Behavior</h2>
+
+<p>Displays a row of LEDs. Each LED lights up when its corresponding input is
+active (as determined by the <i>Active On High?</i> property). 
+
+<p>This is similar to the <a href="led.html">LED</a>, but groups multiple LEDs
+into a single component. It is especially useful for visualizing the bits of a
+multi-bit value, such as the contents of a register or counter.
+
+<h2>Ports</h2>
+
+<p>You can configure an LED Bar to have multiple inputs, one per LED, or a
+single multi-bit input that controls all LEDs.
+
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b>
+change the <i>Label Location</i> property.</li>
+<li><b>Typing a number (1-32)</b> changes the <i>Segments</i> property.
+</ul>
+
+<h2>Properties</h2>
+
+<dl>
+
+<dt>Facing</dt>
+<dd>The direction the component faces. Changing this rotates the entire
+component, including its ports.</dd>
+
+<dt>Input Format</dt>
+<dd>Whether to use one 1-bit input per LED (<q>separated</q>) or a single
+multi-bit bus input (<q>bus</q>).</dd>
+
+<dt>Segments</dt>
+<dd>The number of LEDs in the bar, from 1 to 32.</dd>
+
+<dt>Active On High?</dt>
+<dd>If <q>yes</q>, an LED lights up when its input bit is 1. If <q>no</q>,
+it lights up when its input bit is 0.</dd>
+
+<dt>On Color</dt>
+<dd>The color of a lit LED.</dd>
+
+<dt>Off Color</dt>
+<dd>The color of an unlit LED.</dd>
+
+<dt>LED Shape</dt>
+<dd>Whether LEDs are <q>rectangular</q> or <q>round</q>. Rectanglular LEDs are packed more tightly.</dd>
+
+<dt>Label</dt>
+<dd>Text label displayed near the component.</dd>
+
+<dt>Label Location</dt>
+<dd>Which side of the component the label appears on.</dd>
+
+<dt>Label Font</dt>
+<dd>The font used to draw the label.</dd>
+
+<dt>Label Color</dt>
+<dd>The color used to draw the label.</dd>
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>None &mdash; the LED Bar does not respond to being poked.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
+
+</body>
+</html>

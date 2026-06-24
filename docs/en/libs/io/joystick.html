@@ -33,13 +33,13 @@ the days of classical arcade games.</p>
 
 <dl>
 
-<dt>West edge, north pin (output, bit width matches Bit Width attribute)</dt>
+<dt>West edge, north pin (output, bit width matches Bit Width property)</dt>
 <dd>Indicates knob's <var>x</var>-coordinate, to be interpreted as an unsigned
 integer whose value will never be 0. Thus, a value of 1 represents the far left,
 and the maximum value for the bit width indicates the far right. When the knob
 is at rest (in the center), the value has the bit pattern 10...00.</dd>
 
-<dt>West edge, south pin (output, bit width matches Bit Width attribute)</dt>
+<dt>West edge, south pin (output, bit width matches Bit Width property)</dt>
 <dd>Indicates knob's <var>y</var>-coordinate, whose value ranges as with the
 <var>x</var>-coordinate pin. When the knob is pulled to the top, this output's
 value is 1, and when the knob is pulled to the bottom, the output is the
@@ -47,10 +47,10 @@ maximum value for the bit width selected.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-2 through Alt-5 alter its <q>Bit Width</q> attribute.</p>
+Alt-2 through Alt-5 alter its <q>Bit Width</q> property.</p>
 
 <dl>
 
@@ -76,7 +76,7 @@ used.</dd>
 that location and updates the outputs. Dragging the mouse continues to move
 the knob and update the outputs, keeping the knob within the joystick's area.
 Releasing the mouse button reverts the knob back to its rest position, if the
-'Return to Center?' attribute is "yes".</p>
+'Return to Center?' property is "yes".</p>
 
 <h2>FPGA Synthesis</h2><p>None.
 

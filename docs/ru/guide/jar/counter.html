@@ -21,7 +21,7 @@ import java.net.URL;
 
 import javax.swing.ImageIcon;
 
-import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Property;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Direction;
@@ -49,8 +49,8 @@ class GrayCounter extends InstanceFactory {
         // атрибута позволяют нам связать метку с компонентом (однако,
         // нам также нужен configureNewInstance для настройки расположения
         // метки).
-        setAttributes(
-                new Attribute[] { StdAttr.WIDTH, StdAttr.LABEL, StdAttr.LABEL_FONT },
+        setProperties(
+                new Property[] { StdAttr.WIDTH, StdAttr.LABEL, StdAttr.LABEL_FONT },
                 new Object[] { BitWidth.create(4), "", StdAttr.DEFAULT_LABEL_FONT });
         
         // Следующее обращение к методу устанавливает всё так, чтобы состоянием
@@ -80,7 +80,7 @@ class GrayCounter extends InstanceFactory {
     public void propagate(InstanceState state) {
         // Это так же, как и с SimpleGrayCounter, кроме того, что мы используем
         // атрибут StdAttr.WIDTH чтобы задать разрядность.
-        BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
+        BitWidth width = state.getPropertyValue(StdAttr.WIDTH);
         CounterData cur = CounterData.get(state, width);
         boolean trigger = cur.updateClock(state.getPort(0));
         if(trigger) cur.setValue(GrayIncrementer.nextGray(cur.getValue()));
@@ -96,7 +96,7 @@ class GrayCounter extends InstanceFactory {
         painter.drawLabel();
         
         if(painter.getShowState()) {
-            BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
+            BitWidth width = painter.getPropertyValue(StdAttr.WIDTH);
             CounterData state = CounterData.get(painter, width);
             Bounds bds = painter.getBounds();
             GraphicsUtil.drawCenteredText(painter.getGraphics(),
@@ -146,7 +146,7 @@ public class CounterPoker extends InstancePoker {
      * красный прямоугольник вокруг значения. */
     public void paint(InstancePainter painter) {
         Bounds bds = painter.getBounds();
-        BitWidth width = painter.getAttributeValue(StdAttr.WIDTH);
+        BitWidth width = painter.getPropertyValue(StdAttr.WIDTH);
         int len = (width.getWidth() + 3) / 4;
 
         Graphics g = painter.getGraphics();
@@ -162,7 +162,7 @@ public class CounterPoker extends InstancePoker {
     public void keyTyped(InstanceState state, KeyEvent e) {
         // преобразовать её в шестнадцатеричное число; если она - не шестнадцатеричное число, то отменить.
         int val = Character.digit(e.getKeyChar(), 16);
-        BitWidth width = state.getAttributeValue(StdAttr.WIDTH);
+        BitWidth width = state.getPropertyValue(StdAttr.WIDTH);
         if(val &lt; 0 || (val &amp; width.getMask()) != val) return;
 
         // вычислить следующее значение

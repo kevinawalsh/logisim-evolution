@@ -34,7 +34,7 @@ is 1, all values are pinned to 0, regardless of the clock input.</p>
 
 <h2>Pins</h2>
 
-<p>* An asterisk marks pins that exist only when the Parallel Load attribute
+<p>* An asterisk marks pins that exist only when the Parallel Load property
 is enabled.</p>
 
 <dl>
@@ -44,20 +44,20 @@ is enabled.</p>
 but if it is 0, no advance takes place. This input is ignored if the Load
 input is 1.</dd>
 
-<dt>West edge, middle pin (input, bit width matches Data Bits attribute)</dt>
+<dt>West edge, middle pin (input, bit width matches Data Bits property)</dt>
 <dd>Data: When advancing the stages, the value found at this input is loaded
 into the first stage.</dd>
 
 <dt>West edge, bottom pin marked with triangle (input, bit width 1)</dt>
 <dd>Clock: At the instant that this is triggered as specified by the
-Trigger attribute, the component may advance the stages or load new values.</dd>
+Trigger property, the component may advance the stages or load new values.</dd>
 
 <dt>*North edge, left pin (input, bit width 1)</dt>
 <dd>Load: When this 1, the values found on the other north-edge pins are
 loaded into all stages at the next clock trigger. When 0 or disconnected, no
 load occurs.</dd>
 
-<dt>*North edge, other pins (input, bit width matches Data Bits attribute)</dt>
+<dt>*North edge, other pins (input, bit width matches Data Bits property)</dt>
 <dd>Data: These values are loaded into all stages when the clock is triggered
 while the <var>load</var> input is 1. The leftmost input corresponds to the
 youngest stage.</dd>
@@ -66,20 +66,20 @@ youngest stage.</dd>
 <dd>Clear: When this is 1, all stages are asynchronously reset to 0, and all
 other inputs are ignored.</dd>
 
-<dt>*South edge, other pins (output, bit width matches Data Bits attribute)</dt>
+<dt>*South edge, other pins (output, bit width matches Data Bits property)</dt>
 <dd>Output: Emits the value stored in each stage, with the youngest stage
 reflected on the leftmost of the pins (next to the <var>clear</var> input).</dd>
 
-<dt>East edge (output, bit width matches Data Bits attribute)</dt>
+<dt>East edge (output, bit width matches Data Bits property)</dt>
 <dd>Output: Emits the value stored in the final (oldest) stage.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Number of Stages</q> attribute
-and Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute.</p>
+the digits '0' through '9' alter its <q>Number of Stages</q> property
+and Alt-0 through Alt-9 alter its <q>Data Bits</q> property.</p>
 
 <dl>
 
@@ -109,7 +109,7 @@ update at the instant the clock falls from 1 to 0.</dd>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>If the Parallel Load attribute is no, or if the Data Bits attribute is more
+<p>If the Parallel Load property is no, or if the Data Bits property is more
 than 4, then poking the register has no effect. Otherwise, clicking the
 component will bring keyboard focus to the clicked stage
 (indicated by a red rectangle), and typing a hexadecimal digit will

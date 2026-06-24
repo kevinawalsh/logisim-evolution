@@ -24,14 +24,14 @@
 <h2>Behavior</h2>
 
 <p>The ROM component stores up to 16,777,216 values (specified in the Address
-Bit Width attribute), each of which can include up to to 32 bits
-(specified in the Data Bit Width attribute). A circuit can access
+Bit Width property), each of which can include up to to 32 bits
+(specified in the Data Bit Width property). A circuit can access
 the current values in ROM, but it cannot change them. The user can modify individual values
 interactively via the Poke Tool, or the user can modify the entire
 contents via the Menu Tool.</p>
 
 <p>Unlike the RAM component, the ROM component's current contents are
-stored as an attribute of the component. Thus, if a circuit containing
+stored as a property of the component. Thus, if a circuit containing
 a ROM component is used twice, then both ROM components will hold the
 same values. Also because of this behavior, the current ROM contents are
 stored in files created by Logisim.</p>
@@ -45,11 +45,11 @@ will be displayed in inverse text (white on black).</p>
 
 <dl>
 
-<dt><var>A</var> on west edge (input, bit width matches Address Bit Width attribute)</dt>
+<dt><var>A</var> on west edge (input, bit width matches Address Bit Width property)</dt>
 <dd>Selects which of the values are currently being accessed by the
 circuit.</dd>
 
-<dt><var>D</var> on east edge (input/output, bit width matches Data Bit Width attribute)</dt>
+<dt><var>D</var> on east edge (input/output, bit width matches Data Bit Width property)</dt>
 <dd>Outputs the value at the currently selected address at the
 <var>D</var> pin if <var>sel</var> is 1 or floating. If <var>sel</var>
 is 0, then <var>D</var> will be floating.</dd>
@@ -63,11 +63,11 @@ the <var>D</var> output.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Address Bit Width</q> attribute
-and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> attribute.</p>
+the digits '0' through '9' alter its <q>Address Bit Width</q> property
+and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> property.</p>
 
 <dl>
 

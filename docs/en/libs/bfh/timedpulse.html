@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="/logisim-evolution/sidebar.js"></script>
+<title>Timed Pulse</title>
+<link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
+</head>
+
+<body>
+
+<h1><img src="/logisim-evolution/icons/timedpulse.png"> <em>Timed Pulse</em></h1>
+
+<p>Found in <a href="index.html">BFH Mega Functions Library</a></p>
+
+<video src="timedpulse.mp4" autoplay loop muted playsinline></video>
+
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=wiring.circ&circuit=timedpulse-example">Live Circuit: Timed Pulse</a></li>
+</ul>
+
+<h2>Behavior</h2>
+
+<p>Timed Pulse generates pulses at a fixed, predictable rate, regardless of the
+frequency of the underlying clock. Each output pulse is one clock cycle wide by
+default. In other words, the output is 1 for one full clock cycle, then the
+output is 0 for as many clock cycles as needed before th enext pulse to achieve
+the desired rate. The output of Timed Pules can be useful as an enable signal
+for registers, counters, and other components that should update at some fixed
+rate that is slower than the system clock rate.
+
+<p>In the example above, the Timed Pulse component is configured to generate one
+full-cycle pulse at a 1Hz rate, which it achieves even though the clock is
+ticking much faster than 1Hz. The Timed Pulse output is then used to drive a
+blinking LED, which flashes briefly once each second. It also enables a counter,
+which counts up steadily once per second.
+
+<blockquote class="warning">Note: The underlying clock driving the Timed Pulse
+must be at least as faast as the desired target pulse rate, and depending on the
+frequency of the underlying clock, the actual pulse rate achieved in practice
+may only approximate the desired target pulse rate. A faster underlying clock
+will allow a more accurate pulse rate. If the system clock is close to the
+desired pulse rate, pulses can sometimes occur back-to-back, in consecutive
+clock cycles, if that's needed to achieve the desired target pulse rate. In the
+limit, when the system clock is equal to the desired pulse rate, then a pulse
+will occur in every clock cycle, meaning the output of Timed Pulse will be, in
+effect, a constant 1.</blockquote>
+
+<h2>Ports</h2>
+
+<p>There is one output pin, on the east edge, carrying the pulse signal. There
+is one input pin on the south edge, which should be connected to a clock that is
+faster than the desired target pulse rate.
+
+<h2>Keyboard Shortcuts</h2>
+
+<p>When using Edit Tool:</p>
+<ul>
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b>
+change the <i>Label Location</i> property.</li>
+</ul>
+
+<h2>Properties</h2>
+
+<dl>
+
+<dt>Interval</dt>
+<dd>Sets the desired target pulse rate. Must be positive.</dd>
+
+<dt>Unit</dt>
+<dd>Determines how <i>Interval</i> is interpreted, either: seconds, milliseconds, microseconds, nanoseconds, Hz, kHz, or MHz.</dd>
+
+<dt>Trigger</dt>
+<dd>Determines the width and alignment of output pulses with the underlying clock.
+<ul>
+    <li><b>Rising Edge</b>: Each pulse starts on a rising clock edge and ends on the next rising clock edge.
+    <li><b>Falling Edge</b>: Each pulse starts on a falling clock edge and ends on the next falling clock edge.
+    <li><b>High Level</b>: Each pulse coincides with the high portion of the clock cycle.
+    <li><b>Low Level</b>: Each pulse coincides with the low portion of the clock cycle.
+</dd>
+
+<dt>Label</dt>
+<dd>Text to show next to the component.</dd>
+
+<dt>Label Location</dt>
+<dd>Location of the label relative to the component.</dd>
+
+<dt>Label Font</dt>
+<dd>Font for the label.
+
+<dt>Label Color</dt>
+<dd>Color for the label.
+
+</dl>
+
+<h2>Poke Tool Behavior</h2>
+
+<p>Timed Pulse does not respond to pokes.</p>
+
+<h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
+
+</body>
+</html>

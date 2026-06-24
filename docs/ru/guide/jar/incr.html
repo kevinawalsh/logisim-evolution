@@ -74,7 +74,7 @@
 <pre>
 package com.cburch.gray;
 
-import com.cburch.logisim.data.Attribute;
+import com.cburch.logisim.data.Property;
 import com.cburch.logisim.data.BitWidth;
 import com.cburch.logisim.data.Bounds;
 import com.cburch.logisim.data.Value;
@@ -104,7 +104,7 @@ class GrayIncrementer extends InstanceFactory {
          * атрибуты StdAttr, когда это уместно: пользователь может выбрать несколько
          * компонентов (даже из разных фабрик) с одинаковым атрибутом
          * и изменять их все сразу. */
-        setAttributes(new Attribute[] { StdAttr.WIDTH },
+        setProperties(new Property[] { StdAttr.WIDTH },
                 new Object[] { BitWidth.create(4) });
         
         /* "Offset bounds" - это положение ограничивающего прямоугольника

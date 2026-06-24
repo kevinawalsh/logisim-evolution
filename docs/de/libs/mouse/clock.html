@@ -30,7 +30,7 @@ ticks are enabled via the
 A "tick" is Logisim's unit of time; the speed at which ticks occur can
 be selected from the Simulate menu's Tick Frequency submenu.</p>
 The clock's cycle can be configured using
-its High Duration and Low Duration attributes.</p>
+its High Duration and Low Duration properties.</p>
 
 <p>Note that Logisim's simulation of clocks is quite unrealistic: In
 real circuits, multiple clocks will drift from one another and will
@@ -41,15 +41,15 @@ the same rate.</p>
 
 <p>A clock has only one pin, an output with a bit width of 1, whose
 value will represent the current value of the clock. The location of
-this pin is specified in the Facing attribute. The clock's value
+this pin is specified in the Facing property. The clock's value
 will toggle on its schedule whenever ticks are enabled, and it will
 toggle whenever it is clicked using the <a href="poke.html">Poke
 Tool</a>.</p>
 
-<h2>Attribute</h2>
+<h2>Property</h2>
 
 <p>When the component is selected or being added,
-the arrow keys alter its <q>Facing</q> attribute.</p>
+the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 

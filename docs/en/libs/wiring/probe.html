@@ -10,70 +10,58 @@
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/probe.gif">
-<em>Probe</em></h1>
+<h1><img src="/logisim-evolution/icons/probe.gif"> <em>Probe</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0.3 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/probe.png" width="39" height="52"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
 
-<h2>Behavior</h2>
+<p>A probe displays the value of a signal. It is mainly intended for debugging,
+by showing the value carried by some wire or output from some other component.
+Probes do not affect the functioning of a circuit in any way.
 
-<p>A probe is an element that simply displays the value at a given point
-in a circuit. It does not itself interact with other components.</p>
+<img src="probes.png">
 
-<p>In most respects, the probe component duplicates the functionality found in a
-<a href="pin.html">Pin component</a> configured as an output pin. The difference
-is that if the circuit is used as a subcircuit component, then an output pin
-will be a part of that interface, whereas a probe is not. They also are
-different in that the probe automatically adapts its width to whatever it is
-connected to. Graphically, a probe looks like a pin but has a thinner, gray
-border and a yellow background.</p>
+<h2>Ports</h2>
 
-<h2>Pins</h2>
+<p>Each probe has a single input port. The signal at this port is displayed by
+the probe. As a convenience, a probe automatically adjusts the width of it's
+port to match whatever it is connected to.</p>
 
-<p>A probe component has only one pin, which acts as an input to
-the probe. The width that this pin accepts is adaptive: The probe will
-adapt to inputs of any width.</p>
+<h2>Keyboard Shortcuts</h2>
 
-<h2>Attributes</h2>
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
 
-<p>When the component is selected or being added,
-the arrow keys alter its <q>Facing</q> attribute.</p>
+<li><b>Arrow keys while holding the option key (⌥) or Alt key</b>
+change the <i>Label Location</i> property.</li>
+
+</ul>
+
+<h2>Properties</h2>
 
 <dl>
 
 <dt>Facing</dt>
-<dd>The side of the component where its input pin should be.</dd>
+<dd>The side where the port should be.</dd>
 
 <dt>Label</dt>
-<dd>The text within the label associated with the component.</dd>
+<dd>Text to be associated with the component.</dd>
 
 <dt>Label Location</dt>
-<dd>The location of the label relative to the component.</dd>
+<dd>Location of the label relative to the component.</dd>
 
 <dt>Label Font</dt>
-<dd>The font with which to render the label.</dd>
+<dd>Font for the label.</dd>
 
 <dt>Radix</dt>
-<dd>The base (for example, binary, decimal, or hexadecimal) in which
-the value is displayed.</dd>
+<dd>The number base used for displaying values.</dd>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - probes do not respond to being poked.</p>
 
-<h2>FPGA Synthesis</h2><p>None, but Probe components will be silently
-ignored during FPGA synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
+<h2>FPGA Synthesis</h2><p>Probe components are silently ignored during FPGA synthesis.
 
 </body>
 </html>

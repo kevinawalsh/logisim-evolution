@@ -25,8 +25,8 @@
 
 <p>The RAM component, easily the most complex component in Logisim's
 built-in libraries, stores up to 16,777,216 values (specified in the Address
-Bit Width attribute), each of which can include up to to 32 bits
-(specified in the Data Bit Width attribute). The circuit can load and
+Bit Width property), each of which can include up to to 32 bits
+(specified in the Data Bit Width property). The circuit can load and
 store values in RAM. Also, the user can modify individual values
 interactively via the Poke Tool, or the user can modify the entire
 contents via the Menu Tool.</p>
@@ -37,7 +37,7 @@ is listed using hexadecimal. The value at the currently selected address
 will be displayed in inverse text (white on black).</p>
 
 <p>The RAM component supports three different interfaces, depending on the
-Data Interface attribute.</p>
+Data Interface property.</p>
 
 <dl>
 
@@ -68,17 +68,17 @@ use.</p></dd>
 
 <dl>
 
-<dt><var>A</var> on west edge (input, bit width matches Address Bit Width attribute)</dt>
+<dt><var>A</var> on west edge (input, bit width matches Address Bit Width property)</dt>
 <dd>Selects which of the values in memory is currently being accessed by the
 circuit.</dd>
 
-<dt><var>D</var> on west edge (input, bit width matches Data Bit Width attribute)</dt>
+<dt><var>D</var> on west edge (input, bit width matches Data Bit Width property)</dt>
 <dd>This input is present only if "separate load and store ports" is selected
-for the Data Interface attribute. When a store is requested (via the clock changing
+for the Data Interface property. When a store is requested (via the clock changing
 from 0 to 1 while <em>sel</em> and <em>str</em> are both 1 or floating), the
 value found at this port is stored into memory at the currently selected address.</dd>
 
-<dt><var>D</var> on east edge (input/output or output, bit width matches Data Bit Width attribute)</dt>
+<dt><var>D</var> on east edge (input/output or output, bit width matches Data Bit Width property)</dt>
 <dd>If <var>sel</var> and <var>ld</var> are 1 or floating, then the RAM
 component emits the value found at the currently selected address on this port.
 If there is a single load/store port, the value read from this port is
@@ -86,7 +86,7 @@ stored whenever a store is requested.</dd>
 
 <dt><var>str</var> on south edge (input, bit width 1)</dt>
 <dd>Store: This input is present only if "separate load and store ports" is selected
-for the Data Interface attribute. When it is 1 or floating, a clock pulse will result
+for the Data Interface property. When it is 1 or floating, a clock pulse will result
 in storing the data found on the west edge into memory (provided the
 <var>sel</var> input is also 1 or floating).</dd>
 
@@ -97,7 +97,7 @@ situations where you have multiple RAM units, only one of which would be
 enabled at any time.</dd>
 
 <dt>triangle on south edge (input, bit width 1)
-<dd>Clock input: This is absent when the Data Interface attribute's value is "One
+<dd>Clock input: This is absent when the Data Interface property's value is "One
 asynchronous load/store port." In other circumstances, when <var>ld</var> is 0,
 and this input rises from 0 to 1 (and <var>sel</var> is 1/undefined and
 <var>clr</var> is 0), then the value at the currently selected address
@@ -118,11 +118,11 @@ in memory are pinned to 0, no matter what the other inputs are.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Address Bit Width</q> attribute
-and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> attribute.</p>
+the digits '0' through '9' alter its <q>Address Bit Width</q> property
+and Alt-0 through Alt-9 alter its <q>Data Bit Width</q> property.</p>
 
 <dl>
 

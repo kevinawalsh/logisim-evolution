@@ -112,7 +112,7 @@ output errors or, in some cases, floating ('X') values.</p>
     current to flow in either direction depending on how the inputs are
     wired.</blockquote>
 
-<p>If the Data Bits attribute is more than 1, the <em>gate</em> input is still
+<p>If the Data Bits property is more than 1, the <em>gate</em> input is still
 a single bit, but its value is applied simultaneously to each of the
 <em>source</em> input's bits.</p> 
 
@@ -128,7 +128,7 @@ disabled.</p>
 
 <dl>
 
-<dt>West edge (input, bit width matches Data Bits attribute)</dt>
+<dt>West edge (input, bit width matches Data Bits property)</dt>
 <dd>The component's <em>source</em> input that will transmit to the output
 if triggered by the <em>gate</em> input.</dd>
 
@@ -137,7 +137,7 @@ if triggered by the <em>gate</em> input.</dd>
 will transmit if the <em>gate</em> value is 0; for N-type transistors,
 this will trigger the transistor if the <em>gate</em> value is 1.</dd>
 
-<dt>East edge (output, bit width matches Data Bits attribute)</dd>
+<dt>East edge (output, bit width matches Data Bits property)</dd>
 <dd>The component's output, which will match the <em>source</em> input
 if indicated by the <em>gate</em> input, or will be floating if the <em>gate</em>
 input is the negation of what indicates negation. If <em>gate</em> is floating
@@ -145,11 +145,11 @@ or an error value, then the output will be an error value.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 

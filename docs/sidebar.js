@@ -246,7 +246,7 @@ window.onload = function() {
   if (!isApp) {
     const banner = document.createElement('div');
     banner.id = 'logisim-banner';
-    banner.innerHTML = 'Logisim-Evolution documentation, version 5.1.2-HC.'
+    banner.innerHTML = 'Logisim-Evolution documentation, version 5.3.0-HC.'
       + ' <a href="https://github.com/kevinawalsh/logisim-evolution">Source on GitHub</a>.';
     document.body.prepend(banner);
   }

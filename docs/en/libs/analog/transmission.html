@@ -67,7 +67,7 @@ in which case <em>drain</em> is floating as well. This behavior is summarized by
 <p>* Note: If <em>source</em> is X, <em>drain</em> is X; otherwise <em>drain</em> is E.</p>
 </center>
 
-<p>If the Data Bits attribute is more than 1, each <em>gate</em> input is still
+<p>If the Data Bits property is more than 1, each <em>gate</em> input is still
 a single bit, but the <em>gate</em> values are applied simultaneously to each of the
 <em>source</em> input's bits.</p>
 
@@ -83,7 +83,7 @@ a single bit, but the <em>gate</em> values are applied simultaneously to each of
 
 <dl>
 
-<dt>West edge (input, bit width matches Data Bits attribute)</dt>
+<dt>West edge (input, bit width matches Data Bits property)</dt>
 <dd>The component's <em>source</em> input that will transmit to the output
 if triggered by the <em>p-gate</em> and <em>n-gate</em> inputs.</dd>
 
@@ -93,7 +93,7 @@ if triggered by the <em>p-gate</em> and <em>n-gate</em> inputs.</dd>
 <dt>South edge (input, bit width 1)</dt>
 <dd>The component's <em>n-gate</em> input.</dd>
 
-<dt>East edge (output, bit width matches Data Bits attribute)</dd>
+<dt>East edge (output, bit width matches Data Bits property)</dd>
 <dd>The component's output, which will match the <em>source</em> input
 if <em>p-gate</em> is 0 and <em>n-gate</em> is 1, or it will be floating if
 <em>p-gate</em> is 1 and <em>n-gate</em> is 0. For all other values on <em>p-gate</em> and <em>n-gate</em>,
@@ -101,11 +101,11 @@ the output is an error value or, in some cases, a floating value.</dd>
 
 </dl>
 
-<h2>Attributes</h2>
+<h2>Properties</h2>
 
 <p>When the component is selected or being added,
-Alt-0 through Alt-9 alter its <q>Data Bits</q> attribute
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+Alt-0 through Alt-9 alter its <q>Data Bits</q> property
+and the arrow keys alter its <q>Facing</q> property.</p>
 
 <dl>
 

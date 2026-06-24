@@ -4,125 +4,169 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="/logisim-evolution/sidebar.js"></script>
-<title>Splitter</title>
+<title>Split/Join Signals (a.k.a. "Splitter")</title>
 <link rel="stylesheet" type="text/css" href="/logisim-evolution/help.css">
 </head>
 
 <body>
 
-<h1><img src="/logisim-evolution/icons/splitter.gif">
-<em>Splitter</em></h1>
+<h1><img src="/logisim-evolution/icons/splitter.gif"> <em>Split/Join Signals (a.k.a. "Splitter")</em></h1>
 
-<p><table>
-<tr><td><strong>Library:</strong></td>
-	<td><a href="index.html">Wiring</a></td></tr>
-<tr><td><strong>Introduced:</strong></td>
-	<td>2.0 Beta 1 (in Base library, moved to Wiring in 2.7.0)</td></tr>
-<tr><td valign="top"><strong>Appearance:</strong></td>
-	<td valign="top"><img src="/logisim-evolution/img-libs/splitter.png" width="24" height="44"></td></tr>
-</table></p>
+<p>Found in <a href="index.html">Wiring Library</a></p>
 
-<h2>Behavior</h2>
+<img src="splitters.png">
 
-<p>The splitter creates a correspondence between a multi-bit value and several
-separate subsets of those bits. Despite its name, it can either
-split a multi-bit value into component parts, or it can combine
-component parts into a multi-bit value; or it can do both at once.
-A more complete description of splitters is found in the '<a
-href="../../guide/bundles/splitting.html">Splitters</a>' section of the
-<em>User's Guide</em>.</p>
+<h2>See Also:</h2>
+<ul>
+    <li><a class="logisim-link" onclick="live(event, this)" href="/logisim-evolution/live?file=wiring.circ&circuit=splitter-examples">Live Circuit: Splitters</a></li>
+</ul>
 
-<p>Logisim treats splitters specially when propagating values within a
-circuit: Whereas all other components have a computed delay for purposes
-of simulating their behavior, values propagate through splitters (as
-well as wires) instantaneously.</p>
+<p>The Split/Join Signals component, or <i>Splitter</i> for short, is used to
+join or split signals and buses. A splitter is very flexible in how it can be
+used:
+<ul>
 
-<p class="aside"><strong>Note:</strong> The term <em>splitter</em> is a non-standard
-term, which is unique to Logisim as far as I know. I am unaware of any
-standard term for such a concept; the only term I have heard used is
-<em>bus ripper</em>, but this term is unnecessarily violent for my
-tastes.</p>
+<li><p><b>Split a bus:</b> It can split a single <em>n</em>-bit bus into <em>n</em>
+individual 1-bit signals.</p></li>
 
-<h2>Pins</h2>
+<li><p><b>Join signals:</b> It can do the opposite, joining <em>n</em>
+individual 1-bit signals, into a single <em>n</em>-bit bus.</p></li>
 
-<p>To distinguish the several connecting points for a splitter, we refer
-to the single connecting point one side as its <em>combined end</em>,
-and we refer to the multiple connecting points on the other side as its
-<em>split ends</em>.</p>
+<li><p><b>Merge or partition equal-sized buses:</b> It can split an 12-bit bus into
+three 4-bit buses, or four 3-bit buses, or two 6-bit buses, or other similar
+combinations, or do the opposite, merging multiple smaller buses into one larger
+bus.</p></li>
 
-<dl>
+<li><p><b>Merge or re-partition unequal-sized buses and signals:</b> You can mix
+and match different width buses. For example, it can merge a 4-bit bus, two
+2-bit buses, a 3-bit bus, and a 1-bit wire, all together to form a single 12-bit
+bus, or it can do the the opposite, splitting the 12-bit bus into smaller
+unequal sized buses and signals.<p></li>
 
-<dt>Combined end (input/output bit width matches Bit Width In attribute)</dt>
-<dd><p>A value holding all of the bits traveling through the splitter.</p></dd>
+<li><p><b>Pull signals out of a bus:</b> A common use case is "tapping" into a
+bus to pull out one or more bits. Given an 8-bit bus, a splitter can be used to
+extract just bit number 7 (the left, most significant bit), or just bit number 0
+(the right, least significant bit), or just bits 3, 2, 1, and 0 (the bottom
+half), or any other combination of bits.</p></li>
 
-<dt>Split ends (input/output, bit width computed based on Bit <var>x</var> attributes)</td>
-<dd><p>The number of split ends is specified in the Fan Out attribute, and
-each split end has an index that is at least 0 and less than the Fan Out
-attribute. For each split end, all bits for which Bit <var>x</var>
-refers to its index travels through that split end; the order of these
-bits is the same as their order within the combined end.</p></dd>
+<img src="splitters-odd.png">
 
-</dl>
+</ul>
 
-<h2>Attributes</h2>
+<h2>Ports</h2>
 
-<p>When the component is selected or being added,
-the digits '0' through '9' alter its <q>Fan Out</q> attribute,
-Alt-0 through Alt-9 alter both the <q>Fan Out</q> and <q>Bit Width In</q> attributes,
-and the arrow keys alter its <q>Facing</q> attribute.</p>
+<p>Each splitter has a <em>combined end</em>, and one or more <em>taps</em>. The
+<i>Fan Out</i> property controls how many taps there are. Taps are numbered 1 to M. The
+<i>Combined Bit Width</i> property controls the width of combined end, and also controls how
+many bits are available for the taps. Bits are numbrered 0 to N-1. Other
+properties allow you to assign each bit (0 to N-1) from the combined end to one
+of the taps (1 to M). Or, you can select "None" for a bit to indicate that bit
+isn't used by any of the taps.</p>
+
+<p><img class="nonicon" src="splitter-taps.png" style="float: right; border: 1px solid gray;">
+In the image at right, there are 8 bits and 8 taps. Tap 1, at the top, carries
+bit 0. Tap 2, second from the top, carries bits 3, 2, and 1. The next two taps
+carry no bits. Bit 6 is carried by the bottom-most tap, Tap 8. The numbers drawn
+next to each tap show which bits are carried by that tap.</p>
+
+<blockquote class="warning"><b>Note:</b> Each bit can only be assigned to one
+tap. So the combined end has "all the bits" in the splitter (all 8 bits in the
+image at right). And the taps, taken together, can't have duplicate copies of
+any of those bits. In other words, each bit number drawn on the symbol can only
+appear at most once. But there is no requirement that the taps, taken together,
+cover all the bits: there can be bits "missing" from the taps. And some taps can
+be empty, carrying no signals at all, if you want. These are shown in
+gray.</blockquote>
+
+<blockquote class="hint"><b>Tip:</b> The combined end, and the taps, have no
+specific direction. In fact, you can mix and match directions freely, even
+within the same splitter or the same port of a splitter. You can arrange for
+some signals to flow into certain taps (or parts of a tap) and out (part of) the
+combined end, while having other signals flowing into (other parts of) the
+combined end and out of other (or other parts of) some taps.</blockquote>
+
+<p>Logisim's simulation engine treats splitters specially when propagating
+values within a circuit. Unlike all other components, splitters have no "delay"
+or direction. Essentially, the simulator internally decomposes all buses and
+splitters into an equivalent arrangement of individual 1-bit wires.</p>
+
+<p class="aside"><strong>Note:</strong> The term <em>splitter</em> is a
+non-standard term, unique to Logisim as far as I know. I am unaware of any
+standard term for such a concept. Sometimes they are called a "breakout
+harness", "bus breakout", or just "breakout". In automotive wiring, and some
+other electronics, it might be called a "wiring harness" or "cable harness",
+though a wiring harness often has taps scattered along its length and might have
+more than one connectors at each end, rather than a single distinct "combined
+end".</p>
+
+<h2>Keyboard Shortcuts</h2>
+
+<ul>
+<li><b>Arrow keys</b> change the <i>Facing</i> property.</li>
+
+<li><b>Typing a number (1-32)</b> changes the <i>Fan Out</i> property,
+controlling how many taps are present.</li>
+
+<li><b>Typing a number (1-32) while holding the option key (⌥) or Alt key</b> 
+changes <b>both</b> the <i>Fan Out</i> <b>and</b> the <i>Combined Bit Width</i>
+property, controlling the number of bits available at the combined end and the
+number of bits available for the taps, and making enough taps so there is one
+for each bit.</li>
+</ul>
+
+<h2>Properties</h2>
 
 <dl>
 
 <dt>Facing</dt>
-<dd><p>The location of the split ends relative to the combined end.</p></dd>
+<dd><p>The direction the taps are pointing.</p></dd>
 
 <dt>Fan Out</dt>
-<dd><p>The number of split ends.</p></dd>
+<dd><p>The number of taps.</p></dd>
 
-<dt>Bit Width In</dt>
+<dt>Combined Bit Width</dt>
 <dd><p>The bit width of the combined end.</p></dd>
 
 <dt>Appearance</dt>
-<dd><p>Supports different ways of depicting the splitter in the circuit.
-The <q>Left-handed</q> option (the default) draws a spine going left from the
-combined end, with a labeled line coming from the spine for each split end.
-The <q>Right-handed</q> option is the same except the spine goes right (if you're
-facing according to the Facing attribute).
-The <q>Centered</q> option centers the spine so it goes in roughly equal directions
-left and right.
-And the <q>Legacy</q> option draws diagonal lines to each split end, without labels;
-this option is primarily for compatibility with versions
-older than 2.7.0, when this was the only option for splitter appearance.</p></dd>
+<dd><p>Supports different ways of depicting the splitter in the circuit. If a
+splitter is facing East, then:
+<ul>
+<li><i>Left-handed</i> (the default) draws a spine going left from the
+combined end, with taps arranged perpendicular to the spine.
+<li><i>Right-handed</i> is similar, but with the spine going to the right relative
+to the combined end.
+<li><i>Centered</i> draws a shorter spine, roughly balanced left to rigght, and
+with a mix of diagonal and perpendicular taps. Bit numbers are shown on the
+taps. This option is primarily for compatibility with older versions of Logisim.
+</ul>
+</dd>
 
 <dt>Spacing</td>
-<dd><p>Controls how far appart the split end pins are placed.</p></dd>
+<dd><p>Controls how far apart the tap pins are placed.</p></dd>
 
 <dt>Bit <var>x</var></dt>
-<dd><p>The index of the split end to which bit <var>x</var> of the combined
-end corresponds. The split ends are indexed starting from 0 at the top
-(for a splitter facing east or west) or from 0 at the left/west (for a
-splitter facing north or south). A bit can be specified to correspond to
-none of the split ends. There is no way for a bit to correspond to
-multiple split ends.</p>
+<dd><p>Controls which tap bit <var>x</var> is connected to, or can be set to
+"None" if bit <var>x</var> is not to be used by the taps. Taps are numbered
+start from 1 at the top (for a splitter facing east or west) or from 1 at the
+left/west (for a splitter facing north or south). Note: There is no way for a
+bit to be connected to multiple taps.</p>
 
-<p>Sometimes you can avoid twiddling each individual Bit <var>x</var> attribute
-by bringing up the pop-up menu for a splitter (usually by right-clicking or
-control-clicking it). The pop-up menu includes options labeled Distribute Ascending
-and Distribute Descending. The Distribute Ascending option distributes the bits
-so that each split end receives the same number of bits, starting from end 0.
-(If the number of split ends doesn't divide exactly into the number of bits,
+<p>As a convenience, the popup menu for a splitter can be used to reset all of
+the <i>Bit x</i> properties simultaneously. Right click (or Control-Click) a
+splitter to bring up the popup menu.
+Choose <b>Distribute Ascending</b> to distribute the bits
+so that each tap receives the same number of bits, starting from tap 1.
+(If the number of taps doesn't divide exactly into the number of bits,
 then the bits are distributed as evenly as possible.)
-Distribute Descending does the same but starts from the highest-numbered end.</p></dd>
+Choose <b>Distribute Descending</b> to do the same, but starting from the highest-numbered tap.</p></dd>
 
 </dl>
 
 <h2>Poke Tool Behavior</h2>
 
-<p>None.</p>
+<p>None - splitters do not respond to being poked.</p>
 
 <h2>FPGA Synthesis</h2><p>Supports VHDL and Verilog synthesis.
-
-<p><a href="../index.html">Up to <em>Library Reference</em></a></p>
 
 </body>
 </html>
