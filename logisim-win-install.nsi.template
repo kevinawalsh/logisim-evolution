@@ -1,0 +1,32 @@
+!include WinMessages.nsh
+!include FileFunc.nsh
+ 
+SilentInstall silent
+RequestExecutionLevel user
+ShowInstDetails hide
+ 
+OutFile "Logisim-Evolution-@@VER_HC@@.exe"
+Icon "logisim.ico"
+VIProductVersion @@VER_DOTDOT@@
+VIAddVersionKey ProductName "Logisim-Evolution-@@VER_HC@@"
+VIAddVersionKey LegalCopyright "Copyright (c) @@COPYRIGHT_YEAR@@ Kevin Walsh"
+VIAddVersionKey FileDescription "Digital logic designer and simulator"
+VIAddVersionKey FileVersion @@VER_DOTDOT@@
+VIAddVersionKey ProductVersion "@@VER_HC@@ / @@JAVA_VER@@"
+VIAddVersionKey InternalName "Logisim-Evolution-HC"
+VIAddVersionKey OriginalFilename "Logisim-Evolution-@@VER_HC@@.exe"
+ 
+Section
+  SetOverwrite off
+ 
+  SetOutPath "$TEMP\logisim-evolution-runtime"
+  File /r "logisim-evolution-runtime\*"
+ 
+  InitPluginsDir
+  SetOutPath $PluginsDir
+  File "logisim-evolution-@@VER_HC@@.jar"
+  SetOutPath $TEMP
+  ${GetParameters} $R0
+  nsExec::Exec '"$TEMP\logisim-evolution-runtime\bin\javaw.exe" -jar $PluginsDir\logisim-evolution-@@VER_HC@@.jar $R0'
+  RMDir /r $PluginsDir
+SectionEnd

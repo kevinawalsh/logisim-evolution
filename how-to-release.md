@@ -1,5 +1,8 @@
 # How to build releases
 
+0. Check java version on both MacOS and Windows, ensure it is the current LTS
+   version for each platform.
+
 1. Check git status, ensure on holycross branch all work is committed.
 
 2. Bump version, copyright year, and contact info in various files:

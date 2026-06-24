@@ -12,6 +12,8 @@ com/hepia
 *.class
 
 # Generated files
+logisim-l4j.xml
+logisim-win-install.nsi
 javadoc/
 test/com/cburch/logisim/gui
 bin/

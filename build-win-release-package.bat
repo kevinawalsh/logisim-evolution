@@ -5,22 +5,23 @@ rem   This script is for building the final Windows executable image. This is ba
 rem   closely on the Mac script in build-mac-release-package.sh. However, there are
 rem   some differences.
 rem   
-rem   Most importantly, jpackage does not seem to work on windows: selecting either
-rem   exe or msi types for output generates an unsupported-type error. The
-rem   previously-used Launch4j tool does not support bundling the runtime, and we
-rem   should not expect the user to have a Java 11 runtime preinstalled -- after all,
-rem   there is no downloadable JRE for Java 11.
+rem   Most importantly, until (maybe) recently, jpackage does not seem to work
+rem   on windows: selecting either exe or msi types for output generates an
+rem   unsupported-type error. The previously-used Launch4j tool does not support
+rem   bundling the runtime, and we should not expect the user to have a recent
+rem   Java runtime preinstalled -- after all, there is no downloadable JRE for
+rem   recent Java releases.
 rem   
 rem   Workaround 1: Use Launch4j to build an EXE that references a jlink-produced Java
 rem   runtime in the same directory, then distribute that EXE with the runtime as a ZIP
 rem   file. Users can unzip, put wherever they like, then click the exe. As long as
-rem   the JRE stays in the same directory, should work fine.
+rem   the JRE stays in the same directory, should work fine, but it is not ideal.
 rem   
 rem   Workaround 2: Use NSIS, as described here:
 rem     https://netnix.org/2018/07/19/windows-exe-bundled-with-openjdk/
 rem   This will silently unzip the JRE to a temp folder (but cache the result), and
 rem   will unzip the jar as well, then execute them. Basically, it is a silent
-rem   installer that runs every time you click the EXE.
+rem   installer that runs every time you click the EXE. We adopt this strategy.
 
 rem   Source files needed:
 rem     logisim-evolution.jar
@@ -29,15 +30,30 @@ rem     LICENSE
 rem     logisim-l4j.xml
 rem     logisim-win-install.nsi
 
-rem set JDEPS="C:\Program Files\Java\jdk-11.0.4+11\bin\jdeps.exe"
-rem set JLINK="C:\Program Files\Java\jdk-11.0.4+11\bin\jlink.exe"
-rem set JDEPS="C:\Program Files\AdoptOpenJDK\temurin-17.0.7_7-hotspot\bin\jdeps.exe"
-rem set JLINK="C:\Program Files\AdoptOpenJDK\temurin-17.0.7_7-hotspot\bin\jlink.exe"
-set JDEPS="C:\Program Files\Eclipse Adoptium\jdk-17.0.13.11-hotspot\bin\jdeps.exe"
-set JLINK="C:\Program Files\Eclipse Adoptium\jdk-17.0.13.11-hotspot\bin\jlink.exe"
-rem set PACKAGER="C:\Program Files\Java\jdk-14\bin\jpackage.exe"
+rem   How to run this script:
+rem     - Change into this directory.
+rem     - Ensure the correct, release-ready logisim-evolution.jar file is
+rem       present in this directory.
+rem     - Ensure the current LTS version of java is installed.
+rem     - Edit JAVA_VER and the install paths below.
+rem     - run in cmd.exe
+
+rem Configurable Version Info and Install Paths -- edit these before each release
+set JAVA_VER="Eclipse Adoptium OpenJDK Temurin-25.0.3_9"
+set JDEPS="C:\Program Files\Eclipse Adoptium\jdk-25.0.3.9-hotspot\bin\jdeps.exe"
+set JLINK="C:\Program Files\Eclipse Adoptium\jdk-25.0.3.9-hotspot\bin\jlink.exe"
 set LAUNCH4J="C:\Program Files (x86)\Launch4j\launch4jc.exe"
 set NSIS="c:\Program Files (x86)\NSIS\Bin\makensis.exe"
+
+echo Gathering info...
+set /p VERSION=<VERSION
+set /p COPYRIGHT_YEAR=<COPYRIGHT_YEAR
+set VER_HC=%VERSION:-HC=hc%
+set VER_BASE=%VERSION:-HC=%
+set VER_DOTDOT=%VER_BASE%.00000
+set BUILD_DIR=%~dp0
+echo Version: %VERSION% ^(%VER_HC%^, %VER_DOTDOT%^), Copyright year: %COPYRIGHT_YEAR%
+echo BuildDir: %BUILD_DIR%
 
 rem Using print-module-deps appears to be the correct way to get the dependencies.
 echo Detecting java module dependencies...
@@ -59,79 +75,33 @@ if "%DETECTED_MODULES%" == "%MODULES%" goto modules_ok
 
 if EXIST "%JAVA_RUNTIME%" goto runtime_ok
   echo Building custom java runtime (using jlink)...
-  %JLINK% --no-header-files --no-man-pages --compress=2 --strip-debug ^
+  %JLINK% --no-header-files --no-man-pages --strip-debug ^
         --add-modules "%MODULES%" --output "%JAVA_RUNTIME%"
   goto runtime_built
 :runtime_ok
   echo Using previously built custom java runtime (from jlink).
 :runtime_built
 
-rem   rem installer type can be exe or msi, but exe does not seem to work
-rem   set INSTALLER_TYPE="msi"
-rem   set OUTPUT=.
-rem   set JAR=logisim-evolution.jar
-rem   set VERSION=5.0.5
-rem   rem FILE_ASSOCIATIONS="file-associations.properties"
-rem   set APP_ICON="logisim.ico"
-rem   rem JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"
-rem   
-rem   rem Prepare input files
-rem   echo Preparing input files...
-rem   rmdir /S /Q win-staging
-rem   mkdir win-staging
-rem   copy LICENSE LICENSE.txt
-rem   copy LICENSE.txt win-staging\
-rem   copy %JAR% win-staging\
-rem   
-rem   rem Prepare installer customizations: background image, postinstall script
-rem   rem echo Preparing installer customizations...
-rem   rem rm -rf win-resources
-rem   rem mkdir -p win-resources
-rem   rem cp win-installer-background.png win-resources/Logisim-Evolution-background.png
-rem   
-rem     rem Build the app and installer package
-rem     echo Building %INSTALLER_TYPE% ...
-rem     %PACKAGER% ^
-rem       --package-type %INSTALLER_TYPE% ^
-rem       --input win-staging ^
-rem       --output "%OUTPUT%" ^
-rem       --name "Logisim-Evolution" ^
-rem       --main-class com.cburch.logisim.Main ^
-rem       --main-jar "%JAR%" ^
-rem       --app-version "%VERSION%" ^
-rem       --copyright "(c) 2025 Kevin Walsh" ^
-rem       --description "Digital logic designer and simulator." ^
-rem       --vendor "Kevin Walsh" ^
-rem       --add-modules "%MODULES%" ^
-rem       --runtime-image "%JAVA_RUNTIME%" ^
-rem       --icon "%APP_ICON%" ^
-rem       --file-associations "%FILE_ASSOCIATIONS%" ^
-rem       --identifier "%JAVA_APP_IDENTIFIER%" ^
-rem       --resource-dir mac-resources ^
-rem       --license-file LICENSE.txt ^
-rem       --win-dir-chooser ^
-rem       --win-menu
-rem   
-rem   rem rmdir /S /Q win-staging
-rem   rem rm -rf mac-resources
-rem   move Logisim-Evolution-%VERSION%.exe Logisim-Evolution-%VERSION%-HC.exe
-
+echo Generating logisim-l4j.xml from template...
+powershell -NoProfile -Command "(Get-Content 'logisim-l4j.xml.template') -replace '@@VER_HC@@',$env:VER_HC -replace '@@BUILD_DIR@@',$env:BUILD_DIR | Set-Content 'logisim-l4j.xml'" || goto :error
 echo Creating executable wrapper...
 %LAUNCH4J% logisim-l4j.xml || goto :error
 
 echo Creating ZIP package for distribution...
-IF EXIST Logisim-Evolution-5.0.5hc-windows.zip del Logisim-Evolution-5.0.5hc-windows.zip || goto :error
-IF EXIST Logisim-Evolution-5.0.5hc rmdir /S /Q Logisim-Evolution-5.0.5hc || goto :error
-mkdir Logisim-Evolution-5.0.5hc || goto :error
-copy LICENSE Logisim-Evolution-5.0.5hc\LICENSE.txt || goto :error
-copy logisim-evolution-5.0.5hc.exe Logisim-Evolution-5.0.5hc || goto :error
-xcopy /s logisim-evolution-runtime Logisim-Evolution-5.0.5hc\logisim-evolution-runtime\ || goto :error
-powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-5.0.5hc', 'Logisim-Evolution-5.0.5hc-windows.zip'); }" || goto :error
-IF EXIST logisim-evolution-5.0.5hc.exe del logisim-evolution-5.0.5hc.exe || goto :error
-rmdir /S /Q Logisim-Evolution-5.0.5hc || goto :error
+IF EXIST Logisim-Evolution-%VER_HC%-windows.zip del Logisim-Evolution-%VER_HC%-windows.zip || goto :error
+IF EXIST Logisim-Evolution-%VER_HC% rmdir /S /Q Logisim-Evolution-%VER_HC% || goto :error
+mkdir Logisim-Evolution-%VER_HC% || goto :error
+copy LICENSE Logisim-Evolution-%VER_HC%\LICENSE.txt || goto :error
+copy logisim-evolution-%VER_HC%.exe Logisim-Evolution-%VER_HC% || goto :error
+xcopy /s logisim-evolution-runtime Logisim-Evolution-%VER_HC%\logisim-evolution-runtime\ || goto :error
+powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('Logisim-Evolution-%VER_HC%', 'Logisim-Evolution-%VER_HC%-windows.zip'); }" || goto :error
+IF EXIST logisim-evolution-%VER_HC%.exe del logisim-evolution-%VER_HC%.exe || goto :error
+rmdir /S /Q Logisim-Evolution-%VER_HC% || goto :error
 
 echo Creating self-contained executable...
-copy logisim-evolution.jar logisim-evolution-5.0.5hc.jar || goto :error
+echo Generating logisim-win-install.nsi from template...
+powershell -NoProfile -Command "(Get-Content 'logisim-win-install.nsi.template') -replace '@@VER_HC@@',$env:VER_HC -replace '@@VER_DOTDOT@@',$env:VER_DOTDOT -replace '@@COPYRIGHT_YEAR@@',$env:COPYRIGHT_YEAR -replace '@@JAVA_VER@@',$env:JAVA_VER | Set-Content 'logisim-win-install.nsi'" || goto :error
+copy logisim-evolution.jar logisim-evolution-%VER_HC%.jar || goto :error
 %NSIS% logisim-win-install.nsi || goto :error
 
 echo =======================================

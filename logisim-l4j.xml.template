@@ -2,8 +2,8 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>C:\Users\kwalsh\Downloads\logisim-evolution\logisim-evolution.jar</jar>
-  <outfile>C:\Users\kwalsh\Downloads\logisim-evolution\logisim-evolution-5.0.5hc.exe</outfile>
+  <jar>@@BUILD_DIR@@logisim-evolution.jar</jar>
+  <outfile>@@BUILD_DIR@@logisim-evolution-@@VER_HC@@.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir>.</chdir>
@@ -13,7 +13,7 @@
   <stayAlive>false</stayAlive>
   <restartOnCrash>false</restartOnCrash>
   <manifest></manifest>
-  <icon>C:\Users\kwalsh\Downloads\logisim-evolution\logisim.ico</icon>
+  <icon>@@BUILD_DIR@@logisim.ico</icon>
   <jre>
     <path>logisim-evolution-runtime</path>
     <bundledJre64Bit>true</bundledJre64Bit>
