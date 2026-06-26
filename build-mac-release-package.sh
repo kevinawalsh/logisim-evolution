@@ -116,6 +116,8 @@ if [ "${VERSION}-HC" != "${VERSION_HC}" ]; then
 fi
 echo "Release version: $VERSION Holy Cross Edition"
 
+JAR=logisim-evolution-${VERSION}hc.jar
+
 CRASH_LINK=`awk '/^issues:/ { print $2; }' contact.txt`
 CRASH_EMAIL=`awk '/^contact:/ { print $2; }' contact.txt`
 SRC_LINK=`awk '/^source:/ { print $2; }' contact.txt`
@@ -136,12 +138,12 @@ JAVA_RUNTIME="java-runtime-mac"
 
 # Using list-deps is recommended by one tutorial, but it seems to over-estimate
 # the modules needed. Perhaps it (harmlessly)includes transitive dependencies?
-# MODULES=`jdeps --list-deps logisim-evolution.jar | paste -d, -s`
+# MODULES=`jdeps --list-deps $JAR | paste -d, -s`
 # MODULES=java.base,java.datatransfer,java.desktop,java.logging,java.prefs,java.xml
 
 # Using print-module-deps appears to be the correct way to get the dependencies.
 echo "Detecting ignored java modules..."
-DETECTED_MISSING=`jdeps --print-module-deps logisim-evolution.jar | awk '/not found$/ { print $3; }' | cut -d. -f1 | sort -u | paste -d, -s -`
+DETECTED_MISSING=`jdeps --print-module-deps $JAR | awk '/not found$/ { print $3; }' | cut -d. -f1 | sort -u | paste -d, -s -`
 MISSING="android"
 echo "Detected ignored java modules: ${DETECTED_MISSING}"
 
@@ -155,7 +157,7 @@ if [ "${DETECTED_MISSING}" != "${MISSING}" ]; then
 fi
 
 echo "Detecting java module dependencies..."
-DETECTED_MODULES=`jdeps --print-module-deps --ignore-missing-deps logisim-evolution.jar`
+DETECTED_MODULES=`jdeps --print-module-deps --ignore-missing-deps $JAR`
 MODULES="java.base,java.desktop,java.logging,java.management,java.net.http,java.prefs,jdk.httpserver"
 echo "Detected java module dependencies: ${DETECTED_MODULES}"
   
@@ -177,7 +179,6 @@ fi
 
 INSTALLER_TYPE="pkg" # Options: dmg or pkg
 OUTPUT="."
-JAR="logisim-evolution.jar"
 FILE_ASSOCIATIONS="file-associations.properties"
 APP_ICON="logisim.icns"
 JAVA_APP_IDENTIFIER="edu.holycross.cs.kwalsh.logisim"

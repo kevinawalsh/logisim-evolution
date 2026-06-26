@@ -1,12 +1,14 @@
 !include WinMessages.nsh
 !include FileFunc.nsh
- 
-SilentInstall silent
-RequestExecutionLevel user
-ShowInstDetails hide
- 
-OutFile "Logisim-Evolution-@@VER_HC@@.exe"
+
+; ---------------------------------------------------------------
+; Basic installer metadata
+; ---------------------------------------------------------------
+Name "Logisim-Evolution @@VER_HC@@"
+OutFile "Logisim-Evolution-@@VER_HC@@-Setup.exe"
 Icon "logisim.ico"
+UninstallIcon "logisim.ico"
+
 VIProductVersion @@VER_DOTDOT@@
 VIAddVersionKey ProductName "Logisim-Evolution-@@VER_HC@@"
 VIAddVersionKey LegalCopyright "Copyright (c) @@COPYRIGHT_YEAR@@ Kevin Walsh"
@@ -14,19 +16,124 @@ VIAddVersionKey FileDescription "Digital logic designer and simulator"
 VIAddVersionKey FileVersion @@VER_DOTDOT@@
 VIAddVersionKey ProductVersion "@@VER_HC@@ / @@JAVA_VER@@"
 VIAddVersionKey InternalName "Logisim-Evolution-HC"
-VIAddVersionKey OriginalFilename "Logisim-Evolution-@@VER_HC@@.exe"
- 
-Section
-  SetOverwrite off
- 
-  SetOutPath "$TEMP\logisim-evolution-runtime"
-  File /r "logisim-evolution-runtime\*"
- 
-  InitPluginsDir
-  SetOutPath $PluginsDir
-  File "logisim-evolution-@@VER_HC@@.jar"
-  SetOutPath $TEMP
-  ${GetParameters} $R0
-  nsExec::Exec '"$TEMP\logisim-evolution-runtime\bin\javaw.exe" -jar $PluginsDir\logisim-evolution-@@VER_HC@@.jar $R0'
-  RMDir /r $PluginsDir
+VIAddVersionKey OriginalFilename "Logisim-Evolution-@@VER_HC@@-Setup.exe"
+
+; ---------------------------------------------------------------
+; Installation settings
+; ---------------------------------------------------------------
+; Per-user install: no admin rights required.
+; Installs to %LOCALAPPDATA%\Logisim-Evolution-@@VER_HC@@
+RequestExecutionLevel user
+InstallDir "$LOCALAPPDATA\Logisim-Evolution-@@VER_HC@@"
+
+; ---------------------------------------------------------------
+; Modern UI or plain UI?
+; Using plain UI here for simplicity and minimal dependencies.
+; If you want a wizard-style UI, add MUI2 includes here.
+; ---------------------------------------------------------------
+ShowInstDetails show
+ShowUninstDetails show
+
+; ---------------------------------------------------------------
+; Installer section
+; ---------------------------------------------------------------
+Section "Install"
+
+  SetOverwrite on
+  SetOutPath "$INSTDIR"
+
+  ; Copy the entire jpackage app-image directory contents.
+  ; The app-image directory produced by jpackage contains:
+  ;   Logisim-Evolution-@@VER_HC@@.exe   (the launcher)
+  ;   runtime\                           (bundled JRE)
+  ;   app\                               (jar + config)
+  File /r "Logisim-Evolution-@@VER_HC@@\*"
+
+  ; --- Start Menu shortcut ---
+  CreateDirectory "$SMPROGRAMS\Logisim-Evolution"
+  CreateShortcut \
+    "$SMPROGRAMS\Logisim-Evolution\Logisim-Evolution @@VER_HC@@.lnk" \
+    "$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe" \
+    "" \
+    "$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe" 0
+
+  ; --- Desktop shortcut (optional: remove if unwanted) ---
+  CreateShortcut \
+    "$DESKTOP\Logisim-Evolution @@VER_HC@@.lnk" \
+    "$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe" \
+    "" \
+    "$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe" 0
+
+  ; --- .circ file association (per-user, no admin needed) ---
+  ; Map extension to a ProgID
+  WriteRegStr HKCU "Software\Classes\.circ" "" "LogisimHC.Circuit"
+  WriteRegStr HKCU "Software\Classes\.circ" "Content Type" "application/vnd.kwalsh.logisim-evolution-hc"
+
+  ; Define the ProgID
+  WriteRegStr HKCU "Software\Classes\LogisimHC.Circuit" "" "Logisim Circuit File"
+  WriteRegStr HKCU "Software\Classes\LogisimHC.Circuit\DefaultIcon" "" \
+    "$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe,0"
+  WriteRegStr HKCU "Software\Classes\LogisimHC.Circuit\shell\open\command" "" \
+    '"$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe" "%1"'
+
+  ; Notify the shell that file associations changed
+  System::Call 'shell32.dll::SHChangeNotify(i, i, i, i) v (0x08000000, 0, 0, 0)'
+
+  ; --- Register uninstaller in Add/Remove Programs ---
+  WriteRegStr HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "DisplayName" "Logisim-Evolution @@VER_HC@@"
+  WriteRegStr HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "DisplayVersion" "@@VER_HC@@"
+  WriteRegStr HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "Publisher" "Kevin Walsh"
+  WriteRegStr HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "DisplayIcon" "$INSTDIR\Logisim-Evolution-@@VER_HC@@.exe,0"
+  WriteRegStr HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "UninstallString" "$INSTDIR\Uninstall-@@VER_HC@@.exe"
+  WriteRegStr HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "InstallLocation" "$INSTDIR"
+  WriteRegDWORD HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "NoModify" 1
+  WriteRegDWORD HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@" \
+    "NoRepair" 1
+
+  ; Write the uninstaller executable
+  WriteUninstaller "$INSTDIR\Uninstall-@@VER_HC@@.exe"
+
+SectionEnd
+
+; ---------------------------------------------------------------
+; Uninstaller section
+; ---------------------------------------------------------------
+Section "Uninstall"
+
+  ; Remove shortcuts
+  Delete "$SMPROGRAMS\Logisim-Evolution\Logisim-Evolution @@VER_HC@@.lnk"
+  RMDir "$SMPROGRAMS\Logisim-Evolution"
+  Delete "$DESKTOP\Logisim-Evolution @@VER_HC@@.lnk"
+
+  ; Remove file association registry entries
+  DeleteRegKey HKCU "Software\Classes\.circ"
+  DeleteRegKey HKCU "Software\Classes\LogisimHC.Circuit"
+
+  ; Notify the shell that file associations changed
+  System::Call 'shell32.dll::SHChangeNotify(i, i, i, i) v (0x08000000, 0, 0, 0)'
+
+  ; Remove uninstaller entry from Add/Remove Programs
+  DeleteRegKey HKCU \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\LogisimHC-@@VER_HC@@"
+
+  ; Remove installed files
+  ; RMDir /r removes the directory and everything in it.
+  ; This is safe because $INSTDIR is a versioned path we own.
+  RMDir /r "$INSTDIR"
+
 SectionEnd
