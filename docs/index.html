@@ -1,15 +1,137 @@
-<!DOCTYPE html><html><head>
-    <title>Logisim Evolution - Holy Cross Edition</title>
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logisim Evolution - Holy Cross Edition</title>
 </head>
 <body>
 <h1>Logisim Evolution - Holy Cross Edition</h1>
 
-<p>TODO: friendly landing page here, with links to:</p>
+<p>Logisim is an educational tool for designing and simulating digital logic circuits.</p>
+
+<h3>Download and Install</h3>
+
 <ul>
-  <li>downloads for latest binary release</li>
-  <li>github page</li>
-  <li>documentation pages (primary link to /en/ site, with other languages listed as alternatives)</li>
+  <li><a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/Logisim-Evolution-5.3.0-HC.pkg">Download Logisim for Mac OS</a><br>
+  Version 5.3.0-HC, <i>pkg</i> installer program for recent arm-based M-series "Apple Silicon" Macs.
+  <li>Download Logisim for older Intel-based x86 Macs</a><br>
+  Not yet available, please contact kwalsh@holycross.edu if you are interested in this to run Logisim on an older Mac.
+  <li><a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/Logisim-Evolution-5.3.0hc-Setup.exe">Download Logisim for Windows</a><br>
+  Version 5.3.0-HC, <i>exe</i> installer program for Windows. An alternative <a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/Logisim-Evolution-5.3.0hc-windows.zip">Logisim zip archive</a> is available as well, which can be put on a USB stick or run directly from a download folder.
+  <li><a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/logisim-evolution-5.3.0hc.jar">Download Logisim for Linux</a><br>
+  Requires Java 17 or above. This is a Java <i>jar</i> file, which should work on any Linux, Mac OS, Windows computer. 
+  <li><a href="https://github.com/kevinawalsh/logisim-evolution/releases">Download older versions of Logisim</a>
 </ul>
+
+<p><b>Which version should I download for Mac?</b> Recent Mac computers should
+use the "Apple Silicon" version. Under the Apple Menu, go to "About This Mac".
+If the chip says Apple M1, Apple M6, or any other similar chip, you have an
+Apple Silicon Mac. Older Intel-based Macs need a separate version. If you think
+that would be useful, please contact kwalsh@holycross.edu and one can be made
+available.
+
+<p><b>Mac Security Warning:</b> The MacOS security gatekeeper may prevent you
+from opening the PKG file above directly. As of the time of publishing, the code
+has passed Apple security review and is digitally signed by the developer
+(myself, K. Walsh), but Apple regularly adds new restrictions that can cause new
+security warnings. To install, right-click and "Save As..." to save the PKG file
+to your Downloads folder. Then go to your Downloads folder in the finder, right
+click the PKG file and "Open with... Installer (Default)". If given a security
+warning, click "Open". This should install Logisim in your Applications folder.
+
+<p><b>Which version should I download for Windows?</b> This version of Logisim
+uses a standard windows installer program to install Logisim. It should
+<b>not</b> require administrator privileges to install, as it installs into your
+personal Program Files folder and in your start menu, rather than in the
+system-wide Program Files folder. The alternative zip-format download can be
+used if you'd rather run Logisim directly from your Downloads folder or copy it
+to a portable thumbdrive. The zip archive contains an EXE file you can click on
+to launch Logisim, along with the Java JAR file with Logisim code and a suitable
+Java runtime for windows: extract the compressed contents to a directory of your
+choice and click the EXE launcher.
+
+<p><b>Universal Java Jar</b> Windows and Mac versions will work only on Windows
+or Mac. The platform-independent JAR file should work on any platform, but
+requires that Java version 17 or above be installed separately if your computer
+doesn't already have it. Java version 25 or higher is recommended. One good
+choice is to use the Eclipse/Adoptium project <a
+href="https://adoptium.net/">Temurin OpenJDK</a>. To run the JAR file, open a
+command line (or Mac Terminal or Windows CMD.exe or PowerShell prompt) and type
+`java -jar logisim-evolution-5.3.0hc.jar` from within the directory where you
+have downloaded the JAR file.
+
+<h3>Documentation</h3>
+
+<p>Documentation for circuit component libraries, user tutorials, and other
+guides are all available within the app. Or you can access them online:
+<ul>
+  <li><a href="https://kevinawalsh.github.io/logisim-evolution/en/libs/index.html">Circuit Component Library Reference</a>
+  <li><a href="https://kevinawalsh.github.io/logisim-evolution/en/guide/index.html">Beginners Guide & Other Documentation</a>
+  <li>Documentation (in sometimes embarrassingly chaotic states of inaccuracy and disarray) is available in
+    <a href="https://kevinawalsh.github.io/logisim-evolution/en/">English</a>, 
+    <a href="https://kevinawalsh.github.io/logisim-evolution/es/">Spanish</a>,
+    <a href="https://kevinawalsh.github.io/logisim-evolution/pt/">Portuguese</a>,
+    <a href="https://kevinawalsh.github.io/logisim-evolution/fr/">French</a>,
+    <a href="https://kevinawalsh.github.io/logisim-evolution/de/">German</a>,
+    <a href="https://kevinawalsh.github.io/logisim-evolution/el/">Greek</a>, and
+    <a href="https://kevinawalsh.github.io/logisim-evolution/ru/">Russian</a>.
+</ul>
+
+<p>Please don't hesitate to <a href="https://github.com/kevinawalsh/logisim-evolution/issues">report bugs or other issues</a>, or submit feature requests.
+
+<h3>Features</h3>
+
+<video src="logisim-demo.mp4" autoplay loop muted playsinline></video>
+
+<ul>
+<li>Design digital circuits by placing and wiring together buttons, switches, LEDs, simple gates, and hundreds of other components.
+<li>Interactive live simulation: you can interact with a circuit by supplying input via virtual buttons, switches, joystick, microphone, and other virtual devices,
+and see the output on virtual LEDs, 7-segment displays, LCD panels, etc.
+<li>Build combinational (aka "combinatorial") circuits using individual components, piece by piece, or using the
+combinational analysis window, which lets you create a circuit from a truth table, logical expression, or Karnaugh map.
+<li>Build stateful (aka "sequential") circuits using flip-flops, registers, counters, ROM, RAM and other state-holding components.
+<li>Logisim supports virtual keyboard input and terminal output devices: your circuits can process keyboard input and generate character output.
+<li>Use multi-bit bus wires (up to 32-bits) and "tunnels" to simplify wiring.
+<li>Circuits can be embedded within each other as sub-circuits, with custom shaped appearance and dynamically updating visual effects.
+<li>FPGA support: Logisim can convert your circuit to Verilog or VHDL, then synthesize and uploade it to an FPGA. Note: not all components and circuit features are currently available for FPGA synthesis.
+<li>Chronogram: visualize circuit behavior with a timeline of signal values.
+<li>Auto-backup and recovery of project files.
+<li>Logisim is open source and entirely free: use it for education, personal projects, or whatever else you want within the generous bounds of the GPLv3 license.
+<li>Logisim has no telemetry or data collection of any kind. Your privacy is important.
+<li><b>new!</b> Type-to-insert: just type a component name to search the libraries.
+<li><b>new!</b> Quick-help panel in the main window: for fast access to component reference sheets and examples. (work in progress)
+<li><b>new!</b> Example circuits: Look in the File menu for demo circuits. (more to come)
+<li><b>new!</b> New audio and I/O components for generating, visualizing, and playing waveforms.
+<li><b>new!</b> Support for the Alchitry Cu V2 fpga demo board, with I/O hat.
+<li><b>new!</b> Improved FPGA toolchain support, especially for Apio and openFPGALoader.
+</ul>
+
+<h3>History</h3>
+
+<p>This version, Logisim-evolution (Holy Cross Edition) is maintained by
+<a href="mailto:kwalsh@holycross.edu">Kevin Walsh</a> at <a href="https://holycross.edu">College of the Holy Cross</a>.
+
+<p>Logisim was originally created by <a href="http://www.cburch.com/logisim/">Dr. Carl Burch</a> and actively developed
+by him until 2011. This is the "Holy Cross Edition", which is maintained and used by Holy Cross and others.
+
+<p>This repository is a fork of <a href="https://github.com/reds-heig/logisim-evolution">reds-heig logisim-evolution</a>,
+which in turn is a fork of the original <a href="http://www.cburch.com/logisim/">[Logisim by Dr. Carl Burch</a>. 
+
+<h3>License</h3>
+
+<p>The code is licensed under the GNU GENERAL PUBLIC LICENSE, version 3.
+
+<h3>Credits</h3>
+
+<p>The following institutions and people contributed to Logisim's development:
+<li>Carl Burch - <a href="https://www.hendrix.edu/">Hendrix College</a> - USA
+<li><a href="http://www.bfh.ch">Haute École Spécialisée Bernoise</a> - Switzerland
+<li><a href="http://hepia.hesge.ch">Haute École du paysage, d'ingénierie et d'architecture de Genève</a> - Switzerland
+<li><a href="http://www.heig-vd.ch">Haute École d'Ingénierie et de Gestion du Canton de Vaud</a> - Switzerland
+<li>Theldo Cruz Franqueira - Pontifícia Universidade Católica de Minas Gerais - Brasil
+<li>Moshe Berman - Brooklyn College
+
+<p>Thanks also to the many individuals contributing bug reports, demo files, features, and feedback.
 
 </body>
 </html>
