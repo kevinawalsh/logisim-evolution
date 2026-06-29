@@ -1,4 +1,4 @@
-/* ── Reset & Base ─────────────────────────────────────────────────── */
+/* -- Reset & Base --------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
@@ -12,7 +12,7 @@ body {
   background: #f0f0f5;
 }
 
-/* ── Layout ───────────────────────────────────────────────────────── */
+/* -- Layout --------------------------------------------------------- */
 main {
   max-width: 840px;
   margin: 0 auto;
@@ -23,7 +23,7 @@ main {
   border-top: 5px solid #006400;
 }
 
-/* ── Headings ─────────────────────────────────────────────────────── */
+/* -- Headings ------------------------------------------------------- */
 h1 {
   font-size: 2rem;
   font-weight: 700;
@@ -42,7 +42,7 @@ h2 {
   border-bottom: 2px solid #e0e0ea;
 }
 
-/* ── Text ─────────────────────────────────────────────────────────── */
+/* -- Text ----------------------------------------------------------- */
 p { margin: 0.85rem 0; }
 
 .intro {
@@ -51,16 +51,16 @@ p { margin: 0.85rem 0; }
   margin: 0.25rem 0 0.5rem;
 }
 
-/* ── Links ────────────────────────────────────────────────────────── */
+/* -- Links ---------------------------------------------------------- */
 a { color: #0044cc; text-decoration: none; }
 a:hover { color: #002288; text-decoration: underline; }
 a:visited { color: #5500aa; }
 
-/* ── Lists ────────────────────────────────────────────────────────── */
+/* -- Lists ---------------------------------------------------------- */
 ul { padding-left: 1.4rem; margin: 0.5rem 0; }
 li { margin-bottom: 0.5rem; }
 
-/* ── Code ─────────────────────────────────────────────────────────── */
+/* -- Code ----------------------------------------------------------- */
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.875em;
@@ -70,7 +70,7 @@ code {
   border: 1px solid #dddde8;
 }
 
-/* ── Splash image ─────────────────────────────────────────────────── */
+/* -- Splash image --------------------------------------------------- */
 .splash {
   display: block;
   width: 100%;
@@ -80,7 +80,7 @@ code {
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
-/* ── Video ────────────────────────────────────────────────────────── */
+/* -- Video ---------------------------------------------------------- */
 video {
   display: block;
   width: 100%;
@@ -90,7 +90,7 @@ video {
   margin: 1rem 0 1.5rem;
 }
 
-/* ── "new" badge ──────────────────────────────────────────────────── */
+/* -- "new" badge ---------------------------------------------------- */
 .badge {
   display: inline-block;
   font-size: 0.68em;
@@ -106,7 +106,147 @@ video {
   line-height: 1.4;
 }
 
-/* ── Mobile ───────────────────────────────────────────────────────── */
+/* -- Collapsible info panels ---------------------------------------- */
+.info-panel {
+  border: 1px solid #e0e0ea;
+  border-radius: 8px;
+  padding: 0;
+  margin: 0.5rem 0;
+  background: #f8f8fc;
+}
+
+.info-panel summary {
+  cursor: pointer;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.info-panel summary::before {
+  content: "▸";
+  font-size: 0.75em;
+  color: #888;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.info-panel[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.info-panel[open] summary {
+  border-bottom: 1px solid #e0e0ea;
+}
+
+.info-panel > :not(summary) {
+  padding: 0.75rem 0.9rem;
+  font-size: 0.875rem;
+  color: #444;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* -- Download tiles ------------------------------------------------- */
+.dl-wrap  { padding: 1rem 0; }
+
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.dl-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #d0cfc8;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+a.dl-tile:hover {
+  border-color: #aab;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+}
+
+.dl-tile.unavailable {
+  background: #f5f4f0;
+  border-color: #e0dfd8;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.dl-tile.unavailable img { filter: grayscale(1); }
+
+.dl-os  { font-size: 16px; font-weight: 500; color: #111; }
+.dl-sub { font-size: 13px; color: #888; margin-top: 4px; line-height: 1.4; }
+
+.dl-action {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2563eb;
+}
+
+.dl-unavail {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #888;
+}
+
+.dl-footer    { margin-top: 6px; margin-bottom: 6px; font-size: 13px; color: #888; }
+.dl-footer a  { color: #888; text-decoration: none; }
+
+/* -- GitHub button -------------------------------------------------- */
+.github-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.75rem 1.1rem;
+  margin: 0.5rem 0;
+  background: #1a1a2e;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.github-btn:hover,
+.github-btn:visited {
+  color: #fff;
+  text-decoration: none;
+}
+
+.github-btn:hover { background: #2d2d50; }
+
+.github-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+/* -- Mobile --------------------------------------------------------- */
 @media (max-width: 600px) {
   body  { font-size: 16px; }
   h1    { font-size: 1.5rem; }

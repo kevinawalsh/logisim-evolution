@@ -28,29 +28,18 @@ and hundreds of other components.</p>
 
 <h2>Download and Install</h2>
 
-<div style="font-family: sans-serif; padding: 1rem 0;">
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+<div class="dl-wrap">
+  <div class="dl-grid">
 
     <!-- macOS Apple Silicon -->
     <a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/Logisim-Evolution-5.3.0-HC.pkg"
-       style="display: flex; flex-direction: column; align-items: flex-start; padding: 20px;
-              background: #ffffff; border: 1px solid #d0cfc8; border-radius: 12px;
-              text-decoration: none; color: inherit; gap: 12px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-           fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-           aria-hidden="true">
-        <path d="M9 7c-3 0-4 3-4 5.5C5 16 7 21 9 21c1 0 1.5-.5 3-.5s2 .5 3 .5c2 0 4-5 4-8.5
-                 C19 9.5 17.5 7 16 7c-1.5 0-2 1-4 1S10 7 9 7z"/>
-        <path d="M12 4a2 2 0 0 0 2-2 2 2 0 0 0-2 2"/>
-      </svg>
+       class="dl-tile">
+      <img src="macos.png" width="40" height="40" alt="">
       <div>
-        <div style="font-size: 16px; font-weight: 500; color: #111;">macOS</div>
-        <div style="font-size: 13px; color: #888; margin-top: 4px; line-height: 1.4;">
-          Apple Silicon<br>M-series Macs
-        </div>
+        <div class="dl-os">macOS</div>
+        <div class="dl-sub">Apple Silicon<br>M-series Macs</div>
       </div>
-      <div style="margin-top: auto; display: flex; align-items: center; gap: 6px;
-                  font-size: 13px; color: #2563eb; font-weight: 500;">
+      <div class="dl-action">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
              aria-hidden="true">
@@ -61,47 +50,24 @@ and hundreds of other components.</p>
     </a>
 
     <!-- macOS Intel (unavailable) -->
-    <div style="display: flex; flex-direction: column; align-items: flex-start; padding: 20px;
-                background: #f5f4f0; border: 1px solid #e0dfd8; border-radius: 12px;
-                color: inherit; gap: 12px; opacity: 0.55;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-           fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-           aria-hidden="true">
-        <path d="M9 7c-3 0-4 3-4 5.5C5 16 7 21 9 21c1 0 1.5-.5 3-.5s2 .5 3 .5c2 0 4-5 4-8.5
-                 C19 9.5 17.5 7 16 7c-1.5 0-2 1-4 1S10 7 9 7z"/>
-        <path d="M12 4a2 2 0 0 0 2-2 2 2 0 0 0-2 2"/>
-      </svg>
+    <div class="dl-tile unavailable">
+      <img src="macos.png" width="40" height="40" alt="">
       <div>
-        <div style="font-size: 16px; font-weight: 500; color: #111;">macOS</div>
-        <div style="font-size: 13px; color: #888; margin-top: 4px; line-height: 1.4;">
-          Intel x86<br>older Macs
-        </div>
+        <div class="dl-os">macOS</div>
+        <div class="dl-sub">Intel x86<br>older Macs</div>
       </div>
-      <div style="margin-top: auto; font-size: 12px; color: #888;
-                  background: #eae9e3; border: 1px solid #d0cfc8; border-radius: 4px;
-                  padding: 3px 8px;">
-        not yet available
-      </div>
+      <div class="dl-unavail">not yet available</div>
     </div>
 
     <!-- Windows -->
     <a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/Logisim-Evolution-5.3.0hc-Setup.exe"
-       style="display: flex; flex-direction: column; align-items: flex-start; padding: 20px;
-              background: #ffffff; border: 1px solid #d0cfc8; border-radius: 12px;
-              text-decoration: none; color: inherit; gap: 12px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-           fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-           aria-hidden="true">
-        <path d="M6.5 5L11 4v7H6.5zM12 4l5.5 1V11H12zM6.5 12H11v7l-4.5-1zM12 12h5.5l-5.5 7z" fill="#2563eb" stroke="none"/>
-      </svg>
+       class="dl-tile">
+      <img src="windows.png" width="40" height="40" alt="">
       <div>
-        <div style="font-size: 16px; font-weight: 500; color: #111;">Windows</div>
-        <div style="font-size: 13px; color: #888; margin-top: 4px; line-height: 1.4;">
-          Executable Installer<br>Or use zip archive below
-        </div>
+        <div class="dl-os">Windows</div>
+        <div class="dl-sub">Executable Installer<br>Or use zip archive from github</div>
       </div>
-      <div style="margin-top: auto; display: flex; align-items: center; gap: 6px;
-                  font-size: 13px; color: #2563eb; font-weight: 500;">
+      <div class="dl-action">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
              aria-hidden="true">
@@ -113,24 +79,13 @@ and hundreds of other components.</p>
 
     <!-- Linux / universal jar -->
     <a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/logisim-evolution-5.3.0hc.jar"
-       style="display: flex; flex-direction: column; align-items: flex-start; padding: 20px;
-              background: #ffffff; border: 1px solid #d0cfc8; border-radius: 12px;
-              text-decoration: none; color: inherit; gap: 12px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-           fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-           aria-hidden="true">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M9 12c0-3.5 1.5-6 3-6s3 2.5 3 6-1.5 6-3 6-3-2.5-3-6z"/>
-        <path d="M3 12h18"/>
-      </svg>
+       class="dl-tile">
+      <img src="linux.png" width="40" height="40" alt="">
       <div>
-        <div style="font-size: 16px; font-weight: 500; color: #111;">Linux</div>
-        <div style="font-size: 13px; color: #888; margin-top: 4px; line-height: 1.4;">
-          Universal .jar<br>requires Java 17+
-        </div>
+        <div class="dl-os">Linux</div>
+        <div class="dl-sub">Universal .jar<br>requires Java 17+</div>
       </div>
-      <div style="margin-top: auto; display: flex; align-items: center; gap: 6px;
-                  font-size: 13px; color: #2563eb; font-weight: 500;">
+      <div class="dl-action">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
              aria-hidden="true">
@@ -142,51 +97,69 @@ and hundreds of other components.</p>
 
   </div>
 
-  <p style="margin-top: 14px; font-size: 13px; color: #888;">
-    <a href="https://github.com/kevinawalsh/logisim-evolution/releases"
-       style="color: #555; text-decoration: none;">
-      &#x1F552; See all versions on GitHub
+  <p class="dl-footer">
+    <a href="https://github.com/kevinawalsh/logisim-evolution/releases/download/v5.3.0/Logisim-Evolution-5.3.0hc-windows.zip">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 -5 24 24"
+           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>Windows zip archive
     </a>
+    <span style="color: #888;">&nbsp;&middot;&nbsp; Alternative usb/portable no-install version for Windows</span>
+  </p>
+
+  <p class="dl-footer">
+    <a href="https://github.com/kevinawalsh/logisim-evolution/releases">&#x1F552; See all versions on GitHub</a>
     &nbsp;&middot;&nbsp; Version 5.3.0-HC released in June 2026
   </p>
 </div>
 
-<p><b>Which version should I download for Mac?</b> Recent Mac computers should
-use the "Apple Silicon" version. Under the Apple Menu, go to "About This Mac".
-If the chip says Apple M1, Apple M6, or any other similar chip, you have an
-Apple Silicon Mac. Older Intel-based Macs need a separate version. If you think
-that would be useful, please contact kwalsh@holycross.edu and one can be made
-available.</p>
+<details class="info-panel">
+  <summary>Which version should I download for Mac?</summary>
+  <p>Recent Mac computers should use the "Apple Silicon" version. Under the Apple
+  Menu, go to "About This Mac". If the chip says Apple M1, Apple M6, or any
+  other similar chip, you have an Apple Silicon Mac. Older Intel-based Macs need
+  a separate version. If you think that would be useful, please contact
+  kwalsh@holycross.edu and one can be made available.</p>
+</details>
 
-<p><b>Mac Security Warning:</b> The MacOS security gatekeeper may prevent you
-from opening the PKG file above directly. As of the time of publishing, the code
-has passed Apple security review and is digitally signed by the developer
-(myself, K. Walsh), but Apple regularly adds new restrictions that can cause new
-security warnings. To install, right-click and "Save As..." to save the PKG file
-to your Downloads folder. Then go to your Downloads folder in the finder, right
-click the PKG file and "Open with... Installer (Default)". If given a security
-warning, click "Open". This should install Logisim in your Applications folder.</p>
+<details class="info-panel">
+  <summary>Mac Security Warning</summary>
+  <p>The MacOS security gatekeeper may prevent you from opening the PKG file above
+  directly. As of the time of publishing, the code has passed Apple security
+  review and is digitally signed by the developer (myself, K. Walsh), but Apple
+  regularly adds new restrictions that can cause new security warnings. To
+  install, right-click and "Save As..." to save the PKG file to your Downloads
+  folder. Then go to your Downloads folder in the finder, right click the PKG
+  file and "Open with... Installer (Default)". If given a security warning, click
+  "Open". This should install Logisim in your Applications folder.</p>
+</details>
 
-<p><b>Which version should I download for Windows?</b> This version of Logisim
-uses a standard windows installer program to install Logisim. It should
-<b>not</b> require administrator privileges to install, as it installs into your
-personal Program Files folder and in your start menu, rather than in the
-system-wide Program Files folder. The alternative zip-format download can be
-used if you'd rather run Logisim directly from your Downloads folder or copy it
-to a portable thumbdrive. The zip archive contains an EXE file you can click on
-to launch Logisim, along with the Java JAR file with Logisim code and a suitable
-Java runtime for windows: extract the compressed contents to a directory of your
-choice and click the EXE launcher.</p>
+<details class="info-panel">
+  <summary>Which version should I download for Windows?</summary>
+  <p>This version of Logisim uses a standard windows installer program to install
+  Logisim. It should <b>not</b> require administrator privileges to install, as
+  it installs into your personal Program Files folder and in your start menu,
+  rather than in the system-wide Program Files folder. The alternative zip-format
+  download can be used if you'd rather run Logisim directly from your Downloads
+  folder or copy it to a portable thumbdrive. The zip archive contains an EXE
+  file you can click on to launch Logisim, along with the Java JAR file with
+  Logisim code and a suitable Java runtime for windows: extract the compressed
+  contents to a directory of your choice and click the EXE launcher.</p>
+</details>
 
-<p><b>Universal Java Jar:</b> Windows and Mac versions will work only on Windows
-or Mac. The platform-independent JAR file should work on any platform, but
-requires that Java version 17 or above be installed separately if your computer
-doesn't already have it. Java version 25 or higher is recommended. One good
-choice is to use the Eclipse/Adoptium project <a
-href="https://adoptium.net/">Temurin OpenJDK</a>. To run the JAR file, open a
-command line (or Mac Terminal or Windows CMD.exe or PowerShell prompt) and type
-<code>java -jar logisim-evolution-5.3.0hc.jar</code> from within the directory where you
-have downloaded the JAR file.</p>
+<details class="info-panel">
+  <summary>Universal JAR</summary>
+  <p>Windows and Mac versions will work only on Windows or Mac. The
+  platform-independent JAR file should work on any platform, but requires that
+  Java version 17 or above be installed separately if your computer doesn't
+  already have it. Java version 25 or higher is recommended. One good choice is
+  to use the Eclipse/Adoptium project <a href="https://adoptium.net/">Temurin
+  OpenJDK</a>. To run the JAR file, open a command line (or Mac Terminal or
+  Windows CMD.exe or PowerShell prompt) and type
+  <code>java -jar logisim-evolution-5.3.0hc.jar</code> from within the directory
+  where you have downloaded the JAR file.</p>
+</details>
 
 <h2>Documentation</h2>
 
@@ -209,7 +182,7 @@ guides are all available within the app. Or you can access them online:</p>
 
 <h2>Features</h2>
 
-<video src="logisim-demo.mp4" autoplay loop muted playsinline controls></video>
+<video src="https://mathcs.holycross.edu/~kwalsh/logisim-demo.mp4" autoplay loop muted playsinline controls></video>
 
 <p>Logisim is a mature, fully-featured program that has been used and developed over many years in multiple colleges and universities around the world.</p>
 
@@ -244,9 +217,25 @@ by him until 2011. This is the "Holy Cross Edition", which is maintained and use
 <p>This repository is a fork of <a href="https://github.com/reds-heig/logisim-evolution">reds-heig logisim-evolution</a>,
 which in turn is a fork of the original <a href="http://www.cburch.com/logisim/">Logisim by Dr. Carl Burch</a>.</p>
 
-<h2>License</h2>
+<h2>License &amp; Source Code</h2>
 
 <p>The code is licensed under the GNU GENERAL PUBLIC LICENSE, version 3.</p>
+
+<a href="https://github.com/kevinawalsh/logisim-evolution/" class="github-btn">
+  <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577
+             0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7
+             3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236
+             1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332
+             -5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0
+             1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405
+             2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91
+             1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015
+             2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297
+             c0-6.627-5.373-12-12-12"/>
+  </svg>
+  View source code on GitHub
+</a>
 
 <h2>Credits</h2>
 
