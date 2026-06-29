@@ -1,0 +1,115 @@
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  color: #222;
+  background: #f0f0f5;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────── */
+main {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 4rem;
+  background: #fff;
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0,0,0,0.07);
+  border-top: 5px solid #006400;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #006400;
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #006400;
+  margin: 2.5rem 0 0.75rem;
+  padding: 0 0 0.4rem 0.65rem;
+  border-left: 4px solid #006400;
+  border-bottom: 2px solid #e0e0ea;
+}
+
+/* ── Text ─────────────────────────────────────────────────────────── */
+p { margin: 0.85rem 0; }
+
+.intro {
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0.25rem 0 0.5rem;
+}
+
+/* ── Links ────────────────────────────────────────────────────────── */
+a { color: #0044cc; text-decoration: none; }
+a:hover { color: #002288; text-decoration: underline; }
+a:visited { color: #5500aa; }
+
+/* ── Lists ────────────────────────────────────────────────────────── */
+ul { padding-left: 1.4rem; margin: 0.5rem 0; }
+li { margin-bottom: 0.5rem; }
+
+/* ── Code ─────────────────────────────────────────────────────────── */
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.875em;
+  background: #f3f3f8;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+  border: 1px solid #dddde8;
+}
+
+/* ── Splash image ─────────────────────────────────────────────────── */
+.splash {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 1rem 0 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* ── Video ────────────────────────────────────────────────────────── */
+video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  margin: 1rem 0 1.5rem;
+}
+
+/* ── "new" badge ──────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  font-size: 0.68em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #1a7a44;
+  color: #fff;
+  padding: 0.15em 0.5em;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 0.35em;
+  line-height: 1.4;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  body  { font-size: 16px; }
+  h1    { font-size: 1.5rem; }
+  h2    { font-size: 1.15rem; }
+  main  { padding: 1.25rem 1rem 2.5rem; box-shadow: none; }
+}
