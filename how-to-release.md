@@ -45,12 +45,11 @@
         build-win-release-package.bat
         logisim.ico
         logisim-evolution.jar
-        logisim-l4j.xml
-        logisim-win-install.nsi
+        logisim-win-install.nsi.template
    - update build-win-release-package.bat paths for hotspot, Launch4j, NSIS, etc.
    - run build-win-release-package.bat
    - Artifact for release: Logisim-Evolution-${VERSION}hc-windows.zip
-   - Artifact for release: Logisim-Evolution-${VERSION}hc.exe
+   - Artifact for release: Logisim-Evolution-${VERSION}hc-Setup.exe
 
 7. Create github release, and upload all artifacts
    - Ensure github pages are showing new version of docs
