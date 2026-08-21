@@ -376,7 +376,7 @@ public class XmlProjectReader extends XmlReader {
       // Check for known holycross website
       boolean hc_website = (website != null &&
           (website.toLowerCase().contains("/github.com/kevinawalsh/") ||
-           website.toLowerCase().contains("/kevinawalsh.github.com/")));
+           website.toLowerCase().contains("/kevinawalsh.github.io/")));
 
       // Check for known reds-heig website
       boolean rh_website = (website != null &&
@@ -411,13 +411,13 @@ public class XmlProjectReader extends XmlReader {
       }
 
       // claims to be HC edition, future version, and expected website, or no website...
-      if (hc_variant && ver.compareTo(Main.VERSION) <= 0 &&
+      if (hc_variant && ver.compareTo(Main.VERSION) > 0 &&
           (hc_website || website == null))
-        return HOLY_CROSS_FUTURE;
+        return String.format(HOLY_CROSS_FUTURE, ver, Main.VERSION);
 
       // claims to be HC edition, future version, and an unexpected website...
-      if (hc_variant && ver.compareTo(Main.VERSION) <= 0)
-        return HOLY_CROSS_FUTURE + "\n" +
+      if (hc_variant && ver.compareTo(Main.VERSION) > 0)
+        return String.format(HOLY_CROSS_FUTURE, ver, Main.VERSION) + "\n" +
           String.format(
               "\nOr, you might try the following site, which was listed within the\n" +
               "project file: <%s>", website);
@@ -425,7 +425,7 @@ public class XmlProjectReader extends XmlReader {
       // claims to be HC edition, known version, but missing or wrong website...
       if (hc_variant) {
         sourceVersion = ver; // apply compatibility fixes for given version, I guess?
-        return HOLY_CROSS_MISLABELED +
+        return String.format(HOLY_CROSS_MISLABELED, ver) +
           (website == null ? "" :
            String.format(" You might try the following site,\n" +
              "which was listed within the project file: <%s>", website));
