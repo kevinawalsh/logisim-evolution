@@ -8,11 +8,10 @@
 2. Bump version, copyright year, and contact info in various files:
    - VERSION, COPYRIGHT\_YEAR, and contact.txt
    - README.md
-   - logisim-win-install.nsi
+   - logisim-win-install.nsi.template
    - build-mac-release-package.sh
    - build-mac-release-package-x86.sh
    - build-win-release-package.bat
-   - logisim-l4j.xml
 
 3. ant cleanall && ant jar publish-docs
    - Copy logisim-evolution.jar to logisim-evolution-${VERSION}hc.jar
