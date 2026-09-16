@@ -376,6 +376,9 @@ public class RomContents extends MemContents {
     CopyContents(RomContents contents, long start, MemContents src, long offset, long count) {
       this.contents = contents;
       this.src = src;
+      this.start = start;
+      this.offset = offset;
+      this.count = count;
       this.oldContents = contents.duplicate();
     }
 
